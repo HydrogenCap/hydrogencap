@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -19,7 +19,7 @@ const authSchema = z.object({
 
 type AuthFormData = z.infer<typeof authSchema>;
 
-export default function Auth() {
+function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
@@ -49,7 +49,6 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await signIn(data.email, data.password);
         if (error) {
-          // Handle specific error messages
           if (error.message.includes('Invalid login credentials')) {
             toast({
               title: 'Login failed',
@@ -73,7 +72,6 @@ export default function Auth() {
       } else {
         const { error } = await signUp(data.email, data.password, data.fullName);
         if (error) {
-          // Handle specific error messages
           if (error.message.includes('User already registered')) {
             toast({
               title: 'Account exists',
@@ -105,6 +103,11 @@ export default function Auth() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    form.reset();
   };
 
   return (
@@ -205,10 +208,7 @@ export default function Auth() {
             <div className="mt-6 text-center">
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  form.reset();
-                }}
+                onClick={toggleMode}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {isLogin ? (
@@ -230,3 +230,5 @@ export default function Auth() {
     </div>
   );
 }
+
+export default AuthPage;
