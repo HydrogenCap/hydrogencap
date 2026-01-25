@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
-import { OwnershipCard, OwnershipEditor } from '@/components/ownership';
+import { OwnershipCard, OwnershipEditor, BeneficialAttributionCard } from '@/components/ownership';
 import { LocationRegistryCard } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
@@ -391,6 +391,9 @@ function PropertyDetailPage() {
               onAddOwnership={handleAddOwnership}
               onEditOwnership={handleEditOwnership}
             />
+
+            {/* Beneficial Attribution */}
+            <BeneficialAttributionCard propertyId={id!} />
 
             {/* Notes */}
             {property.notes && (

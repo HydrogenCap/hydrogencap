@@ -62,6 +62,35 @@ export type Database = {
           },
         ]
       }
+      beneficial_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficial_groups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       costs: {
         Row: {
           bills_gbp_manual: number | null
@@ -229,6 +258,48 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_beneficial_mapping: {
+        Row: {
+          beneficial_group_id: string
+          created_at: string
+          effective_from: string | null
+          entity_id: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          beneficial_group_id: string
+          created_at?: string
+          effective_from?: string | null
+          entity_id: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          beneficial_group_id?: string
+          created_at?: string
+          effective_from?: string | null
+          entity_id?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_beneficial_mapping_beneficial_group_id_fkey"
+            columns: ["beneficial_group_id"]
+            isOneToOne: false
+            referencedRelation: "beneficial_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_beneficial_mapping_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -675,6 +746,8 @@ export type Database = {
           area_name: string | null
           bathrooms: number | null
           beds: number | null
+          beneficial_override_notes: string | null
+          beneficial_override_percent: number | null
           created_at: string
           current_value_gbp: number | null
           epc_rating: string | null
@@ -704,6 +777,8 @@ export type Database = {
           area_name?: string | null
           bathrooms?: number | null
           beds?: number | null
+          beneficial_override_notes?: string | null
+          beneficial_override_percent?: number | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
@@ -733,6 +808,8 @@ export type Database = {
           area_name?: string | null
           bathrooms?: number | null
           beds?: number | null
+          beneficial_override_notes?: string | null
+          beneficial_override_percent?: number | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
