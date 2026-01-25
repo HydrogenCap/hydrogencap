@@ -5,11 +5,9 @@ import {
   ArrowLeft,
   Edit2,
   Trash2,
-  Plus,
   ExternalLink,
   Calendar,
   MapPin,
-  Users,
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
@@ -42,17 +40,13 @@ import {
   useCompany,
   useUpdateCompany,
   useDeleteCompany,
-  useDeleteShareholding,
-  useUpdateShareClass,
-  useConfirmShareClass,
   type CompanyType,
   type CompanyStatus,
-  type Shareholding,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ShareholdingEditor, ComplianceFilingsCard, CompanyLinkedProperties, CompanyMissingInfoCard, CompanyBeneficialOwnersCard } from '@/components/companies';
+import { ComplianceFilingsCard, CompanyLinkedProperties, CompanyBeneficialOwnersCard } from '@/components/companies';
+import { CompanyOwnershipSection } from '@/components/ownership';
 import { useToast } from '@/hooks/use-toast';
-import { formatPercent } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 
 const companyTypeLabels: Record<string, string> = {
@@ -91,9 +85,6 @@ export default function CompanyDetail() {
   const { data: company, isLoading } = useCompany(id);
   const updateCompany = useUpdateCompany();
   const deleteCompany = useDeleteCompany();
-  const deleteShareholding = useDeleteShareholding();
-  const updateShareClass = useUpdateShareClass();
-  const confirmShareClass = useConfirmShareClass();
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -103,18 +94,12 @@ export default function CompanyDetail() {
     company_type: 'SPV' as CompanyType,
     status: 'ACTIVE' as CompanyStatus,
   });
-  const [showShareholdingEditor, setShowShareholdingEditor] = useState(false);
-  const [editingShareholding, setEditingShareholding] = useState<Shareholding | null>(null);
-  const [editingShareClassId, setEditingShareClassId] = useState<string | null>(null);
-  const [editingIssuedShares, setEditingIssuedShares] = useState<string>('');
-  const [preselectedShareClassId, setPreselectedShareClassId] = useState<string | null>(null);
   const hasAutoSynced = useRef(false);
 
   // Auto-sync from Companies House if company number exists and hasn't synced in 24 hours
   const performAutoSync = useCallback(async () => {
     if (!company?.company_number || isLookingUp || hasAutoSynced.current) return;
     
-    // Check if we should auto-sync (not synced or synced more than 24 hours ago)
     const lastSynced = company.ch_last_synced_at ? new Date(company.ch_last_synced_at) : null;
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
@@ -141,7 +126,6 @@ export default function CompanyDetail() {
         }
       } catch (err) {
         console.error('Auto-sync failed:', err);
-        // Silent fail for auto-sync - don't show error toast
       }
     }
   }, [company, isLookingUp, lookupCompany, updateCompany, toast]);
@@ -191,16 +175,6 @@ export default function CompanyDetail() {
     }
   };
 
-  const handleDeleteShareholding = async (shareholdingId: string) => {
-    if (!company) return;
-    try {
-      await deleteShareholding.mutateAsync({ id: shareholdingId, companyId: company.id });
-      toast({ title: 'Shareholder removed' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to remove shareholder', variant: 'destructive' });
-    }
-  };
-
   const handleRefreshFromCH = async () => {
     if (!company?.company_number) return;
     try {
@@ -211,7 +185,6 @@ export default function CompanyDetail() {
           ch_registered_address: result.company.registered_address,
           ch_incorporation_date: result.company.date_of_creation,
           ch_last_synced_at: new Date().toISOString(),
-          // Sync compliance data
           accounts_due_date: result.compliance.accounts_due_date,
           accounts_period_end: result.compliance.accounts_period_end,
           accounts_last_filed_date: result.compliance.accounts_last_filed_date,
@@ -244,41 +217,6 @@ export default function CompanyDetail() {
     } catch {
       toast({ title: 'Error', description: 'Failed to update compliance dates', variant: 'destructive' });
     }
-  };
-
-  const handleUpdateIssuedShares = async () => {
-    if (!editingShareClassId) return;
-    const shares = parseInt(editingIssuedShares, 10);
-    if (isNaN(shares) || shares <= 0) {
-      toast({ title: 'Error', description: 'Issued shares must be a positive number', variant: 'destructive' });
-      return;
-    }
-    try {
-      await updateShareClass.mutateAsync({
-        id: editingShareClassId,
-        issued_shares: shares,
-      });
-      toast({ title: 'Share class updated' });
-      setEditingShareClassId(null);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to update share class', variant: 'destructive' });
-    }
-  };
-
-  const handleConfirmShares = async (shareClassId: string) => {
-    if (!company) return;
-    try {
-      await confirmShareClass.mutateAsync({ id: shareClassId, companyId: company.id });
-      toast({ title: 'Share count confirmed' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to confirm share count', variant: 'destructive' });
-    }
-  };
-
-  const handleAddShareholderFromMissing = (shareClassId: string) => {
-    setPreselectedShareClassId(shareClassId);
-    setEditingShareholding(null);
-    setShowShareholdingEditor(true);
   };
 
   if (isLoading) {
@@ -355,7 +293,7 @@ export default function CompanyDetail() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Company</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete {company.legal_name}? This will also delete all share classes and shareholding records. This action cannot be undone.
+                    Are you sure you want to delete {company.legal_name}? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -465,177 +403,12 @@ export default function CompanyDetail() {
             <CompanyBeneficialOwnersCard companyId={company.id} />
           </div>
 
-          {/* Right Column - Shareholdings */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Missing Info Card */}
-            <CompanyMissingInfoCard
-              shareClasses={company.share_classes}
-              shareholdings={company.shareholdings}
-              onConfirmShares={handleConfirmShares}
-              onAddShareholder={handleAddShareholderFromMissing}
-              isConfirming={confirmShareClass.isPending}
+          {/* Right Column - Shareholders (unified ownership_links) */}
+          <div className="lg:col-span-2">
+            <CompanyOwnershipSection
+              companyId={company.id}
+              companyName={company.legal_name}
             />
-            {company.share_classes.map((shareClass) => {
-              const holdings = company.shareholdings.filter(
-                (sh) => sh.share_class_id === shareClass.id
-              );
-              const totalHeld = holdings.reduce((sum, h) => sum + h.shares_held, 0);
-              const percentAllocated = (totalHeld / shareClass.issued_shares) * 100;
-              const isEditingThisClass = editingShareClassId === shareClass.id;
-
-              return (
-                <Card key={shareClass.id}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        {shareClass.name} Shares
-                        {shareClass.is_primary && (
-                          <Badge variant="secondary" className="text-xs">Primary</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {isEditingThisClass ? (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              value={editingIssuedShares}
-                              onChange={(e) => setEditingIssuedShares(e.target.value)}
-                              className="w-24 h-8"
-                              min="1"
-                            />
-                            <Button size="sm" onClick={handleUpdateIssuedShares}>
-                              Save
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingShareClassId(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setEditingShareClassId(shareClass.id);
-                              setEditingIssuedShares(String(shareClass.issued_shares));
-                            }}
-                            className="text-sm text-muted-foreground hover:text-foreground"
-                          >
-                            {shareClass.issued_shares.toLocaleString()} issued
-                          </button>
-                        )}
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {holdings.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-6">
-                        No shareholders recorded for this share class
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {percentAllocated !== 100 && (
-                          <div className="flex items-center gap-2 text-sm mb-4 p-2 rounded bg-muted">
-                            <AlertCircle className="h-4 w-4 text-warning" />
-                            <span>
-                              {formatPercent(percentAllocated)} allocated
-                              {percentAllocated < 100 && ` (${formatPercent(100 - percentAllocated)} unallocated)`}
-                            </span>
-                          </div>
-                        )}
-
-                        {holdings.map((holding) => {
-                          const percent = (holding.shares_held / shareClass.issued_shares) * 100;
-                          return (
-                            <div
-                              key={holding.id}
-                              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 group"
-                            >
-                              <div className="flex items-center gap-3">
-                                {holding.shareholder_party?.party_type === 'INDIVIDUAL' ? (
-                                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <span className="text-sm font-medium text-primary">
-                                      {holding.shareholder_party.display_name.charAt(0)}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                                )}
-                                <div>
-                                  <p className="font-medium">
-                                    {holding.shareholder_party?.display_name}
-                                  </p>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span>{holding.shareholder_party?.party_type}</span>
-                                    {holding.shareholder_party?.company_number && (
-                                      <>
-                                        <span>•</span>
-                                        <span>{holding.shareholder_party.company_number}</span>
-                                      </>
-                                    )}
-                                    {holding.ownership_source !== 'MANUAL' && (
-                                      <>
-                                        <span>•</span>
-                                        <Badge variant="outline" className="text-xs">
-                                          {holding.ownership_source}
-                                        </Badge>
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="text-right">
-                                  <p className="font-bold">{formatPercent(percent)}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {holding.shares_held.toLocaleString()} shares
-                                  </p>
-                                </div>
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      setEditingShareholding(holding);
-                                      setShowShareholdingEditor(true);
-                                    }}
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive"
-                                    onClick={() => handleDeleteShareholding(holding.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <Button
-                      variant="outline"
-                      className="w-full mt-4"
-                      onClick={() => {
-                        setEditingShareholding(null);
-                        setShowShareholdingEditor(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Shareholder
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
           </div>
         </div>
       </div>
@@ -706,19 +479,6 @@ export default function CompanyDetail() {
           </Card>
         </div>
       )}
-
-      {/* Shareholding Editor */}
-      <ShareholdingEditor
-        companyId={company.id}
-        shareClasses={company.share_classes}
-        open={showShareholdingEditor}
-        onOpenChange={(open) => {
-          setShowShareholdingEditor(open);
-          if (!open) setPreselectedShareClassId(null);
-        }}
-        editingShareholding={editingShareholding}
-        preselectedShareClassId={preselectedShareClassId}
-      />
     </AppLayout>
   );
 }
