@@ -265,7 +265,29 @@ function calculatePropertyLookthrough(
 }
 
 /**
+ * Fetch beneficial ownership data for property attribution
+ */
+async function fetchBeneficialOwnership(propertyId: string) {
+  const { data, error } = await supabase
+    .from('property_beneficial_owners')
+    .select(`
+      id,
+      beneficial_percent,
+      owner_type,
+      notes,
+      company:companies(id, legal_name, company_type),
+      party:parties(id, display_name, party_type)
+    `)
+    .eq('property_id', propertyId)
+    .is('end_date', null);
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
  * Hook: Get ownership attribution for a single property
+ * Uses beneficial ownership split (property_beneficial_owners) as the source of truth
  */
 export function usePropertyAttribution(propertyId: string | undefined, property: PropertyWithFinancials | undefined) {
   return useQuery({
@@ -273,27 +295,43 @@ export function usePropertyAttribution(propertyId: string | undefined, property:
     queryFn: async () => {
       if (!propertyId || !property) return [];
 
-      const data = await fetchAllLookthroughData();
-      const lookthrough = calculatePropertyLookthrough(propertyId, data);
+      const beneficialOwners = await fetchBeneficialOwnership(propertyId);
       const financials = calculatePropertyFinancials(property);
 
-      const attributions: PropertyFinancialAttribution[] = [];
+      const attributions: PropertyFinancialAttribution[] = beneficialOwners.map((owner) => {
+        const percent = Number(owner.beneficial_percent);
+        const factor = percent / 100;
+        
+        // Determine owner name and type from joined data
+        let ownerName = 'Unknown';
+        let ownerType = owner.owner_type;
+        let ownerId = '';
+        
+        if (owner.owner_type === 'COMPANY' && owner.company) {
+          const company = owner.company as { id: string; legal_name: string; company_type: string };
+          ownerName = company.legal_name;
+          ownerId = company.id;
+          ownerType = company.company_type || 'COMPANY';
+        } else if (owner.owner_type === 'PERSON' && owner.party) {
+          const party = owner.party as { id: string; display_name: string; party_type: string };
+          ownerName = party.display_name;
+          ownerId = party.id;
+          ownerType = party.party_type || 'INDIVIDUAL';
+        }
 
-      lookthrough.forEach((ownership) => {
-        const factor = ownership.effectivePercent / 100;
-        attributions.push({
-          ownerId: ownership.partyId,
-          ownerName: ownership.partyName,
-          ownerType: ownership.partyType,
-          effectivePercent: ownership.effectivePercent,
-          pathDescription: ownership.pathDescription,
+        return {
+          ownerId,
+          ownerName,
+          ownerType,
+          effectivePercent: percent,
+          pathDescription: owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
           attributableValue: financials.currentValue * factor,
           attributableEquity: financials.equity * factor,
           attributableDebt: financials.mortgageBalance * factor,
           attributableRent: financials.annualRent * factor,
           attributableNOI: financials.noi * factor,
           attributableCashflow: financials.cashflow * factor,
-        });
+        };
       });
 
       return attributions.sort((a, b) => b.effectivePercent - a.effectivePercent);
@@ -303,7 +341,29 @@ export function usePropertyAttribution(propertyId: string | undefined, property:
 }
 
 /**
+ * Fetch all beneficial ownership data for portfolio attribution
+ */
+async function fetchAllBeneficialOwnership() {
+  const { data, error } = await supabase
+    .from('property_beneficial_owners')
+    .select(`
+      id,
+      property_id,
+      beneficial_percent,
+      owner_type,
+      notes,
+      company:companies(id, legal_name, company_type),
+      party:parties(id, display_name, party_type)
+    `)
+    .is('end_date', null);
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
  * Hook: Get portfolio-wide ownership attribution (aggregated by owner)
+ * Uses beneficial ownership split (property_beneficial_owners) as the source of truth
  */
 export function usePortfolioAttribution(properties: PropertyWithFinancials[] | undefined) {
   return useQuery({
@@ -311,21 +371,41 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
     queryFn: async () => {
       if (!properties || properties.length === 0) return [];
 
-      const data = await fetchAllLookthroughData();
+      const beneficialOwners = await fetchAllBeneficialOwnership();
       const ownerMap = new Map<string, OwnerAttribution>();
 
       for (const property of properties) {
-        const lookthrough = calculatePropertyLookthrough(property.id, data);
+        const propertyOwners = beneficialOwners.filter(bo => bo.property_id === property.id);
         const financials = calculatePropertyFinancials(property);
 
-        lookthrough.forEach((ownership) => {
-          const factor = ownership.effectivePercent / 100;
+        for (const owner of propertyOwners) {
+          const percent = Number(owner.beneficial_percent);
+          const factor = percent / 100;
           
+          // Determine owner identity
+          let ownerName = 'Unknown';
+          let ownerType = owner.owner_type;
+          let ownerId = '';
+          
+          if (owner.owner_type === 'COMPANY' && owner.company) {
+            const company = owner.company as { id: string; legal_name: string; company_type: string };
+            ownerName = company.legal_name;
+            ownerId = company.id;
+            ownerType = company.company_type || 'COMPANY';
+          } else if (owner.owner_type === 'PERSON' && owner.party) {
+            const party = owner.party as { id: string; display_name: string; party_type: string };
+            ownerName = party.display_name;
+            ownerId = party.id;
+            ownerType = party.party_type || 'INDIVIDUAL';
+          }
+
+          if (!ownerId) continue;
+
           const propertyAttribution: PropertyAttribution = {
             propertyId: property.id,
             propertyAddress: property.address_line,
-            effectivePercent: ownership.effectivePercent,
-            pathDescription: ownership.pathDescription,
+            effectivePercent: percent,
+            pathDescription: owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
             attributableValue: financials.currentValue * factor,
             attributableEquity: financials.equity * factor,
             attributableDebt: financials.mortgageBalance * factor,
@@ -334,14 +414,14 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
             attributableCashflow: financials.cashflow * factor,
           };
 
-          const existing = ownerMap.get(ownership.partyId);
+          const existing = ownerMap.get(ownerId);
           if (existing) {
             existing.properties.push(propertyAttribution);
           } else {
-            ownerMap.set(ownership.partyId, {
-              ownerId: ownership.partyId,
-              ownerName: ownership.partyName,
-              ownerType: ownership.partyType,
+            ownerMap.set(ownerId, {
+              ownerId,
+              ownerName,
+              ownerType,
               properties: [propertyAttribution],
               totals: {
                 totalAttributableValue: 0,
@@ -356,7 +436,7 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
               },
             });
           }
-        });
+        }
       }
 
       // Calculate totals for each owner
