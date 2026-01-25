@@ -10,13 +10,16 @@ import {
   RefreshCw,
   Clock,
   FileText,
+  PieChart,
+  TrendingDown,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -120,6 +123,19 @@ export default function MissingInfoPage() {
     return result;
   }, [data, search, missingTypeFilter, priorityFilter, lenderFilter, insurerFilter, sortBy]);
 
+  // Portfolio-wide completeness stats
+  const completenessStats = useMemo(() => {
+    if (data.length === 0) return { average: 100, below50: 0, below75: 0, complete: 0 };
+    
+    const totalPercent = data.reduce((sum, d) => sum + d.completenessPercent, 0);
+    const average = Math.round(totalPercent / data.length);
+    const below50 = data.filter(d => d.completenessPercent < 50).length;
+    const below75 = data.filter(d => d.completenessPercent >= 50 && d.completenessPercent < 75).length;
+    const complete = data.filter(d => d.completenessPercent === 100).length;
+    
+    return { average, below50, below75, complete };
+  }, [data]);
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -154,6 +170,57 @@ export default function MissingInfoPage() {
             Export CSV
           </Button>
         </div>
+
+        {/* Portfolio Completeness Summary */}
+        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <PieChart className="h-5 w-5 text-primary" />
+              Portfolio Data Completeness
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Average Completeness */}
+              <div className="space-y-3">
+                <div className="flex items-end justify-between">
+                  <span className="text-sm text-muted-foreground">Average Completeness</span>
+                  <span className={`text-3xl font-bold ${
+                    completenessStats.average >= 90 
+                      ? 'text-success' 
+                      : completenessStats.average >= 75 
+                        ? 'text-foreground' 
+                        : completenessStats.average >= 50 
+                          ? 'text-amber-600' 
+                          : 'text-destructive'
+                  }`}>
+                    {completenessStats.average}%
+                  </span>
+                </div>
+                <Progress value={completenessStats.average} className="h-3" />
+              </div>
+
+              {/* Breakdown Stats */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 rounded-lg bg-success/10 border border-success/20">
+                  <p className="text-2xl font-bold text-success">{completenessStats.complete}</p>
+                  <p className="text-xs text-muted-foreground">100% Complete</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-2xl font-bold text-amber-600">{completenessStats.below75}</p>
+                  <p className="text-xs text-muted-foreground">50-75%</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <div className="flex items-center justify-center gap-1">
+                    <TrendingDown className="h-4 w-4 text-destructive" />
+                    <p className="text-2xl font-bold text-destructive">{completenessStats.below50}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Below 50%</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Summary Chips */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
