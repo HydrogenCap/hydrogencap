@@ -222,6 +222,11 @@ export function MapPicker({
     }
   };
 
+  // Don't render map when dialog is closed to avoid react-leaflet context issues
+  if (!open) {
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
