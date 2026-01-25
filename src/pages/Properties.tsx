@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { addMonths, isBefore, parseISO } from 'date-fns';
 import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -333,12 +334,19 @@ function getPropertyMetrics(property: PropertyWithFinancials) {
 
 function PropertiesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: properties, isLoading, error } = useProperties();
   const { data: photoMap } = usePropertyPhotos();
   const { data: ownershipMap } = usePropertyOwnerships();
   const { data: passports } = usePropertyPassports();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const activeFilter = searchParams.get('filter');
+
+  // Clear filter function
+  const clearFilter = () => {
+    setSearchParams({});
+  };
   
   // Load saved view from localStorage
   const [activeView, setActiveView] = useState<ViewPreset>(() => {
@@ -391,11 +399,64 @@ function PropertiesPage() {
   const filteredAndSortedProperties = useMemo(() => {
     if (!properties) return [];
 
+    // First apply text search filter
     let result = properties.filter(p => 
       p.address_line.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.area_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.postcode?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Then apply URL-based filters (from Insights page clicks)
+    if (activeFilter) {
+      const now = new Date();
+      result = result.filter(p => {
+        const metrics = getPropertyMetrics(p);
+        const passport = passportMap.get(p.id);
+        
+        switch (activeFilter) {
+          case 'rate_expiry_3m': {
+            const expiryDate = metrics.loan?.fixed_rate_expires;
+            if (!expiryDate) return false;
+            const expiry = parseISO(expiryDate);
+            return isBefore(expiry, addMonths(now, 3));
+          }
+          case 'rate_expiry_6m': {
+            const expiryDate = metrics.loan?.fixed_rate_expires;
+            if (!expiryDate) return false;
+            const expiry = parseISO(expiryDate);
+            return isBefore(expiry, addMonths(now, 6));
+          }
+          case 'rate_expiry_12m': {
+            const expiryDate = metrics.loan?.fixed_rate_expires;
+            if (!expiryDate) return false;
+            const expiry = parseISO(expiryDate);
+            return isBefore(expiry, addMonths(now, 12));
+          }
+          case 'ltv_above_75': {
+            const ltv = metrics.ltv || 0;
+            return ltv > 75;
+          }
+          case 'ltv_above_85': {
+            const ltv = metrics.ltv || 0;
+            return ltv > 85;
+          }
+          case 'epc_below_c': {
+            const epc = p.epc_rating?.toUpperCase();
+            return epc && ['D', 'E', 'F', 'G'].includes(epc);
+          }
+          case 'negative_cashflow': {
+            return (metrics.monthlyCashflow || 0) < 0;
+          }
+          case 'missing_passport': {
+            if (!passport) return true;
+            const completeness = calculatePassportCompleteness(passport);
+            return completeness.percentage < 50;
+          }
+          default:
+            return true;
+        }
+      });
+    }
 
     result.sort((a, b) => {
       const metricsA = getPropertyMetrics(a);
@@ -478,7 +539,7 @@ function PropertiesPage() {
     });
 
     return result;
-  }, [properties, searchQuery, sortField, sortDirection, passportMap]);
+  }, [properties, searchQuery, sortField, sortDirection, passportMap, activeFilter]);
 
   const handleSort = (field: ColumnKey) => {
     if (sortField === field) {
@@ -711,6 +772,31 @@ function PropertiesPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Active Filter Banner */}
+        {activeFilter && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Filtering by:</span>
+              <Badge variant="secondary">
+                {activeFilter === 'rate_expiry_3m' && 'Fixed rate expiring in 3 months'}
+                {activeFilter === 'rate_expiry_6m' && 'Fixed rate expiring in 6 months'}
+                {activeFilter === 'rate_expiry_12m' && 'Fixed rate expiring in 12 months'}
+                {activeFilter === 'ltv_above_75' && 'LTV above 75%'}
+                {activeFilter === 'ltv_above_85' && 'LTV above 85%'}
+                {activeFilter === 'epc_below_c' && 'EPC below C rating'}
+                {activeFilter === 'negative_cashflow' && 'Negative cashflow'}
+                {activeFilter === 'missing_passport' && 'Missing passport data'}
+              </Badge>
+              <span className="text-muted-foreground">
+                ({filteredAndSortedProperties.length} {filteredAndSortedProperties.length === 1 ? 'property' : 'properties'})
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={clearFilter}>
+              Clear filter
+            </Button>
+          </div>
+        )}
 
         {/* Properties Table */}
         {isLoading ? (

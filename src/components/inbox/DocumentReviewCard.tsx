@@ -28,6 +28,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   ground_rent: 'Ground Rent',
   council_tax: 'Council Tax',
   utility_bill: 'Utility Bill',
+  asbestos_management_survey: 'Asbestos Management Survey',
+  asbestos_rd_survey: 'Asbestos R&D Survey',
   other: 'Other',
 };
 

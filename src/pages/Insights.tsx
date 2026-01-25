@@ -254,27 +254,39 @@ function InsightsPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-destructive">
+                  <button
+                    onClick={() => portfolioInsights.debt.expiringIn3Months.count > 0 && navigate('/properties?filter=rate_expiry_3m')}
+                    className={`text-2xl font-bold text-destructive ${portfolioInsights.debt.expiringIn3Months.count > 0 ? 'hover:underline cursor-pointer' : ''}`}
+                    disabled={portfolioInsights.debt.expiringIn3Months.count === 0}
+                  >
                     {portfolioInsights.debt.expiringIn3Months.count}
-                  </div>
+                  </button>
                   <div className="text-xs text-muted-foreground">Expiring 3mo</div>
                   <div className="text-xs text-muted-foreground">
                     {formatPercent(portfolioInsights.debt.expiringIn3Months.percent, 0)} of debt
                   </div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-warning">
+                  <button
+                    onClick={() => portfolioInsights.debt.expiringIn6Months.count > 0 && navigate('/properties?filter=rate_expiry_6m')}
+                    className={`text-2xl font-bold text-warning ${portfolioInsights.debt.expiringIn6Months.count > 0 ? 'hover:underline cursor-pointer' : ''}`}
+                    disabled={portfolioInsights.debt.expiringIn6Months.count === 0}
+                  >
                     {portfolioInsights.debt.expiringIn6Months.count}
-                  </div>
+                  </button>
                   <div className="text-xs text-muted-foreground">Expiring 6mo</div>
                   <div className="text-xs text-muted-foreground">
                     {formatPercent(portfolioInsights.debt.expiringIn6Months.percent, 0)} of debt
                   </div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">
+                  <button
+                    onClick={() => portfolioInsights.debt.expiringIn12Months.count > 0 && navigate('/properties?filter=rate_expiry_12m')}
+                    className={`text-2xl font-bold ${portfolioInsights.debt.expiringIn12Months.count > 0 ? 'hover:underline cursor-pointer' : ''}`}
+                    disabled={portfolioInsights.debt.expiringIn12Months.count === 0}
+                  >
                     {portfolioInsights.debt.expiringIn12Months.count}
-                  </div>
+                  </button>
                   <div className="text-xs text-muted-foreground">Expiring 12mo</div>
                   <div className="text-xs text-muted-foreground">
                     {formatPercent(portfolioInsights.debt.expiringIn12Months.percent, 0)} of debt
