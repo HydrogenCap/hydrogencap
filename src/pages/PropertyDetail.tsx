@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipCard, OwnershipEditor } from '@/components/ownership';
+import { LocationRegistryCard } from '@/components/property';
 import type { PropertyOwnershipWithEntity } from '@/hooks/useOwnership';
 import {
   AlertDialog,
@@ -354,6 +355,19 @@ function PropertyDetailPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Location & Registry */}
+            <LocationRegistryCard
+              propertyId={id!}
+              latitude={property.latitude ? Number(property.latitude) : null}
+              longitude={property.longitude ? Number(property.longitude) : null}
+              titleNumber={property.title_number}
+              tenure={property.tenure}
+              leaseYearsRemaining={property.lease_years_remaining}
+              uprn={property.uprn}
+              landRegistryLink={property.land_registry_link}
+              address={`${property.address_line}, ${property.postcode || ''}`}
+            />
 
             {/* Ownership Section */}
             <OwnershipCard
