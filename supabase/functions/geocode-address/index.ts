@@ -11,10 +11,27 @@ interface GeocodeRequest {
   placeId?: string;
 }
 
-interface AddressComponent {
-  long_name: string;
-  short_name: string;
-  types: string[];
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    house_number?: string;
+    road?: string;
+    neighbourhood?: string;
+    suburb?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    county?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+    country_code?: string;
+  };
+  type?: string;
+  importance?: number;
 }
 
 interface GeocodeResult {
@@ -35,14 +52,6 @@ interface GeocodeResult {
   error?: string;
 }
 
-function extractAddressComponent(
-  components: AddressComponent[],
-  type: string
-): string | null {
-  const component = components.find((c) => c.types.includes(type));
-  return component?.long_name || null;
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -50,96 +59,104 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
-    if (!apiKey) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Google Maps API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const { address }: GeocodeRequest = await req.json();
 
-    const { address, placeId }: GeocodeRequest = await req.json();
-
-    if (!address && !placeId) {
+    if (!address) {
       return new Response(
-        JSON.stringify({ success: false, error: "Address or place_id required" }),
+        JSON.stringify({ success: false, error: "Address required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    let url: string;
-    if (placeId) {
-      // Use Place Details API for place_id lookup
-      url = `https://maps.googleapis.com/maps/api/geocode/json?place_id=${encodeURIComponent(placeId)}&key=${apiKey}`;
-    } else {
-      // Use Geocoding API for address lookup, biased to UK
-      url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=gb&key=${apiKey}`;
-    }
+    console.log(`Geocoding address: ${address}`);
 
-    const response = await fetch(url);
-    const data = await response.json();
+    // Use OpenStreetMap Nominatim API (free, no API key required)
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&addressdetails=1&limit=1&countrycodes=gb`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'PropertyPortfolio/1.0 (geocoding service)',
+        'Accept': 'application/json',
+      }
+    });
 
-    if (data.status !== "OK" || !data.results?.length) {
+    if (!response.ok) {
+      console.error(`Nominatim API error: ${response.status}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: data.status === "ZERO_RESULTS" 
-            ? "No results found for this address" 
-            : `Geocoding failed: ${data.status}` 
+          error: `Geocoding service error: ${response.status}` 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const result = data.results[0];
-    const components = result.address_components as AddressComponent[];
-    const geometry = result.geometry;
+    const data: NominatimResult[] = await response.json();
 
-    // Extract address components
-    const streetNumber = extractAddressComponent(components, "street_number");
-    const route = extractAddressComponent(components, "route");
-    const subpremise = extractAddressComponent(components, "subpremise");
-    const premise = extractAddressComponent(components, "premise");
-    const postalTown = extractAddressComponent(components, "postal_town");
-    const locality = extractAddressComponent(components, "locality");
-    const adminArea2 = extractAddressComponent(components, "administrative_area_level_2");
-    const adminArea1 = extractAddressComponent(components, "administrative_area_level_1");
-    const postcode = extractAddressComponent(components, "postal_code");
-    const country = extractAddressComponent(components, "country") || "United Kingdom";
+    if (!data || data.length === 0) {
+      console.log(`No results found for: ${address}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "No results found for this address" 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const result = data[0];
+    const addr = result.address || {};
+
+    console.log(`Found result: ${result.display_name}`);
 
     // Build address line 1
     let addressLine1 = "";
-    if (subpremise) addressLine1 += subpremise + ", ";
-    if (premise) addressLine1 += premise + ", ";
-    if (streetNumber) addressLine1 += streetNumber + " ";
-    if (route) addressLine1 += route;
-    addressLine1 = addressLine1.trim().replace(/,$/, "");
+    if (addr.house_number) addressLine1 += addr.house_number + " ";
+    if (addr.road) addressLine1 += addr.road;
+    addressLine1 = addressLine1.trim();
+    
+    // Fallback to first part of display name if no structured address
+    if (!addressLine1) {
+      addressLine1 = result.display_name.split(",")[0].trim();
+    }
 
-    // Address line 2 could be locality if different from town
-    const addressLine2 = locality && locality !== postalTown ? locality : null;
+    // Address line 2 - neighbourhood or suburb
+    const addressLine2 = addr.neighbourhood || addr.suburb || null;
 
-    // Town/city is usually postal_town, fallback to locality
-    const townCity = postalTown || locality || null;
+    // Town/city - try multiple fields
+    const townCity = addr.city || addr.town || addr.village || null;
 
-    // County - use admin area 2 or 1
-    const county = adminArea2 || adminArea1 || null;
+    // County
+    const county = addr.county || addr.state || null;
 
-    // Determine confidence based on geometry location_type
+    // Postcode
+    const postcode = addr.postcode || null;
+
+    // Country
+    const country = addr.country || "United Kingdom";
+
+    // Determine confidence based on result type and importance
     let geocodeConfidence: 'exact' | 'approximate' | 'unknown' = 'unknown';
-    if (geometry.location_type === "ROOFTOP") {
+    const importance = result.importance || 0;
+    const resultType = result.type || '';
+    
+    // High confidence for specific address matches
+    if (resultType === 'house' || resultType === 'building' || resultType === 'residential') {
       geocodeConfidence = 'exact';
-    } else if (geometry.location_type === "RANGE_INTERPOLATED" || geometry.location_type === "GEOMETRIC_CENTER") {
+    } else if (importance > 0.5 || resultType === 'street' || resultType === 'road') {
+      geocodeConfidence = 'approximate';
+    } else if (importance > 0.3) {
       geocodeConfidence = 'approximate';
     }
 
     const geocodeResult: GeocodeResult = {
       success: true,
       data: {
-        place_id: result.place_id,
-        formatted_address: result.formatted_address,
-        latitude: geometry.location.lat,
-        longitude: geometry.location.lng,
-        address_line1: addressLine1 || result.formatted_address.split(",")[0],
+        place_id: result.place_id.toString(),
+        formatted_address: result.display_name,
+        latitude: parseFloat(result.lat),
+        longitude: parseFloat(result.lon),
+        address_line1: addressLine1,
         address_line2: addressLine2,
         town_city: townCity,
         county: county,
@@ -148,6 +165,8 @@ serve(async (req) => {
         geocode_confidence: geocodeConfidence,
       },
     };
+
+    console.log(`Geocoding successful: lat=${geocodeResult.data?.latitude}, lng=${geocodeResult.data?.longitude}`);
 
     return new Response(JSON.stringify(geocodeResult), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
