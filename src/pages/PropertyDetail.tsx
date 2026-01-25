@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2, Bath } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
+import { OwnershipCard, OwnershipEditor } from '@/components/ownership';
+import type { PropertyOwnershipWithEntity } from '@/hooks/useOwnership';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +46,22 @@ function PropertyDetailPage() {
   const { toast } = useToast();
   const { data: property, isLoading, error } = useProperty(id);
   const deleteProperty = useDeleteProperty();
+  
+  // Ownership editor state
+  const [ownershipEditorOpen, setOwnershipEditorOpen] = useState(false);
+  const [editingOwnership, setEditingOwnership] = useState<PropertyOwnershipWithEntity | null>(null);
+  const [defaultOwnershipLevel, setDefaultOwnershipLevel] = useState<'Property' | 'SPV_Shareholding'>('Property');
+
+  const handleAddOwnership = (level: 'Property' | 'SPV_Shareholding') => {
+    setEditingOwnership(null);
+    setDefaultOwnershipLevel(level);
+    setOwnershipEditorOpen(true);
+  };
+
+  const handleEditOwnership = (ownership: PropertyOwnershipWithEntity) => {
+    setEditingOwnership(ownership);
+    setOwnershipEditorOpen(true);
+  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -143,6 +161,12 @@ function PropertyDetailPage() {
                   <span className="flex items-center gap-1">
                     <Bed className="h-4 w-4" />
                     {property.beds} bed
+                  </span>
+                )}
+                {property.bathrooms && (
+                  <span className="flex items-center gap-1">
+                    <Bath className="h-4 w-4" />
+                    {property.bathrooms} bath
                   </span>
                 )}
                 {property.property_type && (
@@ -271,23 +295,27 @@ function PropertyDetailPage() {
                     <span>{property.beds ?? '—'}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bathrooms</span>
+                    <span>{property.bathrooms ?? '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">EPC Rating</span>
                     <span>
-                      {property.epc_rating ? (
+                      {property.epc_required === false ? (
+                        <span className="text-muted-foreground">N/A (Listed building)</span>
+                      ) : property.epc_rating ? (
                         <Badge variant="outline" className={epcStatus === 'warning' ? 'status-warning border' : ''}>
                           {property.epc_rating}
                         </Badge>
                       ) : '—'}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Ownership</span>
-                    <span>{property.ownership_entity || 'Personal'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Ownership %</span>
-                    <span>{property.ownership_percent ? `${property.ownership_percent}%` : '100%'}</span>
-                  </div>
+                  {property.listed_status && property.listed_status !== 'Not listed' && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Listed Status</span>
+                      <Badge variant="outline">{property.listed_status}</Badge>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -327,6 +355,13 @@ function PropertyDetailPage() {
               </Card>
             </div>
 
+            {/* Ownership Section */}
+            <OwnershipCard
+              propertyId={id!}
+              onAddOwnership={handleAddOwnership}
+              onEditOwnership={handleEditOwnership}
+            />
+
             {/* Notes */}
             {property.notes && (
               <Card className="bg-card border-border">
@@ -338,6 +373,15 @@ function PropertyDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Ownership Editor Dialog */}
+            <OwnershipEditor
+              propertyId={id!}
+              open={ownershipEditorOpen}
+              onOpenChange={setOwnershipEditorOpen}
+              editingOwnership={editingOwnership}
+              defaultLevel={defaultOwnershipLevel}
+            />
           </TabsContent>
 
           <TabsContent value="finance" className="space-y-4">
