@@ -102,6 +102,15 @@ function InsightsPage() {
     }
   }, [portfolioInsights, properties, hasGeneratedAI, aiLoading, generateInsights]);
 
+  // Auto-generate Location AI insights after portfolio insights are ready
+  useEffect(() => {
+    if (portfolioInsights && properties && locationData.length > 0 && !hasGeneratedLocation && !locationLoading && hasGeneratedAI) {
+      const summaryData = buildAIPromptData(portfolioInsights, properties);
+      generateLocationInsights(locationData, summaryData);
+      setHasGeneratedLocation(true);
+    }
+  }, [portfolioInsights, properties, locationData, hasGeneratedLocation, locationLoading, hasGeneratedAI, generateLocationInsights]);
+
   const handleRefreshAI = async () => {
     if (!portfolioInsights || !properties) return;
     const promptData = buildAIPromptData(portfolioInsights, properties);

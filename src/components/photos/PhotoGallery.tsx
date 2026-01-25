@@ -201,11 +201,11 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
 
         {/* Photo Grid */}
         {photos.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {photos.map((photo) => (
               <div
                 key={photo.id}
-                className="relative group aspect-square rounded-lg overflow-hidden border border-border bg-muted cursor-pointer"
+                className="relative group aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted cursor-pointer"
                 onClick={() => setSelectedPhoto(photo)}
               >
                 <img

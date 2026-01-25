@@ -110,39 +110,44 @@ export function useCreateActivityLog() {
 }
 
 // Helper function to log activity (can be used directly)
-export async function logActivity(entry: Omit<ActivityLogInsert, 'org_id'>) {
+export async function logActivity(entry: Omit<ActivityLogInsert, 'org_id'>): Promise<ActivityLog> {
+  // First check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  const orgId = await getUserOrgId();
+  if (!orgId) {
+    throw new Error('No organization found');
+  }
+
+  const { data, error } = await supabase
+    .from('activity_log')
+    .insert({ ...entry, org_id: orgId })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+// Fire-and-forget version for background logging (won't throw errors)
+async function logActivitySilent(entry: Omit<ActivityLogInsert, 'org_id'>): Promise<void> {
   try {
-    const orgId = await getUserOrgId();
-    if (!orgId) {
-      console.warn('No org_id found, skipping activity log:', entry.title);
-      return null;
-    }
-
-    console.log('Logging activity:', { ...entry, org_id: orgId });
-    
-    const { data, error } = await supabase
-      .from('activity_log')
-      .insert({ ...entry, org_id: orgId })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Failed to log activity:', error.message, entry);
-      return null;
-    }
-
-    console.log('Activity logged successfully:', data);
-    return data;
+    await logActivity(entry);
   } catch (err) {
-    console.error('logActivity exception:', err);
-    return null;
+    console.warn('Activity log failed:', err);
   }
 }
 
 // Utility functions for common log entries
 export const ActivityLoggers = {
   propertyCreated: (propertyId: string, address: string) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'property_created',
       title: 'Property added',
@@ -150,7 +155,7 @@ export const ActivityLoggers = {
     }),
 
   valuationChanged: (propertyId: string, oldValue: number | null, newValue: number) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'valuation_changed',
       title: 'Valuation updated',
@@ -161,7 +166,7 @@ export const ActivityLoggers = {
     }),
 
   mortgageUpdated: (propertyId: string, lender: string | null, balance: number | null) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'mortgage_updated',
       title: 'Mortgage updated',
@@ -172,7 +177,7 @@ export const ActivityLoggers = {
     }),
 
   rateChanged: (propertyId: string, oldRate: number | null, newRate: number, expiryDate?: string) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'rate_changed',
       title: 'Interest rate changed',
@@ -183,7 +188,7 @@ export const ActivityLoggers = {
     }),
 
   incomeUpdated: (propertyId: string, year: number, annualRent: number) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'income_updated',
       title: 'Rental income updated',
@@ -192,7 +197,7 @@ export const ActivityLoggers = {
     }),
 
   costsUpdated: (propertyId: string, year: number, totalCosts: number) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'costs_updated',
       title: 'Costs updated',
@@ -201,7 +206,7 @@ export const ActivityLoggers = {
     }),
 
   documentUploaded: (propertyId: string | null, fileName: string, docType?: string) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'document_uploaded',
       title: 'Document uploaded',
@@ -210,7 +215,7 @@ export const ActivityLoggers = {
     }),
 
   documentAccepted: (propertyId: string | null, fileName: string, docType: string) =>
-    logActivity({
+    logActivitySilent({
       property_id: propertyId,
       entry_type: 'document_accepted',
       title: 'Document filed',
