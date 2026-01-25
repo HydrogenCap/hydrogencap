@@ -224,6 +224,8 @@ export interface PropertyMissingInfo {
   missingPassportFields: string[];
   missingCriticalPassportFields: string[];
   totalMissing: number;
+  totalFields: number;
+  completenessPercent: number;
   status: 'complete' | 'missing_finance' | 'missing_insurance' | 'missing_passport' | 'missing_multiple';
   renewingSoon: boolean;
   hmoLicenceExpiringSoon: boolean;
@@ -345,7 +347,20 @@ export function useMissingInfo() {
         }
       });
 
+      // Calculate total fields and completeness
+      const totalFinanceFields = FINANCE_FIELDS.length + (needsTermYears ? 1 : 0);
+      const totalInsuranceFields = INSURANCE_FIELDS.length;
+      const totalPassportFields = PASSPORT_FIELDS.filter(f => {
+        // Only count HMO fields if HMO licence is required
+        if (f.key.startsWith('hmo_') && f.key !== 'hmo_licence_required') {
+          return passport?.hmo_licence_required;
+        }
+        return true;
+      }).length;
+      
+      const totalFields = totalFinanceFields + totalInsuranceFields + totalPassportFields;
       const totalMissing = missingFinanceFields.length + missingInsuranceFields.length + missingPassportFields.length;
+      const completenessPercent = totalFields > 0 ? Math.round(((totalFields - totalMissing) / totalFields) * 100) : 100;
 
       // Determine status
       const hasMissingFinance = missingFinanceFields.length > 0;
@@ -392,6 +407,8 @@ export function useMissingInfo() {
         missingPassportFields,
         missingCriticalPassportFields,
         totalMissing,
+        totalFields,
+        completenessPercent,
         status,
         renewingSoon,
         hmoLicenceExpiringSoon,

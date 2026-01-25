@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   Collapsible,
   CollapsibleContent,
@@ -181,50 +182,71 @@ export function MissingInfoPropertyRow({ item }: Props) {
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardContent className="pt-4 cursor-pointer hover:bg-muted/50 transition-colors">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              {/* Property Info */}
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                <Building2 className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <Link 
-                    to={`/properties/${item.property.id}`}
-                    className="font-medium hover:underline text-foreground block truncate"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    {item.property.address_line}
-                  </Link>
-                  {item.property.postcode && (
-                    <span className="text-sm text-muted-foreground">{item.property.postcode}</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Property Info */}
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <Building2 className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <Link 
+                      to={`/properties/${item.property.id}`}
+                      className="font-medium hover:underline text-foreground block truncate"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {item.property.address_line}
+                    </Link>
+                    {item.property.postcode && (
+                      <span className="text-sm text-muted-foreground">{item.property.postcode}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status & Badges */}
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  {item.renewingSoon && (
+                    <Badge variant="outline" className="border-amber-500 text-amber-600">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Insurance Renewal
+                    </Badge>
+                  )}
+                  {item.hmoLicenceExpiringSoon && (
+                    <Badge variant="outline" className="border-red-500 text-red-600">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      HMO Expiring
+                    </Badge>
+                  )}
+                  {hasCriticalMissing && (
+                    <Badge variant="outline" className="border-red-500 text-red-600">
+                      Critical Data Missing
+                    </Badge>
+                  )}
+                  {statusBadge()}
+                  <Badge variant="outline">{item.totalMissing} missing</Badge>
+                  {isOpen ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
               </div>
 
-              {/* Status & Badges */}
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                {item.renewingSoon && (
-                  <Badge variant="outline" className="border-amber-500 text-amber-600">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Insurance Renewal
-                  </Badge>
-                )}
-                {item.hmoLicenceExpiringSoon && (
-                  <Badge variant="outline" className="border-red-500 text-red-600">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    HMO Expiring
-                  </Badge>
-                )}
-                {hasCriticalMissing && (
-                  <Badge variant="outline" className="border-red-500 text-red-600">
-                    Critical Data Missing
-                  </Badge>
-                )}
-                {statusBadge()}
-                <Badge variant="outline">{item.totalMissing} missing</Badge>
-                {isOpen ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
+              {/* Completeness Progress Bar */}
+              <div className="flex items-center gap-3">
+                <Progress 
+                  value={item.completenessPercent} 
+                  className="h-2 flex-1"
+                />
+                <span className={`text-sm font-medium min-w-[3.5rem] text-right ${
+                  item.completenessPercent === 100 
+                    ? 'text-success' 
+                    : item.completenessPercent >= 75 
+                      ? 'text-foreground' 
+                      : item.completenessPercent >= 50 
+                        ? 'text-amber-600' 
+                        : 'text-destructive'
+                }`}>
+                  {item.completenessPercent}%
+                </span>
               </div>
             </div>
           </CardContent>
