@@ -1,10 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity, Bed, Users, AlertCircle, ArrowRight } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +14,8 @@ import { useRecentActivity } from '@/hooks/useActivityLog';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
+import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
+import { PropertyMap } from '@/components/maps/PropertyMap';
 import { usePortfolioAttributableMetrics } from '@/hooks/useBeneficialGroups';
 import {
   formatGBP,
@@ -33,13 +32,6 @@ import {
 } from '@/lib/calculations';
 import { calculatePortfolioRentPerBedroom, formatPaymentGBP } from '@/lib/mortgageCalculations';
 
-// Fix Leaflet default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 const CHART_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -350,30 +342,11 @@ function DashboardPage() {
       .sort((a, b) => b.value - a.value);
   }, [properties]);
 
-  // Area exposure data
-  const areaData = useMemo(() => {
-    if (!properties?.length) return [];
-
-    const areaMap: Record<string, number> = {};
-    properties.forEach(property => {
-      const area = property.area_name || 'Unknown';
-      const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
-      areaMap[area] = (areaMap[area] || 0) + value;
-    });
-
-    return Object.entries(areaMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+  // Properties with coordinates for map (for empty state check)
+  const hasPropertiesWithCoords = useMemo(() => {
+    if (!properties?.length) return false;
+    return properties.some(p => p.latitude && p.longitude);
   }, [properties]);
-
-  // Properties with coordinates for map
-  const propertiesWithCoords = useMemo(() => {
-    if (!properties?.length) return [];
-    return properties.filter(p => p.latitude && p.longitude);
-  }, [properties]);
-
-  // UK center coordinates
-  const mapCenter: [number, number] = [52.3555, -1.1743];
 
   if (isLoading) {
     return (
@@ -649,41 +622,23 @@ function DashboardPage() {
               )}
             </CardContent>
           </Card>
-          {/* Property Map */}
+          {/* Property Map - Uses shared PropertyMap component */}
           <Card className="lg:col-span-2 bg-card border-border">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Property Map</CardTitle>
+              <Link 
+                to="/dashboard/map"
+                className="text-xs text-primary hover:underline"
+              >
+                View Full Map →
+              </Link>
             </CardHeader>
             <CardContent>
-              {propertiesWithCoords.length > 0 ? (
-                <div className="h-[300px] rounded-lg overflow-hidden">
-                  <MapContainer
-                    center={mapCenter}
-                    zoom={6}
-                    style={{ height: '100%', width: '100%' }}
-                    className="z-0"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {propertiesWithCoords.map(property => (
-                      <Marker
-                        key={property.id}
-                        position={[Number(property.latitude), Number(property.longitude)]}
-                      >
-                        <Popup>
-                          <div className="text-sm">
-                            <p className="font-medium">{property.address_line}</p>
-                            <p className="text-muted-foreground">
-                              {formatGBP(property.current_value_gbp ? Number(property.current_value_gbp) : null)}
-                            </p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    ))}
-                  </MapContainer>
-                </div>
+              {hasPropertiesWithCoords ? (
+                <PropertyMap
+                  properties={properties || []}
+                  className="h-[300px] rounded-lg"
+                />
               ) : (
                 <div className="h-[300px] rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
@@ -745,42 +700,8 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Area Exposure */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle>Area Exposure</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {areaData.length > 0 ? (
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={areaData.slice(0, 6)} layout="vertical">
-                      <XAxis type="number" hide />
-                      <YAxis
-                        dataKey="name"
-                        type="category"
-                        width={100}
-                        tick={{ fill: 'hsl(215 20% 55%)', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        formatter={(value: number) => formatGBP(value)}
-                        contentStyle={{
-                          backgroundColor: 'hsl(222 47% 8%)',
-                          border: '1px solid hsl(220 25% 16%)',
-                          borderRadius: '0.5rem',
-                        }}
-                      />
-                      <Bar dataKey="value" fill="hsl(174, 72%, 45%)" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                  <p>Add properties to see geographic distribution</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Area Exposure - Uses dedicated component with normalization */}
+          {properties && <AreaExposureChart properties={properties} />}
         </div>
 
         {/* Stock Condition Section */}
