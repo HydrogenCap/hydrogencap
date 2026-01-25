@@ -1,279 +1,120 @@
 
+# Automatic Property Geocoding - Implementation Status
 
-# Portfolio Dashboard - Implementation Plan
+## Current State Analysis
 
-## Overview
-A professional UK property portfolio management app with a dark, fintech-inspired design. Built on Lovable Cloud with real AI-powered document processing, multi-tenant architecture, and comprehensive risk monitoring.
+The automatic geocoding system is **already fully implemented** and ready to use. Here's what's in place:
 
----
+### Backend Infrastructure
+- **Edge Function**: `geocode-address` is deployed and functional
+  - Uses Google Geocoding API (UK-biased)
+  - Extracts structured address components (town, county, postcode)
+  - Determines confidence level (exact/approximate/unknown)
+  - API key `GOOGLE_MAPS_API_KEY` is configured
 
-## Phase 1: Foundation & Infrastructure
+### Frontend Hooks
+- **`useGeocoding`**: Core geocoding operations
+  - `geocodeAddress(address)` - Calls edge function
+  - `geocodeProperty(property)` - Builds address string and geocodes
+  - `updatePropertyGeocode()` - Saves results to database
+  - `markGeocodeFailed()` - Records errors
 
-### Database Architecture
-Set up the complete multi-tenant data model:
-- **Users & Auth** - Email/password authentication with session management
-- **Organizations** - Org-based data isolation (user → org → properties)
-- **Memberships** - User-to-org relationships with roles (owner/admin/viewer)
-- **Properties** - Full property records with UK-specific fields (postcode areas, EPC ratings)
-- **Loans** - Mortgage details, rates, expiry dates, broker info
-- **Income & Costs** - Annual financial records per property
-- **Documents** - AI metadata fields, extraction status, confidence scores
-- **Photos** - Property images with cover photo designation
-- **Activity Log** - Audit trail for all changes
+- **`useBackfillGeocoding`**: Batch processing
+  - Queries properties where `geocode_status = NOT_STARTED/FAILED` or `latitude IS NULL`
+  - Processes in batches of 10 with 200ms rate limiting
+  - Tracks progress (processed, succeeded, failed)
+  - Shows failure list with links to edit
 
-### Row-Level Security
-- All tables scoped to organization membership
-- Future-proof for multi-tenant SaaS expansion
+### UI Components
+- **`MissingLocationsBanner`**: Shows on Dashboard Map
+  - Displays count of properties missing coordinates
+  - "Backfill Locations" button triggers geocoding
+  - Shows real-time progress during processing
 
----
-
-## Phase 2: Core UI Framework
-
-### Design System
-- **Dark professional theme** with accent colors (likely teal/blue for trust, amber for warnings, red for risks)
-- Clean typography, subtle borders, card-based layouts
-- Consistent spacing and shadows throughout
-
-### Navigation Structure
-Sidebar navigation with:
-1. Dashboard (home)
-2. Properties
-3. Document Inbox (with badge count)
-4. Import
-5. Settings
+- **`BackfillButton`**: Reusable component
+  - Compact mode for inline use
+  - Full card mode with progress bar and failure details
 
 ---
 
-## Phase 3: Dashboard
+## What Works Right Now
 
-### Portfolio KPIs (Top Row)
-- Total portfolio value (GBP formatted)
-- Total mortgage balance
-- Total equity
-- Weighted average LTV
-- Monthly net cashflow
-
-### Rankings Section
-- Top 5 properties by ROCE
-- Bottom 5 properties by ROCE
-- Top/Bottom by yield
-
-### Visualizations
-- **Property Map** (Leaflet/OpenStreetMap) - Pins for each property, colored by risk status
-- **Lender Exposure** - Pie chart showing mortgage balance by lender
-- **Area Exposure** - Bar/pie chart with toggle between area_name and postcode_area
-
-### ⚠️ Portfolio Risks Panel
-Automated risk detection with color-coded alerts:
-- 🔴 **Critical**: Fixed rate expired, insurance expired, LTV >85%
-- 🟡 **Warning**: Fixed rate expiring in 90 days, EPC below C, LTV >75%
-- 🟢 **Compliant**: All checks passing
-
-Clickable risks → filtered property list or direct to property detail
+1. Navigate to **Dashboard > Map**
+2. If properties lack coordinates, you'll see a yellow banner: "X properties missing map location"
+3. Click **"Backfill Locations"** button
+4. The system will:
+   - Query all properties needing geocoding
+   - Process them in batches (10 at a time, 200ms delay)
+   - Update each property with lat/lng, place_id, formatted_address
+   - Show real-time progress
+   - List any failures with edit links
 
 ---
 
-## Phase 4: Properties Management
+## Enhancements to Make It More Visible
 
-### Properties List View
-- Sortable, filterable data table
-- Columns: Address, Area, Type, Beds, Value, Mortgage, LTV, Yield, ROCE, Risk Status
-- Filters: Area, postcode area, property type, LTV range, EPC rating
-- Quick search by address
+To ensure users can easily access the backfill feature, I recommend these improvements:
 
-### Property Detail View
-Tabbed interface:
+### 1. Add Location Settings Tab
+Add a "Locations" tab to the Settings page with:
+- Full `BackfillButton` component showing detailed progress
+- Statistics: Total properties, geocoded, pending, failed
+- List of properties with geocoding errors (with retry option)
 
-**Overview Tab**
-- Property details card (address, type, beds, ownership)
-- Financial summary (value, mortgage, equity, LTV)
-- Performance metrics (yield, ROCE, cashflow)
-- Property health scores (0-100 with color indicators)
-- Cover photo + photo gallery
+### 2. Add One-Click Auto-Trigger Option
+Consider auto-triggering geocoding when:
+- User clicks "Backfill Locations" banner button (already works)
+- After bulk import completes (hook into import success)
+- Via a scheduled background job (future enhancement)
 
-**Finance & Refinance Tab**
-- Current loan details
-- Rate diary (current rate, SVR, fixed expiry)
-- Refinance target date & broker info
-- Reminder status (6mo, 3mo, expired)
-- Income & costs breakdown by year
-
-**Costs Tab**
-- Annual cost breakdown (management, bills, insurance, maintenance, compliance, other)
-- Year-over-year comparison
-- Trend visualization
-
-**Documents Tab**
-- Document grid/list by type
-- Expiry status indicators
-- Upload new document (triggers AI processing)
-- View/download documents
-
-**Photos Tab**
-- Photo gallery with drag-to-reorder
-- Set cover photo
-- Upload multiple photos
-
-**Activity Timeline Tab**
-- Chronological log of all changes
-- Entry types: valuation, rate, rent, works, refinance, documents
-- Expandable details
+### 3. Improve Progress Visibility
+- Add toast notification when backfill starts
+- Show completion summary with success/failure counts
+- Add "Retry Failed" button for quick re-processing
 
 ---
 
-## Phase 5: AI Document Vault
+## Implementation Steps
 
-### Document Upload Flow
-1. User uploads PDF/image
-2. AI processing via Lovable AI (Gemini):
-   - OCR extraction if scanned
-   - Document type classification
-   - Property matching based on address
-   - Extract: expiry date, issue date, reference numbers, EPC rating
-   - Generate confidence scores
+### Step 1: Add Location Settings Tab (Settings Page)
+Add a new tab called "Locations" that includes:
+- BackfillButton with full card UI
+- Statistics cards showing geocoding status
+- Table of failed/pending properties
 
-### Review Interface
-- "We think this is: [Doc Type] for [Property] (93% confidence)"
-- One-click Accept or Edit
-- Manual override for type and property
-- Auto-rename preview before saving
+### Step 2: Enhance Import Flow
+After property import completes, show a prompt:
+- "X properties were imported. Would you like to geocode them now?"
+- Button to trigger backfill for newly imported properties
 
-### Auto-Rename Convention
-`[Property_Short_Name]_[Document_Type]_[Identifier]_[Date].ext`
-
-Examples:
-- `25_Arle_Gardens_Insurance_Policy_ABC123_2026-11-30.pdf`
-- `Ivy_House_Bridgwater_EPC_Rating_C_2029-04-12.pdf`
-
-### Expiry Integration
-Extracted expiry dates automatically:
-- Update property compliance status
-- Feed into Risk Radar
-- Trigger timeline entries
+### Step 3: Add Toast Notifications
+- Toast when geocoding starts: "Geocoding X properties..."
+- Toast on completion: "Successfully geocoded X properties"
+- Error toast if all fail
 
 ---
 
-## Phase 6: Document Inbox Zero
+## Technical Details
 
-### Inbox View
-Filter documents by status:
-- Unfiled (no property assigned)
-- Needs Review (pending AI confirmation)
-- Low Confidence (below threshold)
-- Missing Expiry Date
+### Files to Modify
+| File | Change |
+|------|--------|
+| `src/pages/Settings.tsx` | Add "Locations" tab with BackfillButton |
+| `src/hooks/useGeocoding.ts` | Add toast notifications |
+| `src/components/geocoding/BackfillButton.tsx` | Add statistics display |
+| `src/pages/Settings.tsx` | Hook into import completion |
 
-### Bulk Actions
-- Accept all AI suggestions
-- Bulk rename
-- Bulk assign to property
-
-### Dashboard Badge
-"X documents need review" - clickable to inbox
-
----
-
-## Phase 7: Refinance & Rate Monitoring
-
-### Per-Property Tracking
-- Current interest rate
-- Fixed/variable status
-- Fixed rate expiry date
-- Reversion (SVR) rate
-- Refinance target date
-- Broker name & contact
-
-### Automated Reminders
-Surface in Portfolio Risks when:
-- 6 months before fixed rate expiry
-- 3 months before expiry
-- On expiry date
+### New Components
+| Component | Purpose |
+|-----------|---------|
+| `LocationSettingsTab` | Full geocoding management UI |
+| `GeocodeStatsCards` | Show geocoding statistics |
+| `FailedGeocodeList` | Table of failed properties |
 
 ---
 
-## Phase 8: CSV Import
+## Summary
 
-### Import Flow
-1. Upload CSV file
-2. Column mapping preview (drag-drop or dropdown)
-3. Validation:
-   - GBP currency parsing
-   - Percentage handling
-   - Date format conversion
-   - Postcode extraction from address
-4. Duplicate detection by address
-5. Preview with validation errors highlighted
-6. Import with progress indicator
+The core geocoding infrastructure is complete and functional. The enhancements above will make the feature more discoverable and provide better feedback to users. The main work is adding the Settings tab UI and improving notifications.
 
-### Field Handling
-- Calculated fields (LTV, yield, ROCE) computed on display, not imported
-- Store raw values only
-
----
-
-## Phase 9: Activity Timeline
-
-### Auto-Generated Entries
-System creates timeline entries when:
-- Property value updated
-- Mortgage rate changed
-- Rent changed
-- Document uploaded & accepted
-- Refinance completed
-
-### Manual Entries
-- Add notes for major works
-- Record significant events
-
----
-
-## Phase 10: Portfolio Health Scores
-
-### Per-Property Scores (0-100)
-- **Cashflow Score** - Based on net rent margin
-- **Leverage Score** - Based on LTV (lower = better)
-- **Risk Score** - Composite of expiry dates, EPC, compliance
-- **Compliance Score** - Documents up to date
-
-### Visualization
-- Color-coded badges (🟢 70+ / 🟡 40-69 / 🔴 <40)
-- Portfolio averages on dashboard
-- "Weakest Properties" list
-
----
-
-## Phase 11: Settings
-
-### User Settings
-- Profile (name, email)
-- Password change
-
-### Organization Settings
-- Org name
-- Future: invite team members
-
----
-
-## Technical Notes
-
-- **Calculations**: All computed fields (LTV, yield, ROCE, net rent) use consistent formulas across components via shared utility functions
-- **Currency**: All GBP amounts formatted with `Intl.NumberFormat('en-GB')`, stored as numbers
-- **Dates**: Stored as ISO, displayed as UK format (DD/MM/YYYY)
-- **File Storage**: Lovable Cloud Storage for documents and photos
-- **AI Integration**: Lovable AI (Gemini) for document processing via edge function
-
----
-
-## Deliverables
-
-✅ Complete database schema with RLS  
-✅ Authentication (single user, org-ready)  
-✅ Full dashboard with KPIs, map, charts, risks  
-✅ Property CRUD with tabbed detail view  
-✅ AI document vault with real processing  
-✅ Document inbox with bulk actions  
-✅ Refinance tracking & reminders  
-✅ CSV import with validation  
-✅ Activity timeline  
-✅ Health scores  
-✅ Dark professional UI throughout
-
+**Estimated effort**: Small - mostly UI additions to existing functionality
