@@ -19,6 +19,7 @@ import Inbox from "./pages/Inbox";
 import Import from "./pages/Import";
 import ImportPassport from "./pages/ImportPassport";
 import Insights from "./pages/Insights";
+import MissingInfo from "./pages/MissingInfo";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -115,6 +116,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Insights />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/missing-info"
+              element={
+                <ProtectedRoute>
+                  <MissingInfo />
                 </ProtectedRoute>
               }
             />
