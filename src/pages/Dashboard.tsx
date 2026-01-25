@@ -21,8 +21,8 @@ import {
   calculateLTV,
   calculateEquity,
   calculateTotalCosts,
-  calculateNetRent,
-  calculateMonthlyCashflow,
+  calculateMonthlyCashflowAfterDebt,
+  calculateMonthlyMortgagePayment,
   getLTVStatus,
   getEPCStatus,
   getExpiryStatus,
@@ -74,7 +74,7 @@ function DashboardPage() {
     const currentYear = new Date().getFullYear();
     let totalValue = 0;
     let totalMortgage = 0;
-    let totalNetRent = 0;
+    let totalMonthlyCashflowAfterDebt = 0;
 
     properties.forEach(property => {
       const loan = property.loans?.[0];
@@ -83,7 +83,7 @@ function DashboardPage() {
 
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
       const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : 0;
-      const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : 0;
+      const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
       const totalCosts = costs ? calculateTotalCosts({
         management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
         bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
@@ -93,16 +93,27 @@ function DashboardPage() {
         other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
       }) : 0;
 
+      // Calculate effective monthly mortgage payment
+      const mortgagePaymentResult = calculateMonthlyMortgagePayment({
+        balance: mortgage || null,
+        interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
+        termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
+        isInterestOnly: loan?.capital_or_interest === 'interest',
+        paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+      });
+
       totalValue += value;
       totalMortgage += mortgage;
-      totalNetRent += rent - totalCosts;
+      
+      // Use cashflow after debt
+      const monthlyCashflow = calculateMonthlyCashflowAfterDebt(rent, totalCosts, mortgagePaymentResult.effective);
+      totalMonthlyCashflowAfterDebt += monthlyCashflow || 0;
     });
 
     const totalEquity = totalValue - totalMortgage;
     const averageLTV = totalValue > 0 ? (totalMortgage / totalValue) * 100 : 0;
-    const monthlyCashflow = totalNetRent / 12;
 
-    return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow };
+    return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt };
   }, [properties]);
 
   // Calculate risks
@@ -119,7 +130,7 @@ function DashboardPage() {
 
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : null;
       const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
-      const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : 0;
+      const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
       const totalCosts = costs ? calculateTotalCosts({
         management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
         bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
@@ -129,8 +140,20 @@ function DashboardPage() {
         other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
       }) : 0;
 
+      // Calculate effective monthly mortgage payment
+      const mortgagePaymentResult = calculateMonthlyMortgagePayment({
+        balance: mortgage,
+        interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
+        termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
+        isInterestOnly: loan?.capital_or_interest === 'interest',
+        paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+      });
+
       const ltv = calculateLTV(mortgage, value);
-      const netRent = rent - totalCosts;
+      // Calculate annual cashflow after debt for risk assessment
+      const annualCashflowAfterDebt = rent !== null 
+        ? (rent - totalCosts - (mortgagePaymentResult.effective || 0) * 12)
+        : null;
 
       // LTV risks
       const ltvStatus = getLTVStatus(ltv);
@@ -154,8 +177,9 @@ function DashboardPage() {
         });
       }
 
-      // EPC risks
-      const epcStatus = getEPCStatus(property.epc_rating);
+      // EPC risks (only if EPC is required)
+      const epcRequired = property.epc_required !== false;
+      const epcStatus = getEPCStatus(property.epc_rating, epcRequired);
       if (epcStatus === 'warning') {
         riskItems.push({
           id: `epc-${property.id}`,
@@ -202,15 +226,15 @@ function DashboardPage() {
         }
       }
 
-      // Negative cashflow
-      if (netRent < 0) {
+      // Negative cashflow (after debt)
+      if (annualCashflowAfterDebt !== null && annualCashflowAfterDebt < 0) {
         riskItems.push({
           id: `cashflow-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
           type: 'negative_cashflow',
           severity: 'warning',
-          message: `Negative cashflow: ${formatGBP(netRent)}/year`,
+          message: `Negative cashflow: ${formatGBP(annualCashflowAfterDebt)}/year`,
         });
       }
     });

@@ -253,9 +253,14 @@ export type Database = {
           id: string
           interest_rate_percent: number | null
           lender: string | null
+          loan_start_date: string | null
+          loan_term_months: number | null
           mortgage_payment_gbp: number | null
           mortgage_type: string | null
           notes: string | null
+          payment_auto_calculated_gbp: number | null
+          payment_override_gbp: number | null
+          payment_source: string | null
           property_id: string
           refinance_target_date: string | null
           reversion_rate_percent: number | null
@@ -272,9 +277,14 @@ export type Database = {
           id?: string
           interest_rate_percent?: number | null
           lender?: string | null
+          loan_start_date?: string | null
+          loan_term_months?: number | null
           mortgage_payment_gbp?: number | null
           mortgage_type?: string | null
           notes?: string | null
+          payment_auto_calculated_gbp?: number | null
+          payment_override_gbp?: number | null
+          payment_source?: string | null
           property_id: string
           refinance_target_date?: string | null
           reversion_rate_percent?: number | null
@@ -291,9 +301,14 @@ export type Database = {
           id?: string
           interest_rate_percent?: number | null
           lender?: string | null
+          loan_start_date?: string | null
+          loan_term_months?: number | null
           mortgage_payment_gbp?: number | null
           mortgage_type?: string | null
           notes?: string | null
+          payment_auto_calculated_gbp?: number | null
+          payment_override_gbp?: number | null
+          payment_source?: string | null
           property_id?: string
           refinance_target_date?: string | null
           reversion_rate_percent?: number | null
@@ -362,6 +377,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ownership_entities: {
+        Row: {
+          created_at: string
+          entity_type: string
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_entities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           created_at: string
@@ -428,12 +481,17 @@ export type Database = {
         Row: {
           address_line: string
           area_name: string | null
+          bathrooms: number | null
           beds: number | null
           created_at: string
           current_value_gbp: number | null
           epc_rating: string | null
+          epc_required: boolean | null
           id: string
+          land_registry_link: string | null
           latitude: number | null
+          lease_years_remaining: number | null
+          listed_status: string | null
           longitude: number | null
           notes: string | null
           org_id: string
@@ -444,17 +502,25 @@ export type Database = {
           postcode_area: string | null
           property_type: string | null
           purchase_price_gbp: number | null
+          tenure: string | null
+          title_number: string | null
           updated_at: string
+          uprn: string | null
         }
         Insert: {
           address_line: string
           area_name?: string | null
+          bathrooms?: number | null
           beds?: number | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
+          epc_required?: boolean | null
           id?: string
+          land_registry_link?: string | null
           latitude?: number | null
+          lease_years_remaining?: number | null
+          listed_status?: string | null
           longitude?: number | null
           notes?: string | null
           org_id: string
@@ -465,17 +531,25 @@ export type Database = {
           postcode_area?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
+          tenure?: string | null
+          title_number?: string | null
           updated_at?: string
+          uprn?: string | null
         }
         Update: {
           address_line?: string
           area_name?: string | null
+          bathrooms?: number | null
           beds?: number | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
+          epc_required?: boolean | null
           id?: string
+          land_registry_link?: string | null
           latitude?: number | null
+          lease_years_remaining?: number | null
+          listed_status?: string | null
           longitude?: number | null
           notes?: string | null
           org_id?: string
@@ -486,7 +560,10 @@ export type Database = {
           postcode_area?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
+          tenure?: string | null
+          title_number?: string | null
           updated_at?: string
+          uprn?: string | null
         }
         Relationships: [
           {
@@ -494,6 +571,54 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_ownership: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          ownership_entity_id: string
+          ownership_level: string
+          ownership_percent: number
+          property_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ownership_entity_id: string
+          ownership_level?: string
+          ownership_percent: number
+          property_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ownership_entity_id?: string
+          ownership_level?: string
+          ownership_percent?: number
+          property_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_ownership_ownership_entity_id_fkey"
+            columns: ["ownership_entity_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_ownership_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]

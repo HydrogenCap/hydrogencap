@@ -25,6 +25,8 @@ import {
   calculateYield,
   calculateROCE,
   calculateHealthScore,
+  calculateMonthlyMortgagePayment,
+  calculateMonthlyCashflowAfterDebt,
   getLTVStatus,
   getEPCStatus,
   HealthScoreBreakdown,
@@ -32,7 +34,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { HealthScoreBadge } from '@/components/property/HealthScoreBadge';
 
-type SortField = 'address' | 'area' | 'value' | 'mortgage' | 'ltv' | 'yield' | 'roce' | 'health';
+type SortField = 'address' | 'area' | 'value' | 'mortgage' | 'ltv' | 'yield' | 'roce' | 'health' | 'cashflow';
 type SortDirection = 'asc' | 'desc';
 
 function PropertiesPage() {
@@ -65,20 +67,33 @@ function PropertiesPage() {
     const yieldPercent = calculateYield(netRent, currentValue);
     const roce = calculateROCE(netRent, equity);
 
-    // Calculate health score
-    const mortgagePayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
+    // Calculate effective monthly mortgage payment
+    const mortgagePaymentResult = calculateMonthlyMortgagePayment({
+      balance: mortgageBalance,
+      interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
+      termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
+      isInterestOnly: loan?.capital_or_interest === 'interest',
+      paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+    });
+    const effectiveMortgagePayment = mortgagePaymentResult.effective;
+
+    // Calculate monthly cashflow after debt
+    const monthlyCashflow = calculateMonthlyCashflowAfterDebt(annualRent, totalCosts, effectiveMortgagePayment);
+
+    // Calculate health score with proper mortgage payment
     const isInterestOnly = loan?.capital_or_interest === 'interest';
     const healthScore = calculateHealthScore({
       annualRent,
       totalCosts,
-      mortgagePayment,
+      mortgagePayment: effectiveMortgagePayment,
       ltv,
       fixedRateExpires: loan?.fixed_rate_expires || null,
       isInterestOnly,
       epcRating: property.epc_rating,
+      epcRequired: property.epc_required !== false,
     });
 
-    return { mortgageBalance, currentValue, ltv, equity, yieldPercent, roce, healthScore };
+    return { mortgageBalance, currentValue, ltv, equity, yieldPercent, roce, healthScore, monthlyCashflow };
   };
 
   const filteredAndSortedProperties = useMemo(() => {
@@ -119,6 +134,9 @@ function PropertiesPage() {
           break;
         case 'health':
           comparison = metricsA.healthScore.total - metricsB.healthScore.total;
+          break;
+        case 'cashflow':
+          comparison = (metricsA.monthlyCashflow || 0) - (metricsB.monthlyCashflow || 0);
           break;
       }
 
@@ -263,13 +281,12 @@ function PropertiesPage() {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead><SortButton field="address">Address</SortButton></TableHead>
                   <TableHead><SortButton field="area">Area</SortButton></TableHead>
-                  <TableHead>Type</TableHead>
                   <TableHead>Beds</TableHead>
+                  <TableHead>Baths</TableHead>
                   <TableHead className="text-right"><SortButton field="value">Value</SortButton></TableHead>
                   <TableHead className="text-right"><SortButton field="mortgage">Mortgage</SortButton></TableHead>
                   <TableHead className="text-right"><SortButton field="ltv">LTV</SortButton></TableHead>
-                  <TableHead className="text-right"><SortButton field="yield">Yield</SortButton></TableHead>
-                  <TableHead><SortButton field="roce">ROCE</SortButton></TableHead>
+                  <TableHead className="text-right"><SortButton field="cashflow">Cashflow</SortButton></TableHead>
                   <TableHead><SortButton field="health">Health</SortButton></TableHead>
                   <TableHead>EPC</TableHead>
                   <TableHead></TableHead>
@@ -288,10 +305,10 @@ function PropertiesPage() {
                         {property.area_name || '—'}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {property.property_type || '—'}
+                        {property.beds ?? '—'}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {property.beds ?? '—'}
+                        {property.bathrooms ?? '—'}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatGBP(metrics.currentValue)}
@@ -303,16 +320,9 @@ function PropertiesPage() {
                         {getLTVBadge(metrics.ltv)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {metrics.yieldPercent !== null ? (
-                          <span className={metrics.yieldPercent >= 0 ? 'text-success' : 'text-destructive'}>
-                            {formatPercent(metrics.yieldPercent)}
-                          </span>
-                        ) : '—'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {metrics.roce !== null ? (
-                          <span className={metrics.roce >= 0 ? 'text-success' : 'text-destructive'}>
-                            {formatPercent(metrics.roce)}
+                        {metrics.monthlyCashflow !== null ? (
+                          <span className={metrics.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}>
+                            {formatGBP(metrics.monthlyCashflow)}/m
                           </span>
                         ) : '—'}
                       </TableCell>
