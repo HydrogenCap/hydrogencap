@@ -16,13 +16,13 @@ import { formatDateUK } from '@/lib/calculations';
 import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
+import { PassportOwnershipSummary } from './PassportOwnershipSummary';
 
 // Simplified schema - only essential fields
 const passportSchema = z.object({
   // TIER 1 - CORE DATA
-  // Ownership & Classification
+  // Ownership & Classification - now read-only, so only keep editable fields
   asset_agreement_category: z.string().nullable().optional(),
-  owned_by: z.string().nullable().optional(),
   owner_tenure: z.string().nullable().optional(),
   land_registry_title_number: z.string().nullable().optional(),
   
@@ -155,12 +155,15 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
             TIER 1 — CORE PROPERTY DATA (always visible)
            ═══════════════════════════════════════════════════════════════════ */}
         
-        {/* Ownership & Classification */}
+        {/* Ownership Summary (read-only) */}
+        <PassportOwnershipSummary propertyId={propertyId} />
+
+        {/* Classification & Title */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Ownership & Classification</CardTitle>
+            <CardTitle className="text-lg">Classification & Title</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <CardContent className="grid gap-4 sm:grid-cols-3">
             <FormField
               control={form.control}
               name="asset_agreement_category"
@@ -182,18 +185,6 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
                       <SelectItem value="Owner Occupier">Owner Occupier</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="owned_by"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Owner / SPV</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} placeholder="e.g. ABC Properties Ltd" />
-                  </FormControl>
                 </FormItem>
               )}
             />
@@ -591,7 +582,6 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
   return {
     // TIER 1 - CORE
     asset_agreement_category: passport?.asset_agreement_category ?? null,
-    owned_by: passport?.owned_by ?? null,
     owner_tenure: passport?.owner_tenure ?? null,
     land_registry_title_number: passport?.land_registry_title_number ?? null,
     bedrooms: passport?.bedrooms ?? null,

@@ -5,3 +5,4 @@ export { ShareholdingEditor } from './ShareholdingEditor';
 export { ComplianceStatusBadge } from './ComplianceStatusBadge';
 export { ComplianceFilingsCard } from './ComplianceFilingsCard';
 export { ComplianceSummaryWidget } from './ComplianceSummaryWidget';
+export { CompanyLinkedProperties } from './CompanyLinkedProperties';
