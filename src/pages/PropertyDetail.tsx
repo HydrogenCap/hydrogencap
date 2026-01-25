@@ -11,6 +11,7 @@ import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipCard, OwnershipEditor } from '@/components/ownership';
 import { LocationRegistryCard } from '@/components/property';
 import { PassportForm } from '@/components/passport';
+import { PhotoGallery } from '@/components/photos';
 import type { PropertyOwnershipWithEntity } from '@/hooks/useOwnership';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -543,11 +544,7 @@ function PropertyDetailPage() {
           </TabsContent>
 
           <TabsContent value="photos">
-            <Card className="bg-card border-border">
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <p>Photo gallery coming soon</p>
-              </CardContent>
-            </Card>
+            <PhotoGallery propertyId={id!} />
           </TabsContent>
 
           <TabsContent value="activity">
