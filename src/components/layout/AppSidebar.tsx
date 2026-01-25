@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  FileText,
   Upload,
   Settings,
   LogOut,
@@ -22,11 +21,12 @@ import {
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInboxDocuments } from '@/hooks/useDocuments';
 
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Properties', icon: Building2, href: '/properties' },
-  { title: 'Document Inbox', icon: Inbox, href: '/inbox', badge: 0 },
+  { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
   { title: 'Import', icon: Upload, href: '/import' },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
@@ -34,6 +34,12 @@ const navItems = [
 export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { data: inboxDocuments } = useInboxDocuments();
+
+  // Count pending documents
+  const pendingCount = inboxDocuments?.filter(
+    d => d.review_status === 'pending' && d.extraction_status === 'completed'
+  ).length || 0;
 
   return (
     <Sidebar>
@@ -60,6 +66,8 @@ export function AppSidebar() {
                 const isActive = location.pathname === item.href || 
                   (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
                 
+                const badgeCount = item.showBadge ? pendingCount : 0;
+                
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
@@ -68,9 +76,9 @@ export function AppSidebar() {
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
                         </span>
-                        {item.badge !== undefined && item.badge > 0 && (
+                        {badgeCount > 0 && (
                           <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
-                            {item.badge}
+                            {badgeCount}
                           </Badge>
                         )}
                       </Link>
