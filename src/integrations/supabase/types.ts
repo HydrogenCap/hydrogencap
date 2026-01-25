@@ -91,6 +91,113 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          ch_incorporation_date: string | null
+          ch_last_synced_at: string | null
+          ch_registered_address: string | null
+          company_number: string | null
+          company_type: string
+          created_at: string
+          id: string
+          jurisdiction: string | null
+          legal_name: string
+          org_id: string
+          party_id: string
+          status: string
+          trading_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          ch_incorporation_date?: string | null
+          ch_last_synced_at?: string | null
+          ch_registered_address?: string | null
+          company_number?: string | null
+          company_type?: string
+          created_at?: string
+          id?: string
+          jurisdiction?: string | null
+          legal_name: string
+          org_id: string
+          party_id: string
+          status?: string
+          trading_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ch_incorporation_date?: string | null
+          ch_last_synced_at?: string | null
+          ch_registered_address?: string | null
+          company_number?: string | null
+          company_type?: string
+          created_at?: string
+          id?: string
+          jurisdiction?: string | null
+          legal_name?: string
+          org_id?: string
+          party_id?: string
+          status?: string
+          trading_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companies_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_metric_snapshots: {
+        Row: {
+          as_of_date: string
+          cashflow_monthly: number | null
+          company_id: string
+          created_at: string
+          debt: number | null
+          equity: number | null
+          id: string
+          valuation: number | null
+        }
+        Insert: {
+          as_of_date: string
+          cashflow_monthly?: number | null
+          company_id: string
+          created_at?: string
+          debt?: number | null
+          equity?: number | null
+          id?: string
+          valuation?: number | null
+        }
+        Update: {
+          as_of_date?: string
+          cashflow_monthly?: number | null
+          company_id?: string
+          created_at?: string
+          debt?: number | null
+          equity?: number | null
+          id?: string
+          valuation?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_metric_snapshots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       costs: {
         Row: {
           bills_gbp_manual: number | null
@@ -404,6 +511,45 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          party_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          party_id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          party_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
             referencedColumns: ["id"]
           },
         ]
@@ -728,6 +874,85 @@ export type Database = {
           },
         ]
       }
+      ownership_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_groups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parties: {
+        Row: {
+          company_number: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          legal_name: string | null
+          org_id: string
+          party_type: string
+          updated_at: string
+        }
+        Insert: {
+          company_number?: string | null
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          org_id: string
+          party_type: string
+          updated_at?: string
+        }
+        Update: {
+          company_number?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          legal_name?: string | null
+          org_id?: string
+          party_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parties_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           created_at: string
@@ -935,6 +1160,7 @@ export type Database = {
           notes: string | null
           owner_entity_id: string
           owner_percent: number
+          owning_company_id: string | null
           property_id: string
           start_date: string | null
           updated_at: string
@@ -946,6 +1172,7 @@ export type Database = {
           notes?: string | null
           owner_entity_id: string
           owner_percent: number
+          owning_company_id?: string | null
           property_id: string
           start_date?: string | null
           updated_at?: string
@@ -957,6 +1184,7 @@ export type Database = {
           notes?: string | null
           owner_entity_id?: string
           owner_percent?: number
+          owning_company_id?: string | null
           property_id?: string
           start_date?: string | null
           updated_at?: string
@@ -967,6 +1195,13 @@ export type Database = {
             columns: ["owner_entity_id"]
             isOneToOne: false
             referencedRelation: "ownership_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_legal_ownership_owning_company_id_fkey"
+            columns: ["owning_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
@@ -1242,6 +1477,114 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: true
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_classes: {
+        Row: {
+          company_id: string
+          created_at: string
+          currency: string | null
+          id: string
+          is_primary: boolean | null
+          issued_shares: number
+          name: string
+          nominal_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_primary?: boolean | null
+          issued_shares?: number
+          name?: string
+          nominal_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_primary?: boolean | null
+          issued_shares?: number
+          name?: string
+          nominal_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_classes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shareholdings: {
+        Row: {
+          company_id: string
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          notes: string | null
+          ownership_source: string
+          share_class_id: string
+          shareholder_party_id: string
+          shares_held: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          ownership_source?: string
+          share_class_id: string
+          shareholder_party_id: string
+          shares_held: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          ownership_source?: string
+          share_class_id?: string
+          shareholder_party_id?: string
+          shares_held?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareholdings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shareholdings_share_class_id_fkey"
+            columns: ["share_class_id"]
+            isOneToOne: false
+            referencedRelation: "share_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shareholdings_shareholder_party_id_fkey"
+            columns: ["shareholder_party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
             referencedColumns: ["id"]
           },
         ]
