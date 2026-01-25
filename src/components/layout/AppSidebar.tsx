@@ -7,6 +7,7 @@ import {
   Inbox,
   TrendingUp,
   AlertCircle,
+  Map,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -27,6 +28,7 @@ import logoImage from '@/assets/logo.png';
 
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { title: 'Map', icon: Map, href: '/dashboard/map' },
   { title: 'Properties', icon: Building2, href: '/properties' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
