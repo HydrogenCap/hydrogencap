@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Building2, Plus, Search, Filter, ExternalLink } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Building2, Plus, Search, Filter, ExternalLink, ArrowUpDown } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCompanies, type Company, type CompanyType, type CompanyStatus } from '@/hooks/useCompanies';
-import { CreateCompanyDialog } from '@/components/companies';
+import { CreateCompanyDialog, ComplianceStatusBadge, ComplianceSummaryWidget } from '@/components/companies';
+import { getComplianceStatus } from '@/lib/complianceStatus';
 import { cn } from '@/lib/utils';
 
 const COMPANY_TYPE_OPTIONS: { value: CompanyType | 'ALL'; label: string }[] = [
@@ -41,6 +42,17 @@ const STATUS_OPTIONS: { value: CompanyStatus | 'ALL'; label: string }[] = [
   { value: 'CLOSED', label: 'Closed' },
 ];
 
+type ComplianceFilter = 'ALL' | 'accounts_overdue' | 'accounts_due_soon' | 'cs_overdue' | 'cs_due_soon' | 'all_ok';
+
+const COMPLIANCE_FILTER_OPTIONS: { value: ComplianceFilter; label: string }[] = [
+  { value: 'ALL', label: 'All Compliance' },
+  { value: 'accounts_overdue', label: 'Accounts Overdue' },
+  { value: 'accounts_due_soon', label: 'Accounts Due Soon' },
+  { value: 'cs_overdue', label: 'CS Overdue' },
+  { value: 'cs_due_soon', label: 'CS Due Soon' },
+  { value: 'all_ok', label: 'All OK' },
+];
+
 const companyTypeLabels: Record<string, string> = {
   HOLDCO: 'Holding Co',
   SPV: 'SPV',
@@ -55,27 +67,117 @@ const statusColors: Record<string, string> = {
   CLOSED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
+type SortField = 'name' | 'accounts_due' | 'cs_due';
+type SortDirection = 'asc' | 'desc';
+
 export default function Companies() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: companies, isLoading } = useCompanies();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<CompanyType | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | 'ALL'>('ALL');
+  const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>(
+    (searchParams.get('compliance') as ComplianceFilter) || 'ALL'
+  );
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  // Filter companies
-  const filteredCompanies = companies?.filter((company) => {
-    const matchesSearch = 
-      company.legal_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.trading_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.company_number?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesType = typeFilter === 'ALL' || company.company_type === typeFilter;
-    const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
+  // Handle compliance filter from URL
+  React.useEffect(() => {
+    const urlFilter = searchParams.get('compliance') as ComplianceFilter;
+    if (urlFilter && COMPLIANCE_FILTER_OPTIONS.some(o => o.value === urlFilter)) {
+      setComplianceFilter(urlFilter);
+    }
+  }, [searchParams]);
 
-    return matchesSearch && matchesType && matchesStatus;
-  }) || [];
+  const handleComplianceFilterChange = (value: ComplianceFilter) => {
+    setComplianceFilter(value);
+    if (value === 'ALL') {
+      searchParams.delete('compliance');
+    } else {
+      searchParams.set('compliance', value);
+    }
+    setSearchParams(searchParams);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Filter and sort companies
+  const filteredCompanies = useMemo(() => {
+    let filtered = companies?.filter((company) => {
+      const matchesSearch = 
+        company.legal_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.trading_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.company_number?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesType = typeFilter === 'ALL' || company.company_type === typeFilter;
+      const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
+
+      // Compliance filter
+      let matchesCompliance = true;
+      if (complianceFilter !== 'ALL') {
+        const accountsStatus = getComplianceStatus(company.accounts_due_date);
+        const csStatus = getComplianceStatus(company.confirmation_statement_due_date);
+        
+        switch (complianceFilter) {
+          case 'accounts_overdue':
+            matchesCompliance = accountsStatus.status === 'overdue';
+            break;
+          case 'accounts_due_soon':
+            matchesCompliance = accountsStatus.status === 'due_soon';
+            break;
+          case 'cs_overdue':
+            matchesCompliance = csStatus.status === 'overdue';
+            break;
+          case 'cs_due_soon':
+            matchesCompliance = csStatus.status === 'due_soon';
+            break;
+          case 'all_ok':
+            matchesCompliance = 
+              (accountsStatus.status === 'ok' || accountsStatus.status === 'unknown') &&
+              (csStatus.status === 'ok' || csStatus.status === 'unknown');
+            break;
+        }
+      }
+
+      return matchesSearch && matchesType && matchesStatus && matchesCompliance;
+    }) || [];
+
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case 'name':
+          comparison = a.legal_name.localeCompare(b.legal_name);
+          break;
+        case 'accounts_due':
+          const aDate = a.accounts_due_date ? new Date(a.accounts_due_date).getTime() : Infinity;
+          const bDate = b.accounts_due_date ? new Date(b.accounts_due_date).getTime() : Infinity;
+          comparison = aDate - bDate;
+          break;
+        case 'cs_due':
+          const aCsDate = a.confirmation_statement_due_date ? new Date(a.confirmation_statement_due_date).getTime() : Infinity;
+          const bCsDate = b.confirmation_statement_due_date ? new Date(b.confirmation_statement_due_date).getTime() : Infinity;
+          comparison = aCsDate - bCsDate;
+          break;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [companies, searchQuery, typeFilter, statusFilter, complianceFilter, sortField, sortDirection]);
 
   // Group by type for summary
   const typeCounts = companies?.reduce((acc, c) => {
@@ -103,35 +205,44 @@ export default function Companies() {
           </Button>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <SummaryCard
-            label="Total Companies"
-            value={companies?.length || 0}
-            onClick={() => {
-              setTypeFilter('ALL');
-              setStatusFilter('ALL');
-            }}
-            active={typeFilter === 'ALL'}
-          />
-          <SummaryCard
-            label="SPVs"
-            value={typeCounts['SPV'] || 0}
-            onClick={() => setTypeFilter('SPV')}
-            active={typeFilter === 'SPV'}
-          />
-          <SummaryCard
-            label="Holding Companies"
-            value={typeCounts['HOLDCO'] || 0}
-            onClick={() => setTypeFilter('HOLDCO')}
-            active={typeFilter === 'HOLDCO'}
-          />
-          <SummaryCard
-            label="Operating Companies"
-            value={typeCounts['OPCO'] || 0}
-            onClick={() => setTypeFilter('OPCO')}
-            active={typeFilter === 'OPCO'}
-          />
+        {/* Summary Cards + Compliance Widget */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <div className="lg:col-span-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <SummaryCard
+              label="Total Companies"
+              value={companies?.length || 0}
+              onClick={() => {
+                setTypeFilter('ALL');
+                setStatusFilter('ALL');
+              }}
+              active={typeFilter === 'ALL'}
+            />
+            <SummaryCard
+              label="SPVs"
+              value={typeCounts['SPV'] || 0}
+              onClick={() => setTypeFilter('SPV')}
+              active={typeFilter === 'SPV'}
+            />
+            <SummaryCard
+              label="Holding Companies"
+              value={typeCounts['HOLDCO'] || 0}
+              onClick={() => setTypeFilter('HOLDCO')}
+              active={typeFilter === 'HOLDCO'}
+            />
+            <SummaryCard
+              label="Operating Companies"
+              value={typeCounts['OPCO'] || 0}
+              onClick={() => setTypeFilter('OPCO')}
+              active={typeFilter === 'OPCO'}
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <ComplianceSummaryWidget
+              companies={companies}
+              isLoading={isLoading}
+              onFilterClick={(filter) => handleComplianceFilterChange(filter)}
+            />
+          </div>
         </div>
 
         {/* Filters */}
@@ -146,7 +257,7 @@ export default function Companies() {
             />
           </div>
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as CompanyType | 'ALL')}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[160px]">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
@@ -159,11 +270,23 @@ export default function Companies() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as CompanyStatus | 'ALL')}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
               {STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={complianceFilter} onValueChange={(v) => handleComplianceFilterChange(v as ComplianceFilter)}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Compliance" />
+            </SelectTrigger>
+            <SelectContent>
+              {COMPLIANCE_FILTER_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -177,11 +300,42 @@ export default function Companies() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Company Name</TableHead>
+                <TableHead>
+                  <button 
+                    className="flex items-center gap-1 hover:text-foreground"
+                    onClick={() => handleSort('name')}
+                  >
+                    Company Name
+                    {sortField === 'name' && (
+                      <ArrowUpDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead>Company Number</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Jurisdiction</TableHead>
+                <TableHead>
+                  <button 
+                    className="flex items-center gap-1 hover:text-foreground"
+                    onClick={() => handleSort('accounts_due')}
+                  >
+                    Accounts Due
+                    {sortField === 'accounts_due' && (
+                      <ArrowUpDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button 
+                    className="flex items-center gap-1 hover:text-foreground"
+                    onClick={() => handleSort('cs_due')}
+                  >
+                    CS Due
+                    {sortField === 'cs_due' && (
+                      <ArrowUpDown className="h-3 w-3" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -193,13 +347,14 @@ export default function Companies() {
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                    <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   </TableRow>
                 ))
               ) : filteredCompanies.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                     {companies?.length === 0
                       ? 'No companies yet. Add your first company to get started.'
                       : 'No companies match your filters.'}
@@ -248,7 +403,18 @@ export default function Companies() {
                         {company.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{company.jurisdiction}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ComplianceStatusBadge 
+                        dueDate={company.accounts_due_date} 
+                        compact 
+                      />
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ComplianceStatusBadge 
+                        dueDate={company.confirmation_statement_due_date} 
+                        compact 
+                      />
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"

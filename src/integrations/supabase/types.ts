@@ -93,11 +93,17 @@ export type Database = {
       }
       companies: {
         Row: {
+          accounts_due_date: string | null
+          accounts_last_filed_date: string | null
+          accounts_period_end: string | null
           ch_incorporation_date: string | null
           ch_last_synced_at: string | null
           ch_registered_address: string | null
           company_number: string | null
           company_type: string
+          confirmation_statement_due_date: string | null
+          confirmation_statement_last_filed_date: string | null
+          confirmation_statement_last_made_up_to: string | null
           created_at: string
           id: string
           jurisdiction: string | null
@@ -109,11 +115,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accounts_due_date?: string | null
+          accounts_last_filed_date?: string | null
+          accounts_period_end?: string | null
           ch_incorporation_date?: string | null
           ch_last_synced_at?: string | null
           ch_registered_address?: string | null
           company_number?: string | null
           company_type?: string
+          confirmation_statement_due_date?: string | null
+          confirmation_statement_last_filed_date?: string | null
+          confirmation_statement_last_made_up_to?: string | null
           created_at?: string
           id?: string
           jurisdiction?: string | null
@@ -125,11 +137,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accounts_due_date?: string | null
+          accounts_last_filed_date?: string | null
+          accounts_period_end?: string | null
           ch_incorporation_date?: string | null
           ch_last_synced_at?: string | null
           ch_registered_address?: string | null
           company_number?: string | null
           company_type?: string
+          confirmation_statement_due_date?: string | null
+          confirmation_statement_last_filed_date?: string | null
+          confirmation_statement_last_made_up_to?: string | null
           created_at?: string
           id?: string
           jurisdiction?: string | null

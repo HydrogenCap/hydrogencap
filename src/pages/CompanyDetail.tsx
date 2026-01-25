@@ -49,7 +49,7 @@ import {
   type Shareholding,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ShareholdingEditor } from '@/components/companies';
+import { ShareholdingEditor, ComplianceFilingsCard } from '@/components/companies';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercent } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
@@ -165,11 +165,38 @@ export default function CompanyDetail() {
           ch_registered_address: result.company.registered_address,
           ch_incorporation_date: result.company.date_of_creation,
           ch_last_synced_at: new Date().toISOString(),
+          // Sync compliance data
+          accounts_due_date: result.compliance.accounts_due_date,
+          accounts_period_end: result.compliance.accounts_period_end,
+          accounts_last_filed_date: result.compliance.accounts_last_filed_date,
+          confirmation_statement_due_date: result.compliance.confirmation_statement_due_date,
+          confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
+          confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
         });
-        toast({ title: 'Synced from Companies House' });
+        toast({ title: 'Synced from Companies House', description: 'Company details and compliance dates updated' });
       }
     } catch {
       toast({ title: 'Error', description: 'Failed to sync from Companies House', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdateComplianceDates = async (updates: {
+    accounts_due_date?: string | null;
+    accounts_period_end?: string | null;
+    accounts_last_filed_date?: string | null;
+    confirmation_statement_due_date?: string | null;
+    confirmation_statement_last_made_up_to?: string | null;
+    confirmation_statement_last_filed_date?: string | null;
+  }) => {
+    if (!company) return;
+    try {
+      await updateCompany.mutateAsync({
+        id: company.id,
+        ...updates,
+      });
+      toast({ title: 'Compliance dates updated' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update compliance dates', variant: 'destructive' });
     }
   };
 
@@ -350,6 +377,24 @@ export default function CompanyDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Compliance & Filings Section */}
+            <ComplianceFilingsCard
+              data={{
+                accounts_due_date: company.accounts_due_date,
+                accounts_period_end: company.accounts_period_end,
+                accounts_last_filed_date: company.accounts_last_filed_date,
+                confirmation_statement_due_date: company.confirmation_statement_due_date,
+                confirmation_statement_last_made_up_to: company.confirmation_statement_last_made_up_to,
+                confirmation_statement_last_filed_date: company.confirmation_statement_last_filed_date,
+                ch_last_synced_at: company.ch_last_synced_at,
+                company_number: company.company_number,
+              }}
+              onUpdate={handleUpdateComplianceDates}
+              onSyncFromCH={handleRefreshFromCH}
+              isSyncing={isLookingUp}
+              isUpdating={updateCompany.isPending}
+            />
           </div>
 
           {/* Right Column - Shareholdings */}

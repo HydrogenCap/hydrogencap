@@ -31,10 +31,20 @@ export interface CHSignificantController {
   notified_on: string;
 }
 
+export interface CHComplianceData {
+  accounts_due_date: string | null;
+  accounts_period_end: string | null;
+  accounts_last_filed_date: string | null;
+  confirmation_statement_due_date: string | null;
+  confirmation_statement_last_made_up_to: string | null;
+  confirmation_statement_last_filed_date: string | null;
+}
+
 export interface CHLookupResult {
   company: CHCompanyProfile;
   officers: CHOfficer[];
   significant_controllers: CHSignificantController[];
+  compliance: CHComplianceData;
 }
 
 export function useCompaniesHouse() {
@@ -91,6 +101,14 @@ export function useCompaniesHouse() {
         company: data.company,
         officers: data.officers || [],
         significant_controllers: data.significant_controllers || [],
+        compliance: data.compliance || {
+          accounts_due_date: null,
+          accounts_period_end: null,
+          accounts_last_filed_date: null,
+          confirmation_statement_due_date: null,
+          confirmation_statement_last_made_up_to: null,
+          confirmation_statement_last_filed_date: null,
+        },
       };
 
       setLookupResult(result);
