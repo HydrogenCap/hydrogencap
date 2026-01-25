@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { useRecentActivity } from '@/hooks/useActivityLog';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
+import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import {
   formatGBP,
   formatPercent,
@@ -364,8 +365,13 @@ function DashboardPage() {
 
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* Portfolio Health */}
+          {properties && properties.length > 0 && (
+            <PortfolioHealthWidget properties={properties} />
+          )}
+
           {/* Risks Panel */}
-          <Card className="lg:col-span-1 bg-card border-border">
+          <Card className={`bg-card border-border ${properties && properties.length > 0 ? '' : 'lg:col-span-1'}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-warning" />
@@ -415,7 +421,6 @@ function DashboardPage() {
               )}
             </CardContent>
           </Card>
-
           {/* Property Map */}
           <Card className="lg:col-span-2 bg-card border-border">
             <CardHeader>
