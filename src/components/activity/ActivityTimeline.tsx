@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityLog } from '@/hooks/useActivityLog';
+import { AddNoteForm } from './AddNoteForm';
 import type { Database } from '@/integrations/supabase/types';
 
 type ActivityLog = Database['public']['Tables']['activity_log']['Row'];
@@ -22,6 +23,7 @@ interface ActivityTimelineProps {
   propertyId?: string;
   limit?: number;
   showHeader?: boolean;
+  showAddNote?: boolean;
 }
 
 const ENTRY_TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string }> = {
@@ -62,10 +64,11 @@ function ActivityItem({ entry }: { entry: ActivityLog }) {
   );
 }
 
-export function ActivityTimeline({ propertyId, limit = 20, showHeader = true }: ActivityTimelineProps) {
+export function ActivityTimeline({ propertyId, limit = 20, showHeader = true, showAddNote = false }: ActivityTimelineProps) {
   const { data: activities, isLoading } = useActivityLog(propertyId);
 
   const displayedActivities = activities?.slice(0, limit) || [];
+  const canAddNote = showAddNote && propertyId;
 
   if (isLoading) {
     return (
@@ -124,7 +127,10 @@ export function ActivityTimeline({ propertyId, limit = 20, showHeader = true }: 
           </CardTitle>
         </CardHeader>
       )}
-      <CardContent>
+      <CardContent className="space-y-4">
+        {canAddNote && (
+          <AddNoteForm propertyId={propertyId} />
+        )}
         <div className="divide-y divide-border">
           {displayedActivities.map(entry => (
             <ActivityItem key={entry.id} entry={entry} />

@@ -484,7 +484,7 @@ function PropertyDetailPage() {
           </TabsContent>
 
           <TabsContent value="activity">
-            <ActivityTimeline propertyId={id} showHeader={false} />
+            <ActivityTimeline propertyId={id} showHeader={false} showAddNote={true} />
           </TabsContent>
         </Tabs>
       </div>
