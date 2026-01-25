@@ -22,6 +22,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
+import logoImage from '@/assets/logo.png';
 
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
@@ -46,12 +47,10 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <Link to="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-            P
-          </div>
+          <img src={logoImage} alt="Hydrogen Capital" className="h-9 w-9 rounded-lg object-cover" />
           <div className="flex flex-col">
-            <span className="font-semibold text-sidebar-foreground">Portfolio</span>
-            <span className="text-xs text-muted-foreground">Dashboard</span>
+            <span className="font-semibold text-sidebar-foreground">Hydrogen</span>
+            <span className="text-xs text-muted-foreground">Capital</span>
           </div>
         </Link>
       </SidebarHeader>
