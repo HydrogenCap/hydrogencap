@@ -23,6 +23,7 @@ import {
   MapPin,
   Globe,
   Landmark,
+  Users,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProperties } from '@/hooks/useProperties';
 import { usePropertyPassports } from '@/hooks/usePropertyPassport';
 import { usePortfolioAI, type AIInsights } from '@/hooks/usePortfolioAI';
@@ -43,6 +45,7 @@ import {
   type ActionItem,
 } from '@/lib/portfolioInsights';
 import { formatGBP, formatPercent } from '@/lib/calculations';
+import { OwnershipAttributionSection } from '@/components/insights/OwnershipAttributionSection';
 
 function InsightsPage() {
   const navigate = useNavigate();
@@ -190,6 +193,21 @@ function InsightsPage() {
             </div>
           </div>
         </div>
+
+        {/* Tabs for different insight views */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="ownership" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Ownership Attribution
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
 
         {/* Key Metrics Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -518,6 +536,13 @@ function InsightsPage() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Ownership Attribution Tab */}
+          <TabsContent value="ownership">
+            <OwnershipAttributionSection properties={properties || []} />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
