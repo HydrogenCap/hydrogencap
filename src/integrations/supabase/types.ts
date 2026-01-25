@@ -284,6 +284,59 @@ export type Database = {
           },
         ]
       }
+      floorplans: {
+        Row: {
+          created_at: string
+          file_type: string
+          file_url: string
+          final_file_name: string | null
+          id: string
+          is_primary: boolean
+          notes: string | null
+          original_file_name: string
+          property_id: string
+          updated_at: string
+          uploaded_at: string
+          version_label: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_type: string
+          file_url: string
+          final_file_name?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          original_file_name: string
+          property_id: string
+          updated_at?: string
+          uploaded_at?: string
+          version_label?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_type?: string
+          file_url?: string
+          final_file_name?: string | null
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          original_file_name?: string
+          property_id?: string
+          updated_at?: string
+          uploaded_at?: string
+          version_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floorplans_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       income: {
         Row: {
           annual_rent_gbp: number
