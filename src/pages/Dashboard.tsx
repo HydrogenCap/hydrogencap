@@ -568,6 +568,9 @@ function DashboardPage() {
                         {missingStats.propertiesWithInsuranceMissing > 0 && (
                           <span>{missingStats.propertiesWithInsuranceMissing} insurance • </span>
                         )}
+                        {missingStats.propertiesWithPassportMissing > 0 && (
+                          <span>{missingStats.propertiesWithPassportMissing} passport • </span>
+                        )}
                         <span className="font-medium text-amber-600">{missingStats.totalMissingFields} fields total</span>
                       </p>
                     </div>

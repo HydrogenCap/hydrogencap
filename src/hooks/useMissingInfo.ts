@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
+import { usePropertyPassports, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { toast } from 'sonner';
 
 // Insurance policy type (from new table)
@@ -19,8 +20,16 @@ export interface InsurancePolicy {
   updated_at: string;
 }
 
+// Field definition type
+export interface FieldDefinition {
+  key: string;
+  label: string;
+  type: 'text' | 'currency' | 'percent' | 'date' | 'select' | 'number' | 'boolean';
+  options?: readonly string[];
+}
+
 // Finance fields to validate (from loans table)
-export const FINANCE_FIELDS = [
+export const FINANCE_FIELDS: FieldDefinition[] = [
   { key: 'lender', label: 'Lender Name', type: 'text' },
   { key: 'current_mortgage_balance_gbp', label: 'Current Balance', type: 'currency' },
   { key: 'interest_rate_percent', label: 'Interest Rate', type: 'percent' },
@@ -29,30 +38,86 @@ export const FINANCE_FIELDS = [
   { key: 'fixed_rate_expires', label: 'Product End Date', type: 'date' },
   { key: 'mortgage_payment_gbp', label: 'Monthly Payment', type: 'currency' },
   { key: 'loan_start_date', label: 'Loan Start Date', type: 'date' },
-] as const;
+];
 
 // Insurance fields to validate (from insurance_policies table)
-export const INSURANCE_FIELDS = [
+export const INSURANCE_FIELDS: FieldDefinition[] = [
   { key: 'insurer_name', label: 'Insurer Name', type: 'text' },
   { key: 'policy_number', label: 'Policy Number', type: 'text' },
   { key: 'renewal_date', label: 'Renewal Date', type: 'date' },
   { key: 'cover_type', label: 'Cover Type', type: 'select', options: ['Buildings', 'Landlord', 'HMO', 'Contents', 'Other'] },
   { key: 'premium_gbp', label: 'Premium', type: 'currency' },
   { key: 'excess_gbp', label: 'Excess', type: 'currency' },
-] as const;
+];
+
+// Passport fields to validate (grouped by category)
+export const PASSPORT_FIELDS: FieldDefinition[] = [
+  // Critical utility fields
+  { key: 'keysafe_code', label: 'Keysafe Code', type: 'text' },
+  { key: 'electric_meter_location', label: 'Electric Meter Location', type: 'text' },
+  { key: 'electric_meter_number', label: 'Electric Meter Number', type: 'text' },
+  { key: 'gas_meter_location', label: 'Gas Meter Location', type: 'text' },
+  { key: 'gas_meter_number', label: 'Gas Meter Number', type: 'text' },
+  { key: 'water_meter_location', label: 'Water Meter Location', type: 'text' },
+  { key: 'water_meter_number', label: 'Water Meter Number', type: 'text' },
+  { key: 'water_stop_tap_location', label: 'Stop Tap Location', type: 'text' },
+  // Property details
+  { key: 'bedrooms', label: 'Bedrooms', type: 'number' },
+  { key: 'bathrooms', label: 'Bathrooms', type: 'number' },
+  { key: 'kitchens', label: 'Kitchens', type: 'number' },
+  { key: 'ensuites', label: 'Ensuites', type: 'number' },
+  { key: 'living_rooms_communal', label: 'Living Rooms', type: 'number' },
+  { key: 'wc_cloakroom', label: 'WC/Cloakroom', type: 'number' },
+  // Construction
+  { key: 'built_in_year', label: 'Built In Year', type: 'number' },
+  { key: 'construction_type', label: 'Construction Type', type: 'select', options: ['Brick', 'Stone', 'Timber Frame', 'Concrete', 'Steel Frame', 'Other'] },
+  { key: 'number_of_storeys', label: 'Number of Storeys', type: 'number' },
+  // Location/Admin
+  { key: 'local_authority_text', label: 'Local Authority', type: 'text' },
+  { key: 'council_tax_band', label: 'Council Tax Band', type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] },
+  { key: 'occupation_status', label: 'Occupation Status', type: 'select', options: ['Let', 'Vacant', 'Owner-occupied', 'Development'] },
+  { key: 'owner_tenure', label: 'Tenure', type: 'select', options: ['Freehold', 'Leasehold', 'Share of Freehold'] },
+  // Parking & Access
+  { key: 'parking', label: 'Parking', type: 'select', options: ['None', 'On-street', 'Driveway', 'Garage', 'Allocated space', 'Multiple'] },
+  { key: 'has_loft_access', label: 'Loft Access', type: 'boolean' },
+  { key: 'basement', label: 'Basement', type: 'boolean' },
+  // HMO
+  { key: 'hmo_licence_required', label: 'HMO Licence Required', type: 'boolean' },
+  { key: 'hmo_licence_number', label: 'HMO Licence Number', type: 'text' },
+  { key: 'hmo_licence_expiry', label: 'HMO Licence Expiry', type: 'date' },
+  { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', type: 'number' },
+  // Management
+  { key: 'management_company_text', label: 'Management Company', type: 'text' },
+  { key: 'property_management_fee_percent', label: 'Management Fee %', type: 'percent' },
+  // Links
+  { key: 'land_registry_title_number', label: 'Title Number', type: 'text' },
+];
+
+// Critical passport fields that should always be filled
+export const CRITICAL_PASSPORT_FIELDS = [
+  'keysafe_code',
+  'electric_meter_location',
+  'electric_meter_number',
+  'gas_meter_location',
+  'gas_meter_number',
+  'water_meter_location',
+  'water_meter_number',
+  'water_stop_tap_location',
+];
 
 // Check if a field value is considered "missing"
 export function isMissing(value: any, fieldKey: string): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string' && value.trim() === '') return true;
   
-  // 0 is missing for monetary/rate fields (except interest_rate where 0% could be valid but unlikely)
+  // 0 is missing for monetary/rate fields
   const zeroIsMissing = [
     'current_mortgage_balance_gbp',
     'mortgage_payment_gbp',
     'premium_gbp',
     'excess_gbp',
     'interest_rate_percent',
+    'property_management_fee_percent',
   ];
   if (zeroIsMissing.includes(fieldKey) && value === 0) return true;
   
@@ -62,11 +127,15 @@ export function isMissing(value: any, fieldKey: string): boolean {
 export interface PropertyMissingInfo {
   property: PropertyWithFinancials;
   insurance: InsurancePolicy | null;
+  passport: PropertyPassport | null;
   missingFinanceFields: string[];
   missingInsuranceFields: string[];
+  missingPassportFields: string[];
+  missingCriticalPassportFields: string[];
   totalMissing: number;
-  status: 'complete' | 'missing_finance' | 'missing_insurance' | 'missing_both';
+  status: 'complete' | 'missing_finance' | 'missing_insurance' | 'missing_passport' | 'missing_multiple';
   renewingSoon: boolean;
+  hmoLicenceExpiringSoon: boolean;
 }
 
 // Fetch insurance policies
@@ -108,6 +177,7 @@ export function useUpsertInsurancePolicy() {
 export function useMissingInfo() {
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const { data: insurancePolicies, isLoading: insuranceLoading } = useInsurancePolicies();
+  const { data: passports, isLoading: passportsLoading } = usePropertyPassports();
 
   const data = useMemo(() => {
     if (!properties) return [];
@@ -115,9 +185,13 @@ export function useMissingInfo() {
     const insuranceMap = new Map<string, InsurancePolicy>();
     insurancePolicies?.forEach(p => insuranceMap.set(p.property_id, p));
 
+    const passportMap = new Map<string, PropertyPassport>();
+    passports?.forEach(p => passportMap.set(p.property_id, p));
+
     return properties.map((property): PropertyMissingInfo => {
       const loan = property.loans?.[0];
       const insurance = insuranceMap.get(property.id) || null;
+      const passport = passportMap.get(property.id) || null;
 
       // Check finance fields
       const missingFinanceFields: string[] = [];
@@ -142,16 +216,42 @@ export function useMissingInfo() {
         }
       });
 
-      const totalMissing = missingFinanceFields.length + missingInsuranceFields.length;
+      // Check passport fields
+      const missingPassportFields: string[] = [];
+      const missingCriticalPassportFields: string[] = [];
+      PASSPORT_FIELDS.forEach(field => {
+        // Skip HMO fields if HMO licence is not required
+        if (field.key.startsWith('hmo_') && field.key !== 'hmo_licence_required') {
+          if (!passport?.hmo_licence_required) return;
+        }
+        
+        const value = passport?.[field.key as keyof PropertyPassport];
+        if (isMissing(value, field.key)) {
+          missingPassportFields.push(field.key);
+          if (CRITICAL_PASSPORT_FIELDS.includes(field.key)) {
+            missingCriticalPassportFields.push(field.key);
+          }
+        }
+      });
+
+      const totalMissing = missingFinanceFields.length + missingInsuranceFields.length + missingPassportFields.length;
 
       // Determine status
+      const hasMissingFinance = missingFinanceFields.length > 0;
+      const hasMissingInsurance = missingInsuranceFields.length > 0;
+      const hasMissingPassport = missingPassportFields.length > 0;
+      
+      const missingCount = [hasMissingFinance, hasMissingInsurance, hasMissingPassport].filter(Boolean).length;
+      
       let status: PropertyMissingInfo['status'] = 'complete';
-      if (missingFinanceFields.length > 0 && missingInsuranceFields.length > 0) {
-        status = 'missing_both';
-      } else if (missingFinanceFields.length > 0) {
+      if (missingCount >= 2) {
+        status = 'missing_multiple';
+      } else if (hasMissingFinance) {
         status = 'missing_finance';
-      } else if (missingInsuranceFields.length > 0) {
+      } else if (hasMissingInsurance) {
         status = 'missing_insurance';
+      } else if (hasMissingPassport) {
+        status = 'missing_passport';
       }
 
       // Check if insurance renewal is within 60 days
@@ -163,24 +263,45 @@ export function useMissingInfo() {
         renewingSoon = diffDays >= 0 && diffDays <= 60;
       }
 
+      // Check if HMO licence is expiring soon
+      let hmoLicenceExpiringSoon = false;
+      if (passport?.hmo_licence_required && passport?.hmo_licence_expiry) {
+        const expiryDate = new Date(passport.hmo_licence_expiry);
+        const now = new Date();
+        const diffDays = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        hmoLicenceExpiringSoon = diffDays >= 0 && diffDays <= 60;
+      }
+
       return {
         property,
         insurance,
+        passport,
         missingFinanceFields,
         missingInsuranceFields,
+        missingPassportFields,
+        missingCriticalPassportFields,
         totalMissing,
         status,
         renewingSoon,
+        hmoLicenceExpiringSoon,
       };
     });
-  }, [properties, insurancePolicies]);
+  }, [properties, insurancePolicies, passports]);
 
   // Summary stats
   const stats = useMemo(() => {
     const propertiesWithFinanceMissing = data.filter(d => d.missingFinanceFields.length > 0).length;
     const propertiesWithInsuranceMissing = data.filter(d => d.missingInsuranceFields.length > 0).length;
+    const propertiesWithPassportMissing = data.filter(d => d.missingPassportFields.length > 0).length;
+    const propertiesWithCriticalPassportMissing = data.filter(d => d.missingCriticalPassportFields.length > 0).length;
     const totalMissingFields = data.reduce((sum, d) => sum + d.totalMissing, 0);
-    return { propertiesWithFinanceMissing, propertiesWithInsuranceMissing, totalMissingFields };
+    return { 
+      propertiesWithFinanceMissing, 
+      propertiesWithInsuranceMissing, 
+      propertiesWithPassportMissing,
+      propertiesWithCriticalPassportMissing,
+      totalMissingFields 
+    };
   }, [data]);
 
   // Get unique lenders and insurers for filters
@@ -206,7 +327,7 @@ export function useMissingInfo() {
     stats,
     lenders,
     insurers,
-    isLoading: propertiesLoading || insuranceLoading,
+    isLoading: propertiesLoading || insuranceLoading || passportsLoading,
   };
 }
 
@@ -228,6 +349,11 @@ export function exportMissingInfoCSV(data: PropertyMissingInfo[]) {
     item.missingInsuranceFields.forEach(field => {
       const currentValue = item.insurance ? String(item.insurance[field as keyof InsurancePolicy] ?? '') : '';
       rows.push(`${item.property.id},"${address}",${postcode},insurance,${field},"${currentValue}"`);
+    });
+
+    item.missingPassportFields.forEach(field => {
+      const currentValue = item.passport ? String(item.passport[field as keyof PropertyPassport] ?? '') : '';
+      rows.push(`${item.property.id},"${address}",${postcode},passport,${field},"${currentValue}"`);
     });
   });
 
@@ -261,6 +387,15 @@ export function copyMissingToClipboard(item: PropertyMissingInfo) {
     lines.push('Missing Insurance:');
     item.missingInsuranceFields.forEach(field => {
       const label = INSURANCE_FIELDS.find(f => f.key === field)?.label || field;
+      lines.push(`  • ${label}`);
+    });
+    lines.push('');
+  }
+
+  if (item.missingPassportFields.length > 0) {
+    lines.push('Missing Passport:');
+    item.missingPassportFields.forEach(field => {
+      const label = PASSPORT_FIELDS.find(f => f.key === field)?.label || field;
       lines.push(`  • ${label}`);
     });
   }

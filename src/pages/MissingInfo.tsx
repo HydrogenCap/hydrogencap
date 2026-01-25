@@ -7,14 +7,12 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   Building2, 
-  Copy,
   RefreshCw,
   Clock,
-  ChevronDown,
-  ChevronUp,
+  FileText,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,20 +25,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
   useMissingInfo,
   exportMissingInfoCSV,
-  copyMissingToClipboard,
-  PropertyMissingInfo,
 } from '@/hooks/useMissingInfo';
 import { MissingInfoPropertyRow } from '@/components/missing-info/MissingInfoPropertyRow';
 
-type MissingTypeFilter = 'all' | 'finance' | 'insurance';
-type PriorityFilter = 'all' | 'most_missing' | 'renewal_soon';
+type MissingTypeFilter = 'all' | 'finance' | 'insurance' | 'passport' | 'critical';
+type PriorityFilter = 'all' | 'most_missing' | 'renewal_soon' | 'hmo_expiring';
 type SortOption = 'most_missing' | 'postcode' | 'updated';
 
 export default function MissingInfoPage() {
@@ -76,11 +67,17 @@ export default function MissingInfoPage() {
       result = result.filter(item => item.missingFinanceFields.length > 0);
     } else if (missingTypeFilter === 'insurance') {
       result = result.filter(item => item.missingInsuranceFields.length > 0);
+    } else if (missingTypeFilter === 'passport') {
+      result = result.filter(item => item.missingPassportFields.length > 0);
+    } else if (missingTypeFilter === 'critical') {
+      result = result.filter(item => item.missingCriticalPassportFields.length > 0);
     }
 
     // Priority filter
     if (priorityFilter === 'renewal_soon') {
       result = result.filter(item => item.renewingSoon);
+    } else if (priorityFilter === 'hmo_expiring') {
+      result = result.filter(item => item.hmoLicenceExpiringSoon);
     }
 
     // Lender filter
@@ -104,11 +101,18 @@ export default function MissingInfoPage() {
       );
     }
 
-    // Additional sort for priority (renewal soon first)
+    // Additional sort for priority (critical & renewal soon first)
     if (priorityFilter === 'all') {
       result.sort((a, b) => {
+        // Critical passport fields first
+        if (a.missingCriticalPassportFields.length > 0 && b.missingCriticalPassportFields.length === 0) return -1;
+        if (a.missingCriticalPassportFields.length === 0 && b.missingCriticalPassportFields.length > 0) return 1;
+        // Then renewal soon
         if (a.renewingSoon && !b.renewingSoon) return -1;
         if (!a.renewingSoon && b.renewingSoon) return 1;
+        // Then HMO expiring
+        if (a.hmoLicenceExpiringSoon && !b.hmoLicenceExpiringSoon) return -1;
+        if (!a.hmoLicenceExpiringSoon && b.hmoLicenceExpiringSoon) return 1;
         return 0;
       });
     }
@@ -121,8 +125,8 @@ export default function MissingInfoPage() {
       <AppLayout>
         <div className="space-y-6">
           <Skeleton className="h-8 w-64" />
-          <div className="grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-20" />)}
+          <div className="grid gap-4 md:grid-cols-4">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20" />)}
           </div>
           <Skeleton className="h-96" />
         </div>
@@ -138,7 +142,7 @@ export default function MissingInfoPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Missing Information (Portfolio)</h1>
             <p className="text-muted-foreground">
-              View and fix missing Finance & Insurance data across all properties
+              View and fix missing Finance, Insurance & Passport data across all properties
             </p>
           </div>
           <Button
@@ -152,7 +156,7 @@ export default function MissingInfoPage() {
         </div>
 
         {/* Summary Chips */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-amber-500/10 border-amber-500/30">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
@@ -183,6 +187,26 @@ export default function MissingInfoPage() {
             </CardContent>
           </Card>
 
+          <Card className="bg-blue-500/10 border-blue-500/30">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Passport Missing</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {stats.propertiesWithPassportMissing}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {stats.propertiesWithCriticalPassportMissing > 0 && (
+                      <span className="text-red-500">{stats.propertiesWithCriticalPassportMissing} critical</span>
+                    )}
+                    {stats.propertiesWithCriticalPassportMissing === 0 && 'properties'}
+                  </p>
+                </div>
+                <FileText className="h-8 w-8 text-blue-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-primary/10 border-primary/30">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
@@ -202,9 +226,9 @@ export default function MissingInfoPage() {
         {/* Filters */}
         <Card>
           <CardContent className="pt-4">
-            <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4 flex-wrap">
               {/* Search */}
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search address, postcode, area..."
@@ -216,7 +240,7 @@ export default function MissingInfoPage() {
 
               {/* Missing Type */}
               <Select value={missingTypeFilter} onValueChange={v => setMissingTypeFilter(v as MissingTypeFilter)}>
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Missing Type" />
                 </SelectTrigger>
@@ -224,6 +248,8 @@ export default function MissingInfoPage() {
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="finance">Finance Only</SelectItem>
                   <SelectItem value="insurance">Insurance Only</SelectItem>
+                  <SelectItem value="passport">Passport Only</SelectItem>
+                  <SelectItem value="critical">Critical Only</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -236,7 +262,8 @@ export default function MissingInfoPage() {
                 <SelectContent>
                   <SelectItem value="all">All Priorities</SelectItem>
                   <SelectItem value="most_missing">Most Missing</SelectItem>
-                  <SelectItem value="renewal_soon">Renewal Soon</SelectItem>
+                  <SelectItem value="renewal_soon">Insurance Renewal Soon</SelectItem>
+                  <SelectItem value="hmo_expiring">HMO Licence Expiring</SelectItem>
                 </SelectContent>
               </Select>
 
