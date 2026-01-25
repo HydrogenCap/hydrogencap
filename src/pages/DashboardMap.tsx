@@ -113,12 +113,12 @@ export default function DashboardMap() {
               </div>
 
               {/* City Filter */}
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <Select value={selectedCity || '__all__'} onValueChange={(v) => setSelectedCity(v === '__all__' ? '' : v)}>
                 <SelectTrigger className="w-[180px] bg-input">
                   <SelectValue placeholder="All Areas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Areas</SelectItem>
+                  <SelectItem value="__all__">All Areas</SelectItem>
                   {filterOptions.cities.map(city => (
                     <SelectItem key={city} value={city}>{city}</SelectItem>
                   ))}
@@ -126,12 +126,12 @@ export default function DashboardMap() {
               </Select>
 
               {/* Lender Filter */}
-              <Select value={selectedLender} onValueChange={setSelectedLender}>
+              <Select value={selectedLender || '__all__'} onValueChange={(v) => setSelectedLender(v === '__all__' ? '' : v)}>
                 <SelectTrigger className="w-[180px] bg-input">
                   <SelectValue placeholder="All Lenders" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Lenders</SelectItem>
+                  <SelectItem value="__all__">All Lenders</SelectItem>
                   {filterOptions.lenders.map(lender => (
                     <SelectItem key={lender} value={lender}>{lender}</SelectItem>
                   ))}
@@ -140,14 +140,14 @@ export default function DashboardMap() {
 
               {/* Renewal Days Filter */}
               <Select 
-                value={renewalDays?.toString() || ''} 
-                onValueChange={(v) => setRenewalDays(v ? Number(v) as 30 | 60 | 90 : undefined)}
+                value={renewalDays?.toString() || '__any__'} 
+                onValueChange={(v) => setRenewalDays(v === '__any__' ? undefined : Number(v) as 30 | 60 | 90)}
               >
                 <SelectTrigger className="w-[180px] bg-input">
                   <SelectValue placeholder="Renewal Soon" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any Renewal</SelectItem>
+                  <SelectItem value="__any__">Any Renewal</SelectItem>
                   <SelectItem value="30">Within 30 days</SelectItem>
                   <SelectItem value="60">Within 60 days</SelectItem>
                   <SelectItem value="90">Within 90 days</SelectItem>
