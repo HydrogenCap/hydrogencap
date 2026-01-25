@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
+import { useRecentActivity } from '@/hooks/useActivityLog';
+import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import {
   formatGBP,
   formatPercent,
@@ -544,6 +546,9 @@ function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Activity */}
+        <RecentActivityWidget />
       </div>
     </AppLayout>
   );
