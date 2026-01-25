@@ -1,0 +1,310 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, Plus, Search, Filter, ExternalLink } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCompanies, type Company, type CompanyType, type CompanyStatus } from '@/hooks/useCompanies';
+import { CreateCompanyDialog } from '@/components/companies';
+import { cn } from '@/lib/utils';
+
+const COMPANY_TYPE_OPTIONS: { value: CompanyType | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'All Types' },
+  { value: 'SPV', label: 'SPV' },
+  { value: 'HOLDCO', label: 'Holding Co' },
+  { value: 'OPCO', label: 'Operating Co' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const STATUS_OPTIONS: { value: CompanyStatus | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'All Statuses' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'DORMANT', label: 'Dormant' },
+  { value: 'SOLD', label: 'Sold' },
+  { value: 'CLOSED', label: 'Closed' },
+];
+
+const companyTypeLabels: Record<string, string> = {
+  HOLDCO: 'Holding Co',
+  SPV: 'SPV',
+  OPCO: 'Operating Co',
+  OTHER: 'Other',
+};
+
+const statusColors: Record<string, string> = {
+  ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  DORMANT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  SOLD: 'bg-muted text-muted-foreground',
+  CLOSED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+};
+
+export default function Companies() {
+  const navigate = useNavigate();
+  const { data: companies, isLoading } = useCompanies();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<CompanyType | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<CompanyStatus | 'ALL'>('ALL');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  // Filter companies
+  const filteredCompanies = companies?.filter((company) => {
+    const matchesSearch = 
+      company.legal_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      company.trading_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      company.company_number?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesType = typeFilter === 'ALL' || company.company_type === typeFilter;
+    const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
+
+    return matchesSearch && matchesType && matchesStatus;
+  }) || [];
+
+  // Group by type for summary
+  const typeCounts = companies?.reduce((acc, c) => {
+    acc[c.company_type] = (acc[c.company_type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Building2 className="h-6 w-6" />
+              Companies
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your SPVs, holding companies, and corporate structure
+            </p>
+          </div>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Company
+          </Button>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SummaryCard
+            label="Total Companies"
+            value={companies?.length || 0}
+            onClick={() => {
+              setTypeFilter('ALL');
+              setStatusFilter('ALL');
+            }}
+            active={typeFilter === 'ALL'}
+          />
+          <SummaryCard
+            label="SPVs"
+            value={typeCounts['SPV'] || 0}
+            onClick={() => setTypeFilter('SPV')}
+            active={typeFilter === 'SPV'}
+          />
+          <SummaryCard
+            label="Holding Companies"
+            value={typeCounts['HOLDCO'] || 0}
+            onClick={() => setTypeFilter('HOLDCO')}
+            active={typeFilter === 'HOLDCO'}
+          />
+          <SummaryCard
+            label="Operating Companies"
+            value={typeCounts['OPCO'] || 0}
+            onClick={() => setTypeFilter('OPCO')}
+            active={typeFilter === 'OPCO'}
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search companies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as CompanyType | 'ALL')}>
+            <SelectTrigger className="w-[180px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent>
+              {COMPANY_TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as CompanyStatus | 'ALL')}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Companies Table */}
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Company Name</TableHead>
+                <TableHead>Company Number</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Jurisdiction</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredCompanies.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    {companies?.length === 0
+                      ? 'No companies yet. Add your first company to get started.'
+                      : 'No companies match your filters.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredCompanies.map((company) => (
+                  <TableRow
+                    key={company.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/companies/${company.id}`)}
+                  >
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{company.legal_name}</p>
+                        {company.trading_name && company.trading_name !== company.legal_name && (
+                          <p className="text-xs text-muted-foreground">
+                            t/a {company.trading_name}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {company.company_number ? (
+                        <a
+                          href={`https://find-and-update.company-information.service.gov.uk/company/${company.company_number}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {company.company_number}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {companyTypeLabels[company.company_type]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn('text-xs', statusColors[company.status])}>
+                        {company.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{company.jurisdiction}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/companies/${company.id}`);
+                        }}
+                      >
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Results Count */}
+        {!isLoading && filteredCompanies.length > 0 && (
+          <p className="text-sm text-muted-foreground text-center">
+            Showing {filteredCompanies.length} of {companies?.length} companies
+          </p>
+        )}
+      </div>
+
+      <CreateCompanyDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={(companyId) => navigate(`/companies/${companyId}`)}
+      />
+    </AppLayout>
+  );
+}
+
+interface SummaryCardProps {
+  label: string;
+  value: number;
+  onClick: () => void;
+  active?: boolean;
+}
+
+function SummaryCard({ label, value, onClick, active }: SummaryCardProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'p-4 rounded-lg border text-left transition-colors',
+        active
+          ? 'border-primary bg-primary/5'
+          : 'border-border bg-card hover:border-primary/50'
+      )}
+    >
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-sm text-muted-foreground">{label}</p>
+    </button>
+  );
+}

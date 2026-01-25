@@ -1,0 +1,599 @@
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Building2,
+  ArrowLeft,
+  Edit2,
+  Trash2,
+  Plus,
+  ExternalLink,
+  Calendar,
+  MapPin,
+  Users,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  useCompany,
+  useUpdateCompany,
+  useDeleteCompany,
+  useDeleteShareholding,
+  useUpdateShareClass,
+  type CompanyType,
+  type CompanyStatus,
+  type Shareholding,
+} from '@/hooks/useCompanies';
+import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
+import { ShareholdingEditor } from '@/components/companies';
+import { useToast } from '@/hooks/use-toast';
+import { formatPercent } from '@/lib/calculations';
+import { cn } from '@/lib/utils';
+
+const companyTypeLabels: Record<string, string> = {
+  HOLDCO: 'Holding Co',
+  SPV: 'SPV',
+  OPCO: 'Operating Co',
+  OTHER: 'Other',
+};
+
+const COMPANY_TYPES: { value: CompanyType; label: string }[] = [
+  { value: 'SPV', label: 'SPV (Property Holding)' },
+  { value: 'HOLDCO', label: 'Holding Company' },
+  { value: 'OPCO', label: 'Operating Company' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const COMPANY_STATUSES: { value: CompanyStatus; label: string }[] = [
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'DORMANT', label: 'Dormant' },
+  { value: 'SOLD', label: 'Sold' },
+  { value: 'CLOSED', label: 'Closed' },
+];
+
+const statusColors: Record<string, string> = {
+  ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  DORMANT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  SOLD: 'bg-muted text-muted-foreground',
+  CLOSED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+};
+
+export default function CompanyDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const { data: company, isLoading } = useCompany(id);
+  const updateCompany = useUpdateCompany();
+  const deleteCompany = useDeleteCompany();
+  const deleteShareholding = useDeleteShareholding();
+  const updateShareClass = useUpdateShareClass();
+  const { lookupCompany, isLookingUp } = useCompaniesHouse();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    legal_name: '',
+    trading_name: '',
+    company_type: 'SPV' as CompanyType,
+    status: 'ACTIVE' as CompanyStatus,
+  });
+  const [showShareholdingEditor, setShowShareholdingEditor] = useState(false);
+  const [editingShareholding, setEditingShareholding] = useState<Shareholding | null>(null);
+  const [editingShareClassId, setEditingShareClassId] = useState<string | null>(null);
+  const [editingIssuedShares, setEditingIssuedShares] = useState<string>('');
+
+  const handleStartEdit = () => {
+    if (!company) return;
+    setEditForm({
+      legal_name: company.legal_name,
+      trading_name: company.trading_name || '',
+      company_type: company.company_type,
+      status: company.status,
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!company) return;
+    try {
+      await updateCompany.mutateAsync({
+        id: company.id,
+        legal_name: editForm.legal_name,
+        trading_name: editForm.trading_name || null,
+        company_type: editForm.company_type,
+        status: editForm.status,
+      });
+      toast({ title: 'Company updated' });
+      setIsEditing(false);
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update company', variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!company) return;
+    try {
+      await deleteCompany.mutateAsync(company.id);
+      toast({ title: 'Company deleted' });
+      navigate('/companies');
+    } catch {
+      toast({ title: 'Error', description: 'Failed to delete company', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteShareholding = async (shareholdingId: string) => {
+    if (!company) return;
+    try {
+      await deleteShareholding.mutateAsync({ id: shareholdingId, companyId: company.id });
+      toast({ title: 'Shareholder removed' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to remove shareholder', variant: 'destructive' });
+    }
+  };
+
+  const handleRefreshFromCH = async () => {
+    if (!company?.company_number) return;
+    try {
+      const result = await lookupCompany(company.company_number);
+      if (result) {
+        await updateCompany.mutateAsync({
+          id: company.id,
+          ch_registered_address: result.company.registered_address,
+          ch_incorporation_date: result.company.date_of_creation,
+          ch_last_synced_at: new Date().toISOString(),
+        });
+        toast({ title: 'Synced from Companies House' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to sync from Companies House', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdateIssuedShares = async () => {
+    if (!editingShareClassId) return;
+    const shares = parseInt(editingIssuedShares, 10);
+    if (isNaN(shares) || shares <= 0) {
+      toast({ title: 'Error', description: 'Issued shares must be a positive number', variant: 'destructive' });
+      return;
+    }
+    try {
+      await updateShareClass.mutateAsync({
+        id: editingShareClassId,
+        issued_shares: shares,
+      });
+      toast({ title: 'Share class updated' });
+      setEditingShareClassId(null);
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update share class', variant: 'destructive' });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!company) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Company not found</h2>
+          <Button onClick={() => navigate('/companies')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Companies
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/companies')}
+              className="mb-2 -ml-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Companies
+            </Button>
+            <div className="flex items-center gap-3">
+              <Building2 className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold">{company.legal_name}</h1>
+                {company.trading_name && company.trading_name !== company.legal_name && (
+                  <p className="text-muted-foreground">Trading as: {company.trading_name}</p>
+                )}
+              </div>
+              <Badge variant="outline" className="ml-2">
+                {companyTypeLabels[company.company_type]}
+              </Badge>
+              <Badge className={cn('text-xs', statusColors[company.status])}>
+                {company.status}
+              </Badge>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleStartEdit}>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Company</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {company.legal_name}? This will also delete all share classes and shareholding records. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left Column - Company Details */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Company Details
+                  {company.company_number && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRefreshFromCH}
+                      disabled={isLookingUp}
+                    >
+                      <RefreshCw className={cn('h-4 w-4 mr-1', isLookingUp && 'animate-spin')} />
+                      Sync CH
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {company.company_number && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Company Number</p>
+                    <a
+                      href={`https://find-and-update.company-information.service.gov.uk/company/${company.company_number}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-primary hover:underline font-medium"
+                    >
+                      {company.company_number}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
+
+                {company.ch_incorporation_date && (
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Incorporated</p>
+                      <p className="font-medium">
+                        {new Date(company.ch_incorporation_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {company.ch_registered_address && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Registered Address</p>
+                      <p className="text-sm">{company.ch_registered_address}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-sm text-muted-foreground">Jurisdiction</p>
+                  <p className="font-medium">{company.jurisdiction}</p>
+                </div>
+
+                {company.ch_last_synced_at && (
+                  <p className="text-xs text-muted-foreground">
+                    Last synced: {new Date(company.ch_last_synced_at).toLocaleString()}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Shareholdings */}
+          <div className="lg:col-span-2 space-y-6">
+            {company.share_classes.map((shareClass) => {
+              const holdings = company.shareholdings.filter(
+                (sh) => sh.share_class_id === shareClass.id
+              );
+              const totalHeld = holdings.reduce((sum, h) => sum + h.shares_held, 0);
+              const percentAllocated = (totalHeld / shareClass.issued_shares) * 100;
+              const isEditingThisClass = editingShareClassId === shareClass.id;
+
+              return (
+                <Card key={shareClass.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        {shareClass.name} Shares
+                        {shareClass.is_primary && (
+                          <Badge variant="secondary" className="text-xs">Primary</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isEditingThisClass ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={editingIssuedShares}
+                              onChange={(e) => setEditingIssuedShares(e.target.value)}
+                              className="w-24 h-8"
+                              min="1"
+                            />
+                            <Button size="sm" onClick={handleUpdateIssuedShares}>
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingShareClassId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingShareClassId(shareClass.id);
+                              setEditingIssuedShares(String(shareClass.issued_shares));
+                            }}
+                            className="text-sm text-muted-foreground hover:text-foreground"
+                          >
+                            {shareClass.issued_shares.toLocaleString()} issued
+                          </button>
+                        )}
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {holdings.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-6">
+                        No shareholders recorded for this share class
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {percentAllocated !== 100 && (
+                          <div className="flex items-center gap-2 text-sm mb-4 p-2 rounded bg-muted">
+                            <AlertCircle className="h-4 w-4 text-warning" />
+                            <span>
+                              {formatPercent(percentAllocated)} allocated
+                              {percentAllocated < 100 && ` (${formatPercent(100 - percentAllocated)} unallocated)`}
+                            </span>
+                          </div>
+                        )}
+
+                        {holdings.map((holding) => {
+                          const percent = (holding.shares_held / shareClass.issued_shares) * 100;
+                          return (
+                            <div
+                              key={holding.id}
+                              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 group"
+                            >
+                              <div className="flex items-center gap-3">
+                                {holding.shareholder_party?.party_type === 'INDIVIDUAL' ? (
+                                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-sm font-medium text-primary">
+                                      {holding.shareholder_party.display_name.charAt(0)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                                )}
+                                <div>
+                                  <p className="font-medium">
+                                    {holding.shareholder_party?.display_name}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{holding.shareholder_party?.party_type}</span>
+                                    {holding.shareholder_party?.company_number && (
+                                      <>
+                                        <span>•</span>
+                                        <span>{holding.shareholder_party.company_number}</span>
+                                      </>
+                                    )}
+                                    {holding.ownership_source !== 'MANUAL' && (
+                                      <>
+                                        <span>•</span>
+                                        <Badge variant="outline" className="text-xs">
+                                          {holding.ownership_source}
+                                        </Badge>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <p className="font-bold">{formatPercent(percent)}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {holding.shares_held.toLocaleString()} shares
+                                  </p>
+                                </div>
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => {
+                                      setEditingShareholding(holding);
+                                      setShowShareholdingEditor(true);
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive"
+                                    onClick={() => handleDeleteShareholding(holding.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      className="w-full mt-4"
+                      onClick={() => {
+                        setEditingShareholding(null);
+                        setShowShareholdingEditor(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Shareholder
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Dialog */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Edit Company</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Legal Name</Label>
+                <Input
+                  value={editForm.legal_name}
+                  onChange={(e) => setEditForm({ ...editForm, legal_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Trading Name</Label>
+                <Input
+                  value={editForm.trading_name}
+                  onChange={(e) => setEditForm({ ...editForm, trading_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Company Type</Label>
+                <Select
+                  value={editForm.company_type}
+                  onValueChange={(v) => setEditForm({ ...editForm, company_type: v as CompanyType })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPANY_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={editForm.status}
+                  onValueChange={(v) => setEditForm({ ...editForm, status: v as CompanyStatus })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COMPANY_STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={handleSaveEdit} disabled={updateCompany.isPending}>
+                  {updateCompany.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Shareholding Editor */}
+      <ShareholdingEditor
+        companyId={company.id}
+        shareClasses={company.share_classes}
+        open={showShareholdingEditor}
+        onOpenChange={setShowShareholdingEditor}
+        editingShareholding={editingShareholding}
+      />
+    </AppLayout>
+  );
+}

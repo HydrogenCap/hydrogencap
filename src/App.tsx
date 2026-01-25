@@ -16,6 +16,8 @@ import Properties from "./pages/Properties";
 import PropertyNew from "./pages/PropertyNew";
 import PropertyEdit from "./pages/PropertyEdit";
 import PropertyDetail from "./pages/PropertyDetail";
+import Companies from "./pages/Companies";
+import CompanyDetail from "./pages/CompanyDetail";
 import Inbox from "./pages/Inbox";
 import Import from "./pages/Import";
 import ImportPassport from "./pages/ImportPassport";
@@ -88,6 +90,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PropertyDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/companies"
+              element={
+                <ProtectedRoute>
+                  <Companies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/companies/:id"
+              element={
+                <ProtectedRoute>
+                  <CompanyDetail />
                 </ProtectedRoute>
               }
             />
