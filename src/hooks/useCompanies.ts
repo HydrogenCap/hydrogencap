@@ -42,6 +42,7 @@ export interface ShareClass {
   is_primary: boolean;
   issued_shares: number;
   nominal_value: number | null;
+  shares_confirmed: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -328,6 +329,27 @@ export function useUpdateShareClass() {
 
       if (error) throw error;
       return data as ShareClass;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['companies', data.company_id] });
+    },
+  });
+}
+
+export function useConfirmShareClass() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
+      const { data, error } = await supabase
+        .from('share_classes')
+        .update({ shares_confirmed: true })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { ...data, company_id: companyId } as ShareClass;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['companies', data.company_id] });

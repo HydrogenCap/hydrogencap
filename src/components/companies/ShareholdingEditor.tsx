@@ -33,6 +33,7 @@ interface ShareholdingEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingShareholding?: Shareholding | null;
+  preselectedShareClassId?: string | null;
 }
 
 const PARTY_TYPES: { value: PartyType; label: string; icon: React.ReactNode }[] = [
@@ -47,6 +48,7 @@ export function ShareholdingEditor({
   open,
   onOpenChange,
   editingShareholding,
+  preselectedShareClassId,
 }: ShareholdingEditorProps) {
   const { toast } = useToast();
   const { data: parties } = useParties();
@@ -74,7 +76,8 @@ export function ShareholdingEditor({
         setNotes(editingShareholding.notes || '');
       } else {
         setSelectedPartyId('');
-        setSelectedShareClassId(shareClasses[0]?.id || '');
+        // Use preselected share class if provided, otherwise default to first
+        setSelectedShareClassId(preselectedShareClassId || shareClasses[0]?.id || '');
         setSharesHeld('');
         setNotes('');
       }
@@ -82,7 +85,7 @@ export function ShareholdingEditor({
       setNewPartyName('');
       setNewPartyType('INDIVIDUAL');
     }
-  }, [open, editingShareholding, shareClasses]);
+  }, [open, editingShareholding, shareClasses, preselectedShareClassId]);
 
   const handleCreateParty = async () => {
     if (!newPartyName.trim()) {

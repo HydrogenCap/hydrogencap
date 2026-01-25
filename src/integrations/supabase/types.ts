@@ -1625,6 +1625,7 @@ export type Database = {
           issued_shares: number
           name: string
           nominal_value: number | null
+          shares_confirmed: boolean | null
           updated_at: string
         }
         Insert: {
@@ -1636,6 +1637,7 @@ export type Database = {
           issued_shares?: number
           name?: string
           nominal_value?: number | null
+          shares_confirmed?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -1647,6 +1649,7 @@ export type Database = {
           issued_shares?: number
           name?: string
           nominal_value?: number | null
+          shares_confirmed?: boolean | null
           updated_at?: string
         }
         Relationships: [
