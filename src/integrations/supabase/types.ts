@@ -979,6 +979,62 @@ export type Database = {
           },
         ]
       }
+      ownership_links: {
+        Row: {
+          created_at: string
+          effective_from: string | null
+          effective_to: string | null
+          id: string
+          notes: string | null
+          owner_party_id: string
+          ownership_type: string
+          percent: number
+          shares: number | null
+          source: string
+          subject_id: string
+          subject_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          owner_party_id: string
+          ownership_type?: string
+          percent: number
+          shares?: number | null
+          source?: string
+          subject_id: string
+          subject_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string | null
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          owner_party_id?: string
+          ownership_type?: string
+          percent?: number
+          shares?: number | null
+          source?: string
+          subject_id?: string
+          subject_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ownership_links_owner_party_id_fkey"
+            columns: ["owner_party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parties: {
         Row: {
           company_number: string | null
