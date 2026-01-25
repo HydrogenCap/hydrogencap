@@ -328,16 +328,25 @@ function DashboardPage() {
     if (!properties?.length) return [];
 
     const lenderMap: Record<string, number> = {};
+    const canonicalNames: Record<string, string> = {}; // Store original casing
+    
     properties.forEach(property => {
       const loan = property.loans?.[0];
       if (loan?.lender && loan.current_mortgage_balance_gbp) {
-        const lender = loan.lender;
-        lenderMap[lender] = (lenderMap[lender] || 0) + Number(loan.current_mortgage_balance_gbp);
+        // Normalize lender name for grouping (case-insensitive, trim whitespace)
+        const normalizedKey = loan.lender.trim().toLowerCase().replace(/\s+/g, ' ');
+        
+        // Keep the first version of the name we encounter as the display name
+        if (!canonicalNames[normalizedKey]) {
+          canonicalNames[normalizedKey] = loan.lender.trim();
+        }
+        
+        lenderMap[normalizedKey] = (lenderMap[normalizedKey] || 0) + Number(loan.current_mortgage_balance_gbp);
       }
     });
 
     return Object.entries(lenderMap)
-      .map(([name, value]) => ({ name, value }))
+      .map(([key, value]) => ({ name: canonicalNames[key], value }))
       .sort((a, b) => b.value - a.value);
   }, [properties]);
 
@@ -720,7 +729,10 @@ function DashboardPage() {
                           backgroundColor: 'hsl(222 47% 8%)',
                           border: '1px solid hsl(220 25% 16%)',
                           borderRadius: '0.5rem',
+                          color: 'hsl(210 40% 98%)',
                         }}
+                        labelStyle={{ color: 'hsl(210 40% 98%)' }}
+                        itemStyle={{ color: 'hsl(210 40% 98%)' }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
