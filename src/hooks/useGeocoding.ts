@@ -156,7 +156,7 @@ export function useGeocoding() {
   };
 }
 
-// Hook for batch geocoding with progress tracking
+// Hook for batch geocoding with progress tracking and toast notifications
 export function useBackfillGeocoding() {
   const { geocodeProperty } = useGeocoding();
   const queryClient = useQueryClient();
@@ -166,6 +166,9 @@ export function useBackfillGeocoding() {
   const startBackfill = useCallback(async (batchSize: number = 10) => {
     setIsRunning(true);
     setProgress({ total: 0, processed: 0, succeeded: 0, failed: 0, failures: [] });
+
+    // Import toast dynamically to avoid hook rules violation
+    const { toast } = await import('@/hooks/use-toast');
 
     try {
       // Fetch all properties needing geocoding
@@ -178,10 +181,19 @@ export function useBackfillGeocoding() {
       if (!properties?.length) {
         setProgress(p => p ? { ...p, total: 0 } : null);
         setIsRunning(false);
+        toast({
+          title: 'No properties to geocode',
+          description: 'All properties already have location data',
+        });
         return;
       }
 
       setProgress(p => p ? { ...p, total: properties.length } : null);
+
+      toast({
+        title: 'Geocoding started',
+        description: `Processing ${properties.length} properties...`,
+      });
 
       // Process in batches
       for (let i = 0; i < properties.length; i += batchSize) {
@@ -217,8 +229,36 @@ export function useBackfillGeocoding() {
 
       // Refresh property list after backfill
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+
+      // Get final progress for toast
+      const finalProgress = await new Promise<BackfillProgress | null>(resolve => {
+        setProgress(p => {
+          resolve(p);
+          return p;
+        });
+      });
+
+      if (finalProgress) {
+        if (finalProgress.failed === 0) {
+          toast({
+            title: 'Geocoding complete',
+            description: `Successfully geocoded ${finalProgress.succeeded} properties`,
+          });
+        } else {
+          toast({
+            title: 'Geocoding complete with errors',
+            description: `${finalProgress.succeeded} succeeded, ${finalProgress.failed} failed`,
+            variant: 'destructive',
+          });
+        }
+      }
     } catch (err) {
       console.error('Backfill error:', err);
+      toast({
+        title: 'Geocoding failed',
+        description: 'An error occurred while geocoding properties',
+        variant: 'destructive',
+      });
     } finally {
       setIsRunning(false);
     }

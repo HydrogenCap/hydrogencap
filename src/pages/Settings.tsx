@@ -7,13 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin } from 'lucide-react';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
+import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
 import { ImportStepper } from '@/components/import/ImportStepper';
+import { GeocodePrompt } from '@/components/import/GeocodePrompt';
 import { useBatchImport } from '@/hooks/useBatchImport';
 import { useProperties } from '@/hooks/useProperties';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
@@ -263,6 +265,10 @@ export default function Settings() {
               <FileSpreadsheet className="h-4 w-4" />
               Import Passports
             </TabsTrigger>
+            <TabsTrigger value="locations" className="gap-2">
+              <MapPin className="h-4 w-4" />
+              Locations
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6 max-w-2xl">
@@ -405,6 +411,15 @@ export default function Settings() {
                         </p>
                       )}
                     </div>
+                    
+                    {/* Geocode Prompt */}
+                    <div className="pt-4">
+                      <GeocodePrompt 
+                        importedCount={propImportResult.success} 
+                        onComplete={() => {}}
+                      />
+                    </div>
+                    
                     <Button onClick={() => navigate('/properties')} className="mt-4">
                       View Properties
                     </Button>
@@ -632,6 +647,11 @@ export default function Settings() {
                 )}
               </div>
             )}
+          </TabsContent>
+
+          {/* Locations Tab */}
+          <TabsContent value="locations" className="space-y-6">
+            <LocationSettingsTab />
           </TabsContent>
         </Tabs>
       </div>
