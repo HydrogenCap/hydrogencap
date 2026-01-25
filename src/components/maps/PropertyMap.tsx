@@ -4,12 +4,11 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
-import { ExternalLink, FileWarning, TrendingDown, Calendar } from 'lucide-react';
+import { ExternalLink, FileWarning, TrendingDown, Calendar, Bed, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { PropertyWithFinancials } from '@/hooks/useProperties';
-import { formatGBP, getExpiryStatus, daysUntil } from '@/lib/calculations';
+import { formatGBP, formatPercent, getExpiryStatus, daysUntil, calculateLTV, calculateMonthlyCashflowAfterDebt, getEffectiveCosts } from '@/lib/calculations';
 
 // Fix Leaflet default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -252,72 +251,150 @@ export function PropertyMap({
                 icon={icon}
               >
                 <Popup className="property-popup">
-                  <Card className="border-0 shadow-none bg-transparent p-0 min-w-[280px]">
-                    <div className="space-y-3">
-                      {/* Address */}
+                  {/* High-contrast card with solid background */}
+                  <div 
+                    className="min-w-[300px] rounded-lg shadow-xl border"
+                    style={{ 
+                      backgroundColor: '#1a1f2e',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <div className="p-4 space-y-3">
+                      {/* Address - Bold and readable */}
                       <div>
-                        <h3 className="font-semibold text-foreground line-clamp-2">
+                        <h3 
+                          className="font-bold text-base leading-tight line-clamp-2"
+                          style={{ color: '#f9fafb' }}
+                        >
                           {property.address_line}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {property.postcode}
+                        <p 
+                          className="text-sm mt-0.5"
+                          style={{ color: '#9ca3af' }}
+                        >
+                          {[property.area_name, property.postcode].filter(Boolean).join(' • ')}
                         </p>
                       </div>
 
-                      {/* Quick Stats */}
-                      <div className="flex gap-4 text-sm">
+                      {/* Key Stats Grid */}
+                      <div 
+                        className="grid grid-cols-2 gap-2 py-2 px-3 rounded-md"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                      >
+                        {/* Beds */}
+                        {property.beds !== null && property.beds !== undefined && (
+                          <div className="flex items-center gap-1.5">
+                            <Bed className="h-3.5 w-3.5" style={{ color: '#6b7280' }} />
+                            <span className="text-sm" style={{ color: '#d1d5db' }}>
+                              <span className="font-semibold" style={{ color: '#f9fafb' }}>{property.beds}</span> beds
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Value */}
                         {property.current_value_gbp && (
                           <div>
-                            <span className="text-muted-foreground">Value:</span>{' '}
-                            <span className="font-medium">{formatGBP(Number(property.current_value_gbp))}</span>
+                            <span className="text-xs" style={{ color: '#6b7280' }}>Value</span>
+                            <p className="text-sm font-semibold" style={{ color: '#f9fafb' }}>
+                              {formatGBP(Number(property.current_value_gbp))}
+                            </p>
                           </div>
                         )}
-                        {income?.annual_rent_gbp && (
-                          <div>
-                            <span className="text-muted-foreground">Rent:</span>{' '}
-                            <span className="font-medium">{formatGBP(Number(income.annual_rent_gbp))}/yr</span>
-                          </div>
-                        )}
+                        
+                        {/* LTV */}
+                        {(() => {
+                          const loan = property.loans?.[0];
+                          const ltv = calculateLTV(
+                            loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null,
+                            property.current_value_gbp ? Number(property.current_value_gbp) : null
+                          );
+                          if (ltv === null) return null;
+                          return (
+                            <div>
+                              <span className="text-xs" style={{ color: '#6b7280' }}>LTV</span>
+                              <p className="text-sm font-semibold" style={{ color: ltv > 75 ? '#f87171' : '#f9fafb' }}>
+                                {formatPercent(ltv, 0)}
+                              </p>
+                            </div>
+                          );
+                        })()}
+                        
+                        {/* Net Cashflow */}
+                        {(() => {
+                          const loan = property.loans?.[0];
+                          const costs = property.costs?.find(c => c.year === currentYear);
+                          const effectiveCosts = getEffectiveCosts(
+                            income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null,
+                            property.current_value_gbp ? Number(property.current_value_gbp) : null,
+                            costs
+                          );
+                          const monthlyCashflow = calculateMonthlyCashflowAfterDebt(
+                            income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null,
+                            effectiveCosts.total,
+                            loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null
+                          );
+                          if (monthlyCashflow === null) return null;
+                          return (
+                            <div>
+                              <span className="text-xs" style={{ color: '#6b7280' }}>Net CF/mo</span>
+                              <p 
+                                className="text-sm font-semibold" 
+                                style={{ color: monthlyCashflow < 0 ? '#f87171' : '#4ade80' }}
+                              >
+                                {formatGBP(monthlyCashflow)}
+                              </p>
+                            </div>
+                          );
+                        })()}
                       </div>
 
-                      {/* Flags */}
-                      <div className="flex flex-wrap gap-1">
-                        {flags.hasMissingFinance && (
-                          <Badge variant="outline" className="text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30 text-xs">
-                            <FileWarning className="h-3 w-3 mr-1" />
-                            Missing Finance
-                          </Badge>
-                        )}
-                        {flags.hasRenewalSoon && (
-                          <Badge variant="outline" className="text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30 text-xs">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Renewal in {flags.renewalDays}d
-                          </Badge>
-                        )}
-                        {flags.hasNegativeCashflow && (
-                          <Badge variant="outline" className="text-destructive border-destructive/30 text-xs">
-                            <TrendingDown className="h-3 w-3 mr-1" />
-                            Negative CF
-                          </Badge>
-                        )}
-                      </div>
+                      {/* Status Flags */}
+                      {(flags.hasMissingFinance || flags.hasRenewalSoon || flags.hasNegativeCashflow) && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {flags.hasMissingFinance && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                              style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' }}
+                            >
+                              <FileWarning className="h-3 w-3" />
+                              Missing Finance
+                            </span>
+                          )}
+                          {flags.hasRenewalSoon && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                              style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' }}
+                            >
+                              <Calendar className="h-3 w-3" />
+                              Renewal {flags.renewalDays}d
+                            </span>
+                          )}
+                          {flags.hasNegativeCashflow && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                              style={{ backgroundColor: 'rgba(248, 113, 113, 0.15)', color: '#f87171' }}
+                            >
+                              <TrendingDown className="h-3 w-3" />
+                              Negative CF
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-                      {/* Actions */}
-                      <div className="flex gap-2 pt-2 border-t border-border">
-                        <Button asChild size="sm" className="flex-1">
-                          <Link to={`/properties/${property.id}`}>
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            View
-                          </Link>
-                        </Button>
-                        <Button asChild variant="outline" size="sm" className="flex-1">
-                          <Link to="/missing-info">
-                            Missing Info
-                          </Link>
-                        </Button>
-                      </div>
+                      {/* CTA Button */}
+                      <Link 
+                        to={`/properties/${property.id}`}
+                        className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-md text-sm font-semibold transition-colors"
+                        style={{ 
+                          backgroundColor: 'hsl(174, 72%, 45%)',
+                          color: '#111827',
+                        }}
+                      >
+                        <Home className="h-4 w-4" />
+                        View Property
+                      </Link>
                     </div>
-                  </Card>
+                  </div>
                 </Popup>
               </Marker>
             );
