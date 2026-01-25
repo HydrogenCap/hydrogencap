@@ -8,3 +8,6 @@ export { LegalOwnerCard } from './LegalOwnerCard';
 export { BeneficialOwnersCard } from './BeneficialOwnersCard';
 export { BeneficialOwnerEditor } from './BeneficialOwnerEditor';
 export { OwnershipSection } from './OwnershipSection';
+export { UnifiedOwnershipCard } from './UnifiedOwnershipCard';
+export { UnifiedOwnershipEditor } from './UnifiedOwnershipEditor';
+export { CompanyOwnershipSection } from './CompanyOwnershipSection';

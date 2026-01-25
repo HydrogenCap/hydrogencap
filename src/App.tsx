@@ -18,6 +18,7 @@ import PropertyEdit from "./pages/PropertyEdit";
 import PropertyDetail from "./pages/PropertyDetail";
 import Companies from "./pages/Companies";
 import CompanyDetail from "./pages/CompanyDetail";
+import Ownership from "./pages/Ownership";
 import Inbox from "./pages/Inbox";
 import Import from "./pages/Import";
 import ImportPassport from "./pages/ImportPassport";
@@ -106,6 +107,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CompanyDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ownership"
+              element={
+                <ProtectedRoute>
+                  <Ownership />
                 </ProtectedRoute>
               }
             />
