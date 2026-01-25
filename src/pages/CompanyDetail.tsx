@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -105,6 +105,49 @@ export default function CompanyDetail() {
   const [editingShareholding, setEditingShareholding] = useState<Shareholding | null>(null);
   const [editingShareClassId, setEditingShareClassId] = useState<string | null>(null);
   const [editingIssuedShares, setEditingIssuedShares] = useState<string>('');
+  const hasAutoSynced = useRef(false);
+
+  // Auto-sync from Companies House if company number exists and hasn't synced in 24 hours
+  const performAutoSync = useCallback(async () => {
+    if (!company?.company_number || isLookingUp || hasAutoSynced.current) return;
+    
+    // Check if we should auto-sync (not synced or synced more than 24 hours ago)
+    const lastSynced = company.ch_last_synced_at ? new Date(company.ch_last_synced_at) : null;
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    
+    const shouldAutoSync = !lastSynced || lastSynced < twentyFourHoursAgo;
+    
+    if (shouldAutoSync) {
+      hasAutoSynced.current = true;
+      try {
+        const result = await lookupCompany(company.company_number);
+        if (result) {
+          await updateCompany.mutateAsync({
+            id: company.id,
+            ch_registered_address: result.company.registered_address,
+            ch_incorporation_date: result.company.date_of_creation,
+            ch_last_synced_at: new Date().toISOString(),
+            accounts_due_date: result.compliance.accounts_due_date,
+            accounts_period_end: result.compliance.accounts_period_end,
+            accounts_last_filed_date: result.compliance.accounts_last_filed_date,
+            confirmation_statement_due_date: result.compliance.confirmation_statement_due_date,
+            confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
+            confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
+          });
+          toast({ title: 'Auto-synced from Companies House', description: 'Compliance dates updated automatically' });
+        }
+      } catch (err) {
+        console.error('Auto-sync failed:', err);
+        // Silent fail for auto-sync - don't show error toast
+      }
+    }
+  }, [company, isLookingUp, lookupCompany, updateCompany, toast]);
+
+  useEffect(() => {
+    if (company && !isLoading) {
+      performAutoSync();
+    }
+  }, [company, isLoading, performAutoSync]);
 
   const handleStartEdit = () => {
     if (!company) return;
