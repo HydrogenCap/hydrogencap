@@ -20,9 +20,14 @@ import { extractPostcodeArea } from '@/lib/calculations';
 import { calculateMortgagePaymentDetailed, formatPaymentGBP } from '@/lib/mortgageCalculations';
 import { AutoPopulateButton } from '@/components/property/AutoPopulateButton';
 import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
+import { AddressAutocomplete, AddressData } from '@/components/maps/AddressAutocomplete';
+import { GeocodeStatusBadge } from '@/components/geocoding';
+import { isSuspiciousGeocodeChange } from '@/hooks/useGeocoding';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
+  address_line2: z.string().max(255).optional(),
+  town_city: z.string().max(100).optional(),
   area_name: z.string().max(100).optional(),
   postcode: z.string().max(10).optional(),
   property_type: z.string().max(50).optional(),
@@ -52,6 +57,16 @@ const propertySchema = z.object({
   fixed_rate_expires: z.string().optional(),
   // Income
   annual_rent_gbp: z.coerce.number().min(0).optional(),
+  // Geocoding fields (hidden, auto-populated)
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
+  place_id: z.string().optional(),
+  formatted_address: z.string().optional(),
+  county: z.string().max(100).optional(),
+  country: z.string().max(100).optional(),
+  geocode_status: z.enum(['NOT_STARTED', 'SUCCESS', 'PARTIAL', 'FAILED']).optional(),
+  geocode_source: z.enum(['PLACES', 'GEOCODE']).optional(),
+  geocode_confidence: z.string().optional(),
 });
 
 type PropertyFormData = z.infer<typeof propertySchema>;
@@ -66,6 +81,8 @@ function PropertyEditPage() {
   const createLoan = useCreateLoan();
   const upsertIncome = useUpsertIncome();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [geocodeData, setGeocodeData] = useState<AddressData | null>(null);
+  const [suspiciousChange, setSuspiciousChange] = useState(false);
 
   // Debug logging
   console.log('PropertyEditPage mounted', { id, isLoading, error: error?.message, hasProperty: !!property });
@@ -75,6 +92,7 @@ function PropertyEditPage() {
     defaultValues: {
       address_line: '',
       ownership_percent: 100,
+      country: 'United Kingdom',
     },
   });
 
@@ -87,6 +105,10 @@ function PropertyEditPage() {
 
       form.reset({
         address_line: property.address_line || '',
+        address_line2: property.address_line2 || '',
+        town_city: property.town_city || '',
+        county: property.county || '',
+        country: property.country || 'United Kingdom',
         area_name: property.area_name || '',
         postcode: property.postcode || '',
         property_type: property.property_type || '',
@@ -104,6 +126,14 @@ function PropertyEditPage() {
         tenure: (property.tenure as PropertyFormData['tenure']) || '',
         lease_years_remaining: property.lease_years_remaining ?? undefined,
         uprn: property.uprn || '',
+        // Geocode fields
+        latitude: property.latitude ?? undefined,
+        longitude: property.longitude ?? undefined,
+        place_id: property.place_id || '',
+        formatted_address: property.formatted_address || '',
+        geocode_status: (property.geocode_status as PropertyFormData['geocode_status']) || 'NOT_STARTED',
+        geocode_source: (property.geocode_source as PropertyFormData['geocode_source']) || undefined,
+        geocode_confidence: property.geocode_confidence || '',
         // Loan fields
         lender: loan?.lender || '',
         interest_rate_percent: loan?.interest_rate_percent ?? undefined,
@@ -131,6 +161,7 @@ function PropertyEditPage() {
   // Watch postcode and address for auto-populate
   const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
   const watchedAddress = useWatch({ control: form.control, name: 'address_line' });
+  const watchedGeocodeStatus = useWatch({ control: form.control, name: 'geocode_status' });
 
   // Calculate mortgage payment
   const mortgageCalc = useMemo(() => {
@@ -145,7 +176,40 @@ function PropertyEditPage() {
     });
   }, [watchedBalance, watchedRate, watchedCapitalOrInterest, watchedTermYears, watchedPaymentOverride]);
 
-  // Handle auto-populate data
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (data: AddressData) => {
+    // Check for suspicious geocode change (>25 miles from existing location)
+    const oldLat = property?.latitude;
+    const oldLng = property?.longitude;
+    if (oldLat && oldLng && isSuspiciousGeocodeChange(oldLat, oldLng, data.latitude, data.longitude)) {
+      setSuspiciousChange(true);
+      toast({
+        title: 'Location Change Warning',
+        description: 'The new address is more than 25 miles from the current location. Please verify this is correct.',
+        variant: 'destructive',
+      });
+    } else {
+      setSuspiciousChange(false);
+    }
+
+    setGeocodeData(data);
+    form.setValue('address_line', data.address_line);
+    form.setValue('address_line2', data.address_line2 || '');
+    form.setValue('postcode', data.postcode || '');
+    form.setValue('town_city', data.town_city || '');
+    form.setValue('county', data.county || '');
+    form.setValue('area_name', data.county || ''); // Also set area_name for compatibility
+    form.setValue('country', data.country);
+    form.setValue('latitude', data.latitude);
+    form.setValue('longitude', data.longitude);
+    form.setValue('place_id', data.place_id);
+    form.setValue('formatted_address', data.formatted_address);
+    form.setValue('geocode_confidence', data.geocode_confidence);
+    form.setValue('geocode_source', data.geocode_source);
+    form.setValue('geocode_status', data.geocode_confidence === 'exact' ? 'SUCCESS' : 'PARTIAL');
+  };
+
+  // Handle auto-populate data (EPC lookup)
   const handleAutoPopulate = (data: PropertyLookupResult) => {
     if (data.epc) {
       if (data.epc.epcRating) {
@@ -171,7 +235,8 @@ function PropertyEditPage() {
       }
     }
 
-    if (data.location) {
+    // Don't override geocode data from address autocomplete with EPC location
+    if (data.location && !geocodeData) {
       if (data.location.county && !form.getValues('area_name')) {
         form.setValue('area_name', data.location.county);
       }
@@ -188,14 +253,26 @@ function PropertyEditPage() {
       const isListed = listedValue !== '' && listedValue !== 'Not listed';
       const epcRequired = !isListed;
       
-      // Update property
+      // Update property with geocoding data
       await updateProperty.mutateAsync({
         id,
         previousValue: property?.current_value_gbp ?? null,
         address_line: data.address_line,
+        address_line2: data.address_line2 || null,
+        town_city: data.town_city || null,
+        county: data.county || null,
+        country: data.country || 'United Kingdom',
         area_name: data.area_name || null,
         postcode: data.postcode || null,
         postcode_area: data.postcode ? extractPostcodeArea(data.postcode) : null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        place_id: data.place_id || null,
+        formatted_address: data.formatted_address || null,
+        geocode_status: data.geocode_status || property?.geocode_status || 'NOT_STARTED',
+        geocode_source: data.geocode_source || property?.geocode_source || null,
+        geocode_confidence: data.geocode_confidence || property?.geocode_confidence || null,
+        geocoded_at: geocodeData ? new Date().toISOString() : property?.geocoded_at || null,
         property_type: data.property_type || null,
         beds: data.beds || null,
         bathrooms: data.bathrooms || null,
@@ -344,10 +421,33 @@ function PropertyEditPage() {
                   name="address_line"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Address *</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Address *</FormLabel>
+                        <div className="flex items-center gap-2">
+                          {suspiciousChange && (
+                            <Badge variant="destructive" className="text-xs">
+                              Large location change
+                            </Badge>
+                          )}
+                          {watchedGeocodeStatus && watchedGeocodeStatus !== 'NOT_STARTED' && (
+                            <GeocodeStatusBadge 
+                              status={watchedGeocodeStatus} 
+                              confidence={form.getValues('geocode_confidence')}
+                            />
+                          )}
+                        </div>
+                      </div>
                       <FormControl>
-                        <Input {...field} placeholder="123 High Street" className="bg-input" />
+                        <AddressAutocomplete
+                          value={field.value}
+                          onChange={field.onChange}
+                          onAddressSelect={handleAddressSelect}
+                          placeholder="Start typing an address..."
+                        />
                       </FormControl>
+                      <FormDescription>
+                        Select from suggestions for automatic location mapping
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
