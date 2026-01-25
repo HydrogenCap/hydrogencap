@@ -13,6 +13,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
 import PropertyNew from "./pages/PropertyNew";
+import PropertyEdit from "./pages/PropertyEdit";
 import PropertyDetail from "./pages/PropertyDetail";
 import Inbox from "./pages/Inbox";
 import Import from "./pages/Import";
@@ -57,6 +58,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PropertyNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <PropertyEdit />
                 </ProtectedRoute>
               }
             />
