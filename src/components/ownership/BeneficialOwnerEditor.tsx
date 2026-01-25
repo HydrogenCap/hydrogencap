@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ import {
   type BeneficialOwner,
 } from '@/hooks/useBeneficialOwnership';
 import { useCompanies } from '@/hooks/useCompanies';
-import { useParties } from '@/hooks/useParties';
+import { useParties, useCreateParty } from '@/hooks/useParties';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
@@ -74,10 +74,13 @@ export function BeneficialOwnerEditor({
   const { toast } = useToast();
   const addOwner = useAddBeneficialOwner();
   const updateOwner = useUpdateBeneficialOwner();
+  const createParty = useCreateParty();
   const { data: companies = [] } = useCompanies();
   const { data: parties = [] } = useParties();
   
   const [ownerType, setOwnerType] = useState<'COMPANY' | 'PERSON'>('COMPANY');
+  const [showNewPersonInput, setShowNewPersonInput] = useState(false);
+  const [newPersonName, setNewPersonName] = useState('');
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -127,6 +130,29 @@ export function BeneficialOwnerEditor({
     form.setValue('owner_type', type);
     form.setValue('company_id', null);
     form.setValue('party_id', null);
+    setShowNewPersonInput(false);
+    setNewPersonName('');
+  };
+
+  const handleCreatePerson = async () => {
+    if (!newPersonName.trim()) return;
+    try {
+      const newParty = await createParty.mutateAsync({
+        party_type: 'INDIVIDUAL',
+        display_name: newPersonName.trim(),
+      });
+      form.setValue('party_id', newParty.id);
+      setShowNewPersonInput(false);
+      setNewPersonName('');
+      toast({ title: `Created "${newParty.display_name}"` });
+    } catch (err) {
+      console.error('Error creating party:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to create person',
+        variant: 'destructive',
+      });
+    }
   };
 
   const onSubmit = async (data: FormData) => {
@@ -163,7 +189,7 @@ export function BeneficialOwnerEditor({
     }
   };
 
-  const isLoading = addOwner.isPending || updateOwner.isPending;
+  const isLoading = addOwner.isPending || updateOwner.isPending || createParty.isPending;
 
   // Filter parties to show only individuals
   const individuals = parties.filter(p => p.party_type === 'INDIVIDUAL');
@@ -237,29 +263,74 @@ export function BeneficialOwnerEditor({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Person</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a person..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {individuals.length === 0 ? (
-                          <SelectItem value="" disabled>
-                            No individuals found. Add people in Settings.
-                          </SelectItem>
-                        ) : (
-                          individuals.map((party) => (
-                            <SelectItem key={party.id} value={party.id}>
-                              {party.display_name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      People are managed in Settings → Parties
-                    </FormDescription>
+                    {!showNewPersonInput ? (
+                      <>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a person..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {individuals.map((party) => (
+                              <SelectItem key={party.id} value={party.id}>
+                                {party.display_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 h-8 text-xs"
+                          onClick={() => setShowNewPersonInput(true)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add new person
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Enter person's name..."
+                            value={newPersonName}
+                            onChange={(e) => setNewPersonName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleCreatePerson();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleCreatePerson}
+                            disabled={!newPersonName.trim() || createParty.isPending}
+                          >
+                            {createParty.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Add'
+                            )}
+                          </Button>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            setShowNewPersonInput(false);
+                            setNewPersonName('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
