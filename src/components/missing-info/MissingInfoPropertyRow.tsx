@@ -7,12 +7,15 @@ import {
   Building2, 
   Clock,
   Save,
-  CheckCircle2,
   AlertTriangle,
+  Calculator,
+  Edit2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Collapsible,
   CollapsibleContent,
@@ -25,6 +28,7 @@ import {
   INSURANCE_FIELDS,
   PASSPORT_FIELDS,
   CRITICAL_PASSPORT_FIELDS,
+  TERM_YEARS_FIELD,
 } from '@/hooks/useMissingInfo';
 import { MissingFieldEditor } from './MissingFieldEditor';
 import { useUpdateLoan } from '@/hooks/useProperties';
@@ -42,6 +46,8 @@ export function MissingInfoPropertyRow({ item }: Props) {
   const [insuranceChanges, setInsuranceChanges] = useState<Record<string, any>>({});
   const [passportChanges, setPassportChanges] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [showPaymentOverride, setShowPaymentOverride] = useState(false);
+  const [paymentOverrideValue, setPaymentOverrideValue] = useState<number | undefined>();
 
   const updateLoan = useUpdateLoan();
   const upsertInsurance = useUpsertInsurancePolicy();
@@ -50,12 +56,13 @@ export function MissingInfoPropertyRow({ item }: Props) {
   const hasChanges = 
     Object.keys(financeChanges).length > 0 || 
     Object.keys(insuranceChanges).length > 0 ||
-    Object.keys(passportChanges).length > 0;
+    Object.keys(passportChanges).length > 0 ||
+    paymentOverrideValue !== undefined;
 
   const statusBadge = () => {
     switch (item.status) {
       case 'complete':
-        return <Badge variant="secondary" className="bg-green-500/10 text-green-600">Complete</Badge>;
+        return <Badge variant="secondary" className="bg-success/10 text-success">Complete</Badge>;
       case 'missing_finance':
         return <Badge variant="secondary" className="bg-amber-500/10 text-amber-600">Missing Finance</Badge>;
       case 'missing_insurance':
@@ -79,18 +86,49 @@ export function MissingInfoPropertyRow({ item }: Props) {
     setPassportChanges(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSaveComputedPayment = async () => {
+    if (!item.monthlyPayment.amount) return;
+    
+    const loan = item.property.loans?.[0];
+    if (!loan) return;
+
+    setIsSaving(true);
+    try {
+      await updateLoan.mutateAsync({
+        id: loan.id,
+        mortgage_payment_gbp: item.monthlyPayment.amount,
+        payment_auto_calculated_gbp: item.monthlyPayment.amount,
+        payment_source: 'auto',
+      });
+      toast.success('Computed payment saved');
+    } catch (error) {
+      toast.error('Failed to save payment');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
       // Save finance changes
-      if (Object.keys(financeChanges).length > 0) {
-        const loan = item.property.loans?.[0];
-        if (loan) {
-          await updateLoan.mutateAsync({
-            id: loan.id,
-            ...financeChanges,
-          });
+      const loan = item.property.loans?.[0];
+      const hasFinanceChanges = Object.keys(financeChanges).length > 0;
+      const hasPaymentOverride = paymentOverrideValue !== undefined;
+
+      if ((hasFinanceChanges || hasPaymentOverride) && loan) {
+        const loanUpdate: Record<string, any> = { ...financeChanges };
+        
+        if (hasPaymentOverride) {
+          loanUpdate.mortgage_payment_gbp = paymentOverrideValue;
+          loanUpdate.payment_override_gbp = paymentOverrideValue;
+          loanUpdate.payment_source = 'manual';
         }
+
+        await updateLoan.mutateAsync({
+          id: loan.id,
+          ...loanUpdate,
+        });
       }
 
       // Save insurance changes
@@ -114,6 +152,8 @@ export function MissingInfoPropertyRow({ item }: Props) {
       setFinanceChanges({});
       setInsuranceChanges({});
       setPassportChanges({});
+      setPaymentOverrideValue(undefined);
+      setShowPaymentOverride(false);
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save changes');
@@ -129,6 +169,12 @@ export function MissingInfoPropertyRow({ item }: Props) {
 
   // Check if there are critical passport fields missing
   const hasCriticalMissing = item.missingCriticalPassportFields.length > 0;
+
+  // Get the appropriate field definition (including term_years)
+  const getFieldDefinition = (fieldKey: string) => {
+    if (fieldKey === 'term_years') return TERM_YEARS_FIELD;
+    return FINANCE_FIELDS.find(f => f.key === fieldKey);
+  };
 
   return (
     <Card className={`transition-colors ${item.renewingSoon || item.hmoLicenceExpiringSoon ? 'border-amber-500/50 bg-amber-500/5' : ''}`}>
@@ -199,7 +245,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {item.missingFinanceFields.map(fieldKey => {
-                    const fieldDef = FINANCE_FIELDS.find(f => f.key === fieldKey);
+                    const fieldDef = getFieldDefinition(fieldKey);
                     if (!fieldDef) return null;
                     const isFilled = fieldKey in financeChanges;
                     return (
@@ -214,6 +260,81 @@ export function MissingInfoPropertyRow({ item }: Props) {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Computed Monthly Payment Display */}
+            {item.property.loans?.[0] && (
+              <div className="bg-muted/50 rounded-lg p-4 border border-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Monthly Payment (auto-calculated)</span>
+                </div>
+                
+                {item.monthlyPayment.canCalculate ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-semibold text-foreground">
+                        £{item.monthlyPayment.amount?.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {item.monthlyPayment.source === 'override' ? 'Manual override' : 'Calculated'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={handleSaveComputedPayment}
+                        disabled={isSaving || item.monthlyPayment.source === 'override'}
+                      >
+                        <Save className="h-3 w-3 mr-1" />
+                        Save computed value
+                      </Button>
+                      
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="override-payment"
+                          checked={showPaymentOverride}
+                          onCheckedChange={setShowPaymentOverride}
+                        />
+                        <Label htmlFor="override-payment" className="text-xs text-muted-foreground">
+                          Override
+                        </Label>
+                      </div>
+                    </div>
+
+                    {showPaymentOverride && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
+                        <div className="relative flex-1 max-w-xs">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="Enter manual payment"
+                            value={paymentOverrideValue ?? ''}
+                            onChange={e => setPaymentOverrideValue(e.target.value ? parseFloat(e.target.value) : undefined)}
+                            className="w-full pl-7 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <span className="text-amber-600">
+                      {item.monthlyPayment.missingReason || 'Cannot calculate payment'}
+                    </span>
+                    {item.needsTermYears && (
+                      <p className="mt-1 text-xs">
+                        Add the loan term above to enable calculation for repayment mortgages.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -279,7 +400,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
                           isFilled={isFilled}
                         />
                         {isCritical && !isFilled && (
-                          <span className="text-xs text-red-500 mt-1 block">Critical field</span>
+                          <span className="text-xs text-destructive mt-1 block">Critical field</span>
                         )}
                       </div>
                     );
