@@ -67,6 +67,9 @@ function PropertyEditPage() {
   const upsertIncome = useUpsertIncome();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Debug logging
+  console.log('PropertyEditPage mounted', { id, isLoading, error: error?.message, hasProperty: !!property });
+
   const form = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
