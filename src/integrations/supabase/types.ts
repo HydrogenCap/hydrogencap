@@ -293,6 +293,58 @@ export type Database = {
           },
         ]
       }
+      dismissed_duplicates: {
+        Row: {
+          dismissed_at: string
+          dismissed_by: string
+          id: string
+          org_id: string
+          property_id_1: string
+          property_id_2: string
+          reason: string | null
+        }
+        Insert: {
+          dismissed_at?: string
+          dismissed_by: string
+          id?: string
+          org_id: string
+          property_id_1: string
+          property_id_2: string
+          reason?: string | null
+        }
+        Update: {
+          dismissed_at?: string
+          dismissed_by?: string
+          id?: string
+          org_id?: string
+          property_id_1?: string
+          property_id_2?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dismissed_duplicates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dismissed_duplicates_property_id_1_fkey"
+            columns: ["property_id_1"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dismissed_duplicates_property_id_2_fkey"
+            columns: ["property_id_2"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           ai_doc_type_confidence: number | null

@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
-import { MapPin, ExternalLink, Edit2, Check, X, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Loader2, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -18,9 +11,35 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+
+// Fix Leaflet default marker icon
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom marker icon
+const propertyIcon = L.divIcon({
+  className: 'custom-marker',
+  html: `<div style="
+    background-color: hsl(174, 72%, 45%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  "></div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
 
 interface LocationRegistryCardProps {
   propertyId: string;
@@ -32,6 +51,15 @@ interface LocationRegistryCardProps {
   uprn?: string | null;
   landRegistryLink?: string | null;
   address?: string;
+}
+
+// Component to update map center when coordinates change
+function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  React.useEffect(() => {
+    map.setView([lat, lng], 15);
+  }, [lat, lng, map]);
+  return null;
 }
 
 export function LocationRegistryCard({
@@ -46,7 +74,6 @@ export function LocationRegistryCard({
   address,
 }: LocationRegistryCardProps) {
   const [coordDialogOpen, setCoordDialogOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const queryClient = useQueryClient();
@@ -55,15 +82,6 @@ export function LocationRegistryCard({
   // Coordinate edit state
   const [coordLat, setCoordLat] = useState<string>('');
   const [coordLng, setCoordLng] = useState<string>('');
-
-  // Edit form state
-  const [editValues, setEditValues] = useState({
-    title_number: titleNumber || '',
-    tenure: tenure || '',
-    lease_years_remaining: leaseYearsRemaining?.toString() || '',
-    uprn: uprn || '',
-    land_registry_link: landRegistryLink || '',
-  });
 
   const hasCoordinates = latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined;
 
@@ -152,218 +170,69 @@ export function LocationRegistryCard({
     }
   };
 
-  const handleStartEdit = () => {
-    setEditValues({
-      title_number: titleNumber || '',
-      tenure: tenure || '',
-      lease_years_remaining: leaseYearsRemaining?.toString() || '',
-      uprn: uprn || '',
-      land_registry_link: landRegistryLink || '',
-    });
-    setIsEditing(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-  };
-
-  const handleSaveRegistry = async () => {
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('properties')
-        .update({
-          title_number: editValues.title_number || null,
-          tenure: editValues.tenure || null,
-          lease_years_remaining: editValues.lease_years_remaining ? parseInt(editValues.lease_years_remaining) : null,
-          uprn: editValues.uprn || null,
-          land_registry_link: editValues.land_registry_link || null,
-        })
-        .eq('id', propertyId);
-
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
-      setIsEditing(false);
-      toast({
-        title: 'Registry details saved',
-        description: 'Land registry information has been updated.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save registry details.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
+  const openInGoogleMaps = () => {
+    if (hasCoordinates) {
+      window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank');
     }
-  };
-
-  // Generate static map URL for preview
-  const getStaticMapUrl = () => {
-    if (!hasCoordinates) return null;
-    return `https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=15&size=400x150&markers=${latitude},${longitude},red-pushpin`;
   };
 
   return (
     <>
       <Card className="bg-card border-border">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Location & Registry
+            Location
           </CardTitle>
-          {!isEditing ? (
-            <Button variant="ghost" size="sm" onClick={handleStartEdit}>
-              <Edit2 className="h-4 w-4" />
+          {hasCoordinates && (
+            <Button variant="ghost" size="sm" onClick={openInGoogleMaps}>
+              <ExternalLink className="h-4 w-4 mr-1" />
+              Open in Maps
             </Button>
-          ) : (
-            <div className="flex gap-1">
-              <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={isSaving}>
-                <X className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleSaveRegistry} disabled={isSaving}>
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Coordinates section */}
-          <div>
-            <Label className="text-muted-foreground text-sm">Coordinates</Label>
-            {hasCoordinates ? (
-              <div className="mt-2 space-y-2">
-                <div className="h-[150px] rounded-lg overflow-hidden border border-border bg-muted">
-                  <img 
-                    src={getStaticMapUrl()!}
-                    alt="Property location"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
-                  </span>
-                  <Button variant="outline" size="sm" onClick={openCoordDialog}>
-                    Update
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full mt-2"
-                onClick={openCoordDialog}
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                Add Coordinates
-              </Button>
-            )}
-          </div>
-
-          {/* Registry Details */}
-          {isEditing ? (
-            <div className="space-y-4 pt-4 border-t border-border">
-              <div className="space-y-2">
-                <Label htmlFor="title_number">Title Number</Label>
-                <Input
-                  id="title_number"
-                  value={editValues.title_number}
-                  onChange={(e) => setEditValues({ ...editValues, title_number: e.target.value })}
-                  placeholder="e.g. BK123456"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tenure">Tenure</Label>
-                <Select
-                  value={editValues.tenure}
-                  onValueChange={(value) => setEditValues({ ...editValues, tenure: value })}
+          {hasCoordinates ? (
+            <>
+              {/* Interactive Map */}
+              <div className="h-[250px] rounded-lg overflow-hidden border border-border">
+                <MapContainer
+                  center={[Number(latitude), Number(longitude)]}
+                  zoom={15}
+                  className="h-full w-full"
+                  style={{ background: 'hsl(222 47% 8%)' }}
+                  scrollWheelZoom={false}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select tenure" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Freehold">Freehold</SelectItem>
-                    <SelectItem value="Leasehold">Leasehold</SelectItem>
-                    <SelectItem value="Share of Freehold">Share of Freehold</SelectItem>
-                    <SelectItem value="Commonhold">Commonhold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(editValues.tenure === 'Leasehold' || editValues.tenure === 'Share of Freehold') && (
-                <div className="space-y-2">
-                  <Label htmlFor="lease_years">Lease Years Remaining</Label>
-                  <Input
-                    id="lease_years"
-                    type="number"
-                    value={editValues.lease_years_remaining}
-                    onChange={(e) => setEditValues({ ...editValues, lease_years_remaining: e.target.value })}
-                    placeholder="e.g. 125"
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                   />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="uprn">UPRN</Label>
-                <Input
-                  id="uprn"
-                  value={editValues.uprn}
-                  onChange={(e) => setEditValues({ ...editValues, uprn: e.target.value })}
-                  placeholder="e.g. 10023456789"
-                />
+                  <Marker 
+                    position={[Number(latitude), Number(longitude)]} 
+                    icon={propertyIcon}
+                  />
+                  <MapUpdater lat={Number(latitude)} lng={Number(longitude)} />
+                </MapContainer>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="land_registry_link">Land Registry Link</Label>
-                <Input
-                  id="land_registry_link"
-                  type="url"
-                  value={editValues.land_registry_link}
-                  onChange={(e) => setEditValues({ ...editValues, land_registry_link: e.target.value })}
-                  placeholder="https://..."
-                />
+              
+              {/* Coordinate display */}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
+                </span>
+                <Button variant="outline" size="sm" onClick={openCoordDialog}>
+                  Update Location
+                </Button>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="space-y-3 pt-4 border-t border-border">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Title Number</span>
-                <span>{titleNumber || '—'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tenure</span>
-                <span>{tenure || '—'}</span>
-              </div>
-              {tenure === 'Leasehold' && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Lease Years</span>
-                  <span>{leaseYearsRemaining ? `${leaseYearsRemaining} years` : '—'}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">UPRN</span>
-                <span>{uprn || '—'}</span>
-              </div>
-              {landRegistryLink && (
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Land Registry</span>
-                  <a
-                    href={landRegistryLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center gap-1"
-                  >
-                    View <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
+            <div className="h-[200px] rounded-lg bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center text-center p-4">
+              <MapPin className="h-10 w-10 text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground mb-3">No location set for this property</p>
+              <Button onClick={openCoordDialog}>
+                <MapPin className="h-4 w-4 mr-2" />
+                Add Location
+              </Button>
             </div>
           )}
         </CardContent>
@@ -375,7 +244,7 @@ export function LocationRegistryCard({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              Set Coordinates
+              Set Location
             </DialogTitle>
           </DialogHeader>
 
@@ -447,7 +316,7 @@ export function LocationRegistryCard({
                   Saving...
                 </>
               ) : (
-                'Save Coordinates'
+                'Save Location'
               )}
             </Button>
           </DialogFooter>

@@ -6,16 +6,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, MapPin, ExternalLink, Route } from 'lucide-react';
+import { Search, Filter, MapPin, ExternalLink, Route, X, Check } from 'lucide-react';
 import { useProperties } from '@/hooks/useProperties';
 import { PropertyMap } from '@/components/maps/PropertyMap';
-import { useDuplicateDetection } from '@/hooks/useDuplicateDetection';
+import { useDuplicateDetection, DuplicateCandidate } from '@/hooks/useDuplicateDetection';
+import { useDismissedDuplicates, useDismissDuplicate, isDuplicateDismissed } from '@/hooks/useDismissedDuplicates';
 import { Link } from 'react-router-dom';
 import { MissingLocationsBanner } from '@/components/geocoding';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardMap() {
   const { data: properties, isLoading } = useProperties();
-  const duplicates = useDuplicateDetection(properties);
+  const allDuplicates = useDuplicateDetection(properties);
+  const { data: dismissedDuplicates } = useDismissedDuplicates();
+  const dismissDuplicate = useDismissDuplicate();
+  const { toast } = useToast();
+  
+  // Filter out dismissed duplicates
+  const duplicates = useMemo(() => {
+    return allDuplicates.filter(
+      dup => !isDuplicateDismissed(dismissedDuplicates, dup.property1.id, dup.property2.id)
+    );
+  }, [allDuplicates, dismissedDuplicates]);
   
   // Count properties missing location
   const missingLocationCount = useMemo(() => {
@@ -196,29 +208,62 @@ export default function DashboardMap() {
             </CardHeader>
             <CardContent className="py-0 pb-3">
               <div className="space-y-2">
-                {duplicates.slice(0, 3).map((dup, i) => (
-                  <div key={i} className="flex items-center gap-4 text-sm">
-                    <Badge variant="outline" className="text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30">
+                {duplicates.slice(0, 5).map((dup, i) => (
+                  <div key={i} className="flex items-center gap-3 text-sm p-2 rounded-lg bg-background/50">
+                    <Badge variant="outline" className="text-[hsl(var(--warning))] border-[hsl(var(--warning))]/30 flex-shrink-0">
                       {dup.confidence === 'high' ? 'High' : 'Medium'}
                     </Badge>
-                    <span className="truncate flex-1">
+                    <span className="truncate flex-1 min-w-0">
                       {dup.property1.address_line}
                     </span>
-                    <span className="text-muted-foreground">↔</span>
-                    <span className="truncate flex-1">
+                    <span className="text-muted-foreground flex-shrink-0">↔</span>
+                    <span className="truncate flex-1 min-w-0">
                       {dup.property2.address_line}
                     </span>
-                    <Link 
-                      to={`/properties/${dup.property1.id}`}
-                      className="text-primary hover:underline"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </Link>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Link 
+                        to={`/properties/${dup.property1.id}`}
+                        className="text-primary hover:underline p-1"
+                        title="View property"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          dismissDuplicate.mutate(
+                            { propertyId1: dup.property1.id, propertyId2: dup.property2.id },
+                            {
+                              onSuccess: () => {
+                                toast({
+                                  title: 'Duplicate dismissed',
+                                  description: 'These properties will no longer be flagged as duplicates.',
+                                });
+                              },
+                              onError: () => {
+                                toast({
+                                  title: 'Error',
+                                  description: 'Failed to dismiss duplicate.',
+                                  variant: 'destructive',
+                                });
+                              },
+                            }
+                          );
+                        }}
+                        disabled={dismissDuplicate.isPending}
+                        title="Not a duplicate - dismiss"
+                      >
+                        <Check className="h-3.5 w-3.5 mr-1" />
+                        Not duplicate
+                      </Button>
+                    </div>
                   </div>
                 ))}
-                {duplicates.length > 3 && (
+                {duplicates.length > 5 && (
                   <p className="text-xs text-muted-foreground">
-                    +{duplicates.length - 3} more potential duplicates
+                    +{duplicates.length - 5} more potential duplicates
                   </p>
                 )}
               </div>
