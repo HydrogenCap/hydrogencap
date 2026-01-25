@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
+import PropertyNew from "./pages/PropertyNew";
+import PropertyDetail from "./pages/PropertyDetail";
 import Inbox from "./pages/Inbox";
 import Import from "./pages/Import";
 import Settings from "./pages/Settings";
@@ -42,6 +44,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Properties />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties/new"
+              element={
+                <ProtectedRoute>
+                  <PropertyNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties/:id"
+              element={
+                <ProtectedRoute>
+                  <PropertyDetail />
                 </ProtectedRoute>
               }
             />
