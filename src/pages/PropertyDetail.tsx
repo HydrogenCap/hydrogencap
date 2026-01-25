@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -483,11 +484,7 @@ function PropertyDetailPage() {
           </TabsContent>
 
           <TabsContent value="activity">
-            <Card className="bg-card border-border">
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <p>Activity timeline coming soon</p>
-              </CardContent>
-            </Card>
+            <ActivityTimeline propertyId={id} showHeader={false} />
           </TabsContent>
         </Tabs>
       </div>
