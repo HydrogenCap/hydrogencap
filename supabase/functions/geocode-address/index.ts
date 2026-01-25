@@ -52,6 +52,58 @@ interface GeocodeResult {
   error?: string;
 }
 
+// Extract postcode from address string (UK postcodes)
+function extractPostcode(address: string): string | null {
+  // UK postcode regex - matches formats like "OX3 8LW", "SW1A 1AA", etc.
+  const postcodeRegex = /\b([A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2})\b/i;
+  const match = address.match(postcodeRegex);
+  return match ? match[1].toUpperCase() : null;
+}
+
+// Clean address by removing duplicate postcodes and building names
+function cleanAddress(address: string): string {
+  // Remove "United Kingdom" as Nominatim handles country codes
+  let cleaned = address.replace(/,?\s*United Kingdom\s*$/i, '');
+  
+  // Extract and deduplicate postcode
+  const postcode = extractPostcode(cleaned);
+  if (postcode) {
+    // Remove all occurrences of the postcode
+    const postcodeRegex = new RegExp(postcode.replace(/\s+/g, '\\s*'), 'gi');
+    cleaned = cleaned.replace(postcodeRegex, '');
+    // Add postcode back once at the end
+    cleaned = cleaned.replace(/,\s*,/g, ',').replace(/,\s*$/, '').trim();
+    cleaned = `${cleaned}, ${postcode}`;
+  }
+  
+  // Clean up multiple commas and spaces
+  cleaned = cleaned.replace(/,\s*,/g, ',').replace(/\s+/g, ' ').trim();
+  
+  return cleaned;
+}
+
+// Try geocoding with Nominatim
+async function geocodeWithNominatim(query: string): Promise<NominatimResult | null> {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=1&countrycodes=gb`;
+  
+  console.log(`Trying Nominatim query: ${query}`);
+  
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'PropertyPortfolio/1.0 (geocoding service)',
+      'Accept': 'application/json',
+    }
+  });
+
+  if (!response.ok) {
+    console.error(`Nominatim API error: ${response.status}`);
+    return null;
+  }
+
+  const data: NominatimResult[] = await response.json();
+  return data && data.length > 0 ? data[0] : null;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -70,30 +122,42 @@ serve(async (req) => {
 
     console.log(`Geocoding address: ${address}`);
 
-    // Use OpenStreetMap Nominatim API (free, no API key required)
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&addressdetails=1&limit=1&countrycodes=gb`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'PropertyPortfolio/1.0 (geocoding service)',
-        'Accept': 'application/json',
-      }
-    });
+    // Strategy 1: Try cleaned full address
+    const cleanedAddress = cleanAddress(address);
+    let result = await geocodeWithNominatim(cleanedAddress);
 
-    if (!response.ok) {
-      console.error(`Nominatim API error: ${response.status}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `Geocoding service error: ${response.status}` 
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Strategy 2: If no result, try with just street + postcode
+    if (!result) {
+      const postcode = extractPostcode(address);
+      if (postcode) {
+        // Extract first line of address (street)
+        const firstLine = address.split(',')[0].trim();
+        const streetAndPostcode = `${firstLine}, ${postcode}, UK`;
+        result = await geocodeWithNominatim(streetAndPostcode);
+      }
     }
 
-    const data: NominatimResult[] = await response.json();
+    // Strategy 3: If still no result, try postcode only (will give approximate location)
+    if (!result) {
+      const postcode = extractPostcode(address);
+      if (postcode) {
+        result = await geocodeWithNominatim(`${postcode}, UK`);
+      }
+    }
 
-    if (!data || data.length === 0) {
+    // Strategy 4: Try town/city from address if available
+    if (!result) {
+      const parts = address.split(',').map(p => p.trim());
+      // Look for parts that might be town names (not postcodes, not "United Kingdom")
+      for (const part of parts) {
+        if (part && !extractPostcode(part) && !part.match(/united kingdom/i) && part.length > 2) {
+          result = await geocodeWithNominatim(`${part}, UK`);
+          if (result) break;
+        }
+      }
+    }
+
+    if (!result) {
       console.log(`No results found for: ${address}`);
       return new Response(
         JSON.stringify({ 
@@ -104,7 +168,6 @@ serve(async (req) => {
       );
     }
 
-    const result = data[0];
     const addr = result.address || {};
 
     console.log(`Found result: ${result.display_name}`);
@@ -129,13 +192,13 @@ serve(async (req) => {
     // County
     const county = addr.county || addr.state || null;
 
-    // Postcode
-    const postcode = addr.postcode || null;
+    // Postcode - prefer from result, fallback to extracted
+    const postcode = addr.postcode || extractPostcode(address) || null;
 
     // Country
     const country = addr.country || "United Kingdom";
 
-    // Determine confidence based on result type and importance
+    // Determine confidence based on result type and what query succeeded
     let geocodeConfidence: 'exact' | 'approximate' | 'unknown' = 'unknown';
     const importance = result.importance || 0;
     const resultType = result.type || '';
@@ -143,9 +206,14 @@ serve(async (req) => {
     // High confidence for specific address matches
     if (resultType === 'house' || resultType === 'building' || resultType === 'residential') {
       geocodeConfidence = 'exact';
+    } else if (addr.house_number && addr.road) {
+      geocodeConfidence = 'exact';
     } else if (importance > 0.5 || resultType === 'street' || resultType === 'road') {
       geocodeConfidence = 'approximate';
-    } else if (importance > 0.3) {
+    } else if (addr.postcode) {
+      // Postcode-level match
+      geocodeConfidence = 'approximate';
+    } else {
       geocodeConfidence = 'approximate';
     }
 
@@ -166,7 +234,7 @@ serve(async (req) => {
       },
     };
 
-    console.log(`Geocoding successful: lat=${geocodeResult.data?.latitude}, lng=${geocodeResult.data?.longitude}`);
+    console.log(`Geocoding successful: lat=${geocodeResult.data?.latitude}, lng=${geocodeResult.data?.longitude}, confidence=${geocodeConfidence}`);
 
     return new Response(JSON.stringify(geocodeResult), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
