@@ -15,6 +15,7 @@ import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { useRecentActivity } from '@/hooks/useActivityLog';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
+import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import {
   formatGBP,
   formatPercent,
@@ -575,6 +576,9 @@ function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Stock Condition Section */}
+        <StockConditionSection />
 
         {/* Recent Activity */}
         <RecentActivityWidget />

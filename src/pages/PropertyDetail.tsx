@@ -10,7 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipCard, OwnershipEditor } from '@/components/ownership';
 import { LocationRegistryCard } from '@/components/property';
+import { PassportForm } from '@/components/passport';
 import type { PropertyOwnershipWithEntity } from '@/hooks/useOwnership';
+import { useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +45,8 @@ import {
 
 function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'overview';
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: property, isLoading, error } = useProperty(id);
@@ -269,11 +273,12 @@ function PropertyDetailPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="bg-muted">
+        <Tabs defaultValue={defaultTab} className="space-y-4">
+          <TabsList className="bg-muted flex-wrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="finance">Finance & Refinance</TabsTrigger>
             <TabsTrigger value="costs">Costs</TabsTrigger>
+            <TabsTrigger value="passport">Passport</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>

@@ -623,6 +623,188 @@ export type Database = {
           },
         ]
       }
+      property_passport: {
+        Row: {
+          access_ramp: boolean | null
+          asset_agreement_category: string | null
+          asset_performance_rating: string | null
+          base_clarification: string | null
+          basement: boolean | null
+          bathrooms: number | null
+          bedrooms: number | null
+          block_communal_entrance: string | null
+          built_in_year: number | null
+          carport: boolean | null
+          communal_tv_supply: boolean | null
+          construction_date_band: string | null
+          construction_type: string | null
+          council_tax_band: string | null
+          county: string | null
+          created_at: string
+          dropbox_link: string | null
+          electric_meter_location: string | null
+          electric_meter_number: string | null
+          ensuites: number | null
+          gas_meter_location: string | null
+          gas_meter_number: string | null
+          has_bin_store: boolean | null
+          has_cycle_store: boolean | null
+          has_guest_room: boolean | null
+          has_loft_access: boolean | null
+          hmo_bed_spaces: number | null
+          hmo_licence: boolean | null
+          hmo_licence_expiry: string | null
+          hmo_licence_number: string | null
+          hmo_licence_required: boolean | null
+          id: string
+          keysafe_code: string | null
+          kitchens: number | null
+          land_registry_title_number: string | null
+          living_rooms_communal: number | null
+          local_authority: string | null
+          loft_access: string | null
+          maintenance_area: string | null
+          number_of_storeys: number | null
+          occupation_status: string | null
+          owned_by: string | null
+          owner_tenure: string | null
+          parking: string | null
+          photographs_link: string | null
+          postcode: string | null
+          property_id: string
+          property_management_company: string | null
+          property_management_fee_percent: number | null
+          town_city: string | null
+          updated_at: string
+          water_meter_location: string | null
+          water_meter_number: string | null
+          water_stop_tap_location: string | null
+          wc_cloakroom: number | null
+        }
+        Insert: {
+          access_ramp?: boolean | null
+          asset_agreement_category?: string | null
+          asset_performance_rating?: string | null
+          base_clarification?: string | null
+          basement?: boolean | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          block_communal_entrance?: string | null
+          built_in_year?: number | null
+          carport?: boolean | null
+          communal_tv_supply?: boolean | null
+          construction_date_band?: string | null
+          construction_type?: string | null
+          council_tax_band?: string | null
+          county?: string | null
+          created_at?: string
+          dropbox_link?: string | null
+          electric_meter_location?: string | null
+          electric_meter_number?: string | null
+          ensuites?: number | null
+          gas_meter_location?: string | null
+          gas_meter_number?: string | null
+          has_bin_store?: boolean | null
+          has_cycle_store?: boolean | null
+          has_guest_room?: boolean | null
+          has_loft_access?: boolean | null
+          hmo_bed_spaces?: number | null
+          hmo_licence?: boolean | null
+          hmo_licence_expiry?: string | null
+          hmo_licence_number?: string | null
+          hmo_licence_required?: boolean | null
+          id?: string
+          keysafe_code?: string | null
+          kitchens?: number | null
+          land_registry_title_number?: string | null
+          living_rooms_communal?: number | null
+          local_authority?: string | null
+          loft_access?: string | null
+          maintenance_area?: string | null
+          number_of_storeys?: number | null
+          occupation_status?: string | null
+          owned_by?: string | null
+          owner_tenure?: string | null
+          parking?: string | null
+          photographs_link?: string | null
+          postcode?: string | null
+          property_id: string
+          property_management_company?: string | null
+          property_management_fee_percent?: number | null
+          town_city?: string | null
+          updated_at?: string
+          water_meter_location?: string | null
+          water_meter_number?: string | null
+          water_stop_tap_location?: string | null
+          wc_cloakroom?: number | null
+        }
+        Update: {
+          access_ramp?: boolean | null
+          asset_agreement_category?: string | null
+          asset_performance_rating?: string | null
+          base_clarification?: string | null
+          basement?: boolean | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          block_communal_entrance?: string | null
+          built_in_year?: number | null
+          carport?: boolean | null
+          communal_tv_supply?: boolean | null
+          construction_date_band?: string | null
+          construction_type?: string | null
+          council_tax_band?: string | null
+          county?: string | null
+          created_at?: string
+          dropbox_link?: string | null
+          electric_meter_location?: string | null
+          electric_meter_number?: string | null
+          ensuites?: number | null
+          gas_meter_location?: string | null
+          gas_meter_number?: string | null
+          has_bin_store?: boolean | null
+          has_cycle_store?: boolean | null
+          has_guest_room?: boolean | null
+          has_loft_access?: boolean | null
+          hmo_bed_spaces?: number | null
+          hmo_licence?: boolean | null
+          hmo_licence_expiry?: string | null
+          hmo_licence_number?: string | null
+          hmo_licence_required?: boolean | null
+          id?: string
+          keysafe_code?: string | null
+          kitchens?: number | null
+          land_registry_title_number?: string | null
+          living_rooms_communal?: number | null
+          local_authority?: string | null
+          loft_access?: string | null
+          maintenance_area?: string | null
+          number_of_storeys?: number | null
+          occupation_status?: string | null
+          owned_by?: string | null
+          owner_tenure?: string | null
+          parking?: string | null
+          photographs_link?: string | null
+          postcode?: string | null
+          property_id?: string
+          property_management_company?: string | null
+          property_management_fee_percent?: number | null
+          town_city?: string | null
+          updated_at?: string
+          water_meter_location?: string | null
+          water_meter_number?: string | null
+          water_stop_tap_location?: string | null
+          wc_cloakroom?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_passport_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

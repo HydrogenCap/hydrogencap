@@ -14,6 +14,7 @@ import PropertyNew from "./pages/PropertyNew";
 import PropertyDetail from "./pages/PropertyDetail";
 import Inbox from "./pages/Inbox";
 import Import from "./pages/Import";
+import ImportPassport from "./pages/ImportPassport";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -76,6 +77,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Import />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/import/passport"
+              element={
+                <ProtectedRoute>
+                  <ImportPassport />
                 </ProtectedRoute>
               }
             />
