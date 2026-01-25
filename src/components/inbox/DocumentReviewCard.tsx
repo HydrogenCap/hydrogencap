@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useUpdateDocument, useDeleteDocument } from '@/hooks/useDocuments';
 import { useProperties } from '@/hooks/useProperties';
 import { useToast } from '@/hooks/use-toast';
+import { createFinalFilename } from '@/lib/documentNaming';
 import type { Database } from '@/integrations/supabase/types';
 
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -65,14 +66,31 @@ export function DocumentReviewCard({ document }: DocumentReviewCardProps) {
 
     setIsProcessing(true);
     try {
+      // Get property address for filename
+      const selectedProperty = properties?.find(p => p.id === selectedPropertyId);
+      
+      // Generate standardized filename
+      const finalFileName = createFinalFilename({
+        docType: selectedDocType,
+        propertyAddress: selectedProperty?.address_line,
+        issueDate: document.extracted_issue_date,
+        expiryDate: document.expiry_date,
+        originalFilename: document.original_file_name,
+      });
+
       await updateDocument.mutateAsync({
         id: document.id,
         review_status: 'accepted',
         doc_type: selectedDocType,
         property_id: selectedPropertyId || null,
+        final_file_name: finalFileName,
+        renamed_at: new Date().toISOString(),
       });
       
-      toast({ title: 'Document accepted' });
+      toast({ 
+        title: 'Document accepted',
+        description: `Renamed to: ${finalFileName}`,
+      });
     } catch (err) {
       toast({ 
         title: 'Failed to accept', 
