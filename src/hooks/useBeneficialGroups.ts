@@ -584,6 +584,8 @@ export function usePortfolioAttributableMetrics(properties: PropertyWithFinancia
 // SEED DEFAULT BENEFICIAL GROUP
 // ============================================
 
+// Note: Seeding is now done via SQL migration. This function is kept for reference
+// but will not auto-seed to prevent duplicates.
 export function useSeedDefaultBeneficialGroup() {
   const queryClient = useQueryClient();
 
@@ -592,15 +594,18 @@ export function useSeedDefaultBeneficialGroup() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      // Check if group already exists
+      // Check if ANY group already exists for this org (not just by name)
       const { data: existing } = await supabase
         .from('beneficial_groups')
         .select('id')
         .eq('org_id', orgId)
-        .eq('name', 'David / Hydrogen')
+        .limit(1)
         .maybeSingle();
 
-      if (existing) return existing;
+      if (existing) {
+        // Already have a group, don't create duplicates
+        return existing;
+      }
 
       // Create the default group
       const { data: group, error } = await supabase

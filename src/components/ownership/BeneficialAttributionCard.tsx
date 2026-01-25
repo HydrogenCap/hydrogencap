@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Star, AlertTriangle, Edit2, Check, X, Plus, Loader2 } from 'lucide-react';
+import { Users, Star, AlertTriangle, Edit2, Check, X, Plus, Loader2, Calculator, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatPercent } from '@/lib/calculations';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -16,13 +17,24 @@ import {
   useAddEntityMapping,
   useRemoveEntityMapping,
   useUpdatePropertyBeneficialOverride,
-  useSeedDefaultBeneficialGroup,
   type EffectiveOwnershipWithBenefit,
 } from '@/hooks/useBeneficialGroups';
-import { useOwnershipEntities } from '@/hooks/useOwnershipLookthrough';
+import { useOwnershipEntities, useLegalOwnership, useEntityShareholdings } from '@/hooks/useOwnershipLookthrough';
+import type { LegalOwnershipWithEntity } from '@/hooks/useOwnershipLookthrough';
 
 interface BeneficialAttributionCardProps {
   propertyId: string;
+}
+
+interface CalculationStep {
+  type: 'direct' | 'look-through';
+  legalOwnerName: string;
+  legalOwnerType: string;
+  legalPercent: number;
+  shareholderName?: string;
+  shareholderPercent?: number;
+  effectivePercent: number;
+  isAttributable: boolean;
 }
 
 export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionCardProps) {
@@ -30,7 +42,7 @@ export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionC
   const { data: attribution, isLoading } = usePropertyAttributableOwnership(propertyId);
   const { data: groups, isLoading: groupsLoading } = useBeneficialGroups();
   const { data: entities } = useOwnershipEntities();
-  const seedDefault = useSeedDefaultBeneficialGroup();
+  const { data: legalOwners } = useLegalOwnership(propertyId);
   const addMapping = useAddEntityMapping();
   const removeMapping = useRemoveEntityMapping();
   const updateOverride = useUpdatePropertyBeneficialOverride();
@@ -41,13 +53,7 @@ export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionC
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<string>('');
   const [selectedGroup, setSelectedGroup] = useState<string>('');
-
-  // Seed default group if none exists
-  useEffect(() => {
-    if (!groupsLoading && groups && groups.length === 0) {
-      seedDefault.mutate();
-    }
-  }, [groups, groupsLoading, seedDefault]);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const primaryGroup = groups?.[0];
 
@@ -124,6 +130,22 @@ export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionC
 
   // Find entities that are NOT in any group for the assign dropdown
   const unassignedEntities = entities?.filter(e => !entitiesInGroup.has(e.id)) || [];
+
+  // Build calculation steps for breakdown display
+  const calculationSteps: CalculationStep[] = [];
+  
+  if (attribution?.effectiveOwnership) {
+    attribution.effectiveOwnership.forEach(owner => {
+      calculationSteps.push({
+        type: 'direct',
+        legalOwnerName: owner.entityName,
+        legalOwnerType: owner.entityType,
+        legalPercent: owner.effectivePercent,
+        effectivePercent: owner.effectivePercent,
+        isAttributable: owner.isAttributableToMe,
+      });
+    });
+  }
 
   return (
     <Card>
@@ -223,6 +245,51 @@ export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionC
             </div>
           </div>
         </div>
+
+        {/* Calculation Breakdown - Collapsible */}
+        <Collapsible open={showBreakdown} onOpenChange={setShowBreakdown}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between" size="sm">
+              <span className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                Calculation Breakdown
+              </span>
+              {showBreakdown ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2">
+            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+              <p className="text-xs text-muted-foreground">
+                Shows how attributable ownership is calculated: Title % × Shareholder % = Effective %
+              </p>
+              
+              {legalOwners && legalOwners.length > 0 ? (
+                <div className="space-y-2">
+                  {legalOwners.map((owner: LegalOwnershipWithEntity) => (
+                    <OwnershipBreakdownRow 
+                      key={owner.id} 
+                      legalOwner={owner} 
+                      primaryGroupId={primaryGroup?.id}
+                      entitiesInGroup={entitiesInGroup}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  No legal ownership recorded for this property
+                </p>
+              )}
+              
+              {/* Totals */}
+              <div className="border-t pt-2 mt-2 flex justify-between items-center">
+                <span className="text-sm font-medium">Total Attributable to "{primaryGroup?.name || 'My Group'}"</span>
+                <Badge className="bg-primary text-primary-foreground">
+                  {formatPercent(attribution?.attributablePercent || 0)}
+                </Badge>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Override Editor */}
         <div className="border rounded-lg p-3">
@@ -364,4 +431,96 @@ export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionC
       </CardContent>
     </Card>
   );
+}
+
+// Sub-component for ownership breakdown row with SPV look-through
+interface OwnershipBreakdownRowProps {
+  legalOwner: LegalOwnershipWithEntity;
+  primaryGroupId: string | undefined;
+  entitiesInGroup: Set<string | undefined>;
+}
+
+function OwnershipBreakdownRow({ legalOwner, primaryGroupId, entitiesInGroup }: OwnershipBreakdownRowProps) {
+  const entity = legalOwner.ownership_entities;
+  const legalPercent = Number(legalOwner.owner_percent);
+  const isCompanyType = entity.entity_type === 'SPV' || entity.entity_type === 'Company';
+  const isDirectlyAttributable = entitiesInGroup.has(entity.id);
+  
+  // Fetch shareholders if it's an SPV/Company
+  const { data: shareholdings } = useEntityShareholdings(isCompanyType ? entity.id : undefined);
+
+  if (isCompanyType && shareholdings && shareholdings.length > 0) {
+    // SPV with shareholders - show look-through calculation
+    return (
+      <div className="space-y-1">
+        <div className="text-xs font-medium text-muted-foreground">
+          {entity.name} ({formatPercent(legalPercent)} title) → Look-through:
+        </div>
+        {shareholdings.map((sh) => {
+          const shareholderPercent = Number(sh.shareholder_percent);
+          const effectivePercent = (legalPercent / 100) * (shareholderPercent / 100) * 100;
+          const isAttributable = entitiesInGroup.has(sh.shareholder_entity.id);
+          
+          return (
+            <div 
+              key={sh.id} 
+              className={`flex items-center justify-between text-sm pl-4 p-1.5 rounded ${
+                isAttributable ? 'bg-primary/10' : 'bg-muted/30'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {isAttributable && <Star className="h-3 w-3 text-primary fill-primary" />}
+                <span>{sh.shareholder_entity.name}</span>
+              </div>
+              <div className="font-mono text-xs">
+                {formatPercent(legalPercent)} × {formatPercent(shareholderPercent)} = 
+                <span className={isAttributable ? 'text-primary font-bold ml-1' : 'ml-1'}>
+                  {formatPercent(effectivePercent)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  } else if (isCompanyType && (!shareholdings || shareholdings.length === 0)) {
+    // SPV without shareholders - warning
+    return (
+      <div className={`flex items-center justify-between text-sm p-2 rounded ${
+        isDirectlyAttributable ? 'bg-primary/10' : 'bg-warning/10'
+      }`}>
+        <div className="flex items-center gap-2">
+          {isDirectlyAttributable && <Star className="h-3 w-3 text-primary fill-primary" />}
+          <span>{entity.name}</span>
+          {!isDirectlyAttributable && (
+            <Badge variant="outline" className="text-xs text-warning border-warning">
+              No shareholders
+            </Badge>
+          )}
+        </div>
+        <span className={isDirectlyAttributable ? 'text-primary font-bold' : ''}>
+          {formatPercent(legalPercent)}
+        </span>
+      </div>
+    );
+  } else {
+    // Direct owner (Person)
+    return (
+      <div className={`flex items-center justify-between text-sm p-2 rounded ${
+        isDirectlyAttributable ? 'bg-primary/10' : 'bg-muted/30'
+      }`}>
+        <div className="flex items-center gap-2">
+          {isDirectlyAttributable && <Star className="h-3 w-3 text-primary fill-primary" />}
+          <span>{entity.name}</span>
+          <Badge variant="outline" className="text-xs">{entity.entity_type}</Badge>
+        </div>
+        <div className="font-mono text-xs">
+          <span className={isDirectlyAttributable ? 'text-primary font-bold' : ''}>
+            {formatPercent(legalPercent)}
+          </span>
+          <span className="text-muted-foreground ml-1">(direct)</span>
+        </div>
+      </div>
+    );
+  }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown } from 'lucide-react';
+import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -92,6 +92,7 @@ const ALL_COLUMNS = [
   { key: 'hmoLicenceNumber', label: 'HMO Licence #' },
   { key: 'hmoLicenceExpiry', label: 'HMO Licence Expiry' },
   { key: 'managementCompany', label: 'Management Company' },
+  { key: 'actions', label: 'Actions' },
 ] as const;
 
 type ColumnKey = typeof ALL_COLUMNS[number]['key'];
@@ -144,7 +145,7 @@ const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKey[]; de
 const DEFAULT_VISIBLE = new Set<ColumnKey>([
   'photo', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
   'lender', 'interestRate', 'fixedRateExpires', 'mortgageBalance', 'mortgagePayment',
-  'rentalIncome', 'netRent', 'yield', 'ltv', 'equity'
+  'rentalIncome', 'netRent', 'yield', 'ltv', 'equity', 'actions'
 ]);
 
 // ============================================
@@ -787,6 +788,7 @@ function PropertiesPage() {
                     {visibleColumns.has('hmoLicenceNumber') && <TableHead>HMO #</TableHead>}
                     {visibleColumns.has('hmoLicenceExpiry') && <SortableHeader field="hmoLicenceExpiry">HMO Expiry</SortableHeader>}
                     {visibleColumns.has('managementCompany') && <TableHead>Mgmt Co.</TableHead>}
+                    {visibleColumns.has('actions') && <TableHead className="w-24 text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -979,6 +981,32 @@ function PropertiesPage() {
                         {visibleColumns.has('managementCompany') && (
                           <TableCell className="text-muted-foreground max-w-[150px] truncate">
                             {passport?.property_management_company || '—'}
+                          </TableCell>
+                        )}
+                        {visibleColumns.has('actions') && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                asChild
+                              >
+                                <Link to={`/properties/${property.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                asChild
+                              >
+                                <Link to={`/properties/${property.id}/edit`}>
+                                  <Edit2 className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </div>
                           </TableCell>
                         )}
                       </TableRow>
