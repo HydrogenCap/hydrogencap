@@ -52,13 +52,24 @@ interface RiskItem {
   id: string;
   propertyId: string;
   address: string;
-  type: 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow';
+  type: 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data';
   severity: 'critical' | 'warning';
   message: string;
 }
 
+// Import passport hooks for risk calculations
+import { usePropertyPassports, getHMOLicenceStatus, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
+
 function DashboardPage() {
   const { data: properties, isLoading } = useProperties();
+  const { data: passports } = usePropertyPassports();
+
+  // Create a map of passports by property_id for quick lookup
+  const passportMap = useMemo(() => {
+    const map = new Map<string, PropertyPassport>();
+    passports?.forEach(p => map.set(p.property_id, p));
+    return map;
+  }, [passports]);
 
   // Calculate portfolio totals
   const portfolioStats = useMemo(() => {
@@ -117,7 +128,7 @@ function DashboardPage() {
     return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt };
   }, [properties]);
 
-  // Calculate risks
+  // Calculate risks (including passport data)
   const risks = useMemo<RiskItem[]>(() => {
     if (!properties?.length) return [];
 
@@ -128,6 +139,7 @@ function DashboardPage() {
       const loan = property.loans?.[0];
       const income = property.income?.find(i => i.year === currentYear);
       const costs = property.costs?.find(c => c.year === currentYear);
+      const passport = passportMap.get(property.id);
 
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : null;
       const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
@@ -238,6 +250,59 @@ function DashboardPage() {
           message: `Negative cashflow: ${formatGBP(annualCashflowAfterDebt)}/year`,
         });
       }
+
+      // ========== PASSPORT-BASED RISKS ==========
+      
+      // HMO licence risks
+      const hmoStatus = getHMOLicenceStatus(passport);
+      if (hmoStatus === 'overdue') {
+        riskItems.push({
+          id: `hmo-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'hmo_licence',
+          severity: 'critical',
+          message: 'HMO licence has expired',
+        });
+      } else if (hmoStatus === 'expiring_soon') {
+        riskItems.push({
+          id: `hmo-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'hmo_licence',
+          severity: 'warning',
+          message: 'HMO licence expires within 30 days',
+        });
+      } else if (hmoStatus === 'missing') {
+        riskItems.push({
+          id: `hmo-missing-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'hmo_licence',
+          severity: 'critical',
+          message: 'HMO licence required but not recorded',
+        });
+      }
+
+      // Operational data risks (from passport completeness)
+      if (passport) {
+        const completeness = calculatePassportCompleteness(passport);
+        if (completeness.criticalMissing.length > 0) {
+          // Only show top 2 missing items in risk message
+          const missingItems = completeness.criticalMissing.slice(0, 2).join(', ');
+          const moreCount = completeness.criticalMissing.length > 2 
+            ? ` +${completeness.criticalMissing.length - 2} more` 
+            : '';
+          riskItems.push({
+            id: `ops-${property.id}`,
+            propertyId: property.id,
+            address: property.address_line,
+            type: 'operational_data',
+            severity: 'warning',
+            message: `Missing: ${missingItems}${moreCount}`,
+          });
+        }
+      }
     });
 
     // Sort by severity
@@ -246,7 +311,7 @@ function DashboardPage() {
       if (a.severity !== 'critical' && b.severity === 'critical') return 1;
       return 0;
     });
-  }, [properties]);
+  }, [properties, passportMap]);
 
   // Lender exposure data
   const lenderData = useMemo(() => {
