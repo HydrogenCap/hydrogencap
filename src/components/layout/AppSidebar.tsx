@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  Upload,
   Settings,
   LogOut,
   Inbox,
@@ -32,8 +31,6 @@ const navItems = [
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
   { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
-  { title: 'Import Properties', icon: Upload, href: '/import' },
-  { title: 'Import Passports', icon: Upload, href: '/import/passport' },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 

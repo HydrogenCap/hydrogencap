@@ -575,8 +575,9 @@ function PropertyDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="photos">
+          <TabsContent value="photos" className="space-y-6">
             <PhotoGallery propertyId={id!} />
+            <FloorplanCard propertyId={id!} />
           </TabsContent>
 
           <TabsContent value="activity">
