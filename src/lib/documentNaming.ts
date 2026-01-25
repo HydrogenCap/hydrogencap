@@ -15,6 +15,8 @@ const DOC_TYPE_CODES: Record<string, string> = {
   ground_rent: 'GroundRent',
   council_tax: 'CouncilTax',
   utility_bill: 'Utility',
+  asbestos_management_survey: 'AsbestosManagement',
+  asbestos_rd_survey: 'AsbestosRD',
   other: 'Doc',
 };
 

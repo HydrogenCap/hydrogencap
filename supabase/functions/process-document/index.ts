@@ -21,6 +21,8 @@ const DOC_TYPES = [
   "ground_rent",
   "council_tax",
   "utility_bill",
+  "asbestos_management_survey",
+  "asbestos_rd_survey",
   "other",
 ] as const;
 
