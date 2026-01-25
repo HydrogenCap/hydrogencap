@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, BeneficialAttributionCard } from '@/components/ownership';
-import { LocationRegistryCard } from '@/components/property';
+import { LocationRegistryCard, PropertyMediaHeader } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
@@ -137,9 +137,16 @@ function PropertyDetailPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/properties')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
+            
+            {/* Cover Photo & Floorplan Quick Actions */}
+            <PropertyMediaHeader 
+              propertyId={id!} 
+              propertyAddress={property.address_line} 
+            />
+            
             <div>
               <h1 className="text-2xl font-bold text-foreground">{property.address_line}</h1>
-              <div className="flex items-center gap-4 mt-1 text-muted-foreground">
+              <div className="flex items-center gap-4 mt-1 text-muted-foreground flex-wrap">
                 {property.postcode && (
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
