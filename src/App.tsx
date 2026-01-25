@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 
 // Pages
 import Auth from "./pages/Auth";
@@ -21,6 +22,7 @@ import ImportPassport from "./pages/ImportPassport";
 import Insights from "./pages/Insights";
 import MissingInfo from "./pages/MissingInfo";
 import Settings from "./pages/Settings";
+import DashboardMap from "./pages/DashboardMap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,8 +31,9 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <Toaster />
-        <Sonner />
+        <GoogleMapsProvider>
+          <Toaster />
+          <Sonner />
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
@@ -44,6 +47,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/map"
+              element={
+                <ProtectedRoute>
+                  <DashboardMap />
                 </ProtectedRoute>
               }
             />
@@ -134,7 +145,8 @@ const App = () => (
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+          </BrowserRouter>
+        </GoogleMapsProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

@@ -793,15 +793,21 @@ export type Database = {
       properties: {
         Row: {
           address_line: string
+          address_line2: string | null
           area_name: string | null
           bathrooms: number | null
           beds: number | null
           beneficial_override_notes: string | null
           beneficial_override_percent: number | null
+          country: string | null
+          county: string | null
           created_at: string
           current_value_gbp: number | null
           epc_rating: string | null
           epc_required: boolean | null
+          formatted_address: string | null
+          geocode_confidence: string | null
+          geocoded_at: string | null
           id: string
           land_registry_link: string | null
           latitude: number | null
@@ -813,26 +819,34 @@ export type Database = {
           original_purchase_date: string | null
           ownership_entity: string | null
           ownership_percent: number | null
+          place_id: string | null
           postcode: string | null
           postcode_area: string | null
           property_type: string | null
           purchase_price_gbp: number | null
           tenure: string | null
           title_number: string | null
+          town_city: string | null
           updated_at: string
           uprn: string | null
         }
         Insert: {
           address_line: string
+          address_line2?: string | null
           area_name?: string | null
           bathrooms?: number | null
           beds?: number | null
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
+          country?: string | null
+          county?: string | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
           epc_required?: boolean | null
+          formatted_address?: string | null
+          geocode_confidence?: string | null
+          geocoded_at?: string | null
           id?: string
           land_registry_link?: string | null
           latitude?: number | null
@@ -844,26 +858,34 @@ export type Database = {
           original_purchase_date?: string | null
           ownership_entity?: string | null
           ownership_percent?: number | null
+          place_id?: string | null
           postcode?: string | null
           postcode_area?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
           tenure?: string | null
           title_number?: string | null
+          town_city?: string | null
           updated_at?: string
           uprn?: string | null
         }
         Update: {
           address_line?: string
+          address_line2?: string | null
           area_name?: string | null
           bathrooms?: number | null
           beds?: number | null
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
+          country?: string | null
+          county?: string | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
           epc_required?: boolean | null
+          formatted_address?: string | null
+          geocode_confidence?: string | null
+          geocoded_at?: string | null
           id?: string
           land_registry_link?: string | null
           latitude?: number | null
@@ -875,12 +897,14 @@ export type Database = {
           original_purchase_date?: string | null
           ownership_entity?: string | null
           ownership_percent?: number | null
+          place_id?: string | null
           postcode?: string | null
           postcode_area?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
           tenure?: string | null
           title_number?: string | null
+          town_city?: string | null
           updated_at?: string
           uprn?: string | null
         }
