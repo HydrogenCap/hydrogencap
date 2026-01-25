@@ -43,6 +43,7 @@ import {
   getExpiryStatus,
   daysUntil,
 } from '@/lib/calculations';
+import { calculateRentPerBedroom, formatPaymentGBP } from '@/lib/mortgageCalculations';
 
 function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -134,6 +135,7 @@ function PropertyDetailPage() {
   const monthlyCashflow = calculateMonthlyCashflow(netRent);
   const yieldPercent = calculateYield(netRent, currentValue);
   const roce = calculateROCE(netRent, equity);
+  const rentPerBedroom = calculateRentPerBedroom(annualRent, property.beds ? Number(property.beds) : null);
 
   const ltvStatus = getLTVStatus(ltv);
   const epcStatus = getEPCStatus(property.epc_rating);
@@ -352,6 +354,14 @@ function PropertyDetailPage() {
                     <span className="text-muted-foreground">ROCE</span>
                     <span className={roce && roce >= 0 ? 'text-success' : 'text-destructive'}>
                       {formatPercent(roce)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Rent / Bedroom</span>
+                    <span>
+                      {rentPerBedroom.monthly !== null 
+                        ? `${formatPaymentGBP(rentPerBedroom.monthly)}/mo` 
+                        : '—'}
                     </span>
                   </div>
                 </CardContent>
