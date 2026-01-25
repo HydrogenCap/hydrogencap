@@ -122,7 +122,7 @@ export function useUpdatePassport() {
   });
 }
 
-// Calculate passport completeness
+// Calculate passport completeness - simplified for core fields only
 export interface PassportCompleteness {
   complete: boolean;
   percentage: number;
@@ -140,25 +140,15 @@ export function calculatePassportCompleteness(passport: PropertyPassport | null)
     };
   }
 
+  // Only core fields that drive decisions
   const requiredFields = [
-    { key: 'keysafe_code', label: 'Keysafe code', critical: true },
-    { key: 'electric_meter_location', label: 'Electric meter location', critical: true },
-    { key: 'gas_meter_location', label: 'Gas meter location', critical: true },
-    { key: 'water_meter_location', label: 'Water meter location', critical: true },
-    { key: 'electric_meter_number', label: 'Electric meter number', critical: true },
-    { key: 'gas_meter_number', label: 'Gas meter number', critical: true },
-    { key: 'water_meter_number', label: 'Water meter number', critical: true },
-    { key: 'water_stop_tap_location', label: 'Stop tap location', critical: true },
-    { key: 'construction_type', label: 'Construction type', critical: false },
-    { key: 'bedrooms', label: 'Bedrooms', critical: false },
-    { key: 'bathrooms', label: 'Bathrooms', critical: false },
+    { key: 'asset_agreement_category', label: 'Property Type', critical: true },
+    { key: 'owned_by', label: 'Owner / SPV', critical: false },
+    { key: 'owner_tenure', label: 'Tenure', critical: true },
+    { key: 'bedrooms', label: 'Bedrooms', critical: true },
+    { key: 'bathrooms', label: 'Bathrooms', critical: true },
     { key: 'kitchens', label: 'Kitchens', critical: false },
-    { key: 'local_authority', label: 'Local authority', critical: false },
-    { key: 'occupation_status', label: 'Occupation status', critical: false },
   ];
-
-  // Check built_in_year or construction_date_band
-  const hasBuildInfo = passport.built_in_year || passport.construction_date_band;
 
   const missingFields: string[] = [];
   const criticalMissing: string[] = [];
@@ -176,19 +166,12 @@ export function calculatePassportCompleteness(passport: PropertyPassport | null)
     }
   });
 
-  // Add build info check
-  if (!hasBuildInfo) {
-    missingFields.push('Build year/date band');
-  } else {
-    filledCount++;
-  }
-
   // HMO licence check
-  if (passport.hmo_licence_required && !passport.hmo_licence) {
-    criticalMissing.push('HMO licence (required but missing)');
+  if (passport.hmo_licence_required && !passport.hmo_licence_expiry) {
+    criticalMissing.push('HMO licence expiry (required but missing)');
   }
 
-  const totalFields = requiredFields.length + 1; // +1 for build info
+  const totalFields = requiredFields.length;
   const percentage = Math.round((filledCount / totalFields) * 100);
 
   return {
