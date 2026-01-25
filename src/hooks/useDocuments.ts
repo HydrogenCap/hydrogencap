@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { ActivityLoggers } from './useActivityLog';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
@@ -70,8 +71,15 @@ export function useCreateDocument() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      // Log activity
+      ActivityLoggers.documentUploaded(
+        data.property_id,
+        data.original_file_name,
+        data.doc_type || undefined
+      );
     },
   });
 }
@@ -80,7 +88,7 @@ export function useUpdateDocument() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...document }: DocumentUpdate & { id: string }) => {
+    mutationFn: async ({ id, wasAccepted, ...document }: DocumentUpdate & { id: string; wasAccepted?: boolean }) => {
       const { data, error } = await supabase
         .from('documents')
         .update(document)
@@ -89,10 +97,21 @@ export function useUpdateDocument() {
         .single();
 
       if (error) throw error;
+      
+      // Log if document was just accepted
+      if (wasAccepted !== true && document.review_status === 'accepted') {
+        ActivityLoggers.documentAccepted(
+          data.property_id,
+          data.original_file_name,
+          data.doc_type || 'Document'
+        );
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
     },
   });
 }
@@ -124,7 +143,6 @@ export function useBulkAcceptDocuments() {
         .from('documents')
         .update({ 
           review_status: 'accepted',
-          doc_type: supabase.rpc ? undefined : undefined, // Will be set per document
         })
         .in('id', documentIds);
 
@@ -132,6 +150,7 @@ export function useBulkAcceptDocuments() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
     },
   });
 }

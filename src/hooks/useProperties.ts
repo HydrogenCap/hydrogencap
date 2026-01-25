@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
+import { ActivityLoggers } from './useActivityLog';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
@@ -88,8 +88,10 @@ export function useCreateProperty() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      // Log activity
+      ActivityLoggers.propertyCreated(data.id, data.address_line);
     },
   });
 }
@@ -98,7 +100,7 @@ export function useUpdateProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...property }: PropertyUpdate & { id: string }) => {
+    mutationFn: async ({ id, previousValue, ...property }: PropertyUpdate & { id: string; previousValue?: number | null }) => {
       const { data, error } = await supabase
         .from('properties')
         .update(property)
@@ -107,11 +109,22 @@ export function useUpdateProperty() {
         .single();
 
       if (error) throw error;
+      
+      // Check if valuation changed
+      if (property.current_value_gbp !== undefined && property.current_value_gbp !== previousValue) {
+        ActivityLoggers.valuationChanged(
+          data.id, 
+          previousValue ?? null, 
+          Number(property.current_value_gbp)
+        );
+      }
+      
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
     },
   });
 }
@@ -152,6 +165,13 @@ export function useCreateLoan() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      // Log activity
+      ActivityLoggers.mortgageUpdated(
+        data.property_id, 
+        data.lender, 
+        data.current_mortgage_balance_gbp ? Number(data.current_mortgage_balance_gbp) : null
+      );
     },
   });
 }
@@ -160,7 +180,14 @@ export function useUpdateLoan() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...loan }: Database['public']['Tables']['loans']['Update'] & { id: string }) => {
+    mutationFn: async ({ 
+      id, 
+      previousRate, 
+      ...loan 
+    }: Database['public']['Tables']['loans']['Update'] & { 
+      id: string; 
+      previousRate?: number | null 
+    }) => {
       const { data, error } = await supabase
         .from('loans')
         .update(loan)
@@ -169,11 +196,30 @@ export function useUpdateLoan() {
         .single();
 
       if (error) throw error;
+      
+      // Check if rate changed
+      if (loan.interest_rate_percent !== undefined && loan.interest_rate_percent !== previousRate) {
+        ActivityLoggers.rateChanged(
+          data.property_id,
+          previousRate ?? null,
+          Number(loan.interest_rate_percent),
+          data.fixed_rate_expires || undefined
+        );
+      } else if (loan.current_mortgage_balance_gbp !== undefined) {
+        // Log mortgage update if balance changed
+        ActivityLoggers.mortgageUpdated(
+          data.property_id,
+          data.lender,
+          Number(loan.current_mortgage_balance_gbp)
+        );
+      }
+      
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
     },
   });
 }
@@ -196,6 +242,13 @@ export function useUpsertIncome() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      // Log activity
+      ActivityLoggers.incomeUpdated(
+        data.property_id, 
+        data.year, 
+        Number(data.annual_rent_gbp)
+      );
     },
   });
 }
@@ -218,6 +271,18 @@ export function useUpsertCosts() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      // Calculate total
+      const total = [
+        data.management_gbp,
+        data.bills_gbp,
+        data.insurance_gbp,
+        data.maintenance_gbp,
+        data.compliance_gbp,
+        data.other_gbp,
+      ].reduce((sum, val) => sum + (val ? Number(val) : 0), 0);
+      
+      ActivityLoggers.costsUpdated(data.property_id, data.year, total);
     },
   });
 }
