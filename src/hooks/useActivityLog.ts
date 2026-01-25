@@ -20,14 +20,30 @@ export type ActivityEntryType =
   | 'manual';
 
 async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
+  try {
+    const { data, error } = await supabase.rpc('get_user_org_id');
+    
+    if (error) {
+      console.warn('Failed to get org_id via RPC:', error.message);
+      // Fallback to direct query
+      const { data: membership, error: membershipError } = await supabase
+        .from('memberships')
+        .select('org_id')
+        .limit(1)
+        .maybeSingle();
+      
+      if (membershipError || !membership) {
+        console.warn('Failed to get org_id from memberships:', membershipError?.message);
+        return null;
+      }
+      return membership.org_id;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('getUserOrgId error:', err);
+    return null;
+  }
 }
 
 export function useActivityLog(propertyId?: string) {
@@ -95,24 +111,32 @@ export function useCreateActivityLog() {
 
 // Helper function to log activity (can be used directly)
 export async function logActivity(entry: Omit<ActivityLogInsert, 'org_id'>) {
-  const orgId = await getUserOrgId();
-  if (!orgId) {
-    console.warn('No org_id found, skipping activity log');
+  try {
+    const orgId = await getUserOrgId();
+    if (!orgId) {
+      console.warn('No org_id found, skipping activity log:', entry.title);
+      return null;
+    }
+
+    console.log('Logging activity:', { ...entry, org_id: orgId });
+    
+    const { data, error } = await supabase
+      .from('activity_log')
+      .insert({ ...entry, org_id: orgId })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to log activity:', error.message, entry);
+      return null;
+    }
+
+    console.log('Activity logged successfully:', data);
+    return data;
+  } catch (err) {
+    console.error('logActivity exception:', err);
     return null;
   }
-
-  const { data, error } = await supabase
-    .from('activity_log')
-    .insert({ ...entry, org_id: orgId })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Failed to log activity:', error);
-    return null;
-  }
-
-  return data;
 }
 
 // Utility functions for common log entries
