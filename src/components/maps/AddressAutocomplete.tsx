@@ -25,6 +25,7 @@ export interface AddressData {
   latitude: number;
   longitude: number;
   geocode_confidence: 'exact' | 'approximate' | 'unknown';
+  geocode_source: 'PLACES' | 'GEOCODE';
 }
 
 interface AddressAutocompleteProps {
@@ -107,6 +108,7 @@ export function AddressAutocomplete({
         latitude: place.geometry.location.lat(),
         longitude: place.geometry.location.lng(),
         geocode_confidence: 'exact', // Places API selections are typically exact
+        geocode_source: 'PLACES',
       };
 
       setInputValue(addressData.formatted_address);
@@ -165,6 +167,7 @@ export function AddressAutocomplete({
         latitude: result.latitude,
         longitude: result.longitude,
         geocode_confidence: result.geocode_confidence,
+        geocode_source: 'GEOCODE',
       };
 
       setInputValue(result.formatted_address);

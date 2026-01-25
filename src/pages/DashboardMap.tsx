@@ -11,10 +11,17 @@ import { useProperties } from '@/hooks/useProperties';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import { useDuplicateDetection } from '@/hooks/useDuplicateDetection';
 import { Link } from 'react-router-dom';
+import { MissingLocationsBanner } from '@/components/geocoding';
 
 export default function DashboardMap() {
   const { data: properties, isLoading } = useProperties();
   const duplicates = useDuplicateDetection(properties);
+  
+  // Count properties missing location
+  const missingLocationCount = useMemo(() => {
+    if (!properties) return 0;
+    return properties.filter(p => !p.latitude || !p.longitude).length;
+  }, [properties]);
   
   const [search, setSearch] = useState('');
   const [missingType, setMissingType] = useState<'all' | 'finance' | 'insurance'>('all');
@@ -80,6 +87,12 @@ export default function DashboardMap() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Missing Locations Banner */}
+        <MissingLocationsBanner 
+          missingCount={missingLocationCount} 
+          totalCount={properties?.length || 0} 
+        />
+
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>

@@ -807,6 +807,9 @@ export type Database = {
           epc_required: boolean | null
           formatted_address: string | null
           geocode_confidence: string | null
+          geocode_error: string | null
+          geocode_source: string | null
+          geocode_status: string | null
           geocoded_at: string | null
           id: string
           land_registry_link: string | null
@@ -846,6 +849,9 @@ export type Database = {
           epc_required?: boolean | null
           formatted_address?: string | null
           geocode_confidence?: string | null
+          geocode_error?: string | null
+          geocode_source?: string | null
+          geocode_status?: string | null
           geocoded_at?: string | null
           id?: string
           land_registry_link?: string | null
@@ -885,6 +891,9 @@ export type Database = {
           epc_required?: boolean | null
           formatted_address?: string | null
           geocode_confidence?: string | null
+          geocode_error?: string | null
+          geocode_source?: string | null
+          geocode_status?: string | null
           geocoded_at?: string | null
           id?: string
           land_registry_link?: string | null

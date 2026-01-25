@@ -1,0 +1,272 @@
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+
+export type GeocodeStatus = 'NOT_STARTED' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
+export type GeocodeSource = 'PLACES' | 'GEOCODE';
+
+export interface GeocodeResult {
+  place_id: string | null;
+  formatted_address: string;
+  latitude: number;
+  longitude: number;
+  address_line: string;
+  address_line2: string | null;
+  town_city: string | null;
+  county: string | null;
+  postcode: string | null;
+  country: string;
+  geocode_confidence: 'exact' | 'approximate' | 'unknown';
+}
+
+export interface BackfillProgress {
+  total: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
+  failures: Array<{
+    propertyId: string;
+    address: string;
+    error: string;
+  }>;
+}
+
+export function useGeocoding() {
+  const queryClient = useQueryClient();
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  // Geocode a single address using the edge function
+  const geocodeAddress = useCallback(async (address: string): Promise<GeocodeResult | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('geocode-address', {
+        body: { address },
+      });
+
+      if (error || !data?.success) {
+        console.error('Geocoding failed:', error || data?.error);
+        return null;
+      }
+
+      const result = data.data;
+      return {
+        place_id: result.place_id,
+        formatted_address: result.formatted_address,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        address_line: result.address_line1,
+        address_line2: result.address_line2,
+        town_city: result.town_city,
+        county: result.county,
+        postcode: result.postcode,
+        country: result.country,
+        geocode_confidence: result.geocode_confidence,
+      };
+    } catch (err) {
+      console.error('Geocoding error:', err);
+      return null;
+    }
+  }, []);
+
+  // Update a property with geocode data
+  const updatePropertyGeocode = useCallback(async (
+    propertyId: string,
+    geocodeData: GeocodeResult,
+    source: GeocodeSource
+  ) => {
+    const status: GeocodeStatus = geocodeData.geocode_confidence === 'exact' ? 'SUCCESS' : 'PARTIAL';
+    
+    const { error } = await supabase
+      .from('properties')
+      .update({
+        place_id: geocodeData.place_id,
+        formatted_address: geocodeData.formatted_address,
+        latitude: geocodeData.latitude,
+        longitude: geocodeData.longitude,
+        town_city: geocodeData.town_city,
+        county: geocodeData.county,
+        country: geocodeData.country,
+        geocode_status: status,
+        geocode_source: source,
+        geocode_error: null,
+        geocoded_at: new Date().toISOString(),
+      })
+      .eq('id', propertyId);
+
+    if (error) throw error;
+    
+    queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+  }, [queryClient]);
+
+  // Mark a property geocode as failed
+  const markGeocodeFailed = useCallback(async (
+    propertyId: string,
+    errorMessage: string
+  ) => {
+    const { error } = await supabase
+      .from('properties')
+      .update({
+        geocode_status: 'FAILED' as GeocodeStatus,
+        geocode_error: errorMessage,
+        geocoded_at: new Date().toISOString(),
+      })
+      .eq('id', propertyId);
+
+    if (error) throw error;
+  }, []);
+
+  // Geocode a property by building address from its fields
+  const geocodeProperty = useCallback(async (property: {
+    id: string;
+    address_line: string;
+    address_line2?: string | null;
+    town_city?: string | null;
+    postcode?: string | null;
+    country?: string | null;
+  }): Promise<boolean> => {
+    // Build full address string
+    const addressParts = [
+      property.address_line,
+      property.address_line2,
+      property.town_city,
+      property.postcode,
+      property.country || 'United Kingdom',
+    ].filter(Boolean);
+    
+    const fullAddress = addressParts.join(', ');
+    
+    const result = await geocodeAddress(fullAddress);
+    
+    if (result) {
+      await updatePropertyGeocode(property.id, result, 'GEOCODE');
+      return true;
+    } else {
+      await markGeocodeFailed(property.id, 'Could not geocode address');
+      return false;
+    }
+  }, [geocodeAddress, updatePropertyGeocode, markGeocodeFailed]);
+
+  return {
+    isGeocoding,
+    setIsGeocoding,
+    geocodeAddress,
+    geocodeProperty,
+    updatePropertyGeocode,
+    markGeocodeFailed,
+  };
+}
+
+// Hook for batch geocoding with progress tracking
+export function useBackfillGeocoding() {
+  const { geocodeProperty } = useGeocoding();
+  const queryClient = useQueryClient();
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<BackfillProgress | null>(null);
+
+  const startBackfill = useCallback(async (batchSize: number = 10) => {
+    setIsRunning(true);
+    setProgress({ total: 0, processed: 0, succeeded: 0, failed: 0, failures: [] });
+
+    try {
+      // Fetch all properties needing geocoding
+      const { data: properties, error } = await supabase
+        .from('properties')
+        .select('id, address_line, address_line2, town_city, postcode, country')
+        .or('geocode_status.eq.NOT_STARTED,geocode_status.eq.FAILED,latitude.is.null');
+
+      if (error) throw error;
+      if (!properties?.length) {
+        setProgress(p => p ? { ...p, total: 0 } : null);
+        setIsRunning(false);
+        return;
+      }
+
+      setProgress(p => p ? { ...p, total: properties.length } : null);
+
+      // Process in batches
+      for (let i = 0; i < properties.length; i += batchSize) {
+        const batch = properties.slice(i, i + batchSize);
+        
+        // Process batch with delays to respect rate limits
+        for (const property of batch) {
+          const success = await geocodeProperty(property);
+          
+          setProgress(p => {
+            if (!p) return null;
+            const newProgress = {
+              ...p,
+              processed: p.processed + 1,
+              succeeded: success ? p.succeeded + 1 : p.succeeded,
+              failed: success ? p.failed : p.failed + 1,
+              failures: success ? p.failures : [
+                ...p.failures,
+                {
+                  propertyId: property.id,
+                  address: property.address_line,
+                  error: 'Geocoding failed',
+                },
+              ],
+            };
+            return newProgress;
+          });
+
+          // Rate limit: wait 200ms between requests
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+
+      // Refresh property list after backfill
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+    } catch (err) {
+      console.error('Backfill error:', err);
+    } finally {
+      setIsRunning(false);
+    }
+  }, [geocodeProperty, queryClient]);
+
+  const resetProgress = useCallback(() => {
+    setProgress(null);
+  }, []);
+
+  return {
+    isRunning,
+    progress,
+    startBackfill,
+    resetProgress,
+  };
+}
+
+// Calculate distance between two coordinates in miles
+export function calculateDistanceMiles(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 3959; // Earth's radius in miles
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
+
+// Check if new geocode is suspiciously far from previous location
+export function isSuspiciousGeocodeChange(
+  oldLat: number | null,
+  oldLng: number | null,
+  newLat: number,
+  newLng: number,
+  thresholdMiles: number = 25
+): boolean {
+  if (oldLat === null || oldLng === null) return false;
+  const distance = calculateDistanceMiles(oldLat, oldLng, newLat, newLng);
+  return distance > thresholdMiles;
+}
