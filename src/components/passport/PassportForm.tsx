@@ -399,6 +399,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="Owner Occupier">Owner Occupier</SelectItem>
                       <SelectItem value="BTL">BTL</SelectItem>
                       <SelectItem value="Licensed HMO">Licensed HMO</SelectItem>
                       <SelectItem value="Unlicensed HMO">Unlicensed HMO</SelectItem>
