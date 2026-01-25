@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity } from 'lucide-react';
+import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity, Bed } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -29,6 +29,7 @@ import {
   getExpiryStatus,
   daysUntil,
 } from '@/lib/calculations';
+import { calculatePortfolioRentPerBedroom, formatPaymentGBP } from '@/lib/mortgageCalculations';
 
 // Fix Leaflet default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -80,6 +81,7 @@ function DashboardPage() {
         totalEquity: 0,
         averageLTV: 0,
         monthlyCashflow: 0,
+        rentPerBedroom: null as number | null,
       };
     }
 
@@ -121,7 +123,17 @@ function DashboardPage() {
     const totalEquity = totalValue - totalMortgage;
     const averageLTV = totalValue > 0 ? (totalMortgage / totalValue) * 100 : 0;
 
-    return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt };
+    // Calculate portfolio rent per bedroom
+    const rentPerBedroomData = properties.map(p => {
+      const inc = p.income?.find(i => i.year === currentYear);
+      return {
+        annualRent: inc?.annual_rent_gbp ? Number(inc.annual_rent_gbp) : null,
+        bedrooms: p.beds ? Number(p.beds) : null,
+      };
+    });
+    const rentPerBedroom = calculatePortfolioRentPerBedroom(rentPerBedroomData);
+
+    return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt, rentPerBedroom: rentPerBedroom.monthly };
   }, [properties]);
 
   // Calculate risks (including passport data)
@@ -373,7 +385,7 @@ function DashboardPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -441,6 +453,21 @@ function DashboardPage() {
               <div className={`text-2xl font-bold ${portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {formatGBP(portfolioStats.monthlyCashflow)}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Rent / Bedroom
+              </CardTitle>
+              <Bed className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                {portfolioStats.rentPerBedroom !== null ? formatPaymentGBP(portfolioStats.rentPerBedroom) : '—'}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">per month avg</p>
             </CardContent>
           </Card>
         </div>
