@@ -8,12 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
-import { OwnershipCard, OwnershipEditor, BeneficialAttributionCard } from '@/components/ownership';
+import { OwnershipSection, BeneficialAttributionCard } from '@/components/ownership';
 import { LocationRegistryCard } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
-import type { PropertyOwnershipWithEntity } from '@/hooks/useOwnership';
+
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
@@ -55,21 +55,6 @@ function PropertyDetailPage() {
   const { data: property, isLoading, error } = useProperty(id);
   const deleteProperty = useDeleteProperty();
   
-  // Ownership editor state
-  const [ownershipEditorOpen, setOwnershipEditorOpen] = useState(false);
-  const [editingOwnership, setEditingOwnership] = useState<PropertyOwnershipWithEntity | null>(null);
-  const [defaultOwnershipLevel, setDefaultOwnershipLevel] = useState<'Property' | 'SPV_Shareholding'>('Property');
-
-  const handleAddOwnership = (level: 'Property' | 'SPV_Shareholding') => {
-    setEditingOwnership(null);
-    setDefaultOwnershipLevel(level);
-    setOwnershipEditorOpen(true);
-  };
-
-  const handleEditOwnership = (ownership: PropertyOwnershipWithEntity) => {
-    setEditingOwnership(ownership);
-    setOwnershipEditorOpen(true);
-  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -383,11 +368,7 @@ function PropertyDetailPage() {
             />
 
             {/* Ownership Section */}
-            <OwnershipCard
-              propertyId={id!}
-              onAddOwnership={handleAddOwnership}
-              onEditOwnership={handleEditOwnership}
-            />
+            <OwnershipSection propertyId={id!} />
 
             {/* Beneficial Attribution */}
             <BeneficialAttributionCard propertyId={id!} />
@@ -403,15 +384,6 @@ function PropertyDetailPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Ownership Editor Dialog */}
-            <OwnershipEditor
-              propertyId={id!}
-              open={ownershipEditorOpen}
-              onOpenChange={setOwnershipEditorOpen}
-              editingOwnership={editingOwnership}
-              defaultLevel={defaultOwnershipLevel}
-            />
           </TabsContent>
 
           <TabsContent value="finance" className="space-y-4">
