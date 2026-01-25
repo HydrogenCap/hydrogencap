@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Building2 } from 'lucide-react';
+import { SecuritySettings } from '@/components/settings/SecuritySettings';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -48,6 +49,9 @@ export default function Settings() {
             <Button>Save Changes</Button>
           </CardContent>
         </Card>
+
+        {/* Security Settings */}
+        <SecuritySettings />
 
         {/* Organization Settings */}
         <Card className="bg-card border-border">
