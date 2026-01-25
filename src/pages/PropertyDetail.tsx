@@ -33,7 +33,7 @@ import {
   formatDateUK,
   calculateLTV,
   calculateEquity,
-  calculateTotalCosts,
+  getEffectiveCosts,
   calculateNetRent,
   calculateMonthlyCashflow,
   calculateYield,
@@ -123,14 +123,10 @@ function PropertyDetailPage() {
   const mortgageBalance = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
   const currentValue = property.current_value_gbp ? Number(property.current_value_gbp) : null;
   const annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-  const totalCosts = costs ? calculateTotalCosts({
-    management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
-    bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
-    insurance_gbp: costs.insurance_gbp ? Number(costs.insurance_gbp) : null,
-    maintenance_gbp: costs.maintenance_gbp ? Number(costs.maintenance_gbp) : null,
-    compliance_gbp: costs.compliance_gbp ? Number(costs.compliance_gbp) : null,
-    other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
-  }) : 0;
+  
+  // Use effective costs (auto-calculated with manual overrides)
+  const effectiveCosts = getEffectiveCosts(annualRent, currentValue, costs);
+  const totalCosts = effectiveCosts.total;
 
   const ltv = calculateLTV(mortgageBalance, currentValue);
   const equity = calculateEquity(currentValue, mortgageBalance);
@@ -497,27 +493,42 @@ function PropertyDetailPage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Management</span>
-                      <span>{formatGBP(costs.management_gbp ? Number(costs.management_gbp) : 0)}</span>
+                      <div className="text-right">
+                        <span>{formatGBP(effectiveCosts.management)}</span>
+                        {effectiveCosts.managementSource === 'auto' && (
+                          <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Bills</span>
-                      <span>{formatGBP(costs.bills_gbp ? Number(costs.bills_gbp) : 0)}</span>
+                      <span>{formatGBP(effectiveCosts.bills)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Insurance</span>
-                      <span>{formatGBP(costs.insurance_gbp ? Number(costs.insurance_gbp) : 0)}</span>
+                      <div className="text-right">
+                        <span>{formatGBP(effectiveCosts.insurance)}</span>
+                        {effectiveCosts.insuranceSource === 'auto' && (
+                          <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Maintenance</span>
-                      <span>{formatGBP(costs.maintenance_gbp ? Number(costs.maintenance_gbp) : 0)}</span>
+                      <span className="text-muted-foreground">Repairs/Maintenance</span>
+                      <div className="text-right">
+                        <span>{formatGBP(effectiveCosts.repairs)}</span>
+                        {effectiveCosts.repairsSource === 'auto' && (
+                          <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Compliance</span>
-                      <span>{formatGBP(costs.compliance_gbp ? Number(costs.compliance_gbp) : 0)}</span>
+                      <span>{formatGBP(effectiveCosts.compliance)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Other</span>
-                      <span>{formatGBP(costs.other_gbp ? Number(costs.other_gbp) : 0)}</span>
+                      <span>{formatGBP(effectiveCosts.other)}</span>
                     </div>
                     <div className="border-t border-border pt-3 flex justify-between font-medium">
                       <span>Total</span>

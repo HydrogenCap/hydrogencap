@@ -35,7 +35,7 @@ import {
   formatDateUK,
   calculateLTV,
   calculateEquity,
-  calculateTotalCosts,
+  getEffectiveCosts,
   calculateNetRent,
   calculateYield,
   calculateMonthlyMortgagePayment,
@@ -282,18 +282,12 @@ function getPropertyMetrics(property: PropertyWithFinancials) {
   const purchasePrice = property.purchase_price_gbp ? Number(property.purchase_price_gbp) : null;
   const annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
   
-  const managementCost = costs?.management_gbp ? Number(costs.management_gbp) : 0;
-  const billsCost = costs?.bills_gbp ? Number(costs.bills_gbp) : 0;
+  // Use effective costs (auto-calculated with manual overrides)
+  const effectiveCosts = getEffectiveCosts(annualRent, currentValue, costs);
+  const managementCost = effectiveCosts.management;
+  const billsCost = effectiveCosts.bills;
   const billsManagement = managementCost + billsCost;
-  
-  const totalCosts = costs ? calculateTotalCosts({
-    management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
-    bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
-    insurance_gbp: costs.insurance_gbp ? Number(costs.insurance_gbp) : null,
-    maintenance_gbp: costs.maintenance_gbp ? Number(costs.maintenance_gbp) : null,
-    compliance_gbp: costs.compliance_gbp ? Number(costs.compliance_gbp) : null,
-    other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
-  }) : 0;
+  const totalCosts = effectiveCosts.total;
 
   const ltv = calculateLTV(mortgageBalance, currentValue);
   const equity = calculateEquity(currentValue, mortgageBalance);

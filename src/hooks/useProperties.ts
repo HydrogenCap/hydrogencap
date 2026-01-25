@@ -272,14 +272,14 @@ export function useUpsertCosts() {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
-      // Calculate total
+      // Calculate total from manual fields
       const total = [
-        data.management_gbp,
-        data.bills_gbp,
-        data.insurance_gbp,
-        data.maintenance_gbp,
-        data.compliance_gbp,
-        data.other_gbp,
+        data.management_gbp_manual,
+        data.bills_gbp_manual,
+        data.insurance_gbp_manual,
+        data.repairs_gbp_manual,
+        data.compliance_gbp_manual,
+        data.other_gbp_manual,
       ].reduce((sum, val) => sum + (val ? Number(val) : 0), 0);
       
       ActivityLoggers.costsUpdated(data.property_id, data.year, total);

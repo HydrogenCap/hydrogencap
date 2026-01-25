@@ -64,41 +64,68 @@ export type Database = {
       }
       costs: {
         Row: {
-          bills_gbp: number | null
-          compliance_gbp: number | null
+          bills_gbp_manual: number | null
+          compliance_gbp_manual: number | null
           created_at: string
           id: string
-          insurance_gbp: number | null
-          maintenance_gbp: number | null
-          management_gbp: number | null
-          other_gbp: number | null
+          insurance_gbp_calculated: number | null
+          insurance_gbp_manual: number | null
+          insurance_rule_enabled: boolean | null
+          insurance_rule_percent_of_value: number | null
+          management_gbp_calculated: number | null
+          management_gbp_manual: number | null
+          management_rule_enabled: boolean | null
+          management_rule_percent_of_rent: number | null
+          other_gbp_manual: number | null
           property_id: string
+          repairs_gbp_calculated: number | null
+          repairs_gbp_manual: number | null
+          repairs_rule_enabled: boolean | null
+          repairs_rule_percent_of_rent: number | null
           updated_at: string
           year: number
         }
         Insert: {
-          bills_gbp?: number | null
-          compliance_gbp?: number | null
+          bills_gbp_manual?: number | null
+          compliance_gbp_manual?: number | null
           created_at?: string
           id?: string
-          insurance_gbp?: number | null
-          maintenance_gbp?: number | null
-          management_gbp?: number | null
-          other_gbp?: number | null
+          insurance_gbp_calculated?: number | null
+          insurance_gbp_manual?: number | null
+          insurance_rule_enabled?: boolean | null
+          insurance_rule_percent_of_value?: number | null
+          management_gbp_calculated?: number | null
+          management_gbp_manual?: number | null
+          management_rule_enabled?: boolean | null
+          management_rule_percent_of_rent?: number | null
+          other_gbp_manual?: number | null
           property_id: string
+          repairs_gbp_calculated?: number | null
+          repairs_gbp_manual?: number | null
+          repairs_rule_enabled?: boolean | null
+          repairs_rule_percent_of_rent?: number | null
           updated_at?: string
           year: number
         }
         Update: {
-          bills_gbp?: number | null
-          compliance_gbp?: number | null
+          bills_gbp_manual?: number | null
+          compliance_gbp_manual?: number | null
           created_at?: string
           id?: string
-          insurance_gbp?: number | null
-          maintenance_gbp?: number | null
-          management_gbp?: number | null
-          other_gbp?: number | null
+          insurance_gbp_calculated?: number | null
+          insurance_gbp_manual?: number | null
+          insurance_rule_enabled?: boolean | null
+          insurance_rule_percent_of_value?: number | null
+          management_gbp_calculated?: number | null
+          management_gbp_manual?: number | null
+          management_rule_enabled?: boolean | null
+          management_rule_percent_of_rent?: number | null
+          other_gbp_manual?: number | null
           property_id?: string
+          repairs_gbp_calculated?: number | null
+          repairs_gbp_manual?: number | null
+          repairs_rule_enabled?: boolean | null
+          repairs_rule_percent_of_rent?: number | null
           updated_at?: string
           year?: number
         }
@@ -202,6 +229,57 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_shareholdings: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          parent_entity_id: string
+          shareholder_entity_id: string
+          shareholder_percent: number
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          parent_entity_id: string
+          shareholder_entity_id: string
+          shareholder_percent: number
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          parent_entity_id?: string
+          shareholder_entity_id?: string
+          shareholder_percent?: number
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_shareholdings_parent_entity_id_fkey"
+            columns: ["parent_entity_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_shareholdings_shareholder_entity_id_fkey"
+            columns: ["shareholder_entity_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -571,6 +649,57 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_legal_ownership: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          owner_entity_id: string
+          owner_percent: number
+          property_id: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_entity_id: string
+          owner_percent: number
+          property_id: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_entity_id?: string
+          owner_percent?: number
+          property_id?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_legal_ownership_owner_entity_id_fkey"
+            columns: ["owner_entity_id"]
+            isOneToOne: false
+            referencedRelation: "ownership_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_legal_ownership_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
