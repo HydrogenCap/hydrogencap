@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Switch } from '@/components/ui/switch';
 import {
   Popover,
   PopoverContent,
@@ -18,13 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-interface FieldDefinition {
-  key: string;
-  label: string;
-  type: 'text' | 'currency' | 'percent' | 'date' | 'select';
-  options?: readonly string[];
-}
+import { FieldDefinition } from '@/hooks/useMissingInfo';
 
 interface Props {
   field: FieldDefinition;
@@ -79,9 +74,35 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
           </div>
         );
 
+      case 'number':
+        return (
+          <Input
+            type="number"
+            step="1"
+            min="0"
+            placeholder="0"
+            value={value || ''}
+            onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+            className={cn(isFilled && 'border-green-500')}
+          />
+        );
+
+      case 'boolean':
+        return (
+          <div className="flex items-center gap-2 h-10">
+            <Switch
+              checked={value === true}
+              onCheckedChange={checked => onChange(checked)}
+            />
+            <span className="text-sm text-muted-foreground">
+              {value === true ? 'Yes' : value === false ? 'No' : 'Not set'}
+            </span>
+          </div>
+        );
+
       case 'date':
         const dateValue = value ? new Date(value) : undefined;
-        // Calculate a reasonable year range (20 years back, 30 years forward for mortgages)
+        // Calculate a reasonable year range (30 years back, 40 years forward for mortgages)
         const currentYear = new Date().getFullYear();
         const fromYear = currentYear - 30;
         const toYear = currentYear + 40;

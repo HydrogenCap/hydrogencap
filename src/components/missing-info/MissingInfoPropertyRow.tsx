@@ -8,6 +8,7 @@ import {
   Clock,
   Save,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +23,13 @@ import {
   copyMissingToClipboard,
   FINANCE_FIELDS,
   INSURANCE_FIELDS,
+  PASSPORT_FIELDS,
+  CRITICAL_PASSPORT_FIELDS,
 } from '@/hooks/useMissingInfo';
 import { MissingFieldEditor } from './MissingFieldEditor';
 import { useUpdateLoan } from '@/hooks/useProperties';
 import { useUpsertInsurancePolicy } from '@/hooks/useMissingInfo';
+import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { toast } from 'sonner';
 
 interface Props {
@@ -36,12 +40,17 @@ export function MissingInfoPropertyRow({ item }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [financeChanges, setFinanceChanges] = useState<Record<string, any>>({});
   const [insuranceChanges, setInsuranceChanges] = useState<Record<string, any>>({});
+  const [passportChanges, setPassportChanges] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
 
   const updateLoan = useUpdateLoan();
   const upsertInsurance = useUpsertInsurancePolicy();
+  const upsertPassport = useUpsertPassport();
 
-  const hasChanges = Object.keys(financeChanges).length > 0 || Object.keys(insuranceChanges).length > 0;
+  const hasChanges = 
+    Object.keys(financeChanges).length > 0 || 
+    Object.keys(insuranceChanges).length > 0 ||
+    Object.keys(passportChanges).length > 0;
 
   const statusBadge = () => {
     switch (item.status) {
@@ -51,8 +60,10 @@ export function MissingInfoPropertyRow({ item }: Props) {
         return <Badge variant="secondary" className="bg-amber-500/10 text-amber-600">Missing Finance</Badge>;
       case 'missing_insurance':
         return <Badge variant="secondary" className="bg-purple-500/10 text-purple-600">Missing Insurance</Badge>;
-      case 'missing_both':
-        return <Badge variant="destructive">Missing Both</Badge>;
+      case 'missing_passport':
+        return <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">Missing Passport</Badge>;
+      case 'missing_multiple':
+        return <Badge variant="destructive">Missing Multiple</Badge>;
     }
   };
 
@@ -62,6 +73,10 @@ export function MissingInfoPropertyRow({ item }: Props) {
 
   const handleInsuranceChange = (field: string, value: any) => {
     setInsuranceChanges(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePassportChange = (field: string, value: any) => {
+    setPassportChanges(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
@@ -87,9 +102,18 @@ export function MissingInfoPropertyRow({ item }: Props) {
         });
       }
 
+      // Save passport changes
+      if (Object.keys(passportChanges).length > 0) {
+        await upsertPassport.mutateAsync({
+          property_id: item.property.id,
+          ...passportChanges,
+        });
+      }
+
       toast.success('Changes saved successfully');
       setFinanceChanges({});
       setInsuranceChanges({});
+      setPassportChanges({});
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save changes');
@@ -101,9 +125,13 @@ export function MissingInfoPropertyRow({ item }: Props) {
   // Calculate remaining missing fields after pending changes
   const remainingFinanceMissing = item.missingFinanceFields.filter(f => !(f in financeChanges));
   const remainingInsuranceMissing = item.missingInsuranceFields.filter(f => !(f in insuranceChanges));
+  const remainingPassportMissing = item.missingPassportFields.filter(f => !(f in passportChanges));
+
+  // Check if there are critical passport fields missing
+  const hasCriticalMissing = item.missingCriticalPassportFields.length > 0;
 
   return (
-    <Card className={`transition-colors ${item.renewingSoon ? 'border-amber-500/50 bg-amber-500/5' : ''}`}>
+    <Card className={`transition-colors ${item.renewingSoon || item.hmoLicenceExpiringSoon ? 'border-amber-500/50 bg-amber-500/5' : ''}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardContent className="pt-4 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -126,11 +154,22 @@ export function MissingInfoPropertyRow({ item }: Props) {
               </div>
 
               {/* Status & Badges */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
                 {item.renewingSoon && (
                   <Badge variant="outline" className="border-amber-500 text-amber-600">
                     <Clock className="h-3 w-3 mr-1" />
-                    Renewal Soon
+                    Insurance Renewal
+                  </Badge>
+                )}
+                {item.hmoLicenceExpiringSoon && (
+                  <Badge variant="outline" className="border-red-500 text-red-600">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    HMO Expiring
+                  </Badge>
+                )}
+                {hasCriticalMissing && (
+                  <Badge variant="outline" className="border-red-500 text-red-600">
+                    Critical Data Missing
                   </Badge>
                 )}
                 {statusBadge()}
@@ -171,9 +210,6 @@ export function MissingInfoPropertyRow({ item }: Props) {
                           onChange={val => handleFinanceChange(fieldKey, val)}
                           isFilled={isFilled}
                         />
-                        {isFilled && (
-                          <CheckCircle2 className="h-4 w-4 text-green-500 absolute top-2 right-2" />
-                        )}
                       </div>
                     );
                   })}
@@ -205,6 +241,46 @@ export function MissingInfoPropertyRow({ item }: Props) {
                           onChange={val => handleInsuranceChange(fieldKey, val)}
                           isFilled={isFilled}
                         />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Missing Passport Fields */}
+            {item.missingPassportFields.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-blue-600 mb-3 flex items-center gap-2">
+                  Missing Passport ({remainingPassportMissing.length} remaining)
+                  {item.missingCriticalPassportFields.length > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      {item.missingCriticalPassportFields.length} critical
+                    </Badge>
+                  )}
+                  {Object.keys(passportChanges).length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {Object.keys(passportChanges).length} filled
+                    </Badge>
+                  )}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {item.missingPassportFields.map(fieldKey => {
+                    const fieldDef = PASSPORT_FIELDS.find(f => f.key === fieldKey);
+                    if (!fieldDef) return null;
+                    const isFilled = fieldKey in passportChanges;
+                    const isCritical = CRITICAL_PASSPORT_FIELDS.includes(fieldKey);
+                    return (
+                      <div key={fieldKey} className={`${isFilled ? 'opacity-50' : ''} ${isCritical ? 'ring-1 ring-red-500/30 rounded-md p-2 -m-2' : ''}`}>
+                        <MissingFieldEditor
+                          field={fieldDef}
+                          value={passportChanges[fieldKey]}
+                          onChange={val => handlePassportChange(fieldKey, val)}
+                          isFilled={isFilled}
+                        />
+                        {isCritical && !isFilled && (
+                          <span className="text-xs text-red-500 mt-1 block">Critical field</span>
+                        )}
                       </div>
                     );
                   })}
