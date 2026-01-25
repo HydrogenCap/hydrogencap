@@ -52,6 +52,7 @@ const propertySchema = z.object({
   fixed_or_variable: z.enum(['fixed', 'variable', '']).optional(),
   current_mortgage_balance_gbp: z.coerce.number().min(0).optional(),
   capital_or_interest: z.enum(['capital', 'interest', '']).optional(),
+  mortgage_type: z.enum(['BTL', 'Bridging', '']).optional(),
   term_years: z.coerce.number().int().min(1).max(50).optional(),
   mortgage_payment_gbp: z.coerce.number().min(0).optional(),
   fixed_rate_expires: z.string().optional(),
@@ -141,6 +142,9 @@ function PropertyEditPage() {
         current_mortgage_balance_gbp: loan?.current_mortgage_balance_gbp ?? undefined,
         capital_or_interest: (loan?.capital_or_interest === 'capital' || loan?.capital_or_interest === 'interest') 
           ? loan.capital_or_interest as 'capital' | 'interest' 
+          : '',
+        mortgage_type: (loan?.mortgage_type === 'BTL' || loan?.mortgage_type === 'Bridging')
+          ? loan.mortgage_type as 'BTL' | 'Bridging'
           : '',
         term_years: (loan as any)?.term_years ?? undefined,
         mortgage_payment_gbp: loan?.payment_override_gbp ?? undefined,
@@ -299,6 +303,7 @@ function PropertyEditPage() {
         fixed_or_variable: data.fixed_or_variable || null,
         current_mortgage_balance_gbp: data.current_mortgage_balance_gbp || null,
         capital_or_interest: data.capital_or_interest || null,
+        mortgage_type: data.mortgage_type || null,
         term_years: data.term_years || null,
         // Store manual payment as override, auto-calc as the regular field
         payment_override_gbp: data.mortgage_payment_gbp || null,
@@ -808,6 +813,27 @@ function PropertyEditPage() {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="mortgage_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mortgage Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-input">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="BTL">Buy-to-Let (BTL)</SelectItem>
+                          <SelectItem value="Bridging">Bridging Loan</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 {watchedCapitalOrInterest === 'capital' && (
                   <FormField
                     control={form.control}
