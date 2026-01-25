@@ -8,7 +8,7 @@ import { PropertyWithFinancials } from '@/hooks/useProperties';
 import { 
   calculateHealthScore, 
   calculateLTV, 
-  calculateTotalCosts,
+  getEffectiveCosts,
   getHealthGrade,
   getHealthStatus,
   HealthScoreBreakdown,
@@ -36,14 +36,10 @@ export function PortfolioHealthWidget({ properties }: PortfolioHealthWidgetProps
       const mortgageBalance = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
       const currentValue = property.current_value_gbp ? Number(property.current_value_gbp) : null;
       const annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-      const totalCosts = costs ? calculateTotalCosts({
-        management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
-        bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
-        insurance_gbp: costs.insurance_gbp ? Number(costs.insurance_gbp) : null,
-        maintenance_gbp: costs.maintenance_gbp ? Number(costs.maintenance_gbp) : null,
-        compliance_gbp: costs.compliance_gbp ? Number(costs.compliance_gbp) : null,
-        other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
-      }) : 0;
+      
+      // Use effective costs (auto-calculated with manual overrides)
+      const effectiveCosts = getEffectiveCosts(annualRent, currentValue, costs);
+      const totalCosts = effectiveCosts.total;
 
       const ltv = calculateLTV(mortgageBalance, currentValue);
       const mortgagePayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;

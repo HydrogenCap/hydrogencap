@@ -21,7 +21,7 @@ import {
   formatPercent,
   calculateLTV,
   calculateEquity,
-  calculateTotalCosts,
+  getEffectiveCosts,
   calculateMonthlyCashflowAfterDebt,
   calculateMonthlyMortgagePayment,
   getLTVStatus,
@@ -96,14 +96,10 @@ function DashboardPage() {
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
       const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : 0;
       const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-      const totalCosts = costs ? calculateTotalCosts({
-        management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
-        bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
-        insurance_gbp: costs.insurance_gbp ? Number(costs.insurance_gbp) : null,
-        maintenance_gbp: costs.maintenance_gbp ? Number(costs.maintenance_gbp) : null,
-        compliance_gbp: costs.compliance_gbp ? Number(costs.compliance_gbp) : null,
-        other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
-      }) : 0;
+      
+      // Use effective costs (auto-calculated with manual overrides)
+      const effectiveCosts = getEffectiveCosts(rent, value, costs);
+      const totalCosts = effectiveCosts.total;
 
       // Calculate effective monthly mortgage payment
       const mortgagePaymentResult = calculateMonthlyMortgagePayment({
@@ -144,14 +140,10 @@ function DashboardPage() {
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : null;
       const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
       const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-      const totalCosts = costs ? calculateTotalCosts({
-        management_gbp: costs.management_gbp ? Number(costs.management_gbp) : null,
-        bills_gbp: costs.bills_gbp ? Number(costs.bills_gbp) : null,
-        insurance_gbp: costs.insurance_gbp ? Number(costs.insurance_gbp) : null,
-        maintenance_gbp: costs.maintenance_gbp ? Number(costs.maintenance_gbp) : null,
-        compliance_gbp: costs.compliance_gbp ? Number(costs.compliance_gbp) : null,
-        other_gbp: costs.other_gbp ? Number(costs.other_gbp) : null,
-      }) : 0;
+      
+      // Use effective costs (auto-calculated with manual overrides)
+      const effectiveCostsRisk = getEffectiveCosts(rent, value, costs);
+      const totalCosts = effectiveCostsRisk.total;
 
       // Calculate effective monthly mortgage payment
       const mortgagePaymentResult = calculateMonthlyMortgagePayment({

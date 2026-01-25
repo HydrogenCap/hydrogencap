@@ -152,6 +152,7 @@ export function calculateTotalCosts(costs: {
   bills_gbp?: number | null;
   insurance_gbp?: number | null;
   maintenance_gbp?: number | null;
+  repairs_gbp?: number | null; // New name for maintenance
   compliance_gbp?: number | null;
   other_gbp?: number | null;
 }): number {
@@ -159,10 +160,151 @@ export function calculateTotalCosts(costs: {
     (costs.management_gbp || 0) +
     (costs.bills_gbp || 0) +
     (costs.insurance_gbp || 0) +
-    (costs.maintenance_gbp || 0) +
+    (costs.maintenance_gbp || costs.repairs_gbp || 0) +
     (costs.compliance_gbp || 0) +
     (costs.other_gbp || 0)
   );
+}
+
+// ============================================================
+// COSTS AUTO-CALCULATION SYSTEM
+// ============================================================
+
+export interface CostsData {
+  // Manual amounts
+  management_gbp_manual?: number | null;
+  repairs_gbp_manual?: number | null;
+  insurance_gbp_manual?: number | null;
+  bills_gbp_manual?: number | null;
+  compliance_gbp_manual?: number | null;
+  other_gbp_manual?: number | null;
+  
+  // Rule toggles and settings
+  management_rule_enabled?: boolean | null;
+  management_rule_percent_of_rent?: number | null;
+  management_gbp_calculated?: number | null;
+  
+  repairs_rule_enabled?: boolean | null;
+  repairs_rule_percent_of_rent?: number | null;
+  repairs_gbp_calculated?: number | null;
+  
+  insurance_rule_enabled?: boolean | null;
+  insurance_rule_percent_of_value?: number | null;
+  insurance_gbp_calculated?: number | null;
+}
+
+export interface EffectiveCosts {
+  management: number;
+  insurance: number;
+  repairs: number;
+  bills: number;
+  compliance: number;
+  other: number;
+  total: number;
+  
+  // Sources for UI display
+  managementSource: 'auto' | 'manual';
+  insuranceSource: 'auto' | 'manual';
+  repairsSource: 'auto' | 'manual';
+}
+
+/**
+ * Calculate auto-calculated cost values based on rules
+ */
+export function calculateCostRules(
+  grossRent: number | null,
+  propertyValue: number | null,
+  costs: CostsData
+): { management: number | null; insurance: number | null; repairs: number | null } {
+  // Management: % of gross rent
+  const managementCalc = (costs.management_rule_enabled !== false && grossRent)
+    ? grossRent * ((costs.management_rule_percent_of_rent ?? 5) / 100)
+    : null;
+
+  // Insurance: % of property value
+  const insuranceCalc = (costs.insurance_rule_enabled !== false && propertyValue)
+    ? propertyValue * ((costs.insurance_rule_percent_of_value ?? 0.3) / 100)
+    : null;
+
+  // Repairs: % of gross rent
+  const repairsCalc = (costs.repairs_rule_enabled !== false && grossRent)
+    ? grossRent * ((costs.repairs_rule_percent_of_rent ?? 5) / 100)
+    : null;
+
+  return { management: managementCalc, insurance: insuranceCalc, repairs: repairsCalc };
+}
+
+/**
+ * Get effective cost amounts (manual overrides auto-calculated)
+ */
+export function getEffectiveCosts(
+  grossRent: number | null,
+  propertyValue: number | null,
+  costs: CostsData | null | undefined
+): EffectiveCosts {
+  if (!costs) {
+    return {
+      management: 0,
+      insurance: 0,
+      repairs: 0,
+      bills: 0,
+      compliance: 0,
+      other: 0,
+      total: 0,
+      managementSource: 'auto',
+      insuranceSource: 'auto',
+      repairsSource: 'auto',
+    };
+  }
+
+  const calculated = calculateCostRules(grossRent, propertyValue, costs);
+
+  // Management: manual overrides auto
+  const hasManualManagement = costs.management_gbp_manual !== null && 
+    costs.management_gbp_manual !== undefined && 
+    costs.management_gbp_manual > 0;
+  const management = hasManualManagement 
+    ? Number(costs.management_gbp_manual) 
+    : (calculated.management ?? 0);
+  const managementSource = hasManualManagement ? 'manual' : 'auto';
+
+  // Insurance: manual overrides auto
+  const hasManualInsurance = costs.insurance_gbp_manual !== null && 
+    costs.insurance_gbp_manual !== undefined && 
+    costs.insurance_gbp_manual > 0;
+  const insurance = hasManualInsurance 
+    ? Number(costs.insurance_gbp_manual) 
+    : (calculated.insurance ?? 0);
+  const insuranceSource = hasManualInsurance ? 'manual' : 'auto';
+
+  // Repairs: manual overrides auto
+  const hasManualRepairs = costs.repairs_gbp_manual !== null && 
+    costs.repairs_gbp_manual !== undefined && 
+    costs.repairs_gbp_manual > 0;
+  const repairs = hasManualRepairs 
+    ? Number(costs.repairs_gbp_manual) 
+    : (calculated.repairs ?? 0);
+  const repairsSource = hasManualRepairs ? 'manual' : 'auto';
+
+  // Static costs (no auto-calc)
+  const bills = costs.bills_gbp_manual ? Number(costs.bills_gbp_manual) : 0;
+  const compliance = costs.compliance_gbp_manual ? Number(costs.compliance_gbp_manual) : 0;
+  const other = costs.other_gbp_manual ? Number(costs.other_gbp_manual) : 0;
+
+  const total = management + insurance + repairs + bills + compliance + other;
+
+  return {
+    management,
+    insurance,
+    repairs,
+    bills,
+    compliance,
+    other,
+    total,
+    managementSource: managementSource as 'auto' | 'manual',
+    insuranceSource: insuranceSource as 'auto' | 'manual',
+    repairsSource: repairsSource as 'auto' | 'manual',
+  };
 }
 
 // Calculate Net Operating Income (NOI) = annual rent - annual costs
