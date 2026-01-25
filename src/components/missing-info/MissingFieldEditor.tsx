@@ -81,6 +81,10 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
 
       case 'date':
         const dateValue = value ? new Date(value) : undefined;
+        // Calculate a reasonable year range (20 years back, 30 years forward for mortgages)
+        const currentYear = new Date().getFullYear();
+        const fromYear = currentYear - 30;
+        const toYear = currentYear + 40;
         return (
           <Popover>
             <PopoverTrigger asChild>
@@ -103,6 +107,9 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
                 onSelect={date => onChange(date ? format(date, 'yyyy-MM-dd') : undefined)}
                 initialFocus
                 className="p-3 pointer-events-auto"
+                captionLayout="dropdown-buttons"
+                fromYear={fromYear}
+                toYear={toYear}
               />
             </PopoverContent>
           </Popover>
