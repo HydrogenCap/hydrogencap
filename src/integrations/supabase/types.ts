@@ -1110,6 +1110,7 @@ export type Database = {
           land_registry_link: string | null
           latitude: number | null
           lease_years_remaining: number | null
+          legal_owner_company_id: string | null
           listed_status: string | null
           longitude: number | null
           notes: string | null
@@ -1152,6 +1153,7 @@ export type Database = {
           land_registry_link?: string | null
           latitude?: number | null
           lease_years_remaining?: number | null
+          legal_owner_company_id?: string | null
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
@@ -1194,6 +1196,7 @@ export type Database = {
           land_registry_link?: string | null
           latitude?: number | null
           lease_years_remaining?: number | null
+          legal_owner_company_id?: string | null
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
@@ -1213,6 +1216,13 @@ export type Database = {
           uprn?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "properties_legal_owner_company_id_fkey"
+            columns: ["legal_owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "properties_org_id_fkey"
             columns: ["org_id"]

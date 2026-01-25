@@ -50,7 +50,7 @@ import {
   type Shareholding,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ShareholdingEditor, ComplianceFilingsCard, CompanyLinkedProperties, CompanyMissingInfoCard } from '@/components/companies';
+import { ShareholdingEditor, ComplianceFilingsCard, CompanyLinkedProperties, CompanyMissingInfoCard, CompanyBeneficialOwnersCard } from '@/components/companies';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercent } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
@@ -460,6 +460,9 @@ export default function CompanyDetail() {
 
             {/* Linked Properties Section */}
             <CompanyLinkedProperties companyId={company.id} />
+
+            {/* Beneficial Ownership Split for properties this company owns */}
+            <CompanyBeneficialOwnersCard companyId={company.id} />
           </div>
 
           {/* Right Column - Shareholdings */}
