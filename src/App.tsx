@@ -23,6 +23,7 @@ import Insights from "./pages/Insights";
 import MissingInfo from "./pages/MissingInfo";
 import Settings from "./pages/Settings";
 import DashboardMap from "./pages/DashboardMap";
+import Timeline from "./pages/Timeline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -127,6 +128,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Insights />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/timeline"
+              element={
+                <ProtectedRoute>
+                  <Timeline />
                 </ProtectedRoute>
               }
             />
