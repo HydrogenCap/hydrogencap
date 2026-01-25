@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useProperty, useUpdateProperty, useUpdateLoan, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
 import { extractPostcodeArea } from '@/lib/calculations';
 import { calculateMortgagePaymentDetailed, formatPaymentGBP } from '@/lib/mortgageCalculations';
+import { AutoPopulateButton } from '@/components/property/AutoPopulateButton';
+import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
@@ -123,6 +125,10 @@ function PropertyEditPage() {
   const watchedTermYears = useWatch({ control: form.control, name: 'term_years' });
   const watchedPaymentOverride = useWatch({ control: form.control, name: 'mortgage_payment_gbp' });
 
+  // Watch postcode and address for auto-populate
+  const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
+  const watchedAddress = useWatch({ control: form.control, name: 'address_line' });
+
   // Calculate mortgage payment
   const mortgageCalc = useMemo(() => {
     return calculateMortgagePaymentDetailed({
@@ -135,6 +141,39 @@ function PropertyEditPage() {
       paymentOverride: watchedPaymentOverride || null,
     });
   }, [watchedBalance, watchedRate, watchedCapitalOrInterest, watchedTermYears, watchedPaymentOverride]);
+
+  // Handle auto-populate data
+  const handleAutoPopulate = (data: PropertyLookupResult) => {
+    if (data.epc) {
+      if (data.epc.epcRating) {
+        const rating = data.epc.epcRating.toUpperCase();
+        if (['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(rating)) {
+          form.setValue('epc_rating', rating as 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G');
+        }
+      }
+      if (data.epc.propertyType && !form.getValues('property_type')) {
+        form.setValue('property_type', data.epc.propertyType);
+      }
+      if (data.epc.bedrooms && !form.getValues('beds')) {
+        form.setValue('beds', data.epc.bedrooms);
+      }
+      if (data.epc.tenure) {
+        const tenureMap: Record<string, 'Freehold' | 'Leasehold'> = {
+          'Freehold': 'Freehold',
+          'Leasehold': 'Leasehold',
+        };
+        if (tenureMap[data.epc.tenure] && !form.getValues('tenure')) {
+          form.setValue('tenure', tenureMap[data.epc.tenure]);
+        }
+      }
+    }
+
+    if (data.location) {
+      if (data.location.county && !form.getValues('area_name')) {
+        form.setValue('area_name', data.location.county);
+      }
+    }
+  };
 
   const onSubmit = async (data: PropertyFormData) => {
     if (!id) return;
@@ -277,9 +316,16 @@ function PropertyEditPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Property Details */}
             <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle>Property Details</CardTitle>
-                <CardDescription>Basic information about the property</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Property Details</CardTitle>
+                  <CardDescription>Basic information about the property</CardDescription>
+                </div>
+                <AutoPopulateButton
+                  postcode={watchedPostcode}
+                  addressLine={watchedAddress}
+                  onDataReceived={handleAutoPopulate}
+                />
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <FormField
