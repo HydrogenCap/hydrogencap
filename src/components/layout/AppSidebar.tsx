@@ -27,7 +27,8 @@ const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Properties', icon: Building2, href: '/properties' },
   { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
-  { title: 'Import', icon: Upload, href: '/import' },
+  { title: 'Import Properties', icon: Upload, href: '/import' },
+  { title: 'Import Passports', icon: Upload, href: '/import/passport' },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 

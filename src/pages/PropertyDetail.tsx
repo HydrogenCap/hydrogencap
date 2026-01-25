@@ -530,6 +530,10 @@ function PropertyDetailPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="passport">
+            <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
+          </TabsContent>
+
           <TabsContent value="documents">
             <Card className="bg-card border-border">
               <CardContent className="py-8 text-center text-muted-foreground">
