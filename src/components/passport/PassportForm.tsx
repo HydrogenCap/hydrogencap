@@ -107,28 +107,21 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
 
   const onSubmit = async (data: PassportFormData) => {
     try {
-      // Build meter_notes from legacy fields if they exist but meter_notes is empty
-      let meterNotes = data.meter_notes;
-      if (!meterNotes && passport) {
-        const legacyParts = [];
-        if (passport.electric_meter_location) legacyParts.push(`Electric: ${passport.electric_meter_location}`);
-        if (passport.gas_meter_location) legacyParts.push(`Gas: ${passport.gas_meter_location}`);
-        if (passport.water_meter_location) legacyParts.push(`Water: ${passport.water_meter_location}`);
-        if (passport.water_stop_tap_location) legacyParts.push(`Stop tap: ${passport.water_stop_tap_location}`);
-        if (legacyParts.length > 0) meterNotes = legacyParts.join('; ');
-      }
-
+      // Extract meter_notes and map to existing DB field
+      const { meter_notes, ...dbFields } = data;
+      
       await upsertPassport.mutateAsync({
         property_id: propertyId,
-        ...data,
-        // Map meter_notes back to electric_meter_location for storage (reusing existing column)
-        electric_meter_location: meterNotes || null,
+        ...dbFields,
+        // Store combined meter notes in electric_meter_location field
+        electric_meter_location: meter_notes || null,
       });
       toast({
         title: 'Passport saved',
         description: 'Property passport has been updated.',
       });
-    } catch {
+    } catch (err) {
+      console.error('Passport save error:', err);
       toast({
         title: 'Error',
         description: 'Failed to save passport.',
@@ -595,17 +588,6 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
 }
 
 function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
-  // Build meter_notes from legacy fields
-  let meterNotes = '';
-  if (passport) {
-    const parts = [];
-    if (passport.electric_meter_location) parts.push(`Electric: ${passport.electric_meter_location}`);
-    if (passport.gas_meter_location) parts.push(`Gas: ${passport.gas_meter_location}`);
-    if (passport.water_meter_location) parts.push(`Water: ${passport.water_meter_location}`);
-    if (passport.water_stop_tap_location) parts.push(`Stop tap: ${passport.water_stop_tap_location}`);
-    meterNotes = parts.join('; ');
-  }
-
   return {
     // TIER 1 - CORE
     asset_agreement_category: passport?.asset_agreement_category ?? null,
@@ -628,7 +610,8 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
     loft_access: passport?.loft_access ?? null,
     block_communal_entrance: passport?.block_communal_entrance ?? null,
     has_gas_supply: passport?.has_gas_supply ?? true,
-    meter_notes: meterNotes || null,
+    // Use electric_meter_location to store meter notes
+    meter_notes: passport?.electric_meter_location ?? null,
     has_bin_store: passport?.has_bin_store ?? false,
     has_cycle_store: passport?.has_cycle_store ?? false,
   };
