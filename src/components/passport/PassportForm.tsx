@@ -12,7 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { usePropertyPassport, useUpsertPassport, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/calculations';
-import { useLocalAuthorities, useCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
+import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
 import { usePropertyLookup, PropertyLookupResult } from '@/hooks/usePropertyLookup';
@@ -108,7 +108,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   
   // Local authorities and management companies
   const { data: localAuthorities = [] } = useLocalAuthorities();
-  const createLocalAuthority = useCreateLocalAuthority();
+  const findOrCreateLocalAuthority = useFindOrCreateLocalAuthority();
   const { data: managementCompanies = [] } = useManagementCompanies();
   const createManagementCompany = useCreateManagementCompany();
   const seedDefaultManagement = useSeedDefaultManagementCompany();
@@ -183,11 +183,11 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
         form.setValue('local_authority_id', existingLA.id);
         updatedFields.push('Local Authority');
       } else {
-        // Create the local authority
+        // Find or create the local authority
         try {
-          const newLA = await createLocalAuthority.mutateAsync(laName);
+          const newLA = await findOrCreateLocalAuthority.mutateAsync(laName);
           form.setValue('local_authority_id', newLA.id);
-          updatedFields.push('Local Authority (created)');
+          updatedFields.push('Local Authority');
         } catch {
           // Just update the text field as fallback
           form.setValue('local_authority', laName);
@@ -359,7 +359,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
                       inputLabel="Council Name"
                       inputPlaceholder="e.g. Birmingham City Council"
                       onAddNew={async (name) => {
-                        const result = await createLocalAuthority.mutateAsync(name);
+                        const result = await findOrCreateLocalAuthority.mutateAsync(name);
                         return { id: result.id, name: result.name };
                       }}
                     />
