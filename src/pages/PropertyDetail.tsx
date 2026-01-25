@@ -285,9 +285,6 @@ function PropertyDetailPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
-            {/* Floorplan - High visibility */}
-            <FloorplanCard propertyId={id!} />
-
             <div className="grid gap-4 md:grid-cols-2">
               {/* Property Details */}
               <Card className="bg-card border-border">
