@@ -14,9 +14,11 @@ export function ColumnMapper({ csvHeaders, mapping, onMappingChange, sampleData 
   const usedFields = new Set(Object.values(mapping).filter(Boolean));
   
   const handleChange = (csvColumn: string, fieldKey: string) => {
+    // Convert special "__skip__" value back to empty string for mapping
+    const actualValue = fieldKey === '__skip__' ? '' : fieldKey;
     onMappingChange({
       ...mapping,
-      [csvColumn]: fieldKey as PropertyFieldKey | '',
+      [csvColumn]: actualValue as PropertyFieldKey | '',
     });
   };
 
@@ -59,14 +61,14 @@ export function ColumnMapper({ csvHeaders, mapping, onMappingChange, sampleData 
               
               <div className="w-56">
                 <Select
-                  value={currentMapping}
+                  value={currentMapping || '__skip__'}
                   onValueChange={(value) => handleChange(header, value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Skip this column" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Skip this column</SelectItem>
+                    <SelectItem value="__skip__">Skip this column</SelectItem>
                     {PROPERTY_FIELDS.map((field) => (
                       <SelectItem 
                         key={field.key} 
