@@ -12,6 +12,7 @@ import { OwnershipCard, OwnershipEditor } from '@/components/ownership';
 import { LocationRegistryCard } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
+import { FloorplanCard } from '@/components/floorplans';
 import type { PropertyOwnershipWithEntity } from '@/hooks/useOwnership';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -284,6 +285,9 @@ function PropertyDetailPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
+            {/* Floorplan - High visibility */}
+            <FloorplanCard propertyId={id!} />
+
             <div className="grid gap-4 md:grid-cols-2">
               {/* Property Details */}
               <Card className="bg-card border-border">
@@ -556,7 +560,11 @@ function PropertyDetailPage() {
             <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
           </TabsContent>
 
-          <TabsContent value="documents">
+          <TabsContent value="documents" className="space-y-4">
+            {/* Floorplans Section */}
+            <FloorplanCard propertyId={id!} showAllFloorplans={true} />
+            
+            {/* Other Documents */}
             <Card className="bg-card border-border">
               <CardContent className="py-8 text-center text-muted-foreground">
                 <p>Document management coming soon</p>
