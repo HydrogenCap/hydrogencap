@@ -49,7 +49,7 @@ import {
   type Shareholding,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ShareholdingEditor, ComplianceFilingsCard } from '@/components/companies';
+import { ShareholdingEditor, ComplianceFilingsCard, CompanyLinkedProperties } from '@/components/companies';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercent } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
@@ -438,6 +438,9 @@ export default function CompanyDetail() {
               isSyncing={isLookingUp}
               isUpdating={updateCompany.isPending}
             />
+
+            {/* Linked Properties Section */}
+            <CompanyLinkedProperties companyId={company.id} />
           </div>
 
           {/* Right Column - Shareholdings */}
