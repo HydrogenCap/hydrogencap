@@ -50,7 +50,7 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get('COMPANIES_HOUSE_API_KEY');
+    const apiKey = Deno.env.get('COMPANIES_HOUSE_API_KEY')?.trim();
     if (!apiKey) {
       console.error('COMPANIES_HOUSE_API_KEY not configured');
       return new Response(
@@ -62,7 +62,9 @@ serve(async (req) => {
     const { action, companyNumber, searchQuery } = await req.json();
     console.log(`Companies House lookup: action=${action}, companyNumber=${companyNumber}, searchQuery=${searchQuery}`);
 
+    // Companies House API uses HTTP Basic Auth with API key as username, empty password
     const authHeader = `Basic ${btoa(apiKey + ':')}`;
+    console.log(`Auth header length: ${authHeader.length}, API key length: ${apiKey.length}`);
 
     if (action === 'search' && searchQuery) {
       // Search for companies by name
