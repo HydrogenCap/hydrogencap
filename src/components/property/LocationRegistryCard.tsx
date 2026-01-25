@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, ExternalLink, Edit2, Check, X } from 'lucide-react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import L from 'leaflet';
+import { MapPin, ExternalLink, Edit2, Check, X, Navigation, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,19 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPicker } from './MapPicker';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import 'leaflet/dist/leaflet.css';
-
-// Fix Leaflet default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 interface LocationRegistryCardProps {
   propertyId: string;
@@ -50,11 +45,16 @@ export function LocationRegistryCard({
   landRegistryLink,
   address,
 }: LocationRegistryCardProps) {
-  const [mapPickerOpen, setMapPickerOpen] = useState(false);
+  const [coordDialogOpen, setCoordDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Coordinate edit state
+  const [coordLat, setCoordLat] = useState<string>('');
+  const [coordLng, setCoordLng] = useState<string>('');
 
   // Edit form state
   const [editValues, setEditValues] = useState({
@@ -67,15 +67,89 @@ export function LocationRegistryCard({
 
   const hasCoordinates = latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined;
 
-  const handleSaveCoordinates = async (lat: number, lng: number) => {
-    const { error } = await supabase
-      .from('properties')
-      .update({ latitude: lat, longitude: lng })
-      .eq('id', propertyId);
+  const openCoordDialog = () => {
+    setCoordLat(latitude?.toString() || '');
+    setCoordLng(longitude?.toString() || '');
+    setCoordDialogOpen(true);
+  };
 
-    if (error) throw error;
+  const handleSaveCoordinates = async () => {
+    const lat = parseFloat(coordLat);
+    const lng = parseFloat(coordLng);
     
-    queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      toast({
+        title: 'Invalid coordinates',
+        description: 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ latitude: lat, longitude: lng })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+      
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      setCoordDialogOpen(false);
+      toast({
+        title: 'Coordinates saved',
+        description: `Location set to ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save coordinates.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const geocodeFromAddress = async () => {
+    if (!address) return;
+    
+    setIsGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=gb`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      
+      if (!response.ok) throw new Error('Geocoding failed');
+      
+      const results = await response.json();
+      
+      if (results.length > 0) {
+        const result = results[0];
+        setCoordLat(parseFloat(result.lat).toFixed(8));
+        setCoordLng(parseFloat(result.lon).toFixed(8));
+        toast({
+          title: 'Location found',
+          description: result.display_name.substring(0, 60) + '...',
+        });
+      } else {
+        toast({
+          title: 'Location not found',
+          description: 'Try entering coordinates manually.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Geocoding error',
+        description: 'Failed to search for address.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeocoding(false);
+    }
   };
 
   const handleStartEdit = () => {
@@ -126,6 +200,12 @@ export function LocationRegistryCard({
     }
   };
 
+  // Generate static map URL for preview
+  const getStaticMapUrl = () => {
+    if (!hasCoordinates) return null;
+    return `https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=15&size=400x150&markers=${latitude},${longitude},red-pushpin`;
+  };
+
   return (
     <>
       <Card className="bg-card border-border">
@@ -150,32 +230,26 @@ export function LocationRegistryCard({
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Map preview or add button */}
+          {/* Coordinates section */}
           <div>
             <Label className="text-muted-foreground text-sm">Coordinates</Label>
             {hasCoordinates ? (
               <div className="mt-2 space-y-2">
-                <div className="h-[150px] rounded-lg overflow-hidden border border-border">
-                  <MapContainer
-                    center={[latitude!, longitude!]}
-                    zoom={15}
-                    style={{ height: '100%', width: '100%' }}
-                    className="z-0"
-                    scrollWheelZoom={false}
-                    dragging={false}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker position={[latitude!, longitude!]} />
-                  </MapContainer>
+                <div className="h-[150px] rounded-lg overflow-hidden border border-border bg-muted">
+                  <img 
+                    src={getStaticMapUrl()!}
+                    alt="Property location"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
                     {latitude?.toFixed(6)}, {longitude?.toFixed(6)}
                   </span>
-                  <Button variant="outline" size="sm" onClick={() => setMapPickerOpen(true)}>
+                  <Button variant="outline" size="sm" onClick={openCoordDialog}>
                     Update
                   </Button>
                 </div>
@@ -184,7 +258,7 @@ export function LocationRegistryCard({
               <Button
                 variant="outline"
                 className="w-full mt-2"
-                onClick={() => setMapPickerOpen(true)}
+                onClick={openCoordDialog}
               >
                 <MapPin className="h-4 w-4 mr-2" />
                 Add Coordinates
@@ -295,14 +369,90 @@ export function LocationRegistryCard({
         </CardContent>
       </Card>
 
-      <MapPicker
-        open={mapPickerOpen}
-        onOpenChange={setMapPickerOpen}
-        initialLat={latitude}
-        initialLng={longitude}
-        address={address}
-        onSave={handleSaveCoordinates}
-      />
+      {/* Coordinates Dialog */}
+      <Dialog open={coordDialogOpen} onOpenChange={setCoordDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Set Coordinates
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {address && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Property address:</p>
+                <div className="flex gap-2">
+                  <p className="text-sm flex-1 bg-muted p-2 rounded">{address}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={geocodeFromAddress}
+                    disabled={isGeocoding}
+                    title="Lookup coordinates from address"
+                  >
+                    {isGeocoding ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Navigation className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="coord_lat">Latitude</Label>
+                <Input
+                  id="coord_lat"
+                  type="number"
+                  step="0.00000001"
+                  min="-90"
+                  max="90"
+                  value={coordLat}
+                  onChange={(e) => setCoordLat(e.target.value)}
+                  placeholder="e.g. 51.5074"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="coord_lng">Longitude</Label>
+                <Input
+                  id="coord_lng"
+                  type="number"
+                  step="0.00000001"
+                  min="-180"
+                  max="180"
+                  value={coordLng}
+                  onChange={(e) => setCoordLng(e.target.value)}
+                  placeholder="e.g. -0.1278"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Tip: You can find coordinates on Google Maps by right-clicking a location and selecting the coordinates.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCoordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCoordinates} disabled={isSaving || !coordLat || !coordLng}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Coordinates'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
