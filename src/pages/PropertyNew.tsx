@@ -21,13 +21,20 @@ const propertySchema = z.object({
   postcode: z.string().max(10).optional(),
   property_type: z.string().max(50).optional(),
   beds: z.coerce.number().int().min(0).max(50).optional(),
+  bathrooms: z.coerce.number().int().min(0).max(50).optional(),
   ownership_entity: z.string().max(100).optional(),
   ownership_percent: z.coerce.number().min(0).max(100).optional(),
   purchase_price_gbp: z.coerce.number().min(0).optional(),
   original_purchase_date: z.string().optional(),
   current_value_gbp: z.coerce.number().min(0).optional(),
-  epc_rating: z.enum(['A', 'B', 'C', 'D', 'E', 'F', 'G', '']).optional(),
+  epc_rating: z.enum(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'N/A', '']).optional(),
+  listed_status: z.enum(['Not listed', 'Grade II', 'Grade II*', 'Grade I', '']).optional(),
   notes: z.string().max(2000).optional(),
+  // Land Registry fields
+  title_number: z.string().max(50).optional(),
+  tenure: z.enum(['Freehold', 'Leasehold', 'Share of Freehold', 'Commonhold', '']).optional(),
+  lease_years_remaining: z.coerce.number().int().min(0).max(999).optional(),
+  uprn: z.string().max(20).optional(),
   // Loan fields
   lender: z.string().max(100).optional(),
   interest_rate_percent: z.coerce.number().min(0).max(100).optional(),
@@ -61,6 +68,11 @@ function PropertyNewPage() {
     setIsSubmitting(true);
     
     try {
+      // Determine if EPC is required based on listed status
+      const listedValue = data.listed_status || '';
+      const isListed = listedValue !== '' && listedValue !== 'Not listed';
+      const epcRequired = !isListed;
+      
       // Create property
       const property = await createProperty.mutateAsync({
         address_line: data.address_line,
@@ -69,12 +81,19 @@ function PropertyNewPage() {
         postcode_area: data.postcode ? extractPostcodeArea(data.postcode) : null,
         property_type: data.property_type || null,
         beds: data.beds || null,
+        bathrooms: data.bathrooms || null,
         ownership_entity: data.ownership_entity || null,
         ownership_percent: data.ownership_percent || 100,
         purchase_price_gbp: data.purchase_price_gbp || null,
         original_purchase_date: data.original_purchase_date || null,
         current_value_gbp: data.current_value_gbp || null,
-        epc_rating: data.epc_rating || null,
+        epc_rating: data.epc_rating === 'N/A' ? null : (data.epc_rating || null),
+        epc_required: epcRequired,
+        listed_status: data.listed_status || null,
+        title_number: data.title_number || null,
+        tenure: data.tenure || null,
+        lease_years_remaining: data.lease_years_remaining || null,
+        uprn: data.uprn || null,
         notes: data.notes || null,
       });
 
@@ -213,6 +232,44 @@ function PropertyNewPage() {
 
                 <FormField
                   control={form.control}
+                  name="bathrooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bathrooms</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" min="0" className="bg-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="listed_status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Listed Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-input">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Not listed">Not listed</SelectItem>
+                          <SelectItem value="Grade II">Grade II</SelectItem>
+                          <SelectItem value="Grade II*">Grade II*</SelectItem>
+                          <SelectItem value="Grade I">Grade I</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="epc_rating"
                   render={({ field }) => (
                     <FormItem>
@@ -227,6 +284,7 @@ function PropertyNewPage() {
                           {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((rating) => (
                             <SelectItem key={rating} value={rating}>{rating}</SelectItem>
                           ))}
+                          <SelectItem value="N/A">N/A (Listed building)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -242,6 +300,83 @@ function PropertyNewPage() {
                       <FormLabel>Ownership Entity</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="Personal / Ltd Company" className="bg-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Land Registry */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle>Land Registry</CardTitle>
+                <CardDescription>Title and tenure details (optional)</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="title_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g. BK123456" className="bg-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="tenure"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tenure</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-input">
+                            <SelectValue placeholder="Select tenure" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Freehold">Freehold</SelectItem>
+                          <SelectItem value="Leasehold">Leasehold</SelectItem>
+                          <SelectItem value="Share of Freehold">Share of Freehold</SelectItem>
+                          <SelectItem value="Commonhold">Commonhold</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {(form.watch('tenure') === 'Leasehold' || form.watch('tenure') === 'Share of Freehold') && (
+                  <FormField
+                    control={form.control}
+                    name="lease_years_remaining"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lease Years Remaining</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" min="0" placeholder="e.g. 125" className="bg-input" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="uprn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UPRN</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g. 10023456789" className="bg-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
