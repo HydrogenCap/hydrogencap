@@ -94,19 +94,34 @@ Generate JSON response with overview, top 5 priorities, risks, and opportunities
       throw new Error("No content in AI response");
     }
 
-    // Parse JSON from response (handle markdown code blocks)
+    // Parse JSON from response (handle markdown code blocks and leading text)
     let insights;
     try {
-      // Remove markdown code blocks if present
       let jsonStr = content.trim();
-      if (jsonStr.startsWith("```json")) {
-        jsonStr = jsonStr.slice(7);
-      } else if (jsonStr.startsWith("```")) {
-        jsonStr = jsonStr.slice(3);
+      
+      // Find JSON block - it might have text before the markdown
+      const jsonBlockStart = jsonStr.indexOf('```json');
+      if (jsonBlockStart !== -1) {
+        jsonStr = jsonStr.slice(jsonBlockStart + 7);
+      } else if (jsonStr.indexOf('```') !== -1) {
+        const blockStart = jsonStr.indexOf('```');
+        jsonStr = jsonStr.slice(blockStart + 3);
       }
-      if (jsonStr.endsWith("```")) {
-        jsonStr = jsonStr.slice(0, -3);
+      
+      // Remove trailing markdown
+      if (jsonStr.indexOf('```') !== -1) {
+        jsonStr = jsonStr.slice(0, jsonStr.indexOf('```'));
       }
+      
+      // Try to find raw JSON if no markdown blocks
+      jsonStr = jsonStr.trim();
+      if (!jsonStr.startsWith('{')) {
+        const jsonStart = jsonStr.indexOf('{');
+        if (jsonStart !== -1) {
+          jsonStr = jsonStr.slice(jsonStart);
+        }
+      }
+      
       insights = JSON.parse(jsonStr.trim());
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
