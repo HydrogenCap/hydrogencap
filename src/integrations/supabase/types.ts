@@ -1170,6 +1170,70 @@ export type Database = {
           },
         ]
       }
+      property_beneficial_owners: {
+        Row: {
+          beneficial_percent: number
+          company_id: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          owner_type: string
+          party_id: string | null
+          property_id: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          beneficial_percent: number
+          company_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_type: string
+          party_id?: string | null
+          property_id: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          beneficial_percent?: number
+          company_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          owner_type?: string
+          party_id?: string | null
+          property_id?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_beneficial_owners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_beneficial_owners_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_beneficial_owners_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_legal_ownership: {
         Row: {
           created_at: string
