@@ -342,6 +342,7 @@ export type Database = {
           property_id: string
           refinance_target_date: string | null
           reversion_rate_percent: number | null
+          term_years: number | null
           updated_at: string
         }
         Insert: {
@@ -366,6 +367,7 @@ export type Database = {
           property_id: string
           refinance_target_date?: string | null
           reversion_rate_percent?: number | null
+          term_years?: number | null
           updated_at?: string
         }
         Update: {
@@ -390,6 +392,7 @@ export type Database = {
           property_id?: string
           refinance_target_date?: string | null
           reversion_rate_percent?: number | null
+          term_years?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -398,6 +401,64 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_authorities: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_authorities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      management_companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "management_companies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -791,8 +852,12 @@ export type Database = {
           land_registry_title_number: string | null
           living_rooms_communal: number | null
           local_authority: string | null
+          local_authority_id: string | null
+          local_authority_text: string | null
           loft_access: string | null
           maintenance_area: string | null
+          management_company_id: string | null
+          management_company_text: string | null
           number_of_storeys: number | null
           occupation_status: string | null
           owned_by: string | null
@@ -848,8 +913,12 @@ export type Database = {
           land_registry_title_number?: string | null
           living_rooms_communal?: number | null
           local_authority?: string | null
+          local_authority_id?: string | null
+          local_authority_text?: string | null
           loft_access?: string | null
           maintenance_area?: string | null
+          management_company_id?: string | null
+          management_company_text?: string | null
           number_of_storeys?: number | null
           occupation_status?: string | null
           owned_by?: string | null
@@ -905,8 +974,12 @@ export type Database = {
           land_registry_title_number?: string | null
           living_rooms_communal?: number | null
           local_authority?: string | null
+          local_authority_id?: string | null
+          local_authority_text?: string | null
           loft_access?: string | null
           maintenance_area?: string | null
+          management_company_id?: string | null
+          management_company_text?: string | null
           number_of_storeys?: number | null
           occupation_status?: string | null
           owned_by?: string | null
@@ -925,6 +998,20 @@ export type Database = {
           wc_cloakroom?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "property_passport_local_authority_id_fkey"
+            columns: ["local_authority_id"]
+            isOneToOne: false
+            referencedRelation: "local_authorities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_passport_management_company_id_fkey"
+            columns: ["management_company_id"]
+            isOneToOne: false
+            referencedRelation: "management_companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "property_passport_property_id_fkey"
             columns: ["property_id"]

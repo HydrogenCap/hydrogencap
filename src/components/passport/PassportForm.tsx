@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,6 +12,9 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { usePropertyPassport, useUpsertPassport, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/calculations';
+import { useLocalAuthorities, useCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
+import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
+import { ExtendableSelect } from './ExtendableSelect';
 
 const passportSchema = z.object({
   // Location & classification
@@ -19,6 +22,7 @@ const passportSchema = z.object({
   county: z.string().nullable().optional(),
   postcode: z.string().nullable().optional(),
   local_authority: z.string().nullable().optional(),
+  local_authority_id: z.string().nullable().optional(),
   maintenance_area: z.string().nullable().optional(),
   asset_agreement_category: z.string().nullable().optional(),
   occupation_status: z.string().nullable().optional(),
@@ -81,6 +85,7 @@ const passportSchema = z.object({
 
   // Management
   property_management_company: z.string().nullable().optional(),
+  management_company_id: z.string().nullable().optional(),
   property_management_fee_percent: z.coerce.number().min(0).max(100).nullable().optional(),
 });
 
@@ -95,6 +100,18 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   const { toast } = useToast();
   const { data: passport, isLoading } = usePropertyPassport(propertyId);
   const upsertPassport = useUpsertPassport();
+  
+  // Local authorities and management companies
+  const { data: localAuthorities = [] } = useLocalAuthorities();
+  const createLocalAuthority = useCreateLocalAuthority();
+  const { data: managementCompanies = [] } = useManagementCompanies();
+  const createManagementCompany = useCreateManagementCompany();
+  const seedDefaultManagement = useSeedDefaultManagementCompany();
+
+  // Seed default management company on mount
+  useEffect(() => {
+    seedDefaultManagement.mutate();
+  }, []);
 
   const form = useForm<PassportFormData>({
     resolver: zodResolver(passportSchema),
@@ -102,7 +119,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   });
 
   // Update form when data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (passport) {
       form.reset(getDefaultValues(passport));
     }
@@ -205,12 +222,26 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
             />
             <FormField
               control={form.control}
-              name="local_authority"
+              name="local_authority_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Local Authority</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value ?? ''} />
+                    <ExtendableSelect
+                      value={field.value ?? null}
+                      onValueChange={field.onChange}
+                      options={localAuthorities.map(la => ({ id: la.id, name: la.name }))}
+                      placeholder="Select local authority..."
+                      addLabel="Add new council"
+                      dialogTitle="Add Local Authority"
+                      dialogDescription="Enter the name of the local council."
+                      inputLabel="Council Name"
+                      inputPlaceholder="e.g. Birmingham City Council"
+                      onAddNew={async (name) => {
+                        const result = await createLocalAuthority.mutateAsync(name);
+                        return { id: result.id, name: result.name };
+                      }}
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -877,12 +908,26 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
-              name="property_management_company"
+              name="management_company_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Management Company</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value ?? ''} />
+                    <ExtendableSelect
+                      value={field.value ?? null}
+                      onValueChange={field.onChange}
+                      options={managementCompanies.map(mc => ({ id: mc.id, name: mc.name }))}
+                      placeholder="Select company..."
+                      addLabel="Add new company"
+                      dialogTitle="Add Management Company"
+                      dialogDescription="Enter the name of the management company."
+                      inputLabel="Company Name"
+                      inputPlaceholder="e.g. Property Management Ltd"
+                      onAddNew={async (name) => {
+                        const result = await createManagementCompany.mutateAsync(name);
+                        return { id: result.id, name: result.name };
+                      }}
+                    />
                   </FormControl>
                 </FormItem>
               )}
@@ -963,6 +1008,7 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
     county: passport?.county ?? null,
     postcode: passport?.postcode ?? null,
     local_authority: passport?.local_authority ?? null,
+    local_authority_id: (passport as any)?.local_authority_id ?? null,
     maintenance_area: passport?.maintenance_area ?? null,
     asset_agreement_category: passport?.asset_agreement_category ?? null,
     occupation_status: passport?.occupation_status ?? null,
@@ -1009,6 +1055,7 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
     photographs_link: passport?.photographs_link ?? null,
     dropbox_link: passport?.dropbox_link ?? null,
     property_management_company: passport?.property_management_company ?? null,
+    management_company_id: (passport as any)?.management_company_id ?? null,
     property_management_fee_percent: passport?.property_management_fee_percent ? Number(passport.property_management_fee_percent) : null,
   };
 }
