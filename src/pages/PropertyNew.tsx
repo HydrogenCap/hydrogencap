@@ -9,16 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateProperty, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
 import { extractPostcodeArea } from '@/lib/calculations';
 import { AutoPopulateButton } from '@/components/property/AutoPopulateButton';
 import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
+import { AddressAutocomplete, AddressData } from '@/components/maps/AddressAutocomplete';
+import { GeocodeStatusBadge } from '@/components/geocoding';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
+  address_line2: z.string().max(255).optional(),
+  town_city: z.string().max(100).optional(),
   area_name: z.string().max(100).optional(),
   postcode: z.string().max(10).optional(),
   property_type: z.string().max(50).optional(),
@@ -46,9 +50,16 @@ const propertySchema = z.object({
   fixed_rate_expires: z.string().optional(),
   // Income
   annual_rent_gbp: z.coerce.number().min(0).optional(),
-  // Auto-populated location fields
+  // Geocoding fields (hidden, auto-populated)
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
+  place_id: z.string().optional(),
+  formatted_address: z.string().optional(),
+  county: z.string().max(100).optional(),
+  country: z.string().max(100).optional(),
+  geocode_status: z.enum(['NOT_STARTED', 'SUCCESS', 'PARTIAL', 'FAILED']).optional(),
+  geocode_source: z.enum(['PLACES', 'GEOCODE']).optional(),
+  geocode_confidence: z.string().optional(),
 });
 
 type PropertyFormData = z.infer<typeof propertySchema>;
@@ -60,20 +71,43 @@ function PropertyNewPage() {
   const createLoan = useCreateLoan();
   const upsertIncome = useUpsertIncome();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [geocodeData, setGeocodeData] = useState<AddressData | null>(null);
 
   const form = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       address_line: '',
       ownership_percent: 100,
+      country: 'United Kingdom',
+      geocode_status: 'NOT_STARTED',
     },
   });
 
   // Watch postcode and address for auto-populate
   const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
   const watchedAddress = useWatch({ control: form.control, name: 'address_line' });
+  const watchedGeocodeStatus = useWatch({ control: form.control, name: 'geocode_status' });
 
-  // Handle auto-populate data
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (data: AddressData) => {
+    setGeocodeData(data);
+    form.setValue('address_line', data.address_line);
+    form.setValue('address_line2', data.address_line2 || '');
+    form.setValue('postcode', data.postcode || '');
+    form.setValue('town_city', data.town_city || '');
+    form.setValue('county', data.county || '');
+    form.setValue('area_name', data.county || ''); // Also set area_name for compatibility
+    form.setValue('country', data.country);
+    form.setValue('latitude', data.latitude);
+    form.setValue('longitude', data.longitude);
+    form.setValue('place_id', data.place_id);
+    form.setValue('formatted_address', data.formatted_address);
+    form.setValue('geocode_confidence', data.geocode_confidence);
+    form.setValue('geocode_source', data.geocode_source);
+    form.setValue('geocode_status', data.geocode_confidence === 'exact' ? 'SUCCESS' : 'PARTIAL');
+  };
+
+  // Handle auto-populate data (EPC lookup)
   const handleAutoPopulate = (data: PropertyLookupResult) => {
     if (data.epc) {
       if (data.epc.epcRating) {
@@ -99,14 +133,15 @@ function PropertyNewPage() {
       }
     }
 
-    if (data.location) {
+    // Don't override geocode data from address autocomplete with EPC location
+    if (data.location && !geocodeData) {
       if (data.location.county && !form.getValues('area_name')) {
         form.setValue('area_name', data.location.county);
       }
-      if (data.location.latitude) {
+      if (data.location.latitude && !form.getValues('latitude')) {
         form.setValue('latitude', data.location.latitude);
       }
-      if (data.location.longitude) {
+      if (data.location.longitude && !form.getValues('longitude')) {
         form.setValue('longitude', data.location.longitude);
       }
     }
@@ -121,14 +156,24 @@ function PropertyNewPage() {
       const isListed = listedValue !== '' && listedValue !== 'Not listed';
       const epcRequired = !isListed;
       
-      // Create property
+      // Create property with geocoding data
       const property = await createProperty.mutateAsync({
         address_line: data.address_line,
+        address_line2: data.address_line2 || null,
+        town_city: data.town_city || null,
+        county: data.county || null,
+        country: data.country || 'United Kingdom',
         area_name: data.area_name || null,
         postcode: data.postcode || null,
         postcode_area: data.postcode ? extractPostcodeArea(data.postcode) : null,
         latitude: data.latitude || null,
         longitude: data.longitude || null,
+        place_id: data.place_id || null,
+        formatted_address: data.formatted_address || null,
+        geocode_status: data.geocode_status || 'NOT_STARTED',
+        geocode_source: data.geocode_source || null,
+        geocode_confidence: data.geocode_confidence || null,
+        geocoded_at: data.latitude ? new Date().toISOString() : null,
         property_type: data.property_type || null,
         beds: data.beds || null,
         bathrooms: data.bathrooms || null,
@@ -222,10 +267,26 @@ function PropertyNewPage() {
                   name="address_line"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Address *</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Address *</FormLabel>
+                        {watchedGeocodeStatus && watchedGeocodeStatus !== 'NOT_STARTED' && (
+                          <GeocodeStatusBadge 
+                            status={watchedGeocodeStatus} 
+                            confidence={form.getValues('geocode_confidence')}
+                          />
+                        )}
+                      </div>
                       <FormControl>
-                        <Input {...field} placeholder="123 High Street" className="bg-input" />
+                        <AddressAutocomplete
+                          value={field.value}
+                          onChange={field.onChange}
+                          onAddressSelect={handleAddressSelect}
+                          placeholder="Start typing an address..."
+                        />
                       </FormControl>
+                      <FormDescription>
+                        Select from suggestions for automatic location mapping
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
