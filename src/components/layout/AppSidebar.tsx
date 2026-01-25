@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
+  Briefcase,
   Settings,
   LogOut,
   Inbox,
@@ -31,6 +32,7 @@ const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Map', icon: Map, href: '/dashboard/map' },
   { title: 'Properties', icon: Building2, href: '/properties' },
+  { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Timeline', icon: Calendar, href: '/timeline' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
