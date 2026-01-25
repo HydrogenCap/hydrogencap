@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity, Bed, Users } from 'lucide-react';
+import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity, Bed, Users, AlertCircle, ArrowRight } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -62,11 +62,13 @@ interface RiskItem {
 
 // Import passport hooks for risk calculations
 import { usePropertyPassports, getHMOLicenceStatus, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
+import { useMissingInfo } from '@/hooks/useMissingInfo';
 
 function DashboardPage() {
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
   const { data: attributableMetrics, isLoading: attrLoading } = usePortfolioAttributableMetrics(properties);
+  const { stats: missingStats } = useMissingInfo();
   const [viewMode, setViewMode] = useState<'gross' | 'attributable'>('gross');
 
   // Create a map of passports by property_id for quick lookup
@@ -546,6 +548,36 @@ function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Missing Info Shortcut Card */}
+        {missingStats.totalMissingFields > 0 && (
+          <Link to="/missing-info">
+            <Card className="bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10 transition-colors cursor-pointer">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 rounded-full bg-amber-500/20">
+                      <AlertCircle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Missing Information</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {missingStats.propertiesWithFinanceMissing > 0 && (
+                          <span>{missingStats.propertiesWithFinanceMissing} finance • </span>
+                        )}
+                        {missingStats.propertiesWithInsuranceMissing > 0 && (
+                          <span>{missingStats.propertiesWithInsuranceMissing} insurance • </span>
+                        )}
+                        <span className="font-medium text-amber-600">{missingStats.totalMissingFields} fields total</span>
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">

@@ -443,6 +443,56 @@ export type Database = {
           },
         ]
       }
+      insurance_policies: {
+        Row: {
+          cover_type: string | null
+          created_at: string
+          excess_gbp: number | null
+          id: string
+          insurer_name: string | null
+          notes: string | null
+          policy_number: string | null
+          premium_gbp: number | null
+          property_id: string
+          renewal_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          cover_type?: string | null
+          created_at?: string
+          excess_gbp?: number | null
+          id?: string
+          insurer_name?: string | null
+          notes?: string | null
+          policy_number?: string | null
+          premium_gbp?: number | null
+          property_id: string
+          renewal_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cover_type?: string | null
+          created_at?: string
+          excess_gbp?: number | null
+          id?: string
+          insurer_name?: string | null
+          notes?: string | null
+          policy_number?: string | null
+          premium_gbp?: number | null
+          property_id?: string
+          renewal_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_policies_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           broker_contact: string | null

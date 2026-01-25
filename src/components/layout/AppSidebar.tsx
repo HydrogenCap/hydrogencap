@@ -7,6 +7,7 @@ import {
   LogOut,
   Inbox,
   TrendingUp,
+  AlertCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -28,6 +29,7 @@ import logoImage from '@/assets/logo.png';
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Properties', icon: Building2, href: '/properties' },
+  { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
   { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
   { title: 'Import Properties', icon: Upload, href: '/import' },
