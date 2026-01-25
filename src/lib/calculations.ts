@@ -162,3 +162,149 @@ export function extractPostcodeArea(postcode: string | null | undefined): string
   const match = postcode.toUpperCase().match(/^([A-Z]{1,2})/);
   return match ? match[1] : null;
 }
+
+// ============================================================
+// Property Health Score System
+// ============================================================
+
+export interface HealthScoreBreakdown {
+  cashflow: number;      // 0-25 points
+  leverage: number;      // 0-25 points
+  risk: number;          // 0-25 points
+  compliance: number;    // 0-25 points
+  total: number;         // 0-100 overall
+}
+
+export interface PropertyHealthInputs {
+  // Cashflow
+  annualRent: number | null;
+  totalCosts: number;
+  mortgagePayment: number | null;
+  
+  // Leverage
+  ltv: number | null;
+  
+  // Risk
+  fixedRateExpires: string | null;
+  isInterestOnly: boolean;
+  
+  // Compliance
+  epcRating: string | null;
+  hasGasSafety?: boolean;
+  hasEICR?: boolean;
+}
+
+/**
+ * Calculate a health score for a property (0-100)
+ * Higher score = healthier property
+ */
+export function calculateHealthScore(inputs: PropertyHealthInputs): HealthScoreBreakdown {
+  const { 
+    annualRent, 
+    totalCosts, 
+    mortgagePayment,
+    ltv,
+    fixedRateExpires,
+    isInterestOnly,
+    epcRating,
+  } = inputs;
+
+  // 1. CASHFLOW SCORE (0-25)
+  let cashflowScore = 0;
+  if (annualRent !== null) {
+    const annualMortgage = (mortgagePayment || 0) * 12;
+    const netIncome = annualRent - totalCosts - annualMortgage;
+    const monthlyCashflow = netIncome / 12;
+    
+    if (monthlyCashflow >= 300) cashflowScore = 25;
+    else if (monthlyCashflow >= 200) cashflowScore = 22;
+    else if (monthlyCashflow >= 100) cashflowScore = 18;
+    else if (monthlyCashflow >= 0) cashflowScore = 12;
+    else if (monthlyCashflow >= -100) cashflowScore = 6;
+    else cashflowScore = 0;
+  }
+
+  // 2. LEVERAGE SCORE (0-25)
+  let leverageScore = 0;
+  if (ltv !== null) {
+    if (ltv <= 50) leverageScore = 25;
+    else if (ltv <= 60) leverageScore = 22;
+    else if (ltv <= 70) leverageScore = 18;
+    else if (ltv <= 75) leverageScore = 14;
+    else if (ltv <= 80) leverageScore = 10;
+    else if (ltv <= 85) leverageScore = 5;
+    else leverageScore = 0;
+  } else {
+    // No mortgage = full equity = max score
+    leverageScore = 25;
+  }
+
+  // 3. RISK SCORE (0-25)
+  let riskScore = 25;
+  
+  // Fixed rate expiry penalty
+  if (fixedRateExpires) {
+    const days = daysUntil(fixedRateExpires);
+    if (days !== null) {
+      if (days <= 0) riskScore -= 15; // Expired
+      else if (days <= 30) riskScore -= 12;
+      else if (days <= 60) riskScore -= 8;
+      else if (days <= 90) riskScore -= 4;
+    }
+  }
+  
+  // Interest-only penalty
+  if (isInterestOnly) {
+    riskScore -= 5;
+  }
+  
+  riskScore = Math.max(0, riskScore);
+
+  // 4. COMPLIANCE SCORE (0-25)
+  let complianceScore = 25;
+  
+  // EPC rating penalty
+  if (epcRating) {
+    const rating = epcRating.toUpperCase();
+    if (rating === 'F' || rating === 'G') complianceScore -= 15;
+    else if (rating === 'E') complianceScore -= 10;
+    else if (rating === 'D') complianceScore -= 5;
+    // A, B, C = no penalty
+  } else {
+    // No EPC on file = penalty
+    complianceScore -= 10;
+  }
+  
+  complianceScore = Math.max(0, complianceScore);
+
+  // TOTAL
+  const total = cashflowScore + leverageScore + riskScore + complianceScore;
+
+  return {
+    cashflow: cashflowScore,
+    leverage: leverageScore,
+    risk: riskScore,
+    compliance: complianceScore,
+    total,
+  };
+}
+
+/**
+ * Get health grade from score
+ */
+export function getHealthGrade(score: number): 'A' | 'B' | 'C' | 'D' | 'F' {
+  if (score >= 85) return 'A';
+  if (score >= 70) return 'B';
+  if (score >= 55) return 'C';
+  if (score >= 40) return 'D';
+  return 'F';
+}
+
+/**
+ * Get status color class for health grade
+ */
+export function getHealthStatus(grade: 'A' | 'B' | 'C' | 'D' | 'F'): 'success' | 'warning' | 'danger' {
+  if (grade === 'A' || grade === 'B') return 'success';
+  if (grade === 'C') return 'warning';
+  return 'danger';
+}

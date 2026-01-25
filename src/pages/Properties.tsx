@@ -24,18 +24,21 @@ import {
   calculateNetRent,
   calculateYield,
   calculateROCE,
+  calculateHealthScore,
   getLTVStatus,
   getEPCStatus,
+  HealthScoreBreakdown,
 } from '@/lib/calculations';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HealthScoreBadge } from '@/components/property/HealthScoreBadge';
 
-type SortField = 'address' | 'area' | 'value' | 'mortgage' | 'ltv' | 'yield' | 'roce';
+type SortField = 'address' | 'area' | 'value' | 'mortgage' | 'ltv' | 'yield' | 'roce' | 'health';
 type SortDirection = 'asc' | 'desc';
 
 function PropertiesPage() {
   const { data: properties, isLoading, error } = useProperties();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('address');
+  const [sortField, setSortField] = useState<SortField>('health');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const getPropertyMetrics = (property: PropertyWithFinancials) => {
@@ -62,7 +65,20 @@ function PropertiesPage() {
     const yieldPercent = calculateYield(netRent, currentValue);
     const roce = calculateROCE(netRent, equity);
 
-    return { mortgageBalance, currentValue, ltv, equity, yieldPercent, roce };
+    // Calculate health score
+    const mortgagePayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
+    const isInterestOnly = loan?.capital_or_interest === 'interest';
+    const healthScore = calculateHealthScore({
+      annualRent,
+      totalCosts,
+      mortgagePayment,
+      ltv,
+      fixedRateExpires: loan?.fixed_rate_expires || null,
+      isInterestOnly,
+      epcRating: property.epc_rating,
+    });
+
+    return { mortgageBalance, currentValue, ltv, equity, yieldPercent, roce, healthScore };
   };
 
   const filteredAndSortedProperties = useMemo(() => {
@@ -100,6 +116,9 @@ function PropertiesPage() {
           break;
         case 'roce':
           comparison = (metricsA.roce || 0) - (metricsB.roce || 0);
+          break;
+        case 'health':
+          comparison = metricsA.healthScore.total - metricsB.healthScore.total;
           break;
       }
 
@@ -250,7 +269,8 @@ function PropertiesPage() {
                   <TableHead className="text-right"><SortButton field="mortgage">Mortgage</SortButton></TableHead>
                   <TableHead className="text-right"><SortButton field="ltv">LTV</SortButton></TableHead>
                   <TableHead className="text-right"><SortButton field="yield">Yield</SortButton></TableHead>
-                  <TableHead className="text-right"><SortButton field="roce">ROCE</SortButton></TableHead>
+                  <TableHead><SortButton field="roce">ROCE</SortButton></TableHead>
+                  <TableHead><SortButton field="health">Health</SortButton></TableHead>
                   <TableHead>EPC</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -295,6 +315,9 @@ function PropertiesPage() {
                             {formatPercent(metrics.roce)}
                           </span>
                         ) : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <HealthScoreBadge score={metrics.healthScore} />
                       </TableCell>
                       <TableCell>
                         {getEPCBadge(property.epc_rating)}
