@@ -44,12 +44,13 @@ import {
   useDeleteCompany,
   useDeleteShareholding,
   useUpdateShareClass,
+  useConfirmShareClass,
   type CompanyType,
   type CompanyStatus,
   type Shareholding,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ShareholdingEditor, ComplianceFilingsCard, CompanyLinkedProperties } from '@/components/companies';
+import { ShareholdingEditor, ComplianceFilingsCard, CompanyLinkedProperties, CompanyMissingInfoCard } from '@/components/companies';
 import { useToast } from '@/hooks/use-toast';
 import { formatPercent } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
@@ -92,6 +93,7 @@ export default function CompanyDetail() {
   const deleteCompany = useDeleteCompany();
   const deleteShareholding = useDeleteShareholding();
   const updateShareClass = useUpdateShareClass();
+  const confirmShareClass = useConfirmShareClass();
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -105,6 +107,7 @@ export default function CompanyDetail() {
   const [editingShareholding, setEditingShareholding] = useState<Shareholding | null>(null);
   const [editingShareClassId, setEditingShareClassId] = useState<string | null>(null);
   const [editingIssuedShares, setEditingIssuedShares] = useState<string>('');
+  const [preselectedShareClassId, setPreselectedShareClassId] = useState<string | null>(null);
   const hasAutoSynced = useRef(false);
 
   // Auto-sync from Companies House if company number exists and hasn't synced in 24 hours
@@ -260,6 +263,22 @@ export default function CompanyDetail() {
     } catch {
       toast({ title: 'Error', description: 'Failed to update share class', variant: 'destructive' });
     }
+  };
+
+  const handleConfirmShares = async (shareClassId: string) => {
+    if (!company) return;
+    try {
+      await confirmShareClass.mutateAsync({ id: shareClassId, companyId: company.id });
+      toast({ title: 'Share count confirmed' });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to confirm share count', variant: 'destructive' });
+    }
+  };
+
+  const handleAddShareholderFromMissing = (shareClassId: string) => {
+    setPreselectedShareClassId(shareClassId);
+    setEditingShareholding(null);
+    setShowShareholdingEditor(true);
   };
 
   if (isLoading) {
@@ -445,6 +464,14 @@ export default function CompanyDetail() {
 
           {/* Right Column - Shareholdings */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Missing Info Card */}
+            <CompanyMissingInfoCard
+              shareClasses={company.share_classes}
+              shareholdings={company.shareholdings}
+              onConfirmShares={handleConfirmShares}
+              onAddShareholder={handleAddShareholderFromMissing}
+              isConfirming={confirmShareClass.isPending}
+            />
             {company.share_classes.map((shareClass) => {
               const holdings = company.shareholdings.filter(
                 (sh) => sh.share_class_id === shareClass.id
@@ -682,8 +709,12 @@ export default function CompanyDetail() {
         companyId={company.id}
         shareClasses={company.share_classes}
         open={showShareholdingEditor}
-        onOpenChange={setShowShareholdingEditor}
+        onOpenChange={(open) => {
+          setShowShareholdingEditor(open);
+          if (!open) setPreselectedShareClassId(null);
+        }}
         editingShareholding={editingShareholding}
+        preselectedShareClassId={preselectedShareClassId}
       />
     </AppLayout>
   );
