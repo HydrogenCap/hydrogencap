@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useCreateProperty, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
 import { extractPostcodeArea } from '@/lib/calculations';
+import { AutoPopulateButton } from '@/components/property/AutoPopulateButton';
+import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
@@ -44,6 +46,9 @@ const propertySchema = z.object({
   fixed_rate_expires: z.string().optional(),
   // Income
   annual_rent_gbp: z.coerce.number().min(0).optional(),
+  // Auto-populated location fields
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
 });
 
 type PropertyFormData = z.infer<typeof propertySchema>;
@@ -64,6 +69,49 @@ function PropertyNewPage() {
     },
   });
 
+  // Watch postcode and address for auto-populate
+  const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
+  const watchedAddress = useWatch({ control: form.control, name: 'address_line' });
+
+  // Handle auto-populate data
+  const handleAutoPopulate = (data: PropertyLookupResult) => {
+    if (data.epc) {
+      if (data.epc.epcRating) {
+        const rating = data.epc.epcRating.toUpperCase();
+        if (['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(rating)) {
+          form.setValue('epc_rating', rating as 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G');
+        }
+      }
+      if (data.epc.propertyType && !form.getValues('property_type')) {
+        form.setValue('property_type', data.epc.propertyType);
+      }
+      if (data.epc.bedrooms && !form.getValues('beds')) {
+        form.setValue('beds', data.epc.bedrooms);
+      }
+      if (data.epc.tenure) {
+        const tenureMap: Record<string, 'Freehold' | 'Leasehold'> = {
+          'Freehold': 'Freehold',
+          'Leasehold': 'Leasehold',
+        };
+        if (tenureMap[data.epc.tenure] && !form.getValues('tenure')) {
+          form.setValue('tenure', tenureMap[data.epc.tenure]);
+        }
+      }
+    }
+
+    if (data.location) {
+      if (data.location.county && !form.getValues('area_name')) {
+        form.setValue('area_name', data.location.county);
+      }
+      if (data.location.latitude) {
+        form.setValue('latitude', data.location.latitude);
+      }
+      if (data.location.longitude) {
+        form.setValue('longitude', data.location.longitude);
+      }
+    }
+  };
+
   const onSubmit = async (data: PropertyFormData) => {
     setIsSubmitting(true);
     
@@ -79,6 +127,8 @@ function PropertyNewPage() {
         area_name: data.area_name || null,
         postcode: data.postcode || null,
         postcode_area: data.postcode ? extractPostcodeArea(data.postcode) : null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
         property_type: data.property_type || null,
         beds: data.beds || null,
         bathrooms: data.bathrooms || null,
@@ -155,9 +205,16 @@ function PropertyNewPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Property Details */}
             <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle>Property Details</CardTitle>
-                <CardDescription>Basic information about the property</CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Property Details</CardTitle>
+                  <CardDescription>Basic information about the property</CardDescription>
+                </div>
+                <AutoPopulateButton
+                  postcode={watchedPostcode}
+                  addressLine={watchedAddress}
+                  onDataReceived={handleAutoPopulate}
+                />
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <FormField

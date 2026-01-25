@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useEffect, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -15,6 +15,8 @@ import { formatDateUK } from '@/lib/calculations';
 import { useLocalAuthorities, useCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
+import { usePropertyLookup, PropertyLookupResult } from '@/hooks/usePropertyLookup';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const passportSchema = z.object({
   // Location & classification
@@ -101,6 +103,9 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   const { data: passport, isLoading } = usePropertyPassport(propertyId);
   const upsertPassport = useUpsertPassport();
   
+  // Property lookup for auto-populate
+  const { lookupProperty, isLooking } = usePropertyLookup();
+  
   // Local authorities and management companies
   const { data: localAuthorities = [] } = useLocalAuthorities();
   const createLocalAuthority = useCreateLocalAuthority();
@@ -118,12 +123,97 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
     defaultValues: getDefaultValues(null),
   });
 
+  // Watch postcode for auto-populate
+  const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
+
   // Update form when data loads
   useEffect(() => {
     if (passport) {
       form.reset(getDefaultValues(passport));
     }
   }, [passport, form]);
+
+  // Handle auto-populate for passport fields
+  const handleAutoPopulate = async () => {
+    const postcode = watchedPostcode || passport?.postcode;
+    if (!postcode) {
+      toast({
+        title: 'Postcode required',
+        description: 'Please enter a postcode first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const result = await lookupProperty(postcode);
+    if (!result) return;
+
+    let updatedFields: string[] = [];
+
+    // Auto-populate council tax band
+    if (result.councilTax?.councilTaxBand && !form.getValues('council_tax_band')) {
+      form.setValue('council_tax_band', result.councilTax.councilTaxBand);
+      updatedFields.push('Council Tax Band');
+    }
+
+    // Auto-populate from EPC data
+    if (result.epc) {
+      if (result.epc.builtYear && !form.getValues('built_in_year')) {
+        form.setValue('built_in_year', result.epc.builtYear);
+        updatedFields.push('Built Year');
+      }
+      if (result.epc.constructionAgeBand && !form.getValues('construction_date_band')) {
+        form.setValue('construction_date_band', result.epc.constructionAgeBand);
+        updatedFields.push('Construction Age Band');
+      }
+      if (result.epc.bedrooms && !form.getValues('bedrooms')) {
+        form.setValue('bedrooms', result.epc.bedrooms);
+        updatedFields.push('Bedrooms');
+      }
+    }
+
+    // Auto-populate local authority (match or create)
+    if (result.location?.localAuthority) {
+      const laName = result.location.localAuthority;
+      const existingLA = localAuthorities.find(
+        la => la.name.toLowerCase() === laName.toLowerCase()
+      );
+
+      if (existingLA) {
+        form.setValue('local_authority_id', existingLA.id);
+        updatedFields.push('Local Authority');
+      } else {
+        // Create the local authority
+        try {
+          const newLA = await createLocalAuthority.mutateAsync(laName);
+          form.setValue('local_authority_id', newLA.id);
+          updatedFields.push('Local Authority (created)');
+        } catch {
+          // Just update the text field as fallback
+          form.setValue('local_authority', laName);
+          updatedFields.push('Local Authority');
+        }
+      }
+
+      // Also set county if available
+      if (result.location.county && !form.getValues('county')) {
+        form.setValue('county', result.location.county);
+        updatedFields.push('County');
+      }
+    }
+
+    if (updatedFields.length > 0) {
+      toast({
+        title: 'Passport data updated',
+        description: `Auto-populated: ${updatedFields.join(', ')}`,
+      });
+    } else {
+      toast({
+        title: 'No new data found',
+        description: 'All available fields are already filled.',
+      });
+    }
+  };
 
   const onSubmit = async (data: PassportFormData) => {
     try {
@@ -179,9 +269,40 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Overview Section */}
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-            <CardDescription>Location, authority, category & occupancy</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Overview</CardTitle>
+              <CardDescription>Location, authority, category & occupancy</CardDescription>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAutoPopulate}
+                    disabled={isLooking}
+                    className="gap-2"
+                  >
+                    {isLooking ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Looking up...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4" />
+                        Auto-populate
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Fetch council tax band, built year, local authority from public registers
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FormField
