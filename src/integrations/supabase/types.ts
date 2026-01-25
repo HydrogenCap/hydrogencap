@@ -1019,6 +1019,7 @@ export type Database = {
           gas_meter_number: string | null
           has_bin_store: boolean | null
           has_cycle_store: boolean | null
+          has_gas_supply: boolean | null
           has_guest_room: boolean | null
           has_loft_access: boolean | null
           hmo_bed_spaces: number | null
@@ -1040,6 +1041,9 @@ export type Database = {
           management_company_text: string | null
           number_of_storeys: number | null
           occupation_status: string | null
+          oil_supplier: string | null
+          oil_tank_capacity_litres: number | null
+          oil_tank_location: string | null
           owned_by: string | null
           owner_tenure: string | null
           parking: string | null
@@ -1080,6 +1084,7 @@ export type Database = {
           gas_meter_number?: string | null
           has_bin_store?: boolean | null
           has_cycle_store?: boolean | null
+          has_gas_supply?: boolean | null
           has_guest_room?: boolean | null
           has_loft_access?: boolean | null
           hmo_bed_spaces?: number | null
@@ -1101,6 +1106,9 @@ export type Database = {
           management_company_text?: string | null
           number_of_storeys?: number | null
           occupation_status?: string | null
+          oil_supplier?: string | null
+          oil_tank_capacity_litres?: number | null
+          oil_tank_location?: string | null
           owned_by?: string | null
           owner_tenure?: string | null
           parking?: string | null
@@ -1141,6 +1149,7 @@ export type Database = {
           gas_meter_number?: string | null
           has_bin_store?: boolean | null
           has_cycle_store?: boolean | null
+          has_gas_supply?: boolean | null
           has_guest_room?: boolean | null
           has_loft_access?: boolean | null
           hmo_bed_spaces?: number | null
@@ -1162,6 +1171,9 @@ export type Database = {
           management_company_text?: string | null
           number_of_storeys?: number | null
           occupation_status?: string | null
+          oil_supplier?: string | null
+          oil_tank_capacity_litres?: number | null
+          oil_tank_location?: string | null
           owned_by?: string | null
           owner_tenure?: string | null
           parking?: string | null

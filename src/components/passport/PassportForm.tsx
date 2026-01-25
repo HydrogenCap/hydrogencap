@@ -57,6 +57,12 @@ const passportSchema = z.object({
   electric_meter_number: z.string().nullable().optional(),
   gas_meter_number: z.string().nullable().optional(),
   water_meter_number: z.string().nullable().optional(),
+  
+  // Heating / fuel type
+  has_gas_supply: z.boolean().default(true),
+  oil_tank_location: z.string().nullable().optional(),
+  oil_supplier: z.string().nullable().optional(),
+  oil_tank_capacity_litres: z.coerce.number().min(0).nullable().optional(),
 
   // Accommodation schedule
   kitchens: z.coerce.number().min(0).max(50).nullable().optional(),
@@ -123,8 +129,9 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
     defaultValues: getDefaultValues(null),
   });
 
-  // Watch postcode for auto-populate
+  // Watch fields for conditional rendering
   const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
+  const watchedHasGasSupply = useWatch({ control: form.control, name: 'has_gas_supply' });
 
   // Update form when data loads
   useEffect(() => {
@@ -691,94 +698,164 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Utilities</CardTitle>
-            <CardDescription>Meter locations & numbers</CardDescription>
+            <CardDescription>Meter locations, numbers & fuel supply</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="water_stop_tap_location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Water Stop Tap Location</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('water_stop_tap_location')} />
-                  </FormControl>
-                </FormItem>
+          <CardContent className="space-y-6">
+            {/* Fuel Supply Type */}
+            <div className="pb-4 border-b border-border">
+              <FormField
+                control={form.control}
+                name="has_gas_supply"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-3">
+                    <FormControl>
+                      <Switch checked={field.value ?? true} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div>
+                      <FormLabel className="!mt-0">Mains Gas Supply</FormLabel>
+                      <FormDescription>Toggle off for oil or electric-only properties</FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="water_stop_tap_location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Water Stop Tap Location</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} className={getMissingClass('water_stop_tap_location')} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div className="hidden sm:block" />
+              <FormField
+                control={form.control}
+                name="electric_meter_location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Electric Meter Location</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} className={getMissingClass('electric_meter_location')} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="electric_meter_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Electric Meter Number</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} className={getMissingClass('electric_meter_number')} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              {/* Conditional Gas Fields */}
+              {watchedHasGasSupply && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="gas_meter_location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gas Meter Location</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} className={getMissingClass('gas_meter_location')} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gas_meter_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gas Meter Number</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} className={getMissingClass('gas_meter_number')} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
-            />
-            <div className="hidden sm:block" />
-            <FormField
-              control={form.control}
-              name="electric_meter_location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Electric Meter Location</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('electric_meter_location')} />
-                  </FormControl>
-                </FormItem>
+
+              {/* Conditional Oil Fields */}
+              {!watchedHasGasSupply && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="oil_tank_location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Oil Tank Location</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} placeholder="e.g. Rear garden, outbuilding" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="oil_tank_capacity_litres"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Oil Tank Capacity (litres)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} value={field.value ?? ''} placeholder="e.g. 1000" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="oil_supplier"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>Oil Supplier</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} placeholder="e.g. Watson Fuels" />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </>
               )}
-            />
-            <FormField
-              control={form.control}
-              name="electric_meter_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Electric Meter Number</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('electric_meter_number')} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gas_meter_location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gas Meter Location</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('gas_meter_location')} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="gas_meter_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Gas Meter Number</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('gas_meter_number')} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="water_meter_location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Water Meter Location</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('water_meter_location')} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="water_meter_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Water Meter Number</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} className={getMissingClass('water_meter_number')} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+
+              <FormField
+                control={form.control}
+                name="water_meter_location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Water Meter Location</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} className={getMissingClass('water_meter_location')} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="water_meter_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Water Meter Number</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} className={getMissingClass('water_meter_number')} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 
