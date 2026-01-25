@@ -3,7 +3,7 @@
  * All financial calculations in one place for consistency
  */
 
-// Format currency in GBP
+// Format currency in GBP with thousand separators
 export function formatGBP(amount: number | null | undefined): string {
   if (amount == null) return '—';
   return new Intl.NumberFormat('en-GB', {
@@ -25,7 +25,7 @@ export function formatGBPDecimal(amount: number | null | undefined): string {
   }).format(amount);
 }
 
-// Format percentage
+// Format percentage with % sign
 export function formatPercent(value: number | null | undefined, decimals: number = 1): string {
   if (value == null) return '—';
   return `${value.toFixed(decimals)}%`;
@@ -53,7 +53,82 @@ export function formatDateShort(date: string | Date | null | undefined): string 
   });
 }
 
-// Calculate LTV percentage
+// ============================================================
+// MORTGAGE PAYMENT CALCULATIONS
+// ============================================================
+
+export interface MortgagePaymentInputs {
+  balance: number | null;
+  interestRate: number | null; // Annual rate as percentage
+  termMonths: number | null;
+  isInterestOnly: boolean;
+  paymentOverride: number | null;
+}
+
+/**
+ * Calculate monthly mortgage payment
+ * Returns the effective payment (override if set, otherwise auto-calculated)
+ */
+export function calculateMonthlyMortgagePayment(inputs: MortgagePaymentInputs): {
+  autoCalculated: number | null;
+  effective: number | null;
+  source: 'auto' | 'manual' | null;
+} {
+  const { balance, interestRate, termMonths, isInterestOnly, paymentOverride } = inputs;
+  
+  // If manual override is set, use that
+  if (paymentOverride !== null && paymentOverride > 0) {
+    return {
+      autoCalculated: calculateAutoPayment(balance, interestRate, termMonths, isInterestOnly),
+      effective: paymentOverride,
+      source: 'manual',
+    };
+  }
+
+  const autoCalc = calculateAutoPayment(balance, interestRate, termMonths, isInterestOnly);
+  return {
+    autoCalculated: autoCalc,
+    effective: autoCalc,
+    source: autoCalc !== null ? 'auto' : null,
+  };
+}
+
+function calculateAutoPayment(
+  balance: number | null,
+  interestRate: number | null,
+  termMonths: number | null,
+  isInterestOnly: boolean
+): number | null {
+  if (balance === null || balance <= 0) return null;
+  if (interestRate === null || interestRate <= 0) return null;
+
+  const monthlyRate = (interestRate / 100) / 12;
+
+  // Interest-only calculation
+  if (isInterestOnly) {
+    return balance * monthlyRate;
+  }
+
+  // Repayment calculation (amortisation formula)
+  if (termMonths === null || termMonths <= 0) return null;
+  
+  const n = termMonths;
+  const r = monthlyRate;
+  
+  // P = L * [r(1+r)^n] / [(1+r)^n - 1]
+  const numerator = r * Math.pow(1 + r, n);
+  const denominator = Math.pow(1 + r, n) - 1;
+  
+  if (denominator === 0) return null;
+  
+  return balance * (numerator / denominator);
+}
+
+// ============================================================
+// CORE FINANCIAL CALCULATIONS
+// ============================================================
+
+// Calculate LTV percentage (with divide-by-zero protection)
 export function calculateLTV(
   mortgageBalance: number | null | undefined,
   currentValue: number | null | undefined
@@ -90,33 +165,61 @@ export function calculateTotalCosts(costs: {
   );
 }
 
-// Calculate annual net rent
-export function calculateNetRent(annualRent: number | null | undefined, totalCosts: number): number | null {
+// Calculate Net Operating Income (NOI) = annual rent - annual costs
+export function calculateNOI(annualRent: number | null | undefined, totalCosts: number): number | null {
   if (annualRent == null) return null;
   return annualRent - totalCosts;
 }
 
-// Calculate monthly net cashflow
+// Legacy alias for NOI
+export function calculateNetRent(annualRent: number | null | undefined, totalCosts: number): number | null {
+  return calculateNOI(annualRent, totalCosts);
+}
+
+// Calculate annual cashflow AFTER debt service
+export function calculateAnnualCashflowAfterDebt(
+  annualRent: number | null,
+  totalCosts: number,
+  monthlyMortgagePayment: number | null
+): number | null {
+  if (annualRent === null) return null;
+  const noi = annualRent - totalCosts;
+  const annualDebtService = (monthlyMortgagePayment || 0) * 12;
+  return noi - annualDebtService;
+}
+
+// Calculate monthly cashflow AFTER debt service
+export function calculateMonthlyCashflowAfterDebt(
+  annualRent: number | null,
+  totalCosts: number,
+  monthlyMortgagePayment: number | null
+): number | null {
+  const annualCashflow = calculateAnnualCashflowAfterDebt(annualRent, totalCosts, monthlyMortgagePayment);
+  if (annualCashflow === null) return null;
+  return annualCashflow / 12;
+}
+
+// Legacy: Calculate monthly net cashflow (NOI-based, for backwards compatibility)
 export function calculateMonthlyCashflow(annualNetRent: number | null): number | null {
   if (annualNetRent == null) return null;
   return annualNetRent / 12;
 }
 
-// Calculate yield percentage
+// Calculate yield percentage (with divide-by-zero protection)
 export function calculateYield(
   annualNetRent: number | null | undefined,
   currentValue: number | null | undefined
 ): number | null {
-  if (!annualNetRent || !currentValue || currentValue === 0) return null;
+  if (annualNetRent == null || !currentValue || currentValue === 0) return null;
   return (annualNetRent / currentValue) * 100;
 }
 
-// Calculate ROCE (Return on Capital Employed)
+// Calculate ROCE (Return on Capital Employed) with divide-by-zero protection
 export function calculateROCE(
   annualNetRent: number | null | undefined,
   equity: number | null | undefined
 ): number | null {
-  if (!annualNetRent || !equity || equity <= 0) return null;
+  if (annualNetRent == null || !equity || equity <= 0) return null;
   return (annualNetRent / equity) * 100;
 }
 
@@ -149,11 +252,32 @@ export function getLTVStatus(ltv: number | null): 'danger' | 'warning' | 'ok' | 
   return 'ok';
 }
 
-// Get EPC risk status
-export function getEPCStatus(rating: string | null | undefined): 'warning' | 'ok' | null {
+// Get EPC risk status (updated to handle N/A and epc_required)
+export function getEPCStatus(
+  rating: string | null | undefined, 
+  epcRequired: boolean = true
+): 'warning' | 'ok' | 'exempt' | null {
+  // If EPC is not required (listed building), it's exempt
+  if (!epcRequired) return 'exempt';
+  
   if (!rating) return null;
-  if (['D', 'E', 'F', 'G'].includes(rating.toUpperCase())) return 'warning';
+  
+  const upperRating = rating.toUpperCase();
+  
+  // N/A is only valid when epc_required is false, but handle gracefully
+  if (upperRating === 'N/A') return 'exempt';
+  
+  // D, E, F, G are below C threshold
+  if (['D', 'E', 'F', 'G'].includes(upperRating)) return 'warning';
+  
   return 'ok';
+}
+
+// Check if EPC rating is valid
+export function isValidEPCRating(rating: string | null | undefined): boolean {
+  if (!rating) return false;
+  const validRatings = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'N/A'];
+  return validRatings.includes(rating.toUpperCase());
 }
 
 // Parse postcode area from full postcode
@@ -176,10 +300,10 @@ export interface HealthScoreBreakdown {
 }
 
 export interface PropertyHealthInputs {
-  // Cashflow
+  // Cashflow (uses cashflow after debt)
   annualRent: number | null;
   totalCosts: number;
-  mortgagePayment: number | null;
+  mortgagePayment: number | null; // Monthly mortgage payment
   
   // Leverage
   ltv: number | null;
@@ -190,6 +314,7 @@ export interface PropertyHealthInputs {
   
   // Compliance
   epcRating: string | null;
+  epcRequired?: boolean; // false for listed buildings
   hasGasSafety?: boolean;
   hasEICR?: boolean;
 }
@@ -262,18 +387,29 @@ export function calculateHealthScore(inputs: PropertyHealthInputs): HealthScoreB
 
   // 4. COMPLIANCE SCORE (0-25)
   let complianceScore = 25;
+  const epcRequired = inputs.epcRequired !== false; // Default to true
   
-  // EPC rating penalty
-  if (epcRating) {
-    const rating = epcRating.toUpperCase();
-    if (rating === 'F' || rating === 'G') complianceScore -= 15;
-    else if (rating === 'E') complianceScore -= 10;
-    else if (rating === 'D') complianceScore -= 5;
-    // A, B, C = no penalty
-  } else {
-    // No EPC on file = penalty
-    complianceScore -= 10;
+  // EPC rating penalty (only if EPC is required)
+  if (epcRequired) {
+    if (epcRating) {
+      const rating = epcRating.toUpperCase();
+      if (rating === 'N/A') {
+        // N/A when EPC is required is a problem
+        complianceScore -= 10;
+      } else if (rating === 'F' || rating === 'G') {
+        complianceScore -= 15;
+      } else if (rating === 'E') {
+        complianceScore -= 10;
+      } else if (rating === 'D') {
+        complianceScore -= 5;
+      }
+      // A, B, C = no penalty
+    } else {
+      // No EPC on file when required = penalty
+      complianceScore -= 10;
+    }
   }
+  // If EPC not required (listed building), no penalty
   
   complianceScore = Math.max(0, complianceScore);
 
