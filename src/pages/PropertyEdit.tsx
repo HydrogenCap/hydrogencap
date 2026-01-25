@@ -286,12 +286,20 @@ function PropertyEditPage() {
   }
 
   if (error || !property) {
+    console.error('PropertyEdit: Failed to load property', { id, error, property });
     return (
       <AppLayout>
-        <div className="p-8 text-center">
-          <p className="text-destructive mb-4">Property not found</p>
+        <div className="p-8 text-center space-y-4">
+          <div className="text-6xl font-bold text-muted-foreground/50">404</div>
+          <h1 className="text-2xl font-semibold">Property not found</h1>
+          <p className="text-muted-foreground">
+            This property may have been deleted or you don't have access to it.
+          </p>
           <Button asChild>
-            <Link to="/properties">Back to Properties</Link>
+            <Link to="/properties">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Properties
+            </Link>
           </Button>
         </div>
       </AppLayout>
