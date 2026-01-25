@@ -19,6 +19,26 @@ interface CompaniesHouseCompany {
     postal_code?: string;
     country?: string;
   };
+  accounts?: {
+    next_due?: string;
+    next_accounts?: {
+      period_end_on?: string;
+      due_on?: string;
+    };
+    last_accounts?: {
+      made_up_to?: string;
+      period_end_on?: string;
+    };
+    accounting_reference_date?: {
+      day?: string;
+      month?: string;
+    };
+  };
+  confirmation_statement?: {
+    next_due?: string;
+    last_made_up_to?: string;
+    next_made_up_to?: string;
+  };
 }
 
 interface CompaniesHouseOfficer {
@@ -41,6 +61,13 @@ interface CompaniesHousePSC {
   natures_of_control: string[];
   notified_on: string;
   ceased_on?: string;
+}
+
+interface FilingHistoryItem {
+  date: string;
+  type: string;
+  description: string;
+  category: string;
 }
 
 serve(async (req) => {
@@ -121,6 +148,8 @@ serve(async (req) => {
 
       const company: CompaniesHouseCompany = await profileResponse.json();
       console.log(`Found company: ${company.company_name}`);
+      console.log(`Accounts data:`, JSON.stringify(company.accounts));
+      console.log(`Confirmation statement data:`, JSON.stringify(company.confirmation_statement));
 
       // Get officers
       let officers: CompaniesHouseOfficer[] = [];
@@ -154,12 +183,62 @@ serve(async (req) => {
         console.warn('Failed to fetch PSCs:', e);
       }
 
+      // Get filing history for last filed dates
+      let lastAccountsFiled: string | null = null;
+      let lastConfirmationStatementFiled: string | null = null;
+      try {
+        const filingUrl = `https://api.company-information.service.gov.uk/company/${companyNumber}/filing-history?items_per_page=50`;
+        const filingResponse = await fetch(filingUrl, {
+          headers: { 'Authorization': authHeader }
+        });
+        if (filingResponse.ok) {
+          const filingData = await filingResponse.json();
+          const items: FilingHistoryItem[] = filingData.items || [];
+          
+          // Find most recent accounts filing
+          const accountsFiling = items.find((f: FilingHistoryItem) => 
+            f.category === 'accounts' || 
+            f.type.toLowerCase().includes('accounts') ||
+            f.description.toLowerCase().includes('accounts')
+          );
+          if (accountsFiling) {
+            lastAccountsFiled = accountsFiling.date;
+          }
+
+          // Find most recent confirmation statement filing
+          const csFiling = items.find((f: FilingHistoryItem) => 
+            f.category === 'confirmation-statement' ||
+            f.type.toLowerCase().includes('confirmation') ||
+            f.description.toLowerCase().includes('confirmation statement')
+          );
+          if (csFiling) {
+            lastConfirmationStatementFiled = csFiling.date;
+          }
+          
+          console.log(`Filing history: accounts filed=${lastAccountsFiled}, CS filed=${lastConfirmationStatementFiled}`);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch filing history:', e);
+      }
+
       // Format registered address
       const addr = company.registered_office_address;
       const registeredAddress = addr 
         ? [addr.address_line_1, addr.address_line_2, addr.locality, addr.postal_code, addr.country]
             .filter(Boolean).join(', ')
         : null;
+
+      // Extract compliance dates
+      const accountsDueDate = company.accounts?.next_due || 
+                              company.accounts?.next_accounts?.due_on || 
+                              null;
+      const accountsPeriodEnd = company.accounts?.next_accounts?.period_end_on || 
+                                 company.accounts?.last_accounts?.period_end_on ||
+                                 null;
+      const confirmationStatementDueDate = company.confirmation_statement?.next_due || null;
+      const confirmationStatementLastMadeUpTo = company.confirmation_statement?.last_made_up_to || null;
+
+      console.log(`Extracted dates: accounts_due=${accountsDueDate}, cs_due=${confirmationStatementDueDate}`);
 
       return new Response(
         JSON.stringify({
@@ -182,6 +261,15 @@ serve(async (req) => {
             natures_of_control: p.natures_of_control || [],
             notified_on: p.notified_on,
           })),
+          // New compliance data
+          compliance: {
+            accounts_due_date: accountsDueDate,
+            accounts_period_end: accountsPeriodEnd,
+            accounts_last_filed_date: lastAccountsFiled,
+            confirmation_statement_due_date: confirmationStatementDueDate,
+            confirmation_statement_last_made_up_to: confirmationStatementLastMadeUpTo,
+            confirmation_statement_last_filed_date: lastConfirmationStatementFiled,
+          },
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

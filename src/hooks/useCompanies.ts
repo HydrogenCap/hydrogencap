@@ -17,6 +17,13 @@ export interface Company {
   ch_registered_address: string | null;
   ch_incorporation_date: string | null;
   ch_last_synced_at: string | null;
+  // Compliance fields
+  accounts_due_date: string | null;
+  accounts_period_end: string | null;
+  accounts_last_filed_date: string | null;
+  confirmation_statement_due_date: string | null;
+  confirmation_statement_last_made_up_to: string | null;
+  confirmation_statement_last_filed_date: string | null;
   created_at: string;
   updated_at: string;
   // Joined data
