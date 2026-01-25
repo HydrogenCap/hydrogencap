@@ -6,6 +6,7 @@ import {
   Settings,
   LogOut,
   Inbox,
+  TrendingUp,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -27,6 +28,7 @@ import logoImage from '@/assets/logo.png';
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Properties', icon: Building2, href: '/properties' },
+  { title: 'Insights', icon: TrendingUp, href: '/insights' },
   { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
   { title: 'Import Properties', icon: Upload, href: '/import' },
   { title: 'Import Passports', icon: Upload, href: '/import/passport' },
