@@ -8,6 +8,7 @@ import {
   TrendingUp,
   AlertCircle,
   Map,
+  Calendar,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -30,6 +31,7 @@ const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Map', icon: Map, href: '/dashboard/map' },
   { title: 'Properties', icon: Building2, href: '/properties' },
+  { title: 'Timeline', icon: Calendar, href: '/timeline' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
   { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
