@@ -54,7 +54,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <Link to="/dashboard" className="flex items-center gap-3">
-          <img src={logoImage} alt="Hydrogen Capital" className="h-12 w-12 rounded-lg object-cover" />
+          <img src={logoImage} alt="Hydrogen Capital" className="h-24 w-24 rounded-lg object-cover" />
           <div className="flex flex-col">
             <span className="font-semibold text-sidebar-foreground">Hydrogen</span>
             <span className="text-xs text-muted-foreground">Capital</span>
