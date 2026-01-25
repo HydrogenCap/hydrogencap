@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Info } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { useProperty, useUpdateProperty, useUpdateLoan, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
 import { extractPostcodeArea } from '@/lib/calculations';
+import { calculateMortgagePaymentDetailed, formatPaymentGBP } from '@/lib/mortgageCalculations';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
@@ -41,6 +44,8 @@ const propertySchema = z.object({
   interest_rate_percent: z.coerce.number().min(0).max(100).optional(),
   fixed_or_variable: z.enum(['fixed', 'variable', '']).optional(),
   current_mortgage_balance_gbp: z.coerce.number().min(0).optional(),
+  capital_or_interest: z.enum(['capital', 'interest', '']).optional(),
+  term_years: z.coerce.number().int().min(1).max(50).optional(),
   mortgage_payment_gbp: z.coerce.number().min(0).optional(),
   fixed_rate_expires: z.string().optional(),
   // Income
@@ -99,13 +104,37 @@ function PropertyEditPage() {
         interest_rate_percent: loan?.interest_rate_percent ?? undefined,
         fixed_or_variable: (loan?.fixed_or_variable as PropertyFormData['fixed_or_variable']) || '',
         current_mortgage_balance_gbp: loan?.current_mortgage_balance_gbp ?? undefined,
-        mortgage_payment_gbp: loan?.mortgage_payment_gbp ?? undefined,
+        capital_or_interest: (loan?.capital_or_interest === 'capital' || loan?.capital_or_interest === 'interest') 
+          ? loan.capital_or_interest as 'capital' | 'interest' 
+          : '',
+        term_years: (loan as any)?.term_years ?? undefined,
+        mortgage_payment_gbp: loan?.payment_override_gbp ?? undefined,
         fixed_rate_expires: loan?.fixed_rate_expires || '',
         // Income
         annual_rent_gbp: income?.annual_rent_gbp ?? undefined,
       });
     }
   }, [property, form]);
+
+  // Watch fields for mortgage auto-calculation
+  const watchedBalance = useWatch({ control: form.control, name: 'current_mortgage_balance_gbp' });
+  const watchedRate = useWatch({ control: form.control, name: 'interest_rate_percent' });
+  const watchedCapitalOrInterest = useWatch({ control: form.control, name: 'capital_or_interest' });
+  const watchedTermYears = useWatch({ control: form.control, name: 'term_years' });
+  const watchedPaymentOverride = useWatch({ control: form.control, name: 'mortgage_payment_gbp' });
+
+  // Calculate mortgage payment
+  const mortgageCalc = useMemo(() => {
+    return calculateMortgagePaymentDetailed({
+      balance: watchedBalance || null,
+      interestRatePercent: watchedRate || null,
+      termYears: watchedTermYears || null,
+      capitalOrInterest: watchedCapitalOrInterest === 'capital' || watchedCapitalOrInterest === 'interest' 
+        ? watchedCapitalOrInterest 
+        : null,
+      paymentOverride: watchedPaymentOverride || null,
+    });
+  }, [watchedBalance, watchedRate, watchedCapitalOrInterest, watchedTermYears, watchedPaymentOverride]);
 
   const onSubmit = async (data: PropertyFormData) => {
     if (!id) return;
@@ -145,26 +174,30 @@ function PropertyEditPage() {
 
       // Handle loan - update existing or create new
       const existingLoan = property?.loans?.[0];
+      const loanData = {
+        lender: data.lender || null,
+        interest_rate_percent: data.interest_rate_percent || null,
+        fixed_or_variable: data.fixed_or_variable || null,
+        current_mortgage_balance_gbp: data.current_mortgage_balance_gbp || null,
+        capital_or_interest: data.capital_or_interest || null,
+        term_years: data.term_years || null,
+        // Store manual payment as override, auto-calc as the regular field
+        payment_override_gbp: data.mortgage_payment_gbp || null,
+        payment_auto_calculated_gbp: mortgageCalc.autoCalculated,
+        payment_source: mortgageCalc.source,
+        fixed_rate_expires: data.fixed_rate_expires || null,
+      };
+
       if (existingLoan) {
         await updateLoan.mutateAsync({
           id: existingLoan.id,
           previousRate: existingLoan.interest_rate_percent,
-          lender: data.lender || null,
-          interest_rate_percent: data.interest_rate_percent || null,
-          fixed_or_variable: data.fixed_or_variable || null,
-          current_mortgage_balance_gbp: data.current_mortgage_balance_gbp || null,
-          mortgage_payment_gbp: data.mortgage_payment_gbp || null,
-          fixed_rate_expires: data.fixed_rate_expires || null,
+          ...loanData,
         });
       } else if (data.lender || data.current_mortgage_balance_gbp) {
         await createLoan.mutateAsync({
           property_id: id,
-          lender: data.lender || null,
-          interest_rate_percent: data.interest_rate_percent || null,
-          fixed_or_variable: data.fixed_or_variable || null,
-          current_mortgage_balance_gbp: data.current_mortgage_balance_gbp || null,
-          mortgage_payment_gbp: data.mortgage_payment_gbp || null,
-          fixed_rate_expires: data.fixed_rate_expires || null,
+          ...loanData,
         });
       }
 
@@ -598,6 +631,44 @@ function PropertyEditPage() {
 
                 <FormField
                   control={form.control}
+                  name="capital_or_interest"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-input">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="interest">Interest Only</SelectItem>
+                          <SelectItem value="capital">Capital & Interest (Repayment)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {watchedCapitalOrInterest === 'capital' && (
+                  <FormField
+                    control={form.control}
+                    name="term_years"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loan Term (Years)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" min="1" max="50" className="bg-input" placeholder="e.g. 25" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
                   name="fixed_rate_expires"
                   render={({ field }) => (
                     <FormItem>
@@ -610,15 +681,69 @@ function PropertyEditPage() {
                   )}
                 />
 
+                {/* Auto-calculated payment display */}
+                <div className="md:col-span-2 p-4 rounded-lg bg-muted/50 border border-border space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Monthly Payment (Auto-calculated)</span>
+                    {mortgageCalc.source && (
+                      <Badge variant={mortgageCalc.source === 'manual' ? 'secondary' : 'outline'}>
+                        {mortgageCalc.source === 'manual' ? 'Override active' : 'Auto'}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="text-2xl font-bold text-primary">
+                    {mortgageCalc.needsTerm ? (
+                      <span className="text-muted-foreground text-base">Enter term to calculate</span>
+                    ) : mortgageCalc.effective !== null ? (
+                      formatPaymentGBP(mortgageCalc.effective)
+                    ) : (
+                      <span className="text-muted-foreground text-base">—</span>
+                    )}
+                  </div>
+
+                  {mortgageCalc.autoCalculated !== null && mortgageCalc.source === 'manual' && (
+                    <p className="text-xs text-muted-foreground">
+                      Auto-calculated: {formatPaymentGBP(mortgageCalc.autoCalculated)}
+                    </p>
+                  )}
+                  
+                  {mortgageCalc.formula && (
+                    <p className="text-xs text-muted-foreground">{mortgageCalc.formula}</p>
+                  )}
+                </div>
+
                 <FormField
                   control={form.control}
                   name="mortgage_payment_gbp"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monthly Payment (£)</FormLabel>
+                    <FormItem className="md:col-span-2">
+                      <div className="flex items-center gap-2">
+                        <FormLabel>Manual Payment Override (£)</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Leave blank to use auto-calculated payment. Enter a value to override the calculation.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <FormControl>
-                        <Input {...field} type="number" min="0" step="10" className="bg-input" />
+                        <Input 
+                          {...field} 
+                          type="number" 
+                          min="0" 
+                          step="0.01" 
+                          className="bg-input max-w-xs" 
+                          placeholder="Leave blank for auto"
+                        />
                       </FormControl>
+                      <FormDescription>
+                        Optional: Override the auto-calculated payment
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
