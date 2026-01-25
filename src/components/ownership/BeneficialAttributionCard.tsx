@@ -393,41 +393,6 @@ export function BeneficialAttributionCard({ propertyId }: BeneficialAttributionC
           )}
         </div>
 
-        {/* Beneficial Group Members */}
-        {primaryGroup && (
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Star className="h-4 w-4 text-primary" />
-              "{primaryGroup.name}" Group Members
-            </h4>
-            {primaryGroup.entity_beneficial_mapping && primaryGroup.entity_beneficial_mapping.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {primaryGroup.entity_beneficial_mapping.map((mapping) => (
-                  <Badge 
-                    key={mapping.id} 
-                    variant="secondary"
-                    className="gap-1"
-                  >
-                    {mapping.ownership_entities?.name}
-                    <button
-                      onClick={() => {
-                        removeMapping.mutate(mapping.id);
-                        toast({ title: 'Entity removed from group' });
-                      }}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No entities assigned to this group yet
-              </p>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
