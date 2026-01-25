@@ -3,7 +3,6 @@ import { LegalOwnerCard } from './LegalOwnerCard';
 import { BeneficialOwnersCard } from './BeneficialOwnersCard';
 import { BeneficialOwnerEditor } from './BeneficialOwnerEditor';
 import { LegalOwnershipEditor } from './LegalOwnershipEditor';
-import type { LegalOwnershipWithEntity } from '@/hooks/useOwnershipLookthrough';
 import type { BeneficialOwner } from '@/hooks/useBeneficialOwnership';
 
 interface OwnershipSectionProps {
@@ -13,19 +12,12 @@ interface OwnershipSectionProps {
 export function OwnershipSection({ propertyId }: OwnershipSectionProps) {
   // Legal ownership editor state
   const [legalEditorOpen, setLegalEditorOpen] = useState(false);
-  const [editingLegalOwner, setEditingLegalOwner] = useState<LegalOwnershipWithEntity | null>(null);
 
   // Beneficial ownership editor state
   const [beneficialEditorOpen, setBeneficialEditorOpen] = useState(false);
   const [editingBeneficialOwner, setEditingBeneficialOwner] = useState<BeneficialOwner | null>(null);
 
-  const handleEditLegalOwner = (ownership: LegalOwnershipWithEntity) => {
-    setEditingLegalOwner(ownership);
-    setLegalEditorOpen(true);
-  };
-
-  const handleAddLegalOwner = () => {
-    setEditingLegalOwner(null);
+  const handleEditLegalOwner = () => {
     setLegalEditorOpen(true);
   };
 
@@ -45,7 +37,6 @@ export function OwnershipSection({ propertyId }: OwnershipSectionProps) {
       <LegalOwnerCard
         propertyId={propertyId}
         onEdit={handleEditLegalOwner}
-        onAdd={handleAddLegalOwner}
       />
 
       {/* Beneficial Ownership Split Card */}
@@ -60,7 +51,6 @@ export function OwnershipSection({ propertyId }: OwnershipSectionProps) {
         propertyId={propertyId}
         open={legalEditorOpen}
         onOpenChange={setLegalEditorOpen}
-        editingOwnership={editingLegalOwner}
       />
 
       {/* Beneficial Owner Editor Dialog */}

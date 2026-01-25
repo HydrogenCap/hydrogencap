@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Building2, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -19,150 +18,184 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  useOwnershipEntities,
-  useCreateEntity,
-  useAddLegalOwnership,
-  useUpdateLegalOwnership,
-  type LegalOwnershipWithEntity,
-} from '@/hooks/useOwnershipLookthrough';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { useCompanies, useCreateCompany, type CompanyType } from '@/hooks/useCompanies';
+import { useProperty, useUpdateProperty } from '@/hooks/useProperties';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface LegalOwnershipEditorProps {
   propertyId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingOwnership?: LegalOwnershipWithEntity | null;
 }
 
-const ENTITY_TYPES = ['Person', 'Company', 'SPV', 'Investor', 'Other'];
+const COMPANY_TYPES: { value: CompanyType; label: string }[] = [
+  { value: 'SPV', label: 'SPV (Property Holding)' },
+  { value: 'HOLDCO', label: 'Holding Company' },
+  { value: 'OPCO', label: 'Operating Company' },
+  { value: 'OTHER', label: 'Other' },
+];
 
 export function LegalOwnershipEditor({
   propertyId,
   open,
   onOpenChange,
-  editingOwnership,
 }: LegalOwnershipEditorProps) {
   const { toast } = useToast();
-  const { data: entities } = useOwnershipEntities();
-  const createEntity = useCreateEntity();
-  const addLegalOwnership = useAddLegalOwnership();
-  const updateLegalOwnership = useUpdateLegalOwnership();
+  const { data: property } = useProperty(propertyId);
+  const { data: companies } = useCompanies();
+  const createCompany = useCreateCompany();
+  const updateProperty = useUpdateProperty();
 
-  const [selectedEntityId, setSelectedEntityId] = useState<string>('');
-  const [ownerPercent, setOwnerPercent] = useState<string>('100');
-  const [notes, setNotes] = useState<string>('');
-  const [showNewEntityForm, setShowNewEntityForm] = useState(false);
-  const [newEntityName, setNewEntityName] = useState('');
-  const [newEntityType, setNewEntityType] = useState<string>('SPV');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [showNewCompanyForm, setShowNewCompanyForm] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyNumber, setNewCompanyNumber] = useState('');
+  const [newCompanyType, setNewCompanyType] = useState<CompanyType>('SPV');
 
-  const isEditing = !!editingOwnership;
-  const isSubmitting = addLegalOwnership.isPending || updateLegalOwnership.isPending;
+  const isSubmitting = updateProperty.isPending;
 
   useEffect(() => {
     if (open) {
-      if (editingOwnership) {
-        setSelectedEntityId(editingOwnership.owner_entity_id);
-        setOwnerPercent(String(editingOwnership.owner_percent));
-        setNotes(editingOwnership.notes || '');
-      } else {
-        setSelectedEntityId('');
-        setOwnerPercent('100');
-        setNotes('');
-      }
-      setShowNewEntityForm(false);
-      setNewEntityName('');
-      setNewEntityType('SPV');
+      setSelectedCompanyId(property?.legal_owner_company_id || '');
+      setShowNewCompanyForm(false);
+      setNewCompanyName('');
+      setNewCompanyNumber('');
+      setNewCompanyType('SPV');
     }
-  }, [open, editingOwnership]);
+  }, [open, property?.legal_owner_company_id]);
 
-  const handleCreateEntity = async () => {
-    if (!newEntityName.trim()) {
-      toast({ title: 'Error', description: 'Entity name is required', variant: 'destructive' });
+  const handleCreateCompany = async () => {
+    if (!newCompanyName.trim()) {
+      toast({ title: 'Error', description: 'Company name is required', variant: 'destructive' });
       return;
     }
 
     try {
-      const newEntity = await createEntity.mutateAsync({
-        name: newEntityName.trim(),
-        entity_type: newEntityType,
+      const newCompany = await createCompany.mutateAsync({
+        legal_name: newCompanyName.trim(),
+        company_number: newCompanyNumber.trim() || undefined,
+        company_type: newCompanyType,
       });
-      setSelectedEntityId(newEntity.id);
-      setShowNewEntityForm(false);
-      toast({ title: 'Entity created', description: `${newEntityName} has been created` });
+      setSelectedCompanyId(newCompany.id);
+      setShowNewCompanyForm(false);
+      toast({ title: 'Company created', description: `${newCompanyName} has been created` });
     } catch {
-      toast({ title: 'Error', description: 'Failed to create entity', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to create company', variant: 'destructive' });
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedEntityId) {
-      toast({ title: 'Error', description: 'Please select an entity', variant: 'destructive' });
-      return;
-    }
-
-    const percent = parseFloat(ownerPercent);
-    if (isNaN(percent) || percent < 0 || percent > 100) {
-      toast({ title: 'Error', description: 'Ownership must be between 0 and 100%', variant: 'destructive' });
-      return;
-    }
-
     try {
-      if (isEditing && editingOwnership) {
-        await updateLegalOwnership.mutateAsync({
-          id: editingOwnership.id,
-          propertyId,
-          owner_entity_id: selectedEntityId,
-          owner_percent: percent,
-          notes: notes.trim() || null,
-        });
-        toast({ title: 'Ownership updated' });
-      } else {
-        await addLegalOwnership.mutateAsync({
-          property_id: propertyId,
-          owner_entity_id: selectedEntityId,
-          owner_percent: percent,
-          notes: notes.trim() || null,
-        });
-        toast({ title: 'Legal owner added' });
-      }
+      await updateProperty.mutateAsync({
+        id: propertyId,
+        legal_owner_company_id: selectedCompanyId || null,
+      });
+      toast({ title: 'Legal owner updated' });
       onOpenChange(false);
     } catch {
-      toast({ title: 'Error', description: 'Failed to save ownership', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to update legal owner', variant: 'destructive' });
     }
   };
+
+  const handleClearOwner = async () => {
+    try {
+      await updateProperty.mutateAsync({
+        id: propertyId,
+        legal_owner_company_id: null,
+      });
+      toast({ title: 'Legal owner removed' });
+      onOpenChange(false);
+    } catch {
+      toast({ title: 'Error', description: 'Failed to remove legal owner', variant: 'destructive' });
+    }
+  };
+
+  const selectedCompany = companies?.find(c => c.id === selectedCompanyId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Legal Owner' : 'Add Legal Owner'}
-          </DialogTitle>
+          <DialogTitle>Set Legal Owner (SPV)</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Entity Selection or Creation */}
-          {!showNewEntityForm ? (
+          {/* Company Selection or Creation */}
+          {!showNewCompanyForm ? (
             <div className="space-y-2">
-              <Label>Legal Owner Entity</Label>
+              <Label>Select Company</Label>
               <div className="flex gap-2">
-                <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select entity..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {entities?.map(entity => (
-                      <SelectItem key={entity.id} value={entity.id}>
-                        {entity.name} ({entity.entity_type})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={searchOpen}
+                      className="flex-1 justify-between"
+                    >
+                      {selectedCompany ? (
+                        <span className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          {selectedCompany.legal_name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Search companies...</span>
+                      )}
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search companies..." />
+                      <CommandList>
+                        <CommandEmpty>No company found.</CommandEmpty>
+                        <CommandGroup>
+                          {companies?.map((company) => (
+                            <CommandItem
+                              key={company.id}
+                              value={company.legal_name}
+                              onSelect={() => {
+                                setSelectedCompanyId(company.id);
+                                setSearchOpen(false);
+                              }}
+                            >
+                              <Building2 className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCompanyId === company.id ? "text-primary" : "text-muted-foreground"
+                              )} />
+                              <div className="flex flex-col">
+                                <span>{company.legal_name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {company.company_type}
+                                  {company.company_number && ` • #${company.company_number}`}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setShowNewEntityForm(true)}
-                  title="Create new entity"
+                  onClick={() => setShowNewCompanyForm(true)}
+                  title="Create new company"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -170,75 +203,70 @@ export function LegalOwnershipEditor({
             </div>
           ) : (
             <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-              <h4 className="font-medium">Create New Entity</h4>
+              <h4 className="font-medium">Create New Company</h4>
               <div className="space-y-2">
-                <Label>Entity Name</Label>
+                <Label>Company Name</Label>
                 <Input
-                  value={newEntityName}
-                  onChange={(e) => setNewEntityName(e.target.value)}
-                  placeholder="e.g., Yashil Properties Ltd"
+                  value={newCompanyName}
+                  onChange={(e) => setNewCompanyName(e.target.value)}
+                  placeholder="e.g., Acme Properties Ltd"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Entity Type</Label>
-                <Select value={newEntityType} onValueChange={setNewEntityType}>
+                <Label>Company Number (optional)</Label>
+                <Input
+                  value={newCompanyNumber}
+                  onChange={(e) => setNewCompanyNumber(e.target.value)}
+                  placeholder="e.g., 12345678"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Company Type</Label>
+                <Select value={newCompanyType} onValueChange={(v) => setNewCompanyType(v as CompanyType)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ENTITY_TYPES.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    {COMPANY_TYPES.map(type => (
+                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowNewEntityForm(false)}>
+                <Button variant="outline" onClick={() => setShowNewCompanyForm(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateEntity} disabled={createEntity.isPending}>
-                  {createEntity.isPending ? 'Creating...' : 'Create Entity'}
+                <Button onClick={handleCreateCompany} disabled={createCompany.isPending}>
+                  {createCompany.isPending ? 'Creating...' : 'Create Company'}
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Ownership Percentage */}
-          <div className="space-y-2">
-            <Label>Ownership Percentage</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={ownerPercent}
-                onChange={(e) => setOwnerPercent(e.target.value)}
-                className="w-32"
-              />
-              <span className="text-muted-foreground">%</span>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label>Notes (optional)</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any additional notes..."
-              rows={2}
-            />
-          </div>
+          {/* Info about what this means */}
+          <p className="text-sm text-muted-foreground">
+            The Legal Owner is the SPV or company that appears on the property title. 
+            The beneficial ownership split is managed separately.
+          </p>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : isEditing ? 'Update' : 'Add Owner'}
-          </Button>
+        <DialogFooter className="flex justify-between">
+          <div>
+            {property?.legal_owner_company_id && (
+              <Button variant="ghost" onClick={handleClearOwner} disabled={isSubmitting}>
+                Remove Owner
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
