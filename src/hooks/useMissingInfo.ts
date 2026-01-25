@@ -28,7 +28,11 @@ export interface FieldDefinition {
   options?: readonly string[];
 }
 
-// Finance fields to validate (from loans table)
+/**
+ * CHANGE 1: Finance Fields
+ * - Removed mortgage_payment_gbp from required list (now auto-calculated)
+ * - Required fields: lender, current_balance, interest_rate, repayment_type, fixed_or_variable, product_end_date, loan_start_date
+ */
 export const FINANCE_FIELDS: FieldDefinition[] = [
   { key: 'lender', label: 'Lender Name', type: 'text' },
   { key: 'current_mortgage_balance_gbp', label: 'Current Balance', type: 'currency' },
@@ -36,23 +40,51 @@ export const FINANCE_FIELDS: FieldDefinition[] = [
   { key: 'capital_or_interest', label: 'Repayment Type', type: 'select', options: ['interest', 'capital'] },
   { key: 'fixed_or_variable', label: 'Fixed or Variable', type: 'select', options: ['fixed', 'variable', 'tracker'] },
   { key: 'fixed_rate_expires', label: 'Product End Date', type: 'date' },
-  { key: 'mortgage_payment_gbp', label: 'Monthly Payment', type: 'currency' },
   { key: 'loan_start_date', label: 'Loan Start Date', type: 'date' },
 ];
 
-// Insurance fields to validate (from insurance_policies table)
+// Term years field (optional - only needed for repayment mortgages)
+export const TERM_YEARS_FIELD: FieldDefinition = {
+  key: 'term_years',
+  label: 'Term (Years)',
+  type: 'number',
+};
+
+/**
+ * CHANGE 2: Insurance Fields
+ * - Removed premium_gbp, excess_gbp, cover_type from required list
+ * - Required fields: insurer_name, policy_number, renewal_date
+ */
 export const INSURANCE_FIELDS: FieldDefinition[] = [
   { key: 'insurer_name', label: 'Insurer Name', type: 'text' },
   { key: 'policy_number', label: 'Policy Number', type: 'text' },
   { key: 'renewal_date', label: 'Renewal Date', type: 'date' },
-  { key: 'cover_type', label: 'Cover Type', type: 'select', options: ['Buildings', 'Landlord', 'HMO', 'Contents', 'Other'] },
-  { key: 'premium_gbp', label: 'Premium', type: 'currency' },
-  { key: 'excess_gbp', label: 'Excess', type: 'currency' },
 ];
 
-// Passport fields to validate (grouped by category)
+/**
+ * CHANGE 3: Passport Fields - Removed duplicates
+ * 
+ * DATA SOURCES (Developer Reference):
+ * - address_line, postcode, beds, bathrooms, property_type, tenure, epc_rating, title_number → properties table
+ * - lender, balance, rate, etc. → loans table
+ * - insurer_name, policy_number, etc. → insurance_policies table
+ * 
+ * Property Passport stores ONLY unique fields not available elsewhere:
+ * - Utility meter locations/numbers
+ * - Keysafe codes
+ * - Construction details (built year, construction type, storeys)
+ * - HMO specific data
+ * - Management company info
+ * - Parking/access details
+ * 
+ * REMOVED from Passport (duplicates):
+ * - bedrooms, bathrooms → Already in properties.beds, properties.bathrooms
+ * - owner_tenure → Already in properties.tenure
+ * - land_registry_title_number → Already in properties.title_number
+ * - postcode → Already in properties.postcode
+ */
 export const PASSPORT_FIELDS: FieldDefinition[] = [
-  // Critical utility fields
+  // Critical utility fields (unique to passport)
   { key: 'keysafe_code', label: 'Keysafe Code', type: 'text' },
   { key: 'electric_meter_location', label: 'Electric Meter Location', type: 'text' },
   { key: 'electric_meter_number', label: 'Electric Meter Number', type: 'text' },
@@ -61,36 +93,31 @@ export const PASSPORT_FIELDS: FieldDefinition[] = [
   { key: 'water_meter_location', label: 'Water Meter Location', type: 'text' },
   { key: 'water_meter_number', label: 'Water Meter Number', type: 'text' },
   { key: 'water_stop_tap_location', label: 'Stop Tap Location', type: 'text' },
-  // Property details
-  { key: 'bedrooms', label: 'Bedrooms', type: 'number' },
-  { key: 'bathrooms', label: 'Bathrooms', type: 'number' },
+  // Room counts - only unique ones not in properties table
   { key: 'kitchens', label: 'Kitchens', type: 'number' },
   { key: 'ensuites', label: 'Ensuites', type: 'number' },
   { key: 'living_rooms_communal', label: 'Living Rooms', type: 'number' },
   { key: 'wc_cloakroom', label: 'WC/Cloakroom', type: 'number' },
-  // Construction
+  // Construction (unique to passport)
   { key: 'built_in_year', label: 'Built In Year', type: 'number' },
   { key: 'construction_type', label: 'Construction Type', type: 'select', options: ['Brick', 'Stone', 'Timber Frame', 'Concrete', 'Steel Frame', 'Other'] },
   { key: 'number_of_storeys', label: 'Number of Storeys', type: 'number' },
-  // Location/Admin
+  // Location/Admin (unique to passport - local_authority_text is passport-specific)
   { key: 'local_authority_text', label: 'Local Authority', type: 'text' },
   { key: 'council_tax_band', label: 'Council Tax Band', type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] },
   { key: 'occupation_status', label: 'Occupation Status', type: 'select', options: ['Let', 'Vacant', 'Owner-occupied', 'Development'] },
-  { key: 'owner_tenure', label: 'Tenure', type: 'select', options: ['Freehold', 'Leasehold', 'Share of Freehold'] },
-  // Parking & Access
+  // Parking & Access (unique to passport)
   { key: 'parking', label: 'Parking', type: 'select', options: ['None', 'On-street', 'Driveway', 'Garage', 'Allocated space', 'Multiple'] },
   { key: 'has_loft_access', label: 'Loft Access', type: 'boolean' },
   { key: 'basement', label: 'Basement', type: 'boolean' },
-  // HMO
+  // HMO (unique to passport)
   { key: 'hmo_licence_required', label: 'HMO Licence Required', type: 'boolean' },
   { key: 'hmo_licence_number', label: 'HMO Licence Number', type: 'text' },
   { key: 'hmo_licence_expiry', label: 'HMO Licence Expiry', type: 'date' },
   { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', type: 'number' },
-  // Management
+  // Management (unique to passport)
   { key: 'management_company_text', label: 'Management Company', type: 'text' },
   { key: 'property_management_fee_percent', label: 'Management Fee %', type: 'percent' },
-  // Links
-  { key: 'land_registry_title_number', label: 'Title Number', type: 'text' },
 ];
 
 // Critical passport fields that should always be filled
@@ -113,15 +140,79 @@ export function isMissing(value: any, fieldKey: string): boolean {
   // 0 is missing for monetary/rate fields
   const zeroIsMissing = [
     'current_mortgage_balance_gbp',
-    'mortgage_payment_gbp',
-    'premium_gbp',
-    'excess_gbp',
     'interest_rate_percent',
     'property_management_fee_percent',
   ];
   if (zeroIsMissing.includes(fieldKey) && value === 0) return true;
   
   return false;
+}
+
+/**
+ * Calculate monthly payment for a mortgage
+ * Returns null if calculation is not possible
+ */
+export interface MonthlyPaymentResult {
+  amount: number | null;
+  source: 'calculated' | 'override' | 'stored';
+  canCalculate: boolean;
+  missingReason?: string;
+}
+
+export function calculateMonthlyPayment(
+  balance: number | null | undefined,
+  rate: number | null | undefined,
+  repaymentType: string | null | undefined,
+  termYears: number | null | undefined,
+  storedPayment: number | null | undefined,
+  paymentSource: string | null | undefined
+): MonthlyPaymentResult {
+  // If user has set an override, use that
+  if (paymentSource === 'manual' && storedPayment && storedPayment > 0) {
+    return { amount: storedPayment, source: 'override', canCalculate: true };
+  }
+
+  // Check if we have the minimum required inputs
+  if (!balance || balance <= 0 || !rate || rate <= 0) {
+    return { 
+      amount: null, 
+      source: 'calculated', 
+      canCalculate: false,
+      missingReason: 'Balance and interest rate required'
+    };
+  }
+
+  const monthlyRate = (rate / 100) / 12;
+
+  // Interest-only calculation
+  if (repaymentType === 'interest') {
+    const payment = balance * monthlyRate;
+    return { amount: Math.round(payment * 100) / 100, source: 'calculated', canCalculate: true };
+  }
+
+  // Capital & Interest (Repayment) calculation
+  if (repaymentType === 'capital') {
+    if (!termYears || termYears <= 0) {
+      return { 
+        amount: null, 
+        source: 'calculated', 
+        canCalculate: false,
+        missingReason: 'Term (years) required for repayment mortgages'
+      };
+    }
+
+    const n = termYears * 12;
+    const payment = balance * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
+    return { amount: Math.round(payment * 100) / 100, source: 'calculated', canCalculate: true };
+  }
+
+  // Unknown repayment type
+  return { 
+    amount: null, 
+    source: 'calculated', 
+    canCalculate: false,
+    missingReason: 'Repayment type required'
+  };
 }
 
 export interface PropertyMissingInfo {
@@ -136,6 +227,9 @@ export interface PropertyMissingInfo {
   status: 'complete' | 'missing_finance' | 'missing_insurance' | 'missing_passport' | 'missing_multiple';
   renewingSoon: boolean;
   hmoLicenceExpiringSoon: boolean;
+  // New: computed monthly payment info
+  monthlyPayment: MonthlyPaymentResult;
+  needsTermYears: boolean;
 }
 
 // Fetch insurance policies
@@ -193,7 +287,20 @@ export function useMissingInfo() {
       const insurance = insuranceMap.get(property.id) || null;
       const passport = passportMap.get(property.id) || null;
 
-      // Check finance fields
+      // Calculate monthly payment
+      const monthlyPayment = calculateMonthlyPayment(
+        loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null,
+        loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
+        loan?.capital_or_interest,
+        loan?.term_years,
+        loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null,
+        loan?.payment_source
+      );
+
+      // Check if term_years is needed but missing (for repayment mortgages)
+      const needsTermYears = loan?.capital_or_interest === 'capital' && !loan?.term_years;
+
+      // Check finance fields (excluding monthly_payment - it's auto-calculated)
       const missingFinanceFields: string[] = [];
       if (loan) {
         FINANCE_FIELDS.forEach(field => {
@@ -202,12 +309,16 @@ export function useMissingInfo() {
             missingFinanceFields.push(field.key);
           }
         });
+        // Add term_years to missing if needed for repayment calculation
+        if (needsTermYears) {
+          missingFinanceFields.push('term_years');
+        }
       } else {
         // No loan record = all finance fields missing
         missingFinanceFields.push(...FINANCE_FIELDS.map(f => f.key));
       }
 
-      // Check insurance fields
+      // Check insurance fields (updated list - no premium/excess/cover_type)
       const missingInsuranceFields: string[] = [];
       INSURANCE_FIELDS.forEach(field => {
         const value = insurance?.[field.key as keyof InsurancePolicy];
@@ -216,7 +327,7 @@ export function useMissingInfo() {
         }
       });
 
-      // Check passport fields
+      // Check passport fields (updated list - no duplicates)
       const missingPassportFields: string[] = [];
       const missingCriticalPassportFields: string[] = [];
       PASSPORT_FIELDS.forEach(field => {
@@ -284,6 +395,8 @@ export function useMissingInfo() {
         status,
         renewingSoon,
         hmoLicenceExpiringSoon,
+        monthlyPayment,
+        needsTermYears,
       };
     });
   }, [properties, insurancePolicies, passports]);
@@ -377,7 +490,8 @@ export function copyMissingToClipboard(item: PropertyMissingInfo) {
   if (item.missingFinanceFields.length > 0) {
     lines.push('Missing Finance:');
     item.missingFinanceFields.forEach(field => {
-      const label = FINANCE_FIELDS.find(f => f.key === field)?.label || field;
+      const label = FINANCE_FIELDS.find(f => f.key === field)?.label || 
+                   (field === 'term_years' ? 'Term (Years)' : field);
       lines.push(`  • ${label}`);
     });
     lines.push('');
