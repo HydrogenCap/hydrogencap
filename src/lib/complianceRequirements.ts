@@ -17,6 +17,8 @@ export interface PropertyComplianceFeatures {
   is_hmo_licensed: boolean | null;
   selective_licence_required: boolean | null;
   co_alarm_required: boolean | null;
+  epc_required: boolean | null;
+  listed_status: string | null;
 }
 
 // Requirement status
@@ -71,9 +73,9 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     category: 'Safety & Legal',
     defaultRequired: true,
     validityYears: 10,
-    condition: () => true, // Always required
+    condition: (p: PropertyComplianceFeatures) => p.epc_required !== false,
     reasonRequired: 'Mandatory for all rental properties',
-    reasonNotRequired: 'Not applicable',
+    reasonNotRequired: 'Listed building - EPC exempt',
   },
   'Smoke Alarm Declaration': {
     category: 'Safety & Legal',
