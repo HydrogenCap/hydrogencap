@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
 import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2 } from 'lucide-react';
@@ -173,31 +173,23 @@ function usePropertyPhotos() {
   });
 }
 
-function usePropertyOwnerships() {
+function useLegalOwnerCompanies() {
   return useQuery({
-    queryKey: ['property_ownerships_list'],
+    queryKey: ['property_legal_owner_companies'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('property_ownership')
-        .select(`
-          property_id,
-          ownership_percent,
-          ownership_entity_id,
-          ownership_entities(name)
-        `);
+      // Get all companies in a single query
+      const { data: companies, error } = await supabase
+        .from('companies')
+        .select('id, legal_name');
       
       if (error) throw error;
       
-      const ownershipMap = new Map<string, Array<{ name: string; percent: number }>>();
-      data?.forEach(row => {
-        const list = ownershipMap.get(row.property_id) || [];
-        list.push({
-          name: (row.ownership_entities as any)?.name || 'Unknown',
-          percent: Number(row.ownership_percent),
-        });
-        ownershipMap.set(row.property_id, list);
+      // Create a map of company_id -> company name
+      const companyMap = new Map<string, string>();
+      companies?.forEach(company => {
+        companyMap.set(company.id, company.legal_name);
       });
-      return ownershipMap;
+      return companyMap;
     },
   });
 }
@@ -337,7 +329,7 @@ function PropertiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: properties, isLoading, error } = useProperties();
   const { data: photoMap } = usePropertyPhotos();
-  const { data: ownershipMap } = usePropertyOwnerships();
+  const { data: companyMap } = useLegalOwnerCompanies();
   const { data: passports } = usePropertyPassports();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -394,6 +386,14 @@ function PropertiesPage() {
     passports?.forEach(p => map.set(p.property_id, p));
     return map;
   }, [passports]);
+
+  // Helper to get ownership name for sorting - needs to be defined before useMemo
+  const getOwnershipNameForSort = useCallback((property: PropertyWithFinancials): string => {
+    if (property.legal_owner_company_id && companyMap) {
+      return companyMap.get(property.legal_owner_company_id) || '';
+    }
+    return property.ownership_entity || '';
+  }, [companyMap]);
 
   // Filter and sort properties
   const filteredAndSortedProperties = useMemo(() => {
@@ -472,6 +472,11 @@ function PropertiesPage() {
         case 'area':
           comparison = (a.area_name || '').localeCompare(b.area_name || '');
           break;
+        case 'ownership':
+          const ownerA = getOwnershipNameForSort(a);
+          const ownerB = getOwnershipNameForSort(b);
+          comparison = ownerA.localeCompare(ownerB);
+          break;
         case 'propertyType':
           comparison = (a.property_type || '').localeCompare(b.property_type || '');
           break;
@@ -539,7 +544,7 @@ function PropertiesPage() {
     });
 
     return result;
-  }, [properties, searchQuery, sortField, sortDirection, passportMap, activeFilter]);
+  }, [properties, searchQuery, sortField, sortDirection, passportMap, activeFilter, companyMap, getOwnershipNameForSort]);
 
   const handleSort = (field: ColumnKey) => {
     if (sortField === field) {
@@ -640,21 +645,21 @@ function PropertiesPage() {
     );
   };
 
-  const getOwnershipDisplay = (propertyId: string) => {
-    const owners = ownershipMap?.get(propertyId);
-    if (!owners || owners.length === 0) return <span className="text-muted-foreground">—</span>;
-    
-    const primary = owners[0];
-    if (owners.length === 1) {
-      return <span>{primary.name} – {primary.percent}%</span>;
+  const getOwnershipDisplay = (property: PropertyWithFinancials) => {
+    // Use legal_owner_company_id to get company name
+    if (property.legal_owner_company_id && companyMap) {
+      const companyName = companyMap.get(property.legal_owner_company_id);
+      if (companyName) {
+        return <span>{companyName}</span>;
+      }
     }
-    return (
-      <span>
-        {primary.name} – {primary.percent}%
-        <span className="text-muted-foreground ml-1">+ others</span>
-      </span>
-    );
+    // Fallback to legacy ownership_entity field
+    if (property.ownership_entity) {
+      return <span>{property.ownership_entity}</span>;
+    }
+    return <span className="text-muted-foreground">—</span>;
   };
+  
 
   const getOpsCompleteness = (passport: PropertyPassport | undefined) => {
     if (!passport) return { complete: false, missing: ['All data missing'] };
@@ -840,7 +845,7 @@ function PropertiesPage() {
                     {visibleColumns.has('photo') && <TableHead className="w-16">Photo</TableHead>}
                     {visibleColumns.has('address') && <SortableHeader field="address">Address</SortableHeader>}
                     {visibleColumns.has('area') && <SortableHeader field="area">Area</SortableHeader>}
-                    {visibleColumns.has('ownership') && <TableHead>Ownership</TableHead>}
+                    {visibleColumns.has('ownership') && <SortableHeader field="ownership">Ownership</SortableHeader>}
                     {visibleColumns.has('propertyType') && <SortableHeader field="propertyType">Type</SortableHeader>}
                     {visibleColumns.has('beds') && <SortableHeader field="beds">Beds</SortableHeader>}
                     {visibleColumns.has('value') && <SortableHeader field="value" align="right">Value</SortableHeader>}
@@ -916,7 +921,7 @@ function PropertiesPage() {
                           <TableCell className="text-muted-foreground">{property.area_name || '—'}</TableCell>
                         )}
                         {visibleColumns.has('ownership') && (
-                          <TableCell className="max-w-[180px] truncate">{getOwnershipDisplay(property.id)}</TableCell>
+                          <TableCell className="max-w-[180px] truncate">{getOwnershipDisplay(property)}</TableCell>
                         )}
                         {visibleColumns.has('propertyType') && (
                           <TableCell className="text-muted-foreground">{property.property_type || '—'}</TableCell>
