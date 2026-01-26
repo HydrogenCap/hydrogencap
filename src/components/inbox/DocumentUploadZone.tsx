@@ -10,6 +10,18 @@ interface DocumentUploadZoneProps {
   onUploadComplete?: () => void;
 }
 
+// Get the user's org_id for storage paths
+async function getUserOrgId(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('org_id')
+    .limit(1)
+    .maybeSingle();
+  
+  if (error || !data) return null;
+  return data.org_id;
+}
+
 export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -44,9 +56,16 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   };
 
   const uploadFile = async (file: File) => {
+    // Get user's org_id for secure storage path
+    const orgId = await getUserOrgId();
+    if (!orgId) {
+      throw new Error('No organization found. Please log in again.');
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `uploads/${fileName}`;
+    // Use org-scoped path for security: {org_id}/{filename}
+    const filePath = `${orgId}/${fileName}`;
 
     setUploadProgress(`Uploading ${file.name}...`);
 
