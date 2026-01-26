@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Bed, AlertCircle, ArrowRight, Users, User } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, AlertCircle, ArrowRight, Users, User, Building2 } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,7 +13,6 @@ import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
-import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
@@ -23,7 +22,6 @@ import {
   formatGBP,
   formatPercent,
   calculateLTV,
-  calculateEquity,
   getEffectiveCosts,
   calculateMonthlyCashflowAfterDebt,
   calculateMonthlyMortgagePayment,
@@ -32,8 +30,9 @@ import {
   getExpiryStatus,
   daysUntil,
 } from '@/lib/calculations';
-import { calculatePortfolioRentPerBedroom, formatPaymentGBP } from '@/lib/mortgageCalculations';
-
+import { calculatePortfolioRentPerBedroom } from '@/lib/mortgageCalculations';
+import { getPropertyMetrics } from '@/lib/propertyMetrics';
+import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 
 const CHART_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -54,7 +53,6 @@ interface RiskItem {
   message: string;
 }
 
-// Import passport hooks for risk calculations
 import { usePropertyPassports, getHMOLicenceStatus, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useMissingInfo } from '@/hooks/useMissingInfo';
 

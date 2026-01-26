@@ -222,13 +222,14 @@ Settings           → User, org, integrations
 
 ## 7. Technical Debt Identified
 
-| Issue | Severity | Fix |
-|-------|----------|-----|
-| `calculateMonthlyCashflow` legacy function still exists | Low | Remove after confirming no usage |
-| Passport meter fields fragmented | Medium | Complete migration to `meter_notes` |
-| Multiple formatGBP variants | Low | Consolidate to 2 (with/without decimals) |
-| Dashboard recalculates on every render | Medium | Add useMemo optimization |
-| Properties.tsx is 1180+ lines | High | Extract table columns, filters, views into modules |
+| Issue | Severity | Fix | Status |
+|-------|----------|-----|--------|
+| `calculateMonthlyCashflow` legacy function still exists | Low | Remove after confirming no usage | - |
+| Passport meter fields fragmented | Medium | Complete migration to `meter_notes` | - |
+| Multiple formatGBP variants | Low | Consolidate to 2 (with/without decimals) | - |
+| Dashboard recalculates on every render | Medium | Add useMemo optimization | ✅ DONE |
+| Properties.tsx is 1180+ lines | High | Extract table columns, filters, views into modules | ✅ DONE |
+| Passport duplicate columns (beds, baths, tenure) | High | Migration to drop duplicate columns | ✅ DONE |
 
 ---
 

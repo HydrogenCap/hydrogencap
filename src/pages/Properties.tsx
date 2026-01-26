@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
-import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling } from 'lucide-react';
+import { Plus, Search, Building2, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,304 +28,33 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePropertyPassports, type PropertyPassport, calculatePassportCompleteness } from '@/hooks/usePropertyPassport';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  formatGBP,
-  formatGBPDecimal,
-  formatPercent,
-  formatDateUK,
-  calculateLTV,
-  calculateEquity,
-  getEffectiveCosts,
-  calculateNetRent,
-  calculateYield,
-  calculateMonthlyMortgagePayment,
-  getLTVStatus,
-  getExpiryStatus,
-  getEPCStatus,
-  daysUntil,
-} from '@/lib/calculations';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
 import { useBulkEpcEnrich } from '@/hooks/useBulkEpcEnrich';
 import { useBulkPricePaidEnrich } from '@/hooks/useBulkPricePaidEnrich';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatGBP, formatGBPDecimal, formatPercent, formatDateUK } from '@/lib/calculations';
 
-// ============================================
-// VIEW PRESET DEFINITIONS
-// ============================================
-
-type ViewPreset = 'default' | 'finance' | 'risk' | 'ops';
-
-// All available columns with their labels
-const ALL_COLUMNS = [
-  { key: 'photo', label: 'Photo' },
-  { key: 'address', label: 'Property Address' },
-  { key: 'area', label: 'Area' },
-  { key: 'ownership', label: 'Ownership' },
-  { key: 'propertyType', label: 'Property Type' },
-  { key: 'beds', label: 'Beds' },
-  { key: 'value', label: 'Property Value' },
-  { key: 'purchasePrice', label: 'Purchase Price' },
-  { key: 'purchaseDate', label: 'Original Purchase Date' },
-  { key: 'lender', label: 'Lender' },
-  { key: 'interestRate', label: 'Interest Rate' },
-  { key: 'fixedOrVariable', label: 'Fixed or Variable' },
-  { key: 'mortgageType', label: 'Mortgage Type' },
-  { key: 'capitalOrInterest', label: 'Capital / Interest' },
-  { key: 'fixedRateExpires', label: 'Fixed Rate Expires' },
-  { key: 'insuranceExpire', label: 'Insurance Expire' },
-  { key: 'mortgageBalance', label: 'Current Mortgage Balance' },
-  { key: 'mortgagePayment', label: 'Mortgage' },
-  { key: 'rentalIncome', label: 'Rental Income' },
-  { key: 'billsManagement', label: 'Bills & Management' },
-  { key: 'netRent', label: 'Net Rent' },
-  { key: 'yield', label: 'Yield' },
-  { key: 'ltv', label: 'LTV' },
-  { key: 'equity', label: 'Equity' },
-  // Additional columns for specific views
-  { key: 'epc', label: 'EPC' },
-  { key: 'monthlyCashflow', label: 'Monthly Cashflow' },
-  { key: 'riskStatus', label: 'Risk Status' },
-  { key: 'keysafeCode', label: 'Keysafe Code' },
-  { key: 'waterStopTap', label: 'Water Stop Tap' },
-  { key: 'electricMeter', label: 'Electric Meter' },
-  { key: 'gasMeter', label: 'Gas Meter' },
-  { key: 'waterMeter', label: 'Water Meter' },
-  { key: 'constructionDateBand', label: 'Construction' },
-  { key: 'hmoLicenceNumber', label: 'HMO Licence #' },
-  { key: 'hmoLicenceExpiry', label: 'HMO Licence Expiry' },
-  { key: 'managementCompany', label: 'Management Company' },
-  { key: 'actions', label: 'Actions' },
-] as const;
-
-type ColumnKey = typeof ALL_COLUMNS[number]['key'];
-type SortDirection = 'asc' | 'desc';
-
-// Preset configurations
-const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKey[]; defaultSort?: ColumnKey; sortDir?: SortDirection }> = {
-  default: {
-    label: 'Default (Sheet View)',
-    columns: [
-      'photo', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
-      'purchaseDate', 'lender', 'interestRate', 'fixedOrVariable', 'mortgageType', 'capitalOrInterest',
-      'fixedRateExpires', 'insuranceExpire', 'mortgageBalance', 'mortgagePayment', 'rentalIncome',
-      'billsManagement', 'netRent', 'yield', 'ltv', 'equity'
-    ],
-    defaultSort: 'address',
-    sortDir: 'asc',
-  },
-  finance: {
-    label: 'Finance View',
-    columns: [
-      'photo', 'address', 'area', 'ownership', 'beds', 'value', 'mortgageBalance', 'mortgagePayment',
-      'interestRate', 'fixedOrVariable', 'mortgageType', 'capitalOrInterest', 'rentalIncome',
-      'billsManagement', 'netRent', 'yield', 'ltv', 'equity'
-    ],
-    defaultSort: 'equity',
-    sortDir: 'desc',
-  },
-  risk: {
-    label: 'Risk View',
-    columns: [
-      'photo', 'address', 'area', 'lender', 'ltv', 'fixedRateExpires', 'insuranceExpire',
-      'epc', 'monthlyCashflow', 'netRent', 'riskStatus'
-    ],
-    defaultSort: 'riskStatus',
-    sortDir: 'desc',
-  },
-  ops: {
-    label: 'Ops View',
-    columns: [
-      'photo', 'address', 'area', 'keysafeCode', 'waterStopTap', 'electricMeter', 'gasMeter',
-      'waterMeter', 'constructionDateBand', 'hmoLicenceNumber', 'hmoLicenceExpiry', 'managementCompany'
-    ],
-    defaultSort: 'address',
-    sortDir: 'asc',
-  },
-};
-
-// Default visible columns for the default view
-const DEFAULT_VISIBLE = new Set<ColumnKey>([
-  'photo', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
-  'lender', 'interestRate', 'fixedRateExpires', 'mortgageBalance', 'mortgagePayment',
-  'rentalIncome', 'netRent', 'yield', 'ltv', 'equity', 'actions'
-]);
-
-// ============================================
-// DATA HOOKS
-// ============================================
-
-function usePropertyPhotos() {
-  return useQuery({
-    queryKey: ['property_photos_covers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('photos')
-        .select('property_id, file_url, is_cover')
-        .eq('is_cover', true);
-      
-      if (error) throw error;
-      
-      const photoMap = new Map<string, string>();
-      data?.forEach(photo => {
-        photoMap.set(photo.property_id, photo.file_url);
-      });
-      return photoMap;
-    },
-  });
-}
-
-function useLegalOwnerCompanies() {
-  return useQuery({
-    queryKey: ['property_legal_owner_companies'],
-    queryFn: async () => {
-      // Get all companies in a single query
-      const { data: companies, error } = await supabase
-        .from('companies')
-        .select('id, legal_name');
-      
-      if (error) throw error;
-      
-      // Create a map of company_id -> company name
-      const companyMap = new Map<string, string>();
-      companies?.forEach(company => {
-        companyMap.set(company.id, company.legal_name);
-      });
-      return companyMap;
-    },
-  });
-}
-
-// ============================================
-// RISK CALCULATION
-// ============================================
-
-type RiskLevel = 'critical' | 'warning' | 'ok';
-
-function calculatePropertyRisk(
-  property: PropertyWithFinancials,
-  passport: PropertyPassport | undefined,
-  metrics: ReturnType<typeof getPropertyMetrics>
-): { level: RiskLevel; issues: string[] } {
-  const issues: string[] = [];
-  let level: RiskLevel = 'ok';
-
-  // LTV > 85% = critical, > 75% = warning
-  if (metrics.ltv !== null) {
-    if (metrics.ltv > 85) {
-      issues.push('LTV > 85%');
-      level = 'critical';
-    } else if (metrics.ltv > 75) {
-      issues.push('LTV > 75%');
-      if (level === 'ok') level = 'warning';
-    }
-  }
-
-  // Fixed rate expiry
-  if (metrics.loan?.fixed_rate_expires) {
-    const status = getExpiryStatus(metrics.loan.fixed_rate_expires);
-    if (status === 'expired') {
-      issues.push('Fixed rate expired');
-      level = 'critical';
-    } else if (status === 'critical' || status === 'warning') {
-      issues.push('Fixed rate expiring soon');
-      if (level === 'ok') level = 'warning';
-    }
-  }
-
-  // EPC rating (if not exempt)
-  if (property.epc_required !== false) {
-    const epcStatus = getEPCStatus(property.epc_rating, property.epc_required ?? true);
-    if (epcStatus === 'warning') {
-      issues.push('EPC below C');
-      if (level === 'ok') level = 'warning';
-    }
-  }
-
-  // HMO licence (from passport)
-  if (passport?.hmo_licence_required && passport.hmo_licence_expiry) {
-    const status = getExpiryStatus(passport.hmo_licence_expiry);
-    if (status === 'expired') {
-      issues.push('HMO licence expired');
-      level = 'critical';
-    } else if (status === 'critical' || status === 'warning') {
-      issues.push('HMO licence expiring');
-      if (level === 'ok') level = 'warning';
-    }
-  }
-
-  // Negative monthly cashflow
-  if (metrics.monthlyCashflow !== null && metrics.monthlyCashflow < 0) {
-    issues.push('Negative cashflow');
-    if (level === 'ok') level = 'warning';
-  }
-
-  return { level, issues };
-}
-
-// ============================================
-// METRICS HELPER
-// ============================================
-
-function getPropertyMetrics(property: PropertyWithFinancials) {
-  const currentYear = new Date().getFullYear();
-  const loan = property.loans?.[0];
-  const income = property.income?.find(i => i.year === currentYear);
-  const costs = property.costs?.find(c => c.year === currentYear);
-
-  const mortgageBalance = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
-  const currentValue = property.current_value_gbp ? Number(property.current_value_gbp) : null;
-  const purchasePrice = property.purchase_price_gbp ? Number(property.purchase_price_gbp) : null;
-  const annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-  
-  // Use effective costs (auto-calculated with manual overrides)
-  const effectiveCosts = getEffectiveCosts(annualRent, currentValue, costs);
-  const managementCost = effectiveCosts.management;
-  const billsCost = effectiveCosts.bills;
-  const billsManagement = managementCost + billsCost;
-  const totalCosts = effectiveCosts.total;
-
-  const ltv = calculateLTV(mortgageBalance, currentValue);
-  const equity = calculateEquity(currentValue, mortgageBalance);
-  const netRent = calculateNetRent(annualRent, totalCosts);
-  const yieldPercent = calculateYield(netRent, currentValue);
-
-  // Calculate monthly mortgage payment
-  const mortgagePaymentResult = calculateMonthlyMortgagePayment({
-    balance: mortgageBalance,
-    interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
-    termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
-    isInterestOnly: loan?.capital_or_interest === 'interest',
-    paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
-  });
-
-  // Monthly cashflow = (net rent / 12) - monthly mortgage
-  const monthlyNetRent = netRent !== null ? netRent / 12 : null;
-  const monthlyCashflow = monthlyNetRent !== null && mortgagePaymentResult.effective !== null
-    ? monthlyNetRent - mortgagePaymentResult.effective
-    : monthlyNetRent;
-
-  return {
-    mortgageBalance,
-    currentValue,
-    purchasePrice,
-    annualRent,
-    billsManagement,
-    totalCosts,
-    ltv,
-    equity,
-    netRent,
-    yieldPercent,
-    mortgagePayment: mortgagePaymentResult.effective,
-    monthlyCashflow,
-    loan,
-  };
-}
-
-// ============================================
-// MAIN COMPONENT
-// ============================================
+// Extracted modules
+import { 
+  ALL_COLUMNS, 
+  VIEW_PRESETS, 
+  FILTER_LABELS,
+  type ColumnKey, 
+  type ViewPreset, 
+  type SortDirection 
+} from '@/lib/propertiesTableConfig';
+import { getPropertyMetrics, calculatePropertyRisk, RISK_ORDER, type RiskLevel } from '@/lib/propertyMetrics';
+import { usePropertyPhotos, useLegalOwnerCompanies } from '@/hooks/usePropertiesTableData';
+import { 
+  SortableHeader, 
+  ExpiryBadge, 
+  LTVBadge, 
+  EPCBadge, 
+  RiskBadge, 
+  OwnershipDisplay,
+  CashflowValue,
+  MeterDisplay
+} from '@/components/properties/PropertiesTableCells';
 
 function PropertiesPage() {
   const navigate = useNavigate();
@@ -349,10 +78,9 @@ function PropertiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const activeFilter = searchParams.get('filter');
 
-  // Clear filter function
-  const clearFilter = () => {
+  const clearFilter = useCallback(() => {
     setSearchParams({});
-  };
+  }, [setSearchParams]);
   
   // Load saved view from localStorage
   const [activeView, setActiveView] = useState<ViewPreset>(() => {
@@ -378,21 +106,21 @@ function PropertiesPage() {
   }, [activeView]);
 
   // Switch view preset
-  const switchView = (view: ViewPreset) => {
+  const switchView = useCallback((view: ViewPreset) => {
     setActiveView(view);
     const preset = VIEW_PRESETS[view];
     setVisibleColumns(new Set(preset.columns));
     setSortField(preset.defaultSort || 'address');
     setSortDirection(preset.sortDir || 'asc');
-  };
+  }, []);
 
   // Reset current view to preset defaults
-  const resetView = () => {
+  const resetView = useCallback(() => {
     const preset = VIEW_PRESETS[activeView];
     setVisibleColumns(new Set(preset.columns));
     setSortField(preset.defaultSort || 'address');
     setSortDirection(preset.sortDir || 'asc');
-  };
+  }, [activeView]);
 
   // Create passport map for quick lookup
   const passportMap = useMemo(() => {
@@ -401,7 +129,7 @@ function PropertiesPage() {
     return map;
   }, [passports]);
 
-  // Helper to get ownership name for sorting - needs to be defined before useMemo
+  // Helper to get ownership name for sorting
   const getOwnershipNameForSort = useCallback((property: PropertyWithFinancials): string => {
     if (property.legal_owner_company_id && companyMap) {
       return companyMap.get(property.legal_owner_company_id) || '';
@@ -409,7 +137,7 @@ function PropertiesPage() {
     return property.ownership_entity || '';
   }, [companyMap]);
 
-  // Filter and sort properties
+  // Filter and sort properties - memoized with stable dependencies
   const filteredAndSortedProperties = useMemo(() => {
     if (!properties) return [];
 
@@ -420,7 +148,7 @@ function PropertiesPage() {
       p.postcode?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Then apply URL-based filters (from Insights page clicks)
+    // Then apply URL-based filters
     if (activeFilter) {
       const now = new Date();
       result = result.filter(p => {
@@ -431,40 +159,31 @@ function PropertiesPage() {
           case 'rate_expiry_3m': {
             const expiryDate = metrics.loan?.fixed_rate_expires;
             if (!expiryDate) return false;
-            const expiry = parseISO(expiryDate);
-            return isBefore(expiry, addMonths(now, 3));
+            return isBefore(parseISO(expiryDate), addMonths(now, 3));
           }
           case 'rate_expiry_6m': {
             const expiryDate = metrics.loan?.fixed_rate_expires;
             if (!expiryDate) return false;
-            const expiry = parseISO(expiryDate);
-            return isBefore(expiry, addMonths(now, 6));
+            return isBefore(parseISO(expiryDate), addMonths(now, 6));
           }
           case 'rate_expiry_12m': {
             const expiryDate = metrics.loan?.fixed_rate_expires;
             if (!expiryDate) return false;
-            const expiry = parseISO(expiryDate);
-            return isBefore(expiry, addMonths(now, 12));
+            return isBefore(parseISO(expiryDate), addMonths(now, 12));
           }
-          case 'ltv_above_75': {
-            const ltv = metrics.ltv || 0;
-            return ltv > 75;
-          }
-          case 'ltv_above_85': {
-            const ltv = metrics.ltv || 0;
-            return ltv > 85;
-          }
+          case 'ltv_above_75':
+            return (metrics.ltv || 0) > 75;
+          case 'ltv_above_85':
+            return (metrics.ltv || 0) > 85;
           case 'epc_below_c': {
             const epc = p.epc_rating?.toUpperCase();
             return epc && ['D', 'E', 'F', 'G'].includes(epc);
           }
-          case 'negative_cashflow': {
+          case 'negative_cashflow':
             return (metrics.monthlyCashflow || 0) < 0;
-          }
           case 'missing_passport': {
             if (!passport) return true;
-            const completeness = calculatePassportCompleteness(passport);
-            return completeness.percentage < 50;
+            return calculatePassportCompleteness(passport).percentage < 50;
           }
           default:
             return true;
@@ -472,6 +191,7 @@ function PropertiesPage() {
       });
     }
 
+    // Sort
     result.sort((a, b) => {
       const metricsA = getPropertyMetrics(a);
       const metricsB = getPropertyMetrics(b);
@@ -487,9 +207,7 @@ function PropertiesPage() {
           comparison = (a.area_name || '').localeCompare(b.area_name || '');
           break;
         case 'ownership':
-          const ownerA = getOwnershipNameForSort(a);
-          const ownerB = getOwnershipNameForSort(b);
-          comparison = ownerA.localeCompare(ownerB);
+          comparison = getOwnershipNameForSort(a).localeCompare(getOwnershipNameForSort(b));
           break;
         case 'propertyType':
           comparison = (a.property_type || '').localeCompare(b.property_type || '');
@@ -540,11 +258,9 @@ function PropertiesPage() {
           comparison = (metricsA.monthlyCashflow || 0) - (metricsB.monthlyCashflow || 0);
           break;
         case 'riskStatus': {
-          // Sort by risk level: critical > warning > ok
           const riskA = calculatePropertyRisk(a, passportA, metricsA);
           const riskB = calculatePropertyRisk(b, passportB, metricsB);
-          const riskOrder: Record<RiskLevel, number> = { critical: 3, warning: 2, ok: 1 };
-          comparison = riskOrder[riskA.level] - riskOrder[riskB.level];
+          comparison = RISK_ORDER[riskA.level] - RISK_ORDER[riskB.level];
           break;
         }
         case 'hmoLicenceExpiry':
@@ -558,18 +274,18 @@ function PropertiesPage() {
     });
 
     return result;
-  }, [properties, searchQuery, sortField, sortDirection, passportMap, activeFilter, companyMap, getOwnershipNameForSort]);
+  }, [properties, searchQuery, sortField, sortDirection, passportMap, activeFilter, getOwnershipNameForSort]);
 
-  const handleSort = (field: ColumnKey) => {
+  const handleSort = useCallback((field: ColumnKey) => {
     if (sortField === field) {
       setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
       setSortDirection('asc');
     }
-  };
+  }, [sortField]);
 
-  const toggleColumn = (key: ColumnKey) => {
+  const toggleColumn = useCallback((key: ColumnKey) => {
     setVisibleColumns(prev => {
       const next = new Set(prev);
       if (next.has(key)) {
@@ -579,120 +295,12 @@ function PropertiesPage() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const handleRowClick = (propertyId: string, e: React.MouseEvent) => {
+  const handleRowClick = useCallback((propertyId: string, e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button, a')) return;
     navigate(`/properties/${propertyId}`);
-  };
-
-  // ============================================
-  // HELPER COMPONENTS
-  // ============================================
-
-  const SortableHeader = ({ field, children, align = 'left' }: { field: ColumnKey; children: React.ReactNode; align?: 'left' | 'right' }) => (
-    <TableHead className={align === 'right' ? 'text-right' : ''}>
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        className={`-ml-3 h-8 hover:bg-transparent ${align === 'right' ? 'ml-auto -mr-3' : ''}`}
-        onClick={(e) => { e.stopPropagation(); handleSort(field); }}
-      >
-        {children}
-        <ArrowUpDown className="ml-2 h-3 w-3 opacity-50" />
-      </Button>
-    </TableHead>
-  );
-
-  const getExpiryBadge = (date: string | null | undefined) => {
-    if (!date) return <span className="text-muted-foreground">—</span>;
-    
-    const status = getExpiryStatus(date);
-    let colorClass = 'text-success';
-    if (status === 'expired') colorClass = 'text-destructive';
-    else if (status === 'critical' || status === 'warning') colorClass = 'text-warning';
-    
-    return <span className={colorClass}>{formatDateUK(date)}</span>;
-  };
-
-  const getLTVBadge = (ltv: number | null) => {
-    if (ltv === null) return <span className="text-muted-foreground">—</span>;
-    
-    const status = getLTVStatus(ltv);
-    let colorClass = '';
-    if (status === 'danger') colorClass = 'text-destructive';
-    else if (status === 'warning') colorClass = 'text-warning';
-    
-    return <span className={colorClass}>{formatPercent(ltv)}</span>;
-  };
-
-  const getEPCBadge = (rating: string | null, required: boolean | null) => {
-    if (required === false) {
-      return <Badge variant="outline" className="text-xs">N/A</Badge>;
-    }
-    if (!rating) return <span className="text-muted-foreground">—</span>;
-    
-    const status = getEPCStatus(rating, required ?? true);
-    let colorClass = 'text-success';
-    if (status === 'warning') colorClass = 'text-warning';
-    else if (status === 'exempt') colorClass = 'text-muted-foreground';
-    
-    return <Badge variant="outline" className={`${colorClass} border-current`}>{rating}</Badge>;
-  };
-
-  const getRiskBadge = (level: RiskLevel, issues: string[]) => {
-    const colors: Record<RiskLevel, string> = {
-      critical: 'bg-destructive text-destructive-foreground',
-      warning: 'bg-warning text-warning-foreground',
-      ok: 'bg-success text-success-foreground',
-    };
-    const labels: Record<RiskLevel, string> = {
-      critical: 'RED',
-      warning: 'YELLOW',
-      ok: 'GREEN',
-    };
-    
-    return (
-      <Badge className={colors[level]} title={issues.join(', ')}>
-        {labels[level]}
-      </Badge>
-    );
-  };
-
-  const getOwnershipDisplay = (property: PropertyWithFinancials) => {
-    // Use legal_owner_company_id to get company name
-    if (property.legal_owner_company_id && companyMap) {
-      const companyName = companyMap.get(property.legal_owner_company_id);
-      if (companyName) {
-        return <span>{companyName}</span>;
-      }
-    }
-    // Fallback to legacy ownership_entity field
-    if (property.ownership_entity) {
-      return <span>{property.ownership_entity}</span>;
-    }
-    return <span className="text-muted-foreground">—</span>;
-  };
-  
-
-  const getOpsCompleteness = (passport: PropertyPassport | undefined) => {
-    if (!passport) return { complete: false, missing: ['All data missing'] };
-    
-    const completeness = calculatePassportCompleteness(passport);
-    const missing: string[] = [];
-    
-    if (!passport.keysafe_code) missing.push('Keysafe');
-    if (!passport.water_stop_tap_location) missing.push('Stop tap');
-    if (!passport.electric_meter_location || !passport.electric_meter_number) missing.push('Electric meter');
-    if (!passport.gas_meter_location || !passport.gas_meter_number) missing.push('Gas meter');
-    if (!passport.water_meter_location || !passport.water_meter_number) missing.push('Water meter');
-    
-    return { complete: completeness.percentage === 100, missing };
-  };
-
-  // ============================================
-  // RENDER
-  // ============================================
+  }, [navigate]);
 
   if (error) {
     return (
@@ -726,11 +334,7 @@ function PropertiesPage() {
                       disabled={isEnrichingEpc || isEnrichingPricePaid}
                       className="gap-2"
                     >
-                      {isEnrichingEpc ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Zap className="h-4 w-4" />
-                      )}
+                      {isEnrichingEpc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                       {isEnrichingEpc ? 'Enriching...' : `Enrich EPC (${propertiesMissingEpc})`}
                     </Button>
                   </TooltipTrigger>
@@ -750,11 +354,7 @@ function PropertiesPage() {
                       disabled={isEnrichingEpc || isEnrichingPricePaid}
                       className="gap-2"
                     >
-                      {isEnrichingPricePaid ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <PoundSterling className="h-4 w-4" />
-                      )}
+                      {isEnrichingPricePaid ? <Loader2 className="h-4 w-4 animate-spin" /> : <PoundSterling className="h-4 w-4" />}
                       {isEnrichingPricePaid ? 'Enriching...' : `Price Paid (${propertiesMissingPurchasePrice})`}
                     </Button>
                   </TooltipTrigger>
@@ -847,16 +447,7 @@ function PropertiesPage() {
           <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium">Filtering by:</span>
-              <Badge variant="secondary">
-                {activeFilter === 'rate_expiry_3m' && 'Fixed rate expiring in 3 months'}
-                {activeFilter === 'rate_expiry_6m' && 'Fixed rate expiring in 6 months'}
-                {activeFilter === 'rate_expiry_12m' && 'Fixed rate expiring in 12 months'}
-                {activeFilter === 'ltv_above_75' && 'LTV above 75%'}
-                {activeFilter === 'ltv_above_85' && 'LTV above 85%'}
-                {activeFilter === 'epc_below_c' && 'EPC below C rating'}
-                {activeFilter === 'negative_cashflow' && 'Negative cashflow'}
-                {activeFilter === 'missing_passport' && 'Missing passport data'}
-              </Badge>
+              <Badge variant="secondary">{FILTER_LABELS[activeFilter] || activeFilter}</Badge>
               <span className="text-muted-foreground">
                 ({filteredAndSortedProperties.length} {filteredAndSortedProperties.length === 1 ? 'property' : 'properties'})
               </span>
@@ -907,33 +498,32 @@ function PropertiesPage() {
                 <TableHeader className="sticky top-0 bg-card z-10">
                   <TableRow className="border-border hover:bg-transparent">
                     {visibleColumns.has('photo') && <TableHead className="w-16">Photo</TableHead>}
-                    {visibleColumns.has('address') && <SortableHeader field="address">Address</SortableHeader>}
-                    {visibleColumns.has('area') && <SortableHeader field="area">Area</SortableHeader>}
-                    {visibleColumns.has('ownership') && <SortableHeader field="ownership">Ownership</SortableHeader>}
-                    {visibleColumns.has('propertyType') && <SortableHeader field="propertyType">Type</SortableHeader>}
-                    {visibleColumns.has('beds') && <SortableHeader field="beds">Beds</SortableHeader>}
-                    {visibleColumns.has('value') && <SortableHeader field="value" align="right">Value</SortableHeader>}
-                    {visibleColumns.has('purchasePrice') && <SortableHeader field="purchasePrice" align="right">Purchase Price</SortableHeader>}
-                    {visibleColumns.has('purchaseDate') && <SortableHeader field="purchaseDate">Purchase Date</SortableHeader>}
-                    {visibleColumns.has('lender') && <SortableHeader field="lender">Lender</SortableHeader>}
-                    {visibleColumns.has('interestRate') && <SortableHeader field="interestRate" align="right">Rate</SortableHeader>}
+                    {visibleColumns.has('address') && <SortableHeader field="address" onSort={handleSort}>Address</SortableHeader>}
+                    {visibleColumns.has('area') && <SortableHeader field="area" onSort={handleSort}>Area</SortableHeader>}
+                    {visibleColumns.has('ownership') && <SortableHeader field="ownership" onSort={handleSort}>Ownership</SortableHeader>}
+                    {visibleColumns.has('propertyType') && <SortableHeader field="propertyType" onSort={handleSort}>Type</SortableHeader>}
+                    {visibleColumns.has('beds') && <SortableHeader field="beds" onSort={handleSort}>Beds</SortableHeader>}
+                    {visibleColumns.has('value') && <SortableHeader field="value" align="right" onSort={handleSort}>Value</SortableHeader>}
+                    {visibleColumns.has('purchasePrice') && <SortableHeader field="purchasePrice" align="right" onSort={handleSort}>Purchase Price</SortableHeader>}
+                    {visibleColumns.has('purchaseDate') && <SortableHeader field="purchaseDate" onSort={handleSort}>Purchase Date</SortableHeader>}
+                    {visibleColumns.has('lender') && <SortableHeader field="lender" onSort={handleSort}>Lender</SortableHeader>}
+                    {visibleColumns.has('interestRate') && <SortableHeader field="interestRate" align="right" onSort={handleSort}>Rate</SortableHeader>}
                     {visibleColumns.has('fixedOrVariable') && <TableHead>Fixed/Variable</TableHead>}
                     {visibleColumns.has('mortgageType') && <TableHead>Mortgage Type</TableHead>}
                     {visibleColumns.has('capitalOrInterest') && <TableHead>Capital/Interest</TableHead>}
-                    {visibleColumns.has('fixedRateExpires') && <SortableHeader field="fixedRateExpires">Rate Expires</SortableHeader>}
+                    {visibleColumns.has('fixedRateExpires') && <SortableHeader field="fixedRateExpires" onSort={handleSort}>Rate Expires</SortableHeader>}
                     {visibleColumns.has('insuranceExpire') && <TableHead>Insurance Expire</TableHead>}
-                    {visibleColumns.has('mortgageBalance') && <SortableHeader field="mortgageBalance" align="right">Balance</SortableHeader>}
-                    {visibleColumns.has('mortgagePayment') && <SortableHeader field="mortgagePayment" align="right">Mortgage/m</SortableHeader>}
-                    {visibleColumns.has('rentalIncome') && <SortableHeader field="rentalIncome" align="right">Rent/yr</SortableHeader>}
+                    {visibleColumns.has('mortgageBalance') && <SortableHeader field="mortgageBalance" align="right" onSort={handleSort}>Balance</SortableHeader>}
+                    {visibleColumns.has('mortgagePayment') && <SortableHeader field="mortgagePayment" align="right" onSort={handleSort}>Mortgage/m</SortableHeader>}
+                    {visibleColumns.has('rentalIncome') && <SortableHeader field="rentalIncome" align="right" onSort={handleSort}>Rent/yr</SortableHeader>}
                     {visibleColumns.has('billsManagement') && <TableHead className="text-right">Bills & Mgmt</TableHead>}
-                    {visibleColumns.has('netRent') && <SortableHeader field="netRent" align="right">Net Rent</SortableHeader>}
-                    {visibleColumns.has('yield') && <SortableHeader field="yield" align="right">Yield</SortableHeader>}
-                    {visibleColumns.has('ltv') && <SortableHeader field="ltv" align="right">LTV</SortableHeader>}
-                    {visibleColumns.has('equity') && <SortableHeader field="equity" align="right">Equity</SortableHeader>}
-                    {/* Additional columns */}
+                    {visibleColumns.has('netRent') && <SortableHeader field="netRent" align="right" onSort={handleSort}>Net Rent</SortableHeader>}
+                    {visibleColumns.has('yield') && <SortableHeader field="yield" align="right" onSort={handleSort}>Yield</SortableHeader>}
+                    {visibleColumns.has('ltv') && <SortableHeader field="ltv" align="right" onSort={handleSort}>LTV</SortableHeader>}
+                    {visibleColumns.has('equity') && <SortableHeader field="equity" align="right" onSort={handleSort}>Equity</SortableHeader>}
                     {visibleColumns.has('epc') && <TableHead>EPC</TableHead>}
-                    {visibleColumns.has('monthlyCashflow') && <SortableHeader field="monthlyCashflow" align="right">Cashflow/m</SortableHeader>}
-                    {visibleColumns.has('riskStatus') && <SortableHeader field="riskStatus">Risk</SortableHeader>}
+                    {visibleColumns.has('monthlyCashflow') && <SortableHeader field="monthlyCashflow" align="right" onSort={handleSort}>Cashflow/m</SortableHeader>}
+                    {visibleColumns.has('riskStatus') && <SortableHeader field="riskStatus" onSort={handleSort}>Risk</SortableHeader>}
                     {visibleColumns.has('keysafeCode') && <TableHead>Keysafe</TableHead>}
                     {visibleColumns.has('waterStopTap') && <TableHead>Stop Tap</TableHead>}
                     {visibleColumns.has('electricMeter') && <TableHead>Electric Meter</TableHead>}
@@ -941,7 +531,7 @@ function PropertiesPage() {
                     {visibleColumns.has('waterMeter') && <TableHead>Water Meter</TableHead>}
                     {visibleColumns.has('constructionDateBand') && <TableHead>Construction</TableHead>}
                     {visibleColumns.has('hmoLicenceNumber') && <TableHead>HMO #</TableHead>}
-                    {visibleColumns.has('hmoLicenceExpiry') && <SortableHeader field="hmoLicenceExpiry">HMO Expiry</SortableHeader>}
+                    {visibleColumns.has('hmoLicenceExpiry') && <SortableHeader field="hmoLicenceExpiry" onSort={handleSort}>HMO Expiry</SortableHeader>}
                     {visibleColumns.has('managementCompany') && <TableHead>Mgmt Co.</TableHead>}
                     {visibleColumns.has('actions') && <TableHead className="w-24 text-right">Actions</TableHead>}
                   </TableRow>
@@ -952,9 +542,6 @@ function PropertiesPage() {
                     const coverPhoto = photoMap?.get(property.id);
                     const passport = passportMap.get(property.id);
                     const risk = calculatePropertyRisk(property, passport, metrics);
-                    
-                    // Insurance expiry placeholder
-                    const insuranceExpiry = null;
                     
                     return (
                       <TableRow 
@@ -985,7 +572,9 @@ function PropertiesPage() {
                           <TableCell className="text-muted-foreground">{property.area_name || '—'}</TableCell>
                         )}
                         {visibleColumns.has('ownership') && (
-                          <TableCell className="max-w-[180px] truncate">{getOwnershipDisplay(property)}</TableCell>
+                          <TableCell className="max-w-[180px] truncate">
+                            <OwnershipDisplay property={property} companyMap={companyMap} />
+                          </TableCell>
                         )}
                         {visibleColumns.has('propertyType') && (
                           <TableCell className="text-muted-foreground">{property.property_type || '—'}</TableCell>
@@ -1023,10 +612,10 @@ function PropertiesPage() {
                           </TableCell>
                         )}
                         {visibleColumns.has('fixedRateExpires') && (
-                          <TableCell>{getExpiryBadge(metrics.loan?.fixed_rate_expires)}</TableCell>
+                          <TableCell><ExpiryBadge date={metrics.loan?.fixed_rate_expires} /></TableCell>
                         )}
                         {visibleColumns.has('insuranceExpire') && (
-                          <TableCell>{getExpiryBadge(insuranceExpiry)}</TableCell>
+                          <TableCell><ExpiryBadge date={null} /></TableCell>
                         )}
                         {visibleColumns.has('mortgageBalance') && (
                           <TableCell className="text-right text-muted-foreground">{formatGBPDecimal(metrics.mortgageBalance)}</TableCell>
@@ -1043,13 +632,7 @@ function PropertiesPage() {
                           <TableCell className="text-right text-muted-foreground">{formatGBPDecimal(metrics.billsManagement)}</TableCell>
                         )}
                         {visibleColumns.has('netRent') && (
-                          <TableCell className="text-right">
-                            {metrics.netRent !== null ? (
-                              <span className={metrics.netRent >= 0 ? 'text-success' : 'text-destructive'}>
-                                {formatGBPDecimal(metrics.netRent)}
-                              </span>
-                            ) : '—'}
-                          </TableCell>
+                          <TableCell className="text-right"><CashflowValue value={metrics.netRent} /></TableCell>
                         )}
                         {visibleColumns.has('yield') && (
                           <TableCell className="text-right">
@@ -1061,26 +644,19 @@ function PropertiesPage() {
                           </TableCell>
                         )}
                         {visibleColumns.has('ltv') && (
-                          <TableCell className="text-right">{getLTVBadge(metrics.ltv)}</TableCell>
+                          <TableCell className="text-right"><LTVBadge ltv={metrics.ltv} /></TableCell>
                         )}
                         {visibleColumns.has('equity') && (
                           <TableCell className="text-right font-medium text-primary">{formatGBPDecimal(metrics.equity)}</TableCell>
                         )}
-                        {/* Additional columns */}
                         {visibleColumns.has('epc') && (
-                          <TableCell>{getEPCBadge(property.epc_rating, property.epc_required)}</TableCell>
+                          <TableCell><EPCBadge rating={property.epc_rating} required={property.epc_required} /></TableCell>
                         )}
                         {visibleColumns.has('monthlyCashflow') && (
-                          <TableCell className="text-right">
-                            {metrics.monthlyCashflow !== null ? (
-                              <span className={metrics.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}>
-                                {formatGBPDecimal(metrics.monthlyCashflow)}
-                              </span>
-                            ) : '—'}
-                          </TableCell>
+                          <TableCell className="text-right"><CashflowValue value={metrics.monthlyCashflow} /></TableCell>
                         )}
                         {visibleColumns.has('riskStatus') && (
-                          <TableCell>{getRiskBadge(risk.level, risk.issues)}</TableCell>
+                          <TableCell><RiskBadge level={risk.level} issues={risk.issues} /></TableCell>
                         )}
                         {visibleColumns.has('keysafeCode') && (
                           <TableCell className={passport?.keysafe_code ? '' : 'text-destructive'}>
@@ -1094,32 +670,17 @@ function PropertiesPage() {
                         )}
                         {visibleColumns.has('electricMeter') && (
                           <TableCell className="text-muted-foreground text-xs max-w-[120px]">
-                            {passport?.electric_meter_location ? (
-                              <span className="block truncate" title={passport.electric_meter_location}>
-                                {passport.electric_meter_location}
-                                {passport.electric_meter_number && <span className="block text-foreground"># {passport.electric_meter_number}</span>}
-                              </span>
-                            ) : <span className="text-warning">Missing</span>}
+                            <MeterDisplay location={passport?.electric_meter_location} number={passport?.electric_meter_number} />
                           </TableCell>
                         )}
                         {visibleColumns.has('gasMeter') && (
                           <TableCell className="text-muted-foreground text-xs max-w-[120px]">
-                            {passport?.gas_meter_location ? (
-                              <span className="block truncate" title={passport.gas_meter_location}>
-                                {passport.gas_meter_location}
-                                {passport.gas_meter_number && <span className="block text-foreground"># {passport.gas_meter_number}</span>}
-                              </span>
-                            ) : <span className="text-warning">Missing</span>}
+                            <MeterDisplay location={passport?.gas_meter_location} number={passport?.gas_meter_number} />
                           </TableCell>
                         )}
                         {visibleColumns.has('waterMeter') && (
                           <TableCell className="text-muted-foreground text-xs max-w-[120px]">
-                            {passport?.water_meter_location ? (
-                              <span className="block truncate" title={passport.water_meter_location}>
-                                {passport.water_meter_location}
-                                {passport.water_meter_number && <span className="block text-foreground"># {passport.water_meter_number}</span>}
-                              </span>
-                            ) : <span className="text-warning">Missing</span>}
+                            <MeterDisplay location={passport?.water_meter_location} number={passport?.water_meter_number} />
                           </TableCell>
                         )}
                         {visibleColumns.has('constructionDateBand') && (
@@ -1131,7 +692,7 @@ function PropertiesPage() {
                           <TableCell className="text-muted-foreground">{passport?.hmo_licence_number || '—'}</TableCell>
                         )}
                         {visibleColumns.has('hmoLicenceExpiry') && (
-                          <TableCell>{getExpiryBadge(passport?.hmo_licence_expiry)}</TableCell>
+                          <TableCell><ExpiryBadge date={passport?.hmo_licence_expiry} /></TableCell>
                         )}
                         {visibleColumns.has('managementCompany') && (
                           <TableCell className="text-muted-foreground max-w-[150px] truncate">
@@ -1141,22 +702,12 @@ function PropertiesPage() {
                         {visibleColumns.has('actions') && (
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                asChild
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                                 <Link to={`/properties/${property.id}`}>
                                   <Eye className="h-4 w-4" />
                                 </Link>
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                asChild
-                              >
+                              <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                                 <Link to={`/properties/${property.id}/edit`}>
                                   <Edit2 className="h-4 w-4" />
                                 </Link>
