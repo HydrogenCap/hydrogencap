@@ -1,0 +1,363 @@
+/**
+ * Metrics Configuration
+ * Centralized definitions for all dashboard metrics with breakdown logic
+ */
+
+import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyPassport } from '@/hooks/usePropertyPassport';
+import {
+  formatGBP,
+  formatPercent,
+  calculateLTV,
+  calculateEquity,
+  getEffectiveCosts,
+  calculateMonthlyCashflowAfterDebt,
+  calculateMonthlyMortgagePayment,
+} from '@/lib/calculations';
+
+export type MetricKey = 
+  | 'equity'
+  | 'value'
+  | 'mortgage'
+  | 'cashflow'
+  | 'ltv'
+  | 'actions'
+  | 'missing_info';
+
+export interface PropertyBreakdownRow {
+  propertyId: string;
+  address: string;
+  values: Record<string, string | number | null>;
+}
+
+export interface MetricBreakdown {
+  title: string;
+  summaryValue: string;
+  calculationText: string;
+  formula: string;
+  columns: { key: string; label: string; align?: 'left' | 'right' }[];
+  rows: PropertyBreakdownRow[];
+  totals?: Record<string, string | number>;
+  emptyMessage?: string;
+}
+
+export interface MetricConfig {
+  key: MetricKey;
+  title: string;
+  description: string;
+  icon: string;
+  getBreakdown: (
+    properties: PropertyWithFinancials[],
+    passports: PropertyPassport[]
+  ) => MetricBreakdown;
+}
+
+// Helper to get current year data
+function getCurrentYearData(property: PropertyWithFinancials) {
+  const currentYear = new Date().getFullYear();
+  const loan = property.loans?.[0];
+  const income = property.income?.find(i => i.year === currentYear);
+  const costs = property.costs?.find(c => c.year === currentYear);
+  
+  const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
+  const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : 0;
+  const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
+  
+  const effectiveCosts = getEffectiveCosts(rent, value, costs);
+  
+  const mortgagePaymentResult = calculateMonthlyMortgagePayment({
+    balance: mortgage || null,
+    interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
+    termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
+    isInterestOnly: loan?.capital_or_interest === 'interest',
+    paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+  });
+  
+  return { loan, income, costs, value, mortgage, rent, effectiveCosts, mortgagePaymentResult };
+}
+
+export const METRICS_CONFIG: Record<MetricKey, MetricConfig> = {
+  equity: {
+    key: 'equity',
+    title: 'Attributable Equity',
+    description: 'Total equity across portfolio',
+    icon: 'TrendingUp',
+    getBreakdown: (properties) => {
+      let totalValue = 0;
+      let totalMortgage = 0;
+      
+      const rows: PropertyBreakdownRow[] = properties.map(property => {
+        const { value, mortgage } = getCurrentYearData(property);
+        const equity = value - mortgage;
+        
+        totalValue += value;
+        totalMortgage += mortgage;
+        
+        return {
+          propertyId: property.id,
+          address: property.address_line,
+          values: {
+            value: formatGBP(value),
+            mortgage: formatGBP(mortgage),
+            equity: formatGBP(equity),
+            valueRaw: value,
+            mortgageRaw: mortgage,
+            equityRaw: equity,
+          },
+        };
+      }).sort((a, b) => (b.values.equityRaw as number) - (a.values.equityRaw as number));
+      
+      const totalEquity = totalValue - totalMortgage;
+      
+      return {
+        title: 'Attributable Equity',
+        summaryValue: formatGBP(totalEquity),
+        calculationText: 'Equity is calculated as the difference between property value and outstanding mortgage balance for each property.',
+        formula: 'Equity = Current Value − Mortgage Balance',
+        columns: [
+          { key: 'address', label: 'Property', align: 'left' },
+          { key: 'value', label: 'Value', align: 'right' },
+          { key: 'mortgage', label: 'Mortgage', align: 'right' },
+          { key: 'equity', label: 'Equity', align: 'right' },
+        ],
+        rows,
+        totals: {
+          value: formatGBP(totalValue),
+          mortgage: formatGBP(totalMortgage),
+          equity: formatGBP(totalEquity),
+        },
+      };
+    },
+  },
+  
+  value: {
+    key: 'value',
+    title: 'Portfolio Value',
+    description: 'Total current value of all properties',
+    icon: 'Building2',
+    getBreakdown: (properties) => {
+      let total = 0;
+      
+      const rows: PropertyBreakdownRow[] = properties.map(property => {
+        const { value } = getCurrentYearData(property);
+        total += value;
+        
+        return {
+          propertyId: property.id,
+          address: property.address_line,
+          values: {
+            value: formatGBP(value),
+            valueRaw: value,
+            type: property.property_type || 'Unknown',
+            beds: property.beds || '—',
+          },
+        };
+      }).sort((a, b) => (b.values.valueRaw as number) - (a.values.valueRaw as number));
+      
+      return {
+        title: 'Portfolio Value',
+        summaryValue: formatGBP(total),
+        calculationText: 'Total current market value of all properties in the portfolio based on the most recent valuations.',
+        formula: 'Portfolio Value = Sum of all property current values',
+        columns: [
+          { key: 'address', label: 'Property', align: 'left' },
+          { key: 'type', label: 'Type', align: 'left' },
+          { key: 'beds', label: 'Beds', align: 'right' },
+          { key: 'value', label: 'Value', align: 'right' },
+        ],
+        rows,
+        totals: { value: formatGBP(total) },
+      };
+    },
+  },
+  
+  mortgage: {
+    key: 'mortgage',
+    title: 'Total Mortgage',
+    description: 'Total outstanding mortgage balance',
+    icon: 'Landmark',
+    getBreakdown: (properties) => {
+      let total = 0;
+      
+      const rows: PropertyBreakdownRow[] = properties.map(property => {
+        const { loan, mortgage } = getCurrentYearData(property);
+        total += mortgage;
+        
+        return {
+          propertyId: property.id,
+          address: property.address_line,
+          values: {
+            balance: formatGBP(mortgage),
+            balanceRaw: mortgage,
+            lender: loan?.lender || 'Unknown',
+            rate: loan?.interest_rate_percent ? `${Number(loan.interest_rate_percent).toFixed(2)}%` : '—',
+            type: loan?.capital_or_interest || '—',
+          },
+        };
+      }).sort((a, b) => (b.values.balanceRaw as number) - (a.values.balanceRaw as number));
+      
+      return {
+        title: 'Total Mortgage',
+        summaryValue: formatGBP(total),
+        calculationText: 'Sum of all outstanding mortgage balances across the portfolio.',
+        formula: 'Total Mortgage = Sum of all current mortgage balances',
+        columns: [
+          { key: 'address', label: 'Property', align: 'left' },
+          { key: 'lender', label: 'Lender', align: 'left' },
+          { key: 'rate', label: 'Rate', align: 'right' },
+          { key: 'type', label: 'Type', align: 'left' },
+          { key: 'balance', label: 'Balance', align: 'right' },
+        ],
+        rows,
+        totals: { balance: formatGBP(total) },
+      };
+    },
+  },
+  
+  cashflow: {
+    key: 'cashflow',
+    title: 'Monthly Cashflow',
+    description: 'Net cashflow after all costs and debt service',
+    icon: 'PoundSterling',
+    getBreakdown: (properties) => {
+      let totalCashflow = 0;
+      let totalRent = 0;
+      let totalCosts = 0;
+      let totalDebtService = 0;
+      
+      const rows: PropertyBreakdownRow[] = properties.map(property => {
+        const { rent, effectiveCosts, mortgagePaymentResult } = getCurrentYearData(property);
+        
+        const monthlyRent = rent ? rent / 12 : 0;
+        const monthlyCosts = effectiveCosts.total / 12;
+        const monthlyPayment = mortgagePaymentResult.effective || 0;
+        const cashflow = calculateMonthlyCashflowAfterDebt(rent, effectiveCosts.total, mortgagePaymentResult.effective);
+        
+        totalRent += monthlyRent;
+        totalCosts += monthlyCosts;
+        totalDebtService += monthlyPayment;
+        totalCashflow += cashflow || 0;
+        
+        return {
+          propertyId: property.id,
+          address: property.address_line,
+          values: {
+            rent: formatGBP(monthlyRent),
+            costs: formatGBP(monthlyCosts),
+            debtService: formatGBP(monthlyPayment),
+            cashflow: formatGBP(cashflow || 0),
+            cashflowRaw: cashflow || 0,
+          },
+        };
+      }).sort((a, b) => (b.values.cashflowRaw as number) - (a.values.cashflowRaw as number));
+      
+      return {
+        title: 'Monthly Cashflow',
+        summaryValue: formatGBP(totalCashflow),
+        calculationText: 'Monthly cashflow after deducting operating costs (management, repairs, insurance, bills) and mortgage payments from rental income.',
+        formula: 'Cashflow = (Annual Rent / 12) − (Monthly Costs) − (Mortgage Payment)',
+        columns: [
+          { key: 'address', label: 'Property', align: 'left' },
+          { key: 'rent', label: 'Rent/mo', align: 'right' },
+          { key: 'costs', label: 'Costs/mo', align: 'right' },
+          { key: 'debtService', label: 'Debt/mo', align: 'right' },
+          { key: 'cashflow', label: 'Cashflow', align: 'right' },
+        ],
+        rows,
+        totals: {
+          rent: formatGBP(totalRent),
+          costs: formatGBP(totalCosts),
+          debtService: formatGBP(totalDebtService),
+          cashflow: formatGBP(totalCashflow),
+        },
+      };
+    },
+  },
+  
+  ltv: {
+    key: 'ltv',
+    title: 'Average LTV',
+    description: 'Weighted loan-to-value ratio across portfolio',
+    icon: 'Percent',
+    getBreakdown: (properties) => {
+      let totalValue = 0;
+      let totalMortgage = 0;
+      
+      const rows: PropertyBreakdownRow[] = properties.map(property => {
+        const { value, mortgage } = getCurrentYearData(property);
+        const ltv = calculateLTV(mortgage, value);
+        
+        totalValue += value;
+        totalMortgage += mortgage;
+        
+        return {
+          propertyId: property.id,
+          address: property.address_line,
+          values: {
+            value: formatGBP(value),
+            mortgage: formatGBP(mortgage),
+            ltv: ltv !== null ? formatPercent(ltv) : '—',
+            ltvRaw: ltv || 0,
+          },
+        };
+      }).sort((a, b) => (b.values.ltvRaw as number) - (a.values.ltvRaw as number));
+      
+      const weightedLTV = totalValue > 0 ? (totalMortgage / totalValue) * 100 : 0;
+      
+      return {
+        title: 'Average LTV',
+        summaryValue: formatPercent(weightedLTV),
+        calculationText: 'Weighted average LTV calculated as total mortgage balance divided by total portfolio value. This provides a better picture than simple average as it accounts for property sizes.',
+        formula: 'Weighted LTV = (Total Mortgage ÷ Total Value) × 100',
+        columns: [
+          { key: 'address', label: 'Property', align: 'left' },
+          { key: 'value', label: 'Value', align: 'right' },
+          { key: 'mortgage', label: 'Mortgage', align: 'right' },
+          { key: 'ltv', label: 'LTV', align: 'right' },
+        ],
+        rows,
+        totals: {
+          value: formatGBP(totalValue),
+          mortgage: formatGBP(totalMortgage),
+          ltv: formatPercent(weightedLTV),
+        },
+      };
+    },
+  },
+  
+  actions: {
+    key: 'actions',
+    title: 'Action Required',
+    description: 'Issues requiring attention',
+    icon: 'AlertTriangle',
+    getBreakdown: () => ({
+      title: 'Action Required',
+      summaryValue: '—',
+      calculationText: 'View the Actions page for detailed risk assessment and required actions.',
+      formula: 'N/A',
+      columns: [],
+      rows: [],
+      emptyMessage: 'Use the Actions page to view and manage risks.',
+    }),
+  },
+  
+  missing_info: {
+    key: 'missing_info',
+    title: 'Missing Information',
+    description: 'Properties with incomplete data',
+    icon: 'AlertCircle',
+    getBreakdown: () => ({
+      title: 'Missing Information',
+      summaryValue: '—',
+      calculationText: 'View the Missing Info page for detailed breakdown of missing fields.',
+      formula: 'N/A',
+      columns: [],
+      rows: [],
+      emptyMessage: 'Use the Missing Info page to complete property data.',
+    }),
+  },
+};
+
+export function getMetricConfig(key: MetricKey): MetricConfig {
+  return METRICS_CONFIG[key];
+}

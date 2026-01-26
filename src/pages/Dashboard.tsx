@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, AlertCircle, ArrowRight, Users, User, Building2 } from 'lucide-react';
 
@@ -19,6 +19,8 @@ import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWid
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
 import { MissingComplianceWidget } from '@/components/dashboard/MissingComplianceWidget';
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
+import { ClickableStatCard } from '@/components/dashboard/ClickableStatCard';
+import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
   formatGBP,
@@ -35,6 +37,7 @@ import {
 import { calculatePortfolioRentPerBedroom } from '@/lib/mortgageCalculations';
 import { getPropertyMetrics } from '@/lib/propertyMetrics';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
+import { MetricKey, METRICS_CONFIG, MetricBreakdown } from '@/lib/metricsConfig';
 
 const CHART_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -70,7 +73,9 @@ const SHAREHOLDER_COLORS = [
 ];
 
 function DashboardPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
@@ -406,6 +411,18 @@ function DashboardPage() {
     }).sort((a, b) => b.equityPercent - a.equityPercent);
   }, [attribution]);
 
+  // Handle metric card click - compute breakdown on demand
+  const handleMetricClick = useCallback((metricKey: MetricKey) => {
+    setSelectedMetric(metricKey);
+  }, []);
+
+  // Get breakdown for selected metric
+  const selectedBreakdown = useMemo<MetricBreakdown | null>(() => {
+    if (!selectedMetric || !coreRentalProperties) return null;
+    const config = METRICS_CONFIG[selectedMetric];
+    return config.getBreakdown(coreRentalProperties, passports || []);
+  }, [selectedMetric, coreRentalProperties, passports]);
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -447,111 +464,98 @@ function DashboardPage() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
 
-        {/* KPI Cards - Simplified to 4 Core Metrics */}
+        {/* KPI Cards - All clickable with detail breakdowns */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Attributable Equity
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {formatGBP(portfolioStats.totalEquity)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Value: {formatGBP(portfolioStats.totalValue)}
-              </p>
-            </CardContent>
-          </Card>
+          <ClickableStatCard
+            title="Attributable Equity"
+            value={formatGBP(portfolioStats.totalEquity)}
+            subtitle={`Value: ${formatGBP(portfolioStats.totalValue)}`}
+            icon={TrendingUp}
+            iconClassName="text-primary"
+            valueClassName="text-primary"
+            onClick={() => handleMetricClick('equity')}
+            aria-label="View details for Attributable Equity"
+          />
 
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Monthly Cashflow
-              </CardTitle>
-              <PoundSterling className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {formatGBP(portfolioStats.monthlyCashflow)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">After debt service</p>
-            </CardContent>
-          </Card>
+          <ClickableStatCard
+            title="Monthly Cashflow"
+            value={formatGBP(portfolioStats.monthlyCashflow)}
+            subtitle="After debt service"
+            icon={PoundSterling}
+            iconClassName="text-success"
+            valueClassName={portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
+            onClick={() => handleMetricClick('cashflow')}
+            aria-label="View details for Monthly Cashflow"
+          />
 
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Average LTV
-              </CardTitle>
-              <Percent className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${
-                portfolioStats.averageLTV > 75 ? 'text-warning' : 
-                portfolioStats.averageLTV > 85 ? 'text-destructive' : ''
-              }`}>
-                {formatPercent(portfolioStats.averageLTV)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Debt: {formatGBP(portfolioStats.totalMortgage)}
-              </p>
-            </CardContent>
-          </Card>
+          <ClickableStatCard
+            title="Average LTV"
+            value={formatPercent(portfolioStats.averageLTV)}
+            subtitle={`Debt: ${formatGBP(portfolioStats.totalMortgage)}`}
+            icon={Percent}
+            iconClassName="text-muted-foreground"
+            valueClassName={
+              portfolioStats.averageLTV > 85 ? 'text-destructive' : 
+              portfolioStats.averageLTV > 75 ? 'text-warning' : ''
+            }
+            onClick={() => handleMetricClick('ltv')}
+            aria-label="View details for Average LTV"
+          />
 
-          <Link to="/actions">
-            <Card className={`bg-card border-border ${risks.length > 0 ? 'border-warning/50' : 'border-success/50'} hover:bg-muted/50 transition-colors cursor-pointer`}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Action Required
-                </CardTitle>
-                <AlertTriangle className={`h-4 w-4 ${risks.length > 0 ? 'text-warning' : 'text-success'}`} />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${risks.length > 0 ? 'text-warning' : 'text-success'}`}>
-                  {risks.length === 0 ? '✓' : risks.length}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {risks.length === 0 ? 'All clear' : `${risks.filter(r => r.severity === 'critical').length} critical`}
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
+          <ClickableStatCard
+            title="Action Required"
+            value={risks.length === 0 ? '✓' : risks.length}
+            subtitle={risks.length === 0 ? 'All clear' : `${risks.filter(r => r.severity === 'critical').length} critical`}
+            icon={AlertTriangle}
+            iconClassName={risks.length > 0 ? 'text-warning' : 'text-success'}
+            valueClassName={risks.length > 0 ? 'text-warning' : 'text-success'}
+            borderClassName={risks.length > 0 ? 'border-warning/50' : 'border-success/50'}
+            onClick={() => navigate('/actions')}
+            aria-label="View actions required"
+          />
         </div>
 
         {/* Missing Info Shortcut Card */}
         {missingStats.totalMissingFields > 0 && (
-          <Link to="/missing-info">
-            <Card className="bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10 transition-colors cursor-pointer">
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 rounded-full bg-amber-500/20">
-                      <AlertCircle className="h-5 w-5 text-amber-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">Missing Information</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {missingStats.propertiesWithFinanceMissing > 0 && (
-                          <span>{missingStats.propertiesWithFinanceMissing} finance • </span>
-                        )}
-                        {missingStats.propertiesWithInsuranceMissing > 0 && (
-                          <span>{missingStats.propertiesWithInsuranceMissing} insurance • </span>
-                        )}
-                        {missingStats.propertiesWithPassportMissing > 0 && (
-                          <span>{missingStats.propertiesWithPassportMissing} passport • </span>
-                        )}
-                        <span className="font-medium text-amber-600">{missingStats.totalMissingFields} fields total</span>
-                      </p>
-                    </div>
+          <Card 
+            className="bg-warning/5 border-warning/30 hover:bg-warning/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate('/missing-info')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/missing-info');
+              }
+            }}
+            aria-label="View missing information"
+          >
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 rounded-full bg-warning/20">
+                    <AlertCircle className="h-5 w-5 text-warning" />
                   </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">Missing Information</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {missingStats.propertiesWithFinanceMissing > 0 && (
+                        <span>{missingStats.propertiesWithFinanceMissing} finance • </span>
+                      )}
+                      {missingStats.propertiesWithInsuranceMissing > 0 && (
+                        <span>{missingStats.propertiesWithInsuranceMissing} insurance • </span>
+                      )}
+                      {missingStats.propertiesWithPassportMissing > 0 && (
+                        <span>{missingStats.propertiesWithPassportMissing} passport • </span>
+                      )}
+                      <span className="font-medium text-warning">{missingStats.totalMissingFields} fields total</span>
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </Link>
+                <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Main Content Grid */}
@@ -872,6 +876,13 @@ function DashboardPage() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Metric Details Sheet */}
+        <MetricDetailsSheet
+          open={selectedMetric !== null}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+          breakdown={selectedBreakdown}
+        />
       </div>
     </AppLayout>
   );
