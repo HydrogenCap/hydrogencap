@@ -307,13 +307,16 @@ export function useMissingInfo() {
   const data = useMemo(() => {
     if (!properties) return [];
 
+    // Filter to only core_rental properties - development properties don't need compliance/missing info tracking
+    const coreRentalProperties = properties.filter(p => p.lifecycle_type === 'core_rental');
+
     const insuranceMap = new Map<string, InsurancePolicy>();
     insurancePolicies?.forEach(p => insuranceMap.set(p.property_id, p));
 
     const passportMap = new Map<string, PropertyPassport>();
     passports?.forEach(p => passportMap.set(p.property_id, p));
 
-    return properties.map((property): PropertyMissingInfo => {
+    return coreRentalProperties.map((property): PropertyMissingInfo => {
       const loan = property.loans?.[0];
       const insurance = insuranceMap.get(property.id) || null;
       const passport = passportMap.get(property.id) || null;
