@@ -266,20 +266,44 @@ function calculatePropertyLookthrough(
 
 /**
  * Fetch beneficial ownership data for property attribution
+ * Now uses unified ownership_links table instead of legacy property_beneficial_owners
  */
 async function fetchBeneficialOwnership(propertyId: string) {
   const { data, error } = await supabase
-    .from('property_beneficial_owners')
+    .from('ownership_links')
     .select(`
       id,
-      beneficial_percent,
-      owner_type,
+      percent,
+      ownership_type,
       notes,
-      company:companies(id, legal_name, company_type),
-      party:parties(id, display_name, party_type)
+      owner_party:parties!owner_party_id(id, display_name, party_type, company_number)
     `)
-    .eq('property_id', propertyId)
-    .is('end_date', null);
+    .eq('subject_type', 'PROPERTY')
+    .eq('subject_id', propertyId)
+    .eq('ownership_type', 'BENEFICIAL')
+    .is('effective_to', null);
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
+ * Fetch company shareholders as beneficial owners (for SPV look-through)
+ */
+async function fetchCompanyShareholders(companyId: string) {
+  const { data, error } = await supabase
+    .from('ownership_links')
+    .select(`
+      id,
+      percent,
+      ownership_type,
+      notes,
+      owner_party:parties!owner_party_id(id, display_name, party_type, company_number)
+    `)
+    .eq('subject_type', 'COMPANY')
+    .eq('subject_id', companyId)
+    .eq('ownership_type', 'SHAREHOLDING')
+    .is('effective_to', null);
 
   if (error) throw error;
   return data || [];
@@ -287,33 +311,38 @@ async function fetchBeneficialOwnership(propertyId: string) {
 
 /**
  * Hook: Get ownership attribution for a single property
- * Uses beneficial ownership split (property_beneficial_owners) as the source of truth
+ * Uses beneficial ownership split from ownership_links as the source of truth
+ * Falls back to SPV shareholders if no direct beneficial ownership is set
  */
 export function usePropertyAttribution(propertyId: string | undefined, property: PropertyWithFinancials | undefined) {
   return useQuery({
-    queryKey: ['property_attribution', propertyId],
+    queryKey: ['property_attribution', propertyId, property?.legal_owner_company_id],
     queryFn: async () => {
       if (!propertyId || !property) return [];
 
-      const beneficialOwners = await fetchBeneficialOwnership(propertyId);
+      // First, try direct beneficial ownership on the property
+      let beneficialOwners = await fetchBeneficialOwnership(propertyId);
+      let isSpvDerived = false;
+      
+      // If no direct beneficial owners but has an SPV, derive from company shareholders
+      if (beneficialOwners.length === 0 && property.legal_owner_company_id) {
+        beneficialOwners = await fetchCompanyShareholders(property.legal_owner_company_id);
+        isSpvDerived = true;
+      }
+      
       const financials = calculatePropertyFinancials(property);
 
       const attributions: PropertyFinancialAttribution[] = beneficialOwners.map((owner) => {
-        const percent = Number(owner.beneficial_percent);
+        const percent = Number(owner.percent);
         const factor = percent / 100;
         
-        // Determine owner name and type from joined data
+        // Determine owner name and type from joined party data
         let ownerName = 'Unknown';
-        let ownerType = owner.owner_type;
+        let ownerType = 'INDIVIDUAL';
         let ownerId = '';
         
-        if (owner.owner_type === 'COMPANY' && owner.company) {
-          const company = owner.company as { id: string; legal_name: string; company_type: string };
-          ownerName = company.legal_name;
-          ownerId = company.id;
-          ownerType = company.company_type || 'COMPANY';
-        } else if (owner.owner_type === 'PERSON' && owner.party) {
-          const party = owner.party as { id: string; display_name: string; party_type: string };
+        if (owner.owner_party) {
+          const party = owner.owner_party as { id: string; display_name: string; party_type: string; company_number: string | null };
           ownerName = party.display_name;
           ownerId = party.id;
           ownerType = party.party_type || 'INDIVIDUAL';
@@ -324,7 +353,9 @@ export function usePropertyAttribution(propertyId: string | undefined, property:
           ownerName,
           ownerType,
           effectivePercent: percent,
-          pathDescription: owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
+          pathDescription: isSpvDerived 
+            ? owner.notes || `Via SPV: ${percent.toFixed(1)}%`
+            : owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
           attributableValue: financials.currentValue * factor,
           attributableEquity: financials.equity * factor,
           attributableDebt: financials.mortgageBalance * factor,
@@ -342,20 +373,44 @@ export function usePropertyAttribution(propertyId: string | undefined, property:
 
 /**
  * Fetch all beneficial ownership data for portfolio attribution
+ * Now uses unified ownership_links table instead of legacy property_beneficial_owners
  */
 async function fetchAllBeneficialOwnership() {
   const { data, error } = await supabase
-    .from('property_beneficial_owners')
+    .from('ownership_links')
     .select(`
       id,
-      property_id,
-      beneficial_percent,
-      owner_type,
+      subject_id,
+      percent,
+      ownership_type,
       notes,
-      company:companies(id, legal_name, company_type),
-      party:parties(id, display_name, party_type)
+      owner_party:parties!owner_party_id(id, display_name, party_type, company_number)
     `)
-    .is('end_date', null);
+    .eq('subject_type', 'PROPERTY')
+    .eq('ownership_type', 'BENEFICIAL')
+    .is('effective_to', null);
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
+ * Fetch all company shareholdings for SPV look-through
+ */
+async function fetchAllCompanyShareholders() {
+  const { data, error } = await supabase
+    .from('ownership_links')
+    .select(`
+      id,
+      subject_id,
+      percent,
+      ownership_type,
+      notes,
+      owner_party:parties!owner_party_id(id, display_name, party_type, company_number)
+    `)
+    .eq('subject_type', 'COMPANY')
+    .eq('ownership_type', 'SHAREHOLDING')
+    .is('effective_to', null);
 
   if (error) throw error;
   return data || [];
@@ -363,7 +418,8 @@ async function fetchAllBeneficialOwnership() {
 
 /**
  * Hook: Get portfolio-wide ownership attribution (aggregated by owner)
- * Uses beneficial ownership split (property_beneficial_owners) as the source of truth
+ * Uses beneficial ownership split from ownership_links as the source of truth
+ * Falls back to SPV shareholders when no direct beneficial ownership exists
  */
 export function usePortfolioAttribution(properties: PropertyWithFinancials[] | undefined) {
   return useQuery({
@@ -371,29 +427,37 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
     queryFn: async () => {
       if (!properties || properties.length === 0) return [];
 
-      const beneficialOwners = await fetchAllBeneficialOwnership();
+      const [directOwners, companyShareholders] = await Promise.all([
+        fetchAllBeneficialOwnership(),
+        fetchAllCompanyShareholders(),
+      ]);
+      
       const ownerMap = new Map<string, OwnerAttribution>();
 
       for (const property of properties) {
-        const propertyOwners = beneficialOwners.filter(bo => bo.property_id === property.id);
+        // First try direct beneficial ownership
+        let propertyOwners = directOwners.filter(bo => bo.subject_id === property.id);
+        let isSpvDerived = false;
+        
+        // If no direct owners but has SPV, use company shareholders
+        if (propertyOwners.length === 0 && property.legal_owner_company_id) {
+          propertyOwners = companyShareholders.filter(sh => sh.subject_id === property.legal_owner_company_id);
+          isSpvDerived = true;
+        }
+        
         const financials = calculatePropertyFinancials(property);
 
         for (const owner of propertyOwners) {
-          const percent = Number(owner.beneficial_percent);
+          const percent = Number(owner.percent);
           const factor = percent / 100;
           
-          // Determine owner identity
+          // Determine owner identity from party data
           let ownerName = 'Unknown';
-          let ownerType = owner.owner_type;
+          let ownerType = 'INDIVIDUAL';
           let ownerId = '';
           
-          if (owner.owner_type === 'COMPANY' && owner.company) {
-            const company = owner.company as { id: string; legal_name: string; company_type: string };
-            ownerName = company.legal_name;
-            ownerId = company.id;
-            ownerType = company.company_type || 'COMPANY';
-          } else if (owner.owner_type === 'PERSON' && owner.party) {
-            const party = owner.party as { id: string; display_name: string; party_type: string };
+          if (owner.owner_party) {
+            const party = owner.owner_party as { id: string; display_name: string; party_type: string; company_number: string | null };
             ownerName = party.display_name;
             ownerId = party.id;
             ownerType = party.party_type || 'INDIVIDUAL';
@@ -405,7 +469,9 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
             propertyId: property.id,
             propertyAddress: property.address_line,
             effectivePercent: percent,
-            pathDescription: owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
+            pathDescription: isSpvDerived 
+              ? owner.notes || `Via SPV: ${percent.toFixed(1)}%`
+              : owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
             attributableValue: financials.currentValue * factor,
             attributableEquity: financials.equity * factor,
             attributableDebt: financials.mortgageBalance * factor,
