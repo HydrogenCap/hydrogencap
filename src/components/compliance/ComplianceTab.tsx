@@ -23,9 +23,10 @@ import {
 
 interface ComplianceTabProps {
   propertyId: string;
+  propertyAddress: string;
 }
 
-export function ComplianceTab({ propertyId }: ComplianceTabProps) {
+export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProps) {
   const { data: items, isLoading } = usePropertyCompliance(propertyId);
   const [statusFilter, setStatusFilter] = useState<ComplianceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -203,7 +204,8 @@ export function ComplianceTab({ propertyId }: ComplianceTabProps) {
             <ComplianceItemRow 
               key={item.id} 
               item={item} 
-              propertyId={propertyId} 
+              propertyId={propertyId}
+              propertyAddress={propertyAddress}
             />
           ))}
         </div>

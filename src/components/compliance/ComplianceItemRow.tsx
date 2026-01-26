@@ -55,9 +55,10 @@ import { useToast } from '@/hooks/use-toast';
 interface ComplianceItemRowProps {
   item: ComplianceItem & { documents: ComplianceDocument[] };
   propertyId: string;
+  propertyAddress: string;
 }
 
-export function ComplianceItemRow({ item, propertyId }: ComplianceItemRowProps) {
+export function ComplianceItemRow({ item, propertyId, propertyAddress }: ComplianceItemRowProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -84,6 +85,8 @@ export function ComplianceItemRow({ item, propertyId }: ComplianceItemRowProps) 
         complianceItemId: item.id,
         propertyId,
         file,
+        complianceType: item.compliance_type,
+        propertyAddress,
       });
       toast({ title: 'Document uploaded successfully' });
     } catch (error) {
