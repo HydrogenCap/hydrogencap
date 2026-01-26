@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Loader2, ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
+import { Save, Loader2, ChevronDown, ChevronRight, Settings2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -17,6 +17,8 @@ import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useL
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
 import { PassportOwnershipSummary } from './PassportOwnershipSummary';
+import { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
+import { useGenerateSuggestions } from '@/hooks/usePassportAutofill';
 
 // Simplified schema - only essential fields
 const passportSchema = z.object({
@@ -71,6 +73,8 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   const { data: passport, isLoading } = usePropertyPassport(propertyId);
   const upsertPassport = useUpsertPassport();
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [autofillModalOpen, setAutofillModalOpen] = useState(false);
+  const generateSuggestions = useGenerateSuggestions();
   
   // Management companies
   const { data: managementCompanies = [] } = useManagementCompanies();
@@ -148,9 +152,47 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
     form.watch('meter_notes')
   );
 
+  const handleAutofillClick = async () => {
+    try {
+      await generateSuggestions.mutateAsync(propertyId);
+      setAutofillModalOpen(true);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to generate suggestions',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Auto-fill with AI Button */}
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAutofillClick}
+            disabled={generateSuggestions.isPending}
+            className="gap-2"
+          >
+            {generateSuggestions.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            Auto-fill with AI
+          </Button>
+        </div>
+
+        {/* Autofill Modal */}
+        <AutofillSuggestionsModal
+          propertyId={propertyId}
+          open={autofillModalOpen}
+          onOpenChange={setAutofillModalOpen}
+        />
+
         {/* ═══════════════════════════════════════════════════════════════════
             TIER 1 — CORE PROPERTY DATA (always visible)
            ═══════════════════════════════════════════════════════════════════ */}

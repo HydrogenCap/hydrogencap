@@ -1189,6 +1189,121 @@ export type Database = {
           },
         ]
       }
+      passport_autofill_suggestions: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          confidence: number
+          created_at: string
+          evidence_excerpt: string | null
+          field_key: string
+          id: string
+          property_id: string
+          rejected_at: string | null
+          rejected_by: string | null
+          source_ref: string | null
+          source_type: Database["public"]["Enums"]["autofill_source_type"]
+          status: Database["public"]["Enums"]["autofill_suggestion_status"]
+          suggested_value: Json
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          confidence: number
+          created_at?: string
+          evidence_excerpt?: string | null
+          field_key: string
+          id?: string
+          property_id: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          source_ref?: string | null
+          source_type: Database["public"]["Enums"]["autofill_source_type"]
+          status?: Database["public"]["Enums"]["autofill_suggestion_status"]
+          suggested_value: Json
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          confidence?: number
+          created_at?: string
+          evidence_excerpt?: string | null
+          field_key?: string
+          id?: string
+          property_id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          source_ref?: string | null
+          source_type?: Database["public"]["Enums"]["autofill_source_type"]
+          status?: Database["public"]["Enums"]["autofill_suggestion_status"]
+          suggested_value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passport_autofill_suggestions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passport_field_audit: {
+        Row: {
+          change_reason: Database["public"]["Enums"]["passport_change_reason"]
+          changed_at: string
+          changed_by: string | null
+          confidence: number | null
+          field_key: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          property_id: string
+          source_ref: string | null
+          source_type:
+            | Database["public"]["Enums"]["autofill_source_type"]
+            | null
+        }
+        Insert: {
+          change_reason: Database["public"]["Enums"]["passport_change_reason"]
+          changed_at?: string
+          changed_by?: string | null
+          confidence?: number | null
+          field_key: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          property_id: string
+          source_ref?: string | null
+          source_type?:
+            | Database["public"]["Enums"]["autofill_source_type"]
+            | null
+        }
+        Update: {
+          change_reason?: Database["public"]["Enums"]["passport_change_reason"]
+          changed_at?: string
+          changed_by?: string | null
+          confidence?: number | null
+          field_key?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          property_id?: string
+          source_ref?: string | null
+          source_type?:
+            | Database["public"]["Enums"]["autofill_source_type"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passport_field_audit_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           created_at: string
@@ -1922,6 +2037,16 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "admin" | "viewer"
+      autofill_source_type:
+        | "postcode_lookup"
+        | "epc"
+        | "floorplan"
+        | "listing"
+        | "inventory"
+        | "photo"
+        | "default"
+      autofill_suggestion_status: "pending" | "accepted" | "rejected"
+      passport_change_reason: "ai_accept" | "manual_edit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2050,6 +2175,17 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "admin", "viewer"],
+      autofill_source_type: [
+        "postcode_lookup",
+        "epc",
+        "floorplan",
+        "listing",
+        "inventory",
+        "photo",
+        "default",
+      ],
+      autofill_suggestion_status: ["pending", "accepted", "rejected"],
+      passport_change_reason: ["ai_accept", "manual_edit"],
     },
   },
 } as const
