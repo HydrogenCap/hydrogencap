@@ -1,5 +1,7 @@
 project_id = "jnkwooocjpgpznittueo"
 
+# Note: All edge functions implement authentication in code using getUser()
+# verify_jwt = false is set because Lovable Cloud uses signing-keys which require in-code validation
 [functions.companies-house-lookup]
 verify_jwt = false
 
@@ -10,4 +12,16 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.bulk-price-paid-enrich]
+verify_jwt = false
+
+[functions.portfolio-insights]
+verify_jwt = false
+
+[functions.portfolio-location-insights]
+verify_jwt = false
+
+[functions.geocode-address]
+verify_jwt = false
+
+[functions.property-lookup]
 verify_jwt = false
