@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Shield,
   ChevronDown,
+  FileText,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -38,6 +39,7 @@ const mainNavItems = [
   { title: 'Portfolio', icon: Building2, href: '/properties' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
+  { title: 'Reports', icon: FileText, href: '/reports' },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 
