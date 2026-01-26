@@ -27,6 +27,9 @@ import {
 } from '@/lib/complianceTypes';
 import { useCreateComplianceItem } from '@/hooks/useCompliance';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+const EPC_RATINGS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
 interface AddComplianceItemDialogProps {
   propertyId: string;
@@ -41,6 +44,7 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
     expiry_date: '',
     responsible_party: 'COHO',
     notes: '',
+    epc_rating: '', // For EPC sync
   });
 
   const { toast } = useToast();
@@ -64,6 +68,18 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
     }
 
     try {
+      // === EPC CONSOLIDATION: Sync EPC rating to properties table ===
+      if (complianceType === 'EPC' && formData.epc_rating) {
+        const { error: syncError } = await supabase
+          .from('properties')
+          .update({ epc_rating: formData.epc_rating })
+          .eq('id', propertyId);
+        
+        if (syncError) {
+          console.error('Failed to sync EPC rating:', syncError);
+        }
+      }
+
       await createItem.mutateAsync({
         property_id: propertyId,
         compliance_type: complianceType,
@@ -71,7 +87,9 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
         expiry_date: formData.expiry_date || null,
         responsible_party: formData.responsible_party,
         is_coho_required: false,
-        notes: formData.notes || null,
+        notes: formData.epc_rating 
+          ? `${formData.notes || ''} Rating: ${formData.epc_rating}`.trim()
+          : formData.notes || null,
         reminder_days: DEFAULT_REMINDER_DAYS,
       });
 
@@ -84,6 +102,7 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
         expiry_date: '',
         responsible_party: 'COHO',
         notes: '',
+        epc_rating: '',
       });
     } catch (error) {
       toast({ 
@@ -136,6 +155,29 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
                   onChange={(e) => setFormData({ ...formData, custom_type: e.target.value })}
                   placeholder="Enter custom type..."
                 />
+              </div>
+            )}
+
+            {/* EPC Rating field - only shown for EPC compliance type */}
+            {formData.compliance_type === 'EPC' && (
+              <div>
+                <label className="text-sm font-medium">EPC Rating</label>
+                <Select 
+                  value={formData.epc_rating}
+                  onValueChange={(v) => setFormData({ ...formData, epc_rating: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select rating..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EPC_RATINGS.map(rating => (
+                      <SelectItem key={rating} value={rating}>{rating}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This will also update the property's EPC rating
+                </p>
               </div>
             )}
 

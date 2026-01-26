@@ -178,12 +178,12 @@ The structure is actually **correct** — `compliance_documents` links to `compl
    - "Compliance" tab → remains "Compliance"
 2. **Add "Attach to Compliance" action** on Documents page
 3. **Show "Missing Document" badge** on compliance items without attached file
-4. **Remove duplicate EPC handling** — EPC is both compliance item AND property field
+4. **Remove duplicate EPC handling** — EPC is both compliance item AND property field ✅ DONE
 
 #### Refactor Actions:
-1. **Add `has_document` indicator** to ComplianceItemRow
+1. **Add `has_document` indicator** to ComplianceItemRow ✅ DONE
 2. **Improve "Add Document" flow** from compliance item
-3. **Consolidate EPC**: Either in compliance OR property, not both
+3. **Consolidate EPC**: ✅ DONE — `properties.epc_rating` is canonical grade, `compliance_items` tracks certificate expiry. Bulk EPC enrich now syncs both. Adding EPC compliance item syncs rating back to property.
 4. **Add proactive alerts**: "5 documents expiring this month"
 
 ---
