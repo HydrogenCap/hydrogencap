@@ -20,7 +20,41 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "planning_building_control": "Building Control Certificate",
 };
 
-// Compliance doc type labels for display
+// Standard validity periods in years for UK compliance certificates
+// Used to calculate expiry date when AI doesn't extract one
+const STANDARD_VALIDITY_YEARS: Record<string, number> = {
+  "gas_safety_certificate": 1,       // CP12 - annual
+  "electrical_certificate": 5,       // EICR - 5 years
+  "epc_certificate": 10,             // EPC - 10 years
+  "fire_alarm_certificate": 1,       // Annual
+  "emergency_lighting_certificate": 1, // Annual
+  "pat_testing": 1,                  // Annual for HMOs
+  "fire_risk_assessment": 1,         // Annual review recommended
+  "hmo_licence": 5,                  // Typically 5 years
+  "legionella_assessment": 2,        // Biennial
+};
+
+// Calculate expiry date based on standard validity if not provided
+function calculateExpiryDate(
+  docType: string,
+  issueDate: string | null,
+  providedExpiry: string | null
+): string | null {
+  // Use provided expiry if available
+  if (providedExpiry) return providedExpiry;
+  
+  // If no issue date, can't calculate
+  if (!issueDate) return null;
+  
+  // Get standard validity period
+  const validityYears = STANDARD_VALIDITY_YEARS[docType];
+  if (!validityYears) return null;
+  
+  // Calculate expiry date
+  const issue = new Date(issueDate);
+  issue.setFullYear(issue.getFullYear() + validityYears);
+  return issue.toISOString().split('T')[0];
+}
 export const COMPLIANCE_DOC_TYPE_LABELS: Record<string, string> = {
   gas_safety_certificate: 'Gas Safety Certificate (CP12)',
   electrical_certificate: 'EICR (Electrical Safety)',
@@ -149,8 +183,9 @@ export function useAcceptComplianceDocument() {
 
       // Map doc type to compliance type
       const complianceType = DOC_TYPE_TO_COMPLIANCE_TYPE[docType] || docType;
-
-      // 1. Find or create compliance_items record for this property + type
+      
+      // Calculate expiry date (use provided or calculate from standard validity)
+      const calculatedExpiryDate = calculateExpiryDate(docType, issueDate, expiryDate);
       const { data: existingItems } = await supabase
         .from('compliance_items')
         .select('id')
@@ -167,7 +202,7 @@ export function useAcceptComplianceDocument() {
           .from('compliance_items')
           .update({
             issue_date: issueDate,
-            expiry_date: expiryDate,
+            expiry_date: calculatedExpiryDate,
             notes: notes ? `${notes}\n\nUpdated via Compliance Inbox` : 'Updated via Compliance Inbox',
           })
           .eq('id', complianceItemId);
@@ -180,7 +215,7 @@ export function useAcceptComplianceDocument() {
             org_id: orgId,
             compliance_type: complianceType,
             issue_date: issueDate,
-            expiry_date: expiryDate,
+            expiry_date: calculatedExpiryDate,
             responsible_party: 'Owner',
             reminder_days: DEFAULT_REMINDER_DAYS,
             notes: notes || 'Created via Compliance Inbox',
