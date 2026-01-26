@@ -50,18 +50,58 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    
+    // Create client with user's JWT for RLS-protected access
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user is authenticated
+    const { data: claimsData, error: claimsError } = await userSupabase.auth.getUser();
+    if (claimsError || !claimsData?.user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { documentId, fileUrl, properties }: ProcessDocumentRequest = await req.json();
 
-    console.log(`Processing document ${documentId}`);
+    console.log(`Processing document ${documentId} for user ${claimsData.user.id}`);
+
+    // Verify user has access to this document via RLS
+    const { data: docAccess, error: accessError } = await userSupabase
+      .from("documents")
+      .select("id, org_id")
+      .eq("id", documentId)
+      .single();
+
+    if (accessError || !docAccess) {
+      return new Response(
+        JSON.stringify({ error: 'Access denied to document' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use service role for updates (after access verified)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Update status to processing
     await supabase

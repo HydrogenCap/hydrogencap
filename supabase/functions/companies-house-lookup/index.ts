@@ -77,6 +77,34 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Create client with user's JWT for authentication verification
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify user is authenticated
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+    if (authError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Companies House lookup for user ${userData.user.id}`);
+
     const apiKey = Deno.env.get('COMPANIES_HOUSE_API_KEY')?.trim();
     if (!apiKey) {
       console.error('COMPANIES_HOUSE_API_KEY not configured');
@@ -90,8 +118,8 @@ serve(async (req) => {
     console.log(`Companies House lookup: action=${action}, companyNumber=${companyNumber}, searchQuery=${searchQuery}`);
 
     // Companies House API uses HTTP Basic Auth with API key as username, empty password
-    const authHeader = `Basic ${btoa(apiKey + ':')}`;
-    console.log(`Auth header length: ${authHeader.length}, API key length: ${apiKey.length}`);
+    const chAuthHeader = `Basic ${btoa(apiKey + ':')}`;
+    console.log(`CH Auth header length: ${chAuthHeader.length}, API key length: ${apiKey.length}`);
 
     if (action === 'search' && searchQuery) {
       // Search for companies by name
@@ -99,7 +127,7 @@ serve(async (req) => {
       console.log(`Searching companies: ${searchUrl}`);
       
       const response = await fetch(searchUrl, {
-        headers: { 'Authorization': authHeader }
+        headers: { 'Authorization': chAuthHeader }
       });
 
       if (!response.ok) {
@@ -134,7 +162,7 @@ serve(async (req) => {
       console.log(`Looking up company: ${profileUrl}`);
       
       const profileResponse = await fetch(profileUrl, {
-        headers: { 'Authorization': authHeader }
+        headers: { 'Authorization': chAuthHeader }
       });
 
       if (!profileResponse.ok) {
@@ -156,7 +184,7 @@ serve(async (req) => {
       try {
         const officersUrl = `https://api.company-information.service.gov.uk/company/${companyNumber}/officers`;
         const officersResponse = await fetch(officersUrl, {
-          headers: { 'Authorization': authHeader }
+          headers: { 'Authorization': chAuthHeader }
         });
         if (officersResponse.ok) {
           const officersData = await officersResponse.json();
@@ -172,7 +200,7 @@ serve(async (req) => {
       try {
         const pscsUrl = `https://api.company-information.service.gov.uk/company/${companyNumber}/persons-with-significant-control`;
         const pscsResponse = await fetch(pscsUrl, {
-          headers: { 'Authorization': authHeader }
+          headers: { 'Authorization': chAuthHeader }
         });
         if (pscsResponse.ok) {
           const pscsData = await pscsResponse.json();
@@ -189,7 +217,7 @@ serve(async (req) => {
       try {
         const filingUrl = `https://api.company-information.service.gov.uk/company/${companyNumber}/filing-history?items_per_page=50`;
         const filingResponse = await fetch(filingUrl, {
-          headers: { 'Authorization': authHeader }
+          headers: { 'Authorization': chAuthHeader }
         });
         if (filingResponse.ok) {
           const filingData = await filingResponse.json();
