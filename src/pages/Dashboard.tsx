@@ -58,8 +58,9 @@ interface RiskItem {
   message: string;
 }
 
-import { usePropertyPassports, getHMOLicenceStatus, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
+import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useMissingInfo } from '@/hooks/useMissingInfo';
+import { useAllCompliance } from '@/hooks/useCompliance';
 
 const SHAREHOLDER_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -79,6 +80,7 @@ function DashboardPage() {
   const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
+  const { data: allComplianceItems } = useAllCompliance();
   const { stats: missingStats } = useMissingInfo();
   const { lifecycleFilter, filterProperties } = useLifecycleFilter();
   
@@ -102,6 +104,17 @@ function DashboardPage() {
     passports?.forEach(p => map.set(p.property_id, p));
     return map;
   }, [passports]);
+
+  // Create a map of compliance items by property_id for HMO licence lookup
+  const complianceByPropertyMap = useMemo(() => {
+    const map = new Map<string, typeof allComplianceItems>();
+    allComplianceItems?.forEach(item => {
+      const existing = map.get(item.property_id) || [];
+      existing.push(item);
+      map.set(item.property_id, existing);
+    });
+    return map;
+  }, [allComplianceItems]);
 
   // Calculate portfolio totals - ONLY from core rental properties for income KPIs
   const portfolioStats = useMemo(() => {
@@ -298,37 +311,49 @@ function DashboardPage() {
         });
       }
 
-      // ========== PASSPORT-BASED RISKS ==========
+      // ========== COMPLIANCE-BASED RISKS ==========
       
-      // HMO licence risks
-      const hmoStatus = getHMOLicenceStatus(passport);
-      if (hmoStatus === 'overdue') {
-        riskItems.push({
-          id: `hmo-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'hmo_licence',
-          severity: 'critical',
-          message: 'HMO licence has expired',
-        });
-      } else if (hmoStatus === 'expiring_soon') {
-        riskItems.push({
-          id: `hmo-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'hmo_licence',
-          severity: 'warning',
-          message: 'HMO licence expires within 30 days',
-        });
-      } else if (hmoStatus === 'missing') {
-        riskItems.push({
-          id: `hmo-missing-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'hmo_licence',
-          severity: 'critical',
-          message: 'HMO licence required but not recorded',
-        });
+      // HMO licence risks - use compliance_items as source of truth
+      if (property.is_hmo_licensed) {
+        const propertyComplianceItems = complianceByPropertyMap.get(property.id) || [];
+        const hmoItem = propertyComplianceItems.find(item => item.compliance_type === 'hmo_licence');
+        
+        if (!hmoItem || !hmoItem.expiry_date) {
+          // HMO required but no compliance item recorded
+          riskItems.push({
+            id: `hmo-missing-${property.id}`,
+            propertyId: property.id,
+            address: property.address_line,
+            type: 'hmo_licence',
+            severity: 'critical',
+            message: 'HMO licence required but missing',
+          });
+        } else {
+          // Check expiry status
+          const expiry = new Date(hmoItem.expiry_date);
+          const now = new Date();
+          const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysUntilExpiry <= 0) {
+            riskItems.push({
+              id: `hmo-${property.id}`,
+              propertyId: property.id,
+              address: property.address_line,
+              type: 'hmo_licence',
+              severity: 'critical',
+              message: 'HMO licence has expired',
+            });
+          } else if (daysUntilExpiry <= 60) {
+            riskItems.push({
+              id: `hmo-${property.id}`,
+              propertyId: property.id,
+              address: property.address_line,
+              type: 'hmo_licence',
+              severity: 'warning',
+              message: `HMO licence expires in ${daysUntilExpiry} days`,
+            });
+          }
+        }
       }
 
       // Operational data risks (from passport completeness)
