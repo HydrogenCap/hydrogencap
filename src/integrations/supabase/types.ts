@@ -1940,6 +1940,45 @@ export type Database = {
           },
         ]
       }
+      scheduled_email_runs: {
+        Row: {
+          created_at: string
+          email_subject: string | null
+          error: string | null
+          id: string
+          provider_message_id: string | null
+          recipient_email: string | null
+          run_key: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email_subject?: string | null
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          run_key: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email_subject?: string | null
+          error?: string | null
+          id?: string
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          run_key?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       share_classes: {
         Row: {
           company_id: string
