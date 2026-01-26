@@ -56,6 +56,7 @@ const propertySchema = z.object({
   term_years: z.coerce.number().int().min(1).max(50).optional(),
   mortgage_payment_gbp: z.coerce.number().min(0).optional(),
   fixed_rate_expires: z.string().optional(),
+  loan_start_date: z.string().optional(),
   // Income
   annual_rent_gbp: z.coerce.number().min(0).optional(),
   // Geocoding fields (hidden, auto-populated)
@@ -149,6 +150,7 @@ function PropertyEditPage() {
         term_years: (loan as any)?.term_years ?? undefined,
         mortgage_payment_gbp: loan?.payment_override_gbp ?? undefined,
         fixed_rate_expires: loan?.fixed_rate_expires || '',
+        loan_start_date: loan?.loan_start_date || '',
         // Income
         annual_rent_gbp: income?.annual_rent_gbp ?? undefined,
       });
@@ -310,6 +312,7 @@ function PropertyEditPage() {
         payment_auto_calculated_gbp: mortgageCalc.autoCalculated,
         payment_source: mortgageCalc.source,
         fixed_rate_expires: data.fixed_rate_expires || null,
+        loan_start_date: data.loan_start_date || null,
       };
 
       if (existingLoan) {
@@ -886,6 +889,20 @@ function PropertyEditPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Fixed Rate Expires</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="date" className="bg-input" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="loan_start_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loan Start Date</FormLabel>
                       <FormControl>
                         <Input {...field} type="date" className="bg-input" />
                       </FormControl>
