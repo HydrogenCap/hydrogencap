@@ -42,7 +42,7 @@ export const FINANCE_FIELDS: FieldDefinition[] = [
   { key: 'fixed_or_variable', label: 'Fixed or Variable', type: 'select', options: ['fixed', 'variable', 'tracker'] },
   { key: 'fixed_rate_expires', label: 'Product End Date', type: 'date' },
   { key: 'loan_start_date', label: 'Loan Start Date', type: 'date' },
-  { key: 'reversion_rate_percent', label: 'Reversion Rate %', type: 'percent' },
+  // reversion_rate_percent removed - not critical for portfolio tracking
 ];
 
 // Term years field (optional - only needed for repayment mortgages)
