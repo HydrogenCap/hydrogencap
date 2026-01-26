@@ -13,6 +13,7 @@ import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWid
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
+import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
   formatGBP,
@@ -630,9 +631,12 @@ function DashboardPage() {
           {properties && <AreaExposureChart properties={properties} />}
         </div>
 
-        {/* Beneficial Owners */}
+        {/* Data Quality & Beneficial Owners Row */}
         {properties && properties.length > 0 && (
-          <BeneficialOwnerWidget properties={properties} />
+          <div className="grid gap-6 md:grid-cols-2">
+            <DataQualityWidget properties={properties} />
+            <BeneficialOwnerWidget properties={properties} />
+          </div>
         )}
 
         {/* Stock Condition Section */}
