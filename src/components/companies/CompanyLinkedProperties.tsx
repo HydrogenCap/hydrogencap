@@ -93,39 +93,52 @@ export function CompanyLinkedProperties({ companyId }: CompanyLinkedPropertiesPr
             )}
 
             {/* Properties list */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {properties.map((property) => (
                 <Link
                   key={property.id}
                   to={`/properties/${property.id}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted transition-colors group"
+                  className="block p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors group"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{property.address_line}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {[property.area_name, property.postcode].filter(Boolean).join(', ')}
-                      </p>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="font-medium">{property.address_line}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {[property.area_name, property.postcode].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
                     </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Role badges */}
-                    <div className="flex flex-col items-end gap-1">
-                      {property.isLegalOwner && (
+                  
+                  {/* Financial details */}
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                    {property.current_value_gbp !== null && (
+                      <div>
+                        <p className="text-muted-foreground text-xs">Value</p>
+                        <p className="font-medium">{formatGBP(property.current_value_gbp)}</p>
+                      </div>
+                    )}
+                    {property.isLegalOwner && (
+                      <div>
+                        <p className="text-muted-foreground text-xs">Ownership</p>
                         <Badge variant="default" className="text-xs">
-                          Legal {property.legalOwnerPercent !== null && property.legalOwnerPercent !== 100 
-                            ? formatPercent(property.legalOwnerPercent) 
-                            : ''}
+                          Legal Owner {property.legalOwnerPercent !== null && property.legalOwnerPercent !== 100 
+                            ? `(${formatPercent(property.legalOwnerPercent)})` 
+                            : '(100%)'}
                         </Badge>
-                      )}
-                      {property.beneficialPercent !== null && (
+                      </div>
+                    )}
+                    {property.beneficialPercent !== null && (
+                      <div>
+                        <p className="text-muted-foreground text-xs">Beneficial</p>
                         <Badge variant="outline" className="text-xs">
-                          Beneficial {formatPercent(property.beneficialPercent)}
+                          {formatPercent(property.beneficialPercent)}
                         </Badge>
-                      )}
-                    </div>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    )}
                   </div>
                 </Link>
               ))}
