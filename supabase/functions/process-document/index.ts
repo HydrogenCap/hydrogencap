@@ -64,6 +64,48 @@ interface AIExtractionResult {
   compliance_type: string | null;
 }
 
+// Helper to convert file to base64 data URL
+async function fetchFileAsDataUrl(fileUrl: string): Promise<{ dataUrl: string; mimeType: string }> {
+  const response = await fetch(fileUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch file: ${response.status}`);
+  }
+  
+  const arrayBuffer = await response.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+  
+  // Convert to base64
+  let binary = '';
+  const len = uint8Array.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(uint8Array[i]);
+  }
+  const base64 = btoa(binary);
+  
+  // Determine MIME type from URL or content-type header
+  const contentType = response.headers.get('content-type') || '';
+  let mimeType = contentType.split(';')[0].trim();
+  
+  // Fallback: detect from URL extension
+  if (!mimeType || mimeType === 'application/octet-stream') {
+    const ext = fileUrl.split('.').pop()?.toLowerCase();
+    const mimeMap: Record<string, string> = {
+      'pdf': 'application/pdf',
+      'png': 'image/png',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+    };
+    mimeType = mimeMap[ext || ''] || 'application/octet-stream';
+  }
+  
+  return {
+    dataUrl: `data:${mimeType};base64,${base64}`,
+    mimeType,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -129,6 +171,11 @@ serve(async (req) => {
       .update({ extraction_status: "processing" })
       .eq("id", documentId);
 
+    // Fetch the file and convert to base64 data URL for AI processing
+    console.log(`Fetching file from: ${fileUrl}`);
+    const { dataUrl, mimeType } = await fetchFileAsDataUrl(fileUrl);
+    console.log(`File converted to data URL, MIME type: ${mimeType}`);
+
     // Build the prompt for Gemini - optimized for UK compliance documents
     const propertyList = properties
       .map((p, i) => `${i + 1}. ID: ${p.id}, Address: ${p.address_line}, Postcode: ${p.postcode || "N/A"}${p.title_number ? `, Title: ${p.title_number}` : ""}`)
@@ -172,7 +219,7 @@ Respond with valid JSON only (no markdown):
   "extracted_certifier_company": "string or null"
 }`;
 
-    // Call Lovable AI Gateway with Gemini for vision
+    // Call Lovable AI Gateway with Gemini for vision - use data URL for PDF/image support
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -192,7 +239,7 @@ Respond with valid JSON only (no markdown):
               },
               {
                 type: "image_url",
-                image_url: { url: fileUrl },
+                image_url: { url: dataUrl },
               },
             ],
           },
