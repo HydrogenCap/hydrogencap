@@ -477,10 +477,11 @@ function PropertyDetailPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="costs">
+          <TabsContent value="costs" className="space-y-4">
+            {/* Operating Costs */}
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle>Annual Costs ({currentYear})</CardTitle>
+                <CardTitle>Operating Costs ({currentYear})</CardTitle>
               </CardHeader>
               <CardContent>
                 {costs ? (
@@ -525,13 +526,79 @@ function PropertyDetailPage() {
                       <span>{formatGBP(effectiveCosts.other)}</span>
                     </div>
                     <div className="border-t border-border pt-3 flex justify-between font-medium">
-                      <span>Total</span>
+                      <span>Total Operating Costs</span>
                       <span>{formatGBP(totalCosts)}</span>
                     </div>
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-4">No costs recorded for {currentYear}</p>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Debt Service */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle>Debt Service</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loan?.mortgage_payment_gbp ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Monthly Mortgage Payment</span>
+                      <span>{formatGBP(Number(loan.mortgage_payment_gbp))}</span>
+                    </div>
+                    <div className="border-t border-border pt-3 flex justify-between font-medium">
+                      <span>Annual Debt Service</span>
+                      <span>{formatGBP(Number(loan.mortgage_payment_gbp) * 12)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">No mortgage payment recorded</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Cashflow Summary */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle>Cashflow Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Gross Annual Rent</span>
+                    <span>{formatGBP(annualRent)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Less: Operating Costs</span>
+                    <span className="text-destructive">-{formatGBP(totalCosts)}</span>
+                  </div>
+                  <div className="border-t border-border pt-3 flex justify-between font-medium">
+                    <span>Net Operating Income (NOI)</span>
+                    <span>{formatGBP(netRent)}</span>
+                  </div>
+                  {loan?.mortgage_payment_gbp && (
+                    <>
+                      <div className="flex justify-between pt-2">
+                        <span className="text-muted-foreground">Less: Debt Service</span>
+                        <span className="text-destructive">-{formatGBP(Number(loan.mortgage_payment_gbp) * 12)}</span>
+                      </div>
+                      <div className="border-t border-border pt-3 flex justify-between font-semibold text-lg">
+                        <span>Net Annual Cashflow</span>
+                        <span className={(netRent || 0) - Number(loan.mortgage_payment_gbp) * 12 >= 0 ? 'text-green-600' : 'text-destructive'}>
+                          {formatGBP((netRent || 0) - Number(loan.mortgage_payment_gbp) * 12)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground text-sm">
+                        <span>Monthly Cashflow</span>
+                        <span className={(netRent || 0) - Number(loan.mortgage_payment_gbp) * 12 >= 0 ? 'text-green-600' : 'text-destructive'}>
+                          {formatGBP(((netRent || 0) - Number(loan.mortgage_payment_gbp) * 12) / 12)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
