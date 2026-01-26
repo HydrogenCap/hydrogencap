@@ -16,7 +16,6 @@ import { formatDateUK } from '@/lib/calculations';
 import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
-import { PassportOwnershipSummary } from './PassportOwnershipSummary';
 import { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
 import { useGenerateSuggestions } from '@/hooks/usePassportAutofill';
 import { supabase } from '@/integrations/supabase/client';
@@ -238,12 +237,11 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
           onOpenChange={setAutofillModalOpen}
         />
 
+
         {/* ═══════════════════════════════════════════════════════════════════
             TIER 1 — CORE PROPERTY DATA (always visible)
            ═══════════════════════════════════════════════════════════════════ */}
-        
-        {/* Ownership Summary (read-only) */}
-        <PassportOwnershipSummary propertyId={propertyId} />
+
 
         {/* Classification & Title */}
         <Card className="bg-card border-border">
