@@ -129,9 +129,7 @@ export const PASSPORT_FIELDS: FieldDefinition[] = [
   { key: 'built_in_year', label: 'Built In Year', type: 'number' },
   { key: 'construction_type', label: 'Construction Type', type: 'select', options: ['Brick', 'Stone', 'Timber Frame', 'Concrete', 'Steel Frame', 'Other'] },
   { key: 'number_of_storeys', label: 'Number of Storeys', type: 'number' },
-  // Location/Admin (unique to passport - local_authority_text is passport-specific)
-  { key: 'local_authority_text', label: 'Local Authority', type: 'text' },
-  { key: 'council_tax_band', label: 'Council Tax Band', type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] },
+  // Location/Admin - local_authority_text and council_tax_band are AI auto-populated
   { key: 'occupation_status', label: 'Occupation Status', type: 'select', options: ['Let', 'Vacant', 'Owner-occupied', 'Development'] },
   // Parking & Access (unique to passport)
   { key: 'parking', label: 'Parking', type: 'select', options: ['None', 'On-street', 'Driveway', 'Garage', 'Allocated space', 'Multiple'] },
@@ -139,7 +137,6 @@ export const PASSPORT_FIELDS: FieldDefinition[] = [
   { key: 'basement', label: 'Basement', type: 'boolean' },
   // HMO (unique to passport - licence number/expiry tracked in Compliance)
   { key: 'hmo_licence_required', label: 'HMO Licence Required', type: 'boolean' },
-  { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', type: 'number' },
   { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', type: 'number' },
   // Management (unique to passport)
   { key: 'management_company_text', label: 'Management Company', type: 'text' },
