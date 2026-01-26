@@ -43,7 +43,7 @@ export function usePropertyWithFeatures(propertyId: string | undefined) {
   });
 }
 
-// Fetch all properties with compliance features
+// Fetch all properties with compliance features - only CORE RENTAL properties
 export function useAllPropertiesWithFeatures() {
   return useQuery({
     queryKey: ['all_property_features'],
@@ -61,11 +61,14 @@ export function useAllPropertiesWithFeatures() {
           occupancy_status,
           is_hmo_licensed,
           selective_licence_required,
-          co_alarm_required
-        `);
+          co_alarm_required,
+          lifecycle_type
+        `)
+        // Only include core_rental properties for compliance tracking
+        .eq('lifecycle_type', 'core_rental');
 
       if (error) throw error;
-      return data as PropertyComplianceFeatures[];
+      return data as (PropertyComplianceFeatures & { lifecycle_type?: string })[];
     },
   });
 }

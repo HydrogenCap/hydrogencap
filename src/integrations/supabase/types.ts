@@ -1409,10 +1409,13 @@ export type Database = {
           lease_years_remaining: number | null
           legal_owner_company_id: string | null
           legal_owner_party_id: string | null
+          lifecycle_status_date: string | null
+          lifecycle_type: string
           listed_status: string | null
           longitude: number | null
           notes: string | null
           occupancy_status: string | null
+          operational_date: string | null
           org_id: string
           original_purchase_date: string | null
           ownership_entity: string | null
@@ -1462,10 +1465,13 @@ export type Database = {
           lease_years_remaining?: number | null
           legal_owner_company_id?: string | null
           legal_owner_party_id?: string | null
+          lifecycle_status_date?: string | null
+          lifecycle_type?: string
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
           occupancy_status?: string | null
+          operational_date?: string | null
           org_id: string
           original_purchase_date?: string | null
           ownership_entity?: string | null
@@ -1515,10 +1521,13 @@ export type Database = {
           lease_years_remaining?: number | null
           legal_owner_company_id?: string | null
           legal_owner_party_id?: string | null
+          lifecycle_status_date?: string | null
+          lifecycle_type?: string
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
           occupancy_status?: string | null
+          operational_date?: string | null
           org_id?: string
           original_purchase_date?: string | null
           ownership_entity?: string | null

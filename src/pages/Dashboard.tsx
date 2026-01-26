@@ -11,12 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
+import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
 import { MissingComplianceWidget } from '@/components/dashboard/MissingComplianceWidget';
+import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
   formatGBP,
@@ -72,7 +74,21 @@ function DashboardPage() {
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
-  const { data: attribution, isLoading: isAttributionLoading } = usePortfolioAttribution(properties || []);
+  const { lifecycleFilter, filterProperties } = useLifecycleFilter();
+  
+  // Filter properties based on lifecycle selection
+  const filteredProperties = useMemo(() => {
+    if (!properties) return [];
+    return filterProperties(properties);
+  }, [properties, filterProperties]);
+  
+  // Core rental properties only (for KPIs that should exclude development)
+  const coreRentalProperties = useMemo(() => {
+    if (!properties) return [];
+    return properties.filter(p => (p.lifecycle_type ?? 'development') === 'core_rental');
+  }, [properties]);
+  
+  const { data: attribution, isLoading: isAttributionLoading } = usePortfolioAttribution(coreRentalProperties);
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -81,9 +97,12 @@ function DashboardPage() {
     return map;
   }, [passports]);
 
-  // Calculate portfolio totals
+  // Calculate portfolio totals - ONLY from core rental properties for income KPIs
   const portfolioStats = useMemo(() => {
-    if (!properties?.length) {
+    // Use core rental properties for financial KPIs (never skewed by development)
+    const kpiProperties = coreRentalProperties;
+    
+    if (!kpiProperties?.length) {
       return {
         totalValue: 0,
         totalMortgage: 0,
@@ -99,7 +118,7 @@ function DashboardPage() {
     let totalMortgage = 0;
     let totalMonthlyCashflowAfterDebt = 0;
 
-    properties.forEach(property => {
+    kpiProperties.forEach(property => {
       const loan = property.loans?.[0];
       const income = property.income?.find(i => i.year === currentYear);
       const costs = property.costs?.find(c => c.year === currentYear);
@@ -133,7 +152,7 @@ function DashboardPage() {
     const averageLTV = totalValue > 0 ? (totalMortgage / totalValue) * 100 : 0;
 
     // Calculate portfolio rent per bedroom
-    const rentPerBedroomData = properties.map(p => {
+    const rentPerBedroomData = kpiProperties.map(p => {
       const inc = p.income?.find(i => i.year === currentYear);
       return {
         annualRent: inc?.annual_rent_gbp ? Number(inc.annual_rent_gbp) : null,
@@ -143,16 +162,17 @@ function DashboardPage() {
     const rentPerBedroom = calculatePortfolioRentPerBedroom(rentPerBedroomData);
 
     return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt, rentPerBedroom: rentPerBedroom.monthly };
-  }, [properties]);
+  }, [coreRentalProperties]);
 
-  // Calculate risks (including passport data)
+  // Calculate risks - ONLY from core rental properties (development shouldn't flag risks)
   const risks = useMemo<RiskItem[]>(() => {
-    if (!properties?.length) return [];
+    // Only show risks for core rental properties
+    if (!coreRentalProperties?.length) return [];
 
     const riskItems: RiskItem[] = [];
     const currentYear = new Date().getFullYear();
 
-    properties.forEach(property => {
+    coreRentalProperties.forEach(property => {
       const loan = property.loans?.[0];
       const income = property.income?.find(i => i.year === currentYear);
       const costs = property.costs?.find(c => c.year === currentYear);
@@ -324,16 +344,16 @@ function DashboardPage() {
       if (a.severity !== 'critical' && b.severity === 'critical') return 1;
       return 0;
     });
-  }, [properties, passportMap]);
+  }, [coreRentalProperties, passportMap]);
 
-  // Lender exposure data
+  // Lender exposure data - from core rental only
   const lenderData = useMemo(() => {
-    if (!properties?.length) return [];
+    if (!coreRentalProperties?.length) return [];
 
     const lenderMap: Record<string, number> = {};
     const canonicalNames: Record<string, string> = {}; // Store original casing
     
-    properties.forEach(property => {
+    coreRentalProperties.forEach(property => {
       const loan = property.loans?.[0];
       if (loan?.lender && loan.current_mortgage_balance_gbp) {
         // Normalize lender name for grouping (case-insensitive, trim whitespace)
@@ -351,13 +371,13 @@ function DashboardPage() {
     return Object.entries(lenderMap)
       .map(([key, value]) => ({ name: canonicalNames[key], value }))
       .sort((a, b) => b.value - a.value);
-  }, [properties]);
+  }, [coreRentalProperties]);
 
-  // Properties with coordinates for map (for empty state check)
+  // Properties with coordinates for map - show filtered properties
   const hasPropertiesWithCoords = useMemo(() => {
-    if (!properties?.length) return false;
-    return properties.some(p => p.latitude && p.longitude);
-  }, [properties]);
+    if (!filteredProperties?.length) return false;
+    return filteredProperties.some(p => p.latitude && p.longitude);
+  }, [filteredProperties]);
 
   // Calculate shareholder data for breakdown tab
   const shareholderData = useMemo(() => {
@@ -403,13 +423,15 @@ function DashboardPage() {
     <AppLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground">
-              {properties?.length || 0} properties in your portfolio
+              {filteredProperties?.length || 0} {lifecycleFilter === 'all' ? '' : lifecycleFilter === 'core_rental' ? 'core rental ' : 'development '}
+              properties{lifecycleFilter !== 'all' && properties && properties.length > filteredProperties.length ? ` (${properties.length} total)` : ''}
             </p>
           </div>
+          <LifecycleFilterToggle />
         </div>
 
         {/* Dashboard Tabs */}
@@ -532,13 +554,13 @@ function DashboardPage() {
 
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Portfolio Health */}
-          {properties && properties.length > 0 && (
-            <PortfolioHealthWidget properties={properties} />
+          {/* Portfolio Health - uses core rental only */}
+          {coreRentalProperties && coreRentalProperties.length > 0 && (
+            <PortfolioHealthWidget properties={coreRentalProperties} />
           )}
 
-          {/* Risks Panel */}
-          <Card className={`bg-card border-border ${properties && properties.length > 0 ? '' : 'lg:col-span-1'}`}>
+          {/* Risks Panel - core rental only */}
+          <Card className={`bg-card border-border ${coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-warning" />
@@ -602,7 +624,7 @@ function DashboardPage() {
             <CardContent>
               {hasPropertiesWithCoords ? (
                 <PropertyMap
-                  properties={properties || []}
+                  properties={filteredProperties || []}
                   className="h-[300px] rounded-lg"
                 />
               ) : (
@@ -666,18 +688,18 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Area Exposure - Uses dedicated component with normalization */}
-          {properties && <AreaExposureChart properties={properties} />}
+          {/* Area Exposure - filtered properties for geographic distribution */}
+          {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
         </div>
 
-        {/* Data Quality Row */}
-        {properties && properties.length > 0 && (
-          <DataQualityWidget properties={properties} />
+        {/* Data Quality Row - all properties */}
+        {filteredProperties && filteredProperties.length > 0 && (
+          <DataQualityWidget properties={filteredProperties} />
         )}
 
-        {/* Beneficial Owner Details */}
-        {properties && properties.length > 0 && (
-          <BeneficialOwnerWidget properties={properties} />
+        {/* Beneficial Owner Details - core rental only */}
+        {coreRentalProperties && coreRentalProperties.length > 0 && (
+          <BeneficialOwnerWidget properties={coreRentalProperties} />
         )}
 
         {/* Stock Condition Section */}

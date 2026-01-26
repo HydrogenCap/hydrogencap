@@ -12,6 +12,7 @@ interface Property {
   address_line: string;
   postcode: string | null;
   town_city: string | null;
+  lifecycle_type: string | null;
 }
 
 interface ComplianceItem {
@@ -329,15 +330,24 @@ serve(async (req) => {
       }
     }
 
-    // Fetch all active properties
+    // Fetch all CORE RENTAL properties only (development properties are excluded from compliance emails)
     const { data: properties, error: propError } = await supabase
       .from("properties")
-      .select("id, address_line, postcode, town_city");
+      .select("id, address_line, postcode, town_city, lifecycle_type")
+      .eq("lifecycle_type", "core_rental");
 
     if (propError) throw propError;
 
+    // Only include core rental properties in email
+    const coreRentalProperties = (properties || []).filter(
+      (p: Property) => (p.lifecycle_type ?? 'development') === 'core_rental'
+    );
+
     const propertyMap = new Map<string, Property>();
-    (properties || []).forEach((p: Property) => propertyMap.set(p.id, p));
+    coreRentalProperties.forEach((p: Property) => propertyMap.set(p.id, p));
+    
+    // Create a set of core rental property IDs for filtering compliance items
+    const coreRentalPropertyIds = new Set(coreRentalProperties.map(p => p.id));
 
     // Fetch all compliance items with is_required = true or not excluded
     const { data: complianceItems, error: compError } = await supabase
@@ -348,12 +358,15 @@ serve(async (req) => {
 
     if (compError) throw compError;
 
-    // Categorize compliance items
+    // Categorize compliance items - ONLY for core rental properties
     const overdueItems: Array<ComplianceItem & { status: 'overdue' }> = [];
     const dueSoonItems: Array<ComplianceItem & { status: 'due_soon' }> = [];
     const unknownItems: Array<ComplianceItem & { status: 'unknown' }> = [];
 
     (complianceItems || []).forEach((item: ComplianceItem) => {
+      // Skip if property is not core rental
+      if (!coreRentalPropertyIds.has(item.property_id)) return;
+      
       const status = getComplianceStatus(item.expiry_date);
       if (status === 'overdue') {
         overdueItems.push({ ...item, status: 'overdue' });
@@ -406,9 +419,9 @@ serve(async (req) => {
 
     if (actError) throw actError;
 
-    // Calculate KPIs
+    // Calculate KPIs - only for core rental properties
     const kpis = {
-      activeProperties: properties?.length || 0,
+      activeProperties: coreRentalProperties?.length || 0,
       overdueCount: overdueItems.length,
       dueSoonCount: dueSoonItems.length
     };
