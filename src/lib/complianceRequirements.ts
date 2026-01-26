@@ -152,23 +152,6 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     reasonRequired: 'Property has emergency lighting system',
     reasonNotRequired: 'No emergency lighting system',
   },
-  'Fire Door Certification': {
-    category: 'HMO & Licensing',
-    defaultRequired: false,
-    validityYears: 1,
-    condition: (p: PropertyComplianceFeatures) => 
-      p.asset_category?.includes('HMO') === true || p.is_hmo_licensed === true,
-    reasonRequired: 'Fire doors required in HMO properties',
-    reasonNotRequired: 'Not an HMO property',
-  },
-  'Fire Panel Commissioning Certificate': {
-    category: 'HMO & Licensing',
-    defaultRequired: false,
-    validityYears: 1,
-    condition: (p: PropertyComplianceFeatures) => p.fire_alarm_grade === 'Grade A',
-    reasonRequired: 'Grade A fire alarm system requires commissioning certificate',
-    reasonNotRequired: 'No Grade A fire alarm system',
-  },
   // Insurance
   'Buildings Insurance Schedule': {
     category: 'Insurance',
