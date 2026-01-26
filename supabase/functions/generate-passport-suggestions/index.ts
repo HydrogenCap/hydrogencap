@@ -339,11 +339,14 @@ Based on typical UK property patterns and any available information, suggest val
       .eq("property_id", property_id)
       .eq("status", "pending");
 
-    // Insert new suggestions
+    // Filter out suggestions with null values (DB has NOT NULL constraint)
+    const validSuggestions = suggestions.filter(s => s.suggested_value !== null);
+
+    // Insert new suggestions (only those with actual values)
     const { data: insertedSuggestions, error: insertError } = await supabaseClient
       .from("passport_autofill_suggestions")
       .insert(
-        suggestions.map(s => ({
+        validSuggestions.map(s => ({
           property_id,
           field_key: s.field_key,
           suggested_value: s.suggested_value,
