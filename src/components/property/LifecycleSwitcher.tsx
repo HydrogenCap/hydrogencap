@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Construction, CalendarDays, AlertCircle } from 'lucide-react';
+import { Building2, Construction, CalendarDays, AlertCircle, Rocket, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -22,8 +22,19 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUpdateProperty } from '@/hooks/useProperties';
+import { 
+  useGoLiveChecklist,
+  validatePropertyData,
+  buildChecklistSections,
+  calculateChecklistProgress,
+  isChecklistComplete
+} from '@/hooks/useGoLiveChecklist';
+import { usePropertyCompliance } from '@/hooks/useCompliance';
+import { usePropertyBeneficialOwnership } from '@/hooks/useOwnershipLinks';
+import { useProperty } from '@/hooks/useProperties';
 import { toast } from 'sonner';
 import { LifecycleType } from '@/contexts/LifecycleFilterContext';
+import { Link } from 'react-router-dom';
 
 interface LifecycleSwitcherProps {
   propertyId: string;
@@ -40,11 +51,31 @@ export function LifecycleSwitcher({
   const [selectedLifecycle, setSelectedLifecycle] = useState<LifecycleType>(currentLifecycle);
   const [opDate, setOpDate] = useState(operationalDate || '');
   const updateProperty = useUpdateProperty();
+  
+  // Load checklist data for validation
+  const { data: property } = useProperty(propertyId);
+  const { checklist } = useGoLiveChecklist(propertyId);
+  const { data: complianceItems = [] } = usePropertyCompliance(propertyId);
+  const { data: ownershipLinks = [] } = usePropertyBeneficialOwnership(propertyId);
+  
+  // Validate checklist completion
+  const validation = validatePropertyData(property, complianceItems, ownershipLinks);
+  const sections = buildChecklistSections(checklist, validation);
+  const progress = calculateChecklistProgress(sections);
+  const checklistComplete = isChecklistComplete(sections);
 
   const isSwitchingToCoreRental = currentLifecycle === 'development' && selectedLifecycle === 'core_rental';
   const isSwitchingToDevelopment = currentLifecycle === 'core_rental' && selectedLifecycle === 'development';
+  
+  // Block switching to core_rental if checklist is incomplete
+  const canSwitchToCoreRental = checklistComplete;
 
   const handleSave = async () => {
+    if (isSwitchingToCoreRental && !canSwitchToCoreRental) {
+      toast.error('Complete the Ready to Go Live checklist to activate this property');
+      return;
+    }
+    
     try {
       await updateProperty.mutateAsync({
         id: propertyId,
@@ -118,36 +149,63 @@ export function LifecycleSwitcher({
 
           {isSwitchingToCoreRental && (
             <>
-              <Alert className="border-primary/30">
-                <AlertCircle className="h-4 w-4 text-primary" />
-                <AlertDescription>
-                  Switching to <strong>Core Rental</strong> will:
-                  <ul className="list-disc ml-4 mt-2 text-sm">
-                    <li>Enable rental income fields</li>
-                    <li>Enable mortgage tracking</li>
-                    <li>Enable compliance enforcement</li>
-                    <li>Include property in all KPIs (cashflow, yield, LTV)</li>
-                    <li>Activate reminders and weekly compliance emails</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
+              {!canSwitchToCoreRental ? (
+                <Alert className="border-warning/50 bg-warning/10">
+                  <Lock className="h-4 w-4 text-warning" />
+                  <AlertDescription className="space-y-2">
+                    <p className="font-medium text-warning">
+                      Complete the Go Live Checklist first
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {progress.completed} of {progress.total} items completed ({progress.percentage}%)
+                    </p>
+                    <Link 
+                      to={`/properties/${propertyId}?tab=overview`}
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                      onClick={() => setOpen(false)}
+                    >
+                      <Rocket className="h-3 w-3" />
+                      View checklist
+                    </Link>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert className="border-success/30 bg-success/10">
+                  <Rocket className="h-4 w-4 text-success" />
+                  <AlertDescription>
+                    <p className="font-medium text-success">Ready to Go Live!</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Switching to <strong>Core Rental</strong> will:
+                    </p>
+                    <ul className="list-disc ml-4 mt-2 text-sm text-muted-foreground">
+                      <li>Enable rental income fields</li>
+                      <li>Enable mortgage tracking</li>
+                      <li>Enable compliance enforcement</li>
+                      <li>Include property in all KPIs (cashflow, yield, LTV)</li>
+                      <li>Activate reminders and weekly compliance emails</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="operational-date" className="flex items-center gap-2">
-                  <CalendarDays className="h-4 w-4" />
-                  Operational Date (optional)
-                </Label>
-                <Input
-                  id="operational-date"
-                  type="date"
-                  value={opDate}
-                  onChange={(e) => setOpDate(e.target.value)}
-                  placeholder="When did this property become income-producing?"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Date when the property started generating rental income
-                </p>
-              </div>
+              {canSwitchToCoreRental && (
+                <div className="space-y-2">
+                  <Label htmlFor="operational-date" className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    Operational Date (optional)
+                  </Label>
+                  <Input
+                    id="operational-date"
+                    type="date"
+                    value={opDate}
+                    onChange={(e) => setOpDate(e.target.value)}
+                    placeholder="When did this property become income-producing?"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Date when the property started generating rental income
+                  </p>
+                </div>
+              )}
             </>
           )}
 
@@ -181,7 +239,11 @@ export function LifecycleSwitcher({
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={selectedLifecycle === currentLifecycle || updateProperty.isPending}
+            disabled={
+              selectedLifecycle === currentLifecycle || 
+              updateProperty.isPending ||
+              (isSwitchingToCoreRental && !canSwitchToCoreRental)
+            }
           >
             {updateProperty.isPending ? 'Saving...' : 'Save Changes'}
           </Button>

@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, FinancialAttributionCard } from '@/components/ownership';
-import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard } from '@/components/property';
+import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveChecklist } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
@@ -264,6 +264,11 @@ function PropertyDetailPage() {
 
           {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-4">
+            {/* Go Live Checklist - Show for Development properties */}
+            {property.lifecycle_type === 'development' && (
+              <GoLiveChecklist propertyId={id!} />
+            )}
+
             <div className="grid gap-4 md:grid-cols-2">
               {/* Property Details */}
               <Card className="bg-card border-border">

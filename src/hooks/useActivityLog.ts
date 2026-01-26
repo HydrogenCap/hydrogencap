@@ -17,7 +17,8 @@ export type ActivityEntryType =
   | 'document_uploaded'
   | 'document_accepted'
   | 'note_added'
-  | 'manual';
+  | 'manual'
+  | 'go_live';
 
 async function getUserOrgId(): Promise<string | null> {
   try {
@@ -229,5 +230,14 @@ export const ActivityLoggers = {
       entry_type: 'note_added',
       title: 'Note added',
       body: note.length > 100 ? note.substring(0, 100) + '...' : note,
+    }),
+
+  goLive: (propertyId: string, address: string) =>
+    logActivitySilent({
+      property_id: propertyId,
+      entry_type: 'go_live',
+      title: '🚀 Property activated',
+      body: `${address} is now live and income-producing`,
+      metadata: { action: 'go_live', activated_at: new Date().toISOString() },
     }),
 };
