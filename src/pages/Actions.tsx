@@ -35,7 +35,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useProperties } from '@/hooks/useProperties';
-import { usePropertyPassports } from '@/hooks/usePropertyPassport';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { 
   calculateLTV, 
@@ -82,7 +81,6 @@ const riskTypeIcons: Record<RiskItem['type'], React.ReactNode> = {
 
 export default function ActionsPage() {
   const { data: properties, isLoading: loadingProperties } = useProperties();
-  const { data: passports, isLoading: loadingPassports } = usePropertyPassports();
   const { data: complianceItems, isLoading: loadingCompliance } = useAllCompliance();
 
   const [search, setSearch] = useState('');
@@ -91,12 +89,16 @@ export default function ActionsPage() {
   const [sortField, setSortField] = useState<SortField>('severity');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  // Build passport map
-  const passportMap = useMemo(() => {
-    const map = new Map<string, NonNullable<typeof passports>[0]>();
-    passports?.forEach(p => map.set(p.property_id, p));
+  // Build compliance map by property
+  const complianceByPropertyMap = useMemo(() => {
+    const map = new Map<string, NonNullable<typeof complianceItems>>();
+    complianceItems?.forEach(item => {
+      const existing = map.get(item.property_id) || [];
+      existing.push(item);
+      map.set(item.property_id, existing);
+    });
     return map;
-  }, [passports]);
+  }, [complianceItems]);
 
   // Get only core rental properties
   const coreRentalProperties = useMemo(() => {
@@ -114,7 +116,7 @@ export default function ActionsPage() {
       const loan = property.loans?.[0];
       const income = property.income?.find(i => i.year === currentYear);
       const costs = property.costs?.find(c => c.year === currentYear);
-      const passport = passportMap.get(property.id);
+      const propertyComplianceItems = complianceByPropertyMap.get(property.id) || [];
 
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : null;
       const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
@@ -219,9 +221,14 @@ export default function ActionsPage() {
         });
       }
 
-      // HMO licence risks
-      if (passport?.hmo_licence_required) {
-        if (!passport.hmo_licence) {
+      // HMO licence risks - use compliance_items as source of truth
+      if (property.is_hmo_licensed) {
+        const hmoItem = propertyComplianceItems.find(item => 
+          item.compliance_type.toLowerCase().replace(/\s+/g, '_') === 'hmo_licence' ||
+          item.compliance_type === 'HMO Licence'
+        );
+        
+        if (!hmoItem || !hmoItem.expiry_date) {
           riskItems.push({
             id: `hmo-${property.id}`,
             propertyId: property.id,
@@ -230,12 +237,12 @@ export default function ActionsPage() {
             severity: 'critical',
             message: 'HMO licence required but missing',
           });
-        } else if (passport.hmo_licence_expiry) {
-          const expiryDate = new Date(passport.hmo_licence_expiry);
-          const today = new Date();
-          const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        } else {
+          const expiry = new Date(hmoItem.expiry_date);
+          const now = new Date();
+          const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           
-          if (daysUntilExpiry < 0) {
+          if (daysUntilExpiry <= 0) {
             riskItems.push({
               id: `hmo-${property.id}`,
               propertyId: property.id,
@@ -244,7 +251,7 @@ export default function ActionsPage() {
               severity: 'critical',
               message: 'HMO licence has expired',
             });
-          } else if (daysUntilExpiry <= 30) {
+          } else if (daysUntilExpiry <= 60) {
             riskItems.push({
               id: `hmo-${property.id}`,
               propertyId: property.id,
@@ -276,7 +283,7 @@ export default function ActionsPage() {
     });
 
     return riskItems;
-  }, [coreRentalProperties, passportMap]);
+  }, [coreRentalProperties, complianceByPropertyMap]);
 
   // Apply filters and sorting
   const filteredRisks = useMemo(() => {
@@ -329,7 +336,7 @@ export default function ActionsPage() {
     }
   };
 
-  const isLoading = loadingProperties || loadingPassports || loadingCompliance;
+  const isLoading = loadingProperties || loadingCompliance;
 
   if (isLoading) {
     return (
