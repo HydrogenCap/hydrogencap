@@ -1703,8 +1703,6 @@ export type Database = {
           asset_performance_rating: string | null
           base_clarification: string | null
           basement: boolean | null
-          bathrooms: number | null
-          bedrooms: number | null
           block_communal_entrance: string | null
           built_in_year: number | null
           carport: boolean | null
@@ -1733,7 +1731,6 @@ export type Database = {
           id: string
           keysafe_code: string | null
           kitchens: number | null
-          land_registry_title_number: string | null
           living_rooms_communal: number | null
           local_authority: string | null
           local_authority_id: string | null
@@ -1748,7 +1745,6 @@ export type Database = {
           oil_tank_capacity_litres: number | null
           oil_tank_location: string | null
           owned_by: string | null
-          owner_tenure: string | null
           parking: string | null
           photographs_link: string | null
           postcode: string | null
@@ -1768,8 +1764,6 @@ export type Database = {
           asset_performance_rating?: string | null
           base_clarification?: string | null
           basement?: boolean | null
-          bathrooms?: number | null
-          bedrooms?: number | null
           block_communal_entrance?: string | null
           built_in_year?: number | null
           carport?: boolean | null
@@ -1798,7 +1792,6 @@ export type Database = {
           id?: string
           keysafe_code?: string | null
           kitchens?: number | null
-          land_registry_title_number?: string | null
           living_rooms_communal?: number | null
           local_authority?: string | null
           local_authority_id?: string | null
@@ -1813,7 +1806,6 @@ export type Database = {
           oil_tank_capacity_litres?: number | null
           oil_tank_location?: string | null
           owned_by?: string | null
-          owner_tenure?: string | null
           parking?: string | null
           photographs_link?: string | null
           postcode?: string | null
@@ -1833,8 +1825,6 @@ export type Database = {
           asset_performance_rating?: string | null
           base_clarification?: string | null
           basement?: boolean | null
-          bathrooms?: number | null
-          bedrooms?: number | null
           block_communal_entrance?: string | null
           built_in_year?: number | null
           carport?: boolean | null
@@ -1863,7 +1853,6 @@ export type Database = {
           id?: string
           keysafe_code?: string | null
           kitchens?: number | null
-          land_registry_title_number?: string | null
           living_rooms_communal?: number | null
           local_authority?: string | null
           local_authority_id?: string | null
@@ -1878,7 +1867,6 @@ export type Database = {
           oil_tank_capacity_litres?: number | null
           oil_tank_location?: string | null
           owned_by?: string | null
-          owner_tenure?: string | null
           parking?: string | null
           photographs_link?: string | null
           postcode?: string | null

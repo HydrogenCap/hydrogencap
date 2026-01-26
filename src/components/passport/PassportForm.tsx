@@ -24,14 +24,10 @@ import { supabase } from '@/integrations/supabase/client';
 // Simplified schema - only essential fields
 const passportSchema = z.object({
   // TIER 1 - CORE DATA
-  // Ownership & Classification - now read-only, so only keep editable fields
+  // Classification
   asset_agreement_category: z.string().nullable().optional(),
-  owner_tenure: z.string().nullable().optional(),
-  land_registry_title_number: z.string().nullable().optional(),
   
-  // Accommodation (single source of truth)
-  bedrooms: z.coerce.number().min(0).max(100).nullable().optional(),
-  bathrooms: z.coerce.number().min(0).max(50).nullable().optional(),
+  // Accommodation (ensuites, kitchens, living rooms - beds/bathrooms are in properties table)
   ensuites: z.coerce.number().min(0).max(50).nullable().optional(),
   kitchens: z.coerce.number().min(0).max(50).nullable().optional(),
   living_rooms_communal: z.coerce.number().min(0).max(50).nullable().optional(),
@@ -283,72 +279,20 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="owner_tenure"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tenure</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select tenure" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Freehold">Freehold</SelectItem>
-                      <SelectItem value="Leasehold">Leasehold</SelectItem>
-                      <SelectItem value="Share of Freehold">Share of Freehold</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="land_registry_title_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title Number</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} placeholder="e.g. WM123456" />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
           </CardContent>
         </Card>
 
-        {/* Accommodation Schedule */}
+        {/* Note: Beds, Bathrooms, Tenure, and Title Number are now managed in the Properties table */}
+
+        {/* Accommodation Schedule (additional rooms only) */}
         <Card className="bg-card border-border">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Accommodation</CardTitle>
+            <CardTitle className="text-lg">Additional Accommodation</CardTitle>
+            <CardDescription>
+              Beds and bathrooms are managed in the main property details. Use this for additional room counts.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-            <FormField
-              control={form.control}
-              name="bedrooms"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bedrooms</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="0" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="bathrooms"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bathrooms</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="0" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+          <CardContent className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             <FormField
               control={form.control}
               name="ensuites"
@@ -727,10 +671,7 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
   return {
     // TIER 1 - CORE
     asset_agreement_category: passport?.asset_agreement_category ?? null,
-    owner_tenure: passport?.owner_tenure ?? null,
-    land_registry_title_number: passport?.land_registry_title_number ?? null,
-    bedrooms: passport?.bedrooms ?? null,
-    bathrooms: passport?.bathrooms ?? null,
+    // Note: beds, bathrooms, tenure are now in properties table, not passport
     ensuites: passport?.ensuites ?? null,
     kitchens: passport?.kitchens ?? null,
     living_rooms_communal: passport?.living_rooms_communal ?? null,
