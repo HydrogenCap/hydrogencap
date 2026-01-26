@@ -316,7 +316,10 @@ function DashboardPage() {
       // HMO licence risks - use compliance_items as source of truth
       if (property.is_hmo_licensed) {
         const propertyComplianceItems = complianceByPropertyMap.get(property.id) || [];
-        const hmoItem = propertyComplianceItems.find(item => item.compliance_type === 'hmo_licence');
+        const hmoItem = propertyComplianceItems.find(item => 
+          item.compliance_type.toLowerCase().replace(/\s+/g, '_') === 'hmo_licence' ||
+          item.compliance_type === 'HMO Licence'
+        );
         
         if (!hmoItem || !hmoItem.expiry_date) {
           // HMO required but no compliance item recorded
