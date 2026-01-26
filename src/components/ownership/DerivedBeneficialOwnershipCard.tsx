@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useProperty } from '@/hooks/useProperties';
 import { useCompany } from '@/hooks/useCompanies';
+import { useParty } from '@/hooks/useParties';
 import {
   useCompanyOwnership,
   calculateOwnershipTotal,
@@ -27,11 +28,14 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
   const { data: company, isLoading: companyLoading } = useCompany(
     property?.legal_owner_company_id || undefined
   );
+  const { data: party, isLoading: partyLoading } = useParty(
+    property?.legal_owner_party_id || undefined
+  );
   const { data: shareholders, isLoading: shareholdersLoading, refetch } = useCompanyOwnership(
     property?.legal_owner_company_id || undefined
   );
 
-  const isLoading = propertyLoading || companyLoading || shareholdersLoading;
+  const isLoading = propertyLoading || companyLoading || partyLoading || shareholdersLoading;
 
   if (isLoading) {
     return (
@@ -44,6 +48,50 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
         </CardHeader>
         <CardContent>
           <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If owned by an individual person, show them as 100% beneficial owner
+  if (property?.legal_owner_party_id && party) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Beneficial Ownership Split
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg">
+            <User className="h-4 w-4" />
+            <span>Directly owned by an individual</span>
+          </div>
+          
+          <Alert className="border-success bg-success/10">
+            <Check className="h-4 w-4 text-success" />
+            <AlertDescription className="text-success">
+              Beneficial ownership fully allocated
+            </AlertDescription>
+          </Alert>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-md bg-background">
+                <User className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <span className="font-medium">{party.display_name}</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Badge variant="outline" className="text-xs">Individual</Badge>
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-lg font-bold">100%</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -63,8 +111,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Set a Legal Owner (SPV) above to see the beneficial ownership split.
-              The beneficial owners are derived from the company's shareholders.
+              Set a Legal Owner above to see the beneficial ownership split.
             </AlertDescription>
           </Alert>
         </CardContent>

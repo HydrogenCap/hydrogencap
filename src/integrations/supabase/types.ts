@@ -1167,6 +1167,7 @@ export type Database = {
           latitude: number | null
           lease_years_remaining: number | null
           legal_owner_company_id: string | null
+          legal_owner_party_id: string | null
           listed_status: string | null
           longitude: number | null
           notes: string | null
@@ -1210,6 +1211,7 @@ export type Database = {
           latitude?: number | null
           lease_years_remaining?: number | null
           legal_owner_company_id?: string | null
+          legal_owner_party_id?: string | null
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
@@ -1253,6 +1255,7 @@ export type Database = {
           latitude?: number | null
           lease_years_remaining?: number | null
           legal_owner_company_id?: string | null
+          legal_owner_party_id?: string | null
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
@@ -1277,6 +1280,13 @@ export type Database = {
             columns: ["legal_owner_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_legal_owner_party_id_fkey"
+            columns: ["legal_owner_party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
             referencedColumns: ["id"]
           },
           {
