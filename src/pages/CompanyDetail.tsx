@@ -44,7 +44,7 @@ import {
   type CompanyStatus,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ComplianceFilingsCard, CompanyLinkedProperties, CompanyBeneficialOwnersCard } from '@/components/companies';
+import { ComplianceFilingsCard, CompanyLinkedProperties } from '@/components/companies';
 import { CompanyOwnershipSection } from '@/components/ownership';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -398,9 +398,6 @@ export default function CompanyDetail() {
 
             {/* Linked Properties Section */}
             <CompanyLinkedProperties companyId={company.id} />
-
-            {/* Beneficial Ownership Split for properties this company owns */}
-            <CompanyBeneficialOwnersCard companyId={company.id} />
           </div>
 
           {/* Right Column - Shareholders (unified ownership_links) */}
