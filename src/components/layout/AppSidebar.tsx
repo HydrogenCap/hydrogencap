@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Map,
   Calendar,
+  Shield,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -33,6 +34,7 @@ const navItems = [
   { title: 'Map', icon: Map, href: '/dashboard/map' },
   { title: 'Properties', icon: Building2, href: '/properties' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
+  { title: 'Compliance', icon: Shield, href: '/compliance' },
   { title: 'Timeline', icon: Calendar, href: '/timeline' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
