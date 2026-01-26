@@ -31,3 +31,6 @@ verify_jwt = false
 
 [functions.apply-passport-suggestions]
 verify_jwt = false
+
+[functions.estimate-construction-year]
+verify_jwt = false

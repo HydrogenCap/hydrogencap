@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Loader2, ChevronDown, ChevronRight, Settings2, Sparkles } from 'lucide-react';
+import { Save, Loader2, ChevronDown, ChevronRight, Settings2, Sparkles, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -19,6 +19,7 @@ import { ExtendableSelect } from './ExtendableSelect';
 import { PassportOwnershipSummary } from './PassportOwnershipSummary';
 import { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
 import { useGenerateSuggestions } from '@/hooks/usePassportAutofill';
+import { supabase } from '@/integrations/supabase/client';
 
 // Simplified schema - only essential fields
 const passportSchema = z.object({
@@ -74,6 +75,13 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   const upsertPassport = useUpsertPassport();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [autofillModalOpen, setAutofillModalOpen] = useState(false);
+  const [constructionEstimate, setConstructionEstimate] = useState<{
+    estimatedYear: number;
+    constructionDateBand: string;
+    confidence: string;
+    reasoning: string;
+  } | null>(null);
+  const [isEstimatingConstruction, setIsEstimatingConstruction] = useState(false);
   const generateSuggestions = useGenerateSuggestions();
   
   // Management companies
@@ -162,6 +170,37 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
         description: error instanceof Error ? error.message : 'Failed to generate suggestions',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleEstimateConstruction = async () => {
+    setIsEstimatingConstruction(true);
+    setConstructionEstimate(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('estimate-construction-year', {
+        body: { propertyId },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to estimate');
+
+      setConstructionEstimate(data.suggestion);
+      // Auto-expand advanced section to show result
+      setAdvancedOpen(true);
+      
+      toast({
+        title: 'Construction period estimated',
+        description: `AI suggests ~${data.suggestion.estimatedYear} (${data.suggestion.confidence} confidence)`,
+      });
+    } catch (error) {
+      console.error('Construction estimate error:', error);
+      toast({
+        title: 'Estimation failed',
+        description: error instanceof Error ? error.message : 'Could not estimate construction year',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsEstimatingConstruction(false);
     }
   };
 
@@ -451,7 +490,54 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
               <CardContent className="space-y-6 pt-0">
                 {/* Construction */}
                 <div>
-                  <h4 className="text-sm font-medium mb-3 text-muted-foreground">Construction</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Construction</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEstimateConstruction}
+                      disabled={isEstimatingConstruction}
+                      className="gap-1.5 h-7 text-xs"
+                    >
+                      {isEstimatingConstruction ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-3 w-3" />
+                      )}
+                      AI Estimate
+                    </Button>
+                  </div>
+                  
+                  {constructionEstimate && (
+                    <div className="mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium">~{constructionEstimate.estimatedYear}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                          constructionEstimate.confidence === 'high' 
+                            ? 'bg-green-500/20 text-green-700 dark:text-green-400' 
+                            : constructionEstimate.confidence === 'medium'
+                            ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {constructionEstimate.confidence} confidence
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="ml-auto h-6 text-xs"
+                          onClick={() => {
+                            form.setValue('construction_date_band', constructionEstimate.constructionDateBand);
+                          }}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{constructionEstimate.reasoning}</p>
+                    </div>
+                  )}
+                  
                   <FormField
                     control={form.control}
                     name="construction_date_band"
@@ -465,13 +551,16 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Pre 1900">Pre 1900</SelectItem>
+                            <SelectItem value="Pre-1900">Pre-1900</SelectItem>
                             <SelectItem value="1900-1929">1900-1929</SelectItem>
                             <SelectItem value="1930-1949">1930-1949</SelectItem>
                             <SelectItem value="1950-1966">1950-1966</SelectItem>
-                            <SelectItem value="1967-1982">1967-1982</SelectItem>
-                            <SelectItem value="1983-1995">1983-1995</SelectItem>
-                            <SelectItem value="1996-2006">1996-2006</SelectItem>
+                            <SelectItem value="1967-1975">1967-1975</SelectItem>
+                            <SelectItem value="1976-1982">1976-1982</SelectItem>
+                            <SelectItem value="1983-1990">1983-1990</SelectItem>
+                            <SelectItem value="1991-1995">1991-1995</SelectItem>
+                            <SelectItem value="1996-2002">1996-2002</SelectItem>
+                            <SelectItem value="2003-2006">2003-2006</SelectItem>
                             <SelectItem value="2007 onwards">2007 onwards</SelectItem>
                           </SelectContent>
                         </Select>
