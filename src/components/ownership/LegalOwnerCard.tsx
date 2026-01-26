@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Pencil, Plus, ExternalLink, Calendar, MapPin, RefreshCw, User } from 'lucide-react';
+import { Building2, Pencil, Plus, ExternalLink, Calendar, MapPin, RefreshCw, User, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProperty } from '@/hooks/useProperties';
 import { useCompany, useUpdateCompany } from '@/hooks/useCompanies';
-import { useParty } from '@/hooks/useParties';
+import { usePropertyBeneficialOwnership, getOwnerName } from '@/hooks/useOwnershipLinks';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { ComplianceStatusBadge } from '@/components/companies/ComplianceStatusBadge';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { formatPercent } from '@/lib/calculations';
 
 interface LegalOwnerCardProps {
   propertyId: string;
@@ -23,9 +24,7 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
   const { data: company, isLoading: companyLoading } = useCompany(
     property?.legal_owner_company_id || undefined
   );
-  const { data: party, isLoading: partyLoading } = useParty(
-    property?.legal_owner_party_id || undefined
-  );
+  const { data: directOwners, isLoading: directOwnersLoading } = usePropertyBeneficialOwnership(propertyId);
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const updateCompany = useUpdateCompany();
   const { toast } = useToast();
@@ -55,7 +54,7 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
     }
   };
 
-  if (propertyLoading) {
+  if (propertyLoading || directOwnersLoading) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
@@ -68,11 +67,11 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
     );
   }
 
-  const hasCompanyOwner = property?.legal_owner_company_id;
-  const hasPersonOwner = property?.legal_owner_party_id;
+  const hasCompanyOwner = !!property?.legal_owner_company_id;
+  const hasIndividualOwners = (directOwners?.length || 0) > 0;
 
   // No owner set
-  if (!hasCompanyOwner && !hasPersonOwner) {
+  if (!hasCompanyOwner && !hasIndividualOwners) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
@@ -91,47 +90,40 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
     );
   }
 
-  // Person owner
-  if (hasPersonOwner) {
+  // Multiple individual owners
+  if (hasIndividualOwners && !hasCompanyOwner) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-medium">Legal Owner (Individual)</CardTitle>
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Legal Owners (Joint)
+            </CardTitle>
             <Button variant="ghost" size="sm" onClick={onEdit}>
               <Pencil className="h-4 w-4 mr-2" />
-              Change
+              Edit
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <User className="h-5 w-5 text-primary" />
+        <CardContent className="space-y-2">
+          {directOwners?.map((owner) => (
+            <div
+              key={owner.id}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-md bg-primary/10">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{getOwnerName(owner)}</p>
+                  <Badge variant="outline" className="text-xs">Individual</Badge>
+                </div>
               </div>
-              <div>
-                {partyLoading ? (
-                  <Skeleton className="h-5 w-32" />
-                ) : party ? (
-                  <>
-                    <p className="font-medium">{party.display_name}</p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs">Individual</Badge>
-                      {party.email && (
-                        <span className="text-xs">{party.email}</span>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">Person not found</p>
-                )}
-              </div>
+              <span className="text-lg font-bold">{formatPercent(Number(owner.percent))}</span>
             </div>
-            <div className="text-right">
-              <span className="text-xl font-bold">100%</span>
-            </div>
-          </div>
+          ))}
         </CardContent>
       </Card>
     );
@@ -184,7 +176,7 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
             <span className="text-xl font-bold">100%</span>
             <div className="mt-1">
               <Link 
-                to={`/companies/${property.legal_owner_company_id}`}
+                to={`/companies/${property?.legal_owner_company_id}`}
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
                 <ExternalLink className="h-3 w-3" />
