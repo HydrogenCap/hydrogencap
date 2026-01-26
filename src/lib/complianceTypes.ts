@@ -23,9 +23,9 @@ export type ComplianceType = typeof COMPLIANCE_TYPES[number];
 
 export type ComplianceStatus = 'valid' | 'expiring_soon' | 'expired' | 'unknown';
 
-export type ResponsibleParty = 'COHO' | 'Agent' | 'Contractor' | 'Owner';
+export type ResponsibleParty = 'Agent' | 'Contractor' | 'Owner';
 
-export const RESPONSIBLE_PARTIES: ResponsibleParty[] = ['COHO', 'Agent', 'Contractor', 'Owner'];
+export const RESPONSIBLE_PARTIES: ResponsibleParty[] = ['Agent', 'Contractor', 'Owner'];
 
 export const DEFAULT_REMINDER_DAYS = [90, 60, 30, 0];
 
@@ -44,7 +44,6 @@ export interface ComplianceItem {
   reminder_days: number[];
   responsible_party: string;
   notes: string | null;
-  is_coho_required: boolean;
   created_at: string;
   updated_at: string;
   documents?: ComplianceDocument[];

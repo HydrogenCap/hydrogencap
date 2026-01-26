@@ -4,7 +4,6 @@ import { Shield, Filter, AlertTriangle, Building2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +28,6 @@ export default function Compliance() {
   const { data: properties } = useProperties();
   const [statusFilter, setStatusFilter] = useState<ComplianceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [cohoOnlyFilter, setCohoOnlyFilter] = useState(false);
 
   // Create property lookup map
   const propertyMap = useMemo(() => {
@@ -70,14 +68,9 @@ export default function Compliance() {
         return false;
       }
       
-      // COHO only filter
-      if (cohoOnlyFilter && !item.is_coho_required) {
-        return false;
-      }
-      
       return true;
     });
-  }, [items, statusFilter, typeFilter, cohoOnlyFilter]);
+  }, [items, statusFilter, typeFilter]);
 
   // Group items by property
   const groupedByProperty = useMemo(() => {
@@ -202,15 +195,6 @@ export default function Compliance() {
               ))}
             </SelectContent>
           </Select>
-
-          <div className="flex items-center gap-2">
-            <Switch
-              id="coho-only"
-              checked={cohoOnlyFilter}
-              onCheckedChange={setCohoOnlyFilter}
-            />
-            <label htmlFor="coho-only" className="text-sm">COHO Required Only</label>
-          </div>
         </div>
 
         {/* Compliance items grouped by property */}
@@ -273,12 +257,7 @@ export default function Compliance() {
                     <div className="divide-y">
                       {propertyItems.map(item => (
                         <div key={item.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium">{item.compliance_type}</span>
-                            {item.is_coho_required && (
-                              <Badge variant="outline" className="text-xs">COHO</Badge>
-                            )}
-                          </div>
+                        <span className="font-medium">{item.compliance_type}</span>
                           <ComplianceStatusBadge expiryDate={item.expiry_date} />
                         </div>
                       ))}
