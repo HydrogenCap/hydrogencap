@@ -76,26 +76,28 @@ function RequirementRow({
   const statusLabel = getRequirementStatusLabel(requirement.status, requirement.daysUntilExpiry);
   const statusColor = getRequirementStatusColor(requirement.status);
   
+  const rowStyles = {
+    missing: 'bg-destructive/10 border border-destructive/20',
+    expired: 'bg-destructive/10 border border-destructive/20',
+    expiring_soon: 'bg-amber-500/10 border border-amber-500/20',
+    valid: 'bg-muted/30 border border-transparent',
+    not_required: 'bg-muted/20 border border-transparent opacity-60',
+  };
+
   return (
-    <div className={`flex items-center justify-between py-2 px-3 rounded-lg ${
-      requirement.status === 'missing' || requirement.status === 'expired' 
-        ? 'bg-red-50 dark:bg-red-900/10' 
-        : requirement.status === 'expiring_soon'
-        ? 'bg-amber-50 dark:bg-amber-900/10'
-        : 'bg-muted/30'
-    }`}>
-      <div className="flex items-center gap-3">
+    <div className={`flex items-center justify-between py-3 px-4 rounded-lg ${rowStyles[requirement.status]}`}>
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <StatusIcon status={requirement.status} />
-        <div>
+        <div className="flex items-center gap-1.5 min-w-0">
           <span className={`font-medium text-sm ${
-            requirement.status === 'not_required' ? 'text-muted-foreground' : ''
+            requirement.status === 'not_required' ? 'text-muted-foreground' : 'text-foreground'
           }`}>
             {requirement.type}
           </span>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3 w-3 text-muted-foreground ml-1 inline cursor-help" />
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help flex-shrink-0" />
               </TooltipTrigger>
               <TooltipContent>
                 <p className="max-w-xs text-xs">{requirement.reason}</p>
@@ -105,15 +107,15 @@ function RequirementRow({
         </div>
       </div>
       
-      <div className="flex items-center gap-2">
-        <Badge className={`${statusColor} text-xs`}>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        <Badge className={`${statusColor} text-xs font-medium`}>
           {statusLabel}
         </Badge>
         
         {requirement.existingItem && requirement.hasDocument && (
-          <Button variant="ghost" size="sm" className="h-7 px-2" asChild>
+          <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
             <Link to={`/properties/${propertyId}?tab=compliance`}>
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-4 w-4" />
             </Link>
           </Button>
         )}
@@ -123,8 +125,8 @@ function RequirementRow({
             propertyId={propertyId} 
             defaultType={requirement.type}
             trigger={
-              <Button variant="outline" size="sm" className="h-7 px-2">
-                <Upload className="h-3 w-3 mr-1" />
+              <Button size="sm" className="h-8 px-3">
+                <Upload className="h-4 w-4 mr-1.5" />
                 Add
               </Button>
             }
