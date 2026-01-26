@@ -73,7 +73,6 @@ export function UnifiedOwnershipEditor({
   const [effectiveFrom, setEffectiveFrom] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [partySearchOpen, setPartySearchOpen] = useState(false);
-  const [partySearch, setPartySearch] = useState('');
 
   // New party creation
   const [showNewParty, setShowNewParty] = useState(false);
@@ -180,11 +179,8 @@ export function UnifiedOwnershipEditor({
 
   const selectedParty = parties?.find(p => p.id === ownerPartyId);
 
-  // Filter parties for search
-  const filteredParties = parties?.filter(p =>
-    p.display_name.toLowerCase().includes(partySearch.toLowerCase()) ||
-    (p.company_number && p.company_number.includes(partySearch))
-  ) || [];
+  // All parties - cmdk handles filtering based on the value prop
+  const allParties = parties || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -273,8 +269,6 @@ export function UnifiedOwnershipEditor({
                   <Command>
                     <CommandInput
                       placeholder="Search parties..."
-                      value={partySearch}
-                      onValueChange={setPartySearch}
                     />
                     <CommandList>
                       <CommandEmpty>
@@ -286,19 +280,18 @@ export function UnifiedOwnershipEditor({
                             size="sm"
                             onClick={() => {
                               setShowNewParty(true);
-                              setNewPartyName(partySearch);
                               setPartySearchOpen(false);
                             }}
                           >
-                            Create "{partySearch}"
+                            + Create new party
                           </Button>
                         </div>
                       </CommandEmpty>
                       <CommandGroup>
-                        {filteredParties.map((party) => (
+                        {allParties.map((party) => (
                           <CommandItem
                             key={party.id}
-                            value={party.id}
+                            value={`${party.display_name} ${party.company_number || ''}`}
                             onSelect={() => {
                               setOwnerPartyId(party.id);
                               setPartySearchOpen(false);
