@@ -17,6 +17,7 @@ import { StockConditionSection } from '@/components/dashboard/StockConditionSect
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
+import { ComplianceAlertsWidget } from '@/components/dashboard/ComplianceAlertsWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
   formatGBP,
@@ -699,6 +700,9 @@ function DashboardPage() {
 
         {/* Stock Condition Section */}
         <StockConditionSection />
+
+        {/* Compliance Alerts */}
+        <ComplianceAlertsWidget />
 
         {/* Recent Activity */}
         <RecentActivityWidget />

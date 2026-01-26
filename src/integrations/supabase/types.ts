@@ -216,6 +216,116 @@ export type Database = {
           },
         ]
       }
+      compliance_documents: {
+        Row: {
+          archived_at: string | null
+          compliance_item_id: string
+          file_type: string | null
+          file_url: string
+          id: string
+          is_current: boolean | null
+          notes: string | null
+          original_file_name: string
+          uploaded_at: string
+          uploaded_by: string | null
+          version_number: number | null
+        }
+        Insert: {
+          archived_at?: string | null
+          compliance_item_id: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          is_current?: boolean | null
+          notes?: string | null
+          original_file_name: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          version_number?: number | null
+        }
+        Update: {
+          archived_at?: string | null
+          compliance_item_id?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          is_current?: boolean | null
+          notes?: string | null
+          original_file_name?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          version_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_documents_compliance_item_id_fkey"
+            columns: ["compliance_item_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_items: {
+        Row: {
+          compliance_type: string
+          created_at: string
+          expiry_date: string | null
+          id: string
+          is_coho_required: boolean | null
+          issue_date: string | null
+          notes: string | null
+          org_id: string
+          property_id: string
+          reminder_days: number[] | null
+          responsible_party: string | null
+          updated_at: string
+        }
+        Insert: {
+          compliance_type: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          is_coho_required?: boolean | null
+          issue_date?: string | null
+          notes?: string | null
+          org_id: string
+          property_id: string
+          reminder_days?: number[] | null
+          responsible_party?: string | null
+          updated_at?: string
+        }
+        Update: {
+          compliance_type?: string
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          is_coho_required?: boolean | null
+          issue_date?: string | null
+          notes?: string | null
+          org_id?: string
+          property_id?: string
+          reminder_days?: number[] | null
+          responsible_party?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_items_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       costs: {
         Row: {
           bills_gbp_manual: number | null

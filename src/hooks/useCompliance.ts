@@ -1,0 +1,243 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import type { ComplianceItem, ComplianceDocument } from '@/lib/complianceTypes';
+
+async function getUserOrgId(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('memberships')
+    .select('org_id')
+    .limit(1)
+    .maybeSingle();
+  
+  if (error || !data) return null;
+  return data.org_id;
+}
+
+// Fetch compliance items for a property
+export function usePropertyCompliance(propertyId: string | undefined) {
+  return useQuery({
+    queryKey: ['compliance', propertyId],
+    queryFn: async () => {
+      if (!propertyId) return [];
+      
+      const { data, error } = await supabase
+        .from('compliance_items')
+        .select(`
+          *,
+          documents:compliance_documents(*)
+        `)
+        .eq('property_id', propertyId)
+        .order('expiry_date', { ascending: true, nullsFirst: false });
+
+      if (error) throw error;
+      return data as (ComplianceItem & { documents: ComplianceDocument[] })[];
+    },
+    enabled: !!propertyId,
+  });
+}
+
+// Fetch all compliance items across portfolio
+export function useAllCompliance() {
+  return useQuery({
+    queryKey: ['compliance', 'all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('compliance_items')
+        .select(`
+          *,
+          documents:compliance_documents(*)
+        `)
+        .order('expiry_date', { ascending: true, nullsFirst: false });
+
+      if (error) throw error;
+      return data as (ComplianceItem & { documents: ComplianceDocument[] })[];
+    },
+  });
+}
+
+// Create compliance item
+export function useCreateComplianceItem() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (item: Omit<ComplianceItem, 'id' | 'org_id' | 'created_at' | 'updated_at' | 'documents'>) => {
+      const orgId = await getUserOrgId();
+      if (!orgId) throw new Error('No organization found');
+
+      const { data, error } = await supabase
+        .from('compliance_items')
+        .insert({
+          ...item,
+          org_id: orgId,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['compliance', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+    },
+  });
+}
+
+// Update compliance item
+export function useUpdateComplianceItem() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...item }: Partial<ComplianceItem> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('compliance_items')
+        .update(item)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['compliance', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+    },
+  });
+}
+
+// Delete compliance item
+export function useDeleteComplianceItem() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
+      const { error } = await supabase
+        .from('compliance_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { propertyId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+    },
+  });
+}
+
+// Upload compliance document
+export function useUploadComplianceDocument() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({
+      complianceItemId,
+      propertyId,
+      file,
+      notes,
+    }: {
+      complianceItemId: string;
+      propertyId: string;
+      file: File;
+      notes?: string;
+    }) => {
+      // Get user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get current version number
+      const { data: existingDocs } = await supabase
+        .from('compliance_documents')
+        .select('version_number')
+        .eq('compliance_item_id', complianceItemId)
+        .order('version_number', { ascending: false })
+        .limit(1);
+
+      const nextVersion = existingDocs && existingDocs.length > 0 
+        ? existingDocs[0].version_number + 1 
+        : 1;
+
+      // Upload file
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${propertyId}/${complianceItemId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('compliance')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('compliance')
+        .getPublicUrl(fileName);
+
+      // Archive previous current documents
+      await supabase
+        .from('compliance_documents')
+        .update({ is_current: false, archived_at: new Date().toISOString() })
+        .eq('compliance_item_id', complianceItemId)
+        .eq('is_current', true);
+
+      // Create document record
+      const { data, error } = await supabase
+        .from('compliance_documents')
+        .insert({
+          compliance_item_id: complianceItemId,
+          file_url: urlData.publicUrl,
+          original_file_name: file.name,
+          file_type: file.type,
+          uploaded_by: user.id,
+          is_current: true,
+          version_number: nextVersion,
+          notes,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data, propertyId };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['compliance', result.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+    },
+  });
+}
+
+// Delete compliance document
+export function useDeleteComplianceDocument() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      propertyId,
+      fileUrl 
+    }: { 
+      id: string; 
+      propertyId: string;
+      fileUrl: string;
+    }) => {
+      // Delete from storage
+      const path = fileUrl.split('/compliance/')[1];
+      if (path) {
+        await supabase.storage.from('compliance').remove([path]);
+      }
+
+      // Delete record
+      const { error } = await supabase
+        .from('compliance_documents')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { propertyId };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['compliance', result.propertyId] });
+    },
+  });
+}

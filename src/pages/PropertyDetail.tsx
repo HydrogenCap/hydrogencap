@@ -13,7 +13,7 @@ import { LocationRegistryCard, PropertyMediaHeader } from '@/components/property
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
-
+import { ComplianceTab } from '@/components/compliance';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
@@ -271,6 +271,7 @@ function PropertyDetailPage() {
             <TabsTrigger value="finance">Finance & Refinance</TabsTrigger>
             <TabsTrigger value="costs">Costs</TabsTrigger>
             <TabsTrigger value="passport">Passport</TabsTrigger>
+            <TabsTrigger value="compliance">Compliance</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -537,6 +538,10 @@ function PropertyDetailPage() {
 
           <TabsContent value="passport">
             <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
+          </TabsContent>
+
+          <TabsContent value="compliance" className="space-y-4">
+            <ComplianceTab propertyId={id!} />
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-4">
