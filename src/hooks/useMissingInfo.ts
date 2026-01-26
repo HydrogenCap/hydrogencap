@@ -37,6 +37,7 @@ export const FINANCE_FIELDS: FieldDefinition[] = [
   { key: 'lender', label: 'Lender Name', type: 'text' },
   { key: 'current_mortgage_balance_gbp', label: 'Current Balance', type: 'currency' },
   { key: 'interest_rate_percent', label: 'Interest Rate', type: 'percent' },
+  { key: 'mortgage_type', label: 'Mortgage Type', type: 'select', options: ['BTL', 'Bridging Loan', 'Principal Residence'] },
   { key: 'capital_or_interest', label: 'Repayment Type', type: 'select', options: ['interest', 'capital'] },
   { key: 'fixed_or_variable', label: 'Fixed or Variable', type: 'select', options: ['fixed', 'variable', 'tracker'] },
   { key: 'fixed_rate_expires', label: 'Product End Date', type: 'date' },
