@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Activity, TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Activity, TrendingUp, TrendingDown, ExternalLink, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -13,9 +13,11 @@ import {
   getHealthStatus,
   HealthScoreBreakdown,
 } from '@/lib/calculations';
+import { cn } from '@/lib/utils';
 
 interface PortfolioHealthWidgetProps {
   properties: PropertyWithFinancials[];
+  onClick?: () => void;
 }
 
 interface PropertyScore {
@@ -24,7 +26,8 @@ interface PropertyScore {
   score: HealthScoreBreakdown;
 }
 
-export function PortfolioHealthWidget({ properties }: PortfolioHealthWidgetProps) {
+export function PortfolioHealthWidget({ properties, onClick }: PortfolioHealthWidgetProps) {
+  const navigate = useNavigate();
   const propertyScores = useMemo<PropertyScore[]>(() => {
     const currentYear = new Date().getFullYear();
     
@@ -98,13 +101,42 @@ export function PortfolioHealthWidget({ properties }: PortfolioHealthWidgetProps
     danger: 'bg-destructive',
   };
 
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
-    <Card className="bg-card border-border">
-      <CardHeader>
+    <Card 
+      className={cn(
+        "bg-card border-border transition-all duration-200",
+        onClick && [
+          "cursor-pointer",
+          "hover:bg-muted/50 hover:border-primary/50",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "active:scale-[0.99]",
+        ]
+      )}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={handleCardClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      aria-label={onClick ? "View details for Portfolio Health" : undefined}
+    >
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5" />
           Portfolio Health
         </CardTitle>
+        {onClick && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Overall Score */}
