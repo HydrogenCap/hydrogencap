@@ -13,6 +13,7 @@ const COMPLIANCE_DOC_TYPES = [
   "epc_certificate",             // EPC
   "fire_alarm_certificate",
   "emergency_lighting_certificate",
+  "fire_suppression_certificate", // Fire suppression system inspection
   "pat_testing",
   "fire_risk_assessment",
   "hmo_licence",
@@ -31,6 +32,7 @@ const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "epc_certificate": "EPC",
   "fire_alarm_certificate": "Fire Alarm Certificate",
   "emergency_lighting_certificate": "Emergency Lighting Certificate",
+  "fire_suppression_certificate": "Fire Suppression System Certificate",
   "pat_testing": "PAT Testing",
   "fire_risk_assessment": "Fire Risk Assessment (FRA)",
   "hmo_licence": "HMO Licence",

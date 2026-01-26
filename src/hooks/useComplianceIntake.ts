@@ -10,6 +10,7 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "epc_certificate": "EPC",
   "fire_alarm_certificate": "Fire Alarm Certificate",
   "emergency_lighting_certificate": "Emergency Lighting Certificate",
+  "fire_suppression_certificate": "Fire Suppression System Certificate",
   "pat_testing": "PAT Testing",
   "fire_risk_assessment": "Fire Risk Assessment (FRA)",
   "hmo_licence": "HMO Licence",
@@ -28,6 +29,7 @@ const STANDARD_VALIDITY_YEARS: Record<string, number> = {
   "epc_certificate": 10,             // EPC - 10 years
   "fire_alarm_certificate": 1,       // Annual
   "emergency_lighting_certificate": 1, // Annual
+  "fire_suppression_certificate": 1, // Annual inspection
   "pat_testing": 1,                  // Annual for HMOs
   "fire_risk_assessment": 1,         // Annual review recommended
   "hmo_licence": 5,                  // Typically 5 years
