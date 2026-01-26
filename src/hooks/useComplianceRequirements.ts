@@ -31,7 +31,9 @@ export function usePropertyWithFeatures(propertyId: string | undefined) {
           occupancy_status,
           is_hmo_licensed,
           selective_licence_required,
-          co_alarm_required
+          co_alarm_required,
+          epc_required,
+          listed_status
         `)
         .eq('id', propertyId)
         .maybeSingle();
@@ -62,6 +64,8 @@ export function useAllPropertiesWithFeatures() {
           is_hmo_licensed,
           selective_licence_required,
           co_alarm_required,
+          epc_required,
+          listed_status,
           lifecycle_type
         `)
         // Only include core_rental properties for compliance tracking
