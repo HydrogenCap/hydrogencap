@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, AlertCircle, ArrowRight, Users, User, Building2 } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2 } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -562,12 +562,27 @@ function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Portfolio Health - uses core rental only */}
           {coreRentalProperties && coreRentalProperties.length > 0 && (
-            <PortfolioHealthWidget properties={coreRentalProperties} />
+            <PortfolioHealthWidget 
+              properties={coreRentalProperties} 
+              onClick={() => handleMetricClick('health')}
+            />
           )}
 
-          {/* Risks Panel - core rental only */}
-          <Card className={`bg-card border-border ${coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}`}>
-            <CardHeader>
+          {/* Risks Panel - core rental only - clickable */}
+          <Card 
+            className={`bg-card border-border transition-all duration-200 cursor-pointer hover:bg-muted/50 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.99] ${coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}`}
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate('/actions')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/actions');
+              }
+            }}
+            aria-label="View all portfolio risks"
+          >
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-warning" />
                 Portfolio Risks
@@ -577,6 +592,7 @@ function DashboardPage() {
                   </Badge>
                 )}
               </CardTitle>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               {risks.length === 0 ? (
@@ -587,10 +603,9 @@ function DashboardPage() {
               ) : (
                 <div className="space-y-3 max-h-[300px] overflow-y-auto">
                   {risks.slice(0, 10).map(risk => (
-                    <Link
+                    <div
                       key={risk.id}
-                      to={`/properties/${risk.propertyId}`}
-                      className="block p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      className="block p-3 rounded-lg bg-muted/50"
                     >
                       <div className="flex items-start gap-2">
                         <Badge
@@ -603,9 +618,8 @@ function DashboardPage() {
                           <p className="text-sm font-medium truncate">{risk.address}</p>
                           <p className="text-xs text-muted-foreground">{risk.message}</p>
                         </div>
-                        <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                       </div>
-                    </Link>
+                    </div>
                   ))}
                   {risks.length > 10 && (
                     <p className="text-center text-xs text-muted-foreground">
@@ -616,22 +630,30 @@ function DashboardPage() {
               )}
             </CardContent>
           </Card>
-          {/* Property Map - Uses shared PropertyMap component */}
-          <Card className="lg:col-span-2 bg-card border-border">
+          
+          {/* Property Map - Uses shared PropertyMap component - clickable */}
+          <Card 
+            className="lg:col-span-2 bg-card border-border transition-all duration-200 cursor-pointer hover:bg-muted/50 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate('/dashboard/map')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/dashboard/map');
+              }
+            }}
+            aria-label="View full portfolio map"
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle>Property Map</CardTitle>
-              <Link 
-                to="/dashboard/map"
-                className="text-xs text-primary hover:underline"
-              >
-                View Full Map →
-              </Link>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               {hasPropertiesWithCoords ? (
                 <PropertyMap
                   properties={filteredProperties || []}
-                  className="h-[300px] rounded-lg"
+                  className="h-[300px] rounded-lg pointer-events-none"
                 />
               ) : (
                 <div className="h-[300px] rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
