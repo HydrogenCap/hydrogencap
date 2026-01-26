@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Pencil, Plus, ExternalLink, Calendar, MapPin, RefreshCw } from 'lucide-react';
+import { Building2, Pencil, Plus, ExternalLink, Calendar, MapPin, RefreshCw, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useProperty } from '@/hooks/useProperties';
 import { useCompany, useUpdateCompany } from '@/hooks/useCompanies';
+import { useParty } from '@/hooks/useParties';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { ComplianceStatusBadge } from '@/components/companies/ComplianceStatusBadge';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,9 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
   const { data: company, isLoading: companyLoading } = useCompany(
     property?.legal_owner_company_id || undefined
+  );
+  const { data: party, isLoading: partyLoading } = useParty(
+    property?.legal_owner_party_id || undefined
   );
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const updateCompany = useUpdateCompany();
@@ -55,7 +59,7 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">Legal Owner (SPV)</CardTitle>
+          <CardTitle className="text-base font-medium">Legal Owner</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-16 w-full" />
@@ -64,11 +68,15 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
     );
   }
 
-  if (!property?.legal_owner_company_id) {
+  const hasCompanyOwner = property?.legal_owner_company_id;
+  const hasPersonOwner = property?.legal_owner_party_id;
+
+  // No owner set
+  if (!hasCompanyOwner && !hasPersonOwner) {
     return (
       <Card className="bg-card border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium">Legal Owner (SPV)</CardTitle>
+          <CardTitle className="text-base font-medium">Legal Owner</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between p-4 rounded-lg border-2 border-dashed border-muted">
@@ -83,6 +91,53 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
     );
   }
 
+  // Person owner
+  if (hasPersonOwner) {
+    return (
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium">Legal Owner (Individual)</CardTitle>
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Change
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                {partyLoading ? (
+                  <Skeleton className="h-5 w-32" />
+                ) : party ? (
+                  <>
+                    <p className="font-medium">{party.display_name}</p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="text-xs">Individual</Badge>
+                      {party.email && (
+                        <span className="text-xs">{party.email}</span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">Person not found</p>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-xl font-bold">100%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Company owner (existing logic)
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-3">
