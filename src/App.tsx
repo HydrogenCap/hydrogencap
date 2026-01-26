@@ -27,6 +27,7 @@ import MissingInfo from "./pages/MissingInfo";
 import Settings from "./pages/Settings";
 import DashboardMap from "./pages/DashboardMap";
 import Timeline from "./pages/Timeline";
+import Compliance from "./pages/Compliance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -171,6 +172,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MissingInfo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/compliance"
+              element={
+                <ProtectedRoute>
+                  <Compliance />
                 </ProtectedRoute>
               }
             />
