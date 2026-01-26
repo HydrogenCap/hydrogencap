@@ -31,14 +31,11 @@ import logoImage from '@/assets/logo.png';
 
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { title: 'Map', icon: Map, href: '/dashboard/map' },
-  { title: 'Properties', icon: Building2, href: '/properties' },
+  { title: 'Portfolio', icon: Building2, href: '/properties' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Compliance', icon: Shield, href: '/compliance' },
-  { title: 'Timeline', icon: Calendar, href: '/timeline' },
-  { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
-  { title: 'Document Inbox', icon: Inbox, href: '/inbox', showBadge: true },
+  { title: 'Inbox', icon: Inbox, href: '/inbox', showBadge: true },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 
