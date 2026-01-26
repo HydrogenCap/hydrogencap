@@ -25,3 +25,9 @@ verify_jwt = false
 
 [functions.property-lookup]
 verify_jwt = false
+
+[functions.generate-passport-suggestions]
+verify_jwt = false
+
+[functions.apply-passport-suggestions]
+verify_jwt = false
