@@ -270,9 +270,12 @@ export type Database = {
         Row: {
           compliance_type: string
           created_at: string
+          exclusion_reason: string | null
           expiry_date: string | null
           id: string
           is_coho_required: boolean | null
+          is_manually_excluded: boolean | null
+          is_required: boolean | null
           issue_date: string | null
           notes: string | null
           org_id: string
@@ -284,9 +287,12 @@ export type Database = {
         Insert: {
           compliance_type: string
           created_at?: string
+          exclusion_reason?: string | null
           expiry_date?: string | null
           id?: string
           is_coho_required?: boolean | null
+          is_manually_excluded?: boolean | null
+          is_required?: boolean | null
           issue_date?: string | null
           notes?: string | null
           org_id: string
@@ -298,9 +304,12 @@ export type Database = {
         Update: {
           compliance_type?: string
           created_at?: string
+          exclusion_reason?: string | null
           expiry_date?: string | null
           id?: string
           is_coho_required?: boolean | null
+          is_manually_excluded?: boolean | null
+          is_required?: boolean | null
           issue_date?: string | null
           notes?: string | null
           org_id?: string
@@ -1371,23 +1380,30 @@ export type Database = {
           address_line: string
           address_line2: string | null
           area_name: string | null
+          asset_category: string | null
           bathrooms: number | null
           beds: number | null
           beneficial_override_notes: string | null
           beneficial_override_percent: number | null
+          co_alarm_required: boolean | null
           country: string | null
           county: string | null
           created_at: string
           current_value_gbp: number | null
           epc_rating: string | null
           epc_required: boolean | null
+          fire_alarm_grade: string | null
           formatted_address: string | null
           geocode_confidence: string | null
           geocode_error: string | null
           geocode_source: string | null
           geocode_status: string | null
           geocoded_at: string | null
+          has_emergency_lighting: boolean | null
+          has_fire_alarm_system: boolean | null
+          has_gas: boolean | null
           id: string
+          is_hmo_licensed: boolean | null
           land_registry_link: string | null
           latitude: number | null
           lease_years_remaining: number | null
@@ -1396,6 +1412,7 @@ export type Database = {
           listed_status: string | null
           longitude: number | null
           notes: string | null
+          occupancy_status: string | null
           org_id: string
           original_purchase_date: string | null
           ownership_entity: string | null
@@ -1405,6 +1422,7 @@ export type Database = {
           postcode_area: string | null
           property_type: string | null
           purchase_price_gbp: number | null
+          selective_licence_required: boolean | null
           tenure: string | null
           title_number: string | null
           town_city: string | null
@@ -1415,23 +1433,30 @@ export type Database = {
           address_line: string
           address_line2?: string | null
           area_name?: string | null
+          asset_category?: string | null
           bathrooms?: number | null
           beds?: number | null
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
+          co_alarm_required?: boolean | null
           country?: string | null
           county?: string | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
           epc_required?: boolean | null
+          fire_alarm_grade?: string | null
           formatted_address?: string | null
           geocode_confidence?: string | null
           geocode_error?: string | null
           geocode_source?: string | null
           geocode_status?: string | null
           geocoded_at?: string | null
+          has_emergency_lighting?: boolean | null
+          has_fire_alarm_system?: boolean | null
+          has_gas?: boolean | null
           id?: string
+          is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
           latitude?: number | null
           lease_years_remaining?: number | null
@@ -1440,6 +1465,7 @@ export type Database = {
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
+          occupancy_status?: string | null
           org_id: string
           original_purchase_date?: string | null
           ownership_entity?: string | null
@@ -1449,6 +1475,7 @@ export type Database = {
           postcode_area?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
+          selective_licence_required?: boolean | null
           tenure?: string | null
           title_number?: string | null
           town_city?: string | null
@@ -1459,23 +1486,30 @@ export type Database = {
           address_line?: string
           address_line2?: string | null
           area_name?: string | null
+          asset_category?: string | null
           bathrooms?: number | null
           beds?: number | null
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
+          co_alarm_required?: boolean | null
           country?: string | null
           county?: string | null
           created_at?: string
           current_value_gbp?: number | null
           epc_rating?: string | null
           epc_required?: boolean | null
+          fire_alarm_grade?: string | null
           formatted_address?: string | null
           geocode_confidence?: string | null
           geocode_error?: string | null
           geocode_source?: string | null
           geocode_status?: string | null
           geocoded_at?: string | null
+          has_emergency_lighting?: boolean | null
+          has_fire_alarm_system?: boolean | null
+          has_gas?: boolean | null
           id?: string
+          is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
           latitude?: number | null
           lease_years_remaining?: number | null
@@ -1484,6 +1518,7 @@ export type Database = {
           listed_status?: string | null
           longitude?: number | null
           notes?: string | null
+          occupancy_status?: string | null
           org_id?: string
           original_purchase_date?: string | null
           ownership_entity?: string | null
@@ -1493,6 +1528,7 @@ export type Database = {
           postcode_area?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
+          selective_licence_required?: boolean | null
           tenure?: string | null
           title_number?: string | null
           town_city?: string | null

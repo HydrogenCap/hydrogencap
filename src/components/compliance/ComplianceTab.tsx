@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { AlertTriangle, Filter, Shield } from 'lucide-react';
+import { AlertTriangle, Filter, Shield, Settings2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -13,7 +14,10 @@ import {
 } from '@/components/ui/select';
 import { ComplianceItemRow } from './ComplianceItemRow';
 import { AddComplianceItemDialog } from './AddComplianceItemDialog';
+import { ComplianceChecklist } from './ComplianceChecklist';
+import { PropertyFeaturesEditor } from './PropertyFeaturesEditor';
 import { usePropertyCompliance } from '@/hooks/useCompliance';
+import { usePropertyWithFeatures } from '@/hooks/useComplianceRequirements';
 import { 
   getComplianceItemStatus, 
   COMPLIANCE_TYPES,
@@ -26,7 +30,9 @@ interface ComplianceTabProps {
 }
 
 export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProps) {
-  const { data: items, isLoading } = usePropertyCompliance(propertyId);
+  const { data: items, isLoading: loadingItems } = usePropertyCompliance(propertyId);
+  const { data: propertyFeatures, isLoading: loadingFeatures } = usePropertyWithFeatures(propertyId);
+  const [viewMode, setViewMode] = useState<'checklist' | 'items'>('checklist');
   const [statusFilter, setStatusFilter] = useState<ComplianceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
@@ -67,8 +73,21 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
     });
   }, [items, statusFilter, typeFilter]);
 
-  // Check for expired items to show banner
   const hasExpired = summary.expired > 0;
+  const isLoading = loadingItems || loadingFeatures;
+  
+  // Default property features
+  const defaultFeatures = {
+    has_gas: propertyFeatures?.has_gas ?? true,
+    has_fire_alarm_system: propertyFeatures?.has_fire_alarm_system ?? false,
+    fire_alarm_grade: propertyFeatures?.fire_alarm_grade ?? null,
+    has_emergency_lighting: propertyFeatures?.has_emergency_lighting ?? false,
+    asset_category: propertyFeatures?.asset_category ?? 'Single Let',
+    occupancy_status: propertyFeatures?.occupancy_status ?? 'Occupied',
+    is_hmo_licensed: propertyFeatures?.is_hmo_licensed ?? false,
+    selective_licence_required: propertyFeatures?.selective_licence_required ?? false,
+    co_alarm_required: propertyFeatures?.co_alarm_required ?? true,
+  };
 
   if (isLoading) {
     return (
@@ -93,8 +112,29 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
         </Alert>
       )}
 
-      {/* Summary cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Property features configuration */}
+      <div className="flex items-center justify-between">
+        <PropertyFeaturesEditor 
+          propertyId={propertyId}
+          initialFeatures={defaultFeatures}
+        />
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'checklist' | 'items')}>
+          <TabsList>
+            <TabsTrigger value="checklist">Requirements Checklist</TabsTrigger>
+            <TabsTrigger value="items">Uploaded Items</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+      
+      {viewMode === 'checklist' ? (
+        <ComplianceChecklist 
+          propertyId={propertyId}
+          propertyAddress={propertyAddress}
+        />
+      ) : (
+        <>
+          {/* Summary cards */}
+          <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Items</CardTitle>
@@ -193,6 +233,8 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
             />
           ))}
         </div>
+      )}
+      </>
       )}
     </div>
   );
