@@ -25,6 +25,8 @@ import {
 import {
   PropertyMissingInfo,
   copyMissingToClipboard,
+  PROPERTY_CORE_FIELDS,
+  INCOME_FIELDS,
   FINANCE_FIELDS,
   INSURANCE_FIELDS,
   PASSPORT_FIELDS,
@@ -32,7 +34,7 @@ import {
   TERM_YEARS_FIELD,
 } from '@/hooks/useMissingInfo';
 import { MissingFieldEditor } from './MissingFieldEditor';
-import { useUpdateLoan } from '@/hooks/useProperties';
+import { useUpdateLoan, useUpdateProperty, useUpsertIncome } from '@/hooks/useProperties';
 import { useUpsertInsurancePolicy } from '@/hooks/useMissingInfo';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { toast } from 'sonner';
@@ -43,6 +45,8 @@ interface Props {
 
 export function MissingInfoPropertyRow({ item }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const [propertyChanges, setPropertyChanges] = useState<Record<string, any>>({});
+  const [incomeChanges, setIncomeChanges] = useState<Record<string, any>>({});
   const [financeChanges, setFinanceChanges] = useState<Record<string, any>>({});
   const [insuranceChanges, setInsuranceChanges] = useState<Record<string, any>>({});
   const [passportChanges, setPassportChanges] = useState<Record<string, any>>({});
@@ -50,11 +54,15 @@ export function MissingInfoPropertyRow({ item }: Props) {
   const [showPaymentOverride, setShowPaymentOverride] = useState(false);
   const [paymentOverrideValue, setPaymentOverrideValue] = useState<number | undefined>();
 
+  const updateProperty = useUpdateProperty();
   const updateLoan = useUpdateLoan();
+  const upsertIncome = useUpsertIncome();
   const upsertInsurance = useUpsertInsurancePolicy();
   const upsertPassport = useUpsertPassport();
 
   const hasChanges = 
+    Object.keys(propertyChanges).length > 0 ||
+    Object.keys(incomeChanges).length > 0 ||
     Object.keys(financeChanges).length > 0 || 
     Object.keys(insuranceChanges).length > 0 ||
     Object.keys(passportChanges).length > 0 ||
@@ -64,6 +72,10 @@ export function MissingInfoPropertyRow({ item }: Props) {
     switch (item.status) {
       case 'complete':
         return <Badge variant="secondary" className="bg-success/10 text-success">Complete</Badge>;
+      case 'missing_property':
+        return <Badge variant="secondary" className="bg-green-500/10 text-green-600">Missing Property</Badge>;
+      case 'missing_income':
+        return <Badge variant="secondary" className="bg-orange-500/10 text-orange-600">Missing Income</Badge>;
       case 'missing_finance':
         return <Badge variant="secondary" className="bg-amber-500/10 text-amber-600">Missing Finance</Badge>;
       case 'missing_insurance':
@@ -73,6 +85,14 @@ export function MissingInfoPropertyRow({ item }: Props) {
       case 'missing_multiple':
         return <Badge variant="destructive">Missing Multiple</Badge>;
     }
+  };
+
+  const handlePropertyChange = (field: string, value: any) => {
+    setPropertyChanges(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleIncomeChange = (field: string, value: any) => {
+    setIncomeChanges(prev => ({ ...prev, [field]: value }));
   };
 
   const handleFinanceChange = (field: string, value: any) => {
@@ -112,6 +132,24 @@ export function MissingInfoPropertyRow({ item }: Props) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Save property core changes
+      if (Object.keys(propertyChanges).length > 0) {
+        await updateProperty.mutateAsync({
+          id: item.property.id,
+          ...propertyChanges,
+        });
+      }
+
+      // Save income changes
+      if (Object.keys(incomeChanges).length > 0) {
+        const currentYear = new Date().getFullYear();
+        await upsertIncome.mutateAsync({
+          property_id: item.property.id,
+          year: currentYear,
+          ...incomeChanges,
+        });
+      }
+
       // Save finance changes
       const loan = item.property.loans?.[0];
       const hasFinanceChanges = Object.keys(financeChanges).length > 0;
@@ -150,6 +188,8 @@ export function MissingInfoPropertyRow({ item }: Props) {
       }
 
       toast.success('Changes saved successfully');
+      setPropertyChanges({});
+      setIncomeChanges({});
       setFinanceChanges({});
       setInsuranceChanges({});
       setPassportChanges({});
@@ -164,6 +204,8 @@ export function MissingInfoPropertyRow({ item }: Props) {
   };
 
   // Calculate remaining missing fields after pending changes
+  const remainingPropertyCoreMissing = item.missingPropertyCoreFields.filter(f => !(f in propertyChanges));
+  const remainingIncomeMissing = item.missingIncomeFields.filter(f => !(f in incomeChanges));
   const remainingFinanceMissing = item.missingFinanceFields.filter(f => !(f in financeChanges));
   const remainingInsuranceMissing = item.missingInsuranceFields.filter(f => !(f in insuranceChanges));
   const remainingPassportMissing = item.missingPassportFields.filter(f => !(f in passportChanges));
@@ -172,7 +214,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
   const hasCriticalMissing = item.missingCriticalPassportFields.length > 0;
 
   // Get the appropriate field definition (including term_years)
-  const getFieldDefinition = (fieldKey: string) => {
+  const getFinanceFieldDefinition = (fieldKey: string) => {
     if (fieldKey === 'term_years') return TERM_YEARS_FIELD;
     return FINANCE_FIELDS.find(f => f.key === fieldKey);
   };
@@ -254,6 +296,68 @@ export function MissingInfoPropertyRow({ item }: Props) {
 
         <CollapsibleContent>
           <div className="border-t px-6 py-4 space-y-6">
+            {/* Missing Property Core Fields */}
+            {item.missingPropertyCoreFields.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-green-600 mb-3 flex items-center gap-2">
+                  Missing Property Details ({remainingPropertyCoreMissing.length} remaining)
+                  {Object.keys(propertyChanges).length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {Object.keys(propertyChanges).length} filled
+                    </Badge>
+                  )}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {item.missingPropertyCoreFields.map(fieldKey => {
+                    const fieldDef = PROPERTY_CORE_FIELDS.find(f => f.key === fieldKey);
+                    if (!fieldDef) return null;
+                    const isFilled = fieldKey in propertyChanges;
+                    return (
+                      <div key={fieldKey} className={isFilled ? 'opacity-50' : ''}>
+                        <MissingFieldEditor
+                          field={fieldDef}
+                          value={propertyChanges[fieldKey]}
+                          onChange={val => handlePropertyChange(fieldKey, val)}
+                          isFilled={isFilled}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Missing Income Fields */}
+            {item.missingIncomeFields.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-orange-600 mb-3 flex items-center gap-2">
+                  Missing Income ({remainingIncomeMissing.length} remaining)
+                  {Object.keys(incomeChanges).length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {Object.keys(incomeChanges).length} filled
+                    </Badge>
+                  )}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {item.missingIncomeFields.map(fieldKey => {
+                    const fieldDef = INCOME_FIELDS.find(f => f.key === fieldKey);
+                    if (!fieldDef) return null;
+                    const isFilled = fieldKey in incomeChanges;
+                    return (
+                      <div key={fieldKey} className={isFilled ? 'opacity-50' : ''}>
+                        <MissingFieldEditor
+                          field={fieldDef}
+                          value={incomeChanges[fieldKey]}
+                          onChange={val => handleIncomeChange(fieldKey, val)}
+                          isFilled={isFilled}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Missing Finance Fields */}
             {item.missingFinanceFields.length > 0 && (
               <div>
@@ -267,7 +371,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {item.missingFinanceFields.map(fieldKey => {
-                    const fieldDef = getFieldDefinition(fieldKey);
+                    const fieldDef = getFinanceFieldDefinition(fieldKey);
                     if (!fieldDef) return null;
                     const isFilled = fieldKey in financeChanges;
                     return (
