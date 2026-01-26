@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { AlertTriangle, Filter, Shield, Settings2 } from 'lucide-react';
+import { AlertTriangle, Filter, Shield, Settings2, Construction } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,18 +23,23 @@ import {
   COMPLIANCE_TYPES,
   type ComplianceStatus 
 } from '@/lib/complianceTypes';
+import { LifecycleType } from '@/contexts/LifecycleFilterContext';
 
 interface ComplianceTabProps {
   propertyId: string;
   propertyAddress: string;
+  lifecycleType?: LifecycleType;
 }
 
-export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProps) {
+export function ComplianceTab({ propertyId, propertyAddress, lifecycleType = 'core_rental' }: ComplianceTabProps) {
   const { data: items, isLoading: loadingItems } = usePropertyCompliance(propertyId);
   const { data: propertyFeatures, isLoading: loadingFeatures } = usePropertyWithFeatures(propertyId);
   const [viewMode, setViewMode] = useState<'checklist' | 'items'>('checklist');
   const [statusFilter, setStatusFilter] = useState<ComplianceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  
+  // Check if property is in development mode
+  const isDevelopment = lifecycleType === 'development';
 
   // Calculate summary stats
   const summary = useMemo(() => {
@@ -100,8 +105,21 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
 
   return (
     <div className="space-y-6">
-      {/* Alert banner for expired compliance */}
-      {hasExpired && (
+      {/* Development mode banner */}
+      {isDevelopment && (
+        <Alert className="border-warning/30">
+          <Construction className="h-4 w-4 text-warning" />
+          <AlertTitle className="text-warning">Compliance Tracking Paused</AlertTitle>
+          <AlertDescription>
+            This property is currently in <strong>Development</strong> mode. Compliance tracking activates 
+            once the property becomes operational. Switch to <strong>Core Rental</strong> mode to enable 
+            full compliance enforcement, expiry reminders, and weekly compliance emails.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Alert banner for expired compliance - only for core rental */}
+      {!isDevelopment && hasExpired && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Compliance Alert</AlertTitle>

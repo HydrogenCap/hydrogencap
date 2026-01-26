@@ -14,6 +14,8 @@ import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
 import { ComplianceTab } from '@/components/compliance';
+import { LifecycleSwitcher, LifecycleBadge } from '@/components/property/LifecycleSwitcher';
+import { LifecycleType } from '@/contexts/LifecycleFilterContext';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
@@ -132,7 +134,14 @@ function PropertyDetailPage() {
             </Button>
             
             <div>
-              <h1 className="text-2xl font-bold">{property.address_line}</h1>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold">{property.address_line}</h1>
+                <LifecycleSwitcher 
+                  propertyId={property.id}
+                  currentLifecycle={(property.lifecycle_type as LifecycleType) || 'development'}
+                  operationalDate={property.operational_date}
+                />
+              </div>
               <div className="flex items-center gap-4 text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
@@ -397,7 +406,11 @@ function PropertyDetailPage() {
 
           {/* COMPLIANCE TAB */}
           <TabsContent value="compliance" className="space-y-4">
-            <ComplianceTab propertyId={id!} propertyAddress={property?.address_line || ''} />
+            <ComplianceTab 
+              propertyId={id!} 
+              propertyAddress={property?.address_line || ''} 
+              lifecycleType={(property?.lifecycle_type as LifecycleType) || 'development'}
+            />
           </TabsContent>
 
           {/* MEDIA & DOCS TAB - Merged */}
