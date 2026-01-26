@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.bulk-epc-enrich]
 verify_jwt = false
+
+[functions.bulk-price-paid-enrich]
+verify_jwt = false
