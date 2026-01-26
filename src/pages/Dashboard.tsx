@@ -15,6 +15,7 @@ import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
+import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import { usePortfolioAttributableMetrics } from '@/hooks/useBeneficialGroups';
 import {
@@ -703,6 +704,11 @@ function DashboardPage() {
           {/* Area Exposure - Uses dedicated component with normalization */}
           {properties && <AreaExposureChart properties={properties} />}
         </div>
+
+        {/* Beneficial Owners */}
+        {properties && properties.length > 0 && (
+          <BeneficialOwnerWidget properties={properties} />
+        )}
 
         {/* Stock Condition Section */}
         <StockConditionSection />
