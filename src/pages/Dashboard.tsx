@@ -501,22 +501,24 @@ function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className={`bg-card border-border ${risks.length > 0 ? 'border-warning/50' : 'border-success/50'}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Action Required
-              </CardTitle>
-              <AlertTriangle className={`h-4 w-4 ${risks.length > 0 ? 'text-warning' : 'text-success'}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${risks.length > 0 ? 'text-warning' : 'text-success'}`}>
-                {risks.length === 0 ? '✓' : risks.length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {risks.length === 0 ? 'All clear' : `${risks.filter(r => r.severity === 'critical').length} critical`}
-              </p>
-            </CardContent>
-          </Card>
+          <Link to="/actions">
+            <Card className={`bg-card border-border ${risks.length > 0 ? 'border-warning/50' : 'border-success/50'} hover:bg-muted/50 transition-colors cursor-pointer`}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Action Required
+                </CardTitle>
+                <AlertTriangle className={`h-4 w-4 ${risks.length > 0 ? 'text-warning' : 'text-success'}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${risks.length > 0 ? 'text-warning' : 'text-success'}`}>
+                  {risks.length === 0 ? '✓' : risks.length}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {risks.length === 0 ? 'All clear' : `${risks.filter(r => r.severity === 'critical').length} critical`}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Missing Info Shortcut Card */}
