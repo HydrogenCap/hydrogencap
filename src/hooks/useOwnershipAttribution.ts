@@ -417,9 +417,119 @@ async function fetchAllCompanyShareholders() {
 }
 
 /**
- * Hook: Get portfolio-wide ownership attribution (aggregated by owner)
+ * Fetch all companies with their party IDs for look-through
+ */
+async function fetchAllCompaniesWithParties() {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, legal_name, party_id');
+
+  if (error) throw error;
+  return data || [];
+}
+
+interface UltimateBeneficiary {
+  partyId: string;
+  partyName: string;
+  partyType: string;
+  effectivePercent: number;
+  pathDescription: string;
+}
+
+/**
+ * Recursively resolve ownership through holding company structures
+ * This traces through companies that are shareholders to find the ultimate beneficial owners
+ */
+function resolveUltimateBeneficiaries(
+  ownerPartyId: string,
+  ownerName: string,
+  ownerType: string,
+  ownershipPercent: number,
+  path: string,
+  companyShareholders: Array<{
+    subject_id: string;
+    percent: number;
+    notes: string | null;
+    owner_party: { id: string; display_name: string; party_type: string; company_number: string | null } | null;
+  }>,
+  companiesWithParties: Array<{ id: string; legal_name: string; party_id: string }>,
+  visited: Set<string> = new Set()
+): UltimateBeneficiary[] {
+  // Prevent infinite loops from circular ownership
+  if (visited.has(ownerPartyId)) {
+    return [];
+  }
+  visited.add(ownerPartyId);
+
+  // If owner is an individual, they are the ultimate beneficiary
+  if (ownerType === 'INDIVIDUAL') {
+    return [{
+      partyId: ownerPartyId,
+      partyName: ownerName,
+      partyType: 'INDIVIDUAL',
+      effectivePercent: ownershipPercent,
+      pathDescription: path,
+    }];
+  }
+
+  // If owner is a company, check if it has shareholders we can look through
+  const companyRecord = companiesWithParties.find(c => c.party_id === ownerPartyId);
+  if (!companyRecord) {
+    // No company record found - treat as terminal owner
+    return [{
+      partyId: ownerPartyId,
+      partyName: ownerName,
+      partyType: ownerType,
+      effectivePercent: ownershipPercent,
+      pathDescription: path,
+    }];
+  }
+
+  // Find shareholders of this company
+  const companyShareholdings = companyShareholders.filter(sh => sh.subject_id === companyRecord.id);
+  
+  if (companyShareholdings.length === 0) {
+    // No shareholders defined - treat company as terminal owner
+    return [{
+      partyId: ownerPartyId,
+      partyName: ownerName,
+      partyType: ownerType,
+      effectivePercent: ownershipPercent,
+      pathDescription: path,
+    }];
+  }
+
+  // Recursively resolve each shareholder
+  const ultimateBeneficiaries: UltimateBeneficiary[] = [];
+  for (const holding of companyShareholdings) {
+    if (!holding.owner_party) continue;
+    
+    const shareholderPercent = Number(holding.percent);
+    const effectivePercent = (ownershipPercent / 100) * (shareholderPercent / 100) * 100;
+    const newPath = `${path} → ${companyRecord.legal_name} (${shareholderPercent.toFixed(1)}%)`;
+    
+    const resolved = resolveUltimateBeneficiaries(
+      holding.owner_party.id,
+      holding.owner_party.display_name,
+      holding.owner_party.party_type,
+      effectivePercent,
+      newPath,
+      companyShareholders,
+      companiesWithParties,
+      new Set(visited)
+    );
+    
+    ultimateBeneficiaries.push(...resolved);
+  }
+
+  return ultimateBeneficiaries;
+}
+
+/**
+ * Hook: Get portfolio-wide ownership attribution (aggregated by ultimate beneficial owner)
  * Uses beneficial ownership split from ownership_links as the source of truth
  * Falls back to SPV shareholders when no direct beneficial ownership exists
+ * Performs full look-through for holding company structures (e.g., Hydrogen Capital → David O'Neill)
  */
 export function usePortfolioAttribution(properties: PropertyWithFinancials[] | undefined) {
   return useQuery({
@@ -427,10 +537,19 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
     queryFn: async () => {
       if (!properties || properties.length === 0) return [];
 
-      const [directOwners, companyShareholders] = await Promise.all([
+      const [directOwners, companyShareholders, companiesWithParties] = await Promise.all([
         fetchAllBeneficialOwnership(),
         fetchAllCompanyShareholders(),
+        fetchAllCompaniesWithParties(),
       ]);
+      
+      // Transform companyShareholders to the format needed for look-through
+      const shareholdersForLookthrough = companyShareholders.map(sh => ({
+        subject_id: sh.subject_id,
+        percent: Number(sh.percent),
+        notes: sh.notes,
+        owner_party: sh.owner_party as { id: string; display_name: string; party_type: string; company_number: string | null } | null,
+      }));
       
       const ownerMap = new Map<string, OwnerAttribution>();
 
@@ -449,58 +568,77 @@ export function usePortfolioAttribution(properties: PropertyWithFinancials[] | u
 
         for (const owner of propertyOwners) {
           const percent = Number(owner.percent);
-          const factor = percent / 100;
           
-          // Determine owner identity from party data
-          let ownerName = 'Unknown';
-          let ownerType = 'INDIVIDUAL';
-          let ownerId = '';
+          if (!owner.owner_party) continue;
           
-          if (owner.owner_party) {
-            const party = owner.owner_party as { id: string; display_name: string; party_type: string; company_number: string | null };
-            ownerName = party.display_name;
-            ownerId = party.id;
-            ownerType = party.party_type || 'INDIVIDUAL';
-          }
+          const party = owner.owner_party as { id: string; display_name: string; party_type: string; company_number: string | null };
+          const basePath = isSpvDerived 
+            ? `Via SPV: ${percent.toFixed(1)}%`
+            : `Beneficial: ${percent.toFixed(1)}%`;
 
-          if (!ownerId) continue;
+          // Resolve to ultimate beneficial owners (look through holding companies)
+          const ultimateBeneficiaries = resolveUltimateBeneficiaries(
+            party.id,
+            party.display_name,
+            party.party_type || 'INDIVIDUAL',
+            percent,
+            basePath,
+            shareholdersForLookthrough,
+            companiesWithParties
+          );
 
-          const propertyAttribution: PropertyAttribution = {
-            propertyId: property.id,
-            propertyAddress: property.address_line,
-            effectivePercent: percent,
-            pathDescription: isSpvDerived 
-              ? owner.notes || `Via SPV: ${percent.toFixed(1)}%`
-              : owner.notes || `Beneficial: ${percent.toFixed(1)}%`,
-            attributableValue: financials.currentValue * factor,
-            attributableEquity: financials.equity * factor,
-            attributableDebt: financials.mortgageBalance * factor,
-            attributableRent: financials.annualRent * factor,
-            attributableNOI: financials.noi * factor,
-            attributableCashflow: financials.cashflow * factor,
-          };
+          // Add each ultimate beneficiary to the map
+          for (const beneficiary of ultimateBeneficiaries) {
+            const factor = beneficiary.effectivePercent / 100;
 
-          const existing = ownerMap.get(ownerId);
-          if (existing) {
-            existing.properties.push(propertyAttribution);
-          } else {
-            ownerMap.set(ownerId, {
-              ownerId,
-              ownerName,
-              ownerType,
-              properties: [propertyAttribution],
-              totals: {
-                totalAttributableValue: 0,
-                totalAttributableEquity: 0,
-                totalAttributableDebt: 0,
-                totalAttributableRent: 0,
-                totalAttributableNOI: 0,
-                totalAttributableCashflow: 0,
-                propertyCount: 0,
-                weightedYield: null,
-                weightedROCE: null,
-              },
-            });
+            const propertyAttribution: PropertyAttribution = {
+              propertyId: property.id,
+              propertyAddress: property.address_line,
+              effectivePercent: beneficiary.effectivePercent,
+              pathDescription: beneficiary.pathDescription,
+              attributableValue: financials.currentValue * factor,
+              attributableEquity: financials.equity * factor,
+              attributableDebt: financials.mortgageBalance * factor,
+              attributableRent: financials.annualRent * factor,
+              attributableNOI: financials.noi * factor,
+              attributableCashflow: financials.cashflow * factor,
+            };
+
+            const existing = ownerMap.get(beneficiary.partyId);
+            if (existing) {
+              // Check if this property already exists for this owner (merge stakes)
+              const existingProp = existing.properties.find(p => p.propertyId === property.id);
+              if (existingProp) {
+                existingProp.effectivePercent += beneficiary.effectivePercent;
+                existingProp.attributableValue += propertyAttribution.attributableValue;
+                existingProp.attributableEquity += propertyAttribution.attributableEquity;
+                existingProp.attributableDebt += propertyAttribution.attributableDebt;
+                existingProp.attributableRent += propertyAttribution.attributableRent;
+                existingProp.attributableNOI += propertyAttribution.attributableNOI;
+                existingProp.attributableCashflow += propertyAttribution.attributableCashflow;
+                existingProp.pathDescription += ` + ${beneficiary.pathDescription}`;
+              } else {
+                existing.properties.push(propertyAttribution);
+              }
+            } else {
+              ownerMap.set(beneficiary.partyId, {
+                ownerId: beneficiary.partyId,
+                ownerName: beneficiary.partyName,
+                ownerType: beneficiary.partyType,
+                properties: [propertyAttribution],
+                totals: {
+                  totalAttributableValue: 0,
+                  totalAttributableEquity: 0,
+                  totalAttributableDebt: 0,
+                  totalAttributableRent: 0,
+                  totalAttributableNOI: 0,
+                  totalAttributableCashflow: 0,
+                  propertyCount: 0,
+                  weightedYield: null,
+                  weightedROCE: null,
+                },
+              });
+            }
           }
         }
       }
