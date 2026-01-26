@@ -65,7 +65,7 @@ export const PROPERTY_CORE_FIELDS: FieldDefinition[] = [
   { key: 'current_value_gbp', label: 'Current Value', type: 'currency' },
   { key: 'purchase_price_gbp', label: 'Purchase Price', type: 'currency' },
   { key: 'original_purchase_date', label: 'Purchase Date', type: 'date' },
-  { key: 'epc_rating', label: 'EPC Rating', type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] },
+  // epc_rating is AI auto-populated via bulk EPC enrichment
   { key: 'title_number', label: 'Title Number', type: 'text' },
 ];
 
