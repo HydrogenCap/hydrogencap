@@ -45,7 +45,7 @@ export function useInboxDocuments() {
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .or('review_status.eq.pending,property_id.is.null')
+        .eq('review_status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
