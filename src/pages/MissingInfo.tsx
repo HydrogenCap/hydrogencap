@@ -33,7 +33,7 @@ import {
 } from '@/hooks/useMissingInfo';
 import { MissingInfoPropertyRow } from '@/components/missing-info/MissingInfoPropertyRow';
 
-type MissingTypeFilter = 'all' | 'finance' | 'insurance' | 'passport' | 'critical';
+type MissingTypeFilter = 'all' | 'property' | 'income' | 'finance' | 'insurance' | 'passport' | 'critical';
 type PriorityFilter = 'all' | 'most_missing' | 'renewal_soon' | 'hmo_expiring';
 type SortOption = 'most_missing' | 'postcode' | 'updated';
 
@@ -66,7 +66,11 @@ export default function MissingInfoPage() {
     }
 
     // Missing type filter
-    if (missingTypeFilter === 'finance') {
+    if (missingTypeFilter === 'property') {
+      result = result.filter(item => item.missingPropertyCoreFields.length > 0);
+    } else if (missingTypeFilter === 'income') {
+      result = result.filter(item => item.missingIncomeFields.length > 0);
+    } else if (missingTypeFilter === 'finance') {
       result = result.filter(item => item.missingFinanceFields.length > 0);
     } else if (missingTypeFilter === 'insurance') {
       result = result.filter(item => item.missingInsuranceFields.length > 0);
@@ -223,7 +227,37 @@ export default function MissingInfoPage() {
         </Card>
 
         {/* Summary Chips */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <Card className="bg-green-500/10 border-green-500/30">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Property Details</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {stats.propertiesWithPropertyCoreMissing}
+                  </p>
+                  <p className="text-xs text-muted-foreground">properties</p>
+                </div>
+                <Building2 className="h-8 w-8 text-green-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-orange-500/10 border-orange-500/30">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Income Missing</p>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {stats.propertiesWithIncomeMissing}
+                  </p>
+                  <p className="text-xs text-muted-foreground">properties</p>
+                </div>
+                <TrendingDown className="h-8 w-8 text-orange-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-amber-500/10 border-amber-500/30">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
@@ -313,6 +347,8 @@ export default function MissingInfoPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="property">Property Details</SelectItem>
+                  <SelectItem value="income">Income Only</SelectItem>
                   <SelectItem value="finance">Finance Only</SelectItem>
                   <SelectItem value="insurance">Insurance Only</SelectItem>
                   <SelectItem value="passport">Passport Only</SelectItem>

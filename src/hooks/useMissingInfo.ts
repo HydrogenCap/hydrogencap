@@ -42,6 +42,7 @@ export const FINANCE_FIELDS: FieldDefinition[] = [
   { key: 'fixed_or_variable', label: 'Fixed or Variable', type: 'select', options: ['fixed', 'variable', 'tracker'] },
   { key: 'fixed_rate_expires', label: 'Product End Date', type: 'date' },
   { key: 'loan_start_date', label: 'Loan Start Date', type: 'date' },
+  { key: 'reversion_rate_percent', label: 'Reversion Rate %', type: 'percent' },
 ];
 
 // Term years field (optional - only needed for repayment mortgages)
@@ -50,6 +51,31 @@ export const TERM_YEARS_FIELD: FieldDefinition = {
   label: 'Term (Years)',
   type: 'number',
 };
+
+/**
+ * Property Core Fields
+ * Core property data from the properties table that should always be filled
+ */
+export const PROPERTY_CORE_FIELDS: FieldDefinition[] = [
+  { key: 'property_type', label: 'Property Type', type: 'select', options: ['House', 'Flat', 'Bungalow', 'Maisonette', 'Studio', 'HMO', 'Commercial', 'Mixed Use', 'Land', 'Other'] },
+  { key: 'tenure', label: 'Tenure', type: 'select', options: ['Freehold', 'Leasehold', 'Share of Freehold', 'Commonhold'] },
+  { key: 'beds', label: 'Bedrooms', type: 'number' },
+  { key: 'bathrooms', label: 'Bathrooms', type: 'number' },
+  { key: 'postcode', label: 'Postcode', type: 'text' },
+  { key: 'current_value_gbp', label: 'Current Value', type: 'currency' },
+  { key: 'purchase_price_gbp', label: 'Purchase Price', type: 'currency' },
+  { key: 'original_purchase_date', label: 'Purchase Date', type: 'date' },
+  { key: 'epc_rating', label: 'EPC Rating', type: 'select', options: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] },
+  { key: 'title_number', label: 'Title Number', type: 'text' },
+];
+
+/**
+ * Income Fields
+ * Rental income data - critical for cashflow calculations
+ */
+export const INCOME_FIELDS: FieldDefinition[] = [
+  { key: 'annual_rent_gbp', label: 'Annual Rent', type: 'currency' },
+];
 
 /**
  * CHANGE 2: Insurance Fields
@@ -220,6 +246,8 @@ export interface PropertyMissingInfo {
   property: PropertyWithFinancials;
   insurance: InsurancePolicy | null;
   passport: PropertyPassport | null;
+  missingPropertyCoreFields: string[];
+  missingIncomeFields: string[];
   missingFinanceFields: string[];
   missingInsuranceFields: string[];
   missingPassportFields: string[];
@@ -227,7 +255,7 @@ export interface PropertyMissingInfo {
   totalMissing: number;
   totalFields: number;
   completenessPercent: number;
-  status: 'complete' | 'missing_finance' | 'missing_insurance' | 'missing_passport' | 'missing_multiple';
+  status: 'complete' | 'missing_property' | 'missing_income' | 'missing_finance' | 'missing_insurance' | 'missing_passport' | 'missing_multiple';
   renewingSoon: boolean;
   hmoLicenceExpiringSoon: boolean;
   // New: computed monthly payment info
@@ -289,6 +317,8 @@ export function useMissingInfo() {
       const loan = property.loans?.[0];
       const insurance = insuranceMap.get(property.id) || null;
       const passport = passportMap.get(property.id) || null;
+      const currentYear = new Date().getFullYear();
+      const income = property.income?.find(i => i.year === currentYear);
 
       // Calculate monthly payment
       const monthlyPayment = calculateMonthlyPayment(
@@ -302,6 +332,24 @@ export function useMissingInfo() {
 
       // Check if term_years is needed but missing (for repayment mortgages)
       const needsTermYears = loan?.capital_or_interest === 'capital' && !loan?.term_years;
+
+      // Check property core fields
+      const missingPropertyCoreFields: string[] = [];
+      PROPERTY_CORE_FIELDS.forEach(field => {
+        const value = property[field.key as keyof typeof property];
+        if (isMissing(value, field.key)) {
+          missingPropertyCoreFields.push(field.key);
+        }
+      });
+
+      // Check income fields
+      const missingIncomeFields: string[] = [];
+      INCOME_FIELDS.forEach(field => {
+        const value = income?.[field.key as keyof typeof income];
+        if (isMissing(value, field.key)) {
+          missingIncomeFields.push(field.key);
+        }
+      });
 
       // Check finance fields (excluding monthly_payment - it's auto-calculated)
       const missingFinanceFields: string[] = [];
@@ -349,6 +397,8 @@ export function useMissingInfo() {
       });
 
       // Calculate total fields and completeness
+      const totalPropertyCoreFields = PROPERTY_CORE_FIELDS.length;
+      const totalIncomeFields = INCOME_FIELDS.length;
       const totalFinanceFields = FINANCE_FIELDS.length + (needsTermYears ? 1 : 0);
       const totalInsuranceFields = INSURANCE_FIELDS.length;
       const totalPassportFields = PASSPORT_FIELDS.filter(f => {
@@ -359,20 +409,26 @@ export function useMissingInfo() {
         return true;
       }).length;
       
-      const totalFields = totalFinanceFields + totalInsuranceFields + totalPassportFields;
-      const totalMissing = missingFinanceFields.length + missingInsuranceFields.length + missingPassportFields.length;
+      const totalFields = totalPropertyCoreFields + totalIncomeFields + totalFinanceFields + totalInsuranceFields + totalPassportFields;
+      const totalMissing = missingPropertyCoreFields.length + missingIncomeFields.length + missingFinanceFields.length + missingInsuranceFields.length + missingPassportFields.length;
       const completenessPercent = totalFields > 0 ? Math.round(((totalFields - totalMissing) / totalFields) * 100) : 100;
 
       // Determine status
+      const hasMissingPropertyCore = missingPropertyCoreFields.length > 0;
+      const hasMissingIncome = missingIncomeFields.length > 0;
       const hasMissingFinance = missingFinanceFields.length > 0;
       const hasMissingInsurance = missingInsuranceFields.length > 0;
       const hasMissingPassport = missingPassportFields.length > 0;
       
-      const missingCount = [hasMissingFinance, hasMissingInsurance, hasMissingPassport].filter(Boolean).length;
+      const missingCount = [hasMissingPropertyCore, hasMissingIncome, hasMissingFinance, hasMissingInsurance, hasMissingPassport].filter(Boolean).length;
       
       let status: PropertyMissingInfo['status'] = 'complete';
       if (missingCount >= 2) {
         status = 'missing_multiple';
+      } else if (hasMissingPropertyCore) {
+        status = 'missing_property';
+      } else if (hasMissingIncome) {
+        status = 'missing_income';
       } else if (hasMissingFinance) {
         status = 'missing_finance';
       } else if (hasMissingInsurance) {
@@ -403,6 +459,8 @@ export function useMissingInfo() {
         property,
         insurance,
         passport,
+        missingPropertyCoreFields,
+        missingIncomeFields,
         missingFinanceFields,
         missingInsuranceFields,
         missingPassportFields,
@@ -421,12 +479,16 @@ export function useMissingInfo() {
 
   // Summary stats
   const stats = useMemo(() => {
+    const propertiesWithPropertyCoreMissing = data.filter(d => d.missingPropertyCoreFields.length > 0).length;
+    const propertiesWithIncomeMissing = data.filter(d => d.missingIncomeFields.length > 0).length;
     const propertiesWithFinanceMissing = data.filter(d => d.missingFinanceFields.length > 0).length;
     const propertiesWithInsuranceMissing = data.filter(d => d.missingInsuranceFields.length > 0).length;
     const propertiesWithPassportMissing = data.filter(d => d.missingPassportFields.length > 0).length;
     const propertiesWithCriticalPassportMissing = data.filter(d => d.missingCriticalPassportFields.length > 0).length;
     const totalMissingFields = data.reduce((sum, d) => sum + d.totalMissing, 0);
     return { 
+      propertiesWithPropertyCoreMissing,
+      propertiesWithIncomeMissing,
       propertiesWithFinanceMissing, 
       propertiesWithInsuranceMissing, 
       propertiesWithPassportMissing,
