@@ -1,23 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Activity, Bed, Users, AlertCircle, ArrowRight } from 'lucide-react';
+import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Bed, AlertCircle, ArrowRight } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
-import { useRecentActivity } from '@/hooks/useActivityLog';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
-import { usePortfolioAttributableMetrics } from '@/hooks/useBeneficialGroups';
 import {
   formatGBP,
   formatPercent,
@@ -60,9 +56,7 @@ import { useMissingInfo } from '@/hooks/useMissingInfo';
 function DashboardPage() {
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
-  const { data: attributableMetrics, isLoading: attrLoading } = usePortfolioAttributableMetrics(properties);
   const { stats: missingStats } = useMissingInfo();
-  const [viewMode, setViewMode] = useState<'gross' | 'attributable'>('gross');
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -373,46 +367,7 @@ function DashboardPage() {
               {properties?.length || 0} properties in your portfolio
             </p>
           </div>
-          
-          {/* Gross / Attributable Toggle */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">View:</span>
-            <ToggleGroup 
-              type="single" 
-              value={viewMode} 
-              onValueChange={(v) => v && setViewMode(v as 'gross' | 'attributable')}
-              className="bg-muted/50 p-1 rounded-lg"
-            >
-              <ToggleGroupItem value="gross" className="text-xs px-3">
-                Gross (100%)
-              </ToggleGroupItem>
-              <ToggleGroupItem value="attributable" className="text-xs px-3">
-                <Users className="h-3 w-3 mr-1" />
-                Attributable
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
         </div>
-
-        {/* Attributable Ownership Summary */}
-        {viewMode === 'attributable' && attributableMetrics && (
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-4">
-                <Users className="h-5 w-5 text-primary" />
-                <div>
-                  <span className="font-medium">My Attributable Ownership:</span>
-                  <span className="ml-2 text-lg font-bold text-primary">
-                    {formatPercent(attributableMetrics.attributable.weightedOwnershipPercent, 1)}
-                  </span>
-                  <span className="text-sm text-muted-foreground ml-2">
-                    (value-weighted average)
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
@@ -425,14 +380,8 @@ function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {viewMode === 'attributable' && attributableMetrics
-                  ? formatGBP(attributableMetrics.attributable.totalValue)
-                  : formatGBP(portfolioStats.totalValue)
-                }
+                {formatGBP(portfolioStats.totalValue)}
               </div>
-              {viewMode === 'attributable' && (
-                <p className="text-xs text-muted-foreground mt-1">your share</p>
-              )}
             </CardContent>
           </Card>
 
@@ -445,14 +394,8 @@ function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {viewMode === 'attributable' && attributableMetrics
-                  ? formatGBP(attributableMetrics.attributable.totalMortgage)
-                  : formatGBP(portfolioStats.totalMortgage)
-                }
+                {formatGBP(portfolioStats.totalMortgage)}
               </div>
-              {viewMode === 'attributable' && (
-                <p className="text-xs text-muted-foreground mt-1">your share</p>
-              )}
             </CardContent>
           </Card>
 
@@ -465,14 +408,8 @@ function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">
-                {viewMode === 'attributable' && attributableMetrics
-                  ? formatGBP(attributableMetrics.attributable.totalEquity)
-                  : formatGBP(portfolioStats.totalEquity)
-                }
+                {formatGBP(portfolioStats.totalEquity)}
               </div>
-              {viewMode === 'attributable' && (
-                <p className="text-xs text-muted-foreground mt-1">your share</p>
-              )}
             </CardContent>
           </Card>
 
@@ -498,21 +435,9 @@ function DashboardPage() {
               <PoundSterling className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
-              {(() => {
-                const cashflow = viewMode === 'attributable' && attributableMetrics
-                  ? attributableMetrics.attributable.totalCashflowAfterDebt / 12
-                  : portfolioStats.monthlyCashflow;
-                return (
-                  <>
-                    <div className={`text-2xl font-bold ${cashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {formatGBP(cashflow)}
-                    </div>
-                    {viewMode === 'attributable' && (
-                      <p className="text-xs text-muted-foreground mt-1">your share</p>
-                    )}
-                  </>
-                );
-              })()}
+              <div className={`text-2xl font-bold ${portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formatGBP(portfolioStats.monthlyCashflow)}
+              </div>
             </CardContent>
           </Card>
 
