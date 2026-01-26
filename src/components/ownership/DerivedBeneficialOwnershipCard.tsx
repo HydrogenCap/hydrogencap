@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, User, Users, ExternalLink, AlertCircle, Check, RefreshCw, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useProperty } from '@/hooks/useProperties';
-import { useCompany } from '@/hooks/useCompanies';
+import { useCompany, type Shareholding, type ShareClass } from '@/hooks/useCompanies';
 import { useParty } from '@/hooks/useParties';
 import {
-  useCompanyOwnership,
   usePropertyBeneficialOwnership,
   useDeleteOwnershipLink,
   calculateOwnershipTotal,
@@ -27,16 +26,68 @@ interface DerivedBeneficialOwnershipCardProps {
   propertyId: string;
 }
 
+// Helper to calculate shareholding percentage based on share class totals
+interface ShareholderDisplay {
+  id: string;
+  name: string;
+  partyType: string;
+  percent: number;
+  shares: number;
+  source: string;
+}
+
+function calculateShareholderPercentages(
+  shareholdings: Shareholding[],
+  shareClasses: ShareClass[]
+): ShareholderDisplay[] {
+  // Group by shareholder
+  const shareholderMap = new Map<string, { 
+    name: string; 
+    partyType: string; 
+    totalShares: number; 
+    source: string;
+    id: string;
+  }>();
+  
+  // Calculate total issued shares across all classes
+  const totalIssuedShares = shareClasses.reduce((sum, sc) => sum + sc.issued_shares, 0);
+  
+  shareholdings.forEach((sh) => {
+    const existingEntry = shareholderMap.get(sh.shareholder_party_id);
+    const name = sh.shareholder_party?.display_name || 'Unknown';
+    const partyType = sh.shareholder_party?.party_type || 'PERSON';
+    
+    if (existingEntry) {
+      existingEntry.totalShares += sh.shares_held;
+    } else {
+      shareholderMap.set(sh.shareholder_party_id, {
+        id: sh.id,
+        name,
+        partyType,
+        totalShares: sh.shares_held,
+        source: sh.ownership_source,
+      });
+    }
+  });
+  
+  // Convert to percentage
+  return Array.from(shareholderMap.entries()).map(([partyId, data]) => ({
+    id: data.id,
+    name: data.name,
+    partyType: data.partyType,
+    percent: totalIssuedShares > 0 ? (data.totalShares / totalIssuedShares) * 100 : 0,
+    shares: data.totalShares,
+    source: data.source,
+  })).sort((a, b) => b.percent - a.percent);
+}
+
 export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficialOwnershipCardProps) {
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
-  const { data: company, isLoading: companyLoading } = useCompany(
+  const { data: companyWithDetails, isLoading: companyLoading, refetch: refetchCompany } = useCompany(
     property?.legal_owner_company_id || undefined
   );
   const { data: party, isLoading: partyLoading } = useParty(
     property?.legal_owner_party_id || undefined
-  );
-  const { data: shareholders, isLoading: shareholdersLoading, refetch: refetchShareholders } = useCompanyOwnership(
-    property?.legal_owner_company_id || undefined
   );
   const { data: directOwners, isLoading: directOwnersLoading, refetch: refetchDirectOwners } = usePropertyBeneficialOwnership(propertyId);
   const deleteOwnership = useDeleteOwnershipLink();
@@ -44,7 +95,18 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<OwnershipLink | null>(null);
 
-  const isLoading = propertyLoading || companyLoading || partyLoading || shareholdersLoading || directOwnersLoading;
+  const isLoading = propertyLoading || companyLoading || partyLoading || directOwnersLoading;
+
+  // Calculate shareholders from company data
+  const shareholders = useMemo(() => {
+    if (!companyWithDetails?.shareholdings || !companyWithDetails?.share_classes) {
+      return [];
+    }
+    return calculateShareholderPercentages(
+      companyWithDetails.shareholdings,
+      companyWithDetails.share_classes
+    );
+  }, [companyWithDetails?.shareholdings, companyWithDetails?.share_classes]);
 
   const handleAddOwner = () => {
     setEditingLink(null);
@@ -91,10 +153,9 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
   const hasDirectOwners = (directOwners?.length || 0) > 0;
 
   // MODE 1: Owned by a company (SPV) - derive from shareholders
-  if (hasCompanyOwner) {
-    const activeLinks = shareholders || [];
-    const total = calculateOwnershipTotal(activeLinks);
-    const isValid = validateOwnershipTotal(total);
+  if (hasCompanyOwner && companyWithDetails) {
+    const total = shareholders.reduce((sum, sh) => sum + sh.percent, 0);
+    const isValid = Math.abs(total - 100) <= 0.5;
     const remaining = 100 - total;
 
     return (
@@ -109,20 +170,18 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => refetchShareholders()}
+                onClick={() => refetchCompany()}
                 className="h-7 text-xs"
               >
                 <RefreshCw className="h-3 w-3 mr-1" />
                 Refresh
               </Button>
-              {company && (
-                <Link to={`/companies/${company.id}`}>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Edit on Company
-                  </Button>
-                </Link>
-              )}
+              <Link to={`/companies/${companyWithDetails.id}`}>
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Edit on Company
+                </Button>
+              </Link>
             </div>
           </div>
         </CardHeader>
@@ -133,10 +192,10 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
             <span>
               Derived from shareholders of{' '}
               <Link
-                to={`/companies/${company?.id}`}
+                to={`/companies/${companyWithDetails.id}`}
                 className="font-medium text-primary hover:underline"
               >
-                {company?.legal_name}
+                {companyWithDetails.legal_name}
               </Link>
             </span>
           </div>
@@ -156,7 +215,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
           </div>
 
           {/* Status Alert */}
-          {!isValid && activeLinks.length > 0 && (
+          {!isValid && shareholders.length > 0 && (
             <Alert variant={total > 100 ? 'destructive' : 'default'} className="border-warning bg-warning/10">
               <AlertCircle className="h-4 w-4 text-warning" />
               <AlertDescription className="text-warning">
@@ -164,7 +223,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
               </AlertDescription>
             </Alert>
           )}
-          {isValid && activeLinks.length > 0 && (
+          {isValid && shareholders.length > 0 && (
             <Alert className="border-success bg-success/10">
               <Check className="h-4 w-4 text-success" />
               <AlertDescription className="text-success">
@@ -173,13 +232,13 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
             </Alert>
           )}
 
-          {activeLinks.length === 0 ? (
+          {shareholders.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-muted rounded-lg text-center">
               <AlertCircle className="h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground mb-3">
-                No shareholders recorded for {company?.legal_name}
+                No shareholders recorded for {companyWithDetails.legal_name}
               </p>
-              <Link to={`/companies/${company?.id}`}>
+              <Link to={`/companies/${companyWithDetails.id}`}>
                 <Button variant="outline" size="sm">
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Add Shareholders on Company Page
@@ -187,7 +246,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
               </Link>
             </div>
           ) : (
-            <OwnersList owners={activeLinks} />
+            <ShareholdersList shareholders={shareholders} />
           )}
         </CardContent>
       </Card>
@@ -395,15 +454,15 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
   );
 }
 
-// Helper component for displaying owners list (read-only)
-function OwnersList({ owners }: { owners: OwnershipLink[] }) {
+// Helper component for displaying shareholders list (read-only, from company shareholdings)
+function ShareholdersList({ shareholders }: { shareholders: ShareholderDisplay[] }) {
   return (
     <div className="space-y-2">
-      {owners.map((link) => {
-        const isCompany = link.owner_party?.party_type === 'COMPANY';
+      {shareholders.map((sh) => {
+        const isCompany = sh.partyType === 'COMPANY';
         return (
           <div
-            key={link.id}
+            key={sh.id}
             className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
           >
             <div className="flex items-center gap-3">
@@ -415,26 +474,24 @@ function OwnersList({ owners }: { owners: OwnershipLink[] }) {
                 )}
               </div>
               <div>
-                <span className="font-medium">{getOwnerName(link)}</span>
+                <span className="font-medium">{sh.name}</span>
                 <div className="flex items-center gap-2 mt-0.5">
                   <Badge variant="outline" className="text-xs">
-                    {getOwnerType(link)}
+                    {isCompany ? 'Company' : 'Individual'}
                   </Badge>
-                  {link.source && (
+                  {sh.source && (
                     <Badge variant="secondary" className="text-xs capitalize">
-                      {link.source}
+                      {sh.source.toLowerCase().replace('_', ' ')}
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <span className="text-lg font-bold">{formatPercent(Number(link.percent))}</span>
-              {link.shares && (
-                <p className="text-xs text-muted-foreground">
-                  {link.shares.toLocaleString()} shares
-                </p>
-              )}
+              <span className="text-lg font-bold">{formatPercent(sh.percent)}</span>
+              <p className="text-xs text-muted-foreground">
+                {sh.shares.toLocaleString()} shares
+              </p>
             </div>
           </div>
         );
