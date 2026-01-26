@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { Inbox as InboxIcon, RefreshCw, CheckCheck } from 'lucide-react';
+import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUploadZone } from '@/components/inbox/DocumentUploadZone';
-import { DocumentReviewCard } from '@/components/inbox/DocumentReviewCard';
-import { useInboxDocuments, useUpdateDocument } from '@/hooks/useDocuments';
-import { useToast } from '@/hooks/use-toast';
+import { ComplianceReviewCard } from '@/components/inbox/ComplianceReviewCard';
+import { useInboxDocuments } from '@/hooks/useDocuments';
+import { useAllCompliance } from '@/hooks/useCompliance';
+import { getComplianceItemStatus } from '@/lib/complianceTypes';
+import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Inbox() {
   const { data: documents, isLoading, refetch } = useInboxDocuments();
-  const updateDocument = useUpdateDocument();
-  const { toast } = useToast();
+  const { data: allCompliance } = useAllCompliance();
+  const acceptAllHighConfidence = useAcceptAllHighConfidence();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
 
   const pendingDocs = documents?.filter(d => d.review_status === 'pending') || [];
@@ -22,44 +25,26 @@ export default function Inbox() {
   ) || [];
   const readyDocs = pendingDocs.filter(d => d.extraction_status === 'completed');
 
+  // High confidence = both doc type and property match >= 70%
+  const highConfidenceDocs = readyDocs.filter(d => 
+    d.ai_suggested_doc_type && 
+    (d.ai_doc_type_confidence || 0) >= 0.7 &&
+    d.ai_suggested_property_id &&
+    (d.ai_property_confidence || 0) >= 0.7
+  );
+
+  // Calculate compliance stats
+  const complianceStats = {
+    valid: allCompliance?.filter(c => getComplianceItemStatus(c.expiry_date) === 'valid').length || 0,
+    expiring: allCompliance?.filter(c => getComplianceItemStatus(c.expiry_date) === 'expiring_soon').length || 0,
+    expired: allCompliance?.filter(c => getComplianceItemStatus(c.expiry_date) === 'expired').length || 0,
+  };
+
   const handleAcceptAll = async () => {
-    const docsToAccept = readyDocs.filter(d => 
-      d.ai_suggested_doc_type && 
-      (d.ai_doc_type_confidence || 0) >= 0.7
-    );
-
-    if (docsToAccept.length === 0) {
-      toast({
-        title: 'No high-confidence documents',
-        description: 'No documents with high AI confidence to auto-accept',
-      });
-      return;
-    }
-
+    if (highConfidenceDocs.length === 0) return;
     setIsAcceptingAll(true);
-    let accepted = 0;
-
     try {
-      for (const doc of docsToAccept) {
-        await updateDocument.mutateAsync({
-          id: doc.id,
-          review_status: 'accepted',
-          doc_type: doc.ai_suggested_doc_type,
-          property_id: doc.ai_suggested_property_id,
-        });
-        accepted++;
-      }
-
-      toast({
-        title: `Accepted ${accepted} documents`,
-        description: 'High-confidence AI suggestions were applied',
-      });
-    } catch (err) {
-      toast({
-        title: 'Failed to accept some documents',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      await acceptAllHighConfidence.mutateAsync(highConfidenceDocs as any);
     } finally {
       setIsAcceptingAll(false);
     }
@@ -72,16 +57,16 @@ export default function Inbox() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <InboxIcon className="h-6 w-6" />
-              Document Inbox
+              <Shield className="h-6 w-6" />
+              Compliance Inbox
               {pendingDocs.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {pendingDocs.length}
+                  {pendingDocs.length} pending
                 </Badge>
               )}
             </h1>
             <p className="text-muted-foreground">
-              Upload and review documents with AI-powered classification
+              AI-powered compliance document intake and management
             </p>
           </div>
 
@@ -93,35 +78,86 @@ export default function Inbox() {
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            {readyDocs.length > 0 && (
+            {highConfidenceDocs.length > 0 && (
               <Button 
-                variant="outline"
                 onClick={handleAcceptAll}
                 disabled={isAcceptingAll}
+                className="bg-emerald-600 hover:bg-emerald-700"
               >
                 <CheckCheck className="h-4 w-4 mr-2" />
-                Accept All High-Confidence
+                Confirm All ({highConfidenceDocs.length})
               </Button>
             )}
           </div>
         </div>
 
+        {/* Compliance Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Valid</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                <span className="text-2xl font-bold">{complianceStats.valid}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className={complianceStats.expiring > 0 ? 'border-amber-500/50' : ''}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <span className="text-2xl font-bold">{complianceStats.expiring}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className={complianceStats.expired > 0 ? 'border-destructive/50' : ''}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Expired</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <span className="text-2xl font-bold">{complianceStats.expired}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Upload Zone */}
-        <DocumentUploadZone onUploadComplete={() => refetch()} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Compliance Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DocumentUploadZone onUploadComplete={() => refetch()} />
+            <p className="text-xs text-muted-foreground mt-2">
+              Upload certificates, licences, and compliance documents. AI will automatically classify, 
+              extract dates, and match to your properties.
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Document List */}
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
             <TabsTrigger value="pending" className="gap-2">
-              Pending Review
-              {pendingDocs.length > 0 && (
+              Ready for Review
+              {readyDocs.length > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5">
-                  {pendingDocs.length}
+                  {readyDocs.length}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="processing" className="gap-2">
-              Processing
+              Analysing
               {processingDocs.length > 0 && (
                 <Badge variant="secondary" className="h-5 min-w-5 px-1.5">
                   {processingDocs.length}
@@ -139,14 +175,37 @@ export default function Inbox() {
               </>
             ) : readyDocs.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                <InboxIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">Inbox Zero!</p>
-                <p className="text-sm">No documents pending review</p>
+                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">All caught up!</p>
+                <p className="text-sm">No compliance documents pending review</p>
               </div>
             ) : (
-              readyDocs.map(doc => (
-                <DocumentReviewCard key={doc.id} document={doc} />
-              ))
+              <>
+                {/* Group by confidence */}
+                {highConfidenceDocs.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      Ready to confirm ({highConfidenceDocs.length})
+                    </p>
+                    {highConfidenceDocs.map(doc => (
+                      <ComplianceReviewCard key={doc.id} document={doc} />
+                    ))}
+                  </div>
+                )}
+                
+                {readyDocs.filter(d => !highConfidenceDocs.includes(d)).length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      Needs review ({readyDocs.filter(d => !highConfidenceDocs.includes(d)).length})
+                    </p>
+                    {readyDocs.filter(d => !highConfidenceDocs.includes(d)).map(doc => (
+                      <ComplianceReviewCard key={doc.id} document={doc} />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
@@ -154,12 +213,12 @@ export default function Inbox() {
             {processingDocs.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">No documents processing</p>
+                <p className="font-medium">No documents analysing</p>
                 <p className="text-sm">Upload documents to start AI analysis</p>
               </div>
             ) : (
               processingDocs.map(doc => (
-                <DocumentReviewCard key={doc.id} document={doc} />
+                <ComplianceReviewCard key={doc.id} document={doc} />
               ))
             )}
           </TabsContent>
