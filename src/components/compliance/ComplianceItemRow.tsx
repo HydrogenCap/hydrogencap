@@ -173,7 +173,10 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
                 </a>
               </Button>
             ) : (
-              <Badge variant="secondary">No document</Badge>
+              <Badge variant="outline" className="status-warning border text-xs">
+                <Upload className="h-3 w-3 mr-1" />
+                Upload Doc
+              </Badge>
             )}
           </div>
         </div>

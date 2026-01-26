@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2, Bath } from 'lucide-react';
+import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2, Bath, FileText, Image } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, FinancialAttributionCard } from '@/components/ownership';
-import { LocationRegistryCard, PropertyMediaHeader } from '@/components/property';
+import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
@@ -31,7 +31,6 @@ import { useToast } from '@/hooks/use-toast';
 import {
   formatGBP,
   formatPercent,
-  formatDateUK,
   calculateLTV,
   calculateEquity,
   getEffectiveCosts,
@@ -41,10 +40,7 @@ import {
   calculateROCE,
   getLTVStatus,
   getEPCStatus,
-  getExpiryStatus,
-  daysUntil,
 } from '@/lib/calculations';
-import { calculateRentPerBedroom, formatPaymentGBP } from '@/lib/mortgageCalculations';
 
 function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,7 +50,6 @@ function PropertyDetailPage() {
   const { toast } = useToast();
   const { data: property, isLoading, error } = useProperty(id);
   const deleteProperty = useDeleteProperty();
-  
 
   const handleDelete = async () => {
     if (!id) return;
@@ -94,7 +89,7 @@ function PropertyDetailPage() {
         <div className="p-8 text-center">
           <p className="text-destructive mb-4">Property not found</p>
           <Button asChild>
-            <Link to="/properties">Back to Properties</Link>
+            <Link to="/properties">Back to Portfolio</Link>
           </Button>
         </div>
       </AppLayout>
@@ -122,12 +117,9 @@ function PropertyDetailPage() {
   const monthlyCashflow = calculateMonthlyCashflowAfterDebt(annualRent, totalCosts, mortgagePayment);
   const yieldPercent = calculateYield(netRent, currentValue);
   const roce = calculateROCE(netRent, equity);
-  const rentPerBedroom = calculateRentPerBedroom(annualRent, property.beds ? Number(property.beds) : null);
 
   const ltvStatus = getLTVStatus(ltv);
   const epcStatus = getEPCStatus(property.epc_rating);
-  const fixedRateStatus = loan?.fixed_rate_expires ? getExpiryStatus(loan.fixed_rate_expires) : null;
-  const daysToExpiry = loan?.fixed_rate_expires ? daysUntil(loan.fixed_rate_expires) : null;
 
   return (
     <AppLayout>
@@ -139,22 +131,13 @@ function PropertyDetailPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             
-            {/* Cover Photo & Floorplan Quick Actions */}
-            <PropertyMediaHeader 
-              propertyId={id!} 
-              propertyAddress={property.address_line} 
-            />
-            
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{property.address_line}</h1>
-              <div className="flex items-center gap-4 mt-1 text-muted-foreground flex-wrap">
-                {property.postcode && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {property.postcode}
-                  </span>
-                )}
-                {property.area_name && <span>{property.area_name}</span>}
+              <h1 className="text-2xl font-bold">{property.address_line}</h1>
+              <div className="flex items-center gap-4 text-muted-foreground mt-1">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {property.town_city || property.area_name || property.postcode}
+                </span>
                 {property.beds && (
                   <span className="flex items-center gap-1">
                     <Bed className="h-4 w-4" />
@@ -176,8 +159,9 @@ function PropertyDetailPage() {
               </div>
             </div>
           </div>
+
           <div className="flex gap-2">
-            <Button variant="outline" asChild>
+            <Button asChild variant="outline">
               <Link to={`/properties/${id}/edit`}>
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit
@@ -185,7 +169,7 @@ function PropertyDetailPage() {
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="icon">
+                <Button variant="outline" size="icon" className="text-destructive">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -193,8 +177,7 @@ function PropertyDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Property</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete this property? This action cannot be undone
-                    and will remove all associated data including loans, income, costs, and documents.
+                    Are you sure you want to delete {property.address_line}? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -208,32 +191,15 @@ function PropertyDetailPage() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Value</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatGBP(currentValue)}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Mortgage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatGBP(mortgageBalance)}</div>
-            </CardContent>
-          </Card>
-
+        {/* KPI Summary Row */}
+        <div className="grid gap-4 md:grid-cols-4">
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Equity</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">{formatGBP(equity)}</div>
+              <p className="text-xs text-muted-foreground">Value: {formatGBP(currentValue)}</p>
             </CardContent>
           </Card>
 
@@ -242,14 +208,13 @@ function PropertyDetailPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">LTV</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2">
-                <span className={`text-2xl font-bold ${
-                  ltvStatus === 'danger' ? 'text-destructive' :
-                  ltvStatus === 'warning' ? 'text-warning' : ''
-                }`}>
-                  {formatPercent(ltv)}
-                </span>
+              <div className={`text-2xl font-bold ${
+                ltvStatus === 'danger' ? 'text-destructive' :
+                ltvStatus === 'warning' ? 'text-warning' : ''
+              }`}>
+                {formatPercent(ltv)}
               </div>
+              <p className="text-xs text-muted-foreground">Mortgage: {formatGBP(mortgageBalance)}</p>
             </CardContent>
           </Card>
 
@@ -261,23 +226,34 @@ function PropertyDetailPage() {
               <div className={`text-2xl font-bold ${monthlyCashflow && monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {formatGBP(monthlyCashflow)}
               </div>
+              <p className="text-xs text-muted-foreground">After debt service</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Net Yield</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${yieldPercent && yieldPercent >= 0 ? 'text-success' : ''}`}>
+                {formatPercent(yieldPercent)}
+              </div>
+              <p className="text-xs text-muted-foreground">ROCE: {formatPercent(roce)}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - Simplified to 5 */}
         <Tabs defaultValue={defaultTab} className="space-y-4">
-          <TabsList className="bg-muted flex-wrap">
+          <TabsList className="bg-muted">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="finance">Finance & Refinance</TabsTrigger>
-            <TabsTrigger value="costs">Costs</TabsTrigger>
-            <TabsTrigger value="passport">Passport</TabsTrigger>
+            <TabsTrigger value="finance">Finance</TabsTrigger>
+            <TabsTrigger value="operations">Operations</TabsTrigger>
             <TabsTrigger value="compliance">Compliance</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="photos">Photos</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="media">Media & Docs</TabsTrigger>
           </TabsList>
 
+          {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               {/* Property Details */}
@@ -302,13 +278,17 @@ function PropertyDetailPage() {
                     <span className="text-muted-foreground">EPC Rating</span>
                     <span>
                       {property.epc_required === false ? (
-                        <span className="text-muted-foreground">N/A (Listed building)</span>
+                        <span className="text-muted-foreground">N/A (Listed)</span>
                       ) : property.epc_rating ? (
                         <Badge variant="outline" className={epcStatus === 'warning' ? 'status-warning border' : ''}>
                           {property.epc_rating}
                         </Badge>
                       ) : '—'}
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tenure</span>
+                    <span className="capitalize">{property.tenure || '—'}</span>
                   </div>
                   {property.listed_status && property.listed_status !== 'Not listed' && (
                     <div className="flex justify-between">
@@ -319,10 +299,10 @@ function PropertyDetailPage() {
                 </CardContent>
               </Card>
 
-              {/* Performance */}
+              {/* Quick Performance */}
               <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle>Performance</CardTitle>
+                  <CardTitle>Quick Performance</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
@@ -330,35 +310,29 @@ function PropertyDetailPage() {
                     <span>{formatGBP(annualRent)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Annual Costs</span>
-                    <span>{formatGBP(totalCosts)}</span>
+                    <span className="text-muted-foreground">Operating Costs</span>
+                    <span className="text-destructive">-{formatGBP(totalCosts)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Net Rent</span>
+                    <span className="text-muted-foreground">NOI</span>
                     <span className={netRent && netRent >= 0 ? 'text-success' : 'text-destructive'}>
                       {formatGBP(netRent)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Yield</span>
-                    <span className={yieldPercent && yieldPercent >= 0 ? 'text-success' : 'text-destructive'}>
-                      {formatPercent(yieldPercent)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">ROCE</span>
-                    <span className={roce && roce >= 0 ? 'text-success' : 'text-destructive'}>
-                      {formatPercent(roce)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Rent / Bedroom</span>
-                    <span>
-                      {rentPerBedroom.monthly !== null 
-                        ? `${formatPaymentGBP(rentPerBedroom.monthly)}/mo` 
-                        : '—'}
-                    </span>
-                  </div>
+                  {mortgagePayment && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Debt Service</span>
+                        <span className="text-destructive">-{formatGBP(mortgagePayment * 12)}/yr</span>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between font-medium">
+                        <span>Net Cashflow</span>
+                        <span className={monthlyCashflow && monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}>
+                          {formatGBP(monthlyCashflow)}/mo
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -393,244 +367,52 @@ function PropertyDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Activity */}
+            <ActivityTimeline propertyId={id} showHeader={true} showAddNote={true} limit={5} />
           </TabsContent>
 
+          {/* FINANCE TAB - Unified */}
           <TabsContent value="finance" className="space-y-4">
-            {loan ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle>Mortgage Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Lender</span>
-                      <span>{loan.lender || '—'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Balance</span>
-                      <span>{formatGBP(mortgageBalance)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Monthly Payment</span>
-                      <span>{loan.mortgage_payment_gbp ? formatGBP(Number(loan.mortgage_payment_gbp)) : '—'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type</span>
-                      <span className="capitalize">{loan.mortgage_type || loan.capital_or_interest || '—'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle>Rate Diary</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Current Rate</span>
-                      <span>{loan.interest_rate_percent ? `${loan.interest_rate_percent}%` : '—'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Rate Type</span>
-                      <span className="capitalize">{loan.fixed_or_variable || '—'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Fixed Expires</span>
-                      <span className="flex items-center gap-2">
-                        {loan.fixed_rate_expires ? (
-                          <>
-                            {formatDateUK(loan.fixed_rate_expires)}
-                            {fixedRateStatus && fixedRateStatus !== 'ok' && (
-                              <Badge 
-                                variant="outline"
-                                className={
-                                  fixedRateStatus === 'expired' ? 'status-danger border' :
-                                  fixedRateStatus === 'critical' ? 'status-danger border' :
-                                  'status-warning border'
-                                }
-                              >
-                                {daysToExpiry && daysToExpiry <= 0 ? 'Expired' : `${daysToExpiry}d`}
-                              </Badge>
-                            )}
-                          </>
-                        ) : '—'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">SVR Rate</span>
-                      <span>{loan.reversion_rate_percent ? `${loan.reversion_rate_percent}%` : '—'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Broker</span>
-                      <span>{loan.broker_name || '—'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <Card className="bg-card border-border">
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No mortgage recorded for this property</p>
-                </CardContent>
-              </Card>
-            )}
+            <FinanceSummaryCard
+              currentValue={currentValue}
+              purchasePrice={property.purchase_price_gbp ? Number(property.purchase_price_gbp) : null}
+              purchaseDate={property.original_purchase_date}
+              annualRent={annualRent}
+              loan={loan || null}
+              effectiveCosts={effectiveCosts}
+              equity={equity}
+              ltv={ltv}
+              netRent={netRent}
+              monthlyCashflow={monthlyCashflow}
+              yieldPercent={yieldPercent}
+              roce={roce}
+            />
           </TabsContent>
 
-          <TabsContent value="costs" className="space-y-4">
-            {/* Operating Costs */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle>Operating Costs ({currentYear})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {costs ? (
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Management</span>
-                      <div className="text-right">
-                        <span>{formatGBP(effectiveCosts.management)}</span>
-                        {effectiveCosts.managementSource === 'auto' && (
-                          <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Bills</span>
-                      <span>{formatGBP(effectiveCosts.bills)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Insurance</span>
-                      <div className="text-right">
-                        <span>{formatGBP(effectiveCosts.insurance)}</span>
-                        {effectiveCosts.insuranceSource === 'auto' && (
-                          <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Repairs/Maintenance</span>
-                      <div className="text-right">
-                        <span>{formatGBP(effectiveCosts.repairs)}</span>
-                        {effectiveCosts.repairsSource === 'auto' && (
-                          <Badge variant="outline" className="ml-2 text-xs">Auto</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Compliance</span>
-                      <span>{formatGBP(effectiveCosts.compliance)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Other</span>
-                      <span>{formatGBP(effectiveCosts.other)}</span>
-                    </div>
-                    <div className="border-t border-border pt-3 flex justify-between font-medium">
-                      <span>Total Operating Costs</span>
-                      <span>{formatGBP(totalCosts)}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">No costs recorded for {currentYear}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Debt Service */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle>Debt Service</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loan?.mortgage_payment_gbp ? (
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Monthly Mortgage Payment</span>
-                      <span>{formatGBP(Number(loan.mortgage_payment_gbp))}</span>
-                    </div>
-                    <div className="border-t border-border pt-3 flex justify-between font-medium">
-                      <span>Annual Debt Service</span>
-                      <span>{formatGBP(Number(loan.mortgage_payment_gbp) * 12)}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">No mortgage payment recorded</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Cashflow Summary */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle>Cashflow Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gross Annual Rent</span>
-                    <span>{formatGBP(annualRent)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Less: Operating Costs</span>
-                    <span className="text-destructive">-{formatGBP(totalCosts)}</span>
-                  </div>
-                  <div className="border-t border-border pt-3 flex justify-between font-medium">
-                    <span>Net Operating Income (NOI)</span>
-                    <span>{formatGBP(netRent)}</span>
-                  </div>
-                  {loan?.mortgage_payment_gbp && (
-                    <>
-                      <div className="flex justify-between pt-2">
-                        <span className="text-muted-foreground">Less: Debt Service</span>
-                        <span className="text-destructive">-{formatGBP(Number(loan.mortgage_payment_gbp) * 12)}</span>
-                      </div>
-                      <div className="border-t border-border pt-3 flex justify-between font-semibold text-lg">
-                        <span>Net Annual Cashflow</span>
-                        <span className={(netRent || 0) - Number(loan.mortgage_payment_gbp) * 12 >= 0 ? 'text-green-600' : 'text-destructive'}>
-                          {formatGBP((netRent || 0) - Number(loan.mortgage_payment_gbp) * 12)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-muted-foreground text-sm">
-                        <span>Monthly Cashflow</span>
-                        <span className={(netRent || 0) - Number(loan.mortgage_payment_gbp) * 12 >= 0 ? 'text-green-600' : 'text-destructive'}>
-                          {formatGBP(((netRent || 0) - Number(loan.mortgage_payment_gbp) * 12) / 12)}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="passport">
+          {/* OPERATIONS TAB - Renamed from Passport */}
+          <TabsContent value="operations">
             <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
           </TabsContent>
 
+          {/* COMPLIANCE TAB */}
           <TabsContent value="compliance" className="space-y-4">
             <ComplianceTab propertyId={id!} propertyAddress={property?.address_line || ''} />
           </TabsContent>
 
-          <TabsContent value="documents" className="space-y-4">
-            {/* Floorplans Section */}
-            <FloorplanCard propertyId={id!} showAllFloorplans={true} />
-            
-            {/* Other Documents */}
-            <Card className="bg-card border-border">
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <p>Document management coming soon</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="photos" className="space-y-6">
+          {/* MEDIA & DOCS TAB - Merged */}
+          <TabsContent value="media" className="space-y-6">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Image className="h-4 w-4" />
+              <span className="font-medium">Photos & Gallery</span>
+            </div>
             <PhotoGallery propertyId={id!} />
-            <FloorplanCard propertyId={id!} />
-          </TabsContent>
-
-          <TabsContent value="activity">
-            <ActivityTimeline propertyId={id} showHeader={false} showAddNote={true} />
+            
+            <div className="flex items-center gap-2 text-muted-foreground pt-4">
+              <FileText className="h-4 w-4" />
+              <span className="font-medium">Floor Plans</span>
+            </div>
+            <FloorplanCard propertyId={id!} showAllFloorplans={true} />
           </TabsContent>
         </Tabs>
       </div>

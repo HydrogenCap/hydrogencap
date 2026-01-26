@@ -427,40 +427,12 @@ function DashboardPage() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
 
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+        {/* KPI Cards - Simplified to 4 Core Metrics */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Portfolio Value
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {formatGBP(portfolioStats.totalValue)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Mortgage
-              </CardTitle>
-              <PoundSterling className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {formatGBP(portfolioStats.totalMortgage)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Equity
+                Attributable Equity
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
@@ -468,20 +440,9 @@ function DashboardPage() {
               <div className="text-2xl font-bold text-primary">
                 {formatGBP(portfolioStats.totalEquity)}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Average LTV
-              </CardTitle>
-              <Percent className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {formatPercent(portfolioStats.averageLTV)}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Value: {formatGBP(portfolioStats.totalValue)}
+              </p>
             </CardContent>
           </Card>
 
@@ -496,21 +457,44 @@ function DashboardPage() {
               <div className={`text-2xl font-bold ${portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {formatGBP(portfolioStats.monthlyCashflow)}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">After debt service</p>
             </CardContent>
           </Card>
 
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Rent / Bedroom
+                Average LTV
               </CardTitle>
-              <Bed className="h-4 w-4 text-muted-foreground" />
+              <Percent className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {portfolioStats.rentPerBedroom !== null ? formatPaymentGBP(portfolioStats.rentPerBedroom) : '—'}
+              <div className={`text-2xl font-bold ${
+                portfolioStats.averageLTV > 75 ? 'text-warning' : 
+                portfolioStats.averageLTV > 85 ? 'text-destructive' : ''
+              }`}>
+                {formatPercent(portfolioStats.averageLTV)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">per month avg</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Debt: {formatGBP(portfolioStats.totalMortgage)}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className={`bg-card border-border ${risks.length > 0 ? 'border-warning/50' : 'border-success/50'}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Action Required
+              </CardTitle>
+              <AlertTriangle className={`h-4 w-4 ${risks.length > 0 ? 'text-warning' : 'text-success'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${risks.length > 0 ? 'text-warning' : 'text-success'}`}>
+                {risks.length === 0 ? '✓' : risks.length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {risks.length === 0 ? 'All clear' : `${risks.filter(r => r.severity === 'critical').length} critical`}
+              </p>
             </CardContent>
           </Card>
         </div>

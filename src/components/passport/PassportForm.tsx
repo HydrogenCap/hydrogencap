@@ -207,23 +207,37 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Auto-fill with AI Button */}
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAutofillClick}
-            disabled={generateSuggestions.isPending}
-            className="gap-2"
-          >
-            {generateSuggestions.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            Auto-fill with AI
-          </Button>
-        </div>
+        {/* Header */}
+        <Card className="bg-muted/30 border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Settings2 className="h-5 w-5" />
+              Operational Details
+            </CardTitle>
+            <CardDescription>
+              Property-specific operational data. Core property info (value, mortgage, rent) is managed in the Finance tab. 
+              Ownership is managed in the Overview tab.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAutofillClick}
+                disabled={generateSuggestions.isPending}
+                className="gap-2"
+              >
+                {generateSuggestions.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Auto-fill with AI
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Autofill Modal */}
         <AutofillSuggestionsModal
