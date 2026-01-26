@@ -144,12 +144,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
             </CollapsibleTrigger>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{item.compliance_type}</span>
-                {item.is_coho_required && (
-                  <Badge variant="outline" className="text-xs">COHO Required</Badge>
-                )}
-              </div>
+              <span className="font-medium">{item.compliance_type}</span>
               <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                 {item.issue_date && (
                   <span>Issued: {format(new Date(item.issue_date), 'dd MMM yyyy')}</span>

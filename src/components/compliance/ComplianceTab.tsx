@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { AlertTriangle, Filter, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -30,7 +29,6 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
   const { data: items, isLoading } = usePropertyCompliance(propertyId);
   const [statusFilter, setStatusFilter] = useState<ComplianceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [cohoOnlyFilter, setCohoOnlyFilter] = useState(false);
 
   // Calculate summary stats
   const summary = useMemo(() => {
@@ -65,14 +63,9 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
         return false;
       }
       
-      // COHO only filter
-      if (cohoOnlyFilter && !item.is_coho_required) {
-        return false;
-      }
-      
       return true;
     });
-  }, [items, statusFilter, typeFilter, cohoOnlyFilter]);
+  }, [items, statusFilter, typeFilter]);
 
   // Check for expired items to show banner
   const hasExpired = summary.expired > 0;
@@ -167,15 +160,6 @@ export function ComplianceTab({ propertyId, propertyAddress }: ComplianceTabProp
               ))}
             </SelectContent>
           </Select>
-
-          <div className="flex items-center gap-2">
-            <Switch
-              id="coho-only"
-              checked={cohoOnlyFilter}
-              onCheckedChange={setCohoOnlyFilter}
-            />
-            <label htmlFor="coho-only" className="text-sm">COHO Required Only</label>
-          </div>
         </div>
 
         <AddComplianceItemDialog propertyId={propertyId} />

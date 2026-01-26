@@ -42,7 +42,7 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
     custom_type: '',
     issue_date: '',
     expiry_date: '',
-    responsible_party: 'COHO',
+    responsible_party: 'Owner',
     notes: '',
     epc_rating: '', // For EPC sync
   });
@@ -86,7 +86,6 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
         issue_date: formData.issue_date || null,
         expiry_date: formData.expiry_date || null,
         responsible_party: formData.responsible_party,
-        is_coho_required: false,
         notes: formData.epc_rating 
           ? `${formData.notes || ''} Rating: ${formData.epc_rating}`.trim()
           : formData.notes || null,
@@ -100,7 +99,7 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
         custom_type: '',
         issue_date: '',
         expiry_date: '',
-        responsible_party: 'COHO',
+        responsible_party: 'Owner',
         notes: '',
         epc_rating: '',
       });
