@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { addMonths, format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -40,12 +40,16 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
     issue_date: '',
     expiry_date: '',
     responsible_party: 'COHO',
-    is_coho_required: true,
     notes: '',
   });
 
   const { toast } = useToast();
   const createItem = useCreateComplianceItem();
+
+  const handleQuickExpiry = (months: number) => {
+    const futureDate = addMonths(new Date(), months);
+    setFormData({ ...formData, expiry_date: format(futureDate, 'yyyy-MM-dd') });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +70,7 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
         issue_date: formData.issue_date || null,
         expiry_date: formData.expiry_date || null,
         responsible_party: formData.responsible_party,
-        is_coho_required: formData.is_coho_required,
+        is_coho_required: false,
         notes: formData.notes || null,
         reminder_days: DEFAULT_REMINDER_DAYS,
       });
@@ -79,7 +83,6 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
         issue_date: '',
         expiry_date: '',
         responsible_party: 'COHO',
-        is_coho_required: true,
         notes: '',
       });
     } catch (error) {
@@ -152,6 +155,26 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
                   value={formData.expiry_date}
                   onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
                 />
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => handleQuickExpiry(6)}
+                  >
+                    +6 months
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => handleQuickExpiry(12)}
+                  >
+                    +12 months
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -170,19 +193,6 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="coho_required"
-                checked={formData.is_coho_required}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, is_coho_required: checked === true })
-                }
-              />
-              <label htmlFor="coho_required" className="text-sm">
-                COHO Required
-              </label>
             </div>
 
             <div>
