@@ -52,7 +52,7 @@ const propertySchema = z.object({
   fixed_or_variable: z.enum(['fixed', 'variable', '']).optional(),
   current_mortgage_balance_gbp: z.coerce.number().min(0).optional(),
   capital_or_interest: z.enum(['capital', 'interest', '']).optional(),
-  mortgage_type: z.enum(['BTL', 'Bridging', '']).optional(),
+  mortgage_type: z.enum(['BTL', 'Bridging', 'Commercial', '']).optional(),
   term_years: z.coerce.number().int().min(1).max(50).optional(),
   mortgage_payment_gbp: z.coerce.number().min(0).optional(),
   fixed_rate_expires: z.string().optional(),
@@ -734,7 +734,7 @@ function PropertyEditPage() {
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-base font-semibold">Mortgage Type</FormLabel>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         <button
                           type="button"
                           onClick={() => field.onChange('BTL')}
@@ -758,6 +758,18 @@ function PropertyEditPage() {
                         >
                           <div className="font-semibold">Bridging Loan</div>
                           <div className="text-sm text-muted-foreground">Short-term finance</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => field.onChange('Commercial')}
+                          className={`p-4 rounded-lg border-2 text-left transition-all ${
+                            field.value === 'Commercial' 
+                              ? 'border-primary bg-primary/10 ring-2 ring-primary/20' 
+                              : 'border-border bg-muted/30 hover:border-muted-foreground/50'
+                          }`}
+                        >
+                          <div className="font-semibold">Commercial Loan</div>
+                          <div className="text-sm text-muted-foreground">Business/commercial property</div>
                         </button>
                       </div>
                       <FormMessage />
