@@ -137,10 +137,9 @@ export const PASSPORT_FIELDS: FieldDefinition[] = [
   { key: 'parking', label: 'Parking', type: 'select', options: ['None', 'On-street', 'Driveway', 'Garage', 'Allocated space', 'Multiple'] },
   { key: 'has_loft_access', label: 'Loft Access', type: 'boolean' },
   { key: 'basement', label: 'Basement', type: 'boolean' },
-  // HMO (unique to passport)
+  // HMO (unique to passport - licence number/expiry tracked in Compliance)
   { key: 'hmo_licence_required', label: 'HMO Licence Required', type: 'boolean' },
-  { key: 'hmo_licence_number', label: 'HMO Licence Number', type: 'text' },
-  { key: 'hmo_licence_expiry', label: 'HMO Licence Expiry', type: 'date' },
+  { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', type: 'number' },
   { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', type: 'number' },
   // Management (unique to passport)
   { key: 'management_company_text', label: 'Management Company', type: 'text' },
