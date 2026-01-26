@@ -154,6 +154,14 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     reasonRequired: 'Property has emergency lighting system',
     reasonNotRequired: 'No emergency lighting system',
   },
+  'Fire Suppression System Certificate': {
+    category: 'HMO & Licensing',
+    defaultRequired: false,
+    validityYears: 1,
+    condition: () => false, // Manually added per property - condition for listed HMOs
+    reasonRequired: 'Fire suppression system installed (HMO licence condition)',
+    reasonNotRequired: 'No fire suppression system',
+  },
   // Insurance
   'Buildings Insurance Schedule': {
     category: 'Insurance',
