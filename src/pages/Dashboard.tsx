@@ -1,19 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Bed, AlertCircle, ArrowRight } from 'lucide-react';
+import { Building2, PoundSterling, TrendingUp, Percent, AlertTriangle, ExternalLink, Bed, AlertCircle, ArrowRight, Users, User } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
+import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
-import { ShareholderBreakdownWidget } from '@/components/dashboard/ShareholderBreakdownWidget';
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
@@ -55,10 +57,23 @@ interface RiskItem {
 import { usePropertyPassports, getHMOLicenceStatus, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useMissingInfo } from '@/hooks/useMissingInfo';
 
+const SHAREHOLDER_COLORS = [
+  'hsl(174, 72%, 45%)',
+  'hsl(190, 80%, 50%)',
+  'hsl(200, 85%, 55%)',
+  'hsl(280, 70%, 55%)',
+  'hsl(320, 75%, 50%)',
+  'hsl(38, 92%, 50%)',
+  'hsl(142, 70%, 45%)',
+  'hsl(350, 80%, 55%)',
+];
+
 function DashboardPage() {
+  const [activeTab, setActiveTab] = useState('overview');
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
+  const { data: attribution, isLoading: isAttributionLoading } = usePortfolioAttribution(properties || []);
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -345,6 +360,33 @@ function DashboardPage() {
     return properties.some(p => p.latitude && p.longitude);
   }, [properties]);
 
+  // Calculate shareholder data for breakdown tab
+  const shareholderData = useMemo(() => {
+    if (!attribution || attribution.length === 0) return [];
+
+    const totalEquity = attribution.reduce(
+      (sum, owner) => sum + owner.totals.totalAttributableEquity,
+      0
+    );
+
+    return attribution.map((owner, index) => {
+      const equityPercent = totalEquity > 0
+        ? (owner.totals.totalAttributableEquity / totalEquity) * 100
+        : 0;
+
+      return {
+        id: owner.ownerId,
+        name: owner.ownerName,
+        type: owner.ownerType,
+        equityPercent,
+        equity: owner.totals.totalAttributableEquity,
+        cashflow: owner.totals.totalAttributableCashflow,
+        properties: owner.totals.propertyCount,
+        color: SHAREHOLDER_COLORS[index % SHAREHOLDER_COLORS.length],
+      };
+    }).sort((a, b) => b.equityPercent - a.equityPercent);
+  }, [attribution]);
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -370,6 +412,19 @@ function DashboardPage() {
             </p>
           </div>
         </div>
+
+        {/* Dashboard Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="shareholders">
+              <Users className="h-4 w-4 mr-2" />
+              Shareholders
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6 mt-6">
 
         {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
@@ -632,12 +687,9 @@ function DashboardPage() {
           {properties && <AreaExposureChart properties={properties} />}
         </div>
 
-        {/* Data Quality & Shareholder Breakdown Row */}
+        {/* Data Quality Row */}
         {properties && properties.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2">
-            <ShareholderBreakdownWidget properties={properties} />
-            <DataQualityWidget properties={properties} />
-          </div>
+          <DataQualityWidget properties={properties} />
         )}
 
         {/* Beneficial Owner Details */}
@@ -650,6 +702,166 @@ function DashboardPage() {
 
         {/* Recent Activity */}
         <RecentActivityWidget />
+          </TabsContent>
+
+          {/* Shareholders Tab */}
+          <TabsContent value="shareholders" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Shareholder Breakdown
+                </CardTitle>
+                <CardDescription>
+                  {shareholderData.length} beneficial owner{shareholderData.length !== 1 ? 's' : ''} across the portfolio
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isAttributionLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-[300px] w-full" />
+                    <Skeleton className="h-[200px] w-full" />
+                  </div>
+                ) : shareholderData.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium text-lg">No shareholders defined</p>
+                    <p className="text-sm mt-2">Set up company shareholders to see the breakdown</p>
+                  </div>
+                ) : (
+                  <div className="grid lg:grid-cols-2 gap-8">
+                    {/* Pie Chart */}
+                    <div className="h-[350px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={shareholderData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={70}
+                            outerRadius={120}
+                            dataKey="equityPercent"
+                            nameKey="name"
+                            paddingAngle={2}
+                            label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                            labelLine={true}
+                          >
+                            {shareholderData.map((entry) => (
+                              <Cell key={entry.id} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number, name: string, props: any) => [
+                              `${value.toFixed(1)}% equity`,
+                              props.payload.name
+                            ]}
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '0.5rem',
+                              color: 'hsl(var(--foreground))',
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Legend with colored dots */}
+                    <div className="space-y-2">
+                      {shareholderData.map((owner) => (
+                        <div
+                          key={owner.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                        >
+                          <div
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: owner.color }}
+                          />
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            {owner.type === 'INDIVIDUAL' || owner.type === 'Person' ? (
+                              <User className="h-4 w-4" />
+                            ) : (
+                              <Building2 className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{owner.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {owner.properties} propert{owner.properties !== 1 ? 'ies' : 'y'}
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-lg font-bold text-primary">
+                              {formatPercent(owner.equityPercent, 1)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Shareholders Table */}
+            {shareholderData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detailed Breakdown</CardTitle>
+                  <CardDescription>
+                    Financial attribution by beneficial owner
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Owner</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-right">Equity %</TableHead>
+                        <TableHead className="text-right">Attributable Equity</TableHead>
+                        <TableHead className="text-right">Monthly Cashflow</TableHead>
+                        <TableHead className="text-right">Properties</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {shareholderData.map((owner) => (
+                        <TableRow key={owner.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: owner.color }}
+                              />
+                              <span className="font-medium">{owner.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {owner.type === 'INDIVIDUAL' || owner.type === 'Person' ? 'Individual' : 'Company'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-primary">
+                            {formatPercent(owner.equityPercent, 1)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatGBP(owner.equity)}
+                          </TableCell>
+                          <TableCell className={`text-right ${owner.cashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
+                            {formatGBP(owner.cashflow)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {owner.properties}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
