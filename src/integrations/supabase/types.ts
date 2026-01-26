@@ -704,6 +704,122 @@ export type Database = {
           },
         ]
       }
+      go_live_checklists: {
+        Row: {
+          build_fire_alarm_installed: boolean
+          build_heating_operational: boolean
+          build_major_works_complete: boolean
+          build_practical_completion: boolean
+          build_utilities_live: boolean
+          compliance_eicr_uploaded: boolean
+          compliance_emergency_lighting_not_applicable: boolean
+          compliance_emergency_lighting_uploaded: boolean
+          compliance_epc_uploaded: boolean
+          compliance_fire_alarm_cert_uploaded: boolean
+          compliance_gas_safety_not_applicable: boolean
+          compliance_gas_safety_uploaded: boolean
+          compliance_hmo_licence_not_applicable: boolean
+          compliance_hmo_licence_uploaded: boolean
+          compliance_legionella_uploaded: boolean
+          created_at: string
+          final_confirmation: boolean
+          finance_expected_income_populated: boolean
+          finance_mortgage_added: boolean
+          finance_mortgage_rate_entered: boolean
+          finance_rent_values_entered: boolean
+          finance_rental_strategy_selected: boolean
+          finance_unencumbered: boolean
+          go_live_approved_at: string | null
+          go_live_approved_by: string | null
+          id: string
+          property_id: string
+          setup_address_verified: boolean
+          setup_legal_owner_confirmed: boolean
+          setup_local_authority_confirmed: boolean
+          setup_ownership_confirmed: boolean
+          setup_tenure_confirmed: boolean
+          updated_at: string
+        }
+        Insert: {
+          build_fire_alarm_installed?: boolean
+          build_heating_operational?: boolean
+          build_major_works_complete?: boolean
+          build_practical_completion?: boolean
+          build_utilities_live?: boolean
+          compliance_eicr_uploaded?: boolean
+          compliance_emergency_lighting_not_applicable?: boolean
+          compliance_emergency_lighting_uploaded?: boolean
+          compliance_epc_uploaded?: boolean
+          compliance_fire_alarm_cert_uploaded?: boolean
+          compliance_gas_safety_not_applicable?: boolean
+          compliance_gas_safety_uploaded?: boolean
+          compliance_hmo_licence_not_applicable?: boolean
+          compliance_hmo_licence_uploaded?: boolean
+          compliance_legionella_uploaded?: boolean
+          created_at?: string
+          final_confirmation?: boolean
+          finance_expected_income_populated?: boolean
+          finance_mortgage_added?: boolean
+          finance_mortgage_rate_entered?: boolean
+          finance_rent_values_entered?: boolean
+          finance_rental_strategy_selected?: boolean
+          finance_unencumbered?: boolean
+          go_live_approved_at?: string | null
+          go_live_approved_by?: string | null
+          id?: string
+          property_id: string
+          setup_address_verified?: boolean
+          setup_legal_owner_confirmed?: boolean
+          setup_local_authority_confirmed?: boolean
+          setup_ownership_confirmed?: boolean
+          setup_tenure_confirmed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          build_fire_alarm_installed?: boolean
+          build_heating_operational?: boolean
+          build_major_works_complete?: boolean
+          build_practical_completion?: boolean
+          build_utilities_live?: boolean
+          compliance_eicr_uploaded?: boolean
+          compliance_emergency_lighting_not_applicable?: boolean
+          compliance_emergency_lighting_uploaded?: boolean
+          compliance_epc_uploaded?: boolean
+          compliance_fire_alarm_cert_uploaded?: boolean
+          compliance_gas_safety_not_applicable?: boolean
+          compliance_gas_safety_uploaded?: boolean
+          compliance_hmo_licence_not_applicable?: boolean
+          compliance_hmo_licence_uploaded?: boolean
+          compliance_legionella_uploaded?: boolean
+          created_at?: string
+          final_confirmation?: boolean
+          finance_expected_income_populated?: boolean
+          finance_mortgage_added?: boolean
+          finance_mortgage_rate_entered?: boolean
+          finance_rent_values_entered?: boolean
+          finance_rental_strategy_selected?: boolean
+          finance_unencumbered?: boolean
+          go_live_approved_at?: string | null
+          go_live_approved_by?: string | null
+          id?: string
+          property_id?: string
+          setup_address_verified?: boolean
+          setup_legal_owner_confirmed?: boolean
+          setup_local_authority_confirmed?: boolean
+          setup_ownership_confirmed?: boolean
+          setup_tenure_confirmed?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "go_live_checklists_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           created_at: string
