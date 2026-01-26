@@ -69,12 +69,17 @@ function getCurrentYearData(property: PropertyWithFinancials) {
   
   const effectiveCosts = getEffectiveCosts(rent, value, costs);
   
+  // Use payment_override first, then stored mortgage_payment_gbp as fallback for override
+  // This ensures we use the stored payment when auto-calculation can't work (e.g., missing term_months)
+  const storedPayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
+  const paymentOverride = loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : storedPayment;
+  
   const mortgagePaymentResult = calculateMonthlyMortgagePayment({
     balance: mortgage || null,
     interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
     termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
     isInterestOnly: loan?.capital_or_interest === 'interest',
-    paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+    paymentOverride: paymentOverride,
   });
   
   return { loan, income, costs, value, mortgage, rent, effectiveCosts, mortgagePaymentResult };
