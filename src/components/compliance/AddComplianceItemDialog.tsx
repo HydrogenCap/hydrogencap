@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { addMonths, format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -33,12 +33,14 @@ const EPC_RATINGS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
 interface AddComplianceItemDialogProps {
   propertyId: string;
+  defaultType?: string;
+  trigger?: React.ReactNode;
 }
 
-export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogProps) {
+export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: AddComplianceItemDialogProps) {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-    compliance_type: '',
+    compliance_type: defaultType || '',
     custom_type: '',
     issue_date: '',
     expiry_date: '',
@@ -46,6 +48,13 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
     notes: '',
     epc_rating: '', // For EPC sync
   });
+  
+  // Update form when defaultType changes
+  React.useEffect(() => {
+    if (defaultType && !open) {
+      setFormData(prev => ({ ...prev, compliance_type: defaultType }));
+    }
+  }, [defaultType, open]);
 
   const { toast } = useToast();
   const createItem = useCreateComplianceItem();
@@ -114,10 +123,12 @@ export function AddComplianceItemDialog({ propertyId }: AddComplianceItemDialogP
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Compliance Item
-        </Button>
+        {trigger || (
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Compliance Item
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>

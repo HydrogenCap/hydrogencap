@@ -16,7 +16,7 @@ import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWid
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
-import { ComplianceAlertsWidget } from '@/components/dashboard/ComplianceAlertsWidget';
+import { MissingComplianceWidget } from '@/components/dashboard/MissingComplianceWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
   formatGBP,
@@ -683,8 +683,8 @@ function DashboardPage() {
         {/* Stock Condition Section */}
         <StockConditionSection />
 
-        {/* Compliance Alerts */}
-        <ComplianceAlertsWidget />
+        {/* Compliance Overview */}
+        <MissingComplianceWidget />
 
         {/* Recent Activity */}
         <RecentActivityWidget />
