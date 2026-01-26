@@ -28,6 +28,7 @@ import Settings from "./pages/Settings";
 import DashboardMap from "./pages/DashboardMap";
 import Timeline from "./pages/Timeline";
 import Compliance from "./pages/Compliance";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -180,6 +181,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Compliance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
                 </ProtectedRoute>
               }
             />
