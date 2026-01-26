@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
-import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2 } from 'lucide-react';
+import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,8 @@ import {
 } from '@/lib/calculations';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
+import { useBulkEpcEnrich } from '@/hooks/useBulkEpcEnrich';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // ============================================
 // VIEW PRESET DEFINITIONS
@@ -331,6 +333,12 @@ function PropertiesPage() {
   const { data: photoMap } = usePropertyPhotos();
   const { data: companyMap } = useLegalOwnerCompanies();
   const { data: passports } = usePropertyPassports();
+  const { enrichAll, isEnriching } = useBulkEpcEnrich();
+  
+  // Calculate properties missing EPC
+  const propertiesMissingEpc = useMemo(() => {
+    return properties?.filter(p => !p.epc_rating && p.postcode).length || 0;
+  }, [properties]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const activeFilter = searchParams.get('filter');
@@ -701,12 +709,38 @@ function PropertiesPage() {
               {properties?.length || 0} properties in your portfolio
             </p>
           </div>
-          <Button asChild>
-            <Link to="/properties/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Property
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {propertiesMissingEpc > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => enrichAll('missing-only')}
+                      disabled={isEnriching}
+                      className="gap-2"
+                    >
+                      {isEnriching ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Zap className="h-4 w-4" />
+                      )}
+                      {isEnriching ? 'Enriching...' : `Enrich EPC (${propertiesMissingEpc})`}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Fetch EPC ratings from gov.uk for {propertiesMissingEpc} properties missing data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <Button asChild>
+              <Link to="/properties/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Property
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* View Switcher + Search + Column Settings */}
