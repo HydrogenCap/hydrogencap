@@ -64,6 +64,13 @@ interface AIExtractionResult {
   compliance_type: string | null;
 }
 
+// Helper to validate UUID format
+function isValidUUID(str: string | null | undefined): boolean {
+  if (!str) return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 // Helper to convert file to base64 data URL
 async function fetchFileAsDataUrl(fileUrl: string): Promise<{ dataUrl: string; mimeType: string }> {
   const response = await fetch(fileUrl);
@@ -294,8 +301,18 @@ Respond with valid JSON only (no markdown):
       // Map to compliance type
       const complianceType = DOC_TYPE_TO_COMPLIANCE_TYPE[parsed.doc_type] || null;
       
+      // Validate UUID - AI sometimes returns truncated UUIDs
+      const validPropertyId = isValidUUID(parsed.matched_property_id) 
+        ? parsed.matched_property_id 
+        : null;
+      
+      if (parsed.matched_property_id && !validPropertyId) {
+        console.warn(`AI returned invalid UUID: ${parsed.matched_property_id}, setting to null`);
+      }
+      
       extraction = {
         ...parsed,
+        matched_property_id: validPropertyId,
         compliance_type: complianceType,
       };
     } catch (parseError) {
