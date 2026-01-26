@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2 } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2, RotateCcw } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -76,6 +76,7 @@ function DashboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
+  const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
   const { data: properties, isLoading } = useProperties();
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
@@ -137,12 +138,16 @@ function DashboardPage() {
       const totalCosts = effectiveCosts.total;
 
       // Calculate effective monthly mortgage payment
+      // Use stored mortgage_payment_gbp as fallback when auto-calc fails (e.g., missing term_months)
+      const storedPayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
+      const paymentOverride = loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : storedPayment;
+      
       const mortgagePaymentResult = calculateMonthlyMortgagePayment({
         balance: mortgage || null,
         interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
         termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
         isInterestOnly: loan?.capital_or_interest === 'interest',
-        paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+        paymentOverride: paymentOverride,
       });
 
       totalValue += value;
@@ -192,12 +197,16 @@ function DashboardPage() {
       const totalCosts = effectiveCostsRisk.total;
 
       // Calculate effective monthly mortgage payment
+      // Use stored mortgage_payment_gbp as fallback when auto-calc fails
+      const storedPaymentRisk = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
+      const paymentOverrideRisk = loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : storedPaymentRisk;
+      
       const mortgagePaymentResult = calculateMonthlyMortgagePayment({
         balance: mortgage,
         interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
         termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
         isInterestOnly: loan?.capital_or_interest === 'interest',
-        paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
+        paymentOverride: paymentOverrideRisk,
       });
 
       const ltv = calculateLTV(mortgage, value);
@@ -478,14 +487,26 @@ function DashboardPage() {
           />
 
           <ClickableStatCard
-            title="Monthly Cashflow"
-            value={formatGBP(portfolioStats.monthlyCashflow)}
+            title={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
+            value={formatGBP(cashflowPeriod === 'monthly' ? portfolioStats.monthlyCashflow : portfolioStats.monthlyCashflow * 12)}
             subtitle="After debt service"
             icon={PoundSterling}
             iconClassName="text-success"
             valueClassName={portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
             onClick={() => handleMetricClick('cashflow')}
-            aria-label="View details for Monthly Cashflow"
+            aria-label="View details for Cashflow"
+            headerAction={
+              <button
+                className="text-xs px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCashflowPeriod(cashflowPeriod === 'monthly' ? 'annual' : 'monthly');
+                }}
+                aria-label={`Switch to ${cashflowPeriod === 'monthly' ? 'annual' : 'monthly'} view`}
+              >
+                {cashflowPeriod === 'monthly' ? '/mo' : '/yr'}
+              </button>
+            }
           />
 
           <ClickableStatCard

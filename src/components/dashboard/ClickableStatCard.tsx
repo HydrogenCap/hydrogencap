@@ -14,6 +14,8 @@ interface ClickableStatCardProps {
   onClick?: () => void;
   disabled?: boolean;
   'aria-label'?: string;
+  /** Optional toggle element to render in the header next to the icon */
+  headerAction?: React.ReactNode;
 }
 
 export function ClickableStatCard({
@@ -27,12 +29,25 @@ export function ClickableStatCard({
   onClick,
   disabled = false,
   'aria-label': ariaLabel,
+  headerAction,
 }: ClickableStatCardProps) {
   const isClickable = !!onClick && !disabled;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
+      onClick?.();
+    }
+  };
+
+  // Handle click on the card, but don't trigger if clicking on the header action
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Check if click originated from the header action area
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-header-action]')) {
+      return; // Don't trigger card click when clicking toggle
+    }
+    if (isClickable) {
       onClick?.();
     }
   };
@@ -52,7 +67,7 @@ export function ClickableStatCard({
       )}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      onClick={isClickable ? onClick : undefined}
+      onClick={handleCardClick}
       onKeyDown={isClickable ? handleKeyDown : undefined}
       aria-label={ariaLabel || `View details for ${title}`}
       aria-disabled={disabled}
@@ -61,7 +76,14 @@ export function ClickableStatCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        {Icon && <Icon className={cn('h-4 w-4', iconClassName)} />}
+        <div className="flex items-center gap-2">
+          {headerAction && (
+            <div data-header-action onClick={(e) => e.stopPropagation()}>
+              {headerAction}
+            </div>
+          )}
+          {Icon && <Icon className={cn('h-4 w-4', iconClassName)} />}
+        </div>
       </CardHeader>
       <CardContent>
         <div className={cn('text-2xl font-bold', valueClassName)}>
