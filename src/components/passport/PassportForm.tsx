@@ -32,10 +32,6 @@ const passportSchema = z.object({
   kitchens: z.coerce.number().min(0).max(50).nullable().optional(),
   living_rooms_communal: z.coerce.number().min(0).max(50).nullable().optional(),
   
-  // Licensing (minimal)
-  hmo_licence_required: z.boolean().default(false),
-  hmo_licence_expiry: z.string().nullable().optional(),
-  
   // Management
   management_company_id: z.string().nullable().optional(),
   property_management_fee_percent: z.coerce.number().min(0).max(100).nullable().optional(),
@@ -332,44 +328,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
           </CardContent>
         </Card>
 
-        {/* Licensing */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Licensing</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="hmo_licence_required"
-              render={({ field }) => (
-                <FormItem className="flex items-center gap-3 pt-2">
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <div>
-                    <FormLabel className="!mt-0">HMO Licence Required</FormLabel>
-                    <FormDescription className="text-xs">Toggle on if property requires an HMO licence</FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="hmo_licence_expiry"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Licence Expiry Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} value={field.value ?? ''} />
-                  </FormControl>
-                  {field.value && (
-                    <FormDescription className="text-xs">{formatDateUK(field.value)}</FormDescription>
-                  )}
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+        {/* Note: HMO Licence is managed in the Compliance tab */}
 
         {/* Management */}
         <Card className="bg-card border-border">
@@ -675,8 +634,7 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
     ensuites: passport?.ensuites ?? null,
     kitchens: passport?.kitchens ?? null,
     living_rooms_communal: passport?.living_rooms_communal ?? null,
-    hmo_licence_required: passport?.hmo_licence_required ?? false,
-    hmo_licence_expiry: passport?.hmo_licence_expiry ?? null,
+    // Note: HMO Licence is managed in Compliance tab
     management_company_id: (passport as any)?.management_company_id ?? null,
     property_management_fee_percent: passport?.property_management_fee_percent ? Number(passport.property_management_fee_percent) : null,
     
