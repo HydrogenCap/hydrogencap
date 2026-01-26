@@ -233,6 +233,49 @@ serve(async (req) => {
           });
           failed++;
         } else {
+          // === EPC CONSOLIDATION: Also upsert compliance_items record ===
+          if (epcData.expiryDate) {
+            // Check if EPC compliance item exists for this property
+            const { data: existingEpc } = await supabase
+              .from('compliance_items')
+              .select('id')
+              .eq('property_id', property.id)
+              .eq('compliance_type', 'EPC')
+              .maybeSingle();
+
+            // Calculate issue date (10 years before expiry)
+            const expiryDateObj = new Date(epcData.expiryDate);
+            const issueDateObj = new Date(expiryDateObj);
+            issueDateObj.setFullYear(issueDateObj.getFullYear() - 10);
+            const issueDate = issueDateObj.toISOString().split('T')[0];
+
+            if (existingEpc) {
+              // Update existing EPC compliance item
+              await supabase
+                .from('compliance_items')
+                .update({
+                  expiry_date: epcData.expiryDate,
+                  issue_date: issueDate,
+                  notes: `Auto-enriched from EPC API. Rating: ${epcData.epcRating}`,
+                })
+                .eq('id', existingEpc.id);
+            } else {
+              // Create new EPC compliance item
+              await supabase
+                .from('compliance_items')
+                .insert({
+                  property_id: property.id,
+                  org_id: membership.org_id,
+                  compliance_type: 'EPC',
+                  expiry_date: epcData.expiryDate,
+                  issue_date: issueDate,
+                  responsible_party: 'Owner',
+                  notes: `Auto-enriched from EPC API. Rating: ${epcData.epcRating}`,
+                  reminder_days: [90, 60, 30, 0],
+                });
+            }
+          }
+
           results.push({
             propertyId: property.id,
             address: property.address_line,
