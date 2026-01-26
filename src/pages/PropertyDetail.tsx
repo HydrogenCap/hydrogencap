@@ -36,7 +36,7 @@ import {
   calculateEquity,
   getEffectiveCosts,
   calculateNetRent,
-  calculateMonthlyCashflow,
+  calculateMonthlyCashflowAfterDebt,
   calculateYield,
   calculateROCE,
   getLTVStatus,
@@ -118,7 +118,8 @@ function PropertyDetailPage() {
   const ltv = calculateLTV(mortgageBalance, currentValue);
   const equity = calculateEquity(currentValue, mortgageBalance);
   const netRent = calculateNetRent(annualRent, totalCosts);
-  const monthlyCashflow = calculateMonthlyCashflow(netRent);
+  const mortgagePayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
+  const monthlyCashflow = calculateMonthlyCashflowAfterDebt(annualRent, totalCosts, mortgagePayment);
   const yieldPercent = calculateYield(netRent, currentValue);
   const roce = calculateROCE(netRent, equity);
   const rentPerBedroom = calculateRentPerBedroom(annualRent, property.beds ? Number(property.beds) : null);
