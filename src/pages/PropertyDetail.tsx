@@ -541,7 +541,7 @@ function PropertyDetailPage() {
           </TabsContent>
 
           <TabsContent value="compliance" className="space-y-4">
-            <ComplianceTab propertyId={id!} />
+            <ComplianceTab propertyId={id!} propertyAddress={property?.address_line || ''} />
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-4">

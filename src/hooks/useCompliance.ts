@@ -127,6 +127,54 @@ export function useDeleteComplianceItem() {
   });
 }
 
+// Compliance type to short code mapping for filenames
+const COMPLIANCE_TYPE_CODES: Record<string, string> = {
+  'Gas Safety Certificate (CP12)': 'GasSafety',
+  'Electrical Safety Certificate (EICR)': 'EICR',
+  'Fire Alarm Certificate': 'FireAlarm',
+  'Emergency Lighting Certificate': 'EmergencyLighting',
+  'Fire Risk Assessment (FRA)': 'FRA',
+  'PAT Testing': 'PAT',
+  'Legionella Risk Assessment': 'Legionella',
+  'EPC': 'EPC',
+  'HMO Licence': 'HMOLicence',
+  'Asbestos Survey': 'Asbestos',
+  'Building Control Certificate': 'BuildingControl',
+  'Fire Door Certification': 'FireDoor',
+  'Fire Panel Commissioning Certificate': 'FirePanel',
+  'Insurance Schedule': 'Insurance',
+  'Floor Plans / Fire Plans': 'FloorPlans',
+};
+
+function generateComplianceFilename(params: {
+  complianceType: string;
+  propertyAddress: string;
+  originalFilename: string;
+}): string {
+  const { complianceType, propertyAddress, originalFilename } = params;
+
+  // Get type code or clean up the type name
+  const typeCode = COMPLIANCE_TYPE_CODES[complianceType] || 
+    complianceType.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+
+  // Clean property address
+  const addressPart = propertyAddress
+    .split(',')[0]
+    .trim()
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .replace(/\s+/g, '')
+    .substring(0, 30);
+
+  // Format date as YYYY-MM-DD
+  const dateStr = new Date().toISOString().split('T')[0];
+
+  // Get file extension
+  const extMatch = originalFilename.match(/\.[^.]+$/);
+  const extension = extMatch ? extMatch[0].toLowerCase() : '.pdf';
+
+  return `${typeCode}_${addressPart}_${dateStr}${extension}`;
+}
+
 // Upload compliance document
 export function useUploadComplianceDocument() {
   const queryClient = useQueryClient();
@@ -136,11 +184,15 @@ export function useUploadComplianceDocument() {
       complianceItemId,
       propertyId,
       file,
+      complianceType,
+      propertyAddress,
       notes,
     }: {
       complianceItemId: string;
       propertyId: string;
       file: File;
+      complianceType: string;
+      propertyAddress: string;
       notes?: string;
     }) => {
       // Get user
@@ -159,20 +211,27 @@ export function useUploadComplianceDocument() {
         ? existingDocs[0].version_number + 1 
         : 1;
 
-      // Upload file
+      // Generate structured filename
+      const structuredFilename = generateComplianceFilename({
+        complianceType,
+        propertyAddress,
+        originalFilename: file.name,
+      });
+
+      // Upload file with structured name
       const fileExt = file.name.split('.').pop();
-      const fileName = `${propertyId}/${complianceItemId}/${Date.now()}.${fileExt}`;
+      const storagePath = `${propertyId}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
       
       const { error: uploadError } = await supabase.storage
         .from('compliance')
-        .upload(fileName, file);
+        .upload(storagePath, file);
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('compliance')
-        .getPublicUrl(fileName);
+        .getPublicUrl(storagePath);
 
       // Archive previous current documents
       await supabase
@@ -181,13 +240,13 @@ export function useUploadComplianceDocument() {
         .eq('compliance_item_id', complianceItemId)
         .eq('is_current', true);
 
-      // Create document record
+      // Create document record with structured filename
       const { data, error } = await supabase
         .from('compliance_documents')
         .insert({
           compliance_item_id: complianceItemId,
           file_url: urlData.publicUrl,
-          original_file_name: file.name,
+          original_file_name: structuredFilename,
           file_type: file.type,
           uploaded_by: user.id,
           is_current: true,
