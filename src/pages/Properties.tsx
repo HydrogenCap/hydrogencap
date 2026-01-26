@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
-import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2 } from 'lucide-react';
+import { Plus, Search, Building2, ArrowUpDown, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +48,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { useBulkEpcEnrich } from '@/hooks/useBulkEpcEnrich';
+import { useBulkPricePaidEnrich } from '@/hooks/useBulkPricePaidEnrich';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // ============================================
@@ -333,11 +334,16 @@ function PropertiesPage() {
   const { data: photoMap } = usePropertyPhotos();
   const { data: companyMap } = useLegalOwnerCompanies();
   const { data: passports } = usePropertyPassports();
-  const { enrichAll, isEnriching } = useBulkEpcEnrich();
+  const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrich();
+  const { enrichAll: enrichPricePaid, isEnriching: isEnrichingPricePaid } = useBulkPricePaidEnrich();
   
-  // Calculate properties missing EPC
+  // Calculate properties missing data
   const propertiesMissingEpc = useMemo(() => {
     return properties?.filter(p => !p.epc_rating && p.postcode).length || 0;
+  }, [properties]);
+  
+  const propertiesMissingPurchasePrice = useMemo(() => {
+    return properties?.filter(p => !p.purchase_price_gbp && p.postcode).length || 0;
   }, [properties]);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -716,20 +722,44 @@ function PropertiesPage() {
                   <TooltipTrigger asChild>
                     <Button 
                       variant="outline" 
-                      onClick={() => enrichAll('missing-only')}
-                      disabled={isEnriching}
+                      onClick={() => enrichEpc('missing-only')}
+                      disabled={isEnrichingEpc || isEnrichingPricePaid}
                       className="gap-2"
                     >
-                      {isEnriching ? (
+                      {isEnrichingEpc ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Zap className="h-4 w-4" />
                       )}
-                      {isEnriching ? 'Enriching...' : `Enrich EPC (${propertiesMissingEpc})`}
+                      {isEnrichingEpc ? 'Enriching...' : `Enrich EPC (${propertiesMissingEpc})`}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Fetch EPC ratings from gov.uk for {propertiesMissingEpc} properties missing data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {propertiesMissingPurchasePrice > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => enrichPricePaid('missing-only')}
+                      disabled={isEnrichingEpc || isEnrichingPricePaid}
+                      className="gap-2"
+                    >
+                      {isEnrichingPricePaid ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <PoundSterling className="h-4 w-4" />
+                      )}
+                      {isEnrichingPricePaid ? 'Enriching...' : `Price Paid (${propertiesMissingPurchasePrice})`}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Fetch historical sold prices from Land Registry for {propertiesMissingPurchasePrice} properties</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
