@@ -7,10 +7,8 @@ import {
   LogOut,
   Inbox,
   TrendingUp,
-  AlertCircle,
-  Map,
-  Calendar,
   Shield,
+  ChevronDown,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -23,19 +21,23 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
+import { useAllCompliance } from '@/hooks/useCompliance';
+import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import logoImage from '@/assets/logo.png';
 
-const navItems = [
+const mainNavItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Portfolio', icon: Building2, href: '/properties' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
-  { title: 'Compliance', icon: Shield, href: '/compliance' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
-  { title: 'Inbox', icon: Inbox, href: '/inbox', showBadge: true },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 
@@ -43,11 +45,26 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { data: inboxDocuments } = useInboxDocuments();
+  const { data: allCompliance } = useAllCompliance();
 
   // Count pending documents
   const pendingCount = inboxDocuments?.filter(
     d => d.review_status === 'pending' && d.extraction_status === 'completed'
   ).length || 0;
+
+  // Count compliance alerts
+  const expiredCount = allCompliance?.filter(
+    c => getComplianceItemStatus(c.expiry_date) === 'expired'
+  ).length || 0;
+
+  const expiringCount = allCompliance?.filter(
+    c => getComplianceItemStatus(c.expiry_date) === 'expiring_soon'
+  ).length || 0;
+
+  const complianceAlertCount = expiredCount + expiringCount;
+
+  // Check if any compliance route is active
+  const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox';
 
   return (
     <Sidebar>
@@ -64,30 +81,83 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
+              {mainNavItems.map((item) => {
                 const isActive = location.pathname === item.href || 
                   (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
-                
-                const badgeCount = item.showBadge ? pendingCount : 0;
                 
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.href} className="flex items-center justify-between">
-                        <span className="flex items-center gap-3">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </span>
-                        {badgeCount > 0 && (
-                          <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
-                            {badgeCount}
-                          </Badge>
-                        )}
+                      <Link to={item.href} className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
+
+              {/* Compliance Section with Submenu */}
+              <Collapsible defaultOpen={isComplianceActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton isActive={isComplianceActive}>
+                      <Shield className="h-4 w-4" />
+                      <span className="flex-1">Compliance</span>
+                      {(complianceAlertCount > 0 || pendingCount > 0) && (
+                        <Badge 
+                          variant={expiredCount > 0 ? "destructive" : "secondary"} 
+                          className="h-5 min-w-5 px-1.5 text-xs mr-1"
+                        >
+                          {complianceAlertCount + pendingCount}
+                        </Badge>
+                      )}
+                      <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          asChild 
+                          isActive={location.pathname === '/compliance'}
+                        >
+                          <Link to="/compliance">
+                            <span>Register</span>
+                            {complianceAlertCount > 0 && (
+                              <Badge 
+                                variant={expiredCount > 0 ? "destructive" : "secondary"} 
+                                className="h-5 min-w-5 px-1.5 text-xs ml-auto"
+                              >
+                                {complianceAlertCount}
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          asChild 
+                          isActive={location.pathname === '/inbox'}
+                        >
+                          <Link to="/inbox">
+                            <Inbox className="h-3 w-3" />
+                            <span>Inbox</span>
+                            {pendingCount > 0 && (
+                              <Badge 
+                                variant="secondary" 
+                                className="h-5 min-w-5 px-1.5 text-xs ml-auto"
+                              >
+                                {pendingCount}
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

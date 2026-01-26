@@ -6,30 +6,45 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Document types we can classify
-const DOC_TYPES = [
-  "epc_certificate",
-  "gas_safety_certificate",
-  "electrical_certificate",
-  "insurance_policy",
-  "tenancy_agreement",
-  "mortgage_offer",
-  "valuation_report",
-  "inventory",
-  "rent_statement",
-  "service_charge",
-  "ground_rent",
-  "council_tax",
-  "utility_bill",
-  "asbestos_management_survey",
-  "asbestos_rd_survey",
+// Compliance document types - aligned with UK property compliance requirements
+const COMPLIANCE_DOC_TYPES = [
+  "gas_safety_certificate",      // CP12
+  "electrical_certificate",      // EICR
+  "epc_certificate",             // EPC
+  "fire_alarm_certificate",
+  "emergency_lighting_certificate",
+  "pat_testing",
+  "fire_risk_assessment",
+  "hmo_licence",
+  "building_insurance",
+  "public_liability_insurance",
+  "asbestos_survey",
+  "legionella_assessment",
+  "planning_building_control",
   "other",
 ] as const;
+
+// Map doc types to compliance_items compliance_type
+const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
+  "gas_safety_certificate": "Gas Safety Certificate (CP12)",
+  "electrical_certificate": "Electrical Safety Certificate (EICR)",
+  "epc_certificate": "EPC",
+  "fire_alarm_certificate": "Fire Alarm Certificate",
+  "emergency_lighting_certificate": "Emergency Lighting Certificate",
+  "pat_testing": "PAT Testing",
+  "fire_risk_assessment": "Fire Risk Assessment (FRA)",
+  "hmo_licence": "HMO Licence",
+  "building_insurance": "Insurance Schedule",
+  "public_liability_insurance": "Insurance Schedule",
+  "asbestos_survey": "Asbestos Survey",
+  "legionella_assessment": "Legionella Risk Assessment",
+  "planning_building_control": "Building Control Certificate",
+};
 
 interface ProcessDocumentRequest {
   documentId: string;
   fileUrl: string;
-  properties: { id: string; address_line: string; postcode: string | null }[];
+  properties: { id: string; address_line: string; postcode: string | null; title_number?: string | null }[];
 }
 
 interface AIExtractionResult {
@@ -38,10 +53,15 @@ interface AIExtractionResult {
   matched_property_id: string | null;
   property_confidence: number;
   extracted_address: string | null;
+  extracted_postcode: string | null;
+  extracted_title_number: string | null;
   extracted_expiry_date: string | null;
   extracted_issue_date: string | null;
   extracted_reference_number: string | null;
   extracted_epc_rating: string | null;
+  extracted_certifier_name: string | null;
+  extracted_certifier_company: string | null;
+  compliance_type: string | null;
 }
 
 serve(async (req) => {
@@ -84,7 +104,7 @@ serve(async (req) => {
 
     const { documentId, fileUrl, properties }: ProcessDocumentRequest = await req.json();
 
-    console.log(`Processing document ${documentId} for user ${claimsData.user.id}`);
+    console.log(`Processing compliance document ${documentId} for user ${claimsData.user.id}`);
 
     // Verify user has access to this document via RLS
     const { data: docAccess, error: accessError } = await userSupabase
@@ -109,35 +129,47 @@ serve(async (req) => {
       .update({ extraction_status: "processing" })
       .eq("id", documentId);
 
-    // Build the prompt for Gemini
+    // Build the prompt for Gemini - optimized for UK compliance documents
     const propertyList = properties
-      .map((p, i) => `${i + 1}. ID: ${p.id}, Address: ${p.address_line}, Postcode: ${p.postcode || "N/A"}`)
+      .map((p, i) => `${i + 1}. ID: ${p.id}, Address: ${p.address_line}, Postcode: ${p.postcode || "N/A"}${p.title_number ? `, Title: ${p.title_number}` : ""}`)
       .join("\n");
 
-    const systemPrompt = `You are a document analysis AI for UK property management. Analyze the provided document image and extract information.
+    const systemPrompt = `You are a UK property compliance document specialist. Analyze this document to classify and extract compliance information.
 
-Your task:
-1. Classify the document type from this list: ${DOC_TYPES.join(", ")}
-2. Extract any property address mentioned in the document
-3. Match the address to one of the user's properties if possible
-4. Extract key dates (expiry date, issue date) if present
-5. Extract any reference numbers
-6. For EPC certificates, extract the energy rating (A-G)
+COMPLIANCE DOCUMENT TYPES (choose the most specific match):
+${COMPLIANCE_DOC_TYPES.map(t => `- ${t}`).join("\n")}
 
-User's properties:
-${propertyList || "No properties registered yet"}
+PROPERTY MATCHING:
+Match to properties using address, postcode, or title number:
+${propertyList || "No properties registered"}
 
-Respond with a JSON object using this exact schema (no markdown, just valid JSON):
+EXTRACTION REQUIREMENTS:
+1. Document type - classify into compliance categories above
+2. Property address - full address as written on document
+3. Postcode - UK postcode format
+4. Title number - if present (Land Registry reference)
+5. Issue date - when certificate was issued
+6. Expiry/renewal date - when certificate expires (critical for compliance)
+7. Reference/certificate number
+8. Certifier name - engineer/inspector who signed
+9. Certifier company - company name of certifier
+10. For EPC only: energy rating A-G
+
+Respond with valid JSON only (no markdown):
 {
-  "doc_type": "string - one of the document types listed above",
-  "doc_type_confidence": "number 0-1 - how confident you are in the classification",
-  "matched_property_id": "string or null - the ID of the matched property from the list, or null if no match",
-  "property_confidence": "number 0-1 - how confident you are in the property match",
-  "extracted_address": "string or null - the address found in the document",
-  "extracted_expiry_date": "string or null - ISO date format YYYY-MM-DD if found",
-  "extracted_issue_date": "string or null - ISO date format YYYY-MM-DD if found",
-  "extracted_reference_number": "string or null - any certificate/reference number found",
-  "extracted_epc_rating": "string or null - EPC rating A-G if this is an EPC certificate"
+  "doc_type": "one of: ${COMPLIANCE_DOC_TYPES.join(", ")}",
+  "doc_type_confidence": 0.0-1.0,
+  "matched_property_id": "UUID or null",
+  "property_confidence": 0.0-1.0,
+  "extracted_address": "string or null",
+  "extracted_postcode": "string or null - UK format",
+  "extracted_title_number": "string or null",
+  "extracted_expiry_date": "YYYY-MM-DD or null",
+  "extracted_issue_date": "YYYY-MM-DD or null",
+  "extracted_reference_number": "string or null",
+  "extracted_epc_rating": "A-G or null",
+  "extracted_certifier_name": "string or null",
+  "extracted_certifier_company": "string or null"
 }`;
 
     // Call Lovable AI Gateway with Gemini for vision
@@ -156,7 +188,7 @@ Respond with a JSON object using this exact schema (no markdown, just valid JSON
             content: [
               {
                 type: "text",
-                text: "Please analyze this document and extract the required information.",
+                text: "Analyze this compliance document and extract all required information for property compliance tracking.",
               },
               {
                 type: "image_url",
@@ -210,7 +242,15 @@ Respond with a JSON object using this exact schema (no markdown, just valid JSON
       if (!jsonMatch) {
         throw new Error("No JSON found in response");
       }
-      extraction = JSON.parse(jsonMatch[0]);
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      // Map to compliance type
+      const complianceType = DOC_TYPE_TO_COMPLIANCE_TYPE[parsed.doc_type] || null;
+      
+      extraction = {
+        ...parsed,
+        compliance_type: complianceType,
+      };
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
       extraction = {
@@ -219,10 +259,15 @@ Respond with a JSON object using this exact schema (no markdown, just valid JSON
         matched_property_id: null,
         property_confidence: 0,
         extracted_address: null,
+        extracted_postcode: null,
+        extracted_title_number: null,
         extracted_expiry_date: null,
         extracted_issue_date: null,
         extracted_reference_number: null,
         extracted_epc_rating: null,
+        extracted_certifier_name: null,
+        extracted_certifier_company: null,
+        compliance_type: null,
       };
     }
 
@@ -263,10 +308,14 @@ Respond with a JSON object using this exact schema (no markdown, just valid JSON
       throw updateError;
     }
 
-    console.log(`Document ${documentId} processed successfully`);
+    console.log(`Compliance document ${documentId} processed successfully`);
 
     return new Response(
-      JSON.stringify({ success: true, extraction }),
+      JSON.stringify({ 
+        success: true, 
+        extraction,
+        compliance_type: extraction.compliance_type,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
