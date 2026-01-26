@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { LegalOwnerCard } from './LegalOwnerCard';
-import { DerivedBeneficialOwnershipCard } from './DerivedBeneficialOwnershipCard';
 import { LegalOwnershipEditor } from './LegalOwnershipEditor';
 
 interface OwnershipSectionProps {
@@ -22,9 +21,6 @@ export function OwnershipSection({ propertyId }: OwnershipSectionProps) {
         propertyId={propertyId}
         onEdit={handleEditLegalOwner}
       />
-
-      {/* Beneficial Ownership Split - Derived from Company Shareholders */}
-      <DerivedBeneficialOwnershipCard propertyId={propertyId} />
 
       {/* Legal Ownership Editor Dialog */}
       <LegalOwnershipEditor
