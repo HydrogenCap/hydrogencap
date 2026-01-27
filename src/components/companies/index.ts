@@ -9,3 +9,4 @@ export { CompanyLinkedProperties } from './CompanyLinkedProperties';
 export { CompanyMissingInfoCard } from './CompanyMissingInfoCard';
 export { CompanyBeneficialOwnersCard } from './CompanyBeneficialOwnersCard';
 export { ShareCapitalCard } from './ShareCapitalCard';
+export { CompanySecretsCard } from './CompanySecretsCard';
