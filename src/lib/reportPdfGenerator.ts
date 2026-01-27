@@ -511,11 +511,27 @@ export class PortfolioComplianceReport extends ReportPdfBase {
 export class PropertyCompliancePack extends ReportPdfBase {
   private property: PropertyReportData;
   private filters: ReportFilters;
+  private attachmentUrls: { name: string; url: string }[] = [];
 
   constructor(property: PropertyReportData, filters: ReportFilters) {
     super();
     this.property = property;
     this.filters = filters;
+    
+    // Collect attachment URLs if enabled
+    if (filters.includeAttachments) {
+      this.property.complianceItems.forEach(item => {
+        if (item.documents && item.documents.length > 0) {
+          const doc = item.documents[0];
+          if (doc.file_url) {
+            this.attachmentUrls.push({
+              name: doc.original_file_name,
+              url: doc.file_url,
+            });
+          }
+        }
+      });
+    }
   }
 
   generate() {
@@ -525,6 +541,12 @@ export class PropertyCompliancePack extends ReportPdfBase {
     this.addComplianceStatement();
     this.addCertificateIndex();
     this.addComplianceNarrative();
+    
+    // Add attachments appendix if enabled
+    if (this.filters.includeAttachments && this.attachmentUrls.length > 0) {
+      this.addAttachmentsAppendix();
+    }
+    
     return this;
   }
 
@@ -653,6 +675,54 @@ export class PropertyCompliancePack extends ReportPdfBase {
     this.doc.text('For queries regarding this property or compliance documentation, please contact:', this.margin, this.currentY);
     this.currentY += 6;
     this.doc.text('Oxygen Management Ltd | office@oxygen.rocks', this.margin, this.currentY);
+  }
+
+  private addAttachmentsAppendix() {
+    this.doc.addPage();
+    this.addHeader('Certificate Attachments Appendix');
+    
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(0, 0, 0);
+    this.addParagraph(
+      `The following ${this.attachmentUrls.length} certificate document(s) are referenced in this compliance pack. ` +
+      `Original digital copies are available upon request or via the property management portal.`
+    );
+    
+    this.currentY += 5;
+    
+    // List all attachments with document reference
+    const tableData = this.attachmentUrls.map((att, idx) => [
+      String(idx + 1),
+      att.name,
+      'Digital file available',
+    ]);
+    
+    autoTable(this.doc, {
+      startY: this.currentY,
+      head: [['#', 'Document Name', 'Status']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [26, 58, 118], fontSize: 9, cellPadding: 4 },
+      bodyStyles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 100 },
+        2: { cellWidth: 50 },
+      },
+    });
+    
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    
+    // Note about digital access
+    this.doc.setFillColor(240, 249, 255);
+    this.doc.roundedRect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 20, 3, 3, 'F');
+    
+    this.doc.setFontSize(9);
+    this.doc.setTextColor(26, 58, 118);
+    const note = 'Note: For security and data protection, original certificate files are stored securely and can be ' +
+      'accessed via the Hydrogen Capital property portal or provided as separate attachments upon verification.';
+    const lines = this.doc.splitTextToSize(note, this.pageWidth - (this.margin * 2) - 10);
+    this.doc.text(lines, this.margin + 5, this.currentY + 7);
   }
 }
 
