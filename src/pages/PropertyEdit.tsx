@@ -730,57 +730,30 @@ function PropertyEditPage() {
                 <CardDescription>Loan details (optional)</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Prominent Mortgage Type Selection */}
+                <div className="grid gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="mortgage_type"
                   render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className="text-base font-semibold">Mortgage Type</FormLabel>
-                      <div className="grid grid-cols-3 gap-3">
-                        <button
-                          type="button"
-                          onClick={() => field.onChange('BTL')}
-                          className={`p-4 rounded-lg border-2 text-left transition-all ${
-                            field.value === 'BTL' 
-                              ? 'border-primary bg-primary/10 ring-2 ring-primary/20' 
-                              : 'border-border bg-muted/30 hover:border-muted-foreground/50'
-                          }`}
-                        >
-                          <div className="font-semibold">Buy-to-Let</div>
-                          <div className="text-sm text-muted-foreground">Standard rental mortgage</div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => field.onChange('Bridging')}
-                          className={`p-4 rounded-lg border-2 text-left transition-all ${
-                            field.value === 'Bridging' 
-                              ? 'border-primary bg-primary/10 ring-2 ring-primary/20' 
-                              : 'border-border bg-muted/30 hover:border-muted-foreground/50'
-                          }`}
-                        >
-                          <div className="font-semibold">Bridging Loan</div>
-                          <div className="text-sm text-muted-foreground">Short-term finance</div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => field.onChange('Commercial')}
-                          className={`p-4 rounded-lg border-2 text-left transition-all ${
-                            field.value === 'Commercial' 
-                              ? 'border-primary bg-primary/10 ring-2 ring-primary/20' 
-                              : 'border-border bg-muted/30 hover:border-muted-foreground/50'
-                          }`}
-                        >
-                          <div className="font-semibold">Commercial Loan</div>
-                          <div className="text-sm text-muted-foreground">Business/commercial property</div>
-                        </button>
-                      </div>
+                    <FormItem>
+                      <FormLabel>Mortgage Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-input">
+                            <SelectValue placeholder="Select mortgage type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="BTL">Buy-to-Let</SelectItem>
+                          <SelectItem value="Bridging">Bridging Loan</SelectItem>
+                          <SelectItem value="Commercial">Commercial Loan</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="grid gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="lender"
