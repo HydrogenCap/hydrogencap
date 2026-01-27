@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock, Building2 } from 'lucide-react';
+import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock, Building2, Link } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { 
@@ -28,8 +27,10 @@ import {
   type MortgageBrokerPackData,
 } from '@/hooks/useReportGeneration';
 import { validateMortgageBrokerPack } from '@/lib/mortgageBrokerPackGenerator';
-import { useReportHistory, getReportTypeName, formatFileSize, deleteReport } from '@/hooks/useReportHistory';
+import { useReportHistory, getReportTypeName, deleteReport } from '@/hooks/useReportHistory';
+import { PropertySearchSelect } from '@/components/reports/PropertySearchSelect';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
+import { Link as RouterLink } from 'react-router-dom';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
 type SelectionMode = 'all' | 'single';
@@ -286,25 +287,12 @@ export default function Reports() {
                   ) : (
                     <div className="space-y-2">
                       <Label>Select Property</Label>
-                      <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a property..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <ScrollArea className="h-60">
-                            {filteredProperties.map(prop => (
-                              <SelectItem key={prop.id} value={prop.id}>
-                                <div className="flex items-center gap-2">
-                                  <span>{prop.address_line}</span>
-                                  <Badge variant="outline" className="text-xs ml-2">
-                                    {prop.lifecycle_type === 'core_rental' ? 'Core' : 'Dev'}
-                                  </Badge>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </ScrollArea>
-                        </SelectContent>
-                      </Select>
+                      <PropertySearchSelect
+                        properties={filteredProperties}
+                        value={selectedPropertyId}
+                        onValueChange={setSelectedPropertyId}
+                        placeholder="Search or select a property..."
+                      />
                       {selectedProperty && (
                         <p className="text-sm text-muted-foreground">
                           Selected: {selectedProperty.address_line}
@@ -358,18 +346,31 @@ export default function Reports() {
 
                       {/* Show entity info for mortgage pack */}
                       {isMortgagePack && canGenerate && selectedProperty && (
-                        <div className="rounded-md border bg-muted/50 p-3 space-y-1">
+                        <div className="rounded-md border bg-muted/50 p-3 space-y-2">
                           <div className="flex items-center gap-2 text-sm">
                             <Building2 className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">Borrowing Entity:</span>
-                            <span className="text-muted-foreground">
+                            <span className={selectedProperty.legal_owner_company_id ? 'text-foreground' : 'text-muted-foreground'}>
                               {companyLoading ? 'Loading...' : (companyData?.legal_name || 'Not linked')}
                             </span>
                           </div>
                           {!selectedProperty.legal_owner_company_id && (
-                            <p className="text-xs text-destructive">
-                              ⚠ No company linked - required for lender pack
-                            </p>
+                            <div className="flex items-center justify-between gap-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                              <p className="text-xs text-destructive">
+                                This property needs an SPV/company linked as legal owner before generating a lender pack.
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="shrink-0 text-xs h-7"
+                                asChild
+                              >
+                                <RouterLink to={`/properties/${selectedProperty.id}`}>
+                                  <Link className="h-3 w-3 mr-1" />
+                                  Link Company
+                                </RouterLink>
+                              </Button>
+                            </div>
                           )}
                         </div>
                       )}
