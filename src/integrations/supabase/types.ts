@@ -216,6 +216,44 @@ export type Database = {
           },
         ]
       }
+      company_secrets: {
+        Row: {
+          auth_code_encrypted: string | null
+          auth_code_last4: string | null
+          company_id: string
+          updated_at: string
+          updated_by: string | null
+          utr_encrypted: string | null
+          utr_last4: string | null
+        }
+        Insert: {
+          auth_code_encrypted?: string | null
+          auth_code_last4?: string | null
+          company_id: string
+          updated_at?: string
+          updated_by?: string | null
+          utr_encrypted?: string | null
+          utr_last4?: string | null
+        }
+        Update: {
+          auth_code_encrypted?: string | null
+          auth_code_last4?: string | null
+          company_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          utr_encrypted?: string | null
+          utr_last4?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_secrets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_documents: {
         Row: {
           archived_at: string | null
@@ -2217,7 +2255,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      company_secrets_masked: {
+        Row: {
+          auth_code_last4: string | null
+          auth_code_masked: string | null
+          company_id: string | null
+          updated_at: string | null
+          utr_last4: string | null
+          utr_masked: string | null
+        }
+        Insert: {
+          auth_code_last4?: string | null
+          auth_code_masked?: never
+          company_id?: string | null
+          updated_at?: string | null
+          utr_last4?: string | null
+          utr_masked?: never
+        }
+        Update: {
+          auth_code_last4?: string | null
+          auth_code_masked?: never
+          company_id?: string | null
+          updated_at?: string | null
+          utr_last4?: string | null
+          utr_masked?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_secrets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_user_org_id: { Args: never; Returns: string }
