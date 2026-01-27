@@ -242,7 +242,7 @@ export function calculatePortfolioRisks(
           type: 'operational_data',
           severity: 'warning',
           message: `Missing: ${missingItems}${moreCount}`,
-          targetUrl: `/properties/${property.id}/edit`,
+          targetUrl: `/properties/${property.id}?tab=operations`,
         });
       }
     }
