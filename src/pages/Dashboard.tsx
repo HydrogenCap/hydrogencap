@@ -61,6 +61,7 @@ interface RiskItem {
 import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useMissingInfo } from '@/hooks/useMissingInfo';
 import { useAllCompliance } from '@/hooks/useCompliance';
+import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 
 const SHAREHOLDER_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -83,6 +84,9 @@ function DashboardPage() {
   const { data: allComplianceItems } = useAllCompliance();
   const { stats: missingStats } = useMissingInfo();
   const { lifecycleFilter, filterProperties } = useLifecycleFilter();
+  
+  // Use the shared portfolio risks hook for action count
+  const { risks: portfolioRisks, criticalCount: portfolioCriticalCount } = usePortfolioRisks();
   
   // Filter properties based on lifecycle selection
   const filteredProperties = useMemo(() => {
@@ -553,12 +557,12 @@ function DashboardPage() {
 
           <ClickableStatCard
             title="Action Required"
-            value={risks.length === 0 ? '✓' : risks.length}
-            subtitle={risks.length === 0 ? 'All clear' : `${risks.filter(r => r.severity === 'critical').length} critical`}
+            value={portfolioRisks.length === 0 ? '✓' : portfolioRisks.length}
+            subtitle={portfolioRisks.length === 0 ? 'All clear' : `${portfolioCriticalCount} critical`}
             icon={AlertTriangle}
-            iconClassName={risks.length > 0 ? 'text-warning' : 'text-success'}
-            valueClassName={risks.length > 0 ? 'text-warning' : 'text-success'}
-            borderClassName={risks.length > 0 ? 'border-warning/50' : 'border-success/50'}
+            iconClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
+            valueClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
+            borderClassName={portfolioRisks.length > 0 ? 'border-warning/50' : 'border-success/50'}
             onClick={() => navigate('/actions')}
             aria-label="View actions required"
           />
