@@ -227,7 +227,8 @@ export class PortfolioComplianceReport extends ReportPdfBase {
     this.doc.addPage();
     this.addExecutiveSummary();
     this.doc.addPage();
-    this.addPropertyTable();
+    this.addPropertySummaryTable();
+    // Each property detail starts on its own page
     this.addDetailedSections();
     return this;
   }
@@ -235,26 +236,43 @@ export class PortfolioComplianceReport extends ReportPdfBase {
   private addCoverPage() {
     // Large header block
     this.doc.setFillColor(26, 58, 118);
-    this.doc.rect(0, 0, this.pageWidth, 100, 'F');
+    this.doc.rect(0, 0, this.pageWidth, 120, 'F');
+    
+    // Add logo placeholder (white circle with "H" as fallback)
+    const logoX = this.margin;
+    const logoY = 25;
+    const logoSize = 20;
+    
+    this.doc.setFillColor(255, 255, 255);
+    this.doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2, 'F');
+    this.doc.setTextColor(26, 58, 118);
+    this.doc.setFontSize(14);
+    this.doc.setFont('helvetica', 'bold');
+    this.doc.text('H', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
+    
+    // Company name next to logo
+    this.doc.setTextColor(255, 255, 255);
+    this.doc.setFontSize(12);
+    this.doc.text('Hydrogen Capital', logoX + logoSize + 8, logoY + logoSize / 2 + 2);
     
     // Title
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFontSize(28);
+    this.doc.setFontSize(32);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Portfolio Compliance Report', this.margin, 50);
+    this.doc.text('Portfolio Compliance', this.margin, 70);
+    this.doc.text('Report', this.margin, 85);
     
     this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'normal');
-    this.doc.text('Hydrogen Capital Property Portfolio', this.margin, 65);
+    this.doc.text('Property Portfolio Overview', this.margin, 105);
     
-    // Report info
+    // Report info section
     this.doc.setTextColor(0, 0, 0);
-    this.currentY = 120;
+    this.currentY = 145;
     
-    this.doc.setFontSize(12);
+    this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'bold');
     this.doc.text('Report Details', this.margin, this.currentY);
-    this.currentY += 10;
+    this.currentY += 12;
     
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(10);
@@ -331,7 +349,7 @@ export class PortfolioComplianceReport extends ReportPdfBase {
     }
   }
 
-  private addPropertyTable() {
+  private addPropertySummaryTable() {
     this.addHeader('Property Compliance Summary');
     
     const tableData = this.properties.map(prop => {
@@ -351,6 +369,7 @@ export class PortfolioComplianceReport extends ReportPdfBase {
       
       return [
         prop.address_line,
+        prop.property_type || '—',
         prop.lifecycle_type === 'core_rental' ? 'Core' : 'Dev',
         overallStatus,
         String(missingCount),
@@ -361,21 +380,22 @@ export class PortfolioComplianceReport extends ReportPdfBase {
     
     autoTable(this.doc, {
       startY: this.currentY,
-      head: [['Property', 'Type', 'Status', 'Missing', 'Expiring', 'Expired']],
+      head: [['Property', 'Type', 'Lifecycle', 'Status', 'Missing', 'Expiring', 'Expired']],
       body: tableData,
       theme: 'striped',
-      headStyles: { fillColor: [26, 58, 118], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
+      headStyles: { fillColor: [26, 58, 118], fontSize: 9, cellPadding: 4 },
+      bodyStyles: { fontSize: 8, cellPadding: 3 },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 20 },
-        5: { cellWidth: 20 },
+        0: { cellWidth: 50 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 18, halign: 'center' },
+        5: { cellWidth: 18, halign: 'center' },
+        6: { cellWidth: 18, halign: 'center' },
       },
       didParseCell: (data) => {
-        if (data.column.index === 2 && data.section === 'body') {
+        if (data.column.index === 3 && data.section === 'body') {
           const value = data.cell.raw as string;
           if (value === 'Critical') data.cell.styles.textColor = BRAND_DANGER;
           if (value === 'Warning') data.cell.styles.textColor = BRAND_WARNING;
@@ -385,26 +405,56 @@ export class PortfolioComplianceReport extends ReportPdfBase {
     });
     
     this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    
+    // Add note about detailed sections
+    this.doc.setFontSize(9);
+    this.doc.setTextColor(107, 114, 128);
+    this.doc.text('Detailed compliance breakdown for each property follows on subsequent pages.', this.margin, this.currentY);
+    this.doc.setTextColor(0, 0, 0);
   }
 
   private addDetailedSections() {
-    this.properties.forEach((prop, index) => {
-      if (index > 0) this.doc.addPage();
-      this.currentY = 25;
+    this.properties.forEach((prop) => {
+      // Always start each property on a new page
+      this.doc.addPage();
+      this.addHeader(`Property Detail: ${prop.address_line.substring(0, 40)}${prop.address_line.length > 40 ? '...' : ''}`);
       
-      this.addSectionTitle(prop.address_line);
+      // Property title
+      this.doc.setFontSize(16);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(26, 58, 118);
+      this.doc.text(prop.address_line, this.margin, this.currentY);
+      this.currentY += 10;
+      this.doc.setTextColor(0, 0, 0);
       
       if (prop.lifecycle_type === 'development') {
         this.addBanner('⚠ Development mode: compliance is informational unless Go Live is completed.');
       }
       
-      // Property info
-      this.addKeyValue('Address', `${prop.address_line}, ${prop.postcode || ''}`);
-      this.addKeyValue('Lifecycle', prop.lifecycle_type === 'core_rental' ? 'Core Rental' : 'Development');
-      this.addKeyValue('Property Type', prop.property_type);
-      this.addKeyValue('Bedrooms', prop.beds?.toString());
+      // Property info in a clean grid
+      this.doc.setFontSize(9);
+      this.doc.setFont('helvetica', 'normal');
       
-      this.currentY += 5;
+      const infoItems = [
+        { label: 'Full Address', value: `${prop.address_line}${prop.postcode ? ', ' + prop.postcode : ''}` },
+        { label: 'Lifecycle Status', value: prop.lifecycle_type === 'core_rental' ? 'Core Rental' : 'Development' },
+        { label: 'Property Type', value: prop.property_type || '—' },
+        { label: 'Bedrooms', value: prop.beds?.toString() || '—' },
+      ];
+      
+      infoItems.forEach(item => {
+        this.addKeyValue(item.label, item.value);
+      });
+      
+      this.currentY += 8;
+      
+      // Section header for certificates
+      this.doc.setFontSize(11);
+      this.doc.setFont('helvetica', 'bold');
+      this.doc.setTextColor(26, 58, 118);
+      this.doc.text('Compliance Certificates', this.margin, this.currentY);
+      this.currentY += 6;
+      this.doc.setTextColor(0, 0, 0);
       
       // Compliance table
       const complianceData = prop.complianceItems.map(item => {
@@ -424,8 +474,15 @@ export class PortfolioComplianceReport extends ReportPdfBase {
           head: [['Certificate', 'Status', 'Issue Date', 'Expiry Date', 'Document']],
           body: complianceData,
           theme: 'striped',
-          headStyles: { fillColor: [26, 58, 118], fontSize: 8 },
-          bodyStyles: { fontSize: 7 },
+          headStyles: { fillColor: [26, 58, 118], fontSize: 9, cellPadding: 4 },
+          bodyStyles: { fontSize: 8, cellPadding: 3 },
+          columnStyles: {
+            0: { cellWidth: 55 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 25 },
+            4: { cellWidth: 45 },
+          },
           didParseCell: (data) => {
             if (data.column.index === 1 && data.section === 'body') {
               const value = (data.cell.raw as string).toLowerCase();
@@ -437,6 +494,12 @@ export class PortfolioComplianceReport extends ReportPdfBase {
         });
         
         this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+      } else {
+        this.doc.setFontSize(9);
+        this.doc.setTextColor(107, 114, 128);
+        this.doc.text('No compliance items recorded for this property.', this.margin, this.currentY);
+        this.currentY += 10;
+        this.doc.setTextColor(0, 0, 0);
       }
     });
   }
