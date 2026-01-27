@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock, Building2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { 
@@ -21,16 +23,20 @@ import {
   useGenerateReport, 
   REPORT_TEMPLATES, 
   validateReportInputs,
-  type ReportType 
+  useCompanyForBrokerPack,
+  type ReportType,
+  type MortgageBrokerPackData,
 } from '@/hooks/useReportGeneration';
+import { validateMortgageBrokerPack } from '@/lib/mortgageBrokerPackGenerator';
 import { useReportHistory, getReportTypeName, formatFileSize, deleteReport } from '@/hooks/useReportHistory';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
 type SelectionMode = 'all' | 'single';
+type LoanPurpose = 'refinance' | 'capital_raise' | 'rate_switch' | 'purchase' | '';
 
 export default function Reports() {
-  const { properties, isLoading } = useReportData();
+  const { properties, portfolioSummary, companies, isLoading } = useReportData();
   const { data: reportHistory, isLoading: historyLoading, refetch: refetchHistory } = useReportHistory();
   const generateReport = useGenerateReport();
 
@@ -42,19 +48,31 @@ export default function Reports() {
   const [brokerNotes, setBrokerNotes] = useState('');
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
 
+  // Mortgage Broker Pack specific state
+  const [showBrokerPackDialog, setShowBrokerPackDialog] = useState(false);
+  const [loanPurpose, setLoanPurpose] = useState<LoanPurpose>('');
+  const [targetLoanAmount, setTargetLoanAmount] = useState<string>('');
+  const [targetLTV, setTargetLTV] = useState<string>('');
+  const [preparedFor, setPreparedFor] = useState<string>('');
+
+  // Get selected property
+  const selectedProperty = useMemo(() => {
+    if (selectionMode === 'single' && selectedPropertyId) {
+      return properties.find(p => p.id === selectedPropertyId);
+    }
+    return null;
+  }, [selectionMode, selectedPropertyId, properties]);
+
+  // Get company data for broker pack
+  const { data: companyData, isLoading: companyLoading } = useCompanyForBrokerPack(
+    selectedProperty?.legal_owner_company_id || undefined
+  );
+
   // Filter properties based on lifecycle
   const filteredProperties = useMemo(() => {
     if (lifecycleType === 'all') return properties;
     return properties.filter(p => p.lifecycle_type === lifecycleType);
   }, [properties, lifecycleType]);
-
-  // Get the selected property for single-property reports
-  const selectedProperty = useMemo(() => {
-    if (selectionMode === 'single' && selectedPropertyId) {
-      return filteredProperties.find(p => p.id === selectedPropertyId);
-    }
-    return null;
-  }, [selectionMode, selectedPropertyId, filteredProperties]);
 
   // Build filters object
   const filters: ReportFilters = useMemo(() => ({
@@ -64,7 +82,34 @@ export default function Reports() {
     includeAttachments,
   }), [lifecycleType, selectionMode, selectedPropertyId, includeAttachments]);
 
+  // Build broker pack data for validation
+  const brokerPackData: MortgageBrokerPackData | null = useMemo(() => {
+    if (!selectedProperty) return null;
+    return {
+      property: selectedProperty,
+      company: companyData || null,
+      portfolioSummary,
+      loanPurpose,
+      targetLoanAmount: targetLoanAmount ? parseFloat(targetLoanAmount) : null,
+      targetLTV: targetLTV ? parseFloat(targetLTV) : null,
+      brokerNotes,
+      preparedFor,
+    };
+  }, [selectedProperty, companyData, portfolioSummary, loanPurpose, targetLoanAmount, targetLTV, brokerNotes, preparedFor]);
+
+  // Validate broker pack
+  const brokerPackValidation = useMemo(() => {
+    if (!brokerPackData) return { canGenerate: false, warnings: [], errors: ['Select a property first'] };
+    return validateMortgageBrokerPack(brokerPackData);
+  }, [brokerPackData]);
+
   const handleGenerateReport = async (reportType: ReportType) => {
+    // For mortgage broker pack, show configuration dialog
+    if (reportType === 'mortgage_broker_pack') {
+      setShowBrokerPackDialog(true);
+      return;
+    }
+
     const template = REPORT_TEMPLATES.find(t => t.id === reportType);
     if (!template) return;
 
@@ -79,10 +124,37 @@ export default function Reports() {
         reportType,
         filters,
         properties: filteredProperties,
-        brokerNotes: reportType === 'mortgage_broker_pack' ? brokerNotes : undefined,
+        brokerNotes: undefined,
       });
       toast.success(`${template.name} generated successfully!`);
-      refetchHistory(); // Refresh history after generating
+      refetchHistory();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to generate report');
+    }
+  };
+
+  const handleGenerateBrokerPack = async () => {
+    if (!brokerPackData || !brokerPackValidation.canGenerate) {
+      toast.error(brokerPackValidation.errors[0] || 'Please complete all required fields');
+      return;
+    }
+
+    try {
+      await generateReport.mutateAsync({
+        reportType: 'mortgage_broker_pack',
+        filters,
+        properties: filteredProperties,
+        brokerNotes,
+        brokerPackData,
+      });
+      toast.success('Mortgage Broker Pack generated successfully!');
+      setShowBrokerPackDialog(false);
+      refetchHistory();
+      // Reset form
+      setLoanPurpose('');
+      setTargetLoanAmount('');
+      setTargetLTV('');
+      setPreparedFor('');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate report');
     }
@@ -251,12 +323,17 @@ export default function Reports() {
                   ? effectiveSelectionCount === 1 
                   : effectiveSelectionCount > 0;
 
+                const isMortgagePack = template.id === 'mortgage_broker_pack';
+
                 return (
                   <Card key={template.id} className={!canGenerate ? 'opacity-60' : ''}>
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
                         <span className="text-2xl">{template.icon}</span>
                         {template.name}
+                        {isMortgagePack && (
+                          <Badge variant="secondary" className="text-xs ml-auto">Lender-Grade</Badge>
+                        )}
                       </CardTitle>
                       <CardDescription>{template.description}</CardDescription>
                     </CardHeader>
@@ -279,15 +356,21 @@ export default function Reports() {
                         </Alert>
                       )}
 
-                      {template.id === 'mortgage_broker_pack' && canGenerate && (
-                        <div className="space-y-2">
-                          <Label htmlFor="broker-notes">Broker Notes (optional)</Label>
-                          <Input
-                            id="broker-notes"
-                            placeholder="Additional notes for the broker..."
-                            value={brokerNotes}
-                            onChange={(e) => setBrokerNotes(e.target.value)}
-                          />
+                      {/* Show entity info for mortgage pack */}
+                      {isMortgagePack && canGenerate && selectedProperty && (
+                        <div className="rounded-md border bg-muted/50 p-3 space-y-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">Borrowing Entity:</span>
+                            <span className="text-muted-foreground">
+                              {companyLoading ? 'Loading...' : (companyData?.legal_name || 'Not linked')}
+                            </span>
+                          </div>
+                          {!selectedProperty.legal_owner_company_id && (
+                            <p className="text-xs text-destructive">
+                              ⚠ No company linked - required for lender pack
+                            </p>
+                          )}
                         </div>
                       )}
 
@@ -301,7 +384,7 @@ export default function Reports() {
                         ) : (
                           <Download className="h-4 w-4" />
                         )}
-                        Generate PDF
+                        {isMortgagePack ? 'Configure & Generate' : 'Generate PDF'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -393,6 +476,145 @@ export default function Reports() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Mortgage Broker Pack Configuration Dialog */}
+        <Dialog open={showBrokerPackDialog} onOpenChange={setShowBrokerPackDialog}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <span className="text-2xl">🏦</span>
+                Mortgage Broker Pack Configuration
+              </DialogTitle>
+              <DialogDescription>
+                Configure the lender-grade documentation pack for {selectedProperty?.address_line}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Validation Errors */}
+              {brokerPackValidation.errors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <ul className="list-disc ml-4 text-sm">
+                      {brokerPackValidation.errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Validation Warnings */}
+              {brokerPackValidation.warnings.length > 0 && (
+                <Alert className="border-warning/50 bg-warning/10">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-warning">
+                    <p className="font-medium mb-1">Optional items missing:</p>
+                    <ul className="list-disc ml-4 text-sm">
+                      {brokerPackValidation.warnings.map((warn, i) => (
+                        <li key={i}>{warn}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Loan Purpose */}
+              <div className="space-y-2">
+                <Label htmlFor="loan-purpose">Loan Purpose *</Label>
+                <Select value={loanPurpose} onValueChange={(v) => setLoanPurpose(v as LoanPurpose)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select loan purpose..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="refinance">Refinance</SelectItem>
+                    <SelectItem value="capital_raise">Capital Raise</SelectItem>
+                    <SelectItem value="rate_switch">Rate Switch</SelectItem>
+                    <SelectItem value="purchase">Purchase</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Target Loan Amount */}
+                <div className="space-y-2">
+                  <Label htmlFor="target-loan">Target Loan Amount (£)</Label>
+                  <Input
+                    id="target-loan"
+                    type="number"
+                    placeholder="e.g. 150000"
+                    value={targetLoanAmount}
+                    onChange={(e) => setTargetLoanAmount(e.target.value)}
+                  />
+                </div>
+
+                {/* Target LTV */}
+                <div className="space-y-2">
+                  <Label htmlFor="target-ltv">Target LTV (%)</Label>
+                  <Input
+                    id="target-ltv"
+                    type="number"
+                    placeholder="e.g. 75"
+                    value={targetLTV}
+                    onChange={(e) => setTargetLTV(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Prepared For */}
+              <div className="space-y-2">
+                <Label htmlFor="prepared-for">Prepared For</Label>
+                <Input
+                  id="prepared-for"
+                  placeholder="Broker name or lender..."
+                  value={preparedFor}
+                  onChange={(e) => setPreparedFor(e.target.value)}
+                />
+              </div>
+
+              {/* Broker Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="broker-notes-dialog">Additional Notes</Label>
+                <Textarea
+                  id="broker-notes-dialog"
+                  placeholder="Any additional information for the broker..."
+                  value={brokerNotes}
+                  onChange={(e) => setBrokerNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {/* Entity Summary */}
+              {companyData && (
+                <div className="rounded-md border bg-muted/30 p-3 space-y-1 text-sm">
+                  <p className="font-medium">Borrowing Entity</p>
+                  <p className="text-muted-foreground">{companyData.legal_name}</p>
+                  {companyData.company_number && (
+                    <p className="text-muted-foreground text-xs">Company No: {companyData.company_number}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowBrokerPackDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleGenerateBrokerPack}
+                disabled={!brokerPackValidation.canGenerate || generateReport.isPending}
+              >
+                {generateReport.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                Generate Pack
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

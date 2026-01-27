@@ -1,17 +1,24 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useProperties } from './useProperties';
 import { useAllCompliance } from './useCompliance';
 import { usePropertyPassports } from './usePropertyPassport';
+import { useCompanies, useCompany, type CompanyWithDetails } from './useCompanies';
 import { logActivity } from './useActivityLog';
 import {
   ReportFilters,
   PropertyReportData,
   PortfolioComplianceReport,
   PropertyCompliancePack,
-  MortgageBrokerPack,
   InsuranceBrokerPack,
 } from '@/lib/reportPdfGenerator';
+import { 
+  LenderGradeMortgageBrokerPack, 
+  type MortgageBrokerPackData,
+  type PortfolioSummary,
+  type CompanyData,
+  validateMortgageBrokerPack,
+} from '@/lib/mortgageBrokerPackGenerator';
 import { format } from 'date-fns';
 
 export type ReportType = 
@@ -49,7 +56,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
   {
     id: 'mortgage_broker_pack',
     name: 'Mortgage Broker Pack',
-    description: 'Property and finance summary for mortgage applications including valuation, income, and document checklist.',
+    description: 'Lender-grade documentation for BTL/HMO mortgage applications. Includes deal summary, entity profile, portfolio track record, and document checklist.',
     icon: '🏦',
     requiresSingleProperty: true,
     availableFor: ['core_rental', 'development', 'all'],
@@ -69,13 +76,15 @@ export function useReportData() {
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const { data: complianceItems, isLoading: complianceLoading } = useAllCompliance();
   const { data: passports, isLoading: passportsLoading } = usePropertyPassports();
+  const { data: companies, isLoading: companiesLoading } = useCompanies();
 
-  const isLoading = propertiesLoading || complianceLoading || passportsLoading;
+  const isLoading = propertiesLoading || complianceLoading || passportsLoading || companiesLoading;
 
   // Build enriched property data
   const enrichedProperties: PropertyReportData[] = (properties || []).map(prop => {
     const propCompliance = complianceItems?.filter(c => c.property_id === prop.id) || [];
     const passport = passports?.find(p => p.property_id === prop.id);
+    const ownerCompany = companies?.find(c => c.id === prop.legal_owner_company_id);
     
     return {
       id: prop.id,
@@ -123,14 +132,108 @@ export function useReportData() {
         local_authority_text: passport.local_authority_text,
       } : null,
       insurancePolicy: (prop as any).insurance_policies?.[0] || null,
-      ownerName: undefined, // Would need to join with companies table
+      ownerName: ownerCompany?.legal_name,
     };
   });
 
+  // Calculate portfolio summary for broker packs
+  const portfolioSummary: PortfolioSummary = calculatePortfolioSummary(properties || []);
+
   return {
     properties: enrichedProperties,
+    companies: companies || [],
+    portfolioSummary,
     isLoading,
   };
+}
+
+// Calculate portfolio-level summary for broker packs
+function calculatePortfolioSummary(properties: any[]): PortfolioSummary {
+  let totalValue = 0;
+  let totalMortgageBalance = 0;
+  let totalBedrooms = 0;
+  let hmoCount = 0;
+
+  properties.forEach(prop => {
+    const value = prop.current_value_gbp ? Number(prop.current_value_gbp) : 0;
+    const loan = prop.loans?.[0];
+    const balance = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : 0;
+    const beds = prop.beds ? Number(prop.beds) : 0;
+
+    totalValue += value;
+    totalMortgageBalance += balance;
+    totalBedrooms += beds;
+    if (prop.is_hmo_licensed) hmoCount++;
+  });
+
+  const averageLTV = totalValue > 0 ? (totalMortgageBalance / totalValue) * 100 : null;
+
+  return {
+    totalProperties: properties.length,
+    totalBedrooms,
+    totalValue,
+    totalMortgageBalance,
+    averageLTV,
+    hmoExperienceYears: hmoCount > 0 ? Math.max(2, hmoCount) : 0,
+    hasArrears: false,
+  };
+}
+
+// Fetch company details for mortgage broker pack
+export function useCompanyForBrokerPack(companyId: string | undefined) {
+  return useQuery({
+    queryKey: ['company-broker-pack', companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+
+      const { data: company, error } = await supabase
+        .from('companies')
+        .select(`
+          id,
+          legal_name,
+          company_number,
+          company_type,
+          ch_registered_address,
+          ch_incorporation_date,
+          party_id
+        `)
+        .eq('id', companyId)
+        .single();
+
+      if (error) throw error;
+
+      // Get shareholdings
+      const { data: shareholdings } = await supabase
+        .from('shareholdings')
+        .select(`
+          shares_held,
+          shareholder_party:parties(display_name, party_type)
+        `)
+        .eq('company_id', companyId)
+        .is('effective_to', null);
+
+      // Calculate percentages from shares
+      const totalShares = shareholdings?.reduce((sum, sh) => sum + (sh.shares_held || 0), 0) || 0;
+      
+      const shareholders = shareholdings?.map(sh => ({
+        name: (sh.shareholder_party as any)?.display_name || 'Unknown',
+        percent: totalShares > 0 ? ((sh.shares_held || 0) / totalShares) * 100 : 0,
+        party_type: (sh.shareholder_party as any)?.party_type || 'INDIVIDUAL',
+      })) || [];
+
+      return {
+        id: company.id,
+        legal_name: company.legal_name,
+        company_number: company.company_number,
+        company_type: company.company_type,
+        ch_registered_address: company.ch_registered_address,
+        ch_incorporation_date: company.ch_incorporation_date,
+        shareholders,
+        directors: [], // Would need Companies House API call for real directors
+      } as CompanyData;
+    },
+    enabled: !!companyId,
+  });
 }
 
 // Filter properties based on report filters
@@ -188,11 +291,13 @@ export function useGenerateReport() {
       filters,
       properties,
       brokerNotes,
+      brokerPackData,
     }: {
       reportType: ReportType;
       filters: ReportFilters;
       properties: PropertyReportData[];
       brokerNotes?: string;
+      brokerPackData?: MortgageBrokerPackData;
     }) => {
       const filteredProps = filterProperties(properties, filters);
       
@@ -200,7 +305,7 @@ export function useGenerateReport() {
         throw new Error('No properties match the selected filters');
       }
 
-      let report;
+      let report: any;
       let filename: string;
       const dateStr = format(new Date(), 'yyyy-MM-dd');
       const timestamp = format(new Date(), 'HHmmss');
@@ -223,7 +328,15 @@ export function useGenerateReport() {
           if (filteredProps.length !== 1) {
             throw new Error('Mortgage Broker Pack requires exactly one property');
           }
-          report = new MortgageBrokerPack(filteredProps[0], brokerNotes || '');
+          if (!brokerPackData) {
+            throw new Error('Mortgage Broker Pack requires additional configuration');
+          }
+          // Validate before generating
+          const validation = validateMortgageBrokerPack(brokerPackData);
+          if (!validation.canGenerate) {
+            throw new Error(validation.errors[0] || 'Missing required information');
+          }
+          report = new LenderGradeMortgageBrokerPack(brokerPackData);
           filename = `Mortgage_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
           
@@ -296,3 +409,7 @@ export function useGenerateReport() {
     },
   });
 }
+
+// Re-export types for use in Reports page
+export type { MortgageBrokerPackData, PortfolioSummary, CompanyData } from '@/lib/mortgageBrokerPackGenerator';
+export { validateMortgageBrokerPack } from '@/lib/mortgageBrokerPackGenerator';
