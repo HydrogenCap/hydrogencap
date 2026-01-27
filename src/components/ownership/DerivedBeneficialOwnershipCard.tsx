@@ -8,10 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useProperty } from '@/hooks/useProperties';
-import { useCompany, type Shareholding, type ShareClass } from '@/hooks/useCompanies';
+import { useCompany } from '@/hooks/useCompanies';
 import { useParty } from '@/hooks/useParties';
 import {
   usePropertyBeneficialOwnership,
+  useCompanyOwnership,
   useDeleteOwnershipLink,
   calculateOwnershipTotal,
   validateOwnershipTotal,
@@ -26,7 +27,7 @@ interface DerivedBeneficialOwnershipCardProps {
   propertyId: string;
 }
 
-// Helper to calculate shareholding percentage based on share class totals
+// Helper to display shareholders from ownership_links
 interface ShareholderDisplay {
   id: string;
   name: string;
@@ -36,54 +37,23 @@ interface ShareholderDisplay {
   source: string;
 }
 
-function calculateShareholderPercentages(
-  shareholdings: Shareholding[],
-  shareClasses: ShareClass[]
-): ShareholderDisplay[] {
-  // Group by shareholder
-  const shareholderMap = new Map<string, { 
-    name: string; 
-    partyType: string; 
-    totalShares: number; 
-    source: string;
-    id: string;
-  }>();
-  
-  // Calculate total issued shares across all classes
-  const totalIssuedShares = shareClasses.reduce((sum, sc) => sum + sc.issued_shares, 0);
-  
-  shareholdings.forEach((sh) => {
-    const existingEntry = shareholderMap.get(sh.shareholder_party_id);
-    const name = sh.shareholder_party?.display_name || 'Unknown';
-    const partyType = sh.shareholder_party?.party_type || 'PERSON';
-    
-    if (existingEntry) {
-      existingEntry.totalShares += sh.shares_held;
-    } else {
-      shareholderMap.set(sh.shareholder_party_id, {
-        id: sh.id,
-        name,
-        partyType,
-        totalShares: sh.shares_held,
-        source: sh.ownership_source,
-      });
-    }
-  });
-  
-  // Convert to percentage
-  return Array.from(shareholderMap.entries()).map(([partyId, data]) => ({
-    id: data.id,
-    name: data.name,
-    partyType: data.partyType,
-    percent: totalIssuedShares > 0 ? (data.totalShares / totalIssuedShares) * 100 : 0,
-    shares: data.totalShares,
-    source: data.source,
+function mapOwnershipLinksToShareholders(links: OwnershipLink[]): ShareholderDisplay[] {
+  return links.map((link) => ({
+    id: link.id,
+    name: link.owner_party?.display_name || 'Unknown',
+    partyType: link.owner_party?.party_type || 'INDIVIDUAL',
+    percent: Number(link.percent),
+    shares: link.shares || 0,
+    source: link.source || 'manual',
   })).sort((a, b) => b.percent - a.percent);
 }
 
 export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficialOwnershipCardProps) {
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
-  const { data: companyWithDetails, isLoading: companyLoading, refetch: refetchCompany } = useCompany(
+  const { data: companyWithDetails, isLoading: companyLoading } = useCompany(
+    property?.legal_owner_company_id || undefined
+  );
+  const { data: companyOwnershipLinks, isLoading: companyOwnershipLoading, refetch: refetchCompanyOwnership } = useCompanyOwnership(
     property?.legal_owner_company_id || undefined
   );
   const { data: party, isLoading: partyLoading } = useParty(
@@ -95,18 +65,15 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<OwnershipLink | null>(null);
 
-  const isLoading = propertyLoading || companyLoading || partyLoading || directOwnersLoading;
+  const isLoading = propertyLoading || companyLoading || companyOwnershipLoading || partyLoading || directOwnersLoading;
 
-  // Calculate shareholders from company data
+  // Map ownership links to shareholder display format
   const shareholders = useMemo(() => {
-    if (!companyWithDetails?.shareholdings || !companyWithDetails?.share_classes) {
+    if (!companyOwnershipLinks || companyOwnershipLinks.length === 0) {
       return [];
     }
-    return calculateShareholderPercentages(
-      companyWithDetails.shareholdings,
-      companyWithDetails.share_classes
-    );
-  }, [companyWithDetails?.shareholdings, companyWithDetails?.share_classes]);
+    return mapOwnershipLinksToShareholders(companyOwnershipLinks);
+  }, [companyOwnershipLinks]);
 
   const handleAddOwner = () => {
     setEditingLink(null);
@@ -170,7 +137,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => refetchCompany()}
+                onClick={() => refetchCompanyOwnership()}
                 className="h-7 text-xs"
               >
                 <RefreshCw className="h-3 w-3 mr-1" />
