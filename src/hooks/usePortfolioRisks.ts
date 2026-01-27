@@ -23,6 +23,8 @@ export interface RiskItem {
   type: RiskType;
   severity: 'critical' | 'warning';
   message: string;
+  /** The URL to navigate to for resolving this issue */
+  targetUrl: string;
 }
 
 export const riskTypeLabels: Record<RiskType, string> = {
@@ -93,6 +95,7 @@ export function calculatePortfolioRisks(
         type: 'ltv',
         severity: 'critical',
         message: `LTV at ${formatPercent(ltv)} (>85%)`,
+        targetUrl: `/properties/${property.id}/edit`,
       });
     } else if (ltvStatus === 'warning') {
       riskItems.push({
@@ -102,6 +105,7 @@ export function calculatePortfolioRisks(
         type: 'ltv',
         severity: 'warning',
         message: `LTV at ${formatPercent(ltv)} (>75%)`,
+        targetUrl: `/properties/${property.id}/edit`,
       });
     }
 
@@ -116,6 +120,7 @@ export function calculatePortfolioRisks(
         type: 'epc',
         severity: 'warning',
         message: `EPC rating ${property.epc_rating} (below C)`,
+        targetUrl: `/properties/${property.id}`,
       });
     }
 
@@ -132,6 +137,7 @@ export function calculatePortfolioRisks(
           type: 'rate_expiry',
           severity: 'critical',
           message: 'Fixed rate has expired',
+          targetUrl: `/properties/${property.id}/edit`,
         });
       } else if (status === 'critical') {
         riskItems.push({
@@ -141,6 +147,7 @@ export function calculatePortfolioRisks(
           type: 'rate_expiry',
           severity: 'critical',
           message: `Fixed rate expires in ${days} days`,
+          targetUrl: `/properties/${property.id}/edit`,
         });
       } else if (status === 'warning') {
         riskItems.push({
@@ -150,6 +157,7 @@ export function calculatePortfolioRisks(
           type: 'rate_expiry',
           severity: 'warning',
           message: `Fixed rate expires in ${days} days`,
+          targetUrl: `/properties/${property.id}/edit`,
         });
       }
     }
@@ -163,6 +171,7 @@ export function calculatePortfolioRisks(
         type: 'negative_cashflow',
         severity: 'warning',
         message: `Negative cashflow: ${formatGBP(annualCashflowAfterDebt)}/year`,
+        targetUrl: `/properties/${property.id}/edit`,
       });
     }
 
@@ -185,6 +194,7 @@ export function calculatePortfolioRisks(
           type: 'hmo_licence',
           severity: 'critical',
           message: 'HMO licence required but missing',
+          targetUrl: `/properties/${property.id}?tab=compliance`,
         });
       } else {
         // Check expiry status
@@ -200,6 +210,7 @@ export function calculatePortfolioRisks(
             type: 'hmo_licence',
             severity: 'critical',
             message: 'HMO licence has expired',
+            targetUrl: `/properties/${property.id}?tab=compliance`,
           });
         } else if (daysUntilExpiry <= 60) {
           riskItems.push({
@@ -209,6 +220,7 @@ export function calculatePortfolioRisks(
             type: 'hmo_licence',
             severity: 'warning',
             message: `HMO licence expires in ${daysUntilExpiry} days`,
+            targetUrl: `/properties/${property.id}?tab=compliance`,
           });
         }
       }
@@ -230,6 +242,7 @@ export function calculatePortfolioRisks(
           type: 'operational_data',
           severity: 'warning',
           message: `Missing: ${missingItems}${moreCount}`,
+          targetUrl: `/properties/${property.id}/edit`,
         });
       }
     }
