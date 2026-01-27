@@ -63,12 +63,14 @@ export interface ChecklistSection {
 export function validatePropertyData(
   property: PropertyWithFinancials | null,
   complianceItems: any[],
-  ownershipLinks: any[]
+  ownershipLinks: any[],
+  passport?: any
 ): {
   hasLegalOwner: boolean;
   ownershipComplete: boolean;
   hasTenure: boolean;
   hasAddress: boolean;
+  hasLocalAuthority: boolean;
   hasEpc: boolean;
   hasEicr: boolean;
   hasGasSafety: boolean;
@@ -87,6 +89,7 @@ export function validatePropertyData(
       ownershipComplete: false,
       hasTenure: false,
       hasAddress: false,
+      hasLocalAuthority: false,
       hasEpc: false,
       hasEicr: false,
       hasGasSafety: false,
@@ -105,16 +108,41 @@ export function validatePropertyData(
   const hasLegalOwner = !!(property.legal_owner_company_id || property.legal_owner_party_id);
 
   // Check ownership totals to 100%
-  const propertyOwnership = ownershipLinks.filter(
-    (l: any) => l.subject_type === 'PROPERTY' && l.subject_id === property.id && !l.effective_to
-  );
-  const totalOwnership = propertyOwnership.reduce((sum: number, l: any) => sum + (l.percent || 0), 0);
-  const ownershipComplete = totalOwnership >= 99.9 && totalOwnership <= 100.1;
+  // For SPV-owned properties, ownership is derived from company shareholders
+  // For directly-owned properties, check direct property ownership links
+  let ownershipComplete = false;
+  
+  if (property.legal_owner_company_id) {
+    // SPV-owned: ownership is managed at company level, consider complete if SPV is assigned
+    // The actual ownership % validation happens on the company page
+    ownershipComplete = true;
+  } else if (property.legal_owner_party_id) {
+    // Single individual owner - 100% by definition
+    ownershipComplete = true;
+  } else {
+    // Check direct property ownership links
+    const propertyOwnership = ownershipLinks.filter(
+      (l: any) => l.subject_type === 'PROPERTY' && l.subject_id === property.id && !l.effective_to
+    );
+    if (propertyOwnership.length > 0) {
+      const totalOwnership = propertyOwnership.reduce((sum: number, l: any) => sum + (l.percent || 0), 0);
+      ownershipComplete = totalOwnership >= 99.9 && totalOwnership <= 100.1;
+    }
+  }
 
   // Property basics
   const hasTenure = !!property.tenure;
   const hasAddress = !!(property.address_line && property.postcode);
   const hasGas = property.has_gas !== false; // Default to true if null
+
+  // Local authority - check passport fields or property area_name
+  const hasLocalAuthority = !!(
+    passport?.local_authority_id ||
+    passport?.local_authority_text ||
+    passport?.local_authority ||
+    property.area_name ||
+    property.county
+  );
 
   // Check compliance documents
   const hasValidDoc = (type: string) => {
@@ -146,6 +174,7 @@ export function validatePropertyData(
     ownershipComplete,
     hasTenure,
     hasAddress,
+    hasLocalAuthority,
     hasEpc,
     hasEicr,
     hasGasSafety,
@@ -199,7 +228,8 @@ export function buildChecklistSections(
         { 
           key: 'setup_local_authority_confirmed', 
           label: 'Local authority confirmed', 
-          checked: c?.setup_local_authority_confirmed ?? false
+          checked: c?.setup_local_authority_confirmed || validation.hasLocalAuthority,
+          autoValidated: validation.hasLocalAuthority
         },
       ],
     },

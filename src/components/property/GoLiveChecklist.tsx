@@ -31,6 +31,7 @@ import {
 import { useProperty } from '@/hooks/useProperties';
 import { usePropertyCompliance } from '@/hooks/useCompliance';
 import { usePropertyBeneficialOwnership } from '@/hooks/useOwnershipLinks';
+import { usePropertyPassport } from '@/hooks/usePropertyPassport';
 import { formatDateUK } from '@/lib/calculations';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -170,6 +171,7 @@ export function GoLiveChecklist({ propertyId }: GoLiveChecklistProps) {
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
   const { data: complianceItems = [], isLoading: complianceLoading } = usePropertyCompliance(propertyId);
   const { data: ownershipLinks = [], isLoading: ownershipLoading } = usePropertyBeneficialOwnership(propertyId);
+  const { data: passport, isLoading: passportLoading } = usePropertyPassport(propertyId);
   const { 
     checklist, 
     isLoading: checklistLoading, 
@@ -179,13 +181,13 @@ export function GoLiveChecklist({ propertyId }: GoLiveChecklistProps) {
     isApproving 
   } = useGoLiveChecklist(propertyId);
 
-  const isLoading = propertyLoading || complianceLoading || ownershipLoading || checklistLoading;
+  const isLoading = propertyLoading || complianceLoading || ownershipLoading || checklistLoading || passportLoading;
 
   // If property is already core_rental, show read-only view
   const isAlreadyLive = property?.lifecycle_type === 'core_rental';
 
-  // Validate actual data
-  const validation = validatePropertyData(property, complianceItems, ownershipLinks);
+  // Validate actual data (pass passport for local authority check)
+  const validation = validatePropertyData(property, complianceItems, ownershipLinks, passport);
   
   // Build checklist sections
   const sections = buildChecklistSections(checklist, validation);
