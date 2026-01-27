@@ -203,11 +203,12 @@ export function useGenerateReport() {
       let report;
       let filename: string;
       const dateStr = format(new Date(), 'yyyy-MM-dd');
+      const timestamp = format(new Date(), 'HHmmss');
 
       switch (reportType) {
         case 'portfolio_compliance':
           report = new PortfolioComplianceReport(filteredProps, filters);
-          filename = `Portfolio_Compliance_Report_${dateStr}.pdf`;
+          filename = `Portfolio_Compliance_Report_${dateStr}_${timestamp}.pdf`;
           break;
           
         case 'property_compliance_pack':
@@ -215,7 +216,7 @@ export function useGenerateReport() {
             throw new Error('Property Compliance Pack requires exactly one property');
           }
           report = new PropertyCompliancePack(filteredProps[0], filters);
-          filename = `Compliance_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}.pdf`;
+          filename = `Compliance_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
           
         case 'mortgage_broker_pack':
@@ -223,7 +224,7 @@ export function useGenerateReport() {
             throw new Error('Mortgage Broker Pack requires exactly one property');
           }
           report = new MortgageBrokerPack(filteredProps[0], brokerNotes || '');
-          filename = `Mortgage_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}.pdf`;
+          filename = `Mortgage_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
           
         case 'insurance_broker_pack':
@@ -231,7 +232,7 @@ export function useGenerateReport() {
             throw new Error('Insurance Broker Pack requires exactly one property');
           }
           report = new InsuranceBrokerPack(filteredProps[0]);
-          filename = `Insurance_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}.pdf`;
+          filename = `Insurance_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
           
         default:
@@ -242,11 +243,14 @@ export function useGenerateReport() {
       report.generate();
       const blob = report.getBlob();
 
-      // Upload to storage
+      // Upload to storage with unique timestamp to avoid conflicts
       const storagePath = `reports/${reportType}/${dateStr}/${filename}`;
       const { error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(storagePath, blob, { contentType: 'application/pdf' });
+        .upload(storagePath, blob, { 
+          contentType: 'application/pdf',
+          upsert: true, // Overwrite if exists
+        });
 
       if (uploadError) {
         console.warn('Failed to save report to storage:', uploadError);

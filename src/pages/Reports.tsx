@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Building2, Filter } from 'lucide-react';
-import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { 
   useReportData, 
@@ -22,20 +23,24 @@ import {
   validateReportInputs,
   type ReportType 
 } from '@/hooks/useReportGeneration';
+import { useReportHistory, getReportTypeName, formatFileSize, deleteReport } from '@/hooks/useReportHistory';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
+type SelectionMode = 'all' | 'single';
 
 export default function Reports() {
   const { properties, isLoading } = useReportData();
+  const { data: reportHistory, isLoading: historyLoading, refetch: refetchHistory } = useReportHistory();
   const generateReport = useGenerateReport();
 
   // Filters state
   const [lifecycleType, setLifecycleType] = useState<LifecycleFilter>('all');
-  const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
-  const [selectAll, setSelectAll] = useState(true);
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('all');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [includeAttachments, setIncludeAttachments] = useState(false);
   const [brokerNotes, setBrokerNotes] = useState('');
+  const [deletingPath, setDeletingPath] = useState<string | null>(null);
 
   // Filter properties based on lifecycle
   const filteredProperties = useMemo(() => {
@@ -43,13 +48,21 @@ export default function Reports() {
     return properties.filter(p => p.lifecycle_type === lifecycleType);
   }, [properties, lifecycleType]);
 
+  // Get the selected property for single-property reports
+  const selectedProperty = useMemo(() => {
+    if (selectionMode === 'single' && selectedPropertyId) {
+      return filteredProperties.find(p => p.id === selectedPropertyId);
+    }
+    return null;
+  }, [selectionMode, selectedPropertyId, filteredProperties]);
+
   // Build filters object
   const filters: ReportFilters = useMemo(() => ({
     lifecycleType,
-    propertyIds: selectAll ? 'all' : selectedPropertyIds,
+    propertyIds: selectionMode === 'all' ? 'all' : (selectedPropertyId ? [selectedPropertyId] : []),
     asOfDate: new Date(),
     includeAttachments,
-  }), [lifecycleType, selectAll, selectedPropertyIds, includeAttachments]);
+  }), [lifecycleType, selectionMode, selectedPropertyId, includeAttachments]);
 
   const handleGenerateReport = async (reportType: ReportType) => {
     const template = REPORT_TEMPLATES.find(t => t.id === reportType);
@@ -69,19 +82,29 @@ export default function Reports() {
         brokerNotes: reportType === 'mortgage_broker_pack' ? brokerNotes : undefined,
       });
       toast.success(`${template.name} generated successfully!`);
+      refetchHistory(); // Refresh history after generating
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to generate report');
     }
   };
 
-  const togglePropertySelection = (propertyId: string) => {
-    setSelectAll(false);
-    setSelectedPropertyIds(prev => 
-      prev.includes(propertyId) 
-        ? prev.filter(id => id !== propertyId)
-        : [...prev, propertyId]
-    );
+  const handleDeleteReport = async (path: string) => {
+    try {
+      setDeletingPath(path);
+      await deleteReport(path);
+      toast.success('Report deleted');
+      refetchHistory();
+    } catch (error) {
+      toast.error('Failed to delete report');
+    } finally {
+      setDeletingPath(null);
+    }
   };
+
+  // Effective selection count for validation
+  const effectiveSelectionCount = selectionMode === 'all' 
+    ? filteredProperties.length 
+    : (selectedPropertyId ? 1 : 0);
 
   if (isLoading) {
     return (
@@ -156,55 +179,66 @@ export default function Reports() {
 
                 <Separator />
 
-                {/* Property Selection */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label>Property Selection</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectAll(true);
-                        setSelectedPropertyIds([]);
-                      }}
-                    >
-                      Select All ({filteredProperties.length})
-                    </Button>
-                  </div>
+                {/* Property Selection Mode */}
+                <div className="space-y-4">
+                  <Label>Property Selection</Label>
+                  <RadioGroup 
+                    value={selectionMode} 
+                    onValueChange={(v) => {
+                      setSelectionMode(v as SelectionMode);
+                      if (v === 'all') setSelectedPropertyId('');
+                    }}
+                    className="flex gap-6"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id="select-all" />
+                      <Label htmlFor="select-all" className="font-normal cursor-pointer">
+                        All Properties ({filteredProperties.length})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="select-single" />
+                      <Label htmlFor="select-single" className="font-normal cursor-pointer">
+                        Single Property
+                      </Label>
+                    </div>
+                  </RadioGroup>
 
-                  {selectAll ? (
+                  {selectionMode === 'all' ? (
                     <Alert>
                       <CheckCircle2 className="h-4 w-4" />
                       <AlertDescription>
-                        All {filteredProperties.length} {lifecycleType === 'all' ? '' : lifecycleType.replace('_', ' ')} properties selected
+                        All {filteredProperties.length} {lifecycleType === 'all' ? '' : lifecycleType.replace('_', ' ')} properties will be included
                       </AlertDescription>
                     </Alert>
                   ) : (
-                    <ScrollArea className="h-40 border rounded-md p-3">
-                      <div className="space-y-2">
-                        {filteredProperties.map(prop => (
-                          <div key={prop.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={prop.id}
-                              checked={selectedPropertyIds.includes(prop.id)}
-                              onCheckedChange={() => togglePropertySelection(prop.id)}
-                            />
-                            <label htmlFor={prop.id} className="text-sm flex-1 cursor-pointer">
-                              {prop.address_line}
-                            </label>
-                            <Badge variant="outline" className="text-xs">
-                              {prop.lifecycle_type === 'core_rental' ? 'Core' : 'Dev'}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  )}
-
-                  {!selectAll && selectedPropertyIds.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      {selectedPropertyIds.length} property(ies) selected
-                    </p>
+                    <div className="space-y-2">
+                      <Label>Select Property</Label>
+                      <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a property..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <ScrollArea className="h-60">
+                            {filteredProperties.map(prop => (
+                              <SelectItem key={prop.id} value={prop.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{prop.address_line}</span>
+                                  <Badge variant="outline" className="text-xs ml-2">
+                                    {prop.lifecycle_type === 'core_rental' ? 'Core' : 'Dev'}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
+                      </Select>
+                      {selectedProperty && (
+                        <p className="text-sm text-muted-foreground">
+                          Selected: {selectedProperty.address_line}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -213,11 +247,9 @@ export default function Reports() {
             {/* Report Templates */}
             <div className="grid gap-4 md:grid-cols-2">
               {REPORT_TEMPLATES.map(template => {
-                const validation = validateReportInputs(template, filters, filteredProperties);
-                const effectiveSelection = selectAll ? filteredProperties.length : selectedPropertyIds.length;
                 const canGenerate = template.requiresSingleProperty 
-                  ? effectiveSelection === 1 
-                  : effectiveSelection > 0;
+                  ? effectiveSelectionCount === 1 
+                  : effectiveSelectionCount > 0;
 
                 return (
                   <Card key={template.id} className={!canGenerate ? 'opacity-60' : ''}>
@@ -229,16 +261,25 @@ export default function Reports() {
                       <CardDescription>{template.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {template.requiresSingleProperty && effectiveSelection !== 1 && (
+                      {template.requiresSingleProperty && selectionMode !== 'single' && (
+                        <Alert className="py-2 border-warning/50 bg-warning/10">
+                          <AlertTriangle className="h-4 w-4 text-warning" />
+                          <AlertDescription className="text-xs text-warning">
+                            Switch to "Single Property" mode above
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      {template.requiresSingleProperty && selectionMode === 'single' && !selectedPropertyId && (
                         <Alert variant="destructive" className="py-2">
                           <AlertTriangle className="h-4 w-4" />
                           <AlertDescription className="text-xs">
-                            Select exactly 1 property for this report
+                            Select a property above
                           </AlertDescription>
                         </Alert>
                       )}
 
-                      {template.id === 'mortgage_broker_pack' && (
+                      {template.id === 'mortgage_broker_pack' && canGenerate && (
                         <div className="space-y-2">
                           <Label htmlFor="broker-notes">Broker Notes (optional)</Label>
                           <Input
@@ -272,12 +313,82 @@ export default function Reports() {
           <TabsContent value="history">
             <Card>
               <CardHeader>
-                <CardTitle>Generated Reports</CardTitle>
-                <CardDescription>Previously generated reports are logged in the Activity feed</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Generated Reports
+                </CardTitle>
+                <CardDescription>Previously generated reports stored in your account</CardDescription>
               </CardHeader>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Report generation history is tracked in each property's Activity timeline.</p>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : !reportHistory || reportHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No reports generated yet</p>
+                    <p className="text-sm mt-1">Generated reports will appear here</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Report Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Generated</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reportHistory.map((report) => (
+                        <TableRow key={report.path}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="truncate max-w-[200px]">{report.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {getReportTypeName(report.report_type).replace(' Report', '').replace(' Pack', '')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {formatDistanceToNow(new Date(report.created_at), { addSuffix: true })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {report.download_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  asChild
+                                >
+                                  <a href={report.download_url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteReport(report.path)}
+                                disabled={deletingPath === report.path}
+                              >
+                                {deletingPath === report.path ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                )}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
