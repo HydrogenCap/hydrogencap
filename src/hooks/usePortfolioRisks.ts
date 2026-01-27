@@ -226,7 +226,27 @@ export function calculatePortfolioRisks(
       }
     }
 
-    // Operational data risks (from passport completeness)
+    // ========== PROPERTY DATA COMPLETENESS ==========
+    
+    // Check core property fields (in properties table, edited via Property Edit page)
+    const missingPropertyFields: string[] = [];
+    if (!property.tenure) missingPropertyFields.push('Tenure');
+    if (property.beds === null || property.beds === undefined) missingPropertyFields.push('Bedrooms');
+    if (property.bathrooms === null || property.bathrooms === undefined) missingPropertyFields.push('Bathrooms');
+    
+    if (missingPropertyFields.length > 0) {
+      riskItems.push({
+        id: `property-data-${property.id}`,
+        propertyId: property.id,
+        address: property.address_line,
+        type: 'operational_data',
+        severity: 'warning',
+        message: `Missing: ${missingPropertyFields.join(', ')}`,
+        targetUrl: `/properties/${property.id}/edit`,
+      });
+    }
+
+    // Operational data risks (from passport - now only operational fields)
     if (passport) {
       const completeness = calculatePassportCompleteness(passport);
       if (completeness.criticalMissing.length > 0) {
