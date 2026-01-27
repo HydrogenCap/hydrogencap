@@ -44,7 +44,7 @@ import {
   type CompanyStatus,
 } from '@/hooks/useCompanies';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
-import { ComplianceFilingsCard, CompanyLinkedProperties, ShareCapitalCard } from '@/components/companies';
+import { ComplianceFilingsCard, CompanyLinkedProperties, ShareCapitalCard, CompanySecretsCard } from '@/components/companies';
 import { CompanyOwnershipSection } from '@/components/ownership';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -401,6 +401,9 @@ export default function CompanyDetail() {
 
             {/* Share Capital Section */}
             <ShareCapitalCard companyId={company.id} />
+
+            {/* Sensitive Details (Auth Code / UTR) */}
+            <CompanySecretsCard companyId={company.id} />
           </div>
 
           {/* Right Column - Shareholders (unified ownership_links) */}
