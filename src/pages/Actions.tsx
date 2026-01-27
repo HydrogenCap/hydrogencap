@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { 
+import { Link, useNavigate } from 'react-router-dom';
+import {
   AlertTriangle, 
   ArrowUpDown, 
   Building2, 
@@ -51,6 +51,7 @@ const riskTypeIcons: Record<RiskType, React.ReactNode> = {
 };
 
 export default function ActionsPage() {
+  const navigate = useNavigate();
   const { risks, criticalCount, warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   const [search, setSearch] = useState('');
@@ -278,7 +279,11 @@ export default function ActionsPage() {
               </TableHeader>
               <TableBody>
                 {filteredRisks.map(risk => (
-                  <TableRow key={risk.id}>
+                  <TableRow 
+                    key={risk.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => navigate(risk.targetUrl)}
+                  >
                     <TableCell>
                       <Badge 
                         variant={risk.severity === 'critical' ? 'destructive' : 'outline'}
@@ -302,11 +307,7 @@ export default function ActionsPage() {
                       <span className="text-sm text-muted-foreground">{risk.message}</span>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link to={`/properties/${risk.propertyId}`}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ))}
