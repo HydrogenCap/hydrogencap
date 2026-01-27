@@ -122,7 +122,7 @@ export function useUpdatePassport() {
   });
 }
 
-// Calculate passport completeness - simplified for core fields only
+// Calculate passport completeness - only operational fields in the passport table
 export interface PassportCompleteness {
   complete: boolean;
   percentage: number;
@@ -136,18 +136,16 @@ export function calculatePassportCompleteness(passport: PropertyPassport | null)
       complete: false,
       percentage: 0,
       missingFields: ['No passport data'],
-      criticalMissing: ['All passport fields missing'],
+      criticalMissing: ['Property Type'],
     };
   }
 
-  // Only core fields that drive decisions
+  // Only operational fields that exist in the passport table
+  // Note: Beds, Bathrooms, Tenure are now in the properties table (checked separately)
   const requiredFields = [
     { key: 'asset_agreement_category', label: 'Property Type', critical: true },
-    { key: 'owned_by', label: 'Owner / SPV', critical: false },
-    { key: 'owner_tenure', label: 'Tenure', critical: true },
-    { key: 'bedrooms', label: 'Bedrooms', critical: true },
-    { key: 'bathrooms', label: 'Bathrooms', critical: true },
     { key: 'kitchens', label: 'Kitchens', critical: false },
+    { key: 'management_company_id', label: 'Management Company', critical: false },
   ];
 
   const missingFields: string[] = [];
@@ -165,11 +163,6 @@ export function calculatePassportCompleteness(passport: PropertyPassport | null)
       filledCount++;
     }
   });
-
-  // HMO licence check
-  if (passport.hmo_licence_required && !passport.hmo_licence_expiry) {
-    criticalMissing.push('HMO licence expiry (required but missing)');
-  }
 
   const totalFields = requiredFields.length;
   const percentage = Math.round((filledCount / totalFields) * 100);
