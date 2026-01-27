@@ -14,7 +14,7 @@ import {
   FileWarning,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,256 +34,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useProperties } from '@/hooks/useProperties';
-import { useAllCompliance } from '@/hooks/useCompliance';
-import { 
-  calculateLTV, 
-  getLTVStatus, 
-  formatPercent, 
-  getExpiryStatus, 
-  daysUntil, 
-  getEPCStatus,
-  getEffectiveCosts,
-  calculateMonthlyMortgagePayment 
-} from '@/lib/calculations';
+import { usePortfolioRisks, RiskType, riskTypeLabels } from '@/hooks/usePortfolioRisks';
 
-type RiskType = 'all' | 'ltv' | 'epc' | 'rate_expiry' | 'cashflow' | 'hmo' | 'operational';
+type RiskTypeFilter = 'all' | RiskType;
 type SeverityFilter = 'all' | 'critical' | 'warning';
 type SortField = 'severity' | 'type' | 'address';
 type SortDir = 'asc' | 'desc';
 
-interface RiskItem {
-  id: string;
-  propertyId: string;
-  address: string;
-  type: 'ltv' | 'epc' | 'rate_expiry' | 'cashflow' | 'hmo' | 'operational';
-  severity: 'critical' | 'warning';
-  message: string;
-}
-
-const riskTypeLabels: Record<RiskItem['type'], string> = {
-  ltv: 'LTV Risk',
-  epc: 'EPC Risk',
-  rate_expiry: 'Rate Expiry',
-  cashflow: 'Negative Cashflow',
-  hmo: 'HMO Licence',
-  operational: 'Missing Data',
-};
-
-const riskTypeIcons: Record<RiskItem['type'], React.ReactNode> = {
+const riskTypeIcons: Record<RiskType, React.ReactNode> = {
   ltv: <Percent className="h-4 w-4" />,
   epc: <Zap className="h-4 w-4" />,
   rate_expiry: <TrendingDown className="h-4 w-4" />,
-  cashflow: <TrendingDown className="h-4 w-4" />,
-  hmo: <Home className="h-4 w-4" />,
-  operational: <FileWarning className="h-4 w-4" />,
+  negative_cashflow: <TrendingDown className="h-4 w-4" />,
+  hmo_licence: <Home className="h-4 w-4" />,
+  operational_data: <FileWarning className="h-4 w-4" />,
 };
 
 export default function ActionsPage() {
-  const { data: properties, isLoading: loadingProperties } = useProperties();
-  const { data: complianceItems, isLoading: loadingCompliance } = useAllCompliance();
+  const { risks, criticalCount, warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<RiskType>('all');
+  const [typeFilter, setTypeFilter] = useState<RiskTypeFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [sortField, setSortField] = useState<SortField>('severity');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-
-  // Build compliance map by property
-  const complianceByPropertyMap = useMemo(() => {
-    const map = new Map<string, NonNullable<typeof complianceItems>>();
-    complianceItems?.forEach(item => {
-      const existing = map.get(item.property_id) || [];
-      existing.push(item);
-      map.set(item.property_id, existing);
-    });
-    return map;
-  }, [complianceItems]);
-
-  // Get only core rental properties
-  const coreRentalProperties = useMemo(() => {
-    return properties?.filter(p => p.lifecycle_type === 'core_rental') || [];
-  }, [properties]);
-
-  // Calculate all risks (same logic as Dashboard)
-  const risks = useMemo<RiskItem[]>(() => {
-    if (!coreRentalProperties?.length) return [];
-
-    const riskItems: RiskItem[] = [];
-    const currentYear = new Date().getFullYear();
-
-    coreRentalProperties.forEach(property => {
-      const loan = property.loans?.[0];
-      const income = property.income?.find(i => i.year === currentYear);
-      const costs = property.costs?.find(c => c.year === currentYear);
-      const propertyComplianceItems = complianceByPropertyMap.get(property.id) || [];
-
-      const value = property.current_value_gbp ? Number(property.current_value_gbp) : null;
-      const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
-      const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-      
-      const effectiveCostsRisk = getEffectiveCosts(rent, value, costs);
-      const totalCosts = effectiveCostsRisk.total;
-
-      const mortgagePaymentResult = calculateMonthlyMortgagePayment({
-        balance: mortgage,
-        interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
-        termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
-        isInterestOnly: loan?.capital_or_interest === 'interest',
-        paymentOverride: loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : null,
-      });
-
-      const ltv = calculateLTV(mortgage, value);
-      const annualCashflowAfterDebt = rent !== null 
-        ? (rent - totalCosts - (mortgagePaymentResult.effective || 0) * 12)
-        : null;
-
-      // LTV risks
-      const ltvStatus = getLTVStatus(ltv);
-      if (ltvStatus === 'danger') {
-        riskItems.push({
-          id: `ltv-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'ltv',
-          severity: 'critical',
-          message: `LTV at ${formatPercent(ltv)} (>85%)`,
-        });
-      } else if (ltvStatus === 'warning') {
-        riskItems.push({
-          id: `ltv-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'ltv',
-          severity: 'warning',
-          message: `LTV at ${formatPercent(ltv)} (>75%)`,
-        });
-      }
-
-      // EPC risks
-      const epcRequired = property.epc_required !== false;
-      const epcStatus = getEPCStatus(property.epc_rating, epcRequired);
-      if (epcStatus === 'warning') {
-        riskItems.push({
-          id: `epc-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'epc',
-          severity: 'warning',
-          message: `EPC rating ${property.epc_rating} (below C)`,
-        });
-      }
-
-      // Rate expiry risks
-      if (loan?.fixed_rate_expires) {
-        const days = daysUntil(loan.fixed_rate_expires);
-        const status = getExpiryStatus(loan.fixed_rate_expires);
-        
-        if (status === 'expired') {
-          riskItems.push({
-            id: `rate-${property.id}`,
-            propertyId: property.id,
-            address: property.address_line,
-            type: 'rate_expiry',
-            severity: 'critical',
-            message: 'Fixed rate has expired',
-          });
-        } else if (status === 'critical') {
-          riskItems.push({
-            id: `rate-${property.id}`,
-            propertyId: property.id,
-            address: property.address_line,
-            type: 'rate_expiry',
-            severity: 'critical',
-            message: `Fixed rate expires in ${days} days`,
-          });
-        } else if (status === 'warning') {
-          riskItems.push({
-            id: `rate-${property.id}`,
-            propertyId: property.id,
-            address: property.address_line,
-            type: 'rate_expiry',
-            severity: 'warning',
-            message: `Fixed rate expires in ${days} days`,
-          });
-        }
-      }
-
-      // Negative cashflow
-      if (annualCashflowAfterDebt !== null && annualCashflowAfterDebt < 0) {
-        riskItems.push({
-          id: `cashflow-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'cashflow',
-          severity: 'warning',
-          message: `Negative cashflow: £${Math.abs(Math.round(annualCashflowAfterDebt)).toLocaleString()}/yr`,
-        });
-      }
-
-      // HMO licence risks - use compliance_items as source of truth
-      if (property.is_hmo_licensed) {
-        const hmoItem = propertyComplianceItems.find(item => 
-          item.compliance_type.toLowerCase().replace(/\s+/g, '_') === 'hmo_licence' ||
-          item.compliance_type === 'HMO Licence'
-        );
-        
-        if (!hmoItem || !hmoItem.expiry_date) {
-          riskItems.push({
-            id: `hmo-${property.id}`,
-            propertyId: property.id,
-            address: property.address_line,
-            type: 'hmo',
-            severity: 'critical',
-            message: 'HMO licence required but missing',
-          });
-        } else {
-          const expiry = new Date(hmoItem.expiry_date);
-          const now = new Date();
-          const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (daysUntilExpiry <= 0) {
-            riskItems.push({
-              id: `hmo-${property.id}`,
-              propertyId: property.id,
-              address: property.address_line,
-              type: 'hmo',
-              severity: 'critical',
-              message: 'HMO licence has expired',
-            });
-          } else if (daysUntilExpiry <= 60) {
-            riskItems.push({
-              id: `hmo-${property.id}`,
-              propertyId: property.id,
-              address: property.address_line,
-              type: 'hmo',
-              severity: 'warning',
-              message: `HMO licence expires in ${daysUntilExpiry} days`,
-            });
-          }
-        }
-      }
-
-      // Missing operational data
-      const criticalMissing: string[] = [];
-      if (!property.current_value_gbp) criticalMissing.push('Value');
-      if (!rent) criticalMissing.push('Rent');
-      if (!mortgage && loan) criticalMissing.push('Mortgage Balance');
-      
-      if (criticalMissing.length > 0) {
-        riskItems.push({
-          id: `operational-${property.id}`,
-          propertyId: property.id,
-          address: property.address_line,
-          type: 'operational',
-          severity: 'warning',
-          message: `Missing: ${criticalMissing.join(', ')}`,
-        });
-      }
-    });
-
-    return riskItems;
-  }, [coreRentalProperties, complianceByPropertyMap]);
 
   // Apply filters and sorting
   const filteredRisks = useMemo(() => {
@@ -324,9 +98,6 @@ export default function ActionsPage() {
     return result;
   }, [risks, search, typeFilter, severityFilter, sortField, sortDir]);
 
-  const criticalCount = risks.filter(r => r.severity === 'critical').length;
-  const warningCount = risks.filter(r => r.severity === 'warning').length;
-
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -335,8 +106,6 @@ export default function ActionsPage() {
       setSortDir('desc');
     }
   };
-
-  const isLoading = loadingProperties || loadingCompliance;
 
   if (isLoading) {
     return (
@@ -394,7 +163,7 @@ export default function ActionsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Issues</p>
-                  <p className="text-3xl font-bold text-foreground">{risks.length}</p>
+                  <p className="text-3xl font-bold text-foreground">{totalCount}</p>
                 </div>
                 <Building2 className="h-8 w-8 text-muted-foreground/50" />
               </div>
@@ -416,7 +185,7 @@ export default function ActionsPage() {
                 />
               </div>
 
-              <Select value={typeFilter} onValueChange={v => setTypeFilter(v as RiskType)}>
+              <Select value={typeFilter} onValueChange={v => setTypeFilter(v as RiskTypeFilter)}>
                 <SelectTrigger className="w-[180px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Issue Type" />
@@ -426,9 +195,9 @@ export default function ActionsPage() {
                   <SelectItem value="ltv">LTV Risk</SelectItem>
                   <SelectItem value="epc">EPC Risk</SelectItem>
                   <SelectItem value="rate_expiry">Rate Expiry</SelectItem>
-                  <SelectItem value="cashflow">Negative Cashflow</SelectItem>
-                  <SelectItem value="hmo">HMO Licence</SelectItem>
-                  <SelectItem value="operational">Missing Data</SelectItem>
+                  <SelectItem value="negative_cashflow">Negative Cashflow</SelectItem>
+                  <SelectItem value="hmo_licence">HMO Licence</SelectItem>
+                  <SelectItem value="operational_data">Missing Data</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -457,7 +226,7 @@ export default function ActionsPage() {
                 <div>
                   <h3 className="font-semibold text-foreground">No Actions Required</h3>
                   <p className="text-sm text-muted-foreground">
-                    {risks.length === 0 
+                    {totalCount === 0 
                       ? 'Your portfolio is healthy with no identified risks.'
                       : 'No results match your current filters.'}
                   </p>
