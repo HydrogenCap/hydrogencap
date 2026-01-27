@@ -8,3 +8,4 @@ export { ComplianceSummaryWidget } from './ComplianceSummaryWidget';
 export { CompanyLinkedProperties } from './CompanyLinkedProperties';
 export { CompanyMissingInfoCard } from './CompanyMissingInfoCard';
 export { CompanyBeneficialOwnersCard } from './CompanyBeneficialOwnersCard';
+export { ShareCapitalCard } from './ShareCapitalCard';
