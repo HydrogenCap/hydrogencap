@@ -1,0 +1,7 @@
+export { default as MarketingHome } from './Home';
+export { default as MarketingProduct } from './Product';
+export { default as MarketingPortfolio } from './Portfolio';
+export { default as MarketingCaseStudies } from './CaseStudies';
+export { default as MarketingAbout } from './About';
+export { default as MarketingContact } from './Contact';
+export { default as MarketingDemo } from './Demo';
