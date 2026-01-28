@@ -101,7 +101,7 @@ function CashflowCard({
   );
 }
 
-// Income & Costs card with monthly/annual toggle
+// Income & Costs card with click-to-toggle monthly/annual
 function IncomeCostsCard({
   annualRent,
   effectiveCosts,
@@ -126,37 +126,23 @@ function IncomeCostsCard({
   const displayNOI = netRent ? netRent / divisor : null;
 
   return (
-    <Card className="bg-card border-border">
+    <Card 
+      className={clickableCardStyles}
+      onClick={() => setShowAnnual(!showAnnual)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setShowAnnual(!showAnnual);
+        }
+      }}
+      aria-label={`Toggle between monthly and annual view. Currently showing ${showAnnual ? 'annual' : 'monthly'}`}
+    >
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Income & Costs
-          </CardTitle>
-          <div className="flex rounded-md overflow-hidden border border-border">
-            <button
-              onClick={() => setShowAnnual(false)}
-              className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors",
-                !showAnnual 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              /mo
-            </button>
-            <button
-              onClick={() => setShowAnnual(true)}
-              className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors",
-                showAnnual 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              /yr
-            </button>
-          </div>
-        </div>
+        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          {showAnnual ? 'Annual' : 'Monthly'} Income & Costs
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between">
@@ -222,6 +208,7 @@ function IncomeCostsCard({
             {formatGBP(displayNOI)}
           </span>
         </div>
+        <p className="text-xs text-muted-foreground pt-1">Click to toggle</p>
       </CardContent>
     </Card>
   );
