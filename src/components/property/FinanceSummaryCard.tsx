@@ -114,7 +114,6 @@ function IncomeCostsCard({
   const [showAnnual, setShowAnnual] = useState(true);
   
   const divisor = showAnnual ? 1 : 12;
-  const periodLabel = showAnnual ? '/yr' : '/mo';
   
   const displayRent = annualRent ? annualRent / divisor : null;
   const displayManagement = effectiveCosts.management / divisor;
@@ -127,30 +126,41 @@ function IncomeCostsCard({
   const displayNOI = netRent ? netRent / divisor : null;
 
   return (
-    <Card 
-      className={clickableCardStyles}
-      onClick={() => setShowAnnual(!showAnnual)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          setShowAnnual(!showAnnual);
-        }
-      }}
-      aria-label={`Toggle between monthly and annual view. Currently showing ${showAnnual ? 'annual' : 'monthly'}`}
-    >
-      <CardHeader>
-        <CardTitle className="text-base flex items-center justify-between">
-          <span>Income & Costs</span>
-          <Badge variant="outline" className="text-xs font-normal">
-            {showAnnual ? 'Annual' : 'Monthly'} • Click to toggle
-          </Badge>
-        </CardTitle>
+    <Card className="bg-card border-border">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Income & Costs
+          </CardTitle>
+          <div className="flex rounded-md overflow-hidden border border-border">
+            <button
+              onClick={() => setShowAnnual(false)}
+              className={cn(
+                "px-3 py-1 text-xs font-medium transition-colors",
+                !showAnnual 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              )}
+            >
+              /mo
+            </button>
+            <button
+              onClick={() => setShowAnnual(true)}
+              className={cn(
+                "px-3 py-1 text-xs font-medium transition-colors",
+                showAnnual 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              )}
+            >
+              /yr
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Gross Rent {periodLabel}</span>
+          <span className="text-muted-foreground">Gross Rent</span>
           <span className="font-medium">{formatGBP(displayRent)}</span>
         </div>
         <Separator />
@@ -207,7 +217,7 @@ function IncomeCostsCard({
           <span className="text-destructive">-{formatGBP(displayTotal)}</span>
         </div>
         <div className="flex justify-between font-medium">
-          <span>NOI {periodLabel}</span>
+          <span>Net Operating Income</span>
           <span className={displayNOI !== null && displayNOI >= 0 ? 'text-success' : 'text-destructive'}>
             {formatGBP(displayNOI)}
           </span>
