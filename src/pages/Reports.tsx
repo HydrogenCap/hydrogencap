@@ -8,13 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock, Building2, Link } from 'lucide-react';
+import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock, Building2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { 
@@ -22,18 +21,14 @@ import {
   useGenerateReport, 
   REPORT_TEMPLATES, 
   validateReportInputs,
-  useCompanyForBrokerPack,
   type ReportType,
   type MortgageBrokerPackData,
 } from '@/hooks/useReportGeneration';
 import { validateMortgageBrokerPack } from '@/lib/mortgageBrokerPackGenerator';
 import { useReportHistory, getReportTypeName, deleteReport } from '@/hooks/useReportHistory';
-import { PropertySearchSelect } from '@/components/reports/PropertySearchSelect';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
-import { Link as RouterLink } from 'react-router-dom';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
-type SelectionMode = 'all' | 'single';
 type LoanPurpose = 'refinance' | 'capital_raise' | 'rate_switch' | 'purchase' | '';
 
 export default function Reports() {
@@ -43,8 +38,6 @@ export default function Reports() {
 
   // Filters state
   const [lifecycleType, setLifecycleType] = useState<LifecycleFilter>('all');
-  const [selectionMode, setSelectionMode] = useState<SelectionMode>('all');
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [includeAttachments, setIncludeAttachments] = useState(false);
   const [brokerNotes, setBrokerNotes] = useState('');
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
@@ -56,39 +49,32 @@ export default function Reports() {
   const [targetLTV, setTargetLTV] = useState<string>('');
   const [preparedFor, setPreparedFor] = useState<string>('');
 
-  // Get selected property
-  const selectedProperty = useMemo(() => {
-    if (selectionMode === 'single' && selectedPropertyId) {
-      return properties.find(p => p.id === selectedPropertyId);
-    }
-    return null;
-  }, [selectionMode, selectedPropertyId, properties]);
-
-  // Get company data for broker pack
-  const { data: companyData, isLoading: companyLoading } = useCompanyForBrokerPack(
-    selectedProperty?.legal_owner_company_id || undefined
-  );
-
   // Filter properties based on lifecycle
   const filteredProperties = useMemo(() => {
     if (lifecycleType === 'all') return properties;
     return properties.filter(p => p.lifecycle_type === lifecycleType);
   }, [properties, lifecycleType]);
 
-  // Build filters object
+  // Build filters object - always use all filtered properties
   const filters: ReportFilters = useMemo(() => ({
     lifecycleType,
-    propertyIds: selectionMode === 'all' ? 'all' : (selectedPropertyId ? [selectedPropertyId] : []),
+    propertyIds: 'all',
     asOfDate: new Date(),
     includeAttachments,
-  }), [lifecycleType, selectionMode, selectedPropertyId, includeAttachments]);
+  }), [lifecycleType, includeAttachments]);
 
-  // Build broker pack data for validation
+  // For mortgage broker pack, use first property with a linked company
+  const propertyForBrokerPack = useMemo(() => {
+    return filteredProperties.find(p => p.legal_owner_company_id) || filteredProperties[0] || null;
+  }, [filteredProperties]);
+
+  // Build broker pack data for validation  
   const brokerPackData: MortgageBrokerPackData | null = useMemo(() => {
-    if (!selectedProperty) return null;
+    if (!propertyForBrokerPack) return null;
+    const company = companies?.find(c => c.id === propertyForBrokerPack.legal_owner_company_id);
     return {
-      property: selectedProperty,
-      company: companyData || null,
+      property: propertyForBrokerPack,
+      company: company || null,
       portfolioSummary,
       loanPurpose,
       targetLoanAmount: targetLoanAmount ? parseFloat(targetLoanAmount) : null,
@@ -96,11 +82,11 @@ export default function Reports() {
       brokerNotes,
       preparedFor,
     };
-  }, [selectedProperty, companyData, portfolioSummary, loanPurpose, targetLoanAmount, targetLTV, brokerNotes, preparedFor]);
+  }, [propertyForBrokerPack, companies, portfolioSummary, loanPurpose, targetLoanAmount, targetLTV, brokerNotes, preparedFor]);
 
   // Validate broker pack
   const brokerPackValidation = useMemo(() => {
-    if (!brokerPackData) return { canGenerate: false, warnings: [], errors: ['Select a property first'] };
+    if (!brokerPackData) return { canGenerate: false, warnings: [], errors: ['No properties available'] };
     return validateMortgageBrokerPack(brokerPackData);
   }, [brokerPackData]);
 
@@ -174,10 +160,11 @@ export default function Reports() {
     }
   };
 
-  // Effective selection count for validation
-  const effectiveSelectionCount = selectionMode === 'all' 
-    ? filteredProperties.length 
-    : (selectedPropertyId ? 1 : 0);
+  // Get company data for broker pack dialog
+  const companyForBrokerPack = useMemo(() => {
+    if (!propertyForBrokerPack?.legal_owner_company_id) return null;
+    return companies?.find(c => c.id === propertyForBrokerPack.legal_owner_company_id) || null;
+  }, [propertyForBrokerPack, companies]);
 
   if (isLoading) {
     return (
@@ -250,56 +237,15 @@ export default function Reports() {
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Property Selection Mode */}
-                <div className="space-y-4">
-                  <Label>Property Selection</Label>
-                  <RadioGroup 
-                    value={selectionMode} 
-                    onValueChange={(v) => {
-                      setSelectionMode(v as SelectionMode);
-                      if (v === 'all') setSelectedPropertyId('');
-                    }}
-                    className="flex gap-6"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id="select-all" />
-                      <Label htmlFor="select-all" className="font-normal cursor-pointer">
-                        All Properties ({filteredProperties.length})
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="single" id="select-single" />
-                      <Label htmlFor="select-single" className="font-normal cursor-pointer">
-                        Single Property
-                      </Label>
-                    </div>
-                  </RadioGroup>
-
-                  {selectionMode === 'all' ? (
-                    <Alert>
-                      <CheckCircle2 className="h-4 w-4" />
-                      <AlertDescription>
-                        All {filteredProperties.length} {lifecycleType === 'all' ? '' : lifecycleType.replace('_', ' ')} properties will be included
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label>Select Property</Label>
-                      <PropertySearchSelect
-                        properties={filteredProperties}
-                        value={selectedPropertyId}
-                        onValueChange={setSelectedPropertyId}
-                        placeholder="Search or select a property..."
-                      />
-                      {selectedProperty && (
-                        <p className="text-sm text-muted-foreground">
-                          Selected: {selectedProperty.address_line}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                {/* Property Selection Summary */}
+                <div className="space-y-2">
+                  <Label>Properties Included</Label>
+                  <Alert>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertDescription>
+                      {filteredProperties.length} {lifecycleType === 'all' ? '' : lifecycleType.replace('_', ' ')} {filteredProperties.length === 1 ? 'property' : 'properties'} will be included in reports
+                    </AlertDescription>
+                  </Alert>
                 </div>
               </CardContent>
             </Card>
@@ -307,11 +253,9 @@ export default function Reports() {
             {/* Report Templates */}
             <div className="grid gap-4 md:grid-cols-2">
               {REPORT_TEMPLATES.map(template => {
-                const canGenerate = template.requiresSingleProperty 
-                  ? effectiveSelectionCount === 1 
-                  : effectiveSelectionCount > 0;
-
+                const canGenerate = filteredProperties.length > 0;
                 const isMortgagePack = template.id === 'mortgage_broker_pack';
+                const propertyCount = filteredProperties.length;
 
                 return (
                   <Card key={template.id} className={!canGenerate ? 'opacity-60' : ''}>
@@ -326,54 +270,10 @@ export default function Reports() {
                       <CardDescription>{template.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {template.requiresSingleProperty && selectionMode !== 'single' && (
-                        <Alert className="py-2 border-warning/50 bg-warning/10">
-                          <AlertTriangle className="h-4 w-4 text-warning" />
-                          <AlertDescription className="text-xs text-warning">
-                            Switch to "Single Property" mode above
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      {template.requiresSingleProperty && selectionMode === 'single' && !selectedPropertyId && (
-                        <Alert variant="destructive" className="py-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertDescription className="text-xs">
-                            Select a property above
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Show entity info for mortgage pack */}
-                      {isMortgagePack && canGenerate && selectedProperty && (
-                        <div className="rounded-md border bg-muted/50 p-3 space-y-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">Borrowing Entity:</span>
-                            <span className={selectedProperty.legal_owner_company_id ? 'text-foreground' : 'text-muted-foreground'}>
-                              {companyLoading ? 'Loading...' : (companyData?.legal_name || 'Not linked')}
-                            </span>
-                          </div>
-                          {!selectedProperty.legal_owner_company_id && (
-                            <div className="flex items-center justify-between gap-2 p-2 bg-destructive/10 rounded border border-destructive/20">
-                              <p className="text-xs text-destructive">
-                                This property needs an SPV/company linked as legal owner before generating a lender pack.
-                              </p>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="shrink-0 text-xs h-7"
-                                asChild
-                              >
-                                <RouterLink to={`/properties/${selectedProperty.id}`}>
-                                  <Link className="h-3 w-3 mr-1" />
-                                  Link Company
-                                </RouterLink>
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {/* Show property count for multi-property reports */}
+                      <div className="text-sm text-muted-foreground">
+                        {propertyCount} {propertyCount === 1 ? 'property' : 'properties'} selected
+                      </div>
 
                       <Button
                         className="w-full gap-2"
@@ -487,7 +387,7 @@ export default function Reports() {
                 Mortgage Broker Pack Configuration
               </DialogTitle>
               <DialogDescription>
-                Configure the lender-grade documentation pack for {selectedProperty?.address_line}
+                Configure the lender-grade documentation pack for {propertyForBrokerPack?.address_line}
               </DialogDescription>
             </DialogHeader>
 
@@ -587,12 +487,12 @@ export default function Reports() {
               </div>
 
               {/* Entity Summary */}
-              {companyData && (
+              {companyForBrokerPack && (
                 <div className="rounded-md border bg-muted/30 p-3 space-y-1 text-sm">
                   <p className="font-medium">Borrowing Entity</p>
-                  <p className="text-muted-foreground">{companyData.legal_name}</p>
-                  {companyData.company_number && (
-                    <p className="text-muted-foreground text-xs">Company No: {companyData.company_number}</p>
+                  <p className="text-muted-foreground">{companyForBrokerPack.legal_name}</p>
+                  {companyForBrokerPack.company_number && (
+                    <p className="text-muted-foreground text-xs">Company No: {companyForBrokerPack.company_number}</p>
                   )}
                 </div>
               )}
