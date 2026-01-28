@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { TrendingUp, TrendingDown, Building, Wallet, PiggyBank, Percent, Calendar } from 'lucide-react';
 import { formatGBP, formatPercent, formatDateUK, getExpiryStatus, daysUntil, getEffectiveCosts, type EffectiveCosts } from '@/lib/calculations';
+import { cn } from '@/lib/utils';
 
 interface LoanData {
   lender?: string | null;
@@ -38,6 +39,63 @@ interface FinanceSummaryCardProps {
   monthlyCashflow: number | null;
   yieldPercent: number | null;
   roce: number | null;
+}
+
+// Separate clickable cashflow card component
+function CashflowCard({ 
+  monthlyCashflow, 
+  annualCashflow 
+}: { 
+  monthlyCashflow: number | null; 
+  annualCashflow: number;
+}) {
+  const [showAnnual, setShowAnnual] = useState(false);
+  
+  const displayValue = showAnnual ? annualCashflow : monthlyCashflow;
+  const isPositive = displayValue !== null && displayValue >= 0;
+
+  return (
+    <Card 
+      className={cn(
+        "bg-card border-border transition-all duration-200 cursor-pointer",
+        "hover:bg-muted/50 hover:border-primary/50",
+        "active:scale-[0.98]"
+      )}
+      onClick={() => setShowAnnual(!showAnnual)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setShowAnnual(!showAnnual);
+        }
+      }}
+      aria-label={`Toggle between monthly and annual cashflow. Currently showing ${showAnnual ? 'annual' : 'monthly'}`}
+    >
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <Wallet className="h-4 w-4" />
+          {showAnnual ? 'Annual' : 'Monthly'} Cashflow
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex justify-between items-center">
+          <span className={`text-2xl font-bold flex items-center gap-1 ${
+            isPositive ? 'text-success' : 'text-destructive'
+          }`}>
+            {isPositive 
+              ? <TrendingUp className="h-4 w-4" /> 
+              : <TrendingDown className="h-4 w-4" />
+            }
+            {formatGBP(displayValue)}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          After debt service • Click to toggle
+        </p>
+      </CardContent>
+    </Card>
+  );
 }
 
 export function FinanceSummaryCard({
@@ -137,35 +195,11 @@ export function FinanceSummaryCard({
           </CardContent>
         </Card>
 
-        {/* Cashflow */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Cashflow
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Monthly</span>
-              <span className={`text-2xl font-bold flex items-center gap-1 ${
-                monthlyCashflow && monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'
-              }`}>
-                {monthlyCashflow && monthlyCashflow >= 0 
-                  ? <TrendingUp className="h-4 w-4" /> 
-                  : <TrendingDown className="h-4 w-4" />
-                }
-                {formatGBP(monthlyCashflow)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Annual</span>
-              <span className={annualCashflow >= 0 ? 'text-success' : 'text-destructive'}>
-                {formatGBP(annualCashflow)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Cashflow - Clickable Toggle */}
+        <CashflowCard 
+          monthlyCashflow={monthlyCashflow} 
+          annualCashflow={annualCashflow} 
+        />
 
         {/* Returns */}
         <Card className="bg-card border-border">
