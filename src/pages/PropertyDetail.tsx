@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, FinancialAttributionCard } from '@/components/ownership';
-import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveChecklist } from '@/components/property';
+import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveChecklist, QuickPerformanceCard } from '@/components/property';
 import { PassportForm } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
@@ -314,41 +314,13 @@ function PropertyDetailPage() {
               </Card>
 
               {/* Quick Performance */}
-              <Card className="bg-card border-border">
-                <CardHeader>
-                  <CardTitle>Quick Performance</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Annual Rent</span>
-                    <span>{formatGBP(annualRent)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Operating Costs</span>
-                    <span className="text-destructive">-{formatGBP(totalCosts)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">NOI</span>
-                    <span className={netRent && netRent >= 0 ? 'text-success' : 'text-destructive'}>
-                      {formatGBP(netRent)}
-                    </span>
-                  </div>
-                  {mortgagePayment && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Debt Service</span>
-                        <span className="text-destructive">-{formatGBP(mortgagePayment * 12)}/yr</span>
-                      </div>
-                      <div className="border-t pt-2 flex justify-between font-medium">
-                        <span>Net Cashflow</span>
-                        <span className={monthlyCashflow && monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}>
-                          {formatGBP(monthlyCashflow)}/mo
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              <QuickPerformanceCard
+                annualRent={annualRent}
+                totalCosts={totalCosts}
+                netRent={netRent}
+                mortgagePayment={mortgagePayment}
+                monthlyCashflow={monthlyCashflow}
+              />
             </div>
 
             {/* Location & Registry */}
