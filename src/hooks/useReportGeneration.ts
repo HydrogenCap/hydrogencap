@@ -48,9 +48,9 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
   {
     id: 'property_compliance_pack',
     name: 'Property Compliance Pack',
-    description: 'Council/licensing ready documentation pack for a single property with certificate index and compliance narrative.',
+    description: 'Council/licensing ready documentation pack with certificate index and compliance narrative.',
     icon: '📋',
-    requiresSingleProperty: true,
+    requiresSingleProperty: false,
     availableFor: ['core_rental', 'development', 'all'],
   },
   {
@@ -58,7 +58,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     name: 'Mortgage Broker Pack',
     description: 'Lender-grade documentation for BTL/HMO mortgage applications. Includes deal summary, entity profile, portfolio track record, and document checklist.',
     icon: '🏦',
-    requiresSingleProperty: true,
+    requiresSingleProperty: false,
     availableFor: ['core_rental', 'development', 'all'],
   },
   {
@@ -66,7 +66,7 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     name: 'Insurance Broker Pack',
     description: 'Risk and building summary for insurance quotations including fire safety and relevant compliance documents.',
     icon: '🛡️',
-    requiresSingleProperty: true,
+    requiresSingleProperty: false,
     availableFor: ['core_rental', 'development', 'all'],
   },
 ];
