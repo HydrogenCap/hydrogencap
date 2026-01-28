@@ -34,6 +34,17 @@ import Actions from "./pages/Actions";
 import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
+// Marketing pages
+import {
+  MarketingHome,
+  MarketingProduct,
+  MarketingPortfolio,
+  MarketingCaseStudies,
+  MarketingAbout,
+  MarketingContact,
+  MarketingDemo,
+} from "./pages/marketing";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -213,10 +224,17 @@ const App = () => (
               }
             />
             
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* Marketing pages (public) */}
+            <Route path="/" element={<MarketingHome />} />
+            <Route path="/product" element={<MarketingProduct />} />
+            <Route path="/portfolio" element={<MarketingPortfolio />} />
+            <Route path="/case-studies" element={<MarketingCaseStudies />} />
+            <Route path="/about" element={<MarketingAbout />} />
+            <Route path="/contact" element={<MarketingContact />} />
+            <Route path="/demo" element={<MarketingDemo />} />
             
             {/* 404 */}
+            <Route path="*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </BrowserRouter>

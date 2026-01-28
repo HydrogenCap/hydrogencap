@@ -450,6 +450,36 @@ export type Database = {
           },
         ]
       }
+      demo_requests: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       dismissed_duplicates: {
         Row: {
           dismissed_at: string
