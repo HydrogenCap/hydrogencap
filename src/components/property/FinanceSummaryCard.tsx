@@ -41,6 +41,13 @@ interface FinanceSummaryCardProps {
   roce: number | null;
 }
 
+// Shared clickable card styles
+const clickableCardStyles = cn(
+  "bg-card border-border transition-all duration-200 cursor-pointer",
+  "hover:bg-muted/50 hover:border-primary/50",
+  "active:scale-[0.98]"
+);
+
 // Separate clickable cashflow card component
 function CashflowCard({ 
   monthlyCashflow, 
@@ -56,11 +63,7 @@ function CashflowCard({
 
   return (
     <Card 
-      className={cn(
-        "bg-card border-border transition-all duration-200 cursor-pointer",
-        "hover:bg-muted/50 hover:border-primary/50",
-        "active:scale-[0.98]"
-      )}
+      className={clickableCardStyles}
       onClick={() => setShowAnnual(!showAnnual)}
       role="button"
       tabIndex={0}
@@ -93,6 +96,122 @@ function CashflowCard({
         <p className="text-xs text-muted-foreground">
           After debt service • Click to toggle
         </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Income & Costs card with monthly/annual toggle
+function IncomeCostsCard({
+  annualRent,
+  effectiveCosts,
+  netRent,
+}: {
+  annualRent: number | null;
+  effectiveCosts: EffectiveCosts;
+  netRent: number | null;
+}) {
+  const [showAnnual, setShowAnnual] = useState(true);
+  
+  const divisor = showAnnual ? 1 : 12;
+  const periodLabel = showAnnual ? '/yr' : '/mo';
+  
+  const displayRent = annualRent ? annualRent / divisor : null;
+  const displayManagement = effectiveCosts.management / divisor;
+  const displayInsurance = effectiveCosts.insurance / divisor;
+  const displayRepairs = effectiveCosts.repairs / divisor;
+  const displayBills = effectiveCosts.bills / divisor;
+  const displayCompliance = effectiveCosts.compliance / divisor;
+  const displayOther = effectiveCosts.other / divisor;
+  const displayTotal = effectiveCosts.total / divisor;
+  const displayNOI = netRent ? netRent / divisor : null;
+
+  return (
+    <Card 
+      className={clickableCardStyles}
+      onClick={() => setShowAnnual(!showAnnual)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setShowAnnual(!showAnnual);
+        }
+      }}
+      aria-label={`Toggle between monthly and annual view. Currently showing ${showAnnual ? 'annual' : 'monthly'}`}
+    >
+      <CardHeader>
+        <CardTitle className="text-base flex items-center justify-between">
+          <span>Income & Costs</span>
+          <Badge variant="outline" className="text-xs font-normal">
+            {showAnnual ? 'Annual' : 'Monthly'} • Click to toggle
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Gross Rent {periodLabel}</span>
+          <span className="font-medium">{formatGBP(displayRent)}</span>
+        </div>
+        <Separator />
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Management</span>
+            <div className="flex items-center gap-2">
+              <span>{formatGBP(displayManagement)}</span>
+              {effectiveCosts.managementSource === 'auto' && (
+                <Badge variant="outline" className="text-xs">Auto</Badge>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Insurance</span>
+            <div className="flex items-center gap-2">
+              <span>{formatGBP(displayInsurance)}</span>
+              {effectiveCosts.insuranceSource === 'auto' && (
+                <Badge variant="outline" className="text-xs">Auto</Badge>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Repairs</span>
+            <div className="flex items-center gap-2">
+              <span>{formatGBP(displayRepairs)}</span>
+              {effectiveCosts.repairsSource === 'auto' && (
+                <Badge variant="outline" className="text-xs">Auto</Badge>
+              )}
+            </div>
+          </div>
+          {effectiveCosts.bills > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Bills</span>
+              <span>{formatGBP(displayBills)}</span>
+            </div>
+          )}
+          {effectiveCosts.compliance > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Compliance</span>
+              <span>{formatGBP(displayCompliance)}</span>
+            </div>
+          )}
+          {effectiveCosts.other > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Other</span>
+              <span>{formatGBP(displayOther)}</span>
+            </div>
+          )}
+        </div>
+        <Separator />
+        <div className="flex justify-between font-medium">
+          <span>Total Costs</span>
+          <span className="text-destructive">-{formatGBP(displayTotal)}</span>
+        </div>
+        <div className="flex justify-between font-medium">
+          <span>NOI {periodLabel}</span>
+          <span className={displayNOI !== null && displayNOI >= 0 ? 'text-success' : 'text-destructive'}>
+            {formatGBP(displayNOI)}
+          </span>
+        </div>
       </CardContent>
     </Card>
   );
@@ -228,77 +347,12 @@ export function FinanceSummaryCard({
 
       {/* Detailed Breakdown */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Income & Costs */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-base">Income & Costs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Gross Annual Rent</span>
-              <span className="font-medium">{formatGBP(annualRent)}</span>
-            </div>
-            <Separator />
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Management</span>
-                <div className="flex items-center gap-2">
-                  <span>{formatGBP(effectiveCosts.management)}</span>
-                  {effectiveCosts.managementSource === 'auto' && (
-                    <Badge variant="outline" className="text-xs">Auto</Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Insurance</span>
-                <div className="flex items-center gap-2">
-                  <span>{formatGBP(effectiveCosts.insurance)}</span>
-                  {effectiveCosts.insuranceSource === 'auto' && (
-                    <Badge variant="outline" className="text-xs">Auto</Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Repairs</span>
-                <div className="flex items-center gap-2">
-                  <span>{formatGBP(effectiveCosts.repairs)}</span>
-                  {effectiveCosts.repairsSource === 'auto' && (
-                    <Badge variant="outline" className="text-xs">Auto</Badge>
-                  )}
-                </div>
-              </div>
-              {effectiveCosts.bills > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Bills</span>
-                  <span>{formatGBP(effectiveCosts.bills)}</span>
-                </div>
-              )}
-              {effectiveCosts.compliance > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Compliance</span>
-                  <span>{formatGBP(effectiveCosts.compliance)}</span>
-                </div>
-              )}
-              {effectiveCosts.other > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Other</span>
-                  <span>{formatGBP(effectiveCosts.other)}</span>
-                </div>
-              )}
-            </div>
-            <Separator />
-            <div className="flex justify-between font-medium">
-              <span>Total Costs</span>
-              <span className="text-destructive">-{formatGBP(effectiveCosts.total)}</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>NOI (Net Operating Income)</span>
-              <span className={netRent && netRent >= 0 ? 'text-success' : 'text-destructive'}>
-                {formatGBP(netRent)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Income & Costs - Clickable Toggle */}
+        <IncomeCostsCard
+          annualRent={annualRent}
+          effectiveCosts={effectiveCosts}
+          netRent={netRent}
+        />
 
         {/* Mortgage & Debt */}
         <Card className="bg-card border-border">
