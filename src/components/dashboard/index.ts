@@ -8,3 +8,12 @@ export { MetricDetailsSheet } from './MetricDetailsSheet';
 export { MissingComplianceWidget } from './MissingComplianceWidget';
 export { PortfolioHealthWidget } from './PortfolioHealthWidget';
 export { StockConditionSection } from './StockConditionSection';
+
+// New shared dashboard UI components (matching Demo styling)
+export { KpiCard } from './KpiCard';
+export { SectionCard } from './SectionCard';
+export { DashboardTable } from './DashboardTable';
+export { MetricValue, StatusBadge, PercentBadge } from './MetricValue';
+export { RiskRadar } from './RiskRadar';
+export { ComplianceStatusBar } from './ComplianceStatusBar';
+export { LtvProgressBar, LtvProgressList } from './LtvProgressBar';
