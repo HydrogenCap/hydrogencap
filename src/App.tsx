@@ -31,6 +31,7 @@ import Timeline from "./pages/Timeline";
 import Compliance from "./pages/Compliance";
 import Reports from "./pages/Reports";
 import Actions from "./pages/Actions";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -200,6 +201,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Actions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <Chat />
                 </ProtectedRoute>
               }
             />
