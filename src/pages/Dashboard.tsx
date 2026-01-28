@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2, RotateCcw } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2, RotateCcw, Shield, MapPin, BarChart3 } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,7 +19,6 @@ import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWid
 import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
 import { MissingComplianceWidget } from '@/components/dashboard/MissingComplianceWidget';
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
-import { ClickableStatCard } from '@/components/dashboard/ClickableStatCard';
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
@@ -38,6 +37,13 @@ import { calculatePortfolioRentPerBedroom } from '@/lib/mortgageCalculations';
 import { getPropertyMetrics } from '@/lib/propertyMetrics';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { MetricKey, METRICS_CONFIG, MetricBreakdown } from '@/lib/metricsConfig';
+
+// New shared dashboard components
+import { KpiCard } from '@/components/dashboard/KpiCard';
+import { SectionCard } from '@/components/dashboard/SectionCard';
+import { RiskRadar } from '@/components/dashboard/RiskRadar';
+import { LtvProgressList } from '@/components/dashboard/LtvProgressBar';
+import { StatusBadge, PercentBadge } from '@/components/dashboard/MetricValue';
 
 const CHART_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -505,31 +511,29 @@ function DashboardPage() {
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
 
-        {/* KPI Cards - All clickable with detail breakdowns */}
+        {/* KPI Cards - Matching Demo styling */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <ClickableStatCard
-            title="Attributable Equity"
+          <KpiCard
+            label="Attributable Equity"
             value={formatGBP(portfolioStats.totalEquity)}
             subtitle={`Value: ${formatGBP(portfolioStats.totalValue)}`}
             icon={TrendingUp}
             iconClassName="text-primary"
             valueClassName="text-primary"
             onClick={() => handleMetricClick('equity')}
-            aria-label="View details for Attributable Equity"
           />
 
-          <ClickableStatCard
-            title={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
+          <KpiCard
+            label={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
             value={formatGBP(cashflowPeriod === 'monthly' ? portfolioStats.monthlyCashflow : portfolioStats.monthlyCashflow * 12)}
             subtitle="After debt service"
             icon={PoundSterling}
             iconClassName="text-success"
             valueClassName={portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
             onClick={() => handleMetricClick('cashflow')}
-            aria-label="View details for Cashflow"
             headerAction={
               <button
-                className="text-xs px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+                className="text-xs px-2 py-1 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground transition-colors font-medium"
                 onClick={(e) => {
                   e.stopPropagation();
                   setCashflowPeriod(cashflowPeriod === 'monthly' ? 'annual' : 'monthly');
@@ -541,30 +545,27 @@ function DashboardPage() {
             }
           />
 
-          <ClickableStatCard
-            title="Average LTV"
+          <KpiCard
+            label="Average LTV"
             value={formatPercent(portfolioStats.averageLTV)}
             subtitle={`Debt: ${formatGBP(portfolioStats.totalMortgage)}`}
             icon={Percent}
-            iconClassName="text-muted-foreground"
             valueClassName={
               portfolioStats.averageLTV > 85 ? 'text-destructive' : 
               portfolioStats.averageLTV > 75 ? 'text-warning' : ''
             }
             onClick={() => handleMetricClick('ltv')}
-            aria-label="View details for Average LTV"
           />
 
-          <ClickableStatCard
-            title="Action Required"
-            value={portfolioRisks.length === 0 ? '✓' : portfolioRisks.length}
+          <KpiCard
+            label="Action Required"
+            value={portfolioRisks.length === 0 ? '✓' : String(portfolioRisks.length)}
             subtitle={portfolioRisks.length === 0 ? 'All clear' : `${portfolioCriticalCount} critical`}
             icon={AlertTriangle}
             iconClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
             valueClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
-            borderClassName={portfolioRisks.length > 0 ? 'border-warning/50' : 'border-success/50'}
             onClick={() => navigate('/actions')}
-            aria-label="View actions required"
+            className={portfolioRisks.length > 0 ? 'border-warning/40' : 'border-success/40'}
           />
         </div>
 
@@ -621,153 +622,106 @@ function DashboardPage() {
             />
           )}
 
-          {/* Risks Panel - core rental only - clickable */}
-          <Card 
-            className={`bg-card border-border transition-all duration-200 cursor-pointer hover:bg-muted/50 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.99] ${coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}`}
-            role="button"
-            tabIndex={0}
+          {/* Risks Panel - Using new SectionCard and RiskRadar */}
+          <SectionCard
+            title="Portfolio Risks"
+            icon={AlertTriangle}
+            iconClassName="text-warning"
             onClick={() => navigate('/actions')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                navigate('/actions');
-              }
-            }}
-            aria-label="View all portfolio risks"
+            showArrow
+            headerAction={
+              risks.length > 0 && (
+                <Badge variant="destructive">{risks.length}</Badge>
+              )
+            }
+            className={coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}
           >
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-warning" />
-                Portfolio Risks
-                {risks.length > 0 && (
-                  <Badge variant="destructive" className="ml-auto">
-                    {risks.length}
-                  </Badge>
-                )}
-              </CardTitle>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {risks.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  <p className="text-success">✓ All clear</p>
-                  <p className="text-sm mt-1">No risks detected</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                  {risks.slice(0, 10).map(risk => (
-                    <div
-                      key={risk.id}
-                      className="block p-3 rounded-lg bg-muted/50"
-                    >
-                      <div className="flex items-start gap-2">
-                        <Badge
-                          variant="outline"
-                          className={risk.severity === 'critical' ? 'status-danger border' : 'status-warning border'}
-                        >
-                          {risk.severity === 'critical' ? '🔴' : '🟡'}
-                        </Badge>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{risk.address}</p>
-                          <p className="text-xs text-muted-foreground">{risk.message}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {risks.length > 10 && (
-                    <p className="text-center text-xs text-muted-foreground">
-                      +{risks.length - 10} more risks
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            <RiskRadar
+              items={risks.map(risk => ({
+                id: risk.id,
+                title: risk.address,
+                subtitle: risk.message,
+                severity: risk.severity === 'critical' ? 'critical' : 'warning',
+              }))}
+              maxItems={8}
+              emptyMessage="No risks detected"
+            />
+          </SectionCard>
           
-          {/* Property Map - Uses shared PropertyMap component - clickable */}
-          <Card 
-            className="lg:col-span-2 bg-card border-border transition-all duration-200 cursor-pointer hover:bg-muted/50 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            role="button"
-            tabIndex={0}
+          {/* Property Map - Using new SectionCard */}
+          <SectionCard
+            title="Property Map"
+            icon={MapPin}
             onClick={() => navigate('/dashboard/map')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                navigate('/dashboard/map');
-              }
-            }}
-            aria-label="View full portfolio map"
+            showArrow
+            className="lg:col-span-2"
+            noPadding
+            contentClassName="p-0"
           >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle>Property Map</CardTitle>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {hasPropertiesWithCoords ? (
+            {hasPropertiesWithCoords ? (
+              <div className="p-4">
                 <PropertyMap
                   properties={filteredProperties || []}
                   className="h-[300px] rounded-lg pointer-events-none"
                 />
-              ) : (
-                <div className="h-[300px] rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Add properties with coordinates to see them on the map</p>
-                  </div>
+              </div>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>Add properties with coordinates to see them on the map</p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </SectionCard>
         </div>
 
         {/* Charts Row */}
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Lender Exposure */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle>Lender Exposure</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {lenderData.length > 0 ? (
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={lenderData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        dataKey="value"
-                        nameKey="name"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
-                      >
-                        {lenderData.map((_, index) => (
-                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => formatGBP(value)}
-                        contentStyle={{
-                          backgroundColor: 'hsl(222 47% 8%)',
-                          border: '1px solid hsl(220 25% 16%)',
-                          borderRadius: '0.5rem',
-                          color: 'hsl(210 40% 98%)',
-                        }}
-                        labelStyle={{ color: 'hsl(210 40% 98%)' }}
-                        itemStyle={{ color: 'hsl(210 40% 98%)' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-                  <p>Add properties with mortgages to see lender breakdown</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Lender Exposure - Using SectionCard */}
+          <SectionCard
+            title="Lender Exposure"
+            icon={BarChart3}
+          >
+            {lenderData.length > 0 ? (
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={lenderData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {lenderData.map((_, index) => (
+                        <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => formatGBP(value)}
+                      contentStyle={{
+                        backgroundColor: 'hsl(222 47% 8%)',
+                        border: '1px solid hsl(220 25% 16%)',
+                        borderRadius: '0.5rem',
+                        color: 'hsl(210 40% 98%)',
+                      }}
+                      labelStyle={{ color: 'hsl(210 40% 98%)' }}
+                      itemStyle={{ color: 'hsl(210 40% 98%)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-[250px] flex items-center justify-center text-muted-foreground">
+                <p>Add properties with mortgages to see lender breakdown</p>
+              </div>
+            )}
+          </SectionCard>
 
           {/* Area Exposure - filtered properties for geographic distribution */}
           {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
@@ -795,116 +749,107 @@ function DashboardPage() {
 
           {/* Shareholders Tab */}
           <TabsContent value="shareholders" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Shareholder Breakdown
-                </CardTitle>
-                <CardDescription>
-                  {shareholderData.length} beneficial owner{shareholderData.length !== 1 ? 's' : ''} across the portfolio
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isAttributionLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-[300px] w-full" />
-                    <Skeleton className="h-[200px] w-full" />
-                  </div>
-                ) : shareholderData.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="font-medium text-lg">No shareholders defined</p>
-                    <p className="text-sm mt-2">Set up company shareholders to see the breakdown</p>
-                  </div>
-                ) : (
-                  <div className="grid lg:grid-cols-2 gap-8">
-                    {/* Pie Chart */}
-                    <div className="h-[350px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={shareholderData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={70}
-                            outerRadius={120}
-                            dataKey="equityPercent"
-                            nameKey="name"
-                            paddingAngle={2}
-                            label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
-                            labelLine={true}
-                          >
-                            {shareholderData.map((entry) => (
-                              <Cell key={entry.id} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number, name: string, props: any) => [
-                              `${value.toFixed(1)}% equity`,
-                              props.payload.name
-                            ]}
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '0.5rem',
-                              color: 'hsl(var(--foreground))',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Legend with colored dots */}
-                    <div className="space-y-2">
-                      {shareholderData.map((owner) => (
-                        <div
-                          key={owner.id}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+            <SectionCard
+              title="Shareholder Breakdown"
+              subtitle={`${shareholderData.length} beneficial owner${shareholderData.length !== 1 ? 's' : ''} across the portfolio`}
+              icon={Users}
+            >
+              {isAttributionLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[200px] w-full" />
+                </div>
+              ) : shareholderData.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium text-lg">No shareholders defined</p>
+                  <p className="text-sm mt-2">Set up company shareholders to see the breakdown</p>
+                </div>
+              ) : (
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {/* Pie Chart */}
+                  <div className="h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={shareholderData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={70}
+                          outerRadius={120}
+                          dataKey="equityPercent"
+                          nameKey="name"
+                          paddingAngle={2}
+                          label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={true}
                         >
-                          <div
-                            className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: owner.color }}
-                          />
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            {owner.type === 'INDIVIDUAL' || owner.type === 'Person' ? (
-                              <User className="h-4 w-4" />
-                            ) : (
-                              <Building2 className="h-4 w-4" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">{owner.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {owner.properties} propert{owner.properties !== 1 ? 'ies' : 'y'}
-                            </div>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-lg font-bold text-primary">
-                              {formatPercent(owner.equityPercent, 1)}
-                            </div>
+                          {shareholderData.map((entry) => (
+                            <Cell key={entry.id} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number, name: string, props: any) => [
+                            `${value.toFixed(1)}% equity`,
+                            props.payload.name
+                          ]}
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '0.5rem',
+                            color: 'hsl(var(--foreground))',
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Legend with colored dots */}
+                  <div className="space-y-2">
+                    {shareholderData.map((owner) => (
+                      <div
+                        key={owner.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50"
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: owner.color }}
+                        />
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          {owner.type === 'INDIVIDUAL' || owner.type === 'Person' ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Building2 className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{owner.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {owner.properties} propert{owner.properties !== 1 ? 'ies' : 'y'}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-lg font-bold text-primary">
+                            {formatPercent(owner.equityPercent, 1)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              )}
+            </SectionCard>
 
             {/* Shareholders Table */}
             {shareholderData.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detailed Breakdown</CardTitle>
-                  <CardDescription>
-                    Financial attribution by beneficial owner
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
+              <SectionCard
+                title="Detailed Breakdown"
+                subtitle="Financial attribution by beneficial owner"
+                noPadding
+              >
+                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
                         <TableHead>Owner</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead className="text-right">Equity %</TableHead>
@@ -915,7 +860,7 @@ function DashboardPage() {
                     </TableHeader>
                     <TableBody>
                       {shareholderData.map((owner) => (
-                        <TableRow key={owner.id}>
+                        <TableRow key={owner.id} className="hover:bg-muted/20">
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <div
@@ -926,9 +871,9 @@ function DashboardPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-xs">
+                            <StatusBadge status="neutral">
                               {owner.type === 'INDIVIDUAL' || owner.type === 'Person' ? 'Individual' : 'Company'}
-                            </Badge>
+                            </StatusBadge>
                           </TableCell>
                           <TableCell className="text-right font-bold text-primary">
                             {formatPercent(owner.equityPercent, 1)}
@@ -946,8 +891,8 @@ function DashboardPage() {
                       ))}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </div>
+              </SectionCard>
             )}
           </TabsContent>
         </Tabs>
