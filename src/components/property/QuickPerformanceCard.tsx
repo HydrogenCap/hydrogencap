@@ -18,9 +18,10 @@ export function QuickPerformanceCard({
   mortgagePayment,
   monthlyCashflow,
 }: QuickPerformanceCardProps) {
-  const [showAnnual, setShowAnnual] = useState(true);
+  const [showAnnual, setShowAnnual] = useState(false);
   
   const divisor = showAnnual ? 1 : 12;
+  const periodLabel = showAnnual ? 'ANNUAL' : 'MONTHLY';
   
   const displayRent = annualRent ? annualRent / divisor : null;
   const displayCosts = totalCosts / divisor;
@@ -29,37 +30,27 @@ export function QuickPerformanceCard({
   const displayCashflow = monthlyCashflow ? (showAnnual ? monthlyCashflow * 12 : monthlyCashflow) : null;
 
   return (
-    <Card className="bg-card border-border">
+    <Card 
+      className={cn(
+        "bg-card border-border transition-all duration-200 cursor-pointer",
+        "hover:bg-muted/50 hover:border-primary/50",
+        "active:scale-[0.98]"
+      )}
+      onClick={() => setShowAnnual(!showAnnual)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setShowAnnual(!showAnnual);
+        }
+      }}
+      aria-label={`Toggle between monthly and annual performance. Currently showing ${showAnnual ? 'annual' : 'monthly'}`}
+    >
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Quick Performance
-          </CardTitle>
-          <div className="flex rounded-md overflow-hidden border border-border">
-            <button
-              onClick={() => setShowAnnual(false)}
-              className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors",
-                !showAnnual 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              /mo
-            </button>
-            <button
-              onClick={() => setShowAnnual(true)}
-              className={cn(
-                "px-3 py-1 text-xs font-medium transition-colors",
-                showAnnual 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
-              )}
-            >
-              /yr
-            </button>
-          </div>
-        </div>
+        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+          {periodLabel} Performance
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between">
@@ -90,6 +81,9 @@ export function QuickPerformanceCard({
             </div>
           </>
         )}
+        <p className="text-xs text-muted-foreground pt-1">
+          Click to toggle
+        </p>
       </CardContent>
     </Card>
   );
