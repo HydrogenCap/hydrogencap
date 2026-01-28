@@ -237,59 +237,64 @@ export function calculateCostRules(
 /**
  * Get effective cost amounts (manual overrides auto-calculated)
  */
+/**
+ * Get effective cost amounts (manual overrides auto-calculated)
+ * When no costs record exists, applies default rules (5% management, 5% repairs, 0.3% insurance)
+ */
 export function getEffectiveCosts(
   grossRent: number | null,
   propertyValue: number | null,
   costs: CostsData | null | undefined
 ): EffectiveCosts {
-  if (!costs) {
-    return {
-      management: 0,
-      insurance: 0,
-      repairs: 0,
-      bills: 0,
-      compliance: 0,
-      other: 0,
-      total: 0,
-      managementSource: 'auto',
-      insuranceSource: 'auto',
-      repairsSource: 'auto',
-    };
-  }
+  // Default rules when no costs record exists
+  const defaultCosts: CostsData = {
+    management_rule_enabled: true,
+    management_rule_percent_of_rent: 5.0,
+    repairs_rule_enabled: true,
+    repairs_rule_percent_of_rent: 5.0,
+    insurance_rule_enabled: true,
+    insurance_rule_percent_of_value: 0.3,
+  };
 
-  const calculated = calculateCostRules(grossRent, propertyValue, costs);
+  // Merge with defaults - use existing costs if available, otherwise defaults
+  const effectiveCostsData: CostsData = costs ? {
+    ...defaultCosts,
+    ...costs,
+  } : defaultCosts;
+
+  const calculated = calculateCostRules(grossRent, propertyValue, effectiveCostsData);
 
   // Management: manual overrides auto
-  const hasManualManagement = costs.management_gbp_manual !== null && 
-    costs.management_gbp_manual !== undefined && 
-    costs.management_gbp_manual > 0;
+  const hasManualManagement = effectiveCostsData.management_gbp_manual !== null && 
+    effectiveCostsData.management_gbp_manual !== undefined && 
+    effectiveCostsData.management_gbp_manual > 0;
   const management = hasManualManagement 
-    ? Number(costs.management_gbp_manual) 
+    ? Number(effectiveCostsData.management_gbp_manual) 
     : (calculated.management ?? 0);
   const managementSource = hasManualManagement ? 'manual' : 'auto';
 
   // Insurance: manual overrides auto
-  const hasManualInsurance = costs.insurance_gbp_manual !== null && 
-    costs.insurance_gbp_manual !== undefined && 
-    costs.insurance_gbp_manual > 0;
+  const hasManualInsurance = effectiveCostsData.insurance_gbp_manual !== null && 
+    effectiveCostsData.insurance_gbp_manual !== undefined && 
+    effectiveCostsData.insurance_gbp_manual > 0;
   const insurance = hasManualInsurance 
-    ? Number(costs.insurance_gbp_manual) 
+    ? Number(effectiveCostsData.insurance_gbp_manual) 
     : (calculated.insurance ?? 0);
   const insuranceSource = hasManualInsurance ? 'manual' : 'auto';
 
   // Repairs: manual overrides auto
-  const hasManualRepairs = costs.repairs_gbp_manual !== null && 
-    costs.repairs_gbp_manual !== undefined && 
-    costs.repairs_gbp_manual > 0;
+  const hasManualRepairs = effectiveCostsData.repairs_gbp_manual !== null && 
+    effectiveCostsData.repairs_gbp_manual !== undefined && 
+    effectiveCostsData.repairs_gbp_manual > 0;
   const repairs = hasManualRepairs 
-    ? Number(costs.repairs_gbp_manual) 
+    ? Number(effectiveCostsData.repairs_gbp_manual) 
     : (calculated.repairs ?? 0);
   const repairsSource = hasManualRepairs ? 'manual' : 'auto';
 
   // Static costs (no auto-calc)
-  const bills = costs.bills_gbp_manual ? Number(costs.bills_gbp_manual) : 0;
-  const compliance = costs.compliance_gbp_manual ? Number(costs.compliance_gbp_manual) : 0;
-  const other = costs.other_gbp_manual ? Number(costs.other_gbp_manual) : 0;
+  const bills = effectiveCostsData.bills_gbp_manual ? Number(effectiveCostsData.bills_gbp_manual) : 0;
+  const compliance = effectiveCostsData.compliance_gbp_manual ? Number(effectiveCostsData.compliance_gbp_manual) : 0;
+  const other = effectiveCostsData.other_gbp_manual ? Number(effectiveCostsData.other_gbp_manual) : 0;
 
   const total = management + insurance + repairs + bills + compliance + other;
 
