@@ -13,7 +13,9 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock, Building2 } from 'lucide-react';
+import { FileText, Download, Loader2, CheckCircle2, AlertTriangle, Filter, Trash2, ExternalLink, Clock } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { PropertySearchSelect } from '@/components/reports/PropertySearchSelect';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { 
@@ -30,6 +32,7 @@ import type { ReportFilters } from '@/lib/reportPdfGenerator';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
 type LoanPurpose = 'refinance' | 'capital_raise' | 'rate_switch' | 'purchase' | '';
+type SelectionMode = 'all' | 'single';
 
 export default function Reports() {
   const { properties, portfolioSummary, companies, isLoading } = useReportData();
@@ -38,10 +41,11 @@ export default function Reports() {
 
   // Filters state
   const [lifecycleType, setLifecycleType] = useState<LifecycleFilter>('all');
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>('all');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [includeAttachments, setIncludeAttachments] = useState(false);
   const [brokerNotes, setBrokerNotes] = useState('');
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
-
   // Mortgage Broker Pack specific state
   const [showBrokerPackDialog, setShowBrokerPackDialog] = useState(false);
   const [loanPurpose, setLoanPurpose] = useState<LoanPurpose>('');
@@ -50,10 +54,18 @@ export default function Reports() {
   const [preparedFor, setPreparedFor] = useState<string>('');
 
   // Filter properties based on lifecycle
-  const filteredProperties = useMemo(() => {
+  const lifecycleFilteredProperties = useMemo(() => {
     if (lifecycleType === 'all') return properties;
     return properties.filter(p => p.lifecycle_type === lifecycleType);
   }, [properties, lifecycleType]);
+
+  // Final filtered properties based on selection mode
+  const filteredProperties = useMemo(() => {
+    if (selectionMode === 'single' && selectedPropertyId) {
+      return lifecycleFilteredProperties.filter(p => p.id === selectedPropertyId);
+    }
+    return lifecycleFilteredProperties;
+  }, [lifecycleFilteredProperties, selectionMode, selectedPropertyId]);
 
   // Build filters object - always use all filtered properties
   const filters: ReportFilters = useMemo(() => ({
@@ -237,16 +249,47 @@ export default function Reports() {
                   </div>
                 </div>
 
-                {/* Property Selection Summary */}
-                <div className="space-y-2">
-                  <Label>Properties Included</Label>
-                  <Alert>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertDescription>
-                      {filteredProperties.length} {lifecycleType === 'all' ? '' : lifecycleType.replace('_', ' ')} {filteredProperties.length === 1 ? 'property' : 'properties'} will be included in reports
-                    </AlertDescription>
-                  </Alert>
+                {/* Property Selection Mode */}
+                <div className="space-y-3">
+                  <Label>Property Selection</Label>
+                  <RadioGroup
+                    value={selectionMode}
+                    onValueChange={(v) => {
+                      setSelectionMode(v as SelectionMode);
+                      if (v === 'all') setSelectedPropertyId(null);
+                    }}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id="all-properties" />
+                      <Label htmlFor="all-properties" className="font-normal cursor-pointer">
+                        All Properties ({lifecycleFilteredProperties.length})
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="single-property" />
+                      <Label htmlFor="single-property" className="font-normal cursor-pointer">
+                        Single Property
+                      </Label>
+                    </div>
+                  </RadioGroup>
+
+                  {selectionMode === 'single' && (
+                    <PropertySearchSelect
+                      properties={lifecycleFilteredProperties}
+                      value={selectedPropertyId || ''}
+                      onValueChange={setSelectedPropertyId}
+                    />
+                  )}
                 </div>
+
+                {/* Properties Included Summary */}
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertDescription>
+                    {filteredProperties.length} {lifecycleType === 'all' ? '' : lifecycleType.replace('_', ' ')} {filteredProperties.length === 1 ? 'property' : 'properties'} will be included in reports
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
 
