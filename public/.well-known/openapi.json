@@ -1,0 +1,293 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hydrogen Capital Portfolio API",
+    "description": "API for accessing property portfolio data including properties, companies, compliance status, loans, and action items.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://jnkwooocjpgpznittueo.supabase.co/functions/v1/portfolio-api"
+    }
+  ],
+  "paths": {
+    "/summary": {
+      "get": {
+        "operationId": "getPortfolioSummary",
+        "summary": "Get portfolio summary",
+        "description": "Returns high-level portfolio metrics including total value, equity, LTV, and property breakdown.",
+        "responses": {
+          "200": {
+            "description": "Portfolio summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/properties": {
+      "get": {
+        "operationId": "getProperties",
+        "summary": "Get properties list",
+        "description": "Returns list of properties with optional filtering by lifecycle type.",
+        "parameters": [
+          {
+            "name": "lifecycle",
+            "in": "query",
+            "description": "Filter by lifecycle type (operational, development, disposed)",
+            "schema": {
+              "type": "string",
+              "enum": ["operational", "development", "disposed"]
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of properties to return",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Properties list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PropertiesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/companies": {
+      "get": {
+        "operationId": "getCompanies",
+        "summary": "Get companies list",
+        "description": "Returns list of SPV companies with filing status and deadlines.",
+        "responses": {
+          "200": {
+            "description": "Companies list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompaniesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/compliance": {
+      "get": {
+        "operationId": "getComplianceStatus",
+        "summary": "Get compliance status",
+        "description": "Returns compliance item counts and details of expired or expiring certificates.",
+        "responses": {
+          "200": {
+            "description": "Compliance status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplianceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/loans": {
+      "get": {
+        "operationId": "getLoans",
+        "summary": "Get loans list",
+        "description": "Returns list of mortgages/loans with summary statistics.",
+        "responses": {
+          "200": {
+            "description": "Loans list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoansResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actions": {
+      "get": {
+        "operationId": "getActionItems",
+        "summary": "Get action items",
+        "description": "Returns prioritized list of required actions including expired compliance, poor EPC ratings, and overdue filings.",
+        "responses": {
+          "200": {
+            "description": "Action items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PortfolioSummary": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalProperties": { "type": "integer" },
+              "totalCompanies": { "type": "integer" },
+              "totalValueGBP": { "type": "number" },
+              "totalDebtGBP": { "type": "number" },
+              "totalEquityGBP": { "type": "number" },
+              "ltvPercent": { "type": "number" },
+              "annualRentGBP": { "type": "number" },
+              "grossYieldPercent": { "type": "number" }
+            }
+          },
+          "propertyBreakdown": {
+            "type": "object"
+          },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PropertiesResponse": {
+        "type": "object",
+        "properties": {
+          "properties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "address_line": { "type": "string" },
+                "postcode": { "type": "string" },
+                "current_value_gbp": { "type": "number" },
+                "beds": { "type": "integer" },
+                "property_type": { "type": "string" },
+                "lifecycle_type": { "type": "string" },
+                "epc_rating": { "type": "string" }
+              }
+            }
+          },
+          "count": { "type": "integer" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CompaniesResponse": {
+        "type": "object",
+        "properties": {
+          "companies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "legal_name": { "type": "string" },
+                "company_number": { "type": "string" },
+                "status": { "type": "string" },
+                "accounts_due_date": { "type": "string" },
+                "confirmation_statement_due_date": { "type": "string" },
+                "accountsOverdue": { "type": "boolean" },
+                "confirmationStatementOverdue": { "type": "boolean" }
+              }
+            }
+          },
+          "count": { "type": "integer" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ComplianceResponse": {
+        "type": "object",
+        "properties": {
+          "compliance": {
+            "type": "object",
+            "properties": {
+              "totalItems": { "type": "integer" },
+              "expired": { "type": "integer" },
+              "expiringSoon30Days": { "type": "integer" },
+              "valid": { "type": "integer" },
+              "expiredItems": { "type": "array" },
+              "expiringSoonItems": { "type": "array" }
+            }
+          },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LoansResponse": {
+        "type": "object",
+        "properties": {
+          "loans": { "type": "array" },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "totalLoans": { "type": "integer" },
+              "totalDebtGBP": { "type": "number" },
+              "averageInterestRatePercent": { "type": "number" },
+              "fixedRateExpiringSoon": { "type": "integer" }
+            }
+          },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ActionsResponse": {
+        "type": "object",
+        "properties": {
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string" },
+                "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+                "description": { "type": "string" },
+                "property": { "type": "string" },
+                "propertyId": { "type": "string" }
+              }
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "high": { "type": "integer" },
+              "medium": { "type": "integer" }
+            }
+          },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Supabase JWT token from user authentication"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

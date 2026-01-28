@@ -43,3 +43,6 @@ verify_jwt = false
 
 [functions.company-secrets]
 verify_jwt = false
+
+[functions.portfolio-api]
+verify_jwt = false
