@@ -70,11 +70,14 @@ function parseCSVLine(line: string): string[] {
 
 // Property field definitions for mapping
 export const PROPERTY_FIELDS = [
+  { key: 'id', label: 'Property ID', required: false, category: 'system' },
   { key: 'address_line', label: 'Address', required: true },
+  { key: 'address_line2', label: 'Address Line 2', required: false },
   { key: 'area_name', label: 'Area/Location', required: false },
   { key: 'postcode', label: 'Postcode', required: false },
   { key: 'property_type', label: 'Property Type', required: false },
   { key: 'beds', label: 'Bedrooms', required: false },
+  { key: 'bathrooms', label: 'Bathrooms', required: false },
   { key: 'current_value_gbp', label: 'Current Value (£)', required: false },
   { key: 'purchase_price_gbp', label: 'Purchase Price (£)', required: false },
   { key: 'ownership_entity', label: 'Ownership Entity', required: false },
@@ -86,6 +89,7 @@ export const PROPERTY_FIELDS = [
   { key: 'lender', label: 'Lender', required: false, category: 'loan' },
   { key: 'interest_rate_percent', label: 'Interest Rate (%)', required: false, category: 'loan' },
   { key: 'mortgage_payment_gbp', label: 'Monthly Mortgage (£)', required: false, category: 'loan' },
+  { key: 'fixed_rate_expires', label: 'Fixed Rate Expires', required: false, category: 'loan' },
   // Income fields
   { key: 'annual_rent_gbp', label: 'Annual Rent (£)', required: false, category: 'income' },
 ] as const;
@@ -123,12 +127,19 @@ export function validateAndTransformRows(
       const value = row[csvColumn]?.trim() || '';
       
       // Transform based on field type
-      if (fieldKey === 'address_line') {
+      if (fieldKey === 'id') {
+        // Property ID for updates - keep as string, validate UUID format
+        if (value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+          data[fieldKey] = value;
+        } else {
+          data[fieldKey] = null;
+        }
+      } else if (fieldKey === 'address_line') {
         if (!value) {
           errors.push({ row: index, field: fieldKey, message: 'Address is required' });
         }
         data[fieldKey] = value || null;
-      } else if (fieldKey === 'beds') {
+      } else if (fieldKey === 'beds' || fieldKey === 'bathrooms') {
         const num = parseInt(value, 10);
         data[fieldKey] = isNaN(num) ? null : num;
       } else if (fieldKey.includes('_gbp') || fieldKey.includes('_percent')) {
@@ -166,17 +177,21 @@ export function autoDetectMapping(headers: string[]): ColumnMapping {
   const mapping: ColumnMapping = {};
   
   const headerPatterns: { pattern: RegExp; field: PropertyFieldKey }[] = [
-    { pattern: /^address|street|property\s*address/i, field: 'address_line' },
+    { pattern: /^property\s*id|^id$/i, field: 'id' },
+    { pattern: /^address($|\s|_)|street|property\s*address/i, field: 'address_line' },
+    { pattern: /^address\s*line\s*2|address_line2|address2/i, field: 'address_line2' },
     { pattern: /^area|location|region|town|city/i, field: 'area_name' },
     { pattern: /^postcode|post\s*code|zip/i, field: 'postcode' },
     { pattern: /^type|property\s*type|prop\s*type/i, field: 'property_type' },
     { pattern: /^beds|bedrooms|bed\s*count/i, field: 'beds' },
+    { pattern: /^baths|bathrooms|bath\s*count/i, field: 'bathrooms' },
     { pattern: /^(current\s*)?value|market\s*value|valuation/i, field: 'current_value_gbp' },
     { pattern: /^purchase\s*price|bought\s*for|acquisition/i, field: 'purchase_price_gbp' },
     { pattern: /^mortgage\s*balance|loan\s*balance|outstanding/i, field: 'mortgage_balance_gbp' },
     { pattern: /^lender|bank|mortgage\s*provider/i, field: 'lender' },
     { pattern: /^interest\s*rate|rate\s*%|mortgage\s*rate/i, field: 'interest_rate_percent' },
     { pattern: /^(monthly\s*)?mortgage\s*payment|monthly\s*payment/i, field: 'mortgage_payment_gbp' },
+    { pattern: /^fixed\s*rate\s*expires|rate\s*expiry/i, field: 'fixed_rate_expires' },
     { pattern: /^(annual\s*)?rent|rental\s*income|yearly\s*rent/i, field: 'annual_rent_gbp' },
     { pattern: /^epc|energy\s*rating/i, field: 'epc_rating' },
     { pattern: /^owner|entity|ownership\s*entity|company/i, field: 'ownership_entity' },
