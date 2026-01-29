@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
-import { Plus, Search, Building2, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling } from 'lucide-react';
+import { Plus, Search, Building2, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling, Download, Upload } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,8 @@ import { useBulkEpcEnrich } from '@/hooks/useBulkEpcEnrich';
 import { useBulkPricePaidEnrich } from '@/hooks/useBulkPricePaidEnrich';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatGBP, formatGBPDecimal, formatPercent, formatDateUK } from '@/lib/calculations';
+import { downloadCSV } from '@/lib/csvExporter';
+import { useToast } from '@/hooks/use-toast';
 
 // Extracted modules
 import { 
@@ -65,6 +67,7 @@ function PropertiesPage() {
   const { data: passports } = usePropertyPassports();
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrich();
   const { enrichAll: enrichPricePaid, isEnriching: isEnrichingPricePaid } = useBulkPricePaidEnrich();
+  const { toast } = useToast();
   
   // Calculate properties missing data
   const propertiesMissingEpc = useMemo(() => {
@@ -302,6 +305,23 @@ function PropertiesPage() {
     navigate(`/properties/${propertyId}`);
   }, [navigate]);
 
+  const handleDownloadCSV = useCallback(() => {
+    if (!properties || properties.length === 0) {
+      toast({
+        title: 'No properties to export',
+        description: 'Add some properties first before exporting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const filename = `properties-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadCSV(properties, filename);
+    toast({
+      title: 'Export complete',
+      description: `Downloaded ${properties.length} properties to ${filename}`,
+    });
+  }, [properties, toast]);
+
   if (error) {
     return (
       <AppLayout>
@@ -364,6 +384,34 @@ function PropertiesPage() {
                 </Tooltip>
               </TooltipProvider>
             )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" onClick={handleDownloadCSV}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Download all properties as CSV for editing</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" asChild>
+                    <Link to="/import">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import CSV
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Import or update properties from CSV</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button asChild>
               <Link to="/properties/new">
                 <Plus className="h-4 w-4 mr-2" />

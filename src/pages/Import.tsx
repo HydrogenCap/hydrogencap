@@ -32,7 +32,7 @@ export default function Import() {
   const [parsedCSV, setParsedCSV] = useState<ParsedCSV | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [validatedRows, setValidatedRows] = useState<ValidatedRow[]>([]);
-  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; created: number; updated: number } | null>(null);
 
   const handleFileSelect = useCallback(async (file: File) => {
     setSelectedFile(file);
@@ -118,7 +118,9 @@ export default function Import() {
         {/* Page Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Import Properties</h1>
-          <p className="text-muted-foreground">Import properties from a CSV file</p>
+          <p className="text-muted-foreground">
+            Import new properties or update existing ones from a CSV file. Properties with a valid Property ID will be updated; otherwise, new properties will be created.
+          </p>
         </div>
 
         {/* Stepper */}
@@ -155,15 +157,20 @@ export default function Import() {
                     Your CSV can include any of these columns (we'll auto-detect them):
                   </p>
                   <ul className="grid grid-cols-2 gap-1 text-sm text-muted-foreground">
+                    <li><span className="text-foreground font-medium">Property ID</span> - For updates (from export)</li>
                     <li><span className="text-foreground font-medium">address</span> - Property address *</li>
                     <li><span className="text-foreground font-medium">area</span> - Location/area</li>
                     <li><span className="text-foreground font-medium">postcode</span> - UK postcode</li>
                     <li><span className="text-foreground font-medium">type</span> - Property type</li>
                     <li><span className="text-foreground font-medium">beds</span> - Bedrooms</li>
+                    <li><span className="text-foreground font-medium">bathrooms</span> - Bathrooms</li>
                     <li><span className="text-foreground font-medium">value</span> - Current value</li>
                     <li><span className="text-foreground font-medium">mortgage_balance</span> - Outstanding mortgage</li>
                     <li><span className="text-foreground font-medium">annual_rent</span> - Yearly rental income</li>
                   </ul>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 Tip: Export your existing properties first, make changes in Excel/Sheets, then re-import to update.
+                  </p>
                 </div>
               </>
             )}
@@ -197,8 +204,20 @@ export default function Import() {
                     Import Complete
                   </h3>
                   <p className="text-muted-foreground mt-1">
-                    Successfully imported {importResult.success} properties
+                    Successfully processed {importResult.success} properties
                   </p>
+                  <div className="flex items-center justify-center gap-4 mt-2 text-sm">
+                    {importResult.created > 0 && (
+                      <span className="text-emerald-500">
+                        {importResult.created} created
+                      </span>
+                    )}
+                    {importResult.updated > 0 && (
+                      <span className="text-blue-500">
+                        {importResult.updated} updated
+                      </span>
+                    )}
+                  </div>
                   {importResult.failed > 0 && (
                     <p className="text-destructive text-sm mt-1">
                       {importResult.failed} rows failed to import
