@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/table';
 import { usePortfolioAttribution, type OwnerAttribution } from '@/hooks/useOwnershipAttribution';
 import { PropertyWithFinancials } from '@/hooks/useProperties';
-import { formatGBP, formatPercent } from '@/lib/calculations';
+import { formatGBP, formatPercent, getEffectiveCosts } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 
 interface OwnershipAttributionSectionProps {
@@ -129,13 +129,10 @@ function OwnerCard({ owner, totalPortfolioValue }: { owner: OwnerAttribution; to
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
                   <PiggyBank className="h-3 w-3" />
-                  Net Income
+                  Gross Rent
                 </div>
-                <div className={cn(
-                  "font-semibold",
-                  owner.totals.totalAttributableNOI >= 0 ? "text-success" : "text-destructive"
-                )}>
-                  {formatGBP(owner.totals.totalAttributableNOI)}/yr
+                <div className="font-semibold">
+                  {formatGBP(owner.totals.totalAttributableRent)}/yr
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Yield: {owner.totals.weightedYield !== null ? formatPercent(owner.totals.weightedYield, 2) : '—'}
@@ -145,7 +142,7 @@ function OwnerCard({ owner, totalPortfolioValue }: { owner: OwnerAttribution; to
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
                   <TrendingUp className="h-3 w-3" />
-                  Cashflow
+                  Net Annual Cashflow
                 </div>
                 <div className={cn(
                   "font-semibold",
@@ -168,8 +165,8 @@ function OwnerCard({ owner, totalPortfolioValue }: { owner: OwnerAttribution; to
                     <TableHead className="text-right">Stake</TableHead>
                     <TableHead className="text-right">Value</TableHead>
                     <TableHead className="text-right">Equity</TableHead>
-                    <TableHead className="text-right">NOI</TableHead>
-                    <TableHead className="text-right">Cashflow</TableHead>
+                    <TableHead className="text-right">Gross Rent</TableHead>
+                    <TableHead className="text-right">Net Cashflow</TableHead>
                     <TableHead className="w-8"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -187,11 +184,8 @@ function OwnerCard({ owner, totalPortfolioValue }: { owner: OwnerAttribution; to
                       </TableCell>
                       <TableCell className="text-right">{formatGBP(prop.attributableValue)}</TableCell>
                       <TableCell className="text-right">{formatGBP(prop.attributableEquity)}</TableCell>
-                      <TableCell className={cn(
-                        "text-right",
-                        prop.attributableNOI >= 0 ? "text-success" : "text-destructive"
-                      )}>
-                        {formatGBP(prop.attributableNOI)}
+                      <TableCell className="text-right">
+                        {formatGBP(prop.attributableRent)}
                       </TableCell>
                       <TableCell className={cn(
                         "text-right",
@@ -226,6 +220,43 @@ export function OwnershipAttributionSection({ properties }: OwnershipAttribution
     (sum, p) => sum + (p.current_value_gbp ? Number(p.current_value_gbp) : 0),
     0
   );
+
+  // Calculate portfolio totals from properties directly for accurate gross rent and cashflow
+  // Must be called before any conditional returns to satisfy hooks rules
+  const portfolioTotals = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    let totalGrossRent = 0;
+    let totalCashflow = 0;
+    
+    for (const p of properties) {
+      const income = p.income?.find(i => i.year === currentYear);
+      const annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : 0;
+      totalGrossRent += annualRent;
+      
+      // Calculate cashflow for this property
+      const loan = p.loans?.[0];
+      const costs = p.costs?.find(c => c.year === currentYear);
+      const currentValue = p.current_value_gbp ? Number(p.current_value_gbp) : 0;
+      const mortgagePayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : 0;
+      
+      const effectiveCosts = getEffectiveCosts(annualRent, currentValue, costs);
+      const noi = annualRent - effectiveCosts.total;
+      const annualDebtService = mortgagePayment * 12;
+      totalCashflow += noi - annualDebtService;
+    }
+    
+    // Sum equity from attribution (safe to access even if null/empty)
+    const totalEquity = (attribution || []).reduce(
+      (sum, owner) => sum + owner.totals.totalAttributableEquity,
+      0
+    );
+    
+    return {
+      equity: totalEquity,
+      grossRent: totalGrossRent,
+      cashflow: totalCashflow,
+    };
+  }, [properties, attribution]);
 
   if (isLoading) {
     return (
@@ -268,16 +299,6 @@ export function OwnershipAttributionSection({ properties }: OwnershipAttribution
     );
   }
 
-  // Calculate portfolio totals
-  const portfolioTotals = attribution.reduce(
-    (acc, owner) => ({
-      equity: acc.equity + owner.totals.totalAttributableEquity,
-      cashflow: acc.cashflow + owner.totals.totalAttributableCashflow,
-      noi: acc.noi + owner.totals.totalAttributableNOI,
-    }),
-    { equity: 0, cashflow: 0, noi: 0 }
-  );
-
   return (
     <div className="space-y-6">
       {/* Summary Header */}
@@ -297,17 +318,11 @@ export function OwnershipAttributionSection({ properties }: OwnershipAttribution
               <div className="text-2xl font-bold">{formatGBP(portfolioTotals.equity)}</div>
               <div className="text-sm text-muted-foreground">Total Attributable Equity</div>
             </div>
-            <div className={cn(
-              "text-center p-4 rounded-lg",
-              portfolioTotals.noi >= 0 ? "bg-success/10" : "bg-destructive/10"
-            )}>
-              <div className={cn(
-                "text-2xl font-bold",
-                portfolioTotals.noi >= 0 ? "text-success" : "text-destructive"
-              )}>
-                {formatGBP(portfolioTotals.noi)}/yr
+            <div className="text-center p-4 rounded-lg bg-muted/50">
+              <div className="text-2xl font-bold">
+                {formatGBP(portfolioTotals.grossRent)}/yr
               </div>
-              <div className="text-sm text-muted-foreground">Total Net Operating Income</div>
+              <div className="text-sm text-muted-foreground">Total Gross Rent</div>
             </div>
             <div className={cn(
               "text-center p-4 rounded-lg",
@@ -319,7 +334,7 @@ export function OwnershipAttributionSection({ properties }: OwnershipAttribution
               )}>
                 {formatGBP(portfolioTotals.cashflow)}/yr
               </div>
-              <div className="text-sm text-muted-foreground">Total Cashflow After Debt</div>
+              <div className="text-sm text-muted-foreground">Net Annual Cashflow</div>
             </div>
           </div>
 
