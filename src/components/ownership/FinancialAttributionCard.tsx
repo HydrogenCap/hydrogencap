@@ -117,20 +117,12 @@ export function FinancialAttributionCard({ propertyId }: FinancialAttributionCar
             </div>
             <div className="font-semibold">{formatGBP(totals.equity)}</div>
           </div>
-          <div className={cn(
-            "p-3 rounded-lg",
-            totals.noi >= 0 ? "bg-success/10" : "bg-destructive/10"
-          )}>
+          <div className="p-3 rounded-lg bg-muted/50">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <TrendingUp className="h-3 w-3" />
-              Total NOI
+              Total Gross Rent
             </div>
-            <div className={cn(
-              "font-semibold",
-              totals.noi >= 0 ? "text-success" : "text-destructive"
-            )}>
-              {formatGBP(totals.noi)}/yr
-            </div>
+            <div className="font-semibold">{formatGBP(totals.rent)}/yr</div>
           </div>
           <div className={cn(
             "p-3 rounded-lg",
@@ -138,7 +130,7 @@ export function FinancialAttributionCard({ propertyId }: FinancialAttributionCar
           )}>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <PiggyBank className="h-3 w-3" />
-              Total Cashflow
+              Net Annual Cashflow
             </div>
             <div className={cn(
               "font-semibold",
@@ -158,9 +150,8 @@ export function FinancialAttributionCard({ propertyId }: FinancialAttributionCar
                 <TableHead className="text-right">Stake</TableHead>
                 <TableHead className="text-right">Value</TableHead>
                 <TableHead className="text-right">Equity</TableHead>
-                <TableHead className="text-right">Rent</TableHead>
-                <TableHead className="text-right">NOI</TableHead>
-                <TableHead className="text-right">Cashflow</TableHead>
+                <TableHead className="text-right">Gross Rent</TableHead>
+                <TableHead className="text-right">Net Cashflow</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -192,12 +183,6 @@ export function FinancialAttributionCard({ propertyId }: FinancialAttributionCar
                   </TableCell>
                   <TableCell className="text-right text-sm">
                     {formatGBP(owner.attributableRent)}
-                  </TableCell>
-                  <TableCell className={cn(
-                    "text-right text-sm",
-                    owner.attributableNOI >= 0 ? "text-success" : "text-destructive"
-                  )}>
-                    {formatGBP(owner.attributableNOI)}
                   </TableCell>
                   <TableCell className={cn(
                     "text-right text-sm font-medium",
