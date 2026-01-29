@@ -233,8 +233,21 @@ function PropertiesPage() {
         case 'interestRate':
           comparison = (Number(metricsA.loan?.interest_rate_percent) || 0) - (Number(metricsB.loan?.interest_rate_percent) || 0);
           break;
+        case 'fixedOrVariable':
+          comparison = (metricsA.loan?.fixed_or_variable || '').localeCompare(metricsB.loan?.fixed_or_variable || '');
+          break;
+        case 'mortgageType':
+          comparison = (metricsA.loan?.mortgage_type || '').localeCompare(metricsB.loan?.mortgage_type || '');
+          break;
+        case 'capitalOrInterest':
+          comparison = (metricsA.loan?.capital_or_interest || '').localeCompare(metricsB.loan?.capital_or_interest || '');
+          break;
         case 'fixedRateExpires':
           comparison = (metricsA.loan?.fixed_rate_expires || '').localeCompare(metricsB.loan?.fixed_rate_expires || '');
+          break;
+        case 'insuranceExpire':
+          // Insurance expiry from insurance_policies table if available (null fallback for now)
+          comparison = 0;
           break;
         case 'mortgageBalance':
           comparison = (metricsA.mortgageBalance || 0) - (metricsB.mortgageBalance || 0);
@@ -244,6 +257,9 @@ function PropertiesPage() {
           break;
         case 'rentalIncome':
           comparison = (metricsA.annualRent || 0) - (metricsB.annualRent || 0);
+          break;
+        case 'billsManagement':
+          comparison = (metricsA.billsManagement || 0) - (metricsB.billsManagement || 0);
           break;
         case 'netRent':
           comparison = (metricsA.netRent || 0) - (metricsB.netRent || 0);
@@ -257,6 +273,9 @@ function PropertiesPage() {
         case 'equity':
           comparison = (metricsA.equity || 0) - (metricsB.equity || 0);
           break;
+        case 'epc':
+          comparison = (a.epc_rating || '').localeCompare(b.epc_rating || '');
+          break;
         case 'monthlyCashflow':
           comparison = (metricsA.monthlyCashflow || 0) - (metricsB.monthlyCashflow || 0);
           break;
@@ -266,8 +285,36 @@ function PropertiesPage() {
           comparison = RISK_ORDER[riskA.level] - RISK_ORDER[riskB.level];
           break;
         }
+        case 'keysafeCode':
+          comparison = (passportA?.keysafe_code || '').localeCompare(passportB?.keysafe_code || '');
+          break;
+        case 'waterStopTap':
+          comparison = (passportA?.water_stop_tap_location || '').localeCompare(passportB?.water_stop_tap_location || '');
+          break;
+        case 'electricMeter':
+          comparison = (passportA?.electric_meter_location || '').localeCompare(passportB?.electric_meter_location || '');
+          break;
+        case 'gasMeter':
+          comparison = (passportA?.gas_meter_location || '').localeCompare(passportB?.gas_meter_location || '');
+          break;
+        case 'waterMeter':
+          comparison = (passportA?.water_meter_location || '').localeCompare(passportB?.water_meter_location || '');
+          break;
+        case 'constructionDateBand':
+          comparison = (passportA?.construction_date_band || passportA?.built_in_year?.toString() || '').localeCompare(
+            passportB?.construction_date_band || passportB?.built_in_year?.toString() || ''
+          );
+          break;
+        case 'hmoLicenceNumber':
+          comparison = (passportA?.hmo_licence_number || '').localeCompare(passportB?.hmo_licence_number || '');
+          break;
         case 'hmoLicenceExpiry':
           comparison = (passportA?.hmo_licence_expiry || '').localeCompare(passportB?.hmo_licence_expiry || '');
+          break;
+        case 'managementCompany':
+          comparison = (passportA?.management_company_id || passportA?.management_company_text || '').localeCompare(
+            passportB?.management_company_id || passportB?.management_company_text || ''
+          );
           break;
         default:
           comparison = 0;
@@ -556,31 +603,31 @@ function PropertiesPage() {
                     {visibleColumns.has('purchaseDate') && <SortableHeader field="purchaseDate" onSort={handleSort}>Purchase Date</SortableHeader>}
                     {visibleColumns.has('lender') && <SortableHeader field="lender" onSort={handleSort}>Lender</SortableHeader>}
                     {visibleColumns.has('interestRate') && <SortableHeader field="interestRate" align="right" onSort={handleSort}>Rate</SortableHeader>}
-                    {visibleColumns.has('fixedOrVariable') && <TableHead>Fixed/Variable</TableHead>}
-                    {visibleColumns.has('mortgageType') && <TableHead>Mortgage Type</TableHead>}
-                    {visibleColumns.has('capitalOrInterest') && <TableHead>Capital/Interest</TableHead>}
+                    {visibleColumns.has('fixedOrVariable') && <SortableHeader field="fixedOrVariable" onSort={handleSort}>Fixed/Variable</SortableHeader>}
+                    {visibleColumns.has('mortgageType') && <SortableHeader field="mortgageType" onSort={handleSort}>Mortgage Type</SortableHeader>}
+                    {visibleColumns.has('capitalOrInterest') && <SortableHeader field="capitalOrInterest" onSort={handleSort}>Capital/Interest</SortableHeader>}
                     {visibleColumns.has('fixedRateExpires') && <SortableHeader field="fixedRateExpires" onSort={handleSort}>Rate Expires</SortableHeader>}
-                    {visibleColumns.has('insuranceExpire') && <TableHead>Insurance Expire</TableHead>}
+                    {visibleColumns.has('insuranceExpire') && <SortableHeader field="insuranceExpire" onSort={handleSort}>Insurance Expire</SortableHeader>}
                     {visibleColumns.has('mortgageBalance') && <SortableHeader field="mortgageBalance" align="right" onSort={handleSort}>Balance</SortableHeader>}
                     {visibleColumns.has('mortgagePayment') && <SortableHeader field="mortgagePayment" align="right" onSort={handleSort}>Mortgage/m</SortableHeader>}
                     {visibleColumns.has('rentalIncome') && <SortableHeader field="rentalIncome" align="right" onSort={handleSort}>Rent/yr</SortableHeader>}
-                    {visibleColumns.has('billsManagement') && <TableHead className="text-right">Bills & Mgmt</TableHead>}
+                    {visibleColumns.has('billsManagement') && <SortableHeader field="billsManagement" align="right" onSort={handleSort}>Bills & Mgmt</SortableHeader>}
                     {visibleColumns.has('netRent') && <SortableHeader field="netRent" align="right" onSort={handleSort}>Net Rent</SortableHeader>}
                     {visibleColumns.has('yield') && <SortableHeader field="yield" align="right" onSort={handleSort}>Yield</SortableHeader>}
                     {visibleColumns.has('ltv') && <SortableHeader field="ltv" align="right" onSort={handleSort}>LTV</SortableHeader>}
                     {visibleColumns.has('equity') && <SortableHeader field="equity" align="right" onSort={handleSort}>Equity</SortableHeader>}
-                    {visibleColumns.has('epc') && <TableHead>EPC</TableHead>}
+                    {visibleColumns.has('epc') && <SortableHeader field="epc" onSort={handleSort}>EPC</SortableHeader>}
                     {visibleColumns.has('monthlyCashflow') && <SortableHeader field="monthlyCashflow" align="right" onSort={handleSort}>Cashflow/m</SortableHeader>}
                     {visibleColumns.has('riskStatus') && <SortableHeader field="riskStatus" onSort={handleSort}>Risk</SortableHeader>}
-                    {visibleColumns.has('keysafeCode') && <TableHead>Keysafe</TableHead>}
-                    {visibleColumns.has('waterStopTap') && <TableHead>Stop Tap</TableHead>}
-                    {visibleColumns.has('electricMeter') && <TableHead>Electric Meter</TableHead>}
-                    {visibleColumns.has('gasMeter') && <TableHead>Gas Meter</TableHead>}
-                    {visibleColumns.has('waterMeter') && <TableHead>Water Meter</TableHead>}
-                    {visibleColumns.has('constructionDateBand') && <TableHead>Construction</TableHead>}
-                    {visibleColumns.has('hmoLicenceNumber') && <TableHead>HMO #</TableHead>}
+                    {visibleColumns.has('keysafeCode') && <SortableHeader field="keysafeCode" onSort={handleSort}>Keysafe</SortableHeader>}
+                    {visibleColumns.has('waterStopTap') && <SortableHeader field="waterStopTap" onSort={handleSort}>Stop Tap</SortableHeader>}
+                    {visibleColumns.has('electricMeter') && <SortableHeader field="electricMeter" onSort={handleSort}>Electric Meter</SortableHeader>}
+                    {visibleColumns.has('gasMeter') && <SortableHeader field="gasMeter" onSort={handleSort}>Gas Meter</SortableHeader>}
+                    {visibleColumns.has('waterMeter') && <SortableHeader field="waterMeter" onSort={handleSort}>Water Meter</SortableHeader>}
+                    {visibleColumns.has('constructionDateBand') && <SortableHeader field="constructionDateBand" onSort={handleSort}>Construction</SortableHeader>}
+                    {visibleColumns.has('hmoLicenceNumber') && <SortableHeader field="hmoLicenceNumber" onSort={handleSort}>HMO #</SortableHeader>}
                     {visibleColumns.has('hmoLicenceExpiry') && <SortableHeader field="hmoLicenceExpiry" onSort={handleSort}>HMO Expiry</SortableHeader>}
-                    {visibleColumns.has('managementCompany') && <TableHead>Mgmt Co.</TableHead>}
+                    {visibleColumns.has('managementCompany') && <SortableHeader field="managementCompany" onSort={handleSort}>Mgmt Co.</SortableHeader>}
                     {visibleColumns.has('actions') && <TableHead className="w-24 text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
