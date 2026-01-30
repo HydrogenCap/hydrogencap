@@ -32,6 +32,7 @@ interface ExtendableSelectProps {
   onAddNew: (name: string) => Promise<{ id: string; name: string }>;
   isLoading?: boolean;
   disabled?: boolean;
+  useNameAsValue?: boolean;
 }
 
 export function ExtendableSelect({
@@ -47,6 +48,7 @@ export function ExtendableSelect({
   onAddNew,
   isLoading = false,
   disabled = false,
+  useNameAsValue = false,
 }: ExtendableSelectProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -64,7 +66,7 @@ export function ExtendableSelect({
 
     try {
       const newItem = await onAddNew(newName.trim());
-      onValueChange(newItem.id);
+      onValueChange(useNameAsValue ? newItem.name : newItem.id);
       setDialogOpen(false);
       setNewName('');
     } catch (err) {

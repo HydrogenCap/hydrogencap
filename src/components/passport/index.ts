@@ -2,3 +2,6 @@ export { PassportForm } from './PassportForm';
 export { ExtendableSelect } from './ExtendableSelect';
 export { PassportOwnershipSummary } from './PassportOwnershipSummary';
 export { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
+export { CoreIdentityCard } from './CoreIdentityCard';
+export { AddressEditor } from './AddressEditor';
+export { MultiTitleNumberInput } from './MultiTitleNumberInput';
