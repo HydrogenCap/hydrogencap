@@ -81,9 +81,18 @@ export function useUpsertPassport() {
   
   return useMutation({
     mutationFn: async (passport: PropertyPassportInsert) => {
+      // Sanitize empty strings to null for UUID fields to prevent database errors
+      const sanitized = { ...passport };
+      const uuidFields = ['management_company_id', 'local_authority_id'] as const;
+      for (const field of uuidFields) {
+        if (sanitized[field] === '') {
+          sanitized[field] = null;
+        }
+      }
+      
       const { data, error } = await supabase
         .from('property_passport')
-        .upsert(passport, { onConflict: 'property_id' })
+        .upsert(sanitized, { onConflict: 'property_id' })
         .select()
         .single();
 
