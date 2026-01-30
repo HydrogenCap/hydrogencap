@@ -12,6 +12,7 @@ import {
   FileText,
   MessageSquare,
   AlertCircle,
+  ClipboardList,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const mainNavItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Portfolio', icon: Building2, href: '/properties' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
+  { title: 'Passport', icon: ClipboardList, href: '/import/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
