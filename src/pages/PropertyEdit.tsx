@@ -52,7 +52,7 @@ const propertySchema = z.object({
   fixed_or_variable: z.enum(['fixed', 'variable', '']).optional(),
   current_mortgage_balance_gbp: z.coerce.number().min(0).optional(),
   capital_or_interest: z.enum(['capital', 'interest', '']).optional(),
-  mortgage_type: z.enum(['BTL', 'Bridging', 'Commercial', '']).optional(),
+  mortgage_type: z.enum(['BTL', 'Bridging', 'Commercial', 'PPR', '']).optional(),
   term_years: z.coerce.number().int().min(1).max(50).optional(),
   mortgage_payment_gbp: z.coerce.number().min(0).optional(),
   fixed_rate_expires: z.string().optional(),
@@ -144,8 +144,8 @@ function PropertyEditPage() {
         capital_or_interest: (loan?.capital_or_interest === 'capital' || loan?.capital_or_interest === 'interest') 
           ? loan.capital_or_interest as 'capital' | 'interest' 
           : '',
-        mortgage_type: (loan?.mortgage_type === 'BTL' || loan?.mortgage_type === 'Bridging')
-          ? loan.mortgage_type as 'BTL' | 'Bridging'
+        mortgage_type: (loan?.mortgage_type === 'BTL' || loan?.mortgage_type === 'Bridging' || loan?.mortgage_type === 'Commercial' || loan?.mortgage_type === 'PPR')
+          ? loan.mortgage_type as 'BTL' | 'Bridging' | 'Commercial' | 'PPR'
           : '',
         term_years: (loan as any)?.term_years ?? undefined,
         mortgage_payment_gbp: loan?.payment_override_gbp ?? undefined,
@@ -747,6 +747,7 @@ function PropertyEditPage() {
                           <SelectItem value="BTL">Buy-to-Let</SelectItem>
                           <SelectItem value="Bridging">Bridging Loan</SelectItem>
                           <SelectItem value="Commercial">Commercial Loan</SelectItem>
+                          <SelectItem value="PPR">Principle Primary Residence</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
