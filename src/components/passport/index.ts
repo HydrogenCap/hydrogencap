@@ -5,3 +5,4 @@ export { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
 export { CoreIdentityCard } from './CoreIdentityCard';
 export { AddressEditor } from './AddressEditor';
 export { MultiTitleNumberInput } from './MultiTitleNumberInput';
+export { PassportRowEditor } from './PassportRowEditor';

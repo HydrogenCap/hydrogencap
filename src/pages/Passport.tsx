@@ -5,26 +5,19 @@ import {
   Building2, 
   Search, 
   ChevronRight,
-  AlertCircle,
-  CheckCircle2,
   Home,
-  Flame,
-  Droplets,
-  Zap,
-  Key,
-  Shield,
   Upload,
   Filter,
   X,
   Landmark,
   Dna,
+  Edit3,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
@@ -32,13 +25,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { usePassportsWithProperties, calculatePassportCompleteness } from '@/hooks/usePropertyPassport';
 import { useProperties } from '@/hooks/useProperties';
-import { useTitleNumbers, PROPERTY_TYPES, LISTED_STATUSES } from '@/hooks/useCoreIdentity';
+import { PROPERTY_TYPES, LISTED_STATUSES } from '@/hooks/useCoreIdentity';
+import { PassportRowEditor } from '@/components/passport/PassportRowEditor';
 
 export default function Passport() {
   const { data: properties, isLoading } = useProperties();
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   
   // Filters
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<string>('');
@@ -83,6 +77,10 @@ export default function Passport() {
     setConservationAreaFilter('');
   };
 
+  const toggleRow = (id: string) => {
+    setExpandedRowId(expandedRowId === id ? null : id);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -94,7 +92,7 @@ export default function Passport() {
               Property Passports
             </h1>
             <p className="text-muted-foreground">
-              Core property identity and operational data for all properties
+              Core property identity and operational data — click Edit to update inline
             </p>
           </div>
           <Button asChild variant="outline">
@@ -274,7 +272,10 @@ export default function Passport() {
         {/* Properties Table */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>All Properties ({filteredProperties.length})</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Edit3 className="h-5 w-5" />
+              All Properties ({filteredProperties.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -292,90 +293,92 @@ export default function Passport() {
                 )}
               </div>
             ) : (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Property</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Construction</TableHead>
-                      <TableHead>Listed</TableHead>
-                      <TableHead>Conservation</TableHead>
-                      <TableHead>UPRN</TableHead>
-                      <TableHead className="w-10"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProperties.map((property) => {
-                      return (
-                        <TableRow key={property.id} className="hover:bg-muted/30">
-                          <TableCell>
-                            <div>
-                              {property.property_name && (
-                                <p className="font-medium text-primary text-sm">{property.property_name}</p>
-                              )}
-                              <p className="font-medium text-foreground">{property.address_line}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {property.postcode}
-                                {property.town_city && ` • ${property.town_city}`}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {property.property_type ? (
-                              <Badge variant="outline">
-                                <Home className="h-3 w-3 mr-1" />
-                                {property.property_type}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {property.construction_type ? (
-                              <span className="text-sm">{property.construction_type}</span>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {property.listed_status && property.listed_status !== 'Not listed' ? (
-                              <Badge variant="secondary" className="text-xs">
-                                {property.listed_status}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {property.conservation_area ? (
-                              <Badge variant="outline" className="text-xs border-warning text-warning">
-                                <Landmark className="h-3 w-3 mr-1" />
-                                Yes
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {property.uprn ? (
-                              <span className="text-sm font-mono">{property.uprn}</span>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Button asChild variant="ghost" size="icon">
-                              <Link to={`/properties/${property.id}?tab=operations`}>
-                                <ChevronRight className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+              <div className="space-y-2">
+                {filteredProperties.map((property) => (
+                  <div key={property.id} className="border border-border rounded-lg overflow-hidden">
+                    <div className="flex items-center justify-between p-4 hover:bg-muted/30">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+                        {/* Address */}
+                        <div className="md:col-span-2">
+                          {property.property_name && (
+                            <p className="font-medium text-primary text-sm">{property.property_name}</p>
+                          )}
+                          <p className="font-medium text-foreground">{property.address_line}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {property.postcode}
+                            {property.town_city && ` • ${property.town_city}`}
+                          </p>
+                        </div>
+
+                        {/* Type */}
+                        <div>
+                          {property.property_type ? (
+                            <Badge variant="outline">
+                              <Home className="h-3 w-3 mr-1" />
+                              {property.property_type}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-dashed text-muted-foreground">
+                              No type
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Construction */}
+                        <div>
+                          {property.construction_type ? (
+                            <span className="text-sm">{property.construction_type}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </div>
+
+                        {/* Listed & Conservation */}
+                        <div className="flex flex-wrap gap-1">
+                          {property.listed_status && property.listed_status !== 'Not listed' && (
+                            <Badge variant="secondary" className="text-xs">
+                              {property.listed_status}
+                            </Badge>
+                          )}
+                          {property.conservation_area && (
+                            <Badge variant="outline" className="text-xs border-warning text-warning">
+                              <Landmark className="h-3 w-3 mr-1" />
+                              Conservation
+                            </Badge>
+                          )}
+                          {!property.listed_status && !property.conservation_area && (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 justify-end">
+                          <PassportRowEditor
+                            property={property}
+                            isExpanded={expandedRowId === property.id}
+                            onToggle={() => toggleRow(property.id)}
+                          />
+                          <Button asChild variant="ghost" size="icon">
+                            <Link to={`/properties/${property.id}?tab=operations`}>
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Expanded Editor */}
+                    {expandedRowId === property.id && (
+                      <div className="px-4 pb-4">
+                        <PassportRowEditor
+                          property={property}
+                          isExpanded={true}
+                          onToggle={() => toggleRow(property.id)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
