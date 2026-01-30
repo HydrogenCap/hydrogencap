@@ -32,6 +32,7 @@ import Compliance from "./pages/Compliance";
 import Reports from "./pages/Reports";
 import Actions from "./pages/Actions";
 import Chat from "./pages/Chat";
+import Passport from "./pages/Passport";
 import NotFound from "./pages/NotFound";
 
 // Marketing pages
@@ -212,6 +213,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Actions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/passport"
+              element={
+                <ProtectedRoute>
+                  <Passport />
                 </ProtectedRoute>
               }
             />
