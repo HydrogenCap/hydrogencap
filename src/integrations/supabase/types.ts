@@ -1570,6 +1570,8 @@ export type Database = {
           beneficial_override_notes: string | null
           beneficial_override_percent: number | null
           co_alarm_required: boolean | null
+          conservation_area: boolean
+          construction_type: string | null
           country: string | null
           county: string | null
           created_at: string
@@ -1587,6 +1589,8 @@ export type Database = {
           has_fire_alarm_system: boolean | null
           has_gas: boolean | null
           id: string
+          identity_updated_at: string | null
+          identity_updated_by: string | null
           is_hmo_licensed: boolean | null
           land_registry_link: string | null
           latitude: number | null
@@ -1605,8 +1609,10 @@ export type Database = {
           ownership_entity: string | null
           ownership_percent: number | null
           place_id: string | null
+          planning_authority: string | null
           postcode: string | null
           postcode_area: string | null
+          property_name: string | null
           property_type: string | null
           purchase_price_gbp: number | null
           selective_licence_required: boolean | null
@@ -1615,6 +1621,7 @@ export type Database = {
           town_city: string | null
           updated_at: string
           uprn: string | null
+          year_built: string | null
         }
         Insert: {
           address_line: string
@@ -1626,6 +1633,8 @@ export type Database = {
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
           co_alarm_required?: boolean | null
+          conservation_area?: boolean
+          construction_type?: string | null
           country?: string | null
           county?: string | null
           created_at?: string
@@ -1643,6 +1652,8 @@ export type Database = {
           has_fire_alarm_system?: boolean | null
           has_gas?: boolean | null
           id?: string
+          identity_updated_at?: string | null
+          identity_updated_by?: string | null
           is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
           latitude?: number | null
@@ -1661,8 +1672,10 @@ export type Database = {
           ownership_entity?: string | null
           ownership_percent?: number | null
           place_id?: string | null
+          planning_authority?: string | null
           postcode?: string | null
           postcode_area?: string | null
+          property_name?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
           selective_licence_required?: boolean | null
@@ -1671,6 +1684,7 @@ export type Database = {
           town_city?: string | null
           updated_at?: string
           uprn?: string | null
+          year_built?: string | null
         }
         Update: {
           address_line?: string
@@ -1682,6 +1696,8 @@ export type Database = {
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
           co_alarm_required?: boolean | null
+          conservation_area?: boolean
+          construction_type?: string | null
           country?: string | null
           county?: string | null
           created_at?: string
@@ -1699,6 +1715,8 @@ export type Database = {
           has_fire_alarm_system?: boolean | null
           has_gas?: boolean | null
           id?: string
+          identity_updated_at?: string | null
+          identity_updated_by?: string | null
           is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
           latitude?: number | null
@@ -1717,8 +1735,10 @@ export type Database = {
           ownership_entity?: string | null
           ownership_percent?: number | null
           place_id?: string | null
+          planning_authority?: string | null
           postcode?: string | null
           postcode_area?: string | null
+          property_name?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
           selective_licence_required?: boolean | null
@@ -1727,6 +1747,7 @@ export type Database = {
           town_city?: string | null
           updated_at?: string
           uprn?: string | null
+          year_built?: string | null
         }
         Relationships: [
           {
@@ -2128,6 +2149,38 @@ export type Database = {
             foreignKeyName: "property_passport_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_title_numbers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          property_id: string
+          title_number: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          property_id: string
+          title_number: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          property_id?: string
+          title_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_title_numbers_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },

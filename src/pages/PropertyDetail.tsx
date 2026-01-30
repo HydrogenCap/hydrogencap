@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, FinancialAttributionCard } from '@/components/ownership';
 import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveChecklist, QuickPerformanceCard } from '@/components/property';
-import { PassportForm } from '@/components/passport';
+import { PassportForm, CoreIdentityCard } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
 import { ComplianceTab } from '@/components/compliance';
@@ -377,7 +377,8 @@ function PropertyDetailPage() {
           </TabsContent>
 
           {/* OPERATIONS TAB - Renamed from Passport */}
-          <TabsContent value="operations">
+          <TabsContent value="operations" className="space-y-6">
+            <CoreIdentityCard propertyId={id!} />
             <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
           </TabsContent>
 
