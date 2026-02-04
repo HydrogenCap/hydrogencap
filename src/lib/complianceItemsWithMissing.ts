@@ -32,6 +32,8 @@ export interface PropertyForCompliance {
   is_hmo_licensed: boolean | null;
   selective_licence_required: boolean | null;
   lifecycle_type: string | null;
+  is_grade_listed: boolean | null;
+  listing_grade: string | null;
 }
 
 // Define conditional pairs: when one exists, the other becomes optional/not_required
@@ -117,8 +119,10 @@ function getComplianceTypesForProperty(property: PropertyForCompliance): { requi
     is_hmo_licensed: property.is_hmo_licensed,
     selective_licence_required: property.selective_licence_required,
     co_alarm_required: property.has_gas, // Assume CO alarm required if has gas
-    epc_required: true, // Default to required
+    epc_required: property.is_grade_listed !== true, // Not required for Grade Listed
     listed_status: null,
+    is_grade_listed: property.is_grade_listed,
+    listing_grade: property.listing_grade,
   };
 
   const required: string[] = [];

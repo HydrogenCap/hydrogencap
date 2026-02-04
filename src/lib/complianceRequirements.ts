@@ -19,6 +19,8 @@ export interface PropertyComplianceFeatures {
   co_alarm_required: boolean | null;
   epc_required: boolean | null;
   listed_status: string | null;
+  is_grade_listed: boolean | null;
+  listing_grade: string | null;
 }
 
 // Requirement status
@@ -73,9 +75,9 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     category: 'Safety & Legal',
     defaultRequired: true,
     validityYears: 10,
-    condition: (p: PropertyComplianceFeatures) => p.epc_required !== false,
+    condition: (p: PropertyComplianceFeatures) => p.is_grade_listed !== true && p.epc_required !== false,
     reasonRequired: 'Mandatory for all rental properties',
-    reasonNotRequired: 'Listed building - EPC exempt',
+    reasonNotRequired: 'Grade Listed building - legally exempt from EPC requirements',
   },
   'Smoke Alarm Declaration': {
     category: 'Safety & Legal',
