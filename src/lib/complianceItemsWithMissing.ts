@@ -40,6 +40,16 @@ const CONDITIONAL_PAIRS: Record<string, { alternative: string; priority: 'this' 
   'Smoke Alarm Declaration': { alternative: 'Fire Alarm Certificate', priority: 'this' },
 };
 
+// Compliance types that should always be shown as optional (not counted as missing/expired when not uploaded)
+const ALWAYS_OPTIONAL_TYPES = [
+  'Legionella Risk Assessment',
+];
+
+// Reason text for optional items
+const OPTIONAL_TYPE_REASONS: Record<string, string> = {
+  'Legionella Risk Assessment': 'Optional - not required by law for most residential properties',
+};
+
 /**
  * Calculate status and days until expiry for an item
  */
@@ -87,12 +97,12 @@ function hasValidRecord(
 }
 
 /**
- * Get required compliance types for a property based on its features
+ * Get required and optional compliance types for a property based on its features
  */
-function getRequiredTypesForProperty(property: PropertyForCompliance): string[] {
+function getComplianceTypesForProperty(property: PropertyForCompliance): { required: string[]; optional: string[] } {
   // Skip compliance tracking for properties in development
   if (property.lifecycle_type === 'development') {
-    return [];
+    return { required: [], optional: [] };
   }
 
   const features: PropertyComplianceFeatures = {
@@ -111,15 +121,18 @@ function getRequiredTypesForProperty(property: PropertyForCompliance): string[] 
     listed_status: null,
   };
 
-  const requiredTypes: string[] = [];
+  const required: string[] = [];
+  const optional: string[] = [];
 
   for (const [typeName, definition] of Object.entries(COMPLIANCE_REQUIREMENT_DEFINITIONS)) {
-    if (definition.condition(features)) {
-      requiredTypes.push(typeName);
+    if (ALWAYS_OPTIONAL_TYPES.includes(typeName)) {
+      optional.push(typeName);
+    } else if (definition.condition(features)) {
+      required.push(typeName);
     }
   }
 
-  return requiredTypes;
+  return { required, optional };
 }
 
 /**
@@ -140,13 +153,14 @@ export function generateComplianceItemsWithMissing(
 
   // Process each property
   properties.forEach(property => {
-    const requiredTypes = getRequiredTypesForProperty(property);
+    const { required: requiredTypes, optional: optionalTypes } = getComplianceTypesForProperty(property);
 
     // Check which conditional items exist for this property
     const hasFireAlarmCert = hasValidRecord(existingItemsMap, property.id, 'Fire Alarm Certificate');
     const hasSmokeAlarmDecl = hasValidRecord(existingItemsMap, property.id, 'Smoke Alarm Declaration');
 
-    requiredTypes.forEach(complianceType => {
+    // Process a compliance type (handles both required and optional)
+    const processComplianceType = (complianceType: string, isOptionalType: boolean) => {
       const key = `${property.id}::${complianceType}`;
       const existingItem = existingItemsMap.get(key);
 
@@ -154,17 +168,20 @@ export function generateComplianceItemsWithMissing(
       let conditionalReason: string | undefined;
       let alternativeType: string | undefined;
 
+      // If this is an always-optional type, set status to 'optional'
+      if (isOptionalType) {
+        conditionalStatus = 'optional';
+        conditionalReason = OPTIONAL_TYPE_REASONS[complianceType] || 'Optional item';
+      }
       // Apply conditional logic for Fire Alarm Certificate / Smoke Alarm Declaration
-      if (complianceType === 'Smoke Alarm Declaration') {
+      else if (complianceType === 'Smoke Alarm Declaration') {
         if (hasFireAlarmCert) {
-          // Fire Alarm Certificate exists - Smoke Alarm Declaration is not required
           conditionalStatus = 'not_required';
           conditionalReason = 'Fire Alarm Certificate uploaded';
           alternativeType = 'Fire Alarm Certificate';
         }
       } else if (complianceType === 'Fire Alarm Certificate') {
         if (hasSmokeAlarmDecl && !hasFireAlarmCert) {
-          // Smoke Alarm Declaration exists - Fire Alarm Certificate is optional
           conditionalStatus = 'optional';
           conditionalReason = 'Alternative to Smoke Alarm Declaration';
           alternativeType = 'Smoke Alarm Declaration';
@@ -175,8 +192,10 @@ export function generateComplianceItemsWithMissing(
         // Use actual item
         const { status, daysUntilExpiry } = calculateItemStatus(existingItem.expiry_date);
         
-        // Override status if conditional logic applies (only for items without valid docs)
-        const finalStatus = conditionalStatus && status === 'unknown' ? conditionalStatus : status;
+        // For optional types without valid docs, keep as optional; otherwise show actual status
+        const finalStatus = isOptionalType && status === 'unknown' 
+          ? 'optional' 
+          : (conditionalStatus && status === 'unknown' ? conditionalStatus : status);
         
         result.push({
           id: existingItem.id,
@@ -188,14 +207,12 @@ export function generateComplianceItemsWithMissing(
           daysUntilExpiry,
           isMissing: false,
           documents: existingItem.documents,
-          conditionalReason,
+          conditionalReason: isOptionalType ? OPTIONAL_TYPE_REASONS[complianceType] : conditionalReason,
           alternativeType,
         });
-        // Remove from map so we don't double-count
         existingItemsMap.delete(key);
       } else {
         // Create missing placeholder
-        // If conditional status applies, use it; otherwise use 'unknown'
         result.push({
           id: `missing-${property.id}-${complianceType.replace(/\s+/g, '-')}`,
           property_id: property.id,
@@ -210,7 +227,13 @@ export function generateComplianceItemsWithMissing(
           alternativeType,
         });
       }
-    });
+    };
+
+    // Process required types first
+    requiredTypes.forEach(type => processComplianceType(type, false));
+    
+    // Process optional types
+    optionalTypes.forEach(type => processComplianceType(type, true));
   });
 
   // Add any remaining actual items that aren't in the required types
