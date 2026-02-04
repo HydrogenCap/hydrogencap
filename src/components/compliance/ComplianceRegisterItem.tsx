@@ -2,7 +2,7 @@ import { CheckCircle2, Clock, XCircle, AlertCircle, Upload, RefreshCw } from 'lu
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { getComplianceItemStatus, type ComplianceStatus } from '@/lib/complianceTypes';
+import { type ComplianceStatus } from '@/lib/complianceTypes';
 
 interface ComplianceRegisterItemProps {
   id: string;
@@ -10,6 +10,9 @@ interface ComplianceRegisterItemProps {
   expiryDate: string | null;
   issueDate?: string | null;
   certificateNumber?: string | null;
+  status?: ComplianceStatus;
+  daysUntilExpiry?: number | null;
+  isMissing?: boolean;
   onUpload: () => void;
 }
 
@@ -47,9 +50,9 @@ const statusConfig: Record<ComplianceStatus, {
   },
   unknown: {
     icon: AlertCircle,
-    iconClass: 'text-gray-500',
-    badgeClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200',
-    label: () => 'Unknown',
+    iconClass: 'text-muted-foreground',
+    badgeClass: 'bg-muted text-muted-foreground border-border',
+    label: () => 'Not uploaded',
     buttonLabel: 'Upload',
     buttonVariant: 'default',
   },
@@ -64,17 +67,30 @@ function getDaysUntilExpiry(expiryDate: string | null): number | null {
   return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function getStatusFromExpiry(expiryDate: string | null): ComplianceStatus {
+  if (!expiryDate) return 'unknown';
+  const days = getDaysUntilExpiry(expiryDate);
+  if (days === null) return 'unknown';
+  if (days < 0) return 'expired';
+  if (days <= 60) return 'expiring_soon';
+  return 'valid';
+}
+
 export function ComplianceRegisterItem({
   complianceType,
   expiryDate,
   issueDate,
   certificateNumber,
+  status: statusProp,
+  daysUntilExpiry: daysUntilExpiryProp,
+  isMissing = false,
   onUpload,
 }: ComplianceRegisterItemProps) {
-  const status = getComplianceItemStatus(expiryDate);
+  // Use provided status/days or calculate from expiryDate
+  const status = statusProp ?? getStatusFromExpiry(expiryDate);
+  const days = daysUntilExpiryProp ?? getDaysUntilExpiry(expiryDate);
   const config = statusConfig[status];
   const Icon = config.icon;
-  const days = getDaysUntilExpiry(expiryDate);
 
   const formatDate = (date: string | null) => {
     if (!date) return null;
@@ -90,18 +106,26 @@ export function ComplianceRegisterItem({
   };
 
   return (
-    <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+    <div className={cn(
+      'flex items-center justify-between py-3 first:pt-0 last:pb-0',
+      // Visual treatment for missing items - subtle amber tint
+      isMissing && 'bg-amber-50/50 dark:bg-amber-900/10 -mx-4 px-4 border-l-4 border-amber-400'
+    )}>
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <Icon className={cn('h-5 w-5 flex-shrink-0', config.iconClass)} />
         <div className="min-w-0">
           <p className="font-medium truncate">{complianceType}</p>
-          {(expiryDate || certificateNumber) && (
+          {isMissing ? (
+            <p className="text-sm text-muted-foreground italic truncate">
+              Not uploaded
+            </p>
+          ) : (expiryDate || certificateNumber) ? (
             <p className="text-sm text-muted-foreground truncate">
               {expiryDate && `Expires: ${formatDate(expiryDate)}`}
               {expiryDate && certificateNumber && ' • '}
               {certificateNumber && `#${certificateNumber}`}
             </p>
-          )}
+          ) : null}
         </div>
       </div>
       

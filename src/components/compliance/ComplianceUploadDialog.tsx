@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Upload, Loader2, CheckCircle2, AlertTriangle, RotateCcw, FileText, Bot } from 'lucide-react';
+import { Upload, Loader2, CheckCircle2, AlertTriangle, RotateCcw, FileText, Bot, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,9 @@ interface ComplianceUploadDialogProps {
   complianceType: string;
   propertyAddress: string;
   propertyId: string;
-  complianceItemId: string;
+  complianceItemId?: string;
+  isMissing?: boolean;
+  onCreateMissingItem?: () => Promise<string | null>;
   onSuccess?: () => void;
 }
 
@@ -46,6 +48,8 @@ export function ComplianceUploadDialog({
   propertyAddress,
   propertyId,
   complianceItemId,
+  isMissing = false,
+  onCreateMissingItem,
   onSuccess,
 }: ComplianceUploadDialogProps) {
   const [step, setStep] = useState<UploadStep>('upload');
@@ -53,6 +57,7 @@ export function ComplianceUploadDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
   const { toast } = useToast();
   
   const uploadDocument = useUploadComplianceDocument();
@@ -71,6 +76,7 @@ export function ComplianceUploadDialog({
     setSelectedFile(null);
     setAnalysisResult(null);
     setIsProcessing(false);
+    setCreatedItemId(null);
   }, []);
 
   const handleFileSelect = useCallback(async (file: File) => {
@@ -194,9 +200,24 @@ export function ComplianceUploadDialog({
     
     setIsProcessing(true);
     try {
+      // If this is a missing item, create the compliance record first
+      let itemId = complianceItemId;
+      if (isMissing && onCreateMissingItem) {
+        const newItemId = await onCreateMissingItem();
+        if (!newItemId) {
+          throw new Error('Failed to create compliance record');
+        }
+        itemId = newItemId;
+        setCreatedItemId(newItemId);
+      }
+
+      if (!itemId) {
+        throw new Error('No compliance item ID');
+      }
+
       // Upload document
       await uploadDocument.mutateAsync({
-        complianceItemId,
+        complianceItemId: itemId,
         propertyId,
         file: selectedFile,
         complianceType,
@@ -206,15 +227,17 @@ export function ComplianceUploadDialog({
       // Update compliance item with extracted dates
       if (analysisResult.expiryDate || analysisResult.issueDate) {
         await updateComplianceItem.mutateAsync({
-          id: complianceItemId,
+          id: itemId,
           expiry_date: analysisResult.expiryDate,
           issue_date: analysisResult.issueDate,
         });
       }
 
       toast({
-        title: 'Document saved',
-        description: 'Compliance record has been updated successfully.',
+        title: isMissing ? 'Compliance record created' : 'Document saved',
+        description: isMissing 
+          ? 'New compliance record has been created successfully.'
+          : 'Compliance record has been updated successfully.',
       });
       
       onSuccess?.();
@@ -260,6 +283,16 @@ export function ComplianceUploadDialog({
             {complianceType} for {propertyAddress}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Missing item indicator */}
+        {isMissing && step === 'upload' && (
+          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-900/20">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              This document has not been uploaded yet. Upload a certificate to create a new compliance record.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Step 1: Upload */}
         {step === 'upload' && (
@@ -353,7 +386,7 @@ export function ComplianceUploadDialog({
                   <span className="text-muted-foreground">Status</span>
                   <p className={cn(
                     'font-medium',
-                    analysisResult.isExpired ? 'text-red-600' : 'text-green-600'
+                    analysisResult.isExpired ? 'text-destructive' : 'text-green-600'
                   )}>
                     {getDaysLabel(analysisResult.daysUntilExpiry, analysisResult.isExpired)}
                   </p>
@@ -384,7 +417,7 @@ export function ComplianceUploadDialog({
               </Button>
               <Button onClick={handleSave} disabled={isProcessing}>
                 {isProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Save Information
+                {isMissing ? 'Create Record' : 'Save Information'}
               </Button>
             </div>
           </div>

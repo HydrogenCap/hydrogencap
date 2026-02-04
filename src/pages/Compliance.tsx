@@ -18,19 +18,22 @@ import {
 import { StatusFilterBox } from '@/components/compliance/StatusFilterBox';
 import { ComplianceRegisterItem } from '@/components/compliance/ComplianceRegisterItem';
 import { ComplianceUploadDialog } from '@/components/compliance/ComplianceUploadDialog';
-import { useAllCompliance } from '@/hooks/useCompliance';
+import { useAllCompliance, useCreateComplianceItem } from '@/hooks/useCompliance';
 import { useProperties } from '@/hooks/useProperties';
+import { COMPLIANCE_TYPES, type ComplianceStatus } from '@/lib/complianceTypes';
 import { 
-  getComplianceItemStatus, 
-  COMPLIANCE_TYPES,
-  type ComplianceStatus 
-} from '@/lib/complianceTypes';
+  generateComplianceItemsWithMissing, 
+  calculateComplianceStats,
+  type ComplianceItemWithMissing,
+  type PropertyForCompliance,
+} from '@/lib/complianceItemsWithMissing';
 
 type FilterStatus = ComplianceStatus | 'all';
 
 export default function Compliance() {
   const { data: items, isLoading } = useAllCompliance();
-  const { data: properties } = useProperties();
+  const { data: properties, isLoading: propertiesLoading } = useProperties();
+  const createComplianceItem = useCreateComplianceItem();
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +45,7 @@ export default function Compliance() {
     type: string;
     propertyId: string;
     propertyAddress: string;
+    isMissing: boolean;
   } | null>(null);
 
   // Create property lookup map
@@ -50,36 +54,44 @@ export default function Compliance() {
     return new Map(properties.map(p => [p.id, p]));
   }, [properties]);
 
-  // Calculate summary stats
-  const summary = useMemo(() => {
-    if (!items) return { valid: 0, expiring: 0, expired: 0, unknown: 0, total: 0 };
+  // Generate all items including missing placeholders
+  const allItemsWithMissing = useMemo(() => {
+    if (!items || !properties) return [];
     
-    return items.reduce(
-      (acc, item) => {
-        const status = getComplianceItemStatus(item.expiry_date);
-        acc.total++;
-        if (status === 'valid') acc.valid++;
-        else if (status === 'expiring_soon') acc.expiring++;
-        else if (status === 'expired') acc.expired++;
-        else acc.unknown++;
-        return acc;
-      },
-      { valid: 0, expiring: 0, expired: 0, unknown: 0, total: 0 }
-    );
-  }, [items]);
+    // Convert properties to the expected format
+    const propertiesForCompliance: PropertyForCompliance[] = properties.map(p => ({
+      id: p.id,
+      address_line: p.address_line || '',
+      postcode: p.postcode,
+      has_gas: p.has_gas,
+      has_fire_alarm_system: p.has_fire_alarm_system,
+      fire_alarm_grade: p.fire_alarm_grade,
+      has_emergency_lighting: p.has_emergency_lighting,
+      asset_category: p.asset_category,
+      is_hmo_licensed: p.is_hmo_licensed,
+      selective_licence_required: p.selective_licence_required,
+      lifecycle_type: p.lifecycle_type,
+    }));
+
+    return generateComplianceItemsWithMissing(items, propertiesForCompliance);
+  }, [items, properties]);
+
+  // Calculate summary stats (missing items count in 'expired')
+  const summary = useMemo(() => {
+    return calculateComplianceStats(allItemsWithMissing);
+  }, [allItemsWithMissing]);
 
   // Filter items
   const filteredItems = useMemo(() => {
-    if (!items) return [];
-    
-    return items.filter(item => {
-      // Status filter
+    return allItemsWithMissing.filter(item => {
+      // Status filter - "expired" filter shows both expired AND unknown/missing
       if (statusFilter !== 'all') {
-        const status = getComplianceItemStatus(item.expiry_date);
-        if (statusFilter === 'expiring_soon' && status !== 'expiring_soon') return false;
-        if (statusFilter === 'expired' && status !== 'expired') return false;
-        if (statusFilter === 'valid' && status !== 'valid') return false;
-        if (statusFilter === 'unknown' && status !== 'unknown') return false;
+        if (statusFilter === 'expired') {
+          // Show both expired and unknown (missing) items
+          if (item.status !== 'expired' && item.status !== 'unknown') return false;
+        } else if (statusFilter !== item.status) {
+          return false;
+        }
       }
       
       // Type filter
@@ -102,11 +114,11 @@ export default function Compliance() {
       
       return true;
     });
-  }, [items, statusFilter, typeFilter, searchQuery, propertyMap]);
+  }, [allItemsWithMissing, statusFilter, typeFilter, searchQuery, propertyMap]);
 
-  // Group items by property
+  // Group items by property - sort missing items to top within each group
   const groupedByProperty = useMemo(() => {
-    const groups = new Map<string, typeof filteredItems>();
+    const groups = new Map<string, ComplianceItemWithMissing[]>();
     
     filteredItems.forEach(item => {
       const existing = groups.get(item.property_id) || [];
@@ -114,25 +126,56 @@ export default function Compliance() {
       groups.set(item.property_id, existing);
     });
     
+    // Sort each group: missing/expired items first, then expiring, then valid
+    groups.forEach((groupItems, propertyId) => {
+      groupItems.sort((a, b) => {
+        const statusOrder = { unknown: 0, expired: 1, expiring_soon: 2, valid: 3 };
+        return statusOrder[a.status] - statusOrder[b.status];
+      });
+    });
+    
     return groups;
   }, [filteredItems]);
 
-  // Check for expired items to show banner
-  const hasExpired = summary.expired > 0;
+  // Check for items needing action (expired OR missing)
+  const hasItemsNeedingAction = summary.expired > 0;
 
   const handleStatusFilterClick = (status: FilterStatus) => {
     setStatusFilter(prev => prev === status ? 'all' : status);
   };
 
-  const handleUploadClick = (item: typeof items[0]) => {
+  const handleUploadClick = async (item: ComplianceItemWithMissing) => {
     const property = propertyMap.get(item.property_id);
+    
+    // If it's a missing item, we need to create it first when uploading
     setSelectedItem({
       id: item.id,
       type: item.compliance_type,
       propertyId: item.property_id,
       propertyAddress: property?.address_line || 'Unknown Property',
+      isMissing: item.isMissing,
     });
     setUploadDialogOpen(true);
+  };
+
+  const handleCreateMissingItem = async (): Promise<string | null> => {
+    if (!selectedItem?.isMissing) return selectedItem?.id || null;
+    
+    try {
+      const result = await createComplianceItem.mutateAsync({
+        property_id: selectedItem.propertyId,
+        compliance_type: selectedItem.type,
+        issue_date: null,
+        expiry_date: null,
+        reminder_days: [90, 60, 30, 0],
+        responsible_party: 'Owner',
+        notes: null,
+      });
+      return result.id;
+    } catch (error) {
+      console.error('Failed to create compliance item:', error);
+      return null;
+    }
   };
 
   const clearFilters = () => {
@@ -147,13 +190,13 @@ export default function Compliance() {
     switch (status) {
       case 'valid': return 'valid';
       case 'expiring_soon': return 'expiring';
-      case 'expired': return 'expired';
-      case 'unknown': return 'unknown';
+      case 'expired': return 'expired/missing';
+      case 'unknown': return 'missing';
       default: return 'total';
     }
   };
 
-  if (isLoading) {
+  if (isLoading || propertiesLoading) {
     return (
       <AppLayout>
         <div className="space-y-4">
@@ -182,13 +225,13 @@ export default function Compliance() {
           </div>
         </div>
 
-        {/* Alert banner for expired compliance */}
-        {hasExpired && (
+        {/* Alert banner for expired OR missing compliance */}
+        {hasItemsNeedingAction && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Compliance Alert</AlertTitle>
             <AlertDescription>
-              {summary.expired} compliance item{summary.expired !== 1 ? 's have' : ' has'} expired across your portfolio. 
+              {summary.expired} compliance item{summary.expired !== 1 ? 's have' : ' has'} expired or {summary.expired !== 1 ? 'are' : 'is'} missing across your portfolio. 
               Immediate action required.
             </AlertDescription>
           </Alert>
@@ -218,7 +261,7 @@ export default function Compliance() {
             onClick={() => handleStatusFilterClick('expiring_soon')}
           />
           <StatusFilterBox
-            label="Expired"
+            label="Expired / Missing"
             count={summary.expired}
             variant="expired"
             isActive={statusFilter === 'expired'}
@@ -271,7 +314,7 @@ export default function Compliance() {
               <Shield className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No items found</h3>
               <p className="text-muted-foreground text-center">
-                {items?.length === 0 
+                {allItemsWithMissing.length === 0 
                   ? "Start tracking compliance by adding items to your properties."
                   : "Try adjusting your filters or search query."
                 }
@@ -282,8 +325,13 @@ export default function Compliance() {
           <div className="space-y-4">
             {Array.from(groupedByProperty.entries()).map(([propertyId, propertyItems]) => {
               const property = propertyMap.get(propertyId);
-              const expiredCount = propertyItems.filter(i => getComplianceItemStatus(i.expiry_date) === 'expired').length;
-              const expiringCount = propertyItems.filter(i => getComplianceItemStatus(i.expiry_date) === 'expiring_soon').length;
+              // Count items needing action (expired + missing)
+              const needsActionCount = propertyItems.filter(
+                i => i.status === 'expired' || i.status === 'unknown'
+              ).length;
+              const expiringCount = propertyItems.filter(
+                i => i.status === 'expiring_soon'
+              ).length;
               
               return (
                 <Card key={propertyId}>
@@ -306,11 +354,11 @@ export default function Compliance() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {expiredCount > 0 && (
-                          <Badge variant="destructive">{expiredCount} Expired</Badge>
+                        {needsActionCount > 0 && (
+                          <Badge variant="destructive">{needsActionCount} Need Action</Badge>
                         )}
                         {expiringCount > 0 && (
-                          <Badge className="bg-amber-500 hover:bg-amber-600">{expiringCount} Expiring</Badge>
+                          <Badge className="bg-amber-500 text-white hover:bg-amber-600">{expiringCount} Expiring</Badge>
                         )}
                         <Button variant="outline" size="sm" asChild>
                           <Link to={`/properties/${propertyId}?tab=compliance`}>
@@ -328,6 +376,9 @@ export default function Compliance() {
                           id={item.id}
                           complianceType={item.compliance_type}
                           expiryDate={item.expiry_date}
+                          status={item.status}
+                          daysUntilExpiry={item.daysUntilExpiry}
+                          isMissing={item.isMissing}
                           onUpload={() => handleUploadClick(item)}
                         />
                       ))}
@@ -347,7 +398,9 @@ export default function Compliance() {
             complianceType={selectedItem.type}
             propertyAddress={selectedItem.propertyAddress}
             propertyId={selectedItem.propertyId}
-            complianceItemId={selectedItem.id}
+            complianceItemId={selectedItem.isMissing ? undefined : selectedItem.id}
+            isMissing={selectedItem.isMissing}
+            onCreateMissingItem={handleCreateMissingItem}
             onSuccess={() => setSelectedItem(null)}
           />
         )}
