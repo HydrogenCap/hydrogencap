@@ -20,6 +20,7 @@ import { DataQualityWidget } from '@/components/dashboard/DataQualityWidget';
 import { MissingComplianceWidget } from '@/components/dashboard/MissingComplianceWidget';
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
+import { ThisMonthWidget } from '@/components/dashboard/ThisMonthWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import {
   formatGBP,
@@ -614,6 +615,9 @@ function DashboardPage() {
 
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
+          {/* This Month Summary */}
+          <ThisMonthWidget />
+
           {/* Portfolio Health - uses core rental only */}
           {coreRentalProperties && coreRentalProperties.length > 0 && (
             <PortfolioHealthWidget 

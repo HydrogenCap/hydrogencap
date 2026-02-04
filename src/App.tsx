@@ -33,6 +33,7 @@ import Reports from "./pages/Reports";
 import Actions from "./pages/Actions";
 import Chat from "./pages/Chat";
 import Passport from "./pages/Passport";
+import Pipeline from "./pages/Pipeline";
 import NotFound from "./pages/NotFound";
 
 // Marketing pages
@@ -221,6 +222,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Passport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pipeline"
+              element={
+                <ProtectedRoute>
+                  <Pipeline />
                 </ProtectedRoute>
               }
             />
