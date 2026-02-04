@@ -20,6 +20,7 @@ interface ComplianceRegisterItemProps {
 
 const statusConfig: Record<ComplianceStatus, {
   icon: typeof CheckCircle2;
+  iconBgClass: string;
   iconClass: string;
   badgeClass: string;
   label: (days: number | null, reason?: string) => string;
@@ -29,8 +30,9 @@ const statusConfig: Record<ComplianceStatus, {
 }> = {
   valid: {
     icon: CheckCircle2,
-    iconClass: 'text-green-600',
-    badgeClass: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200',
+    iconBgClass: 'bg-green-500/20',
+    iconClass: 'text-green-400',
+    badgeClass: 'bg-green-500/20 text-green-300 border-green-500/30',
     label: (days) => days !== null ? `Valid for ${days} days` : 'Valid',
     buttonLabel: 'Update',
     buttonVariant: 'outline',
@@ -38,8 +40,9 @@ const statusConfig: Record<ComplianceStatus, {
   },
   expiring_soon: {
     icon: Clock,
-    iconClass: 'text-amber-600',
-    badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200',
+    iconBgClass: 'bg-amber-500/20',
+    iconClass: 'text-amber-400',
+    badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     label: (days) => days !== null ? (days === 0 ? 'Expires today' : `Expires in ${days} days`) : 'Expiring Soon',
     buttonLabel: 'Update',
     buttonVariant: 'outline',
@@ -47,8 +50,9 @@ const statusConfig: Record<ComplianceStatus, {
   },
   expired: {
     icon: XCircle,
-    iconClass: 'text-red-600',
-    badgeClass: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200',
+    iconBgClass: 'bg-red-500/20',
+    iconClass: 'text-red-400',
+    badgeClass: 'bg-red-500/20 text-red-300 border-red-500/30',
     label: (days) => days !== null ? `Expired ${Math.abs(days)} days ago` : 'Expired',
     buttonLabel: 'Upload',
     buttonVariant: 'default',
@@ -56,6 +60,7 @@ const statusConfig: Record<ComplianceStatus, {
   },
   unknown: {
     icon: AlertCircle,
+    iconBgClass: 'bg-muted',
     iconClass: 'text-muted-foreground',
     badgeClass: 'bg-muted text-muted-foreground border-border',
     label: () => 'Not uploaded',
@@ -65,8 +70,9 @@ const statusConfig: Record<ComplianceStatus, {
   },
   not_required: {
     icon: Info,
-    iconClass: 'text-blue-500',
-    badgeClass: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200',
+    iconBgClass: 'bg-blue-500/10',
+    iconClass: 'text-blue-400/60',
+    badgeClass: 'bg-blue-500/10 text-blue-400/80 border-blue-500/20',
     label: () => 'Not required',
     buttonLabel: 'Upload',
     buttonVariant: 'ghost',
@@ -74,8 +80,9 @@ const statusConfig: Record<ComplianceStatus, {
   },
   optional: {
     icon: Info,
-    iconClass: 'text-blue-500',
-    badgeClass: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200',
+    iconBgClass: 'bg-blue-500/10',
+    iconClass: 'text-blue-400/60',
+    badgeClass: 'bg-blue-500/10 text-blue-400/80 border-blue-500/20',
     label: () => 'Optional',
     buttonLabel: 'Upload',
     buttonVariant: 'ghost',
@@ -104,7 +111,6 @@ function getStatusFromExpiry(expiryDate: string | null): ComplianceStatus {
 export function ComplianceRegisterItem({
   complianceType,
   expiryDate,
-  issueDate,
   certificateNumber,
   status: statusProp,
   daysUntilExpiry: daysUntilExpiryProp,
@@ -138,62 +144,86 @@ export function ComplianceRegisterItem({
 
   return (
     <div className={cn(
-      'flex items-center justify-between py-3 first:pt-0 last:pb-0',
-      // Visual treatment for different states
-      needsAction && isMissing && 'bg-amber-50/50 dark:bg-amber-900/10 -mx-4 px-4 border-l-4 border-amber-400',
-      isConditionalItem && 'bg-gray-50/50 dark:bg-gray-900/20 -mx-4 px-4 border-l-4 border-gray-200 dark:border-gray-700 opacity-75'
+      'group flex items-center justify-between px-5 py-4 transition-colors duration-150',
+      'hover:bg-accent/30',
+      // Border between items
+      'border-b border-border/50 last:border-b-0',
+      // Conditional items styling
+      isConditionalItem && 'opacity-60 hover:opacity-80'
     )}>
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <Icon className={cn('h-5 w-5 flex-shrink-0', config.iconClass)} />
-        <div className="min-w-0">
-          <p className={cn(
-            'font-medium truncate',
+      {/* Left side - Icon & Info */}
+      <div className="flex items-center gap-4 min-w-0 flex-1">
+        {/* Status icon in colored circle */}
+        <div className={cn(
+          'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform duration-200',
+          'group-hover:scale-110',
+          config.iconBgClass
+        )}>
+          <Icon className={cn('h-5 w-5', config.iconClass)} />
+        </div>
+        
+        {/* Text content */}
+        <div className="flex-1 min-w-0">
+          <div className={cn(
+            'font-medium text-foreground truncate',
             isConditionalItem && 'text-muted-foreground'
           )}>
             {complianceType}
-          </p>
-          {/* Show conditional reason for not_required/optional items */}
-          {isConditionalItem && conditionalReason ? (
-            <p className="text-xs text-muted-foreground truncate">
-              {conditionalReason}
-            </p>
-          ) : isMissing ? (
-            <p className="text-sm text-muted-foreground italic truncate">
-              Not uploaded
-              {alternativeType && (
-                <span className="ml-1 text-xs">• Or upload {alternativeType}</span>
-              )}
-            </p>
-          ) : (expiryDate || certificateNumber) ? (
-            <p className="text-sm text-muted-foreground truncate">
-              {expiryDate && `Expires: ${formatDate(expiryDate)}`}
-              {expiryDate && certificateNumber && ' • '}
-              {certificateNumber && `#${certificateNumber}`}
-            </p>
-          ) : null}
+          </div>
+          
+          {/* Secondary info */}
+          <div className="text-sm text-muted-foreground mt-0.5 truncate">
+            {isConditionalItem && conditionalReason ? (
+              conditionalReason
+            ) : isMissing ? (
+              <span className="italic">
+                Not uploaded
+                {alternativeType && (
+                  <span className="ml-1 text-xs">• Or upload {alternativeType}</span>
+                )}
+              </span>
+            ) : (expiryDate || certificateNumber) ? (
+              <>
+                {expiryDate && `Expires: ${formatDate(expiryDate)}`}
+                {expiryDate && certificateNumber && ' • '}
+                {certificateNumber && `#${certificateNumber}`}
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
       
+      {/* Right side - Status badge & button */}
       <div className="flex items-center gap-3 flex-shrink-0">
-        <Badge variant="outline" className={cn('font-normal', config.badgeClass)}>
+        {/* Status badge - prominent */}
+        <Badge 
+          variant="outline" 
+          className={cn(
+            'px-3 py-1.5 text-xs font-medium rounded-md border transition-colors',
+            config.badgeClass
+          )}
+        >
           {config.label(days, conditionalReason)}
         </Badge>
+        
+        {/* Action button */}
         {config.showButton && (
           <Button
             size="sm"
             variant={config.buttonVariant}
             onClick={onUpload}
             className={cn(
-              'gap-1.5',
+              'min-w-[90px] h-9 transition-all duration-150',
+              needsAction && 'bg-primary hover:bg-primary/90',
               status === 'optional' && 'text-muted-foreground'
             )}
           >
-            {config.buttonVariant === 'default' ? (
-              <Upload className="h-3.5 w-3.5" />
+            {needsAction ? (
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
             ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             )}
-            {status === 'optional' ? 'Upload (Optional)' : config.buttonLabel}
+            {status === 'optional' ? 'Upload' : config.buttonLabel}
           </Button>
         )}
       </div>

@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Search, Building2, AlertTriangle, X } from 'lucide-react';
+import { 
+  Shield, Search, Home, AlertTriangle, X, ChevronRight, 
+  Filter, ArrowUpDown, Loader2 
+} from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -29,7 +31,6 @@ import {
 } from '@/lib/complianceItemsWithMissing';
 
 type FilterStatus = ComplianceStatus | 'all';
-type ActionableStatus = 'expired' | 'unknown';
 
 export default function Compliance() {
   const { data: items, isLoading } = useAllCompliance();
@@ -59,7 +60,6 @@ export default function Compliance() {
   const allItemsWithMissing = useMemo(() => {
     if (!items || !properties) return [];
     
-    // Convert properties to the expected format
     const propertiesForCompliance: PropertyForCompliance[] = properties.map(p => ({
       id: p.id,
       address_line: p.address_line || '',
@@ -77,18 +77,17 @@ export default function Compliance() {
     return generateComplianceItemsWithMissing(items, propertiesForCompliance);
   }, [items, properties]);
 
-  // Calculate summary stats (missing items count in 'expired')
+  // Calculate summary stats
   const summary = useMemo(() => {
     return calculateComplianceStats(allItemsWithMissing);
   }, [allItemsWithMissing]);
 
-  // Filter items - exclude not_required/optional from expired filter
+  // Filter items
   const filteredItems = useMemo(() => {
     return allItemsWithMissing.filter(item => {
-      // Never show not_required items in the expired/missing filter
+      // Status filter logic
       if (statusFilter === 'expired') {
         if (item.status === 'not_required' || item.status === 'optional') return false;
-        // Show both expired and unknown (missing) items
         if (item.status !== 'expired' && item.status !== 'unknown') return false;
       } else if (statusFilter !== 'all') {
         if (statusFilter !== item.status) return false;
@@ -116,7 +115,7 @@ export default function Compliance() {
     });
   }, [allItemsWithMissing, statusFilter, typeFilter, searchQuery, propertyMap]);
 
-  // Group items by property - sort missing items to top within each group
+  // Group items by property
   const groupedByProperty = useMemo(() => {
     const groups = new Map<string, ComplianceItemWithMissing[]>();
     
@@ -126,8 +125,8 @@ export default function Compliance() {
       groups.set(item.property_id, existing);
     });
     
-    // Sort each group: missing/expired items first, then expiring, then valid, then optional/not_required
-    groups.forEach((groupItems, propertyId) => {
+    // Sort each group by urgency
+    groups.forEach((groupItems) => {
       groupItems.sort((a, b) => {
         const statusOrder: Record<ComplianceStatus, number> = { 
           unknown: 0, 
@@ -144,7 +143,6 @@ export default function Compliance() {
     return groups;
   }, [filteredItems]);
 
-  // Check for items needing action (expired OR missing)
   const hasItemsNeedingAction = summary.expired > 0;
 
   const handleStatusFilterClick = (status: FilterStatus) => {
@@ -154,7 +152,6 @@ export default function Compliance() {
   const handleUploadClick = async (item: ComplianceItemWithMissing) => {
     const property = propertyMap.get(item.property_id);
     
-    // If it's a missing item, we need to create it first when uploading
     setSelectedItem({
       id: item.id,
       type: item.compliance_type,
@@ -203,17 +200,36 @@ export default function Compliance() {
     }
   };
 
+  // Loading state
   if (isLoading || propertiesLoading) {
     return (
       <AppLayout>
-        <div className="space-y-4">
-          <Skeleton className="h-12 w-64" />
-          <div className="grid gap-4 md:grid-cols-4">
+        <div className="space-y-8 p-6">
+          {/* Header skeleton */}
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-5 w-96" />
+          </div>
+          
+          {/* Stat boxes skeleton */}
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24" />
+              <Skeleton key={i} className="h-[140px] rounded-xl" />
             ))}
           </div>
-          <Skeleton className="h-96" />
+          
+          {/* Search bar skeleton */}
+          <div className="flex gap-4">
+            <Skeleton className="h-11 flex-1 max-w-md" />
+            <Skeleton className="h-11 w-[200px]" />
+          </div>
+          
+          {/* Cards skeleton */}
+          <div className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-64 rounded-xl" />
+            ))}
+          </div>
         </div>
       </AppLayout>
     );
@@ -221,31 +237,47 @@ export default function Compliance() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 p-4 lg:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Compliance Register</h1>
-            <p className="text-muted-foreground">
-              Portfolio-wide compliance tracking and document management
-            </p>
-          </div>
+        <div className="space-y-1">
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+            Compliance Register
+          </h1>
+          <p className="text-muted-foreground">
+            Portfolio-wide compliance tracking and document management
+          </p>
         </div>
 
-        {/* Alert banner for expired OR missing compliance */}
+        {/* Alert Banner - Redesigned */}
         {hasItemsNeedingAction && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Compliance Alert</AlertTitle>
-            <AlertDescription>
-              {summary.expired} compliance item{summary.expired !== 1 ? 's have' : ' has'} expired or {summary.expired !== 1 ? 'are' : 'is'} missing across your portfolio. 
-              Immediate action required.
-            </AlertDescription>
-          </Alert>
+          <div className="bg-gradient-to-r from-red-950/50 to-red-900/30 border-l-4 border-red-500 rounded-lg p-4 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-red-300 mb-1">
+                  Compliance Alert
+                </h3>
+                <p className="text-sm text-red-200/80">
+                  {summary.expired} compliance item{summary.expired !== 1 ? 's have' : ' has'} expired or {summary.expired !== 1 ? 'are' : 'is'} missing across your portfolio.
+                  <button 
+                    onClick={() => handleStatusFilterClick('expired')}
+                    className="font-medium underline ml-1.5 hover:text-red-100 transition-colors"
+                  >
+                    Take action now
+                  </button>
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Clickable Status Filter Boxes */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        {/* Status Filter Boxes - Redesigned */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatusFilterBox
             label="Total Items"
             count={summary.total}
@@ -276,20 +308,21 @@ export default function Compliance() {
           />
         </div>
 
-        {/* Search and Filter Bar */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Search and Filter Bar - Enhanced */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative max-w-lg">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Search by property, postcode, or type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-11 h-11 bg-card border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
           
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full sm:w-[220px] h-11 border-border">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
@@ -303,12 +336,17 @@ export default function Compliance() {
 
         {/* Active filter indicator */}
         {hasActiveFilters && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">
               Showing {filteredItems.length} {statusFilter !== 'all' ? getStatusLabel(statusFilter) : ''} item{filteredItems.length !== 1 ? 's' : ''}
             </span>
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto py-1 px-2">
-              <X className="h-3 w-3 mr-1" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={clearFilters} 
+              className="h-8 px-3 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1.5" />
               Clear filters
             </Button>
           </div>
@@ -316,11 +354,13 @@ export default function Compliance() {
 
         {/* Compliance items grouped by property */}
         {groupedByProperty.size === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No items found</h3>
-              <p className="text-muted-foreground text-center">
+          <Card className="border-border bg-card">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <Shield className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No items found</h3>
+              <p className="text-muted-foreground text-center max-w-md">
                 {allItemsWithMissing.length === 0 
                   ? "Start tracking compliance by adding items to your properties."
                   : "Try adjusting your filters or search query."
@@ -329,10 +369,9 @@ export default function Compliance() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6 transition-opacity duration-200">
             {Array.from(groupedByProperty.entries()).map(([propertyId, propertyItems]) => {
               const property = propertyMap.get(propertyId);
-              // Count items needing action (expired + missing)
               const needsActionCount = propertyItems.filter(
                 i => i.status === 'expired' || i.status === 'unknown'
               ).length;
@@ -341,57 +380,70 @@ export default function Compliance() {
               ).length;
               
               return (
-                <Card key={propertyId}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                        <div>
+                <Card key={propertyId} className="border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                  {/* Property Header - Redesigned */}
+                  <div className="bg-gradient-to-r from-secondary to-card px-5 lg:px-6 py-4 border-b border-border">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      {/* Left side */}
+                      <div className="flex items-center gap-4">
+                        {/* Property icon */}
+                        <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Home className="h-6 w-6 text-primary" />
+                        </div>
+                        
+                        {/* Address */}
+                        <div className="min-w-0">
                           <Link 
                             to={`/properties/${propertyId}`}
-                            className="font-semibold hover:underline"
+                            className="text-lg font-semibold text-foreground hover:text-primary transition-colors truncate block"
                           >
                             {property?.address_line || 'Unknown Property'}
                           </Link>
                           {property?.postcode && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              {property.postcode}
-                            </span>
+                            <p className="text-sm text-muted-foreground">{property.postcode}</p>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      
+                      {/* Right side - Badges */}
+                      <div className="flex items-center gap-3 flex-shrink-0">
                         {needsActionCount > 0 && (
-                          <Badge variant="destructive">{needsActionCount} Need Action</Badge>
+                          <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-3 py-1.5">
+                            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                            {needsActionCount} Need Action
+                          </Badge>
                         )}
                         {expiringCount > 0 && (
-                          <Badge className="bg-amber-500 text-white hover:bg-amber-600">{expiringCount} Expiring</Badge>
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 px-3 py-1.5">
+                            {expiringCount} Expiring
+                          </Badge>
                         )}
-                        <Button variant="outline" size="sm" asChild>
+                        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
                           <Link to={`/properties/${propertyId}?tab=compliance`}>
                             View All
+                            <ChevronRight className="h-4 w-4 ml-1" />
                           </Link>
                         </Button>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="divide-y">
-                      {propertyItems.map(item => (
-                        <ComplianceRegisterItem
-                          key={item.id}
-                          id={item.id}
-                          complianceType={item.compliance_type}
-                          expiryDate={item.expiry_date}
-                          status={item.status}
-                          daysUntilExpiry={item.daysUntilExpiry}
-                          isMissing={item.isMissing}
-                          conditionalReason={item.conditionalReason}
-                          alternativeType={item.alternativeType}
-                          onUpload={() => handleUploadClick(item)}
-                        />
-                      ))}
-                    </div>
+                  </div>
+                  
+                  {/* Compliance Items */}
+                  <CardContent className="p-0">
+                    {propertyItems.map(item => (
+                      <ComplianceRegisterItem
+                        key={item.id}
+                        id={item.id}
+                        complianceType={item.compliance_type}
+                        expiryDate={item.expiry_date}
+                        status={item.status}
+                        daysUntilExpiry={item.daysUntilExpiry}
+                        isMissing={item.isMissing}
+                        conditionalReason={item.conditionalReason}
+                        alternativeType={item.alternativeType}
+                        onUpload={() => handleUploadClick(item)}
+                      />
+                    ))}
                   </CardContent>
                 </Card>
               );
