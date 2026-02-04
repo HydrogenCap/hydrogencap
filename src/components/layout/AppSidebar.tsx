@@ -16,6 +16,7 @@ import {
   Construction,
   History,
   CalendarDays,
+  CalendarCheck,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -78,7 +79,7 @@ export function AppSidebar() {
   const complianceAlertCount = expiredCount + expiringCount;
 
   // Check if any compliance route is active
-  const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox';
+  const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox' || location.pathname === '/compliance-calendar';
 
   return (
     <Sidebar>
@@ -165,6 +166,17 @@ export function AppSidebar() {
                                 {pendingCount}
                               </Badge>
                             )}
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          asChild 
+                          isActive={location.pathname === '/compliance-calendar'}
+                        >
+                          <Link to="/compliance-calendar">
+                            <CalendarCheck className="h-3 w-3" />
+                            <span>Calendar</span>
                           </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>

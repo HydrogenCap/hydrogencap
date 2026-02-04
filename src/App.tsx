@@ -29,6 +29,7 @@ import Settings from "./pages/Settings";
 import DashboardMap from "./pages/DashboardMap";
 import Timeline from "./pages/Timeline";
 import RefinanceCalendar from "./pages/RefinanceCalendar";
+import ComplianceCalendar from "./pages/ComplianceCalendar";
 import Compliance from "./pages/Compliance";
 import Reports from "./pages/Reports";
 import Actions from "./pages/Actions";
@@ -247,6 +248,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/compliance-calendar"
+              element={
+                <ProtectedRoute>
+                  <ComplianceCalendar />
                 </ProtectedRoute>
               }
             />
