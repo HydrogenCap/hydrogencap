@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Edit,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Ban
 } from 'lucide-react';
 import { PropertyWithFinancials } from '@/hooks/useProperties';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -40,32 +41,81 @@ interface AffectedProperty {
   missingFields: string[];
 }
 
+interface ExemptedProperty {
+  id: string;
+  address: string;
+  exemptionReason: string;
+}
+
 interface QualityIssue {
   category: string;
   label: string;
   priority: 'high' | 'medium' | 'low';
   completeCount: number;
   totalCount: number;
+  requiredCount: number;
+  exemptedCount: number;
   affectedProperties: AffectedProperty[];
+  exemptedProperties: ExemptedProperty[];
 }
 
 interface QualityAnalysis {
   overallCompleteness: number;
   completeFields: number;
   totalFields: number;
+  requiredFields: number;
+  exemptedFields: number;
   issues: QualityIssue[];
 }
 
 // Field name formatter
 function formatFieldName(field: string): string {
-  return field
+  const formatted = field
     .replace(/([A-Z])/g, ' $1')
     .replace(/_/g, ' ')
     .replace(/^./, str => str.toUpperCase())
     .trim();
+  
+  // Special cases for abbreviations
+  const specialCases: Record<string, string> = {
+    'Epc Rating': 'EPC Rating',
+    'Epc Expiry': 'EPC Expiry',
+    'Hmo License': 'HMO License',
+    'Ltv': 'LTV',
+  };
+  
+  return specialCases[formatted] || formatted;
 }
 
-// Data quality analyzer
+// Check if a field is exempted for a specific property
+function checkFieldExemption(
+  property: PropertyWithFinancials, 
+  fieldKey: string
+): { exempt: boolean; reason: string | null } {
+  // EPC Rating - exempt if Grade Listed building
+  if (fieldKey === 'epcRating') {
+    // Check explicit epc_required flag first
+    if ((property as any).epc_required === false) {
+      return { exempt: true, reason: 'EPC not required' };
+    }
+    // Check if Grade Listed
+    if ((property as any).is_grade_listed === true) {
+      const grade = (property as any).listing_grade || 'Listed';
+      return { exempt: true, reason: `Grade ${grade} Listed Building - legally exempt` };
+    }
+  }
+  
+  // Gas Safety fields - exempt if no gas at property
+  if (fieldKey === 'gasExpiry' || fieldKey === 'gasSafety') {
+    if ((property as any).has_gas === false) {
+      return { exempt: true, reason: 'No gas supply at property' };
+    }
+  }
+  
+  return { exempt: false, reason: null };
+}
+
+// Data quality analyzer with exemption support
 function analyzeDataQuality(
   properties: PropertyWithFinancials[], 
   companyMap: Map<string, string>
@@ -130,27 +180,60 @@ function analyzeDataQuality(
 
   const issues: QualityIssue[] = [];
   let totalFields = 0;
+  let totalRequiredFields = 0;
   let completeFields = 0;
+  let totalExemptedFields = 0;
 
   Object.entries(categories).forEach(([categoryKey, category]) => {
     const affectedProperties: AffectedProperty[] = [];
+    const exemptedProperties: ExemptedProperty[] = [];
     let categoryComplete = 0;
     let categoryTotal = 0;
+    let categoryRequired = 0;
+    let categoryExempted = 0;
 
     properties.forEach(property => {
       const missingFields: string[] = [];
+      let propertyExemptionReason: string | null = null;
       
       category.fields.forEach(field => {
         categoryTotal++;
-        const value = field.path(property);
+        totalFields++;
         
-        if (value === null || value === undefined || value === '' || 
-            (typeof value === 'string' && value.trim() === '')) {
-          missingFields.push(formatFieldName(field.key));
+        // Check for exemption
+        const exemption = checkFieldExemption(property, field.key);
+        
+        if (exemption.exempt) {
+          categoryExempted++;
+          totalExemptedFields++;
+          if (!propertyExemptionReason) {
+            propertyExemptionReason = exemption.reason;
+          }
         } else {
-          categoryComplete++;
+          // Field is required
+          categoryRequired++;
+          totalRequiredFields++;
+          
+          const value = field.path(property);
+          
+          if (value === null || value === undefined || value === '' || 
+              (typeof value === 'string' && value.trim() === '')) {
+            missingFields.push(formatFieldName(field.key));
+          } else {
+            categoryComplete++;
+            completeFields++;
+          }
         }
       });
+
+      // Track exempted properties for this category
+      if (propertyExemptionReason) {
+        exemptedProperties.push({
+          id: property.id,
+          address: property.address_line,
+          exemptionReason: propertyExemptionReason,
+        });
+      }
 
       if (missingFields.length > 0) {
         // Get ownership display name
@@ -172,16 +255,16 @@ function analyzeDataQuality(
       }
     });
 
-    totalFields += categoryTotal;
-    completeFields += categoryComplete;
-
     issues.push({
       category: categoryKey,
       label: category.label,
       priority: category.priority,
       completeCount: categoryComplete,
       totalCount: categoryTotal,
+      requiredCount: categoryRequired,
+      exemptedCount: categoryExempted,
       affectedProperties,
+      exemptedProperties,
     });
   });
 
@@ -197,9 +280,11 @@ function analyzeDataQuality(
   });
 
   return {
-    overallCompleteness: totalFields > 0 ? completeFields / totalFields : 1,
+    overallCompleteness: totalRequiredFields > 0 ? completeFields / totalRequiredFields : 1,
     completeFields,
     totalFields,
+    requiredFields: totalRequiredFields,
+    exemptedFields: totalExemptedFields,
     issues,
   };
 }
@@ -215,8 +300,13 @@ function DataQualityIssueRow({
   onToggle: () => void;
 }) {
   const navigate = useNavigate();
-  const percentage = Math.round((issue.completeCount / issue.totalCount) * 100);
+  // Use requiredCount for percentage (excludes exempt fields)
+  const percentage = issue.requiredCount > 0 
+    ? Math.round((issue.completeCount / issue.requiredCount) * 100) 
+    : 100;
   const hasIssues = issue.affectedProperties.length > 0;
+  const hasExemptions = issue.exemptedCount > 0;
+  const isExpandable = hasIssues || hasExemptions;
   
   const getStatusColor = (pct: number) => {
     if (pct >= 100) return 'text-success';
@@ -237,7 +327,7 @@ function DataQualityIssueRow({
         <CollapsibleTrigger asChild>
           <button
             className="w-full p-3 bg-muted/50 hover:bg-muted transition-colors flex items-center justify-between text-left"
-            disabled={!hasIssues}
+            disabled={!isExpandable}
           >
             <div className="flex items-center gap-3 flex-1">
               {issue.priority === 'high' && hasIssues ? (
@@ -262,18 +352,26 @@ function DataQualityIssueRow({
                     </Badge>
                   )}
                 </div>
-                {hasIssues && (
-                  <span className="text-xs text-muted-foreground">
-                    {issue.affectedProperties.length} {issue.affectedProperties.length === 1 ? 'property needs' : 'properties need'} attention
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {hasIssues && (
+                    <span className="text-xs text-muted-foreground">
+                      {issue.affectedProperties.length} {issue.affectedProperties.length === 1 ? 'property needs' : 'properties need'} attention
+                    </span>
+                  )}
+                  {hasExemptions && (
+                    <span className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                      <Ban className="h-3 w-3" />
+                      {issue.exemptedProperties.length} exempt
+                    </span>
+                  )}
+                </div>
               </div>
               
               <div className="flex items-center gap-3">
                 <span className={`text-sm font-semibold ${getStatusColor(percentage)}`}>
-                  {issue.completeCount}/{issue.totalCount}
+                  {issue.completeCount}/{issue.requiredCount}
                 </span>
-                {hasIssues ? (
+                {isExpandable ? (
                   isExpanded ? (
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   ) : (
@@ -300,7 +398,8 @@ function DataQualityIssueRow({
         {/* Expanded Property List */}
         <CollapsibleContent>
           <div className="border-t border-border bg-background">
-            {issue.affectedProperties.length > 0 ? (
+            {/* Missing Properties */}
+            {issue.affectedProperties.length > 0 && (
               <div className="p-3 space-y-2">
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Properties Missing This Data:
@@ -346,7 +445,41 @@ function DataQualityIssueRow({
                   </p>
                 )}
               </div>
-            ) : (
+            )}
+            
+            {/* Exempt Properties */}
+            {issue.exemptedProperties.length > 0 && (
+              <div className={`p-3 space-y-2 ${issue.affectedProperties.length > 0 ? 'border-t border-border' : ''}`}>
+                <div className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <Ban className="h-3 w-3" />
+                  Marked as Not Required:
+                </div>
+                {issue.exemptedProperties.slice(0, 5).map((property) => (
+                  <div
+                    key={property.id}
+                    className="p-3 border border-border/50 rounded-md bg-muted/30 flex items-center gap-3 opacity-70"
+                  >
+                    <Ban className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground/80 truncate">
+                        {property.address}
+                      </div>
+                      <div className="text-xs text-muted-foreground italic">
+                        {property.exemptionReason}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {issue.exemptedProperties.length > 5 && (
+                  <p className="text-center text-xs text-muted-foreground/60 py-2">
+                    +{issue.exemptedProperties.length - 5} more exempt
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* All Complete State */}
+            {issue.affectedProperties.length === 0 && issue.exemptedProperties.length === 0 && (
               <div className="p-6 text-center">
                 <CheckCircle2 className="h-8 w-8 mx-auto text-success mb-2" />
                 <p className="text-sm text-success font-medium">All properties have this data complete! 🎉</p>
@@ -385,7 +518,7 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
   // Re-analyze when properties change or lastUpdateTime changes
   const qualityAnalysis = useMemo<QualityAnalysis>(() => {
     if (!properties?.length) {
-      return { overallCompleteness: 1, completeFields: 0, totalFields: 0, issues: [] };
+      return { overallCompleteness: 1, completeFields: 0, totalFields: 0, requiredFields: 0, exemptedFields: 0, issues: [] };
     }
     return analyzeDataQuality(properties, companyMap);
   }, [properties, companyMap, lastUpdateTime]);
@@ -442,7 +575,9 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
           <div>
             <CardTitle className="text-lg">Data Quality</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {qualityAnalysis.totalFields} fields across {properties.length} properties
+              {qualityAnalysis.requiredFields} required fields • {qualityAnalysis.exemptedFields > 0 && (
+                <span className="text-muted-foreground/70">{qualityAnalysis.exemptedFields} exempt</span>
+              )}
             </p>
           </div>
         </div>
@@ -467,7 +602,7 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Overall Completeness</span>
-            <span className="font-medium">{completeCategories}/{qualityAnalysis.issues.length} categories complete</span>
+            <span className="font-medium">{qualityAnalysis.completeFields}/{qualityAnalysis.requiredFields} required fields complete</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div 
@@ -475,6 +610,12 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
               style={{ width: `${overallPercentage}%` }}
             />
           </div>
+          {qualityAnalysis.exemptedFields > 0 && (
+            <div className="text-xs text-muted-foreground/70 flex items-center gap-1">
+              <Ban className="h-3 w-3" />
+              {qualityAnalysis.exemptedFields} fields marked as not required/exempt
+            </div>
+          )}
         </div>
 
         {/* Needs Attention Section */}
