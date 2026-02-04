@@ -55,6 +55,49 @@ export function useAllCompliance() {
   });
 }
 
+// Fetch all compliance items with property data joined (fixes N+1 query)
+export function useAllComplianceWithProperties() {
+  return useQuery({
+    queryKey: ['compliance', 'all', 'with-properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('compliance_items')
+        .select(`
+          *,
+          documents:compliance_documents(*),
+          property:properties!inner(
+            id,
+            address_line,
+            postcode,
+            lifecycle_type,
+            is_hmo_licensed,
+            has_gas,
+            is_grade_listed,
+            epc_required,
+            asset_category
+          )
+        `)
+        .order('expiry_date', { ascending: true, nullsFirst: false });
+
+      if (error) throw error;
+      return data as (ComplianceItem & { 
+        documents: ComplianceDocument[];
+        property: {
+          id: string;
+          address_line: string;
+          postcode: string;
+          lifecycle_type: string | null;
+          is_hmo_licensed: boolean | null;
+          has_gas: boolean | null;
+          is_grade_listed: boolean | null;
+          epc_required: boolean | null;
+          asset_category: string | null;
+        };
+      })[];
+    },
+  });
+}
+
 // Create compliance item
 export function useCreateComplianceItem() {
   const queryClient = useQueryClient();
@@ -83,7 +126,7 @@ export function useCreateComplianceItem() {
   });
 }
 
-// Update compliance item
+// Update compliance item with optimistic updates
 export function useUpdateComplianceItem() {
   const queryClient = useQueryClient();
   
@@ -99,8 +142,45 @@ export function useUpdateComplianceItem() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['compliance', data.property_id] });
+    // Optimistic update for instant UI feedback
+    onMutate: async (newItem) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['compliance'] });
+      
+      // Snapshot the previous value for rollback
+      const previousAllItems = queryClient.getQueryData(['compliance', 'all']);
+      const previousAllWithProps = queryClient.getQueryData(['compliance', 'all', 'with-properties']);
+      
+      // Optimistically update 'all' cache
+      queryClient.setQueryData(['compliance', 'all'], (old: ComplianceItem[] | undefined) => 
+        old?.map(item => 
+          item.id === newItem.id ? { ...item, ...newItem } : item
+        )
+      );
+      
+      // Optimistically update 'all with properties' cache
+      queryClient.setQueryData(['compliance', 'all', 'with-properties'], (old: unknown[] | undefined) => 
+        old?.map((item: any) => 
+          item.id === newItem.id ? { ...item, ...newItem } : item
+        )
+      );
+      
+      return { previousAllItems, previousAllWithProps };
+    },
+    onError: (_err, _newItem, context) => {
+      // Rollback on error
+      if (context?.previousAllItems) {
+        queryClient.setQueryData(['compliance', 'all'], context.previousAllItems);
+      }
+      if (context?.previousAllWithProps) {
+        queryClient.setQueryData(['compliance', 'all', 'with-properties'], context.previousAllWithProps);
+      }
+    },
+    onSettled: (data) => {
+      // Always refetch after error or success to ensure consistency
+      if (data?.property_id) {
+        queryClient.invalidateQueries({ queryKey: ['compliance', data.property_id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
     },
   });
