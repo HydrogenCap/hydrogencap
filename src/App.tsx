@@ -37,6 +37,7 @@ import Actions from "./pages/Actions";
 import Chat from "./pages/Chat";
 import Passport from "./pages/Passport";
 import Pipeline from "./pages/Pipeline";
+import SharedDocument from "./pages/SharedDocument";
 import NotFound from "./pages/NotFound";
 
 // Marketing pages
@@ -271,8 +272,10 @@ const App = () => (
             <Route path="/contact" element={<MarketingContact />} />
             <Route path="/demo" element={<MarketingDemo />} />
             
+            {/* Shared document viewer (public) */}
+            <Route path="/shared/:token" element={<SharedDocument />} />
+            
             {/* 404 */}
-            <Route path="*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
               </Routes>
               </BrowserRouter>

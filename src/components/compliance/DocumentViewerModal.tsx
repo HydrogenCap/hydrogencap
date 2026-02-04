@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, ExternalLink, X, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { Download, ExternalLink, X, FileText, Loader2, AlertCircle, Link2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { ShareLinkButton } from '@/components/documents/ShareLinkButton';
 
 interface DocumentViewerModalProps {
   open: boolean;
@@ -180,6 +181,7 @@ export function DocumentViewerModal({
               {title || document.original_file_name}
             </DialogTitle>
             <div className="flex items-center gap-2">
+              <ShareLinkButton complianceDocumentId={document.id} variant="outline" size="sm" />
               <Button variant="outline" size="sm" onClick={handleDownload} disabled={!signedUrl}>
                 <Download className="h-4 w-4 mr-1" />
                 Download

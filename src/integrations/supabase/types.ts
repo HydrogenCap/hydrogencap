@@ -532,6 +532,76 @@ export type Database = {
           },
         ]
       }
+      document_share_links: {
+        Row: {
+          compliance_document_id: string | null
+          created_at: string
+          created_by: string
+          document_id: string | null
+          expires_at: string
+          id: string
+          is_active: boolean
+          last_viewed_at: string | null
+          max_views: number | null
+          org_id: string
+          password_hash: string | null
+          token: string
+          view_count: number
+        }
+        Insert: {
+          compliance_document_id?: string | null
+          created_at?: string
+          created_by: string
+          document_id?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          last_viewed_at?: string | null
+          max_views?: number | null
+          org_id: string
+          password_hash?: string | null
+          token?: string
+          view_count?: number
+        }
+        Update: {
+          compliance_document_id?: string | null
+          created_at?: string
+          created_by?: string
+          document_id?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          last_viewed_at?: string | null
+          max_views?: number | null
+          org_id?: string
+          password_hash?: string | null
+          token?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_share_links_compliance_document_id_fkey"
+            columns: ["compliance_document_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_share_links_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_share_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           ai_doc_type_confidence: number | null
@@ -2284,6 +2354,113 @@ export type Database = {
           },
         ]
       }
+      shareholder_access: {
+        Row: {
+          access_level: string
+          can_view_compliance: boolean
+          can_view_documents: boolean
+          can_view_financials: boolean
+          created_at: string
+          id: string
+          invite_id: string | null
+          last_accessed_at: string | null
+          org_id: string
+          revoked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_level?: string
+          can_view_compliance?: boolean
+          can_view_documents?: boolean
+          can_view_financials?: boolean
+          created_at?: string
+          id?: string
+          invite_id?: string | null
+          last_accessed_at?: string | null
+          org_id: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_level?: string
+          can_view_compliance?: boolean
+          can_view_documents?: boolean
+          can_view_financials?: boolean
+          created_at?: string
+          id?: string
+          invite_id?: string | null
+          last_accessed_at?: string | null
+          org_id?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareholder_access_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "shareholder_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shareholder_access_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shareholder_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          name: string | null
+          org_id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          name?: string | null
+          org_id: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          name?: string | null
+          org_id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareholder_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shareholdings: {
         Row: {
           company_id: string
@@ -2389,6 +2566,10 @@ export type Database = {
     Functions: {
       get_user_org_id: { Args: never; Returns: string }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }
+      user_has_shareholder_access: {
+        Args: { check_org_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "viewer"
