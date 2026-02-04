@@ -45,7 +45,8 @@ import {
   type ViewPreset, 
   type SortDirection 
 } from '@/lib/propertiesTableConfig';
-import { getPropertyMetrics, calculatePropertyRisk, RISK_ORDER, type RiskLevel } from '@/lib/propertyMetrics';
+import { getPropertyMetrics, calculatePropertyRisk, RISK_ORDER, type RiskLevel, type PropertyMetrics } from '@/lib/propertyMetrics';
+import { calculatePortfolioStats } from '@/lib/portfolioStats';
 import { usePropertyPhotos, useLegalOwnerCompanies } from '@/hooks/usePropertiesTableData';
 import { 
   SortableHeader, 
@@ -57,6 +58,8 @@ import {
   CashflowValue,
   MeterDisplay
 } from '@/components/properties/PropertiesTableCells';
+import { PortfolioTotalsRow } from '@/components/properties/PortfolioTotalsRow';
+import { PortfolioMetricsFooter } from '@/components/properties/PortfolioMetricsFooter';
 
 function PropertiesPage() {
   const navigate = useNavigate();
@@ -131,6 +134,21 @@ function PropertiesPage() {
     passports?.forEach(p => map.set(p.property_id, p));
     return map;
   }, [passports]);
+
+  // Create metrics map for quick lookup and portfolio stats
+  const { metricsMap, portfolioStats } = useMemo(() => {
+    if (!properties) return { metricsMap: new Map<string, PropertyMetrics>(), portfolioStats: calculatePortfolioStats([], new Map()) };
+    
+    const map = new Map<string, PropertyMetrics>();
+    properties.forEach(p => {
+      map.set(p.id, getPropertyMetrics(p));
+    });
+    
+    return {
+      metricsMap: map,
+      portfolioStats: calculatePortfolioStats(properties, map),
+    };
+  }, [properties]);
 
   // Helper to get ownership name for sorting
   const getOwnershipNameForSort = useCallback((property: PropertyWithFinancials): string => {
@@ -813,10 +831,20 @@ function PropertiesPage() {
                       </TableRow>
                     );
                   })}
+                  
+                  {/* Portfolio Totals Row */}
+                  {filteredAndSortedProperties.length > 0 && (
+                    <PortfolioTotalsRow stats={portfolioStats} visibleColumns={visibleColumns} />
+                  )}
                 </TableBody>
               </Table>
             </div>
           </Card>
+        )}
+        
+        {/* Portfolio Metrics Footer - shown when we have properties */}
+        {filteredAndSortedProperties.length > 0 && (
+          <PortfolioMetricsFooter stats={portfolioStats} />
         )}
       </div>
     </AppLayout>
