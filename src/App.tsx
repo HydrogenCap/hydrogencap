@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PortalProtectedRoute } from "@/components/portal";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 
 // Pages
@@ -39,6 +40,14 @@ import Passport from "./pages/Passport";
 import Pipeline from "./pages/Pipeline";
 import SharedDocument from "./pages/SharedDocument";
 import NotFound from "./pages/NotFound";
+
+// Portal pages
+import {
+  AcceptInvite,
+  PortalDashboard,
+  PortalProperties,
+  PortalCompliance,
+} from "./pages/portal";
 
 // Marketing pages
 import {
@@ -274,6 +283,33 @@ const App = () => (
             
             {/* Shared document viewer (public) */}
             <Route path="/shared/:token" element={<SharedDocument />} />
+            
+            {/* Portal routes (shareholder access) */}
+            <Route path="/portal/accept/:token" element={<AcceptInvite />} />
+            <Route
+              path="/portal"
+              element={
+                <PortalProtectedRoute>
+                  <PortalDashboard />
+                </PortalProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/properties"
+              element={
+                <PortalProtectedRoute>
+                  <PortalProperties />
+                </PortalProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/compliance"
+              element={
+                <PortalProtectedRoute>
+                  <PortalCompliance />
+                </PortalProtectedRoute>
+              }
+            />
             
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
