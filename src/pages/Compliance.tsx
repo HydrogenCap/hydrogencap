@@ -29,6 +29,7 @@ import {
 } from '@/lib/complianceItemsWithMissing';
 
 type FilterStatus = ComplianceStatus | 'all';
+type ActionableStatus = 'expired' | 'unknown';
 
 export default function Compliance() {
   const { data: items, isLoading } = useAllCompliance();
@@ -81,17 +82,16 @@ export default function Compliance() {
     return calculateComplianceStats(allItemsWithMissing);
   }, [allItemsWithMissing]);
 
-  // Filter items
+  // Filter items - exclude not_required/optional from expired filter
   const filteredItems = useMemo(() => {
     return allItemsWithMissing.filter(item => {
-      // Status filter - "expired" filter shows both expired AND unknown/missing
-      if (statusFilter !== 'all') {
-        if (statusFilter === 'expired') {
-          // Show both expired and unknown (missing) items
-          if (item.status !== 'expired' && item.status !== 'unknown') return false;
-        } else if (statusFilter !== item.status) {
-          return false;
-        }
+      // Never show not_required items in the expired/missing filter
+      if (statusFilter === 'expired') {
+        if (item.status === 'not_required' || item.status === 'optional') return false;
+        // Show both expired and unknown (missing) items
+        if (item.status !== 'expired' && item.status !== 'unknown') return false;
+      } else if (statusFilter !== 'all') {
+        if (statusFilter !== item.status) return false;
       }
       
       // Type filter
@@ -126,10 +126,17 @@ export default function Compliance() {
       groups.set(item.property_id, existing);
     });
     
-    // Sort each group: missing/expired items first, then expiring, then valid
+    // Sort each group: missing/expired items first, then expiring, then valid, then optional/not_required
     groups.forEach((groupItems, propertyId) => {
       groupItems.sort((a, b) => {
-        const statusOrder = { unknown: 0, expired: 1, expiring_soon: 2, valid: 3 };
+        const statusOrder: Record<ComplianceStatus, number> = { 
+          unknown: 0, 
+          expired: 1, 
+          expiring_soon: 2, 
+          valid: 3,
+          optional: 4,
+          not_required: 5,
+        };
         return statusOrder[a.status] - statusOrder[b.status];
       });
     });
@@ -379,6 +386,8 @@ export default function Compliance() {
                           status={item.status}
                           daysUntilExpiry={item.daysUntilExpiry}
                           isMissing={item.isMissing}
+                          conditionalReason={item.conditionalReason}
+                          alternativeType={item.alternativeType}
                           onUpload={() => handleUploadClick(item)}
                         />
                       ))}

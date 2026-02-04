@@ -21,6 +21,8 @@ export function ComplianceStatusBadge({ expiryDate, showLabel = true }: Complian
     expiring_soon: 'Expiring Soon',
     expired: 'Expired',
     unknown: 'Unknown',
+    not_required: 'Not Required',
+    optional: 'Optional',
   };
 
   return (

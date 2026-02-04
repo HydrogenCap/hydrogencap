@@ -1,4 +1,5 @@
 // Generate missing compliance items for properties based on required types
+// Includes conditional logic for mutually exclusive requirements (Fire Alarm vs Smoke Alarm)
 // Missing items are shown as 'unknown' status and count toward the Expired total
 
 import type { ComplianceItem, ComplianceStatus } from './complianceTypes';
@@ -14,6 +15,9 @@ export interface ComplianceItemWithMissing {
   daysUntilExpiry: number | null;
   isMissing: boolean;
   documents?: { id: string; is_current: boolean }[];
+  // Conditional logic fields
+  conditionalReason?: string;
+  alternativeType?: string;
 }
 
 export interface PropertyForCompliance {
@@ -29,6 +33,12 @@ export interface PropertyForCompliance {
   selective_licence_required: boolean | null;
   lifecycle_type: string | null;
 }
+
+// Define conditional pairs: when one exists, the other becomes optional/not_required
+const CONDITIONAL_PAIRS: Record<string, { alternative: string; priority: 'this' | 'alternative' }> = {
+  'Fire Alarm Certificate': { alternative: 'Smoke Alarm Declaration', priority: 'alternative' },
+  'Smoke Alarm Declaration': { alternative: 'Fire Alarm Certificate', priority: 'this' },
+};
 
 /**
  * Calculate status and days until expiry for an item
@@ -57,6 +67,23 @@ function calculateItemStatus(expiryDate: string | null): { status: ComplianceSta
   }
 
   return { status, daysUntilExpiry };
+}
+
+/**
+ * Check if an item has a valid document uploaded (status != unknown)
+ */
+function hasValidRecord(
+  items: Map<string, ComplianceItem & { documents?: { id: string; is_current: boolean }[] }>,
+  propertyId: string,
+  complianceType: string
+): boolean {
+  const key = `${propertyId}::${complianceType}`;
+  const item = items.get(key);
+  if (!item) return false;
+  
+  // Has a document OR has an expiry date
+  const hasDocument = item.documents?.some(d => d.is_current) ?? false;
+  return hasDocument || item.expiry_date !== null;
 }
 
 /**
@@ -96,7 +123,7 @@ function getRequiredTypesForProperty(property: PropertyForCompliance): string[] 
 }
 
 /**
- * Generate all compliance items including missing placeholders
+ * Generate all compliance items including missing placeholders with conditional logic
  */
 export function generateComplianceItemsWithMissing(
   actualItems: (ComplianceItem & { documents?: { id: string; is_current: boolean }[] })[],
@@ -111,45 +138,76 @@ export function generateComplianceItemsWithMissing(
     existingItemsMap.set(key, item);
   });
 
-  // Create a set of property IDs that have actual items
-  const propertyIdsWithItems = new Set(actualItems.map(item => item.property_id));
-
   // Process each property
   properties.forEach(property => {
     const requiredTypes = getRequiredTypesForProperty(property);
+
+    // Check which conditional items exist for this property
+    const hasFireAlarmCert = hasValidRecord(existingItemsMap, property.id, 'Fire Alarm Certificate');
+    const hasSmokeAlarmDecl = hasValidRecord(existingItemsMap, property.id, 'Smoke Alarm Declaration');
 
     requiredTypes.forEach(complianceType => {
       const key = `${property.id}::${complianceType}`;
       const existingItem = existingItemsMap.get(key);
 
+      let conditionalStatus: ComplianceStatus | null = null;
+      let conditionalReason: string | undefined;
+      let alternativeType: string | undefined;
+
+      // Apply conditional logic for Fire Alarm Certificate / Smoke Alarm Declaration
+      if (complianceType === 'Smoke Alarm Declaration') {
+        if (hasFireAlarmCert) {
+          // Fire Alarm Certificate exists - Smoke Alarm Declaration is not required
+          conditionalStatus = 'not_required';
+          conditionalReason = 'Fire Alarm Certificate uploaded';
+          alternativeType = 'Fire Alarm Certificate';
+        }
+      } else if (complianceType === 'Fire Alarm Certificate') {
+        if (hasSmokeAlarmDecl && !hasFireAlarmCert) {
+          // Smoke Alarm Declaration exists - Fire Alarm Certificate is optional
+          conditionalStatus = 'optional';
+          conditionalReason = 'Alternative to Smoke Alarm Declaration';
+          alternativeType = 'Smoke Alarm Declaration';
+        }
+      }
+
       if (existingItem) {
         // Use actual item
         const { status, daysUntilExpiry } = calculateItemStatus(existingItem.expiry_date);
+        
+        // Override status if conditional logic applies (only for items without valid docs)
+        const finalStatus = conditionalStatus && status === 'unknown' ? conditionalStatus : status;
+        
         result.push({
           id: existingItem.id,
           property_id: existingItem.property_id,
           compliance_type: existingItem.compliance_type,
           issue_date: existingItem.issue_date,
           expiry_date: existingItem.expiry_date,
-          status,
+          status: finalStatus,
           daysUntilExpiry,
           isMissing: false,
           documents: existingItem.documents,
+          conditionalReason,
+          alternativeType,
         });
         // Remove from map so we don't double-count
         existingItemsMap.delete(key);
       } else {
         // Create missing placeholder
+        // If conditional status applies, use it; otherwise use 'unknown'
         result.push({
           id: `missing-${property.id}-${complianceType.replace(/\s+/g, '-')}`,
           property_id: property.id,
           compliance_type: complianceType,
           issue_date: null,
           expiry_date: null,
-          status: 'unknown',
+          status: conditionalStatus || 'unknown',
           daysUntilExpiry: null,
           isMissing: true,
           documents: [],
+          conditionalReason,
+          alternativeType,
         });
       }
     });
@@ -176,11 +234,17 @@ export function generateComplianceItemsWithMissing(
 }
 
 /**
- * Calculate summary stats including missing items in expired count
+ * Calculate summary stats - excludes 'not_required' and 'optional' from expired count
  */
 export function calculateComplianceStats(items: ComplianceItemWithMissing[]) {
   return items.reduce(
     (acc, item) => {
+      // Don't count not_required or optional in totals
+      if (item.status === 'not_required' || item.status === 'optional') {
+        acc.notRequired++;
+        return acc;
+      }
+      
       acc.total++;
       if (item.status === 'valid') acc.valid++;
       else if (item.status === 'expiring_soon') acc.expiring++;
@@ -190,6 +254,6 @@ export function calculateComplianceStats(items: ComplianceItemWithMissing[]) {
       }
       return acc;
     },
-    { valid: 0, expiring: 0, expired: 0, total: 0 }
+    { valid: 0, expiring: 0, expired: 0, total: 0, notRequired: 0 }
   );
 }

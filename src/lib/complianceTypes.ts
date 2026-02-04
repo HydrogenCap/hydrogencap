@@ -21,7 +21,7 @@ export const COMPLIANCE_TYPES = [
 
 export type ComplianceType = typeof COMPLIANCE_TYPES[number];
 
-export type ComplianceStatus = 'valid' | 'expiring_soon' | 'expired' | 'unknown';
+export type ComplianceStatus = 'valid' | 'expiring_soon' | 'expired' | 'unknown' | 'not_required' | 'optional';
 
 export type ResponsibleParty = 'Agent' | 'Contractor' | 'Owner';
 
@@ -119,6 +119,9 @@ export function getComplianceStatusColor(status: ComplianceStatus): string {
       return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
     case 'valid':
       return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    case 'not_required':
+    case 'optional':
+      return 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
     case 'unknown':
     default:
       return 'bg-muted text-muted-foreground';
