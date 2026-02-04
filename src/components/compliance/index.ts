@@ -7,4 +7,5 @@ export { PropertyFeaturesEditor } from './PropertyFeaturesEditor';
 export { DocumentViewerModal } from './DocumentViewerModal';
 export { ComplianceStatusCard } from './ComplianceStatusCard';
 export { ComplianceItemDrawer } from './ComplianceItemDrawer';
+export { AIComplianceChecker } from './AIComplianceChecker';
 export type { StatusType } from './ComplianceStatusCard';

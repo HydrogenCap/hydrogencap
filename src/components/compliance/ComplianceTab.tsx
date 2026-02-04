@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { AlertTriangle, Filter, Shield, Settings2, Construction } from 'lucide-react';
+import { AlertTriangle, Filter, Shield, Settings2, Construction, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Select,
   SelectContent,
@@ -16,6 +17,7 @@ import { ComplianceItemRow } from './ComplianceItemRow';
 import { AddComplianceItemDialog } from './AddComplianceItemDialog';
 import { ComplianceChecklist } from './ComplianceChecklist';
 import { PropertyFeaturesEditor } from './PropertyFeaturesEditor';
+import { AIComplianceChecker } from './AIComplianceChecker';
 import { usePropertyCompliance } from '@/hooks/useCompliance';
 import { usePropertyWithFeatures } from '@/hooks/useComplianceRequirements';
 import { 
@@ -37,6 +39,7 @@ export function ComplianceTab({ propertyId, propertyAddress, lifecycleType = 'co
   const [viewMode, setViewMode] = useState<'checklist' | 'items'>('checklist');
   const [statusFilter, setStatusFilter] = useState<ComplianceStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [showAIChecker, setShowAIChecker] = useState(false);
   
   // Check if property is in development mode
   const isDevelopment = lifecycleType === 'development';
@@ -129,6 +132,24 @@ export function ComplianceTab({ propertyId, propertyAddress, lifecycleType = 'co
           </AlertDescription>
         </Alert>
       )}
+
+      {/* AI Compliance Checker */}
+      <Collapsible open={showAIChecker} onOpenChange={setShowAIChecker}>
+        <CollapsibleTrigger asChild>
+          <Button variant="outline" className="w-full justify-between">
+            <span className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Compliance Checker
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {showAIChecker ? 'Hide' : 'Show'} AI Analysis
+            </span>
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-4">
+          <AIComplianceChecker propertyId={propertyId} />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Property features configuration */}
       <div className="flex items-center justify-between">
