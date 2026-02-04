@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin } from 'lucide-react';
+import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield } from 'lucide-react';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
 import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
+import { ShareholderManagement } from '@/components/settings/ShareholderManagement';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
@@ -268,6 +269,10 @@ export default function Settings() {
             <TabsTrigger value="locations" className="gap-2">
               <MapPin className="h-4 w-4" />
               Locations
+            </TabsTrigger>
+            <TabsTrigger value="shareholders" className="gap-2">
+              <Shield className="h-4 w-4" />
+              Shareholders
             </TabsTrigger>
           </TabsList>
 
@@ -652,6 +657,11 @@ export default function Settings() {
           {/* Locations Tab */}
           <TabsContent value="locations" className="space-y-6">
             <LocationSettingsTab />
+          </TabsContent>
+
+          {/* Shareholders Tab */}
+          <TabsContent value="shareholders" className="space-y-6">
+            <ShareholderManagement />
           </TabsContent>
         </Tabs>
       </div>
