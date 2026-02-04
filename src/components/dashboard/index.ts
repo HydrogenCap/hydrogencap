@@ -8,6 +8,7 @@ export { MetricDetailsSheet } from './MetricDetailsSheet';
 export { MissingComplianceWidget } from './MissingComplianceWidget';
 export { PortfolioHealthWidget } from './PortfolioHealthWidget';
 export { StockConditionSection } from './StockConditionSection';
+export { ThisMonthWidget } from './ThisMonthWidget';
 
 // New shared dashboard UI components (matching Demo styling)
 export { KpiCard } from './KpiCard';

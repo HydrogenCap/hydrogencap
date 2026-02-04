@@ -8,7 +8,9 @@ export type SortDirection = 'asc' | 'desc';
 
 // All available columns with their labels
 export const ALL_COLUMNS = [
+  { key: 'select', label: 'Select' },
   { key: 'photo', label: 'Photo' },
+  { key: 'lifecycle', label: 'Status' },
   { key: 'address', label: 'Property Address' },
   { key: 'area', label: 'Area' },
   { key: 'ownership', label: 'Ownership' },
@@ -55,7 +57,7 @@ export const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKe
   default: {
     label: 'Default (Sheet View)',
     columns: [
-      'photo', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
+      'select', 'photo', 'lifecycle', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
       'purchaseDate', 'lender', 'interestRate', 'fixedOrVariable', 'mortgageType', 'capitalOrInterest',
       'fixedRateExpires', 'insuranceExpire', 'mortgageBalance', 'mortgagePayment', 'rentalIncome',
       'billsManagement', 'netRent', 'yield', 'ltv', 'equity'
@@ -66,7 +68,7 @@ export const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKe
   finance: {
     label: 'Finance View',
     columns: [
-      'photo', 'address', 'area', 'ownership', 'beds', 'value', 'mortgageBalance', 'mortgagePayment',
+      'select', 'photo', 'lifecycle', 'address', 'area', 'ownership', 'beds', 'value', 'mortgageBalance', 'mortgagePayment',
       'interestRate', 'fixedOrVariable', 'mortgageType', 'capitalOrInterest', 'rentalIncome',
       'billsManagement', 'netRent', 'yield', 'ltv', 'equity'
     ],
@@ -76,7 +78,7 @@ export const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKe
   risk: {
     label: 'Risk View',
     columns: [
-      'photo', 'address', 'area', 'lender', 'ltv', 'fixedRateExpires', 'insuranceExpire',
+      'select', 'photo', 'lifecycle', 'address', 'area', 'lender', 'ltv', 'fixedRateExpires', 'insuranceExpire',
       'epc', 'monthlyCashflow', 'netRent', 'riskStatus'
     ],
     defaultSort: 'riskStatus',
@@ -85,7 +87,7 @@ export const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKe
   ops: {
     label: 'Ops View',
     columns: [
-      'photo', 'address', 'area', 'keysafeCode', 'waterStopTap', 'electricMeter', 'gasMeter',
+      'select', 'photo', 'lifecycle', 'address', 'area', 'keysafeCode', 'waterStopTap', 'electricMeter', 'gasMeter',
       'waterMeter', 'constructionDateBand', 'hmoLicenceNumber', 'hmoLicenceExpiry', 'managementCompany'
     ],
     defaultSort: 'address',
@@ -95,7 +97,7 @@ export const VIEW_PRESETS: Record<ViewPreset, { label: string; columns: ColumnKe
 
 // Default visible columns for the default view
 export const DEFAULT_VISIBLE_COLUMNS = new Set<ColumnKey>([
-  'photo', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
+  'select', 'photo', 'lifecycle', 'address', 'area', 'ownership', 'propertyType', 'beds', 'value', 'purchasePrice',
   'lender', 'interestRate', 'fixedRateExpires', 'mortgageBalance', 'mortgagePayment',
   'rentalIncome', 'netRent', 'yield', 'ltv', 'equity', 'actions'
 ]);

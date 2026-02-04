@@ -13,6 +13,7 @@ import {
   MessageSquare,
   AlertCircle,
   ClipboardList,
+  Construction,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,6 +41,7 @@ import logoImage from '@/assets/logo.png';
 const mainNavItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Portfolio', icon: Building2, href: '/properties' },
+  { title: 'Pipeline', icon: Construction, href: '/pipeline' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
