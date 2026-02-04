@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, differenceInDays } from 'date-fns';
-import { CalendarCheck, ChevronLeft, ChevronRight, AlertTriangle, FileCheck, Flame, Zap, Home, Shield, Building2 } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, AlertTriangle, FileCheck, Flame, Zap, Home, Shield, Building2, CheckCircle2, List } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,6 +13,9 @@ import { cn } from '@/lib/utils';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { useProperties } from '@/hooks/useProperties';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
+import { ComplianceStatusCard, type StatusType } from '@/components/compliance/ComplianceStatusCard';
+import { ComplianceItemDrawer } from '@/components/compliance/ComplianceItemDrawer';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ComplianceEvent {
   id: string;
@@ -23,6 +26,7 @@ interface ComplianceEvent {
   typeLabel: string;
   daysUntil: number;
   status: 'valid' | 'expiring_soon' | 'expired' | 'missing';
+  issueDate?: string | null;
 }
 
 const COMPLIANCE_ICONS: Record<string, React.ElementType> = {
@@ -51,6 +55,9 @@ export default function ComplianceCalendar() {
   const { data: complianceItems, isLoading: complianceLoading } = useAllCompliance();
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedStatus, setSelectedStatus] = useState<StatusType | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const isLoading = complianceLoading || propertiesLoading;
 
@@ -90,6 +97,7 @@ export default function ComplianceCalendar() {
         typeLabel: COMPLIANCE_LABELS[item.compliance_type] || item.compliance_type,
         daysUntil,
         status,
+        issueDate: item.issue_date,
       });
     });
 
@@ -122,20 +130,44 @@ export default function ComplianceCalendar() {
     return complianceEvents.filter(e => e.date >= new Date() && e.date <= cutoff);
   }, [complianceEvents]);
 
-  // Stats
+  // Stats for status cards
   const stats = useMemo(() => {
     const expired = complianceEvents.filter(e => e.status === 'expired');
     const within30 = complianceEvents.filter(e => e.daysUntil >= 0 && e.daysUntil <= 30);
     const within90 = complianceEvents.filter(e => e.daysUntil > 30 && e.daysUntil <= 90);
-    
-    // Group by type
-    const byType = new Map<string, number>();
-    complianceEvents.filter(e => e.status === 'expired' || e.daysUntil <= 30).forEach(e => {
-      byType.set(e.type, (byType.get(e.type) || 0) + 1);
-    });
+    const valid = complianceEvents.filter(e => e.daysUntil > 90);
 
-    return { expired, within30, within90, byType };
+    return { expired, within30, within90, valid, all: complianceEvents };
   }, [complianceEvents]);
+
+  // Filter items based on selected status
+  const filteredItems = useMemo(() => {
+    if (!selectedStatus) return [];
+
+    switch (selectedStatus) {
+      case 'expired':
+        return stats.expired;
+      case 'expiring_soon':
+        return stats.within30;
+      case 'within_90':
+        return stats.within90;
+      case 'valid':
+        return stats.valid;
+      case 'all':
+        return stats.all;
+      default:
+        return [];
+    }
+  }, [selectedStatus, stats]);
+
+  const handleStatusClick = useCallback((status: StatusType) => {
+    setSelectedStatus(status);
+    setDrawerOpen(true);
+  }, []);
+
+  const handleItemUpdated = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+  }, [queryClient]);
 
   const navigateMonth = (delta: number) => {
     setCurrentMonth(prev => addMonths(prev, delta));
@@ -157,6 +189,11 @@ export default function ComplianceCalendar() {
       <AppLayout>
         <div className="space-y-6">
           <Skeleton className="h-8 w-64" />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-3">
               <Skeleton className="h-[500px]" />
@@ -178,53 +215,52 @@ export default function ComplianceCalendar() {
             <h1 className="text-2xl font-bold text-foreground">Compliance Calendar</h1>
           </div>
           <p className="text-muted-foreground mt-1">
-            Track certificate expiry dates across your portfolio
+            Track certificate expiry dates across your portfolio. Click any status card to view and update items.
           </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className={cn(stats.expired.length > 0 && 'border-destructive')}>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className={cn('h-4 w-4', stats.expired.length > 0 ? 'text-destructive' : 'text-muted-foreground')} />
-                <span className="text-sm text-muted-foreground">Expired</span>
-              </div>
-              <p className={cn('text-2xl font-bold mt-1', stats.expired.length > 0 && 'text-destructive')}>
-                {stats.expired.length}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className={cn(stats.within30.length > 0 && 'border-amber-500')}>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4 text-amber-500" />
-                <span className="text-sm text-muted-foreground">Within 30 Days</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{stats.within30.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm text-muted-foreground">Within 90 Days</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{stats.within90.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Total Tracked</span>
-              </div>
-              <p className="text-2xl font-bold mt-1">{complianceEvents.length}</p>
-            </CardContent>
-          </Card>
+        {/* Interactive Status Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <ComplianceStatusCard
+            label="Expired"
+            count={stats.expired.length}
+            icon={AlertTriangle}
+            status="expired"
+            isActive={selectedStatus === 'expired'}
+            onClick={() => handleStatusClick('expired')}
+          />
+          <ComplianceStatusCard
+            label="Within 30 Days"
+            count={stats.within30.length}
+            icon={FileCheck}
+            status="expiring_soon"
+            isActive={selectedStatus === 'expiring_soon'}
+            onClick={() => handleStatusClick('expiring_soon')}
+          />
+          <ComplianceStatusCard
+            label="Within 90 Days"
+            count={stats.within90.length}
+            icon={FileCheck}
+            status="within_90"
+            isActive={selectedStatus === 'within_90'}
+            onClick={() => handleStatusClick('within_90')}
+          />
+          <ComplianceStatusCard
+            label="Valid"
+            count={stats.valid.length}
+            icon={CheckCircle2}
+            status="valid"
+            isActive={selectedStatus === 'valid'}
+            onClick={() => handleStatusClick('valid')}
+          />
+          <ComplianceStatusCard
+            label="All Items"
+            count={stats.all.length}
+            icon={List}
+            status="all"
+            isActive={selectedStatus === 'all'}
+            onClick={() => handleStatusClick('all')}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -355,7 +391,7 @@ export default function ComplianceCalendar() {
                               <div className={cn(
                                 'p-1.5 rounded',
                                 event.status === 'expired' ? 'bg-destructive/10 text-destructive' :
-                                event.daysUntil <= 30 ? 'bg-amber-500/10 text-amber-500' :
+                                event.daysUntil <= 30 ? 'bg-amber-500/10 text-amber-600' :
                                 'bg-muted'
                               )}>
                                 <Icon className="h-3 w-3" />
@@ -410,6 +446,15 @@ export default function ComplianceCalendar() {
           </div>
         </div>
       </div>
+
+      {/* Compliance Items Drawer */}
+      <ComplianceItemDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        selectedStatus={selectedStatus}
+        items={filteredItems}
+        onItemUpdated={handleItemUpdated}
+      />
     </AppLayout>
   );
 }

@@ -5,3 +5,6 @@ export { AddComplianceItemDialog } from './AddComplianceItemDialog';
 export { ComplianceChecklist } from './ComplianceChecklist';
 export { PropertyFeaturesEditor } from './PropertyFeaturesEditor';
 export { DocumentViewerModal } from './DocumentViewerModal';
+export { ComplianceStatusCard } from './ComplianceStatusCard';
+export { ComplianceItemDrawer } from './ComplianceItemDrawer';
+export type { StatusType } from './ComplianceStatusCard';
