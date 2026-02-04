@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -17,10 +18,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, X, Percent, Calendar, Building2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronDown, X, Percent, Calendar, Building2, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { useBulkLoanUpdate, useBulkPropertyUpdate } from '@/hooks/useBulkPropertyUpdate';
+import { useCompanies } from '@/hooks/useCompanies';
 
 interface BulkActionsProps {
   selectedIds: Set<string>;
@@ -28,52 +30,71 @@ interface BulkActionsProps {
 }
 
 export function BulkActions({ selectedIds, onClearSelection }: BulkActionsProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [showRateDialog, setShowRateDialog] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogTab, setDialogTab] = useState<'mortgage' | 'property'>('mortgage');
+  
+  // Mortgage fields
   const [newRate, setNewRate] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [fixedRateExpires, setFixedRateExpires] = useState('');
+  const [lender, setLender] = useState('');
+  
+  // Property fields
+  const [lifecycleType, setLifecycleType] = useState('');
+  const [legalOwnerCompanyId, setLegalOwnerCompanyId] = useState('');
+
+  const bulkLoanUpdate = useBulkLoanUpdate();
+  const bulkPropertyUpdate = useBulkPropertyUpdate();
+  const { data: companies } = useCompanies();
 
   const count = selectedIds.size;
   if (count === 0) return null;
 
-  const handleUpdateRates = async () => {
-    if (!newRate || isNaN(parseFloat(newRate))) {
-      toast({ title: 'Invalid rate', description: 'Please enter a valid interest rate.', variant: 'destructive' });
-      return;
-    }
+  const isUpdating = bulkLoanUpdate.isPending || bulkPropertyUpdate.isPending;
 
-    setIsUpdating(true);
-    try {
-      // Get property IDs and update their loans
-      const propertyIds = Array.from(selectedIds);
-      
-      const { error } = await supabase
-        .from('loans')
-        .update({ interest_rate_percent: parseFloat(newRate) })
-        .in('property_id', propertyIds);
-
-      if (error) throw error;
-
-      toast({ 
-        title: 'Rates updated', 
-        description: `Updated interest rate to ${newRate}% for ${count} properties.` 
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-      setShowRateDialog(false);
-      setNewRate('');
-      onClearSelection();
-    } catch (error) {
-      toast({ 
-        title: 'Error', 
-        description: 'Failed to update rates. Please try again.', 
-        variant: 'destructive' 
-      });
-    } finally {
-      setIsUpdating(false);
-    }
+  const resetForm = () => {
+    setNewRate('');
+    setFixedRateExpires('');
+    setLender('');
+    setLifecycleType('');
+    setLegalOwnerCompanyId('');
   };
+
+  const handleOpenDialog = (tab: 'mortgage' | 'property') => {
+    setDialogTab(tab);
+    setShowDialog(true);
+  };
+
+  const handleMortgageUpdate = async () => {
+    const propertyIds = Array.from(selectedIds);
+    
+    await bulkLoanUpdate.mutateAsync({
+      propertyIds,
+      interestRate: newRate ? parseFloat(newRate) : undefined,
+      fixedRateExpires: fixedRateExpires || undefined,
+      lender: lender || undefined,
+    });
+
+    setShowDialog(false);
+    resetForm();
+    onClearSelection();
+  };
+
+  const handlePropertyUpdate = async () => {
+    const propertyIds = Array.from(selectedIds);
+    
+    await bulkPropertyUpdate.mutateAsync({
+      propertyIds,
+      lifecycleType: lifecycleType as 'development' | 'core_rental' || undefined,
+      legalOwnerCompanyId: legalOwnerCompanyId || undefined,
+    });
+
+    setShowDialog(false);
+    resetForm();
+    onClearSelection();
+  };
+
+  const canSubmitMortgage = newRate || fixedRateExpires || lender;
+  const canSubmitProperty = lifecycleType || legalOwnerCompanyId;
 
   return (
     <>
@@ -91,14 +112,14 @@ export function BulkActions({ selectedIds, onClearSelection }: BulkActionsProps)
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => setShowRateDialog(true)}>
+            <DropdownMenuItem onClick={() => handleOpenDialog('mortgage')}>
               <Percent className="h-4 w-4 mr-2" />
-              Update Interest Rate
+              Update Mortgage Details
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <Calendar className="h-4 w-4 mr-2" />
-              Set Rate Expiry Date
+            <DropdownMenuItem onClick={() => handleOpenDialog('property')}>
+              <ArrowRightLeft className="h-4 w-4 mr-2" />
+              Update Property Details
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -114,37 +135,124 @@ export function BulkActions({ selectedIds, onClearSelection }: BulkActionsProps)
         </Button>
       </div>
 
-      <Dialog open={showRateDialog} onOpenChange={setShowRateDialog}>
-        <DialogContent>
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Update Interest Rate</DialogTitle>
+            <DialogTitle>Bulk Update {count} Properties</DialogTitle>
             <DialogDescription>
-              Set a new interest rate for {count} selected properties.
+              Update multiple properties at once. Only filled fields will be updated.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="rate">New Interest Rate (%)</Label>
-              <Input
-                id="rate"
-                type="number"
-                step="0.01"
-                min="0"
-                max="20"
-                placeholder="e.g. 5.25"
-                value={newRate}
-                onChange={(e) => setNewRate(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRateDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateRates} disabled={isUpdating}>
-              {isUpdating ? 'Updating...' : 'Update Rates'}
-            </Button>
-          </DialogFooter>
+
+          <Tabs value={dialogTab} onValueChange={(v) => setDialogTab(v as 'mortgage' | 'property')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="mortgage">
+                <Percent className="h-4 w-4 mr-2" />
+                Mortgage
+              </TabsTrigger>
+              <TabsTrigger value="property">
+                <Building2 className="h-4 w-4 mr-2" />
+                Property
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="mortgage" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="rate">New Interest Rate (%)</Label>
+                <Input
+                  id="rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="20"
+                  placeholder="e.g. 5.25"
+                  value={newRate}
+                  onChange={(e) => setNewRate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Fixed Rate Expiry Date</Label>
+                <Input
+                  id="expiry"
+                  type="date"
+                  value={fixedRateExpires}
+                  onChange={(e) => setFixedRateExpires(e.target.value)}
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lender">Lender</Label>
+                <Input
+                  id="lender"
+                  placeholder="e.g. Barclays, NatWest"
+                  value={lender}
+                  onChange={(e) => setLender(e.target.value)}
+                />
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => setShowDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleMortgageUpdate} 
+                  disabled={isUpdating || !canSubmitMortgage}
+                >
+                  {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Update Mortgages
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="property" className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Lifecycle Status</Label>
+                <Select value={lifecycleType} onValueChange={setLifecycleType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select lifecycle..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="development">Development</SelectItem>
+                    <SelectItem value="core_rental">Core Rental</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Changing to Core Rental will set the operational date to today.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Legal Owner (Company)</Label>
+                <Select value={legalOwnerCompanyId} onValueChange={setLegalOwnerCompanyId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies?.map(c => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.legal_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button variant="outline" onClick={() => setShowDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePropertyUpdate} 
+                  disabled={isUpdating || !canSubmitProperty}
+                >
+                  {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Update Properties
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
