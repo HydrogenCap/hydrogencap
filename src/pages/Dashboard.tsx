@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
@@ -616,41 +617,47 @@ function DashboardPage() {
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* This Month Summary */}
-          <ThisMonthWidget />
+          <ErrorBoundary>
+            <ThisMonthWidget />
+          </ErrorBoundary>
 
           {/* Portfolio Health - uses core rental only */}
           {coreRentalProperties && coreRentalProperties.length > 0 && (
-            <PortfolioHealthWidget 
-              properties={coreRentalProperties} 
-              onClick={() => handleMetricClick('health')}
-            />
+            <ErrorBoundary>
+              <PortfolioHealthWidget 
+                properties={coreRentalProperties} 
+                onClick={() => handleMetricClick('health')}
+              />
+            </ErrorBoundary>
           )}
 
           {/* Risks Panel - Using new SectionCard and RiskRadar */}
-          <SectionCard
-            title="Portfolio Risks"
-            icon={AlertTriangle}
-            iconClassName="text-warning"
-            onClick={() => navigate('/actions')}
-            showArrow
-            headerAction={
-              risks.length > 0 && (
-                <Badge variant="destructive">{risks.length}</Badge>
-              )
-            }
-            className={coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}
-          >
-            <RiskRadar
-              items={risks.map(risk => ({
-                id: risk.id,
-                title: risk.address,
-                subtitle: risk.message,
-                severity: risk.severity === 'critical' ? 'critical' : 'warning',
-              }))}
-              maxItems={8}
-              emptyMessage="No risks detected"
-            />
-          </SectionCard>
+          <ErrorBoundary>
+            <SectionCard
+              title="Portfolio Risks"
+              icon={AlertTriangle}
+              iconClassName="text-warning"
+              onClick={() => navigate('/actions')}
+              showArrow
+              headerAction={
+                risks.length > 0 && (
+                  <Badge variant="destructive">{risks.length}</Badge>
+                )
+              }
+              className={coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}
+            >
+              <RiskRadar
+                items={risks.map(risk => ({
+                  id: risk.id,
+                  title: risk.address,
+                  subtitle: risk.message,
+                  severity: risk.severity === 'critical' ? 'critical' : 'warning',
+                }))}
+                maxItems={8}
+                emptyMessage="No risks detected"
+              />
+            </SectionCard>
+          </ErrorBoundary>
           
           {/* Property Map - Using new SectionCard */}
           <SectionCard
@@ -728,27 +735,39 @@ function DashboardPage() {
           </SectionCard>
 
           {/* Area Exposure - filtered properties for geographic distribution */}
-          {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
+          <ErrorBoundary>
+            {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
+          </ErrorBoundary>
         </div>
 
         {/* Data Quality Row - all properties */}
-        {filteredProperties && filteredProperties.length > 0 && (
-          <DataQualityWidget properties={filteredProperties} />
-        )}
+        <ErrorBoundary>
+          {filteredProperties && filteredProperties.length > 0 && (
+            <DataQualityWidget properties={filteredProperties} />
+          )}
+        </ErrorBoundary>
 
         {/* Beneficial Owner Details - core rental only */}
-        {coreRentalProperties && coreRentalProperties.length > 0 && (
-          <BeneficialOwnerWidget properties={coreRentalProperties} />
-        )}
+        <ErrorBoundary>
+          {coreRentalProperties && coreRentalProperties.length > 0 && (
+            <BeneficialOwnerWidget properties={coreRentalProperties} />
+          )}
+        </ErrorBoundary>
 
         {/* Stock Condition Section */}
-        <StockConditionSection />
+        <ErrorBoundary>
+          <StockConditionSection />
+        </ErrorBoundary>
 
         {/* Compliance Overview */}
-        <MissingComplianceWidget />
+        <ErrorBoundary>
+          <MissingComplianceWidget />
+        </ErrorBoundary>
 
         {/* Recent Activity */}
-        <RecentActivityWidget />
+        <ErrorBoundary>
+          <RecentActivityWidget />
+        </ErrorBoundary>
           </TabsContent>
 
           {/* Shareholders Tab */}
