@@ -6,6 +6,7 @@ export const COMPLIANCE_TYPES = [
   'Fire Alarm Certificate',
   'Emergency Lighting Certificate',
   'Fire Risk Assessment (FRA)',
+  'Fire Suppression System Certificate',
   'PAT Testing',
   'Legionella Risk Assessment',
   'EPC',
