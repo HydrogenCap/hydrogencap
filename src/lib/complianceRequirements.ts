@@ -171,15 +171,6 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     reasonRequired: 'Buildings insurance mandatory for all properties',
     reasonNotRequired: 'Not applicable',
   },
-  'Public Liability Insurance': {
-    category: 'Insurance',
-    defaultRequired: false,
-    validityYears: 1,
-    condition: (p: PropertyComplianceFeatures) => 
-      p.asset_category?.includes('HMO') === true || p.is_hmo_licensed === true,
-    reasonRequired: 'Public liability insurance recommended for HMO properties',
-    reasonNotRequired: 'Optional for single let properties',
-  },
 } as const;
 
 export type ComplianceTypeName = keyof typeof COMPLIANCE_REQUIREMENT_DEFINITIONS;
