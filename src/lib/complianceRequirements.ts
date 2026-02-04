@@ -104,11 +104,11 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
   },
   'Legionella Risk Assessment': {
     category: 'Safety & Legal',
-    defaultRequired: true,
+    defaultRequired: false,
     validityYears: 2,
-    condition: () => true,
-    reasonRequired: 'Recommended for all rental properties',
-    reasonNotRequired: 'Not applicable',
+    condition: () => false, // Optional - not legally required for most residential properties
+    reasonRequired: 'Complex water system or high-risk environment',
+    reasonNotRequired: 'Optional - not required by law for most residential properties',
   },
   'PAT Testing': {
     category: 'Safety & Legal',
