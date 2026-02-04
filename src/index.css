@@ -3,68 +3,125 @@
 @tailwind utilities;
 
 /* 
-  Portfolio Dashboard Design System
-  Dark professional fintech-inspired theme with teal/blue accents
-  All colors in HSL format
+  HydrogenCap Professional Theme System
+  Light/Dark mode with professional financial platform aesthetics
+  All colors in HSL format for Tailwind compatibility
 */
 
 @layer base {
-  :root {
-    /* Base dark theme - no light mode for this app */
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+  /* Light Mode - Professional clean white */
+  :root,
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Teal/cyan primary for trust & professionalism */
-    --primary: 174 72% 45%;
-    --primary-foreground: 222 47% 6%;
+    /* Professional teal primary - trust & stability */
+    --primary: 193 90% 34%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 30% 15%;
-    --secondary-foreground: 210 40% 90%;
+    --secondary: 210 17% 96%;
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 220 25% 12%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 210 17% 96%;
+    --muted-foreground: 210 7% 46%;
 
-    --accent: 220 35% 18%;
-    --accent-foreground: 210 40% 95%;
+    --accent: 210 17% 93%;
+    --accent-foreground: 0 0% 10%;
 
-    /* Semantic colors for risk status */
-    --success: 142 70% 45%;
-    --success-foreground: 142 70% 95%;
+    /* Semantic colors */
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 10%;
+    --warning-foreground: 0 0% 10%;
     
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 25% 16%;
-    --input: 220 25% 14%;
-    --ring: 174 72% 45%;
+    --border: 210 14% 91%;
+    --input: 210 14% 89%;
+    --ring: 193 90% 34%;
 
     --radius: 0.5rem;
 
-    /* Sidebar - slightly lighter dark */
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 210 30% 75%;
-    --sidebar-primary: 174 72% 45%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 220 35% 12%;
-    --sidebar-accent-foreground: 210 40% 95%;
-    --sidebar-border: 220 25% 14%;
-    --sidebar-ring: 174 72% 45%;
+    /* Sidebar - subtle gray */
+    --sidebar-background: 210 17% 98%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 193 90% 34%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 17% 93%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 210 14% 91%;
+    --sidebar-ring: 193 90% 34%;
 
-    /* Chart colors */
-    --chart-1: 174 72% 45%;
-    --chart-2: 190 80% 50%;
-    --chart-3: 200 85% 55%;
-    --chart-4: 280 70% 55%;
-    --chart-5: 320 75% 50%;
+    /* Chart colors - vibrant for data viz */
+    --chart-1: 193 90% 34%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 0 84% 60%;
+  }
+
+  /* Dark Mode - Professional deep navy */
+  .dark {
+    --background: 210 25% 8%;
+    --foreground: 210 17% 98%;
+
+    --card: 213 20% 13%;
+    --card-foreground: 210 17% 98%;
+
+    --popover: 213 18% 15%;
+    --popover-foreground: 210 17% 98%;
+
+    /* Brightened teal for dark mode */
+    --primary: 191 83% 48%;
+    --primary-foreground: 210 25% 8%;
+
+    --secondary: 213 18% 18%;
+    --secondary-foreground: 210 17% 90%;
+
+    --muted: 213 18% 15%;
+    --muted-foreground: 215 14% 55%;
+
+    --accent: 213 20% 20%;
+    --accent-foreground: 210 17% 95%;
+
+    /* Semantic colors - adjusted for dark backgrounds */
+    --success: 158 64% 52%;
+    --success-foreground: 210 25% 8%;
+    
+    --warning: 45 93% 58%;
+    --warning-foreground: 0 0% 10%;
+    
+    --destructive: 0 72% 63%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 213 16% 22%;
+    --input: 213 18% 18%;
+    --ring: 191 83% 48%;
+
+    /* Sidebar - slightly elevated */
+    --sidebar-background: 210 23% 10%;
+    --sidebar-foreground: 210 20% 75%;
+    --sidebar-primary: 191 83% 48%;
+    --sidebar-primary-foreground: 210 25% 8%;
+    --sidebar-accent: 213 18% 15%;
+    --sidebar-accent-foreground: 210 17% 95%;
+    --sidebar-border: 213 18% 18%;
+    --sidebar-ring: 191 83% 48%;
+
+    /* Chart colors - brightened for dark mode */
+    --chart-1: 191 83% 48%;
+    --chart-2: 158 64% 52%;
+    --chart-3: 45 93% 58%;
+    --chart-4: 262 83% 68%;
+    --chart-5: 0 72% 63%;
   }
 }
 
@@ -76,9 +133,10 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Custom scrollbar for dark theme */
+  /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -100,15 +158,15 @@
 @layer utilities {
   /* Risk status utilities */
   .status-success {
-    @apply text-[hsl(var(--success))] bg-[hsl(var(--success))]/10 border-[hsl(var(--success))]/20;
+    @apply text-success bg-success/10 border-success/20;
   }
   
   .status-warning {
-    @apply text-[hsl(var(--warning))] bg-[hsl(var(--warning))]/10 border-[hsl(var(--warning))]/20;
+    @apply text-warning bg-warning/10 border-warning/20;
   }
   
   .status-danger {
-    @apply text-[hsl(var(--destructive))] bg-[hsl(var(--destructive))]/10 border-[hsl(var(--destructive))]/20;
+    @apply text-destructive bg-destructive/10 border-destructive/20;
   }
 
   /* Gradient backgrounds */
@@ -116,7 +174,7 @@
     background: linear-gradient(
       135deg,
       hsl(var(--card)) 0%,
-      hsl(220 35% 10%) 100%
+      hsl(var(--muted)) 100%
     );
   }
 
@@ -124,7 +182,7 @@
     background: linear-gradient(
       135deg,
       hsl(var(--primary)) 0%,
-      hsl(190 80% 50%) 100%
+      hsl(var(--primary) / 0.8) 100%
     );
   }
 
