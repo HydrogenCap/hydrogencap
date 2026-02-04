@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -14,10 +14,19 @@ import {
   ChevronDown,
   ChevronRight,
   Edit,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { PropertyWithFinancials } from '@/hooks/useProperties';
 import { useCompanies } from '@/hooks/useCompanies';
+
+// Event name for property updates
+export const PROPERTY_UPDATED_EVENT = 'propertyUpdated';
+
+// Helper function to notify when a property is updated
+export function notifyPropertyUpdated(propertyId?: string) {
+  window.dispatchEvent(new CustomEvent(PROPERTY_UPDATED_EVENT, { detail: { propertyId } }));
+}
 
 interface DataQualityWidgetProps {
   properties: PropertyWithFinancials[];
@@ -352,8 +361,20 @@ function DataQualityIssueRow({
 
 export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { data: companies } = useCompanies();
   
+  // Listen for property update events to trigger re-analysis
+  useEffect(() => {
+    const handlePropertyUpdate = () => {
+      setLastUpdateTime(Date.now());
+    };
+
+    window.addEventListener(PROPERTY_UPDATED_EVENT, handlePropertyUpdate);
+    return () => window.removeEventListener(PROPERTY_UPDATED_EVENT, handlePropertyUpdate);
+  }, []);
+
   // Build company name lookup map
   const companyMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -361,14 +382,22 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
     return map;
   }, [companies]);
 
+  // Re-analyze when properties change or lastUpdateTime changes
   const qualityAnalysis = useMemo<QualityAnalysis>(() => {
     if (!properties?.length) {
       return { overallCompleteness: 1, completeFields: 0, totalFields: 0, issues: [] };
     }
     return analyzeDataQuality(properties, companyMap);
-  }, [properties, companyMap]);
+  }, [properties, companyMap, lastUpdateTime]);
 
   const overallPercentage = Math.round(qualityAnalysis.overallCompleteness * 100);
+
+  // Manual refresh handler
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    setLastUpdateTime(Date.now());
+    setTimeout(() => setIsRefreshing(false), 500);
+  }, []);
 
   const toggleSection = (sectionKey: string) => {
     setExpandedSections(prev => ({
@@ -417,8 +446,19 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
             </p>
           </div>
         </div>
-        <div className={`text-3xl font-bold ${getStatusColor(overallPercentage)}`}>
-          {overallPercentage}%
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title="Refresh data quality analysis"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+          <div className={`text-3xl font-bold ${getStatusColor(overallPercentage)}`}>
+            {overallPercentage}%
+          </div>
         </div>
       </CardHeader>
       

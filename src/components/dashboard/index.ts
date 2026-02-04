@@ -2,7 +2,7 @@ export { AreaExposureChart } from './AreaExposureChart';
 export { BeneficialOwnerWidget } from './BeneficialOwnerWidget';
 export { ClickableStatCard } from './ClickableStatCard';
 export { ComplianceAlertsWidget } from './ComplianceAlertsWidget';
-export { DataQualityWidget } from './DataQualityWidget';
+export { DataQualityWidget, notifyPropertyUpdated, PROPERTY_UPDATED_EVENT } from './DataQualityWidget';
 export { LifecycleFilterToggle } from './LifecycleFilterToggle';
 export { MetricDetailsSheet } from './MetricDetailsSheet';
 export { MissingComplianceWidget } from './MissingComplianceWidget';

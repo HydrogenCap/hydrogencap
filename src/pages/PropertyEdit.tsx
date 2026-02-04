@@ -23,6 +23,7 @@ import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
 import { AddressAutocomplete, AddressData } from '@/components/maps/AddressAutocomplete';
 import { GeocodeStatusBadge } from '@/components/geocoding';
 import { isSuspiciousGeocodeChange } from '@/hooks/useGeocoding';
+import { notifyPropertyUpdated } from '@/components/dashboard';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
@@ -337,6 +338,9 @@ function PropertyEditPage() {
           annual_rent_gbp: data.annual_rent_gbp || 0,
         });
       }
+
+      // Notify data quality widget to refresh
+      notifyPropertyUpdated(id);
 
       toast({
         title: 'Property updated',
