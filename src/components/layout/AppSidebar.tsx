@@ -17,6 +17,7 @@ import {
   History,
   CalendarDays,
   CalendarCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -39,12 +40,14 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
 import { useAllCompliance } from '@/hooks/useCompliance';
+import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import logoImage from '@/assets/logo.png';
 
 const mainNavItems = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Portfolio', icon: Building2, href: '/properties' },
+  { title: 'Actions', icon: AlertTriangle, href: '/actions', showBadge: true },
   { title: 'Pipeline', icon: Construction, href: '/pipeline' },
   { title: 'Timeline', icon: History, href: '/timeline' },
   { title: 'Refinance', icon: CalendarDays, href: '/refinance-calendar' },
@@ -62,6 +65,7 @@ export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { data: inboxDocuments } = useInboxDocuments();
   const { data: allCompliance } = useAllCompliance();
+  const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
 
   // Count pending documents
   const pendingCount = inboxDocuments?.filter(
@@ -100,13 +104,22 @@ export function AppSidebar() {
               {mainNavItems.map((item) => {
                 const isActive = location.pathname === item.href || 
                   (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+                const showActionsBadge = (item as any).showBadge && actionsCount > 0;
                 
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
                       <Link to={item.href} className="flex items-center gap-3">
                         <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <span className="flex-1">{item.title}</span>
+                        {showActionsBadge && (
+                          <Badge 
+                            variant={actionsCriticalCount > 0 ? "destructive" : "secondary"}
+                            className="h-5 min-w-5 px-1.5 text-xs"
+                          >
+                            {actionsCount}
+                          </Badge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

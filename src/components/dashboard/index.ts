@@ -1,4 +1,5 @@
 export { AreaExposureChart } from './AreaExposureChart';
+export { ActionsRequiredWidget } from './ActionsRequiredWidget';
 export { BeneficialOwnerWidget } from './BeneficialOwnerWidget';
 export { ClickableStatCard } from './ClickableStatCard';
 export { ComplianceAlertsWidget } from './ComplianceAlertsWidget';
