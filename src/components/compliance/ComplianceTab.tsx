@@ -95,6 +95,8 @@ export function ComplianceTab({ propertyId, propertyAddress, lifecycleType = 'co
     is_hmo_licensed: propertyFeatures?.is_hmo_licensed ?? false,
     selective_licence_required: propertyFeatures?.selective_licence_required ?? false,
     co_alarm_required: propertyFeatures?.co_alarm_required ?? true,
+    is_grade_listed: propertyFeatures?.is_grade_listed ?? false,
+    listing_grade: propertyFeatures?.listing_grade ?? null,
   };
 
   if (isLoading) {

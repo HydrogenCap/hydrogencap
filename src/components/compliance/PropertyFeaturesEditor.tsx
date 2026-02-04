@@ -35,6 +35,8 @@ interface PropertyFeaturesEditorProps {
     is_hmo_licensed: boolean | null;
     selective_licence_required: boolean | null;
     co_alarm_required: boolean | null;
+    is_grade_listed: boolean | null;
+    listing_grade: string | null;
   };
   onUpdate?: () => void;
 }
@@ -42,6 +44,7 @@ interface PropertyFeaturesEditorProps {
 const ASSET_CATEGORIES = ['Single Let', 'HMO', 'HMO (Licensed)', 'Commercial', 'Mixed Use'];
 const OCCUPANCY_STATUSES = ['Occupied', 'Void', 'In Works'];
 const FIRE_ALARM_GRADES = ['None', 'Grade D1', 'Grade D2', 'Grade A', 'Grade LD1', 'Grade LD2', 'Grade LD3'];
+const LISTING_GRADES = ['I', 'II*', 'II'];
 
 export function PropertyFeaturesEditor({ 
   propertyId, 
@@ -73,6 +76,8 @@ export function PropertyFeaturesEditor({
           is_hmo_licensed: features.is_hmo_licensed,
           selective_licence_required: features.selective_licence_required,
           co_alarm_required: features.co_alarm_required,
+          is_grade_listed: features.is_grade_listed,
+          listing_grade: features.listing_grade,
         })
         .eq('id', propertyId);
       
@@ -240,6 +245,42 @@ export function PropertyFeaturesEditor({
               onCheckedChange={(v) => setFeatures({ ...features, selective_licence_required: v })}
             />
           </div>
+          
+          {/* Grade Listed Building */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Grade Listed Building</Label>
+              <p className="text-xs text-muted-foreground">Exempt from EPC requirements</p>
+            </div>
+            <Switch 
+              checked={features.is_grade_listed ?? false}
+              onCheckedChange={(v) => setFeatures({ 
+                ...features, 
+                is_grade_listed: v,
+                listing_grade: v ? (features.listing_grade || 'II') : null
+              })}
+            />
+          </div>
+          
+          {features.is_grade_listed && (
+            <div className="space-y-2 pl-4 border-l-2">
+              <Label>Listing Grade</Label>
+              <Select 
+                value={features.listing_grade || 'II'} 
+                onValueChange={(v) => setFeatures({ ...features, listing_grade: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LISTING_GRADES.map(grade => (
+                    <SelectItem key={grade} value={grade}>Grade {grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Historic England listing classification</p>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-end gap-2">

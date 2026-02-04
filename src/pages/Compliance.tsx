@@ -72,6 +72,8 @@ export default function Compliance() {
       is_hmo_licensed: p.is_hmo_licensed,
       selective_licence_required: p.selective_licence_required,
       lifecycle_type: p.lifecycle_type,
+      is_grade_listed: p.is_grade_listed,
+      listing_grade: p.listing_grade,
     }));
 
     return generateComplianceItemsWithMissing(items, propertiesForCompliance);

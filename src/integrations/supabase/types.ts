@@ -1588,9 +1588,11 @@ export type Database = {
           has_emergency_lighting: boolean | null
           has_fire_alarm_system: boolean | null
           has_gas: boolean | null
+          heritage_notes: string | null
           id: string
           identity_updated_at: string | null
           identity_updated_by: string | null
+          is_grade_listed: boolean | null
           is_hmo_licensed: boolean | null
           land_registry_link: string | null
           latitude: number | null
@@ -1600,6 +1602,8 @@ export type Database = {
           lifecycle_status_date: string | null
           lifecycle_type: string
           listed_status: string | null
+          listing_grade: string | null
+          listing_number: string | null
           longitude: number | null
           notes: string | null
           occupancy_status: string | null
@@ -1651,9 +1655,11 @@ export type Database = {
           has_emergency_lighting?: boolean | null
           has_fire_alarm_system?: boolean | null
           has_gas?: boolean | null
+          heritage_notes?: string | null
           id?: string
           identity_updated_at?: string | null
           identity_updated_by?: string | null
+          is_grade_listed?: boolean | null
           is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
           latitude?: number | null
@@ -1663,6 +1669,8 @@ export type Database = {
           lifecycle_status_date?: string | null
           lifecycle_type?: string
           listed_status?: string | null
+          listing_grade?: string | null
+          listing_number?: string | null
           longitude?: number | null
           notes?: string | null
           occupancy_status?: string | null
@@ -1714,9 +1722,11 @@ export type Database = {
           has_emergency_lighting?: boolean | null
           has_fire_alarm_system?: boolean | null
           has_gas?: boolean | null
+          heritage_notes?: string | null
           id?: string
           identity_updated_at?: string | null
           identity_updated_by?: string | null
+          is_grade_listed?: boolean | null
           is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
           latitude?: number | null
@@ -1726,6 +1736,8 @@ export type Database = {
           lifecycle_status_date?: string | null
           lifecycle_type?: string
           listed_status?: string | null
+          listing_grade?: string | null
+          listing_number?: string | null
           longitude?: number | null
           notes?: string | null
           occupancy_status?: string | null
