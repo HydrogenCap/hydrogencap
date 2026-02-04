@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
 import { useAllCompliance } from '@/hooks/useCompliance';
@@ -191,15 +192,18 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3 px-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-medium text-accent-foreground">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user?.email || 'User'}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium text-sidebar-foreground truncate">
-                {user?.email || 'User'}
-              </span>
-            </div>
+            <ThemeToggle />
           </div>
           <SidebarMenu>
             <SidebarMenuItem>
