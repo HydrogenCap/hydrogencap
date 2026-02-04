@@ -8,4 +8,7 @@ export { DocumentViewerModal } from './DocumentViewerModal';
 export { ComplianceStatusCard } from './ComplianceStatusCard';
 export { ComplianceItemDrawer } from './ComplianceItemDrawer';
 export { AIComplianceChecker } from './AIComplianceChecker';
+export { StatusFilterBox } from './StatusFilterBox';
+export { ComplianceRegisterItem } from './ComplianceRegisterItem';
+export { ComplianceUploadDialog } from './ComplianceUploadDialog';
 export type { StatusType } from './ComplianceStatusCard';
