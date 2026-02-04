@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2, RotateCcw, Shield, MapPin, BarChart3 } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, User, Building2, RotateCcw, Shield, MapPin, BarChart3, FileText } from 'lucide-react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,7 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
@@ -497,7 +499,17 @@ function DashboardPage() {
               properties{lifecycleFilter !== 'all' && properties && properties.length > filteredProperties.length ? ` (${properties.length} total)` : ''}
             </p>
           </div>
-          <LifecycleFilterToggle />
+          <div className="flex items-center gap-3">
+            <BankPresentationDialog 
+              trigger={
+                <Button variant="outline" size="sm" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Bank Pack
+                </Button>
+              }
+            />
+            <LifecycleFilterToggle />
+          </div>
         </div>
 
         {/* Dashboard Tabs */}
