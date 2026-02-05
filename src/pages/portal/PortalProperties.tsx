@@ -1,4 +1,4 @@
-import { Building2, MapPin, Home, Bed } from 'lucide-react';
+import { Building2, MapPin, Home, Bed, ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PortalLayout } from '@/components/portal/PortalLayout';
@@ -9,7 +9,7 @@ import { formatGBP } from '@/lib/calculations';
 
 export default function PortalProperties() {
   const { canViewFinancials } = useShareholderSession();
-  const { properties, isLoading } = useShareholderPortfolioData();
+  const { properties, coverPhotoMap, isLoading } = useShareholderPortfolioData();
 
   if (isLoading) {
     return (
@@ -36,12 +36,24 @@ export default function PortalProperties() {
               ? (loan.current_mortgage_balance_gbp / property.current_value_gbp) * 100
               : 0;
 
+            const coverPhotoUrl = coverPhotoMap.get(property.id);
+
             return (
               <Card key={property.id} className="overflow-hidden">
                 {/* Property Image Placeholder */}
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  <Building2 className="h-12 w-12 text-muted-foreground/50" />
-                </div>
+                {coverPhotoUrl ? (
+                  <div className="aspect-video bg-muted overflow-hidden">
+                    <img
+                      src={coverPhotoUrl}
+                      alt={property.address_line}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-muted flex items-center justify-center">
+                    <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
+                  </div>
+                )}
 
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
