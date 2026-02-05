@@ -19,6 +19,9 @@ import {
   CalendarCheck,
   AlertTriangle,
   HardHat,
+  Users,
+  PoundSterling,
+  Wrench,
 } from 'lucide-react';
 import {
   Sidebar,

@@ -43,6 +43,10 @@ import NotFound from "./pages/NotFound";
 import Contractors from "./pages/Contractors";
 import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
+import Tenants from "./pages/Tenants";
+import TenantDetail from "./pages/TenantDetail";
+import RentCollection from "./pages/RentCollection";
+import MaintenanceRequests from "./pages/MaintenanceRequests";
 
 // Portal pages
 import {
@@ -298,7 +302,11 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            
+            <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
+            <Route path="/tenants/:tenantId" element={<ProtectedRoute><TenantDetail /></ProtectedRoute>} />
+            <Route path="/rent" element={<ProtectedRoute><RentCollection /></ProtectedRoute>} />
+            <Route path="/maintenance" element={<ProtectedRoute><MaintenanceRequests /></ProtectedRoute>} />
+
             {/* Marketing pages (public) */}
             <Route path="/" element={<MarketingHome />} />
             <Route path="/product" element={<MarketingProduct />} />
