@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export function usePropertyPhotos() {
   return useQuery({
-    queryKey: ['property_photos_covers'],
+    queryKey: ['property_photos_covers_map'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('photos')
