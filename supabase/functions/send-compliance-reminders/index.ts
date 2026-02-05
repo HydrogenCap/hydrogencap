@@ -190,13 +190,17 @@ function getPropertyAddress(item: ComplianceItem): string {
           );
 
           const emailResult = await resend.emails.send({
-            from: "HydrogenCap <notifications@hydrogencap.com>",
+            from: "HydrogenCap <onboarding@resend.dev>",
             to: [profile.email],
             subject,
             html,
           });
 
-          console.log(`Email sent to ${profile.email}: ${subject}`);
+          console.log(`Email sent to ${profile.email}: ${subject}`, JSON.stringify(emailResult));
+
+          if (emailResult.error) {
+            throw new Error(emailResult.error.message);
+          }
 
           // Log the notification
           await supabase.from('notification_log').insert({
