@@ -14,6 +14,7 @@ import { PassportForm, CoreIdentityCard } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
 import { ComplianceTab } from '@/components/compliance';
+import { PropertyValuationCard, ComparableSalesTable } from '@/components/valuations';
 import { LifecycleSwitcher, LifecycleBadge } from '@/components/property/LifecycleSwitcher';
 import { LifecycleType } from '@/contexts/LifecycleFilterContext';
 import { useSearchParams } from 'react-router-dom';
@@ -374,6 +375,19 @@ function PropertyDetailPage() {
               yieldPercent={yieldPercent}
               roce={roce}
             />
+
+            {/* AI Valuation Section */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <PropertyValuationCard
+                propertyId={id!}
+                recordedValue={currentValue}
+                lastEstimate={property.last_valuation_estimate ? Number(property.last_valuation_estimate) : undefined}
+                lastValuationDate={property.last_valuation_date || undefined}
+                changePercent={property.value_change_percent ? Number(property.value_change_percent) : undefined}
+                confidence={property.valuation_confidence || undefined}
+              />
+              <ComparableSalesTable propertyId={id!} />
+            </div>
           </TabsContent>
 
           {/* OPERATIONS TAB - Renamed from Passport */}

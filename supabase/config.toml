@@ -52,3 +52,9 @@ verify_jwt = false
  
  [functions.send-compliance-reminders]
  verify_jwt = false
+
+[functions.fetch-land-registry-comparables]
+verify_jwt = false
+
+[functions.generate-ai-valuation]
+verify_jwt = false

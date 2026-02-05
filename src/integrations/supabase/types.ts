@@ -254,6 +254,75 @@ export type Database = {
           },
         ]
       }
+      comparable_sales: {
+        Row: {
+          address: string
+          created_at: string
+          distance_meters: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          new_build: boolean | null
+          org_id: string
+          postcode: string
+          price_paid: number
+          property_type: string | null
+          sale_date: string
+          source_property_id: string | null
+          tenure: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          distance_meters?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          new_build?: boolean | null
+          org_id: string
+          postcode: string
+          price_paid: number
+          property_type?: string | null
+          sale_date: string
+          source_property_id?: string | null
+          tenure?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          distance_meters?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          new_build?: boolean | null
+          org_id?: string
+          postcode?: string
+          price_paid?: number
+          property_type?: string | null
+          sale_date?: string
+          source_property_id?: string | null
+          tenure?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comparable_sales_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comparable_sales_source_property_id_fkey"
+            columns: ["source_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_documents: {
         Row: {
           archived_at: string | null
@@ -1867,6 +1936,8 @@ export type Database = {
           is_grade_listed: boolean | null
           is_hmo_licensed: boolean | null
           land_registry_link: string | null
+          last_valuation_date: string | null
+          last_valuation_estimate: number | null
           latitude: number | null
           lease_years_remaining: number | null
           legal_owner_company_id: string | null
@@ -1897,6 +1968,8 @@ export type Database = {
           town_city: string | null
           updated_at: string
           uprn: string | null
+          valuation_confidence: string | null
+          value_change_percent: number | null
           year_built: string | null
         }
         Insert: {
@@ -1934,6 +2007,8 @@ export type Database = {
           is_grade_listed?: boolean | null
           is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
+          last_valuation_date?: string | null
+          last_valuation_estimate?: number | null
           latitude?: number | null
           lease_years_remaining?: number | null
           legal_owner_company_id?: string | null
@@ -1964,6 +2039,8 @@ export type Database = {
           town_city?: string | null
           updated_at?: string
           uprn?: string | null
+          valuation_confidence?: string | null
+          value_change_percent?: number | null
           year_built?: string | null
         }
         Update: {
@@ -2001,6 +2078,8 @@ export type Database = {
           is_grade_listed?: boolean | null
           is_hmo_licensed?: boolean | null
           land_registry_link?: string | null
+          last_valuation_date?: string | null
+          last_valuation_estimate?: number | null
           latitude?: number | null
           lease_years_remaining?: number | null
           legal_owner_company_id?: string | null
@@ -2031,6 +2110,8 @@ export type Database = {
           town_city?: string | null
           updated_at?: string
           uprn?: string | null
+          valuation_confidence?: string | null
+          value_change_percent?: number | null
           year_built?: string | null
         }
         Relationships: [
@@ -2470,6 +2551,141 @@ export type Database = {
           },
         ]
       }
+      property_valuations: {
+        Row: {
+          adjustment_factors: Json | null
+          comparables_avg_price: number | null
+          comparables_count: number | null
+          comparables_max_price: number | null
+          comparables_min_price: number | null
+          confidence_level: string | null
+          created_at: string
+          estimated_value_gbp: number
+          id: string
+          notes: string | null
+          org_id: string
+          property_id: string
+          valuation_date: string
+          valuation_method: string
+        }
+        Insert: {
+          adjustment_factors?: Json | null
+          comparables_avg_price?: number | null
+          comparables_count?: number | null
+          comparables_max_price?: number | null
+          comparables_min_price?: number | null
+          confidence_level?: string | null
+          created_at?: string
+          estimated_value_gbp: number
+          id?: string
+          notes?: string | null
+          org_id: string
+          property_id: string
+          valuation_date?: string
+          valuation_method: string
+        }
+        Update: {
+          adjustment_factors?: Json | null
+          comparables_avg_price?: number | null
+          comparables_count?: number | null
+          comparables_max_price?: number | null
+          comparables_min_price?: number | null
+          confidence_level?: string | null
+          created_at?: string
+          estimated_value_gbp?: number
+          id?: string
+          notes?: string | null
+          org_id?: string
+          property_id?: string
+          valuation_date?: string
+          valuation_method?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_valuations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_valuations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refinancing_opportunities: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_ltv: number
+          current_mortgage_gbp: number
+          current_value_gbp: number
+          id: string
+          identified_at: string
+          notes: string | null
+          org_id: string
+          potential_release_gbp: number
+          property_id: string
+          reviewed_at: string | null
+          status: string
+          target_ltv: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_ltv: number
+          current_mortgage_gbp: number
+          current_value_gbp: number
+          id?: string
+          identified_at?: string
+          notes?: string | null
+          org_id: string
+          potential_release_gbp: number
+          property_id: string
+          reviewed_at?: string | null
+          status?: string
+          target_ltv?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_ltv?: number
+          current_mortgage_gbp?: number
+          current_value_gbp?: number
+          id?: string
+          identified_at?: string
+          notes?: string | null
+          org_id?: string
+          potential_release_gbp?: number
+          property_id?: string
+          reviewed_at?: string | null
+          status?: string
+          target_ltv?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refinancing_opportunities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refinancing_opportunities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_email_runs: {
         Row: {
           created_at: string
@@ -2773,6 +2989,66 @@ export type Database = {
             columns: ["shareholder_party_id"]
             isOneToOne: false
             referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      valuation_alerts: {
+        Row: {
+          alert_type: string
+          change_percent: number | null
+          created_at: string
+          estimated_value_gbp: number | null
+          id: string
+          is_dismissed: boolean
+          is_read: boolean
+          message: string
+          org_id: string
+          property_id: string
+          recorded_value_gbp: number | null
+          title: string
+        }
+        Insert: {
+          alert_type: string
+          change_percent?: number | null
+          created_at?: string
+          estimated_value_gbp?: number | null
+          id?: string
+          is_dismissed?: boolean
+          is_read?: boolean
+          message: string
+          org_id: string
+          property_id: string
+          recorded_value_gbp?: number | null
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          change_percent?: number | null
+          created_at?: string
+          estimated_value_gbp?: number | null
+          id?: string
+          is_dismissed?: boolean
+          is_read?: boolean
+          message?: string
+          org_id?: string
+          property_id?: string
+          recorded_value_gbp?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuation_alerts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "valuation_alerts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
