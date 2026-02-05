@@ -58,3 +58,6 @@ verify_jwt = false
 
 [functions.generate-ai-valuation]
 verify_jwt = false
+
+[functions.send-job-request]
+verify_jwt = false
