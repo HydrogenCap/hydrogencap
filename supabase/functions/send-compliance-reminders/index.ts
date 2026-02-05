@@ -18,14 +18,18 @@
   property?: {
      address_line: string;
      postcode: string;
-  }[] | null;
+  }[] | { address_line: string; postcode: string; } | null;
  }
  
  const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
  
 function getPropertyAddress(item: ComplianceItem): string {
-  if (item.property && Array.isArray(item.property) && item.property.length > 0) {
-    return item.property[0].address_line || 'Unknown Property';
+  // Handle both array (from Supabase join) and object formats
+  const prop = Array.isArray(item.property) ? item.property[0] : item.property;
+  if (prop && prop.address_line) {
+    const addr = prop.address_line;
+    const postcode = prop.postcode;
+    return postcode ? `${addr}, ${postcode}` : addr;
   }
   return 'Unknown Property';
 }
