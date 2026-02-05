@@ -18,6 +18,7 @@ import {
   CalendarDays,
   CalendarCheck,
   AlertTriangle,
+  HardHat,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -52,6 +53,7 @@ const mainNavItems = [
   { title: 'Timeline', icon: History, href: '/timeline' },
   { title: 'Refinance', icon: CalendarDays, href: '/refinance-calendar' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
+  { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },

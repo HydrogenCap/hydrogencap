@@ -40,6 +40,7 @@ import Passport from "./pages/Passport";
 import Pipeline from "./pages/Pipeline";
 import SharedDocument from "./pages/SharedDocument";
 import NotFound from "./pages/NotFound";
+import Contractors from "./pages/Contractors";
 
 // Portal pages
 import {
@@ -268,6 +269,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ComplianceCalendar />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contractors"
+              element={
+                <ProtectedRoute>
+                  <Contractors />
                 </ProtectedRoute>
               }
             />

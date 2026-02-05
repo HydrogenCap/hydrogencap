@@ -467,49 +467,291 @@ export type Database = {
           },
         ]
       }
+      contractor_jobs: {
+        Row: {
+          accepted_at: string | null
+          booked_date: string | null
+          booked_time_slot: string | null
+          completed_at: string | null
+          compliance_item_id: string | null
+          contractor_id: string | null
+          contractor_notes: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          final_amount_gbp: number | null
+          id: string
+          internal_notes: string | null
+          invoice_reference: string | null
+          job_type: string
+          org_id: string
+          payment_status: string | null
+          property_id: string
+          quoted_amount_gbp: number | null
+          quoted_at: string | null
+          request_message: string | null
+          requested_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          booked_date?: string | null
+          booked_time_slot?: string | null
+          completed_at?: string | null
+          compliance_item_id?: string | null
+          contractor_id?: string | null
+          contractor_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          final_amount_gbp?: number | null
+          id?: string
+          internal_notes?: string | null
+          invoice_reference?: string | null
+          job_type: string
+          org_id: string
+          payment_status?: string | null
+          property_id: string
+          quoted_amount_gbp?: number | null
+          quoted_at?: string | null
+          request_message?: string | null
+          requested_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          booked_date?: string | null
+          booked_time_slot?: string | null
+          completed_at?: string | null
+          compliance_item_id?: string | null
+          contractor_id?: string | null
+          contractor_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          final_amount_gbp?: number | null
+          id?: string
+          internal_notes?: string | null
+          invoice_reference?: string | null
+          job_type?: string
+          org_id?: string
+          payment_status?: string | null
+          property_id?: string
+          quoted_amount_gbp?: number | null
+          quoted_at?: string | null
+          request_message?: string | null
+          requested_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_jobs_compliance_item_id_fkey"
+            columns: ["compliance_item_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_reviews: {
+        Row: {
+          communication_rating: number | null
+          contractor_id: string
+          created_at: string
+          id: string
+          job_id: string | null
+          org_id: string
+          punctuality_rating: number | null
+          quality_rating: number | null
+          rating: number
+          review_text: string | null
+          reviewed_by: string | null
+          value_rating: number | null
+        }
+        Insert: {
+          communication_rating?: number | null
+          contractor_id: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          org_id: string
+          punctuality_rating?: number | null
+          quality_rating?: number | null
+          rating: number
+          review_text?: string | null
+          reviewed_by?: string | null
+          value_rating?: number | null
+        }
+        Update: {
+          communication_rating?: number | null
+          contractor_id?: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          org_id?: string
+          punctuality_rating?: number | null
+          quality_rating?: number | null
+          rating?: number
+          review_text?: string | null
+          reviewed_by?: string | null
+          value_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_reviews_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_reviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_reviews_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractor_service_areas: {
+        Row: {
+          city: string | null
+          contractor_id: string
+          county: string | null
+          id: string
+          postcode_district: string | null
+          postcode_prefix: string | null
+          priority: number | null
+        }
+        Insert: {
+          city?: string | null
+          contractor_id: string
+          county?: string | null
+          id?: string
+          postcode_district?: string | null
+          postcode_prefix?: string | null
+          priority?: number | null
+        }
+        Update: {
+          city?: string | null
+          contractor_id?: string
+          county?: string | null
+          id?: string
+          postcode_district?: string | null
+          postcode_prefix?: string | null
+          priority?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_service_areas_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractors: {
         Row: {
+          availability_notes: string | null
+          average_rating: number | null
+          avg_response_hours: number | null
+          call_out_fee_gbp: number | null
           company_name: string | null
           compliance_types: string[]
           created_at: string
           email: string | null
+          hourly_rate_gbp: number | null
           id: string
+          is_active: boolean | null
           is_preferred: boolean
+          last_used_at: string | null
           name: string
           notes: string | null
           org_id: string
           phone: string | null
           service_areas: string[] | null
+          total_jobs: number | null
+          typical_costs: Json | null
           updated_at: string
           website: string | null
         }
         Insert: {
+          availability_notes?: string | null
+          average_rating?: number | null
+          avg_response_hours?: number | null
+          call_out_fee_gbp?: number | null
           company_name?: string | null
           compliance_types?: string[]
           created_at?: string
           email?: string | null
+          hourly_rate_gbp?: number | null
           id?: string
+          is_active?: boolean | null
           is_preferred?: boolean
+          last_used_at?: string | null
           name: string
           notes?: string | null
           org_id: string
           phone?: string | null
           service_areas?: string[] | null
+          total_jobs?: number | null
+          typical_costs?: Json | null
           updated_at?: string
           website?: string | null
         }
         Update: {
+          availability_notes?: string | null
+          average_rating?: number | null
+          avg_response_hours?: number | null
+          call_out_fee_gbp?: number | null
           company_name?: string | null
           compliance_types?: string[]
           created_at?: string
           email?: string | null
+          hourly_rate_gbp?: number | null
           id?: string
+          is_active?: boolean | null
           is_preferred?: boolean
+          last_used_at?: string | null
           name?: string
           notes?: string | null
           org_id?: string
           phone?: string | null
           service_areas?: string[] | null
+          total_jobs?: number | null
+          typical_costs?: Json | null
           updated_at?: string
           website?: string | null
         }
@@ -1228,6 +1470,47 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: true
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_request_templates: {
+        Row: {
+          body_template: string
+          compliance_type: string | null
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          org_id: string
+          subject_template: string
+        }
+        Insert: {
+          body_template: string
+          compliance_type?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          org_id: string
+          subject_template: string
+        }
+        Update: {
+          body_template?: string
+          compliance_type?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          org_id?: string
+          subject_template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_request_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -3092,6 +3375,24 @@ export type Database = {
       }
     }
     Functions: {
+      find_matching_contractors: {
+        Args: {
+          p_compliance_type: string
+          p_org_id: string
+          p_postcode: string
+        }
+        Returns: {
+          average_rating: number
+          company_name: string
+          contractor_id: string
+          email: string
+          match_score: number
+          name: string
+          phone: string
+          total_jobs: number
+          typical_cost: number
+        }[]
+      }
       get_user_org_id: { Args: never; Returns: string }
       schedule_compliance_reminders: {
         Args: {

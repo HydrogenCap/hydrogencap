@@ -45,7 +45,7 @@
    const [notes, setNotes] = useState('');
    const [file, setFile] = useState<File | null>(null);
  
-   const { data: contractors } = useContractors(complianceItem.compliance_type);
+   const { data: contractors } = useContractors({ complianceType: complianceItem.compliance_type });
    const updateItem = useUpdateComplianceItem();
    const uploadDoc = useUploadComplianceDocument();
    const { toast } = useToast();
