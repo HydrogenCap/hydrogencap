@@ -15,6 +15,7 @@ import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
 import { ComplianceTab } from '@/components/compliance';
 import { PropertyValuationCard, ComparableSalesTable } from '@/components/valuations';
+import { InsurancePanel } from '@/components/insurance';
 import { LifecycleSwitcher, LifecycleBadge } from '@/components/property/LifecycleSwitcher';
 import { LifecycleType } from '@/contexts/LifecycleFilterContext';
 import { useSearchParams } from 'react-router-dom';

@@ -1,6 +1,6 @@
  import React, { useState } from 'react';
  import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, MapPin, MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, MapPin, MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle, Plus } from 'lucide-react';
  import { AppLayout } from '@/components/layout/AppLayout';
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
  import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, 
  import { Textarea } from '@/components/ui/textarea';
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompleteJob, JOB_PRIORITIES } from '@/hooks/useContractorJobs';
+import { useJobNotes, useAddJobNote } from '@/hooks/useJobNotes';
  import { AddReviewDialog } from '@/components/contractors/AddReviewDialog';
  import { format } from 'date-fns';
  import { cn } from '@/lib/utils';
@@ -31,6 +32,8 @@ import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompl
    const { jobId } = useParams<{ jobId: string }>();
    const navigate = useNavigate();
    const { data: job, isLoading } = useContractorJob(jobId);
+  const { data: notes } = useJobNotes(jobId);
+  const addNote = useAddJobNote();
    
    const [showBookDialog, setShowBookDialog] = useState(false);
    const [showCompleteDialog, setShowCompleteDialog] = useState(false);
@@ -40,13 +43,23 @@ import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompl
    const [quotedAmount, setQuotedAmount] = useState('');
    const [finalAmount, setFinalAmount] = useState('');
    const [completionNotes, setCompletionNotes] = useState('');
+  const [newNote, setNewNote] = useState('');
  
    const updateJob = useUpdateJob();
    const sendRequest = useSendJobRequest();
    const bookJob = useBookJob();
    const completeJob = useCompleteJob();
  
-   if (isLoading) {
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !job) return;
+    await addNote.mutateAsync({
+      jobId: job.id,
+      note: newNote,
+    });
+    setNewNote('');
+  };
+
+  if (isLoading) {
      return (
        <AppLayout>
          <div className="flex items-center justify-center h-64">
@@ -443,6 +456,52 @@ import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompl
                  </CardContent>
                </Card>
              )}
+
+            {/* Notes */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Add Note */}
+                <div className="flex gap-2 mb-4">
+                  <Textarea
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={handleAddNote} 
+                    disabled={!newNote.trim() || addNote.isPending}
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Notes List */}
+                <div className="space-y-3">
+                  {notes?.map(note => (
+                    <div key={note.id} className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm">{note.note}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(note.created_at), 'dd MMM yyyy, HH:mm')}
+                      </p>
+                    </div>
+                  ))}
+                  {(!notes || notes.length === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No notes yet
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
            </div>
          </div>
        </div>

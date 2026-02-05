@@ -1644,50 +1644,113 @@ export type Database = {
       }
       insurance_policies: {
         Row: {
+          auto_renew: boolean | null
+          buildings_cover_gbp: number | null
+          contents_cover_gbp: number | null
           cover_type: string | null
           created_at: string
           excess_gbp: number | null
           id: string
           insurer_name: string | null
           notes: string | null
+          org_id: string | null
+          payment_frequency: string | null
           policy_number: string | null
+          policy_type: string | null
           premium_gbp: number | null
           property_id: string
           renewal_date: string | null
+          start_date: string | null
+          status: string | null
           updated_at: string
         }
         Insert: {
+          auto_renew?: boolean | null
+          buildings_cover_gbp?: number | null
+          contents_cover_gbp?: number | null
           cover_type?: string | null
           created_at?: string
           excess_gbp?: number | null
           id?: string
           insurer_name?: string | null
           notes?: string | null
+          org_id?: string | null
+          payment_frequency?: string | null
           policy_number?: string | null
+          policy_type?: string | null
           premium_gbp?: number | null
           property_id: string
           renewal_date?: string | null
+          start_date?: string | null
+          status?: string | null
           updated_at?: string
         }
         Update: {
+          auto_renew?: boolean | null
+          buildings_cover_gbp?: number | null
+          contents_cover_gbp?: number | null
           cover_type?: string | null
           created_at?: string
           excess_gbp?: number | null
           id?: string
           insurer_name?: string | null
           notes?: string | null
+          org_id?: string | null
+          payment_frequency?: string | null
           policy_number?: string | null
+          policy_type?: string | null
           premium_gbp?: number | null
           property_id?: string
           renewal_date?: string | null
+          start_date?: string | null
+          status?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "insurance_policies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "insurance_policies_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: true
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          job_id: string
+          note: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          job_id: string
+          note: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          job_id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_notes_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
             referencedColumns: ["id"]
           },
         ]
