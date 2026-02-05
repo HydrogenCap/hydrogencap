@@ -48,6 +48,7 @@ import { SectionCard } from '@/components/dashboard/SectionCard';
 import { RiskRadar } from '@/components/dashboard/RiskRadar';
 import { LtvProgressList } from '@/components/dashboard/LtvProgressBar';
 import { StatusBadge, PercentBadge } from '@/components/dashboard/MetricValue';
+import { ActionsRequiredWidget } from '@/components/dashboard/ActionsRequiredWidget';
 
 const CHART_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -627,7 +628,7 @@ function DashboardPage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* This Month Summary */}
           <ErrorBoundary>
             <ThisMonthWidget />
@@ -642,62 +643,38 @@ function DashboardPage() {
               />
             </ErrorBoundary>
           )}
-
-          {/* Risks Panel - Using new SectionCard and RiskRadar */}
-          <ErrorBoundary>
-            <SectionCard
-              title="Portfolio Risks"
-              icon={AlertTriangle}
-              iconClassName="text-warning"
-              onClick={() => navigate('/actions')}
-              showArrow
-              headerAction={
-                risks.length > 0 && (
-                  <Badge variant="destructive">{risks.length}</Badge>
-                )
-              }
-              className={coreRentalProperties && coreRentalProperties.length > 0 ? '' : 'lg:col-span-1'}
-            >
-              <RiskRadar
-                items={risks.map(risk => ({
-                  id: risk.id,
-                  title: risk.address,
-                  subtitle: risk.message,
-                  severity: risk.severity === 'critical' ? 'critical' : 'warning',
-                }))}
-                maxItems={8}
-                emptyMessage="No risks detected"
-              />
-            </SectionCard>
-          </ErrorBoundary>
-          
-          {/* Property Map - Using new SectionCard */}
-          <SectionCard
-            title="Property Map"
-            icon={MapPin}
-            onClick={() => navigate('/dashboard/map')}
-            showArrow
-            className="lg:col-span-2"
-            noPadding
-            contentClassName="p-0"
-          >
-            {hasPropertiesWithCoords ? (
-              <div className="p-4">
-                <PropertyMap
-                  properties={filteredProperties || []}
-                  className="h-[300px] rounded-lg pointer-events-none"
-                />
-              </div>
-            ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Add properties with coordinates to see them on the map</p>
-                </div>
-              </div>
-            )}
-          </SectionCard>
         </div>
+
+        {/* Actions Required Widget - Full tabbed view */}
+        <ErrorBoundary>
+          <ActionsRequiredWidget />
+        </ErrorBoundary>
+
+        {/* Property Map - Using new SectionCard */}
+        <SectionCard
+          title="Property Map"
+          icon={MapPin}
+          onClick={() => navigate('/dashboard/map')}
+          showArrow
+          noPadding
+          contentClassName="p-0"
+        >
+          {hasPropertiesWithCoords ? (
+            <div className="p-4">
+              <PropertyMap
+                properties={filteredProperties || []}
+                className="h-[300px] rounded-lg pointer-events-none"
+              />
+            </div>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>Add properties with coordinates to see them on the map</p>
+              </div>
+            </div>
+          )}
+        </SectionCard>
 
         {/* Charts Row */}
         <div className="grid gap-6 md:grid-cols-2">
