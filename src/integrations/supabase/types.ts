@@ -315,10 +315,16 @@ export type Database = {
           is_manually_excluded: boolean | null
           is_required: boolean | null
           issue_date: string | null
+          last_reminder_sent_at: string | null
           notes: string | null
           org_id: string
           property_id: string
+          reminder_count: number | null
           reminder_days: number[] | null
+          renewal_booked_date: string | null
+          renewal_contractor_id: string | null
+          renewal_notes: string | null
+          renewal_status: string | null
           responsible_party: string | null
           updated_at: string
         }
@@ -332,10 +338,16 @@ export type Database = {
           is_manually_excluded?: boolean | null
           is_required?: boolean | null
           issue_date?: string | null
+          last_reminder_sent_at?: string | null
           notes?: string | null
           org_id: string
           property_id: string
+          reminder_count?: number | null
           reminder_days?: number[] | null
+          renewal_booked_date?: string | null
+          renewal_contractor_id?: string | null
+          renewal_notes?: string | null
+          renewal_status?: string | null
           responsible_party?: string | null
           updated_at?: string
         }
@@ -349,10 +361,16 @@ export type Database = {
           is_manually_excluded?: boolean | null
           is_required?: boolean | null
           issue_date?: string | null
+          last_reminder_sent_at?: string | null
           notes?: string | null
           org_id?: string
           property_id?: string
+          reminder_count?: number | null
           reminder_days?: number[] | null
+          renewal_booked_date?: string | null
+          renewal_contractor_id?: string | null
+          renewal_notes?: string | null
+          renewal_status?: string | null
           responsible_party?: string | null
           updated_at?: string
         }
@@ -369,6 +387,69 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_items_renewal_contractor_id_fkey"
+            columns: ["renewal_contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contractors: {
+        Row: {
+          company_name: string | null
+          compliance_types: string[]
+          created_at: string
+          email: string | null
+          id: string
+          is_preferred: boolean
+          name: string
+          notes: string | null
+          org_id: string
+          phone: string | null
+          service_areas: string[] | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          compliance_types?: string[]
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_preferred?: boolean
+          name: string
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          service_areas?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          compliance_types?: string[]
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_preferred?: boolean
+          name?: string
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          service_areas?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractors_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1251,6 +1332,127 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "memberships_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_log: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          notification_type: string
+          org_id: string
+          recipient: string
+          reference_id: string | null
+          reference_type: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type: string
+          org_id: string
+          recipient: string
+          reference_id?: string | null
+          reference_type?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          org_id?: string
+          recipient?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_address: string | null
+          email_enabled: boolean
+          id: string
+          notify_expired: boolean
+          notify_expiring_soon: boolean
+          notify_negative_cashflow: boolean
+          notify_rate_expiry: boolean
+          org_id: string
+          reminder_days: number[]
+          timezone: string
+          updated_at: string
+          user_id: string
+          weekly_digest_day: number
+          weekly_digest_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          email_address?: string | null
+          email_enabled?: boolean
+          id?: string
+          notify_expired?: boolean
+          notify_expiring_soon?: boolean
+          notify_negative_cashflow?: boolean
+          notify_rate_expiry?: boolean
+          org_id: string
+          reminder_days?: number[]
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          weekly_digest_day?: number
+          weekly_digest_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          email_address?: string | null
+          email_enabled?: boolean
+          id?: string
+          notify_expired?: boolean
+          notify_expiring_soon?: boolean
+          notify_negative_cashflow?: boolean
+          notify_rate_expiry?: boolean
+          org_id?: string
+          reminder_days?: number[]
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          weekly_digest_day?: number
+          weekly_digest_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -2307,6 +2509,56 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_notifications: {
+        Row: {
+          created_at: string
+          dedup_key: string
+          id: string
+          notification_type: string
+          org_id: string
+          processed: boolean
+          processed_at: string | null
+          reference_id: string | null
+          reference_type: string | null
+          scheduled_for: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedup_key: string
+          id?: string
+          notification_type: string
+          org_id: string
+          processed?: boolean
+          processed_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          scheduled_for: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dedup_key?: string
+          id?: string
+          notification_type?: string
+          org_id?: string
+          processed?: boolean
+          processed_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          scheduled_for?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_classes: {
         Row: {
           company_id: string
@@ -2565,6 +2817,14 @@ export type Database = {
     }
     Functions: {
       get_user_org_id: { Args: never; Returns: string }
+      schedule_compliance_reminders: {
+        Args: {
+          p_compliance_item_id: string
+          p_expiry_date: string
+          p_org_id: string
+        }
+        Returns: undefined
+      }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }
       user_has_shareholder_access: {
         Args: { check_org_id: string }

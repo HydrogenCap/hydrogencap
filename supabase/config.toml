@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.ai-compliance-checker]
 verify_jwt = false
+ 
+ [functions.send-compliance-reminders]
+ verify_jwt = false
