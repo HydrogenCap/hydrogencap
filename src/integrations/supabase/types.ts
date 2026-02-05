@@ -1652,6 +1652,158 @@ export type Database = {
           },
         ]
       }
+      maintenance_requests: {
+        Row: {
+          category: Database["public"]["Enums"]["maintenance_category"]
+          completed_at: string | null
+          contractor_job_id: string | null
+          created_at: string
+          description: string
+          id: string
+          internal_notes: string | null
+          location_in_property: string | null
+          org_id: string
+          photos: string[] | null
+          property_id: string
+          room_id: string | null
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["maintenance_status"]
+          tenant_feedback: string | null
+          tenant_id: string | null
+          tenant_rating: number | null
+          title: string
+          updated_at: string
+          urgency: Database["public"]["Enums"]["maintenance_urgency"]
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["maintenance_category"]
+          completed_at?: string | null
+          contractor_job_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          internal_notes?: string | null
+          location_in_property?: string | null
+          org_id: string
+          photos?: string[] | null
+          property_id: string
+          room_id?: string | null
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          tenant_feedback?: string | null
+          tenant_id?: string | null
+          tenant_rating?: number | null
+          title: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["maintenance_urgency"]
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["maintenance_category"]
+          completed_at?: string | null
+          contractor_job_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          internal_notes?: string | null
+          location_in_property?: string | null
+          org_id?: string
+          photos?: string[] | null
+          property_id?: string
+          room_id?: string | null
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          tenant_feedback?: string | null
+          tenant_id?: string | null
+          tenant_rating?: number | null
+          title?: string
+          updated_at?: string
+          urgency?: Database["public"]["Enums"]["maintenance_urgency"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_contractor_job_id_fkey"
+            columns: ["contractor_job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_updates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_type: Database["public"]["Enums"]["update_creator_type"]
+          id: string
+          message: string
+          new_status: Database["public"]["Enums"]["maintenance_status"] | null
+          photos: string[] | null
+          request_id: string
+          update_type: string
+          visible_to_tenant: boolean
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_type?: Database["public"]["Enums"]["update_creator_type"]
+          id?: string
+          message: string
+          new_status?: Database["public"]["Enums"]["maintenance_status"] | null
+          photos?: string[] | null
+          request_id: string
+          update_type: string
+          visible_to_tenant?: boolean
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_type?: Database["public"]["Enums"]["update_creator_type"]
+          id?: string
+          message?: string
+          new_status?: Database["public"]["Enums"]["maintenance_status"] | null
+          photos?: string[] | null
+          request_id?: string
+          update_type?: string
+          visible_to_tenant?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_updates_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       management_companies: {
         Row: {
           created_at: string
@@ -2991,6 +3143,214 @@ export type Database = {
           },
         ]
       }
+      rent_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_reconciled: boolean | null
+          notes: string | null
+          org_id: string
+          payment_date: string
+          payment_method: string | null
+          recorded_by: string | null
+          reference: string | null
+          rent_schedule_id: string | null
+          tenancy_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          is_reconciled?: boolean | null
+          notes?: string | null
+          org_id: string
+          payment_date: string
+          payment_method?: string | null
+          recorded_by?: string | null
+          reference?: string | null
+          rent_schedule_id?: string | null
+          tenancy_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_reconciled?: boolean | null
+          notes?: string | null
+          org_id?: string
+          payment_date?: string
+          payment_method?: string | null
+          recorded_by?: string | null
+          reference?: string | null
+          rent_schedule_id?: string | null
+          tenancy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_payments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_rent_schedule_id_fkey"
+            columns: ["rent_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "rent_schedule"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rent_schedule: {
+        Row: {
+          additional_charges: number | null
+          amount_outstanding: number | null
+          amount_paid: number | null
+          created_at: string
+          due_date: string
+          id: string
+          notes: string | null
+          org_id: string
+          period_end: string
+          period_start: string
+          reminder_sent_at: string | null
+          rent_amount: number
+          status: Database["public"]["Enums"]["rent_status"]
+          tenancy_id: string
+          updated_at: string
+          warning_sent_at: string | null
+        }
+        Insert: {
+          additional_charges?: number | null
+          amount_outstanding?: number | null
+          amount_paid?: number | null
+          created_at?: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          period_end: string
+          period_start: string
+          reminder_sent_at?: string | null
+          rent_amount: number
+          status?: Database["public"]["Enums"]["rent_status"]
+          tenancy_id: string
+          updated_at?: string
+          warning_sent_at?: string | null
+        }
+        Update: {
+          additional_charges?: number | null
+          amount_outstanding?: number | null
+          amount_paid?: number | null
+          created_at?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          period_end?: string
+          period_start?: string
+          reminder_sent_at?: string | null
+          rent_amount?: number
+          status?: Database["public"]["Enums"]["rent_status"]
+          tenancy_id?: string
+          updated_at?: string
+          warning_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_schedule_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_schedule_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          amenities: string[] | null
+          created_at: string
+          description: string | null
+          floor: number | null
+          id: string
+          org_id: string
+          photos: string[] | null
+          property_id: string
+          room_name: string
+          room_number: string | null
+          room_type: Database["public"]["Enums"]["room_type"]
+          square_footage: number | null
+          status: Database["public"]["Enums"]["room_status"]
+          target_rent_pcm: number | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          created_at?: string
+          description?: string | null
+          floor?: number | null
+          id?: string
+          org_id: string
+          photos?: string[] | null
+          property_id: string
+          room_name: string
+          room_number?: string | null
+          room_type?: Database["public"]["Enums"]["room_type"]
+          square_footage?: number | null
+          status?: Database["public"]["Enums"]["room_status"]
+          target_rent_pcm?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          created_at?: string
+          description?: string | null
+          floor?: number | null
+          id?: string
+          org_id?: string
+          photos?: string[] | null
+          property_id?: string
+          room_name?: string
+          room_number?: string | null
+          room_type?: Database["public"]["Enums"]["room_type"]
+          square_footage?: number | null
+          status?: Database["public"]["Enums"]["room_status"]
+          target_rent_pcm?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_email_runs: {
         Row: {
           created_at: string
@@ -3309,6 +3669,205 @@ export type Database = {
           },
         ]
       }
+      tenancies: {
+        Row: {
+          created_at: string
+          deposit_amount: number | null
+          deposit_protected_date: string | null
+          deposit_reference: string | null
+          deposit_scheme: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          notice_date: string | null
+          notice_period_weeks: number | null
+          org_id: string
+          property_id: string
+          rent_amount_pcm: number
+          rent_due_day: number
+          room_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["tenancy_status"]
+          tenancy_agreement_url: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_protected_date?: string | null
+          deposit_reference?: string | null
+          deposit_scheme?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          notice_date?: string | null
+          notice_period_weeks?: number | null
+          org_id: string
+          property_id: string
+          rent_amount_pcm: number
+          rent_due_day?: number
+          room_id: string
+          start_date: string
+          status?: Database["public"]["Enums"]["tenancy_status"]
+          tenancy_agreement_url?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_protected_date?: string | null
+          deposit_reference?: string | null
+          deposit_scheme?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          notice_date?: string | null
+          notice_period_weeks?: number | null
+          org_id?: string
+          property_id?: string
+          rent_amount_pcm?: number
+          rent_due_day?: number
+          room_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["tenancy_status"]
+          tenancy_agreement_url?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenancies_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancies_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancies_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          annual_income: number | null
+          created_at: string
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          employer_address: string | null
+          employer_name: string | null
+          employment_status: string | null
+          first_name: string
+          guarantor_address: string | null
+          guarantor_email: string | null
+          guarantor_name: string | null
+          guarantor_phone: string | null
+          id: string
+          last_name: string
+          national_insurance: string | null
+          notes: string | null
+          org_id: string
+          phone: string | null
+          portal_user_id: string | null
+          previous_address: string | null
+          previous_landlord_name: string | null
+          previous_landlord_phone: string | null
+          reference_notes: string | null
+          status: Database["public"]["Enums"]["tenant_status"]
+          updated_at: string
+        }
+        Insert: {
+          annual_income?: number | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employer_address?: string | null
+          employer_name?: string | null
+          employment_status?: string | null
+          first_name: string
+          guarantor_address?: string | null
+          guarantor_email?: string | null
+          guarantor_name?: string | null
+          guarantor_phone?: string | null
+          id?: string
+          last_name: string
+          national_insurance?: string | null
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          portal_user_id?: string | null
+          previous_address?: string | null
+          previous_landlord_name?: string | null
+          previous_landlord_phone?: string | null
+          reference_notes?: string | null
+          status?: Database["public"]["Enums"]["tenant_status"]
+          updated_at?: string
+        }
+        Update: {
+          annual_income?: number | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employer_address?: string | null
+          employer_name?: string | null
+          employment_status?: string | null
+          first_name?: string
+          guarantor_address?: string | null
+          guarantor_email?: string | null
+          guarantor_name?: string | null
+          guarantor_phone?: string | null
+          id?: string
+          last_name?: string
+          national_insurance?: string | null
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          portal_user_id?: string | null
+          previous_address?: string | null
+          previous_landlord_name?: string | null
+          previous_landlord_phone?: string | null
+          reference_notes?: string | null
+          status?: Database["public"]["Enums"]["tenant_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       valuation_alerts: {
         Row: {
           alert_type: string
@@ -3427,6 +3986,10 @@ export type Database = {
           typical_cost: number
         }[]
       }
+      generate_rent_schedule: {
+        Args: { p_months?: number; p_tenancy_id: string }
+        Returns: number
+      }
       get_user_org_id: { Args: never; Returns: string }
       schedule_compliance_reminders: {
         Args: {
@@ -3454,7 +4017,32 @@ export type Database = {
         | "photo"
         | "default"
       autofill_suggestion_status: "pending" | "accepted" | "rejected"
+      maintenance_category:
+        | "plumbing"
+        | "electrical"
+        | "heating"
+        | "appliance"
+        | "damp_mould"
+        | "structural"
+        | "security"
+        | "cleaning"
+        | "garden"
+        | "other"
+      maintenance_status:
+        | "new"
+        | "acknowledged"
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "closed"
+      maintenance_urgency: "emergency" | "urgent" | "normal" | "low"
       passport_change_reason: "ai_accept" | "manual_edit"
+      rent_status: "upcoming" | "due" | "paid" | "partial" | "overdue"
+      room_status: "vacant" | "occupied" | "notice" | "maintenance"
+      room_type: "single" | "double" | "ensuite" | "studio"
+      tenancy_status: "pending" | "active" | "notice" | "ended"
+      tenant_status: "prospect" | "active" | "past" | "blacklisted"
+      update_creator_type: "manager" | "tenant" | "contractor" | "system"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3593,7 +4181,34 @@ export const Constants = {
         "default",
       ],
       autofill_suggestion_status: ["pending", "accepted", "rejected"],
+      maintenance_category: [
+        "plumbing",
+        "electrical",
+        "heating",
+        "appliance",
+        "damp_mould",
+        "structural",
+        "security",
+        "cleaning",
+        "garden",
+        "other",
+      ],
+      maintenance_status: [
+        "new",
+        "acknowledged",
+        "scheduled",
+        "in_progress",
+        "completed",
+        "closed",
+      ],
+      maintenance_urgency: ["emergency", "urgent", "normal", "low"],
       passport_change_reason: ["ai_accept", "manual_edit"],
+      rent_status: ["upcoming", "due", "paid", "partial", "overdue"],
+      room_status: ["vacant", "occupied", "notice", "maintenance"],
+      room_type: ["single", "double", "ensuite", "studio"],
+      tenancy_status: ["pending", "active", "notice", "ended"],
+      tenant_status: ["prospect", "active", "past", "blacklisted"],
+      update_creator_type: ["manager", "tenant", "contractor", "system"],
     },
   },
 } as const

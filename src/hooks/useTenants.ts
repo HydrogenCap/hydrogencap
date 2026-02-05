@@ -1,0 +1,222 @@
+ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useToast } from '@/hooks/use-toast';
+ 
+ export type TenantStatus = 'prospect' | 'active' | 'past' | 'blacklisted';
+ 
+ export interface Tenant {
+   id: string;
+   org_id: string;
+   first_name: string;
+   last_name: string;
+   email: string | null;
+   phone: string | null;
+   date_of_birth: string | null;
+   national_insurance: string | null;
+   emergency_contact_name: string | null;
+   emergency_contact_phone: string | null;
+   emergency_contact_relationship: string | null;
+   employment_status: string | null;
+   employer_name: string | null;
+   employer_address: string | null;
+   annual_income: number | null;
+   guarantor_name: string | null;
+   guarantor_email: string | null;
+   guarantor_phone: string | null;
+   guarantor_address: string | null;
+   previous_address: string | null;
+   previous_landlord_name: string | null;
+   previous_landlord_phone: string | null;
+   reference_notes: string | null;
+   portal_user_id: string | null;
+   status: TenantStatus;
+   notes: string | null;
+   created_at: string;
+   updated_at: string;
+ }
+ 
+ export interface TenantWithProperty extends Tenant {
+   current_tenancy?: {
+     id: string;
+     property_id: string;
+     room_id: string;
+     start_date: string;
+     end_date: string | null;
+     rent_amount_pcm: number;
+     property?: {
+       address_line: string;
+       postcode: string | null;
+     };
+     room?: {
+       room_name: string;
+     };
+   } | null;
+ }
+ 
+ async function getUserOrgId(): Promise<string | null> {
+   const { data, error } = await supabase
+     .from('memberships')
+     .select('org_id')
+     .limit(1)
+     .maybeSingle();
+   if (error || !data) return null;
+   return data.org_id;
+ }
+ 
+ export function useTenants(status?: TenantStatus) {
+   return useQuery({
+     queryKey: ['tenants', status],
+     queryFn: async () => {
+       let query = supabase
+         .from('tenants')
+         .select('*')
+         .order('created_at', { ascending: false });
+ 
+       if (status) {
+         query = query.eq('status', status);
+       }
+ 
+       const { data, error } = await query;
+       if (error) throw error;
+       return data as Tenant[];
+     },
+   });
+ }
+ 
+ export function useTenantsWithProperty() {
+   return useQuery({
+     queryKey: ['tenants', 'with-property'],
+     queryFn: async () => {
+       // Get all tenants
+       const { data: tenants, error: tenantsError } = await supabase
+         .from('tenants')
+         .select('*')
+         .order('created_at', { ascending: false });
+ 
+       if (tenantsError) throw tenantsError;
+ 
+       // Get active tenancies with property and room info
+       const { data: tenancies, error: tenanciesError } = await supabase
+         .from('tenancies')
+         .select(`
+           id, tenant_id, property_id, room_id, start_date, end_date, rent_amount_pcm,
+           property:properties(address_line, postcode),
+           room:rooms(room_name)
+         `)
+         .in('status', ['active', 'notice']);
+ 
+       if (tenanciesError) throw tenanciesError;
+ 
+       // Map tenancies to tenants
+       const tenancyMap = new Map(tenancies.map(t => [t.tenant_id, t]));
+ 
+       return tenants.map(tenant => ({
+         ...tenant,
+         current_tenancy: tenancyMap.get(tenant.id) || null,
+       })) as TenantWithProperty[];
+     },
+   });
+ }
+ 
+ export function useTenant(tenantId: string) {
+   return useQuery({
+     queryKey: ['tenants', tenantId],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from('tenants')
+         .select('*')
+         .eq('id', tenantId)
+         .single();
+       if (error) throw error;
+       return data as Tenant;
+     },
+     enabled: !!tenantId,
+   });
+ }
+ 
+ export function useCreateTenant() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async (tenant: Omit<Tenant, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
+       const orgId = await getUserOrgId();
+       if (!orgId) throw new Error('No organization found');
+ 
+       const { data, error } = await supabase
+         .from('tenants')
+         .insert({ ...tenant, org_id: orgId })
+         .select()
+         .single();
+ 
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: (data) => {
+       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+       toast({ title: 'Tenant created', description: `${data.first_name} ${data.last_name} has been added.` });
+     },
+     onError: (error) => {
+       toast({ title: 'Failed to create tenant', description: error.message, variant: 'destructive' });
+     },
+   });
+ }
+ 
+ export function useUpdateTenant() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async ({ id, ...updates }: Partial<Tenant> & { id: string }) => {
+       const { data, error } = await supabase
+         .from('tenants')
+         .update(updates)
+         .eq('id', id)
+         .select()
+         .single();
+ 
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+       toast({ title: 'Tenant updated' });
+     },
+     onError: (error) => {
+       toast({ title: 'Failed to update tenant', description: error.message, variant: 'destructive' });
+     },
+   });
+ }
+ 
+ export function useDeleteTenant() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async (id: string) => {
+       const { error } = await supabase.from('tenants').delete().eq('id', id);
+       if (error) throw error;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+       toast({ title: 'Tenant deleted' });
+     },
+     onError: (error) => {
+       toast({ title: 'Failed to delete tenant', description: error.message, variant: 'destructive' });
+     },
+   });
+ }
+ 
+ export function useTenantStats() {
+   const { data: tenants } = useTenants();
+ 
+   if (!tenants) return null;
+ 
+   return {
+     total: tenants.length,
+     prospect: tenants.filter(t => t.status === 'prospect').length,
+     active: tenants.filter(t => t.status === 'active').length,
+     past: tenants.filter(t => t.status === 'past').length,
+     blacklisted: tenants.filter(t => t.status === 'blacklisted').length,
+   };
+ }
