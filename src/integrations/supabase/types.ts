@@ -946,6 +946,94 @@ export type Database = {
           },
         ]
       }
+      document_activity: {
+        Row: {
+          action: string
+          details: Json | null
+          document_id: string
+          id: string
+          ip_address: unknown
+          performed_at: string
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          document_id: string
+          id?: string
+          ip_address?: unknown
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          document_id?: string
+          id?: string
+          ip_address?: unknown
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_activity_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          entity_type: string | null
+          icon: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+          org_id: string | null
+          slug: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          entity_type?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          org_id?: string | null
+          slug: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          entity_type?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          org_id?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_categories_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_share_links: {
         Row: {
           compliance_document_id: string | null
@@ -1022,69 +1110,135 @@ export type Database = {
           ai_property_confidence: number | null
           ai_suggested_doc_type: string | null
           ai_suggested_property_id: string | null
+          category: string | null
+          company_id: string | null
+          compliance_item_id: string | null
+          contractor_job_id: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          description: string | null
+          display_name: string | null
           doc_type: string | null
+          document_date: string | null
           expiry_date: string | null
           extracted_address_text: string | null
           extracted_epc_rating: string | null
           extracted_issue_date: string | null
           extracted_reference_number: string | null
           extraction_status: string | null
+          file_size_bytes: number | null
+          file_type: string | null
           file_url: string
           final_file_name: string | null
           id: string
+          is_confidential: boolean | null
+          is_current_version: boolean | null
+          mime_type: string | null
           org_id: string
           original_file_name: string
+          previous_version_id: string | null
           property_id: string | null
           renamed_at: string | null
           review_status: string | null
+          tags: Json | null
+          tenancy_id: string | null
+          tenant_id: string | null
           updated_at: string
+          uploaded_by: string | null
+          version: number | null
+          visible_to_shareholders: boolean | null
+          visible_to_tenants: boolean | null
         }
         Insert: {
           ai_doc_type_confidence?: number | null
           ai_property_confidence?: number | null
           ai_suggested_doc_type?: string | null
           ai_suggested_property_id?: string | null
+          category?: string | null
+          company_id?: string | null
+          compliance_item_id?: string | null
+          contractor_job_id?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          description?: string | null
+          display_name?: string | null
           doc_type?: string | null
+          document_date?: string | null
           expiry_date?: string | null
           extracted_address_text?: string | null
           extracted_epc_rating?: string | null
           extracted_issue_date?: string | null
           extracted_reference_number?: string | null
           extraction_status?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
           file_url: string
           final_file_name?: string | null
           id?: string
+          is_confidential?: boolean | null
+          is_current_version?: boolean | null
+          mime_type?: string | null
           org_id: string
           original_file_name: string
+          previous_version_id?: string | null
           property_id?: string | null
           renamed_at?: string | null
           review_status?: string | null
+          tags?: Json | null
+          tenancy_id?: string | null
+          tenant_id?: string | null
           updated_at?: string
+          uploaded_by?: string | null
+          version?: number | null
+          visible_to_shareholders?: boolean | null
+          visible_to_tenants?: boolean | null
         }
         Update: {
           ai_doc_type_confidence?: number | null
           ai_property_confidence?: number | null
           ai_suggested_doc_type?: string | null
           ai_suggested_property_id?: string | null
+          category?: string | null
+          company_id?: string | null
+          compliance_item_id?: string | null
+          contractor_job_id?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          description?: string | null
+          display_name?: string | null
           doc_type?: string | null
+          document_date?: string | null
           expiry_date?: string | null
           extracted_address_text?: string | null
           extracted_epc_rating?: string | null
           extracted_issue_date?: string | null
           extracted_reference_number?: string | null
           extraction_status?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
           file_url?: string
           final_file_name?: string | null
           id?: string
+          is_confidential?: boolean | null
+          is_current_version?: boolean | null
+          mime_type?: string | null
           org_id?: string
           original_file_name?: string
+          previous_version_id?: string | null
           property_id?: string | null
           renamed_at?: string | null
           review_status?: string | null
+          tags?: Json | null
+          tenancy_id?: string | null
+          tenant_id?: string | null
           updated_at?: string
+          uploaded_by?: string | null
+          version?: number | null
+          visible_to_shareholders?: boolean | null
+          visible_to_tenants?: boolean | null
         }
         Relationships: [
           {
@@ -1095,6 +1249,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_compliance_item_id_fkey"
+            columns: ["compliance_item_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_contractor_job_id_fkey"
+            columns: ["contractor_job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -1102,10 +1277,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documents_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "documents_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -3991,6 +4187,12 @@ export type Database = {
         Returns: number
       }
       get_user_org_id: { Args: never; Returns: string }
+      log_document_download: {
+        Args: { p_document_id: string }
+        Returns: undefined
+      }
+      log_document_view: { Args: { p_document_id: string }; Returns: undefined }
+      restore_document: { Args: { p_document_id: string }; Returns: boolean }
       schedule_compliance_reminders: {
         Args: {
           p_compliance_item_id: string
@@ -3998,6 +4200,10 @@ export type Database = {
           p_org_id: string
         }
         Returns: undefined
+      }
+      soft_delete_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
       }
       update_job_priorities: { Args: never; Returns: number }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }

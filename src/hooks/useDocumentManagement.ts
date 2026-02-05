@@ -1,0 +1,415 @@
+ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useToast } from '@/hooks/use-toast';
+ 
+ export interface ManagedDocument {
+   id: string;
+   org_id: string;
+   file_url: string;
+   original_file_name: string;
+   display_name: string | null;
+   description: string | null;
+   category: string | null;
+   tags: string[] | null;
+   file_type: string | null;
+   file_size_bytes: number | null;
+   mime_type: string | null;
+   property_id: string | null;
+   company_id: string | null;
+   tenant_id: string | null;
+   tenancy_id: string | null;
+   compliance_item_id: string | null;
+   contractor_job_id: string | null;
+   document_date: string | null;
+   expiry_date: string | null;
+   is_confidential: boolean | null;
+   visible_to_shareholders: boolean | null;
+   visible_to_tenants: boolean | null;
+   version: number | null;
+   is_current_version: boolean | null;
+   uploaded_by: string | null;
+   created_at: string;
+   updated_at: string;
+   deleted_at: string | null;
+   // Joined data
+   property?: { address_line: string } | null;
+   company?: { legal_name: string } | null;
+ }
+ 
+ export interface DocumentCategory {
+   id: string;
+   org_id: string | null;
+   name: string;
+   slug: string;
+   description: string | null;
+   icon: string | null;
+   color: string | null;
+   entity_type: string | null;
+   display_order: number | null;
+   is_system: boolean | null;
+ }
+ 
+ export interface DocumentFilters {
+   propertyId?: string;
+   companyId?: string;
+   tenantId?: string;
+   tenancyId?: string;
+   complianceItemId?: string;
+   jobId?: string;
+   category?: string;
+   search?: string;
+ }
+ 
+ // Get file type from mime type or file extension
+ export function getFileType(mimeType: string | null, fileName: string): string {
+   if (mimeType) {
+     if (mimeType.includes('pdf')) return 'pdf';
+     if (mimeType.includes('image')) return 'image';
+     if (mimeType.includes('word') || mimeType.includes('document')) return 'doc';
+     if (mimeType.includes('sheet') || mimeType.includes('excel') || mimeType.includes('csv')) return 'spreadsheet';
+   }
+   
+   const ext = fileName.split('.').pop()?.toLowerCase();
+   if (['pdf'].includes(ext || '')) return 'pdf';
+   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) return 'image';
+   if (['doc', 'docx'].includes(ext || '')) return 'doc';
+   if (['xls', 'xlsx', 'csv'].includes(ext || '')) return 'spreadsheet';
+   return 'other';
+ }
+ 
+ async function getUserOrgId(): Promise<string | null> {
+   const { data, error } = await supabase
+     .from('memberships')
+     .select('org_id')
+     .limit(1)
+     .maybeSingle();
+   
+   if (error || !data) return null;
+   return data.org_id;
+ }
+ 
+ // Get documents with filters
+ export function useManagedDocuments(filters?: DocumentFilters) {
+   return useQuery({
+     queryKey: ['managed-documents', filters],
+     queryFn: async () => {
+       let query = supabase
+         .from('documents')
+         .select(`
+           *,
+          property:properties!documents_property_id_fkey(address_line),
+           company:companies(legal_name)
+         `)
+         .is('deleted_at', null)
+         .order('created_at', { ascending: false });
+ 
+       if (filters?.propertyId) {
+         query = query.eq('property_id', filters.propertyId);
+       }
+       if (filters?.companyId) {
+         query = query.eq('company_id', filters.companyId);
+       }
+       if (filters?.tenantId) {
+         query = query.eq('tenant_id', filters.tenantId);
+       }
+       if (filters?.tenancyId) {
+         query = query.eq('tenancy_id', filters.tenancyId);
+       }
+       if (filters?.complianceItemId) {
+         query = query.eq('compliance_item_id', filters.complianceItemId);
+       }
+       if (filters?.jobId) {
+         query = query.eq('contractor_job_id', filters.jobId);
+       }
+       if (filters?.category && filters.category !== 'all') {
+         query = query.eq('category', filters.category);
+       }
+ 
+       const { data, error } = await query;
+       if (error) throw error;
+ 
+       // Client-side search filter
+       let results = data as ManagedDocument[];
+       if (filters?.search) {
+         const searchLower = filters.search.toLowerCase();
+         results = results.filter(doc =>
+           doc.display_name?.toLowerCase().includes(searchLower) ||
+           doc.original_file_name.toLowerCase().includes(searchLower) ||
+           doc.description?.toLowerCase().includes(searchLower)
+         );
+       }
+ 
+       return results;
+     },
+   });
+ }
+ 
+ // Get document categories
+ export function useDocumentCategories(entityType?: string) {
+   return useQuery({
+     queryKey: ['document-categories', entityType],
+     queryFn: async () => {
+       let query = supabase
+         .from('document_categories')
+         .select('*')
+         .order('display_order');
+ 
+       if (entityType) {
+         query = query.or(`entity_type.eq.${entityType},entity_type.eq.all`);
+       }
+ 
+       const { data, error } = await query;
+       if (error) throw error;
+       return data as DocumentCategory[];
+     },
+   });
+ }
+ 
+ // Upload document
+ export function useUploadManagedDocument() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async ({
+       file,
+       displayName,
+       category,
+       description,
+       propertyId,
+       companyId,
+       tenantId,
+       tenancyId,
+       complianceItemId,
+       jobId,
+       documentDate,
+       expiryDate,
+       isConfidential,
+       visibleToShareholders,
+       visibleToTenants,
+     }: {
+       file: File;
+       displayName: string;
+       category: string;
+       description?: string;
+       propertyId?: string;
+       companyId?: string;
+       tenantId?: string;
+       tenancyId?: string;
+       complianceItemId?: string;
+       jobId?: string;
+       documentDate?: string;
+       expiryDate?: string;
+       isConfidential?: boolean;
+       visibleToShareholders?: boolean;
+       visibleToTenants?: boolean;
+     }) => {
+       const orgId = await getUserOrgId();
+       if (!orgId) throw new Error('No organization found');
+ 
+       const { data: userData } = await supabase.auth.getUser();
+ 
+       // Generate unique file path
+       const fileExt = file.name.split('.').pop();
+       const filePath = `${orgId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+ 
+       // Upload to storage
+       const { error: uploadError } = await supabase.storage
+         .from('documents')
+         .upload(filePath, file);
+ 
+       if (uploadError) throw uploadError;
+ 
+       // Get public URL
+       const { data: urlData } = supabase.storage
+         .from('documents')
+         .getPublicUrl(filePath);
+ 
+       // Create document record
+       const { data, error } = await supabase
+         .from('documents')
+         .insert({
+           org_id: orgId,
+           file_url: urlData.publicUrl,
+           original_file_name: file.name,
+           display_name: displayName,
+           description: description || null,
+           category,
+           file_type: getFileType(file.type, file.name),
+           file_size_bytes: file.size,
+           mime_type: file.type || null,
+           property_id: propertyId || null,
+           company_id: companyId || null,
+           tenant_id: tenantId || null,
+           tenancy_id: tenancyId || null,
+           compliance_item_id: complianceItemId || null,
+           contractor_job_id: jobId || null,
+           document_date: documentDate || null,
+           expiry_date: expiryDate || null,
+           is_confidential: isConfidential || false,
+           visible_to_shareholders: visibleToShareholders || false,
+           visible_to_tenants: visibleToTenants || false,
+           uploaded_by: userData.user?.id || null,
+         })
+         .select()
+         .single();
+ 
+       if (error) throw error;
+ 
+       // Log activity
+       await supabase.from('document_activity').insert({
+         document_id: data.id,
+         action: 'uploaded',
+         performed_by: userData.user?.id || null,
+       });
+ 
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+       toast({ title: 'Document uploaded successfully' });
+     },
+     onError: (error) => {
+       toast({
+         title: 'Upload failed',
+         description: error.message,
+         variant: 'destructive',
+       });
+     },
+   });
+ }
+ 
+ // Update document metadata
+ export function useUpdateManagedDocument() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async ({
+       id,
+       displayName,
+       description,
+       category,
+       tags,
+       documentDate,
+       expiryDate,
+       isConfidential,
+       visibleToShareholders,
+       visibleToTenants,
+     }: {
+       id: string;
+       displayName?: string;
+       description?: string;
+       category?: string;
+       tags?: string[];
+       documentDate?: string;
+       expiryDate?: string;
+       isConfidential?: boolean;
+       visibleToShareholders?: boolean;
+       visibleToTenants?: boolean;
+     }) => {
+       const { data: userData } = await supabase.auth.getUser();
+ 
+       const updateData: Record<string, unknown> = {
+         updated_at: new Date().toISOString(),
+       };
+ 
+       if (displayName !== undefined) updateData.display_name = displayName;
+       if (description !== undefined) updateData.description = description;
+       if (category !== undefined) updateData.category = category;
+       if (tags !== undefined) updateData.tags = tags;
+       if (documentDate !== undefined) updateData.document_date = documentDate || null;
+       if (expiryDate !== undefined) updateData.expiry_date = expiryDate || null;
+       if (isConfidential !== undefined) updateData.is_confidential = isConfidential;
+       if (visibleToShareholders !== undefined) updateData.visible_to_shareholders = visibleToShareholders;
+       if (visibleToTenants !== undefined) updateData.visible_to_tenants = visibleToTenants;
+ 
+       const { data, error } = await supabase
+         .from('documents')
+         .update(updateData)
+         .eq('id', id)
+         .select()
+         .single();
+ 
+       if (error) throw error;
+ 
+       // Log activity
+       await supabase.from('document_activity').insert({
+         document_id: id,
+         action: 'edited',
+         performed_by: userData.user?.id || null,
+       });
+ 
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+       toast({ title: 'Document updated' });
+     },
+   });
+ }
+ 
+ // Soft delete document
+ export function useDeleteManagedDocument() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async (documentId: string) => {
+       const { data, error } = await supabase.rpc('soft_delete_document', {
+         p_document_id: documentId,
+       });
+ 
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+       toast({ title: 'Document deleted' });
+     },
+   });
+ }
+ 
+ // Download document (logs the download)
+ export function useDownloadDocument() {
+   return useMutation({
+     mutationFn: async (document: ManagedDocument) => {
+       // Log download
+       await supabase.rpc('log_document_download', { p_document_id: document.id });
+ 
+       // Trigger download
+       const response = await fetch(document.file_url);
+       const blob = await response.blob();
+       const url = window.URL.createObjectURL(blob);
+       const a = window.document.createElement('a');
+       a.href = url;
+       a.download = document.original_file_name;
+       window.document.body.appendChild(a);
+       a.click();
+       window.URL.revokeObjectURL(url);
+       a.remove();
+ 
+       return true;
+     },
+   });
+ }
+ 
+ // Get document activity
+ export function useDocumentActivity(documentId: string | undefined) {
+   return useQuery({
+     queryKey: ['document-activity', documentId],
+     queryFn: async () => {
+       if (!documentId) return [];
+ 
+       const { data, error } = await supabase
+         .from('document_activity')
+         .select('*')
+         .eq('document_id', documentId)
+         .order('performed_at', { ascending: false });
+ 
+       if (error) throw error;
+       return data;
+     },
+     enabled: !!documentId,
+   });
+ }
