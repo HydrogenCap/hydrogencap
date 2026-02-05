@@ -41,6 +41,8 @@ import Pipeline from "./pages/Pipeline";
 import SharedDocument from "./pages/SharedDocument";
 import NotFound from "./pages/NotFound";
 import Contractors from "./pages/Contractors";
+import Jobs from "./pages/Jobs";
+import JobDetail from "./pages/JobDetail";
 
 // Portal pages
 import {
@@ -277,6 +279,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Contractors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs"
+              element={
+                <ProtectedRoute>
+                  <Jobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs/:jobId"
+              element={
+                <ProtectedRoute>
+                  <JobDetail />
                 </ProtectedRoute>
               }
             />

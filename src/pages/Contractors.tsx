@@ -8,13 +8,14 @@
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
  import { useContractors } from '@/hooks/useContractors';
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
- import { ContractorCard, AddContractorDialog } from '@/components/contractors';
+import { ContractorCard, AddContractorDialog, ContractorDetailDrawer } from '@/components/contractors';
  import { JobTrackerWidget } from '@/components/contractors/JobTrackerWidget';
  
  export default function Contractors() {
    const [searchTerm, setSearchTerm] = useState('');
    const [complianceFilter, setComplianceFilter] = useState<string>('all');
    const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedContractorId, setSelectedContractorId] = useState<string | null>(null);
  
    const { data: contractors, isLoading } = useContractors({
      isActive: true,
@@ -98,7 +99,11 @@
                        </h3>
                        <div className="grid gap-4 md:grid-cols-2">
                          {preferredContractors.map(contractor => (
-                           <ContractorCard key={contractor.id} contractor={contractor} />
+                            <ContractorCard 
+                              key={contractor.id} 
+                              contractor={contractor}
+                              onClick={() => setSelectedContractorId(contractor.id)}
+                            />
                          ))}
                        </div>
                      </div>
@@ -111,7 +116,11 @@
                        )}
                        <div className="grid gap-4 md:grid-cols-2">
                          {otherContractors.map(contractor => (
-                           <ContractorCard key={contractor.id} contractor={contractor} />
+                            <ContractorCard 
+                              key={contractor.id} 
+                              contractor={contractor}
+                              onClick={() => setSelectedContractorId(contractor.id)}
+                            />
                          ))}
                        </div>
                      </div>
@@ -139,7 +148,11 @@
                  <TabsContent value="preferred" className="mt-4">
                    <div className="grid gap-4 md:grid-cols-2">
                      {preferredContractors.map(contractor => (
-                       <ContractorCard key={contractor.id} contractor={contractor} />
+                        <ContractorCard 
+                          key={contractor.id} 
+                          contractor={contractor}
+                          onClick={() => setSelectedContractorId(contractor.id)}
+                        />
                      ))}
                    </div>
                    {preferredContractors.length === 0 && (
@@ -169,6 +182,12 @@
          open={showAddDialog}
          onOpenChange={setShowAddDialog}
        />
+
+      <ContractorDetailDrawer
+        contractorId={selectedContractorId}
+        open={!!selectedContractorId}
+        onOpenChange={(open) => !open && setSelectedContractorId(null)}
+      />
      </AppLayout>
    );
  }
