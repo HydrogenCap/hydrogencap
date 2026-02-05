@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell } from 'lucide-react';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
 import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
-import { ShareholderManagement } from '@/components/settings/ShareholderManagement';
+ import { ShareholderManagement } from '@/components/settings/ShareholderManagement';
+ import { NotificationSettings } from '@/components/settings/NotificationSettings';
+ import { ContractorDirectory } from '@/components/settings/ContractorDirectory';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
@@ -270,11 +272,15 @@ export default function Settings() {
               <MapPin className="h-4 w-4" />
               Locations
             </TabsTrigger>
-            <TabsTrigger value="shareholders" className="gap-2">
-              <Shield className="h-4 w-4" />
-              Shareholders
-            </TabsTrigger>
-          </TabsList>
+             <TabsTrigger value="shareholders" className="gap-2">
+               <Shield className="h-4 w-4" />
+               Shareholders
+             </TabsTrigger>
+             <TabsTrigger value="notifications" className="gap-2">
+               <Bell className="h-4 w-4" />
+               Notifications
+             </TabsTrigger>
+           </TabsList>
 
           <TabsContent value="profile" className="space-y-6 max-w-2xl">
             {/* Profile Settings */}
@@ -663,6 +669,12 @@ export default function Settings() {
           <TabsContent value="shareholders" className="space-y-6">
             <ShareholderManagement />
           </TabsContent>
+
+           {/* Notifications Tab */}
+           <TabsContent value="notifications" className="space-y-6">
+             <NotificationSettings />
+             <ContractorDirectory />
+           </TabsContent>
         </Tabs>
       </div>
     </AppLayout>

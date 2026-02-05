@@ -15,6 +15,7 @@ import { useProperties } from '@/hooks/useProperties';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import { ComplianceStatusCard, type StatusType } from '@/components/compliance/ComplianceStatusCard';
 import { ComplianceItemDrawer } from '@/components/compliance/ComplianceItemDrawer';
+ import { CalendarExportButton } from '@/components/compliance/CalendarExportButton';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface ComplianceEvent {
@@ -210,9 +211,12 @@ export default function ComplianceCalendar() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <div className="flex items-center gap-2">
-            <CalendarCheck className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Compliance Calendar</h1>
+           <div className="flex items-center justify-between">
+             <div className="flex items-center gap-2">
+               <CalendarCheck className="h-6 w-6 text-primary" />
+               <h1 className="text-2xl font-bold text-foreground">Compliance Calendar</h1>
+             </div>
+             <CalendarExportButton />
           </div>
           <p className="text-muted-foreground mt-1">
             Track certificate expiry dates across your portfolio. Click any status card to view and update items.

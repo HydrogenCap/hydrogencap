@@ -1,0 +1,85 @@
+ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useAuth } from '@/contexts/AuthContext';
+ import { useToast } from '@/hooks/use-toast';
+ 
+ export interface NotificationPreferences {
+   id: string;
+   user_id: string;
+   org_id: string;
+   email_enabled: boolean;
+   email_address: string | null;
+   reminder_days: number[];
+   weekly_digest_enabled: boolean;
+   weekly_digest_day: number;
+   notify_expired: boolean;
+   notify_expiring_soon: boolean;
+   notify_rate_expiry: boolean;
+   notify_negative_cashflow: boolean;
+   timezone: string;
+ }
+ 
+ export function useNotificationPreferences() {
+   const { user } = useAuth();
+   
+   return useQuery({
+     queryKey: ['notification-preferences', user?.id],
+     queryFn: async () => {
+       if (!user) return null;
+       
+       const { data, error } = await supabase
+         .from('notification_preferences')
+         .select('*')
+         .eq('user_id', user.id)
+         .maybeSingle();
+       
+       if (error) throw error;
+       return data as NotificationPreferences | null;
+     },
+     enabled: !!user,
+   });
+ }
+ 
+ export function useUpdateNotificationPreferences() {
+   const queryClient = useQueryClient();
+   const { user } = useAuth();
+   const { toast } = useToast();
+   
+   return useMutation({
+     mutationFn: async (prefs: Partial<NotificationPreferences>) => {
+       if (!user) throw new Error('Not authenticated');
+       
+       // Get org_id
+       const { data: membership } = await supabase
+         .from('memberships')
+         .select('org_id')
+         .eq('user_id', user.id)
+         .single();
+       
+       if (!membership) throw new Error('No organization');
+       
+       const { data, error } = await supabase
+         .from('notification_preferences')
+         .upsert({
+           user_id: user.id,
+           org_id: membership.org_id,
+           ...prefs,
+           updated_at: new Date().toISOString(),
+         }, {
+           onConflict: 'user_id,org_id',
+         })
+         .select()
+         .single();
+       
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
+       toast({ title: 'Preferences saved' });
+     },
+     onError: (error) => {
+       toast({ title: 'Failed to save', description: error.message, variant: 'destructive' });
+     },
+   });
+ }
