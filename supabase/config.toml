@@ -64,3 +64,6 @@ verify_jwt = false
 
  [functions.send-job-reminders]
  verify_jwt = false
+ 
+ [functions.create-compliance-jobs]
+ verify_jwt = false

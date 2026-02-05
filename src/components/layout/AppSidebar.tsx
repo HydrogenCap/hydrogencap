@@ -42,6 +42,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
+import { useJobCounts } from '@/hooks/useContractorJobs';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import logoImage from '@/assets/logo.png';
 
@@ -54,7 +55,7 @@ const mainNavItems = [
   { title: 'Refinance', icon: CalendarDays, href: '/refinance-calendar' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
-  { title: 'Jobs', icon: ClipboardList, href: '/jobs' },
+  { title: 'Jobs', icon: ClipboardList, href: '/jobs', showJobsBadge: true },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
@@ -69,6 +70,10 @@ export function AppSidebar() {
   const { data: inboxDocuments } = useInboxDocuments();
   const { data: allCompliance } = useAllCompliance();
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
+  const { data: jobCounts } = useJobCounts();
+
+  // Count urgent/high priority jobs
+  const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
 
   // Count pending documents
   const pendingCount = inboxDocuments?.filter(
@@ -108,6 +113,7 @@ export function AppSidebar() {
                 const isActive = location.pathname === item.href || 
                   (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
                 const showActionsBadge = (item as any).showBadge && actionsCount > 0;
+              const showJobsBadge = (item as any).showJobsBadge && urgentJobsCount > 0;
                 
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -123,6 +129,14 @@ export function AppSidebar() {
                             {actionsCount}
                           </Badge>
                         )}
+                      {showJobsBadge && (
+                        <Badge 
+                          variant={jobCounts?.urgent ? "destructive" : "secondary"}
+                          className="h-5 min-w-5 px-1.5 text-xs"
+                        >
+                          {urgentJobsCount}
+                        </Badge>
+                      )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
