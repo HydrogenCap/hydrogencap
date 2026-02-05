@@ -1,13 +1,15 @@
  import React from 'react';
- import { Bell, Mail, Calendar, Clock, Loader2 } from 'lucide-react';
+import { Bell, Mail, Calendar, Clock, Loader2, Send } from 'lucide-react';
  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
  import { Label } from '@/components/ui/label';
  import { Switch } from '@/components/ui/switch';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
  import { Badge } from '@/components/ui/badge';
  import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
  import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/hooks/useNotificationPreferences';
  import { useAuth } from '@/contexts/AuthContext';
+import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
  
  const DAYS_OF_WEEK = [
    { value: 0, label: 'Sunday' },
@@ -33,6 +35,7 @@
    const { user } = useAuth();
    const { data: prefs, isLoading } = useNotificationPreferences();
    const updatePrefs = useUpdateNotificationPreferences();
+  const sendReminders = useSendComplianceReminders();
  
    const handleToggle = (key: string, value: boolean) => {
      updatePrefs.mutate({ [key]: value } as any);
@@ -96,6 +99,30 @@
            {currentPrefs.email_enabled && (
              <>
                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Send Reminders Now</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Manually trigger all pending compliance reminders
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sendReminders.mutate()}
+                    disabled={sendReminders.isPending}
+                  >
+                    {sendReminders.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-2" />
+                    )}
+                    Send Now
+                  </Button>
+                </div>
+
+                <Separator />
                
                <div className="space-y-4">
                  <Label>Notification Types</Label>
