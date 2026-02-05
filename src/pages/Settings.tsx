@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,8 @@ import { useBatchImport } from '@/hooks/useBatchImport';
 import { useProperties } from '@/hooks/useProperties';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -51,6 +53,40 @@ export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Profile and Organization state
+  const { data: profile } = useProfile();
+  const { data: organization } = useOrganization();
+  const updateProfile = useUpdateProfile();
+  const updateOrganization = useUpdateOrganization();
+  const [fullName, setFullName] = useState('');
+  const [orgName, setOrgName] = useState('');
+
+  // Sync state with fetched data
+  useEffect(() => {
+    if (profile?.full_name) setFullName(profile.full_name);
+  }, [profile?.full_name]);
+
+  useEffect(() => {
+    if (organization?.name) setOrgName(organization.name);
+  }, [organization?.name]);
+
+  const handleSaveProfile = () => {
+    if (!fullName.trim()) {
+      toast({ title: 'Name required', description: 'Please enter your full name', variant: 'destructive' });
+      return;
+    }
+    updateProfile.mutate({ full_name: fullName.trim() });
+  };
+
+  const handleSaveOrganization = () => {
+    if (!organization?.id) return;
+    if (!orgName.trim()) {
+      toast({ title: 'Name required', description: 'Please enter an organization name', variant: 'destructive' });
+      return;
+    }
+    updateOrganization.mutate({ orgId: organization.id, name: orgName.trim() });
+  };
 
   // Property import state
   const batchImport = useBatchImport();
@@ -306,11 +342,15 @@ export default function Settings() {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                     placeholder="Enter your name"
                     className="bg-input border-border"
                   />
                 </div>
-                <Button>Save Changes</Button>
+                <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+                  {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
               </CardContent>
             </Card>
 
@@ -333,11 +373,15 @@ export default function Settings() {
                   <Label htmlFor="orgName">Organization Name</Label>
                   <Input
                     id="orgName"
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
                     placeholder="My Portfolio"
                     className="bg-input border-border"
                   />
                 </div>
-                <Button>Update Organization</Button>
+                <Button onClick={handleSaveOrganization} disabled={updateOrganization.isPending}>
+                  {updateOrganization.isPending ? 'Updating...' : 'Update Organization'}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
