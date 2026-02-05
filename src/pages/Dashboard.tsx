@@ -25,6 +25,7 @@ import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterTog
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
 import { ThisMonthWidget } from '@/components/dashboard/ThisMonthWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
+import { UpcomingExpirationsWidget } from '@/components/dashboard/UpcomingExpirationsWidget';
 import {
   formatGBP,
   formatPercent,
@@ -751,6 +752,11 @@ function DashboardPage() {
         {/* Compliance Overview */}
         <ErrorBoundary>
           <MissingComplianceWidget />
+        </ErrorBoundary>
+
+        {/* Upcoming Compliance Expirations */}
+        <ErrorBoundary>
+          <UpcomingExpirationsWidget />
         </ErrorBoundary>
 
         {/* Recent Activity */}
