@@ -10,7 +10,7 @@ export type Photo = Tables<'photos'>;
  */
 export function useAllPropertyCoverPhotos() {
   return useQuery({
-    queryKey: ['property_photos_covers'],
+    queryKey: ['property_photos_covers_array'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('photos')
