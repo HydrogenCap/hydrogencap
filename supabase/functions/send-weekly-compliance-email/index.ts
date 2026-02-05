@@ -13,6 +13,7 @@ interface Property {
   postcode: string | null;
   town_city: string | null;
   lifecycle_type: string | null;
+  org_id: string;
 }
 
 interface ComplianceItem {
@@ -333,7 +334,7 @@ serve(async (req) => {
     // Fetch all CORE RENTAL properties only (development properties are excluded from compliance emails)
     const { data: properties, error: propError } = await supabase
       .from("properties")
-      .select("id, address_line, postcode, town_city, lifecycle_type")
+      .select("id, address_line, postcode, town_city, lifecycle_type, org_id")
       .eq("lifecycle_type", "core_rental");
 
     if (propError) throw propError;
@@ -469,7 +470,8 @@ serve(async (req) => {
         scheduled_for: new Date().toISOString(),
         status: "queued",
         recipient_email: recipientEmail,
-        email_subject: emailSubject
+        email_subject: emailSubject,
+        org_id: coreRentalProperties[0]?.org_id || null
       })
       .select()
       .single();

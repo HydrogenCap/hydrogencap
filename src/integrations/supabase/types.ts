@@ -2997,6 +2997,7 @@ export type Database = {
           email_subject: string | null
           error: string | null
           id: string
+          org_id: string | null
           provider_message_id: string | null
           recipient_email: string | null
           run_key: string
@@ -3009,6 +3010,7 @@ export type Database = {
           email_subject?: string | null
           error?: string | null
           id?: string
+          org_id?: string | null
           provider_message_id?: string | null
           recipient_email?: string | null
           run_key: string
@@ -3021,6 +3023,7 @@ export type Database = {
           email_subject?: string | null
           error?: string | null
           id?: string
+          org_id?: string | null
           provider_message_id?: string | null
           recipient_email?: string | null
           run_key?: string
@@ -3028,7 +3031,15 @@ export type Database = {
           sent_at?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_email_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_notifications: {
         Row: {
