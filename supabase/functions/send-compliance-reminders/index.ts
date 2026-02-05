@@ -7,35 +7,35 @@
    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
  };
  
- interface ScheduledNotification {
-   id: string;
-   org_id: string;
-   user_id: string;
-   notification_type: string;
-   reference_type: string;
-   reference_id: string;
-   scheduled_for: string;
- }
- 
  interface ComplianceItem {
    id: string;
    property_id: string;
    compliance_type: string;
    expiry_date: string;
-   property?: {
+  org_id: string;
+  last_reminder_sent_at: string | null;
+  reminder_count: number | null;
+  property?: {
      address_line: string;
      postcode: string;
-   };
+  }[] | null;
  }
  
  const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
  
+function getPropertyAddress(item: ComplianceItem): string {
+  if (item.property && Array.isArray(item.property) && item.property.length > 0) {
+    return item.property[0].address_line || 'Unknown Property';
+  }
+  return 'Unknown Property';
+}
+
  function generateComplianceReminderEmail(
    item: ComplianceItem,
    daysUntil: number,
    userName: string
  ): { subject: string; html: string } {
-   const address = item.property?.address_line || 'Unknown Property';
+  const address = getPropertyAddress(item);
    const expiryDate = new Date(item.expiry_date).toLocaleDateString('en-GB', {
      weekday: 'long',
      year: 'numeric',
@@ -110,126 +110,123 @@
  
      console.log("Starting compliance reminder processing...");
  
-     // Get pending notifications that are due
-     const { data: pendingNotifications, error: fetchError } = await supabase
-       .from('scheduled_notifications')
-       .select('*')
-       .eq('processed', false)
-       .lte('scheduled_for', new Date().toISOString())
-       .limit(100);
- 
-     if (fetchError) throw fetchError;
- 
-     console.log(`Processing ${pendingNotifications?.length || 0} notifications`);
- 
-     const results: { id: string; status: string; error?: string }[] = [];
- 
-     for (const notification of pendingNotifications || []) {
-       try {
-         // Get user email from profiles
-         const { data: profile } = await supabase
-           .from('profiles')
-           .select('email, full_name')
-           .eq('user_id', notification.user_id)
-           .single();
-         
-         const userEmail = profile?.email;
-         const userName = profile?.full_name || 'there';
- 
-         if (!userEmail) {
-           console.log(`No email for user ${notification.user_id}`);
-           continue;
-         }
- 
-         if (notification.notification_type === 'compliance_reminder') {
-           // Get compliance item details
-           const { data: complianceItem } = await supabase
-             .from('compliance_items')
-             .select(`
-               *,
-               property:properties(address_line, postcode)
-             `)
-             .eq('id', notification.reference_id)
-             .single();
- 
-           if (!complianceItem) {
-             console.log(`Compliance item ${notification.reference_id} not found`);
-             continue;
-           }
- 
-           // Calculate days until expiry
-           const expiryDate = new Date(complianceItem.expiry_date);
-           const today = new Date();
-           const daysUntil = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
- 
-           // Don't send if already expired
-           if (daysUntil < 0) {
-             console.log(`Skipping expired item ${complianceItem.id}`);
-             continue;
-           }
- 
-           // Generate and send email
-           const { subject, html } = generateComplianceReminderEmail(complianceItem, daysUntil, userName);
-           
-           const emailResult = await resend.emails.send({
-             from: "HydrogenCap <notifications@hydrogencap.com>",
-             to: [userEmail],
-             subject,
-             html,
-           });
- 
-           console.log(`Email sent to ${userEmail}: ${subject}`);
- 
-           // Log the notification
-           await supabase.from('notification_log').insert({
-             org_id: notification.org_id,
-             user_id: notification.user_id,
-             notification_type: 'compliance_reminder',
-             reference_type: 'compliance_item',
-             reference_id: notification.reference_id,
-             channel: 'email',
-             recipient: userEmail,
-             subject,
-             status: 'sent',
-             sent_at: new Date().toISOString(),
-           });
- 
-           // Update compliance item reminder tracking
-           await supabase
-             .from('compliance_items')
-             .update({
-               last_reminder_sent_at: new Date().toISOString(),
-               reminder_count: (complianceItem.reminder_count || 0) + 1,
-             })
-             .eq('id', complianceItem.id);
-         }
- 
-         // Mark notification as processed
-         await supabase
-           .from('scheduled_notifications')
-           .update({ processed: true, processed_at: new Date().toISOString() })
-           .eq('id', notification.id);
- 
-         results.push({ id: notification.id, status: 'sent' });
- 
-       } catch (err: any) {
-         console.error(`Error processing notification ${notification.id}:`, err);
-         
-         // Log failure
-         await supabase.from('notification_log').insert({
-           org_id: notification.org_id,
-           user_id: notification.user_id,
-           notification_type: notification.notification_type,
-           reference_type: notification.reference_type,
-           reference_id: notification.reference_id,
-           channel: 'email',
-           recipient: 'unknown',
-           status: 'failed',
-           error_message: err.message,
-         });
- 
-         results.push({ id: notification.id, status: 'failed', error: err.message });
-       }
+    // Direct approach: find compliance items expiring within reminder windows
+    const today = new Date();
+    const reminderWindows = [90, 60, 30, 14, 7, 3, 1]; // days before expiry
+    
+    // Get all compliance items expiring in the next 90 days
+    const futureDate = new Date(today);
+    futureDate.setDate(futureDate.getDate() + 90);
+    
+    const { data: expiringItems, error: itemsError } = await supabase
+      .from('compliance_items')
+      .select(`
+        id, property_id, compliance_type, expiry_date, org_id, 
+        last_reminder_sent_at, reminder_count,
+        property:properties(address_line, postcode)
+      `)
+      .gte('expiry_date', today.toISOString().split('T')[0])
+      .lte('expiry_date', futureDate.toISOString().split('T')[0]);
+
+    if (itemsError) throw itemsError;
+
+    console.log(`Found ${expiringItems?.length || 0} items expiring in next 90 days`);
+
+    const results: { item: string; status: string; error?: string }[] = [];
+    const processedOrgs = new Set<string>();
+
+    for (const item of expiringItems || []) {
+      const expiryDate = new Date(item.expiry_date);
+      const daysUntil = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Check if we should send for this reminder window
+      const shouldSend = reminderWindows.some(window => {
+        // Send if days until expiry matches a window (with 1 day tolerance)
+        return Math.abs(daysUntil - window) <= 1;
+      });
+
+      // Skip if not in a reminder window or already sent today
+      if (!shouldSend) continue;
+      
+      const lastSent = item.last_reminder_sent_at ? new Date(item.last_reminder_sent_at) : null;
+      const sentToday = lastSent && (today.getTime() - lastSent.getTime()) < (24 * 60 * 60 * 1000);
+      if (sentToday) {
+        console.log(`Skipping ${item.compliance_type} - already sent today`);
+        continue;
+      }
+
+      // Get users in this org who have notifications enabled
+      const { data: prefs } = await supabase
+        .from('notification_preferences')
+        .select('user_id, reminder_days')
+        .eq('org_id', item.org_id)
+        .eq('email_enabled', true)
+        .eq('notify_expiring_soon', true);
+
+      if (!prefs?.length) {
+        console.log(`No users with notifications enabled for org ${item.org_id}`);
+        continue;
+      }
+
+      for (const pref of prefs) {
+        // Check if this user wants reminders at this interval
+        const userWantsReminder = pref.reminder_days?.some((d: number) => Math.abs(daysUntil - d) <= 1);
+        if (!userWantsReminder) continue;
+
+        // Get user email
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('user_id', pref.user_id)
+          .single();
+
+        if (!profile?.email) continue;
+
+        try {
+          const { subject, html } = generateComplianceReminderEmail(
+            item, 
+            daysUntil, 
+            profile.full_name || 'there'
+          );
+
+          const emailResult = await resend.emails.send({
+            from: "HydrogenCap <notifications@hydrogencap.com>",
+            to: [profile.email],
+            subject,
+            html,
+          });
+
+          console.log(`Email sent to ${profile.email}: ${subject}`);
+
+          // Log the notification
+          await supabase.from('notification_log').insert({
+            org_id: item.org_id,
+            user_id: pref.user_id,
+            notification_type: 'compliance_reminder',
+            reference_type: 'compliance_item',
+            reference_id: item.id,
+            channel: 'email',
+            recipient: profile.email,
+            subject,
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+          });
+
+          results.push({ item: `${item.compliance_type} (${daysUntil}d)`, status: 'sent' });
+        } catch (emailErr: any) {
+          console.error(`Failed to send email:`, emailErr);
+          results.push({ item: `${item.compliance_type}`, status: 'failed', error: emailErr.message });
+        }
+      }
+
+      // Update reminder tracking on the compliance item
+      await supabase
+        .from('compliance_items')
+        .update({
+          last_reminder_sent_at: new Date().toISOString(),
+          reminder_count: (item.reminder_count || 0) + 1,
+        })
+        .eq('id', item.id);
      }
  
      return new Response(JSON.stringify({ 
