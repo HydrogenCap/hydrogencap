@@ -375,6 +375,8 @@ export type Database = {
       }
       compliance_items: {
         Row: {
+          auto_job_created: boolean | null
+          auto_job_id: string | null
           compliance_type: string
           created_at: string
           exclusion_reason: string | null
@@ -398,6 +400,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_job_created?: boolean | null
+          auto_job_id?: string | null
           compliance_type: string
           created_at?: string
           exclusion_reason?: string | null
@@ -421,6 +425,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_job_created?: boolean | null
+          auto_job_id?: string | null
           compliance_type?: string
           created_at?: string
           exclusion_reason?: string | null
@@ -444,6 +450,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "compliance_items_auto_job_id_fkey"
+            columns: ["auto_job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "compliance_items_org_id_fkey"
             columns: ["org_id"]
@@ -470,6 +483,7 @@ export type Database = {
       contractor_jobs: {
         Row: {
           accepted_at: string | null
+          auto_created_at: string | null
           booked_date: string | null
           booked_time_slot: string | null
           completed_at: string | null
@@ -486,16 +500,19 @@ export type Database = {
           job_type: string
           org_id: string
           payment_status: string | null
+          priority: string | null
           property_id: string
           quoted_amount_gbp: number | null
           quoted_at: string | null
           request_message: string | null
           requested_at: string | null
+          source: string | null
           status: string
           updated_at: string
         }
         Insert: {
           accepted_at?: string | null
+          auto_created_at?: string | null
           booked_date?: string | null
           booked_time_slot?: string | null
           completed_at?: string | null
@@ -512,16 +529,19 @@ export type Database = {
           job_type: string
           org_id: string
           payment_status?: string | null
+          priority?: string | null
           property_id: string
           quoted_amount_gbp?: number | null
           quoted_at?: string | null
           request_message?: string | null
           requested_at?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           accepted_at?: string | null
+          auto_created_at?: string | null
           booked_date?: string | null
           booked_time_slot?: string | null
           completed_at?: string | null
@@ -538,11 +558,13 @@ export type Database = {
           job_type?: string
           org_id?: string
           payment_status?: string | null
+          priority?: string | null
           property_id?: string
           quoted_amount_gbp?: number | null
           quoted_at?: string | null
           request_message?: string | null
           requested_at?: string | null
+          source?: string | null
           status?: string
           updated_at?: string
         }
@@ -3375,6 +3397,7 @@ export type Database = {
       }
     }
     Functions: {
+      create_jobs_for_expiring_compliance: { Args: never; Returns: number }
       find_matching_contractors: {
         Args: {
           p_compliance_type: string
@@ -3402,6 +3425,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_job_priorities: { Args: never; Returns: number }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }
       user_has_shareholder_access: {
         Args: { check_org_id: string }

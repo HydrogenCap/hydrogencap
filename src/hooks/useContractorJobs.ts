@@ -2,6 +2,10 @@
  import { supabase } from '@/integrations/supabase/client';
  import { useToast } from '@/hooks/use-toast';
  
+ export type JobStatus = 'draft' | 'requested' | 'quoted' | 'accepted' | 'booked' | 'in_progress' | 'completed' | 'verified' | 'cancelled';
+ export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
+ export type JobSource = 'manual' | 'auto_compliance' | 'auto_rate_expiry';
+ 
  export interface ContractorJob {
    id: string;
    org_id: string;
@@ -10,7 +14,9 @@
    contractor_id: string | null;
    job_type: string;
    description: string | null;
-   status: 'draft' | 'requested' | 'quoted' | 'accepted' | 'booked' | 'in_progress' | 'completed' | 'verified' | 'cancelled';
+  status: JobStatus;
+  source: JobSource;
+  priority: JobPriority;
    requested_at: string | null;
    quoted_at: string | null;
    accepted_at: string | null;
@@ -24,6 +30,7 @@
    request_message: string | null;
    contractor_notes: string | null;
    internal_notes: string | null;
+  auto_created_at: string | null;
    created_at: string;
    updated_at: string;
    contractor?: {
@@ -45,6 +52,25 @@
    };
  }
  
+ export const JOB_STATUSES: { value: JobStatus; label: string; color: string }[] = [
+   { value: 'draft', label: 'Draft', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+   { value: 'requested', label: 'Requested', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+   { value: 'quoted', label: 'Quoted', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
+   { value: 'accepted', label: 'Accepted', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' },
+   { value: 'booked', label: 'Booked', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+   { value: 'in_progress', label: 'In Progress', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+   { value: 'completed', label: 'Completed', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+   { value: 'verified', label: 'Verified', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
+   { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+ ];
+ 
+ export const JOB_PRIORITIES: { value: JobPriority; label: string; color: string }[] = [
+   { value: 'low', label: 'Low', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
+   { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
+   { value: 'high', label: 'High', color: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
+   { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
+ ];
+ 
  export interface MatchingContractor {
    contractor_id: string;
    name: string;
@@ -58,9 +84,12 @@
  }
  
  export function useContractorJobs(filters?: {
-   status?: string[];
+  status?: JobStatus[];
+  priority?: JobPriority[];
+  source?: JobSource[];
    propertyId?: string;
    contractorId?: string;
+  hasContractor?: boolean;
  }) {
    return useQuery({
      queryKey: ['contractor-jobs', filters],
@@ -73,21 +102,61 @@
            property:properties(id, address_line, postcode),
            compliance_item:compliance_items(id, compliance_type, expiry_date)
          `)
-         .order('created_at', { ascending: false });
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
  
        if (filters?.status?.length) {
          query = query.in('status', filters.status);
        }
+      if (filters?.priority?.length) {
+        query = query.in('priority', filters.priority);
+      }
+      if (filters?.source?.length) {
+        query = query.in('source', filters.source);
+      }
        if (filters?.propertyId) {
          query = query.eq('property_id', filters.propertyId);
        }
        if (filters?.contractorId) {
          query = query.eq('contractor_id', filters.contractorId);
        }
+      if (filters?.hasContractor === true) {
+        query = query.not('contractor_id', 'is', null);
+      }
+      if (filters?.hasContractor === false) {
+        query = query.is('contractor_id', null);
+      }
  
        const { data, error } = await query;
        if (error) throw error;
        return data as ContractorJob[];
+     },
+   });
+ }
+ 
+ // Get job counts by status for dashboard widgets
+ export function useJobCounts() {
+   return useQuery({
+     queryKey: ['job-counts'],
+     queryFn: async () => {
+       const { data, error } = await supabase
+         .from('contractor_jobs')
+         .select('status, priority, contractor_id')
+         .not('status', 'in', '("completed","verified","cancelled")');
+ 
+       if (error) throw error;
+ 
+       const counts = {
+         total: data.length,
+         draft: data.filter(j => j.status === 'draft').length,
+         needsContractor: data.filter(j => j.status === 'draft' && !j.contractor_id).length,
+         awaitingResponse: data.filter(j => j.status === 'requested').length,
+         booked: data.filter(j => j.status === 'booked').length,
+         urgent: data.filter(j => j.priority === 'urgent').length,
+         high: data.filter(j => j.priority === 'high').length,
+       };
+ 
+       return counts;
      },
    });
  }
@@ -179,6 +248,7 @@
        jobType: string;
        description?: string;
        requestMessage?: string;
+      priority?: JobPriority;
      }) => {
        const { data: membership } = await supabase
          .from('memberships')
@@ -199,6 +269,8 @@
            description: job.description || null,
            request_message: job.requestMessage || null,
            status: 'draft',
+          source: 'manual',
+          priority: job.priority || 'normal',
            created_by: user?.id,
          })
          .select()
@@ -209,6 +281,7 @@
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job created' });
      },
    });
@@ -233,6 +306,7 @@
      onSuccess: (data) => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['contractor-job', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job updated' });
      },
    });
@@ -253,6 +327,7 @@
      },
      onSuccess: (data) => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({
          title: 'Request sent',
          description: `Job request sent to ${data.sentTo}`,
@@ -300,6 +375,7 @@
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job booked' });
      },
    });
@@ -334,7 +410,82 @@
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job marked as completed' });
+     },
+   });
+ }
+ 
+ // Assign contractor to job
+ export function useAssignContractor() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async ({ jobId, contractorId }: { jobId: string; contractorId: string }) => {
+       const { error } = await supabase
+         .from('contractor_jobs')
+         .update({ 
+           contractor_id: contractorId,
+           updated_at: new Date().toISOString(),
+         })
+         .eq('id', jobId);
+ 
+       if (error) throw error;
+     },
+     onSuccess: (_, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+       queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       toast({ title: 'Contractor assigned' });
+     },
+   });
+ }
+ 
+ // Cancel job
+ export function useCancelJob() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async ({ jobId, reason }: { jobId: string; reason?: string }) => {
+       const { error } = await supabase
+         .from('contractor_jobs')
+         .update({
+           status: 'cancelled',
+           internal_notes: reason ? `Cancelled: ${reason}` : 'Cancelled by user',
+           updated_at: new Date().toISOString(),
+         })
+         .eq('id', jobId);
+ 
+       if (error) throw error;
+     },
+     onSuccess: () => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       toast({ title: 'Job cancelled' });
+     },
+   });
+ }
+ 
+ // Run auto-job creation manually
+ export function useRunAutoJobCreation() {
+   const queryClient = useQueryClient();
+   const { toast } = useToast();
+ 
+   return useMutation({
+     mutationFn: async () => {
+       const { data, error } = await supabase.functions.invoke('create-compliance-jobs');
+       if (error) throw error;
+       return data;
+     },
+     onSuccess: (data) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       toast({
+         title: 'Auto-job creation complete',
+         description: `Created ${data.jobs_created} new jobs, updated ${data.priorities_updated} priorities`,
+       });
      },
    });
  }

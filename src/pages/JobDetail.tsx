@@ -1,6 +1,6 @@
  import React, { useState } from 'react';
  import { useParams, useNavigate, Link } from 'react-router-dom';
- import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, MapPin, MessageSquare, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, MapPin, MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle } from 'lucide-react';
  import { AppLayout } from '@/components/layout/AppLayout';
  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
  import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@
  import { Label } from '@/components/ui/label';
  import { Textarea } from '@/components/ui/textarea';
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
- import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompleteJob } from '@/hooks/useContractorJobs';
+import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompleteJob, JOB_PRIORITIES } from '@/hooks/useContractorJobs';
  import { AddReviewDialog } from '@/components/contractors/AddReviewDialog';
  import { format } from 'date-fns';
  import { cn } from '@/lib/utils';
@@ -69,6 +69,12 @@
    }
  
    const config = STATUS_CONFIG[job.status] || STATUS_CONFIG.draft;
+  const priorityConfig = JOB_PRIORITIES.find(p => p.value === job.priority);
+
+  // Calculate days until expiry if compliance linked
+  const daysUntilExpiry = job.compliance_item?.expiry_date
+    ? Math.ceil((new Date(job.compliance_item.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
  
    const handleSendRequest = async () => {
      await sendRequest.mutateAsync({ jobId: job.id });
@@ -147,8 +153,30 @@
              <div className="flex items-center gap-3">
                <h1 className="text-2xl font-bold">{job.job_type}</h1>
                <Badge className={cn('text-sm', config.color)}>{config.label}</Badge>
+              {job.priority !== 'normal' && (
+                <Badge className={cn('text-sm', priorityConfig?.color)}>
+                  {job.priority === 'urgent' && <AlertTriangle className="h-3 w-3 mr-1" />}
+                  {priorityConfig?.label}
+                </Badge>
+              )}
+              {job.source === 'auto_compliance' && (
+                <Badge variant="outline" className="text-sm">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Auto-created
+                </Badge>
+              )}
              </div>
              <p className="text-muted-foreground mt-1">{config.description}</p>
+            {daysUntilExpiry !== null && daysUntilExpiry > 0 && (
+              <p className={cn(
+                "text-sm mt-2",
+                daysUntilExpiry <= 14 ? "text-red-600 dark:text-red-400" :
+                daysUntilExpiry <= 30 ? "text-amber-600 dark:text-amber-400" :
+                "text-muted-foreground"
+              )}>
+                Compliance expires in {daysUntilExpiry} days
+              </p>
+            )}
            </div>
          </div>
  
