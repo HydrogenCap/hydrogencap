@@ -54,6 +54,7 @@ const mainNavItems = [
   { title: 'Refinance', icon: CalendarDays, href: '/refinance-calendar' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
+  { title: 'Jobs', icon: ClipboardList, href: '/jobs' },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
