@@ -64,16 +64,21 @@ import { useAllCompliance } from '@/hooks/useCompliance';
    // Filter to operational properties
    const availableProperties = properties?.filter(p => p.lifecycle_type === 'core_rental');
  
-   const handleSubmit = async (e: React.FormEvent) => {
-     e.preventDefault();
- 
-     await createJob.mutateAsync({
-       propertyId: formData.propertyId,
-       complianceItemId: formData.complianceItemId || undefined,
-       jobType: formData.jobType,
-       description: formData.description || undefined,
-       priority: formData.priority,
-     });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Convert "none" to undefined for compliance_item_id
+    const complianceItemId = formData.complianceItemId && formData.complianceItemId !== 'none' 
+      ? formData.complianceItemId 
+      : undefined;
+
+    await createJob.mutateAsync({
+      propertyId: formData.propertyId,
+      complianceItemId,
+      jobType: formData.jobType,
+      description: formData.description || undefined,
+      priority: formData.priority,
+    });
  
      onOpenChange(false);
      setFormData({
