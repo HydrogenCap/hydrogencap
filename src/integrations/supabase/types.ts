@@ -91,6 +91,39 @@ export type Database = {
           },
         ]
       }
+      certificate_type_mappings: {
+        Row: {
+          ai_detected_type: string
+          compliance_type: string
+          created_at: string
+          document_category: string
+          has_expiry: boolean | null
+          id: string
+          keywords: string[] | null
+          typical_validity_years: number | null
+        }
+        Insert: {
+          ai_detected_type: string
+          compliance_type: string
+          created_at?: string
+          document_category: string
+          has_expiry?: boolean | null
+          id?: string
+          keywords?: string[] | null
+          typical_validity_years?: number | null
+        }
+        Update: {
+          ai_detected_type?: string
+          compliance_type?: string
+          created_at?: string
+          document_category?: string
+          has_expiry?: boolean | null
+          id?: string
+          keywords?: string[] | null
+          typical_validity_years?: number | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           accounts_due_date: string | null
@@ -486,6 +519,11 @@ export type Database = {
           auto_created_at: string | null
           booked_date: string | null
           booked_time_slot: string | null
+          certificate_document_id: string | null
+          certificate_received: boolean | null
+          certificate_received_at: string | null
+          certificate_reminder_count: number | null
+          certificate_reminder_sent_at: string | null
           completed_at: string | null
           compliance_item_id: string | null
           contractor_id: string | null
@@ -494,10 +532,15 @@ export type Database = {
           created_by: string | null
           description: string | null
           final_amount_gbp: number | null
+          follow_up_count: number | null
           id: string
+          inbox_email: string | null
+          inbox_email_token: string | null
           internal_notes: string | null
           invoice_reference: string | null
           job_type: string
+          last_follow_up_at: string | null
+          next_follow_up_date: string | null
           org_id: string
           payment_status: string | null
           priority: string | null
@@ -506,6 +549,7 @@ export type Database = {
           quoted_at: string | null
           request_message: string | null
           requested_at: string | null
+          response_deadline: string | null
           source: string | null
           status: string
           updated_at: string
@@ -515,6 +559,11 @@ export type Database = {
           auto_created_at?: string | null
           booked_date?: string | null
           booked_time_slot?: string | null
+          certificate_document_id?: string | null
+          certificate_received?: boolean | null
+          certificate_received_at?: string | null
+          certificate_reminder_count?: number | null
+          certificate_reminder_sent_at?: string | null
           completed_at?: string | null
           compliance_item_id?: string | null
           contractor_id?: string | null
@@ -523,10 +572,15 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           final_amount_gbp?: number | null
+          follow_up_count?: number | null
           id?: string
+          inbox_email?: string | null
+          inbox_email_token?: string | null
           internal_notes?: string | null
           invoice_reference?: string | null
           job_type: string
+          last_follow_up_at?: string | null
+          next_follow_up_date?: string | null
           org_id: string
           payment_status?: string | null
           priority?: string | null
@@ -535,6 +589,7 @@ export type Database = {
           quoted_at?: string | null
           request_message?: string | null
           requested_at?: string | null
+          response_deadline?: string | null
           source?: string | null
           status?: string
           updated_at?: string
@@ -544,6 +599,11 @@ export type Database = {
           auto_created_at?: string | null
           booked_date?: string | null
           booked_time_slot?: string | null
+          certificate_document_id?: string | null
+          certificate_received?: boolean | null
+          certificate_received_at?: string | null
+          certificate_reminder_count?: number | null
+          certificate_reminder_sent_at?: string | null
           completed_at?: string | null
           compliance_item_id?: string | null
           contractor_id?: string | null
@@ -552,10 +612,15 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           final_amount_gbp?: number | null
+          follow_up_count?: number | null
           id?: string
+          inbox_email?: string | null
+          inbox_email_token?: string | null
           internal_notes?: string | null
           invoice_reference?: string | null
           job_type?: string
+          last_follow_up_at?: string | null
+          next_follow_up_date?: string | null
           org_id?: string
           payment_status?: string | null
           priority?: string | null
@@ -564,11 +629,19 @@ export type Database = {
           quoted_at?: string | null
           request_message?: string | null
           requested_at?: string | null
+          response_deadline?: string | null
           source?: string | null
           status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contractor_jobs_certificate_document_id_fkey"
+            columns: ["certificate_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contractor_jobs_compliance_item_id_fkey"
             columns: ["compliance_item_id"]
@@ -1607,6 +1680,132 @@ export type Database = {
           },
         ]
       }
+      inbound_emails: {
+        Row: {
+          ai_extraction: Json | null
+          attachments: Json | null
+          body_html: string | null
+          body_text: string | null
+          compliance_updated: boolean | null
+          created_at: string
+          document_created_id: string | null
+          from_email: string
+          from_name: string | null
+          id: string
+          job_updated: boolean | null
+          match_confidence: string | null
+          matched_compliance_item_id: string | null
+          matched_job_id: string | null
+          matched_property_id: string | null
+          message_id: string | null
+          org_id: string
+          processed_at: string | null
+          processing_error: string | null
+          processing_status: string | null
+          received_at: string
+          requires_review: boolean | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          subject: string | null
+          to_email: string
+        }
+        Insert: {
+          ai_extraction?: Json | null
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          compliance_updated?: boolean | null
+          created_at?: string
+          document_created_id?: string | null
+          from_email: string
+          from_name?: string | null
+          id?: string
+          job_updated?: boolean | null
+          match_confidence?: string | null
+          matched_compliance_item_id?: string | null
+          matched_job_id?: string | null
+          matched_property_id?: string | null
+          message_id?: string | null
+          org_id: string
+          processed_at?: string | null
+          processing_error?: string | null
+          processing_status?: string | null
+          received_at?: string
+          requires_review?: boolean | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          subject?: string | null
+          to_email: string
+        }
+        Update: {
+          ai_extraction?: Json | null
+          attachments?: Json | null
+          body_html?: string | null
+          body_text?: string | null
+          compliance_updated?: boolean | null
+          created_at?: string
+          document_created_id?: string | null
+          from_email?: string
+          from_name?: string | null
+          id?: string
+          job_updated?: boolean | null
+          match_confidence?: string | null
+          matched_compliance_item_id?: string | null
+          matched_job_id?: string | null
+          matched_property_id?: string | null
+          message_id?: string | null
+          org_id?: string
+          processed_at?: string | null
+          processing_error?: string | null
+          processing_status?: string | null
+          received_at?: string
+          requires_review?: boolean | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          subject?: string | null
+          to_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbound_emails_document_created_id_fkey"
+            columns: ["document_created_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_emails_matched_compliance_item_id_fkey"
+            columns: ["matched_compliance_item_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_emails_matched_job_id_fkey"
+            columns: ["matched_job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_emails_matched_property_id_fkey"
+            columns: ["matched_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inbound_emails_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       income: {
         Row: {
           annual_rent_gbp: number
@@ -1719,6 +1918,47 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: true
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_follow_ups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          follow_up_type: string | null
+          id: string
+          job_id: string
+          message: string | null
+          response_received: boolean | null
+          response_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          follow_up_type?: string | null
+          id?: string
+          job_id: string
+          message?: string | null
+          response_received?: boolean | null
+          response_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          follow_up_type?: string | null
+          id?: string
+          job_id?: string
+          message?: string | null
+          response_received?: boolean | null
+          response_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_follow_ups_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
             referencedColumns: ["id"]
           },
         ]
