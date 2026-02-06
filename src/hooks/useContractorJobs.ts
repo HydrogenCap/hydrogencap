@@ -94,16 +94,16 @@
    return useQuery({
      queryKey: ['contractor-jobs', filters],
      queryFn: async () => {
-       let query = supabase
-         .from('contractor_jobs')
-         .select(`
-           *,
-           contractor:contractors(id, name, company_name, email, phone),
-           property:properties(id, address_line, postcode),
-           compliance_item:compliance_items(id, compliance_type, expiry_date)
-         `)
-        .order('priority', { ascending: false })
-        .order('created_at', { ascending: false });
+      let query = supabase
+        .from('contractor_jobs')
+        .select(`
+          *,
+          contractor:contractors(id, name, company_name, email, phone),
+          property:properties(id, address_line, postcode),
+          compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)
+        `)
+       .order('priority', { ascending: false })
+       .order('created_at', { ascending: false });
  
        if (filters?.status?.length) {
          query = query.in('status', filters.status);
@@ -167,16 +167,16 @@
      queryFn: async () => {
        if (!jobId) return null;
  
-       const { data, error } = await supabase
-         .from('contractor_jobs')
-         .select(`
-           *,
-           contractor:contractors(*),
-           property:properties(id, address_line, postcode),
-           compliance_item:compliance_items(id, compliance_type, expiry_date)
-         `)
-         .eq('id', jobId)
-         .single();
+      const { data, error } = await supabase
+        .from('contractor_jobs')
+        .select(`
+          *,
+          contractor:contractors(*),
+          property:properties(id, address_line, postcode),
+          compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)
+        `)
+        .eq('id', jobId)
+        .single();
  
        if (error) throw error;
        return data as ContractorJob;
