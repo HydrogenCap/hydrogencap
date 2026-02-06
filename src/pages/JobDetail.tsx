@@ -1,20 +1,21 @@
- import React, { useState } from 'react';
- import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, MapPin, MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle, Plus } from 'lucide-react';
- import { AppLayout } from '@/components/layout/AppLayout';
- import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
- import { Button } from '@/components/ui/button';
- import { Badge } from '@/components/ui/badge';
- import { Separator } from '@/components/ui/separator';
- import { Input } from '@/components/ui/input';
- import { Label } from '@/components/ui/label';
- import { Textarea } from '@/components/ui/textarea';
- import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Briefcase, Calendar, Clock, CheckCircle, Send, Phone, Mail, MapPin, MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle, Plus, Copy, Inbox } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useContractorJob, useUpdateJob, useSendJobRequest, useBookJob, useCompleteJob, JOB_PRIORITIES } from '@/hooks/useContractorJobs';
 import { useJobNotes, useAddJobNote } from '@/hooks/useJobNotes';
- import { AddReviewDialog } from '@/components/contractors/AddReviewDialog';
- import { format } from 'date-fns';
- import { cn } from '@/lib/utils';
+import { AddReviewDialog } from '@/components/contractors/AddReviewDialog';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
  
  const STATUS_CONFIG: Record<string, { label: string; color: string; description: string }> = {
    draft: { label: 'Draft', color: 'bg-muted text-muted-foreground', description: 'Job created but not sent' },
@@ -29,9 +30,10 @@ import { useJobNotes, useAddJobNote } from '@/hooks/useJobNotes';
  };
  
  export default function JobDetail() {
-   const { jobId } = useParams<{ jobId: string }>();
-   const navigate = useNavigate();
-   const { data: job, isLoading } = useContractorJob(jobId);
+  const { jobId } = useParams<{ jobId: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { data: job, isLoading } = useContractorJob(jobId);
   const { data: notes } = useJobNotes(jobId);
   const addNote = useAddJobNote();
    
@@ -502,10 +504,66 @@ import { useJobNotes, useAddJobNote } from '@/hooks/useJobNotes';
                 </div>
               </CardContent>
             </Card>
+
+            {/* Certificate Inbox Email */}
+            {job.inbox_email && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Inbox className="h-4 w-4" />
+                    Certificate Inbox
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Contractor can email certificates directly to:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-muted px-3 py-2 rounded text-xs font-mono truncate">
+                      {job.inbox_email}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(job.inbox_email!);
+                        toast({ title: 'Email copied to clipboard' });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Certificates sent here will be automatically processed and filed.
+                  </p>
+
+                  {/* Certificate status for completed jobs */}
+                  {job.status === 'completed' && (
+                    <div className={cn(
+                      "mt-3 p-2 rounded-lg flex items-center gap-2 text-sm",
+                      job.certificate_received 
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                        : "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                    )}>
+                      {job.certificate_received ? (
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          Certificate received {job.certificate_received_at && format(new Date(job.certificate_received_at), 'dd MMM')}
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="h-4 w-4" />
+                          Awaiting certificate
+                        </>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
            </div>
          </div>
        </div>
- 
        {/* Book Dialog */}
        <Dialog open={showBookDialog} onOpenChange={setShowBookDialog}>
          <DialogContent>

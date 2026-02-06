@@ -6,51 +6,65 @@
  export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
  export type JobSource = 'manual' | 'auto_compliance' | 'auto_rate_expiry';
  
- export interface ContractorJob {
-   id: string;
-   org_id: string;
-   property_id: string;
-   compliance_item_id: string | null;
-   contractor_id: string | null;
-   job_type: string;
-   description: string | null;
+export interface ContractorJob {
+  id: string;
+  org_id: string;
+  property_id: string;
+  compliance_item_id: string | null;
+  contractor_id: string | null;
+  job_type: string;
+  description: string | null;
   status: JobStatus;
   source: JobSource;
   priority: JobPriority;
-   requested_at: string | null;
-   quoted_at: string | null;
-   accepted_at: string | null;
-   booked_date: string | null;
-   booked_time_slot: string | null;
-   completed_at: string | null;
-   quoted_amount_gbp: number | null;
-   final_amount_gbp: number | null;
-   payment_status: 'unpaid' | 'invoiced' | 'paid';
-   invoice_reference: string | null;
-   request_message: string | null;
-   contractor_notes: string | null;
-   internal_notes: string | null;
+  requested_at: string | null;
+  quoted_at: string | null;
+  accepted_at: string | null;
+  booked_date: string | null;
+  booked_time_slot: string | null;
+  completed_at: string | null;
+  quoted_amount_gbp: number | null;
+  final_amount_gbp: number | null;
+  payment_status: 'unpaid' | 'invoiced' | 'paid';
+  invoice_reference: string | null;
+  request_message: string | null;
+  contractor_notes: string | null;
+  internal_notes: string | null;
   auto_created_at: string | null;
-   created_at: string;
-   updated_at: string;
-   contractor?: {
-     id: string;
-     name: string;
-     company_name: string | null;
-     email: string | null;
-     phone: string | null;
-   };
-   property?: {
-     id: string;
-     address_line: string;
-     postcode: string;
-   };
-   compliance_item?: {
-     id: string;
-     compliance_type: string;
-     expiry_date: string | null;
-   };
- }
+  // Certificate tracking
+  certificate_received: boolean;
+  certificate_received_at: string | null;
+  certificate_document_id: string | null;
+  certificate_reminder_sent_at: string | null;
+  certificate_reminder_count: number;
+  // Follow-up tracking
+  follow_up_count: number;
+  last_follow_up_at: string | null;
+  next_follow_up_date: string | null;
+  response_deadline: string | null;
+  // Inbox email
+  inbox_email: string | null;
+  inbox_email_token: string | null;
+  created_at: string;
+  updated_at: string;
+  contractor?: {
+    id: string;
+    name: string;
+    company_name: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+  property?: {
+    id: string;
+    address_line: string;
+    postcode: string;
+  };
+  compliance_item?: {
+    id: string;
+    compliance_type: string;
+    expiry_date: string | null;
+  };
+}
  
  export const JOB_STATUSES: { value: JobStatus; label: string; color: string }[] = [
    { value: 'draft', label: 'Draft', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
