@@ -138,17 +138,17 @@
  
      console.log('Processing job request:', jobId);
  
-     // Get job details with related data
-     const { data: job, error: jobError } = await supabase
-       .from('contractor_jobs')
-       .select(`
-         *,
-         contractor:contractors(*),
-         property:properties(address_line, postcode),
-         compliance_item:compliance_items(compliance_type, expiry_date)
-       `)
-       .eq('id', jobId)
-       .single();
+    // Get job details with related data
+    const { data: job, error: jobError } = await supabase
+      .from('contractor_jobs')
+      .select(`
+        *,
+        contractor:contractors(*),
+        property:properties(address_line, postcode),
+        compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(compliance_type, expiry_date)
+      `)
+      .eq('id', jobId)
+      .single();
  
      if (jobError || !job) {
        console.error('Job not found:', jobError);
