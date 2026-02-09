@@ -416,25 +416,8 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                      ))}
                    </div>
                  )}
-               </TabsContent>
- 
-               <TabsContent value="rent" className="mt-4">
-                 <Card>
-                   <CardContent className="py-8 text-center text-muted-foreground">
-                     <PoundSterling className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                     Rent history will be shown here
-                   </CardContent>
-                 </Card>
-               </TabsContent>
- 
-                 <TabsContent value="documents" className="mt-4 space-y-4">
-                   <div className="flex justify-end">
-                     <Button onClick={() => setShowUploadDoc(true)}>
-                       <Upload className="h-4 w-4 mr-2" />
-                       Upload Document
-                     </Button>
-                   </div>
-                   {activeTenancy && (
+
+                  {activeTenancy && (
                     <Card>
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
@@ -459,6 +442,24 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                       </CardContent>
                     </Card>
                   )}
+                </TabsContent>
+ 
+                <TabsContent value="rent" className="mt-4">
+                  <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                      <PoundSterling className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      Rent history will be shown here
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+ 
+                  <TabsContent value="documents" className="mt-4 space-y-4">
+                    <div className="flex justify-end">
+                      <Button onClick={() => setShowUploadDoc(true)}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Document
+                      </Button>
+                    </div>
 
                   {!tenantDocuments || tenantDocuments.length === 0 ? (
                     <Card>
