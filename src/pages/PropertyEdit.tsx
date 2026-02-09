@@ -24,6 +24,7 @@ import { AddressAutocomplete, AddressData } from '@/components/maps/AddressAutoc
 import { GeocodeStatusBadge } from '@/components/geocoding';
 import { isSuspiciousGeocodeChange } from '@/hooks/useGeocoding';
 import { notifyPropertyUpdated } from '@/components/dashboard';
+import { MultiTitleNumberInput } from '@/components/passport/MultiTitleNumberInput';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
@@ -604,19 +605,11 @@ function PropertyEditPage() {
                 <CardDescription>Title and tenure details (optional)</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="title_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g. BK123456" className="bg-input" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {id && (
+                  <div className="md:col-span-2">
+                    <MultiTitleNumberInput propertyId={id} />
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
