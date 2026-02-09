@@ -36,15 +36,14 @@ serve(async (req: Request) => {
     // Get tenant details
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
-      .select("first_name, last_name, email, company_name, tenant_type, company_contact_email")
+      .select("first_name, last_name, email, company_name, tenant_type, company_contact_email, compliance_contact_name, compliance_contact_email")
       .eq("id", tenantId)
       .single();
 
     if (tenantError || !tenant) throw new Error("Tenant not found");
 
-    const recipientEmail = tenant.tenant_type === "company"
-      ? (tenant.company_contact_email || tenant.email)
-      : tenant.email;
+    const recipientEmail = tenant.compliance_contact_email
+      || (tenant.tenant_type === "company" ? (tenant.company_contact_email || tenant.email) : tenant.email);
 
     if (!recipientEmail) throw new Error("Tenant has no email address");
 

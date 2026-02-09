@@ -41,8 +41,10 @@
    company_contact_role: string | null;
    trading_name: string | null;
    vat_registered: boolean | null;
-   vat_number: string | null;
-   status: TenantStatus;
+  vat_number: string | null;
+  compliance_contact_name: string | null;
+  compliance_contact_email: string | null;
+  status: TenantStatus;
    notes: string | null;
    created_at: string;
    updated_at: string;
