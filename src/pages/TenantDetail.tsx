@@ -1,7 +1,7 @@
  import { useState } from 'react';
  import { useParams, Link } from 'react-router-dom';
 
- import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users } from 'lucide-react';
+ import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload } from 'lucide-react';
  import { format } from 'date-fns';
  import { AppLayout } from '@/components/layout/AppLayout';
  import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@
  import { useTenant, TenantStatus } from '@/hooks/useTenants';
  import { useTenancies } from '@/hooks/useTenancies';
  import { LoadingState } from '@/components/common';
- import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplianceChecklist';
+import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplianceChecklist';
+import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
  
  const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
@@ -278,13 +279,28 @@
                                    {tenancy.end_date ? format(new Date(tenancy.end_date), ' dd MMM yyyy') : ' Present'}
                                  </p>
                                </div>
-                               <div className="text-right">
-                                 <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
-                                 <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
-                               </div>
-                             </div>
-                           </CardContent>
-                         </Card>
+                                <div className="text-right">
+                                  <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
+                                  <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
+                                  <div className="flex gap-1 mt-2 justify-end">
+                                    {tenancy.tenancy_agreement_url ? (
+                                      <Button variant="outline" size="sm" asChild>
+                                        <a href={tenancy.tenancy_agreement_url} target="_blank" rel="noopener noreferrer">
+                                          <FileText className="h-3 w-3 mr-1" />
+                                          View Agreement
+                                        </a>
+                                      </Button>
+                                    ) : (
+                                      <Button variant="outline" size="sm" className="text-amber-600">
+                                        <Upload className="h-3 w-3 mr-1" />
+                                        Upload Agreement
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
                          {(tenancy.status === 'active' || tenancy.status === 'pending') && (
                            <TenancyComplianceChecklist
                              tenancyId={tenancy.id}
@@ -318,8 +334,14 @@
            </div>
          </div>
  
-        {/* Tenancy dialog — coming soon */}
-       </div>
+          <CreateTenancyDialog
+            open={showTenancyDialog}
+            onOpenChange={setShowTenancyDialog}
+            tenantId={tenant.id}
+            tenantName={isCompany ? (tenant.company_name || `${tenant.first_name} ${tenant.last_name}`) : `${tenant.first_name} ${tenant.last_name}`}
+            tenantType={(tenant.tenant_type as 'individual' | 'company') || 'individual'}
+          />
+        </div>
      </AppLayout>
    );
  }
