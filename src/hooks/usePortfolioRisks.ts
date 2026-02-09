@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useAllCompliance } from '@/hooks/useCompliance';
+import { useTenancyComplianceStats, type TenancyComplianceItemWithDetails } from '@/hooks/useTenancyCompliance';
 import {
   calculateLTV,
   getLTVStatus,
@@ -14,7 +15,7 @@ import {
   formatGBP,
 } from '@/lib/calculations';
 
-export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data';
+export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance';
 
 export interface RiskItem {
   id: string;
@@ -34,6 +35,7 @@ export const riskTypeLabels: Record<RiskType, string> = {
   negative_cashflow: 'Negative Cashflow',
   hmo_licence: 'HMO Licence',
   operational_data: 'Missing Data',
+  tenancy_compliance: 'Tenancy Compliance',
 };
 
 /**
@@ -44,7 +46,8 @@ export const riskTypeLabels: Record<RiskType, string> = {
 export function calculatePortfolioRisks(
   properties: PropertyWithFinancials[],
   passportMap: Map<string, PropertyPassport>,
-  complianceByPropertyMap: Map<string, any[]>
+  complianceByPropertyMap: Map<string, any[]>,
+  tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = []
 ): RiskItem[] {
   const riskItems: RiskItem[] = [];
   const currentYear = new Date().getFullYear();
@@ -268,6 +271,28 @@ export function calculatePortfolioRisks(
     }
   });
 
+  // ========== TENANCY COMPLIANCE RISKS ==========
+  tenancyComplianceOverdue.forEach(item => {
+    const tenant = item.tenancy?.tenant;
+    const tenantName = tenant?.tenant_type === 'company'
+      ? tenant.company_name || 'Unknown company'
+      : `${tenant?.first_name || ''} ${tenant?.last_name || ''}`.trim() || 'Unknown tenant';
+
+    const message = tenant?.tenant_type === 'company'
+      ? `${item.label} overdue for ${tenantName}`
+      : `${item.label} overdue for ${tenantName} — Section 21 invalid`;
+
+    riskItems.push({
+      id: `tenancy-compliance-${item.id}`,
+      propertyId: item.tenancy?.property_id || '',
+      address: item.tenancy?.property?.address_line || 'Unknown',
+      type: 'tenancy_compliance',
+      severity: 'critical',
+      message,
+      targetUrl: `/tenants/${item.tenancy?.tenant_id}`,
+    });
+  });
+
   return riskItems;
 }
 
@@ -279,6 +304,7 @@ export function usePortfolioRisks() {
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const { data: passports, isLoading: passportsLoading } = usePropertyPassports();
   const { data: allComplianceItems, isLoading: complianceLoading } = useAllCompliance();
+  const { data: tenancyStats, isLoading: tenancyComplianceLoading } = useTenancyComplianceStats();
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -301,8 +327,13 @@ export function usePortfolioRisks() {
   // Calculate risks
   const risks = useMemo(() => {
     if (!properties) return [];
-    return calculatePortfolioRisks(properties, passportMap, complianceByPropertyMap);
-  }, [properties, passportMap, complianceByPropertyMap]);
+    return calculatePortfolioRisks(
+      properties,
+      passportMap,
+      complianceByPropertyMap,
+      tenancyStats?.overdueItems || []
+    );
+  }, [properties, passportMap, complianceByPropertyMap, tenancyStats?.overdueItems]);
 
   const criticalCount = useMemo(() => risks.filter(r => r.severity === 'critical').length, [risks]);
   const warningCount = useMemo(() => risks.filter(r => r.severity === 'warning').length, [risks]);
@@ -312,7 +343,7 @@ export function usePortfolioRisks() {
     criticalCount,
     warningCount,
     totalCount: risks.length,
-    isLoading: propertiesLoading || passportsLoading || complianceLoading,
+    isLoading: propertiesLoading || passportsLoading || complianceLoading || tenancyComplianceLoading,
     passportMap,
     complianceByPropertyMap,
   };

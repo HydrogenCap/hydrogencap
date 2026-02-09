@@ -12,6 +12,7 @@ import {
   Zap,
   Home,
   FileWarning,
+  Shield,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,6 +49,7 @@ const riskTypeIcons: Record<RiskType, React.ReactNode> = {
   negative_cashflow: <TrendingDown className="h-4 w-4" />,
   hmo_licence: <Home className="h-4 w-4" />,
   operational_data: <FileWarning className="h-4 w-4" />,
+  tenancy_compliance: <Shield className="h-4 w-4" />,
 };
 
 export default function ActionsPage() {
@@ -199,6 +201,7 @@ export default function ActionsPage() {
                   <SelectItem value="negative_cashflow">Negative Cashflow</SelectItem>
                   <SelectItem value="hmo_licence">HMO Licence</SelectItem>
                   <SelectItem value="operational_data">Missing Data</SelectItem>
+                  <SelectItem value="tenancy_compliance">Tenancy Compliance</SelectItem>
                 </SelectContent>
               </Select>
 

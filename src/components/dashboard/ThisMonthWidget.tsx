@@ -2,15 +2,17 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Building2, Shield, TrendingUp, ArrowRight } from 'lucide-react';
+import { Calendar, Building2, Shield, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
 import { format, startOfMonth, isAfter } from 'date-fns';
 import { useProperties } from '@/hooks/useProperties';
 import { useAllCompliance } from '@/hooks/useCompliance';
+import { useTenancyComplianceStats } from '@/hooks/useTenancyCompliance';
 import { formatGBP } from '@/lib/calculations';
 
 export function ThisMonthWidget() {
   const { data: properties } = useProperties();
   const { data: complianceItems } = useAllCompliance();
+  const { data: tenancyComplianceStats } = useTenancyComplianceStats();
 
   const stats = useMemo(() => {
     const monthStart = startOfMonth(new Date());
@@ -92,6 +94,19 @@ export function ThisMonthWidget() {
             </p>
           </div>
         </div>
+
+        {(tenancyComplianceStats?.overdueCount ?? 0) > 0 && (
+          <Link
+            to="/actions?type=tenancy_compliance"
+            className="flex items-center justify-between p-2 rounded-md bg-destructive/10 hover:bg-destructive/20 transition-colors"
+          >
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {tenancyComplianceStats!.overdueCount} tenancy compliance item{tenancyComplianceStats!.overdueCount > 1 ? 's' : ''} overdue
+            </div>
+            <Badge variant="destructive" className="text-xs">{tenancyComplianceStats!.overdueCount}</Badge>
+          </Link>
+        )}
 
         <Link 
           to="/timeline" 
