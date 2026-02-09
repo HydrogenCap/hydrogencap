@@ -20,6 +20,7 @@ import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplian
 import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { EditTenantDialog } from '@/components/tenants/EditTenantDialog';
  
 const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
@@ -34,7 +35,8 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
      const [showTenancyDialog, setShowTenancyDialog] = useState(false);
      const [showUploadDoc, setShowUploadDoc] = useState(false);
      const [sendingCerts, setSendingCerts] = useState(false);
-     const [certsSent, setCertsSent] = useState(false);
+      const [certsSent, setCertsSent] = useState(false);
+      const [showEditDialog, setShowEditDialog] = useState(false);
     const { toast } = useToast();
 
     const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId!);
@@ -327,10 +329,10 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                </p>
              )}
            </div>
-           <Button variant="outline">
-             <Edit className="h-4 w-4 mr-2" />
-             Edit Tenant
-           </Button>
+            <Button variant="outline" onClick={() => setShowEditDialog(true)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Tenant
+            </Button>
          </div>
  
          <div className="grid lg:grid-cols-3 gap-6">
@@ -735,8 +737,14 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
              tenancyId={activeTenancy?.id}
              propertyId={activeTenancy?.property?.id}
              entityType="tenancy"
-           />
-         </div>
+            />
+
+            <EditTenantDialog
+              tenant={tenant}
+              open={showEditDialog}
+              onOpenChange={setShowEditDialog}
+            />
+          </div>
      </AppLayout>
    );
  }
