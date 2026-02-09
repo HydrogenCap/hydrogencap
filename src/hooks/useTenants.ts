@@ -4,12 +4,14 @@
  import { useToast } from '@/hooks/use-toast';
  
  export type TenantStatus = 'prospect' | 'active' | 'past' | 'blacklisted';
+ export type TenantType = 'individual' | 'company';
  
  export interface Tenant {
    id: string;
    org_id: string;
-   first_name: string;
-   last_name: string;
+   tenant_type: TenantType;
+   first_name: string | null;
+   last_name: string | null;
    email: string | null;
    phone: string | null;
    date_of_birth: string | null;
@@ -30,6 +32,16 @@
    previous_landlord_phone: string | null;
    reference_notes: string | null;
    portal_user_id: string | null;
+   company_name: string | null;
+   company_number: string | null;
+   company_registered_address: string | null;
+   company_contact_name: string | null;
+   company_contact_email: string | null;
+   company_contact_phone: string | null;
+   company_contact_role: string | null;
+   trading_name: string | null;
+   vat_registered: boolean | null;
+   vat_number: string | null;
    status: TenantStatus;
    notes: string | null;
    created_at: string;
@@ -145,10 +157,13 @@
        if (error) throw error;
        return data;
      },
-     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-       toast({ title: 'Tenant created', description: `${data.first_name} ${data.last_name} has been added.` });
-     },
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ['tenants'] });
+        const displayName = data.tenant_type === 'company' 
+          ? data.company_name 
+          : `${data.first_name} ${data.last_name}`;
+        toast({ title: 'Tenant created', description: `${displayName} has been added.` });
+      },
      onError: (error) => {
        toast({ title: 'Failed to create tenant', description: error.message, variant: 'destructive' });
      },
