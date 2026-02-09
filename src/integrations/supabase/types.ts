@@ -4269,6 +4269,13 @@ export type Database = {
       tenants: {
         Row: {
           annual_income: number | null
+          company_contact_email: string | null
+          company_contact_name: string | null
+          company_contact_phone: string | null
+          company_contact_role: string | null
+          company_name: string | null
+          company_number: string | null
+          company_registered_address: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -4278,13 +4285,13 @@ export type Database = {
           employer_address: string | null
           employer_name: string | null
           employment_status: string | null
-          first_name: string
+          first_name: string | null
           guarantor_address: string | null
           guarantor_email: string | null
           guarantor_name: string | null
           guarantor_phone: string | null
           id: string
-          last_name: string
+          last_name: string | null
           national_insurance: string | null
           notes: string | null
           org_id: string
@@ -4295,10 +4302,21 @@ export type Database = {
           previous_landlord_phone: string | null
           reference_notes: string | null
           status: Database["public"]["Enums"]["tenant_status"]
+          tenant_type: string
+          trading_name: string | null
           updated_at: string
+          vat_number: string | null
+          vat_registered: boolean | null
         }
         Insert: {
           annual_income?: number | null
+          company_contact_email?: string | null
+          company_contact_name?: string | null
+          company_contact_phone?: string | null
+          company_contact_role?: string | null
+          company_name?: string | null
+          company_number?: string | null
+          company_registered_address?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -4308,13 +4326,13 @@ export type Database = {
           employer_address?: string | null
           employer_name?: string | null
           employment_status?: string | null
-          first_name: string
+          first_name?: string | null
           guarantor_address?: string | null
           guarantor_email?: string | null
           guarantor_name?: string | null
           guarantor_phone?: string | null
           id?: string
-          last_name: string
+          last_name?: string | null
           national_insurance?: string | null
           notes?: string | null
           org_id: string
@@ -4325,10 +4343,21 @@ export type Database = {
           previous_landlord_phone?: string | null
           reference_notes?: string | null
           status?: Database["public"]["Enums"]["tenant_status"]
+          tenant_type?: string
+          trading_name?: string | null
           updated_at?: string
+          vat_number?: string | null
+          vat_registered?: boolean | null
         }
         Update: {
           annual_income?: number | null
+          company_contact_email?: string | null
+          company_contact_name?: string | null
+          company_contact_phone?: string | null
+          company_contact_role?: string | null
+          company_name?: string | null
+          company_number?: string | null
+          company_registered_address?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -4338,13 +4367,13 @@ export type Database = {
           employer_address?: string | null
           employer_name?: string | null
           employment_status?: string | null
-          first_name?: string
+          first_name?: string | null
           guarantor_address?: string | null
           guarantor_email?: string | null
           guarantor_name?: string | null
           guarantor_phone?: string | null
           id?: string
-          last_name?: string
+          last_name?: string | null
           national_insurance?: string | null
           notes?: string | null
           org_id?: string
@@ -4355,7 +4384,11 @@ export type Database = {
           previous_landlord_phone?: string | null
           reference_notes?: string | null
           status?: Database["public"]["Enums"]["tenant_status"]
+          tenant_type?: string
+          trading_name?: string | null
           updated_at?: string
+          vat_number?: string | null
+          vat_registered?: boolean | null
         }
         Relationships: [
           {
