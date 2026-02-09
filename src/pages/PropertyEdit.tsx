@@ -87,8 +87,6 @@ function PropertyEditPage() {
   const [geocodeData, setGeocodeData] = useState<AddressData | null>(null);
   const [suspiciousChange, setSuspiciousChange] = useState(false);
 
-  // Debug logging
-  console.log('PropertyEditPage mounted', { id, isLoading, error: error?.message, hasProperty: !!property });
 
   const form = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),

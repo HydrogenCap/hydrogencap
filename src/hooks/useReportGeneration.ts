@@ -148,7 +148,7 @@ export function useReportData() {
 }
 
 // Calculate portfolio-level summary for broker packs
-function calculatePortfolioSummary(properties: any[]): PortfolioSummary {
+function calculatePortfolioSummary(properties: Array<{ current_value_gbp?: number | null; beds?: number | null; is_hmo_licensed?: boolean | null; loans?: Array<{ current_mortgage_balance_gbp?: number | null }> }>): PortfolioSummary {
   let totalValue = 0;
   let totalMortgageBalance = 0;
   let totalBedrooms = 0;
@@ -305,7 +305,7 @@ export function useGenerateReport() {
         throw new Error('No properties match the selected filters');
       }
 
-      let report: any;
+      let report: { generate: () => void; getBlob: () => Blob };
       let filename: string;
       const dateStr = format(new Date(), 'yyyy-MM-dd');
       const timestamp = format(new Date(), 'HHmmss');
