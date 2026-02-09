@@ -82,18 +82,40 @@ serve(async (req: Request) => {
 
     if (!complianceDocs?.length) throw new Error("No current certificates found to send");
 
-    // Download attachments
+    // Download attachments using service role (bucket is private)
     const attachments: { filename: string; content: string }[] = [];
     for (const doc of complianceDocs) {
       try {
-        const response = await fetch(doc.file_url);
-        if (!response.ok) continue;
-        const buffer = await response.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-        attachments.push({
-          filename: doc.original_file_name,
-          content: base64,
-        });
+        // Extract storage path from the full URL
+        // URL format: .../storage/v1/object/public/compliance/{path}
+        const urlObj = new URL(doc.file_url);
+        const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/compliance\/(.+)/);
+        
+        if (pathMatch) {
+          const storagePath = decodeURIComponent(pathMatch[1]);
+          const { data: fileData, error: dlError } = await supabase.storage
+            .from('compliance')
+            .download(storagePath);
+          
+          if (dlError) {
+            console.error(`Storage download error for ${doc.original_file_name}:`, dlError);
+            continue;
+          }
+          
+          const buffer = await fileData.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          const base64 = btoa(binary);
+          attachments.push({
+            filename: doc.original_file_name,
+            content: base64,
+          });
+        } else {
+          console.error(`Could not parse storage path from URL: ${doc.file_url}`);
+        }
       } catch (e) {
         console.error(`Failed to download ${doc.original_file_name}:`, e);
       }
