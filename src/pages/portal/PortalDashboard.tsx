@@ -10,11 +10,20 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP, formatPercent } from '@/lib/calculations';
 
 // Helper to calculate property financials
-function getPropertyFinancials(property: any) {
+interface PortalProperty {
+  current_value_gbp?: number | null;
+  loans?: Array<{ current_mortgage_balance_gbp?: number | null; mortgage_payment_gbp?: number | null }>;
+  income?: Array<{ year: number; annual_rent_gbp?: number | null }>;
+  costs?: Array<{ year: number; management_gbp_manual?: number | null; bills_gbp_manual?: number | null; repairs_gbp_manual?: number | null; insurance_gbp_manual?: number | null; other_gbp_manual?: number | null }>;
+  is_hmo_licensed?: boolean | null;
+  beds?: number | null;
+}
+
+function getPropertyFinancials(property: PortalProperty) {
   const loan = property.loans?.[0];
   const currentYear = new Date().getFullYear();
-  const incomeRecord = property.income?.find((i: any) => i.year === currentYear) || property.income?.[0];
-  const costRecord = property.costs?.find((c: any) => c.year === currentYear) || property.costs?.[0];
+  const incomeRecord = property.income?.find((i) => i.year === currentYear) || property.income?.[0];
+  const costRecord = property.costs?.find((c) => c.year === currentYear) || property.costs?.[0];
 
   const annualRent = incomeRecord?.annual_rent_gbp || 0;
   const annualCosts = costRecord

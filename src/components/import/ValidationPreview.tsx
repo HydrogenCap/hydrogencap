@@ -62,7 +62,7 @@ export function ValidationPreview({ validatedRows, mapping }: ValidationPreviewP
           <TableBody>
             {validatedRows.slice(0, 50).map((row, index) => (
               <TableRow 
-                key={index} 
+                key={`row-${index}-${row.isValid}`} 
                 className={row.isValid ? '' : 'bg-destructive/5'}
               >
                 <TableCell className="sticky left-0 bg-background">

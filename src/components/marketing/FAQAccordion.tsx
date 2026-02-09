@@ -17,8 +17,8 @@ interface FAQAccordionProps {
 export function FAQAccordion({ items }: FAQAccordionProps) {
   return (
     <Accordion type="single" collapsible className="w-full">
-      {items.map((item, index) => (
-        <AccordionItem key={index} value={`item-${index}`}>
+      {items.map((item) => (
+        <AccordionItem key={item.question} value={item.question}>
           <AccordionTrigger className="text-left">
             {item.question}
           </AccordionTrigger>
