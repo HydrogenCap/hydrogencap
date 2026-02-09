@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 
 import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { jsPDF } from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
@@ -154,24 +156,115 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
         // Create an audit document record
         const orgId = await getUserOrgId();
         if (orgId) {
-          const auditContent = [
-            `Compliance Certificates Sent — Audit Record`,
-            ``,
-            `Date: ${sentDateFormatted}`,
-            `Tenant: ${displayName}`,
-            `Email: ${recipientEmail}`,
-            `Property: ${activeTenancy.property.address_line}`,
-            `Certificates: EPC, Gas Safety Certificate (CP12)`,
-            `Sent via: ${data.sentTo || recipientEmail}`,
-            ``,
-            `This record confirms that the above compliance certificates were emailed to the tenant on the date shown.`,
-          ].join('\n');
+          // Generate audit cover page with jsPDF
+          const doc = new jsPDF();
+          const pageWidth = doc.internal.pageSize.getWidth();
 
-          const blob = new Blob([auditContent], { type: 'text/plain' });
-          const fileName = `CertsSent_${displayName.replace(/\s+/g, '')}_${sentDate}.txt`;
-          const filePath = `${orgId}/${crypto.randomUUID()}.txt`;
+          // Header
+          doc.setFontSize(18);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Compliance Certificates — Audit Record', pageWidth / 2, 30, { align: 'center' });
 
-          await supabase.storage.from('documents').upload(filePath, blob);
+          doc.setDrawColor(200);
+          doc.line(20, 36, pageWidth - 20, 36);
+
+          // Details
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'normal');
+          let y = 50;
+          const details = [
+            ['Date Sent', sentDateFormatted],
+            ['Tenant', displayName],
+            ['Email', recipientEmail],
+            ['Property', activeTenancy.property.address_line],
+            ['Certificates', 'EPC, Gas Safety Certificate (CP12)'],
+            ['Sent To', data.sentTo || recipientEmail],
+          ];
+          for (const [label, value] of details) {
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${label}:`, 25, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(value), 70, y);
+            y += 8;
+          }
+
+          y += 10;
+          doc.setFontSize(10);
+          doc.text(
+            'This document confirms that the above compliance certificates were emailed to the tenant',
+            25, y
+          );
+          doc.text('on the date shown. Copies of the certificates are appended below.', 25, y + 6);
+
+          // Footer
+          doc.setFontSize(8);
+          doc.setTextColor(150);
+          doc.text(`Generated ${sentDateFormatted} — Hydrogen Capital`, pageWidth / 2, 285, { align: 'center' });
+
+          // Convert cover page to pdf-lib format for merging
+          const coverBytes = doc.output('arraybuffer');
+          const mergedPdf = await PDFDocument.load(coverBytes);
+
+          // Fetch compliance certificate files and append them
+          const { data: compDocs } = await supabase
+            .from('compliance_items')
+            .select('id, compliance_type, compliance_documents(file_url, original_file_name, file_type)')
+            .eq('property_id', activeTenancy.property.id)
+            .eq('org_id', orgId)
+            .in('compliance_type', ['EPC', 'Gas Safety Certificate (CP12)']);
+
+          if (compDocs) {
+            for (const item of compDocs) {
+              const docs = (item as any).compliance_documents || [];
+              for (const certDoc of docs) {
+                try {
+                  // Try to download the file
+                  const urlObj = new URL(certDoc.file_url);
+                  const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/compliance\/(.+)/);
+                  let fileData: ArrayBuffer | null = null;
+
+                  if (pathMatch) {
+                    const storagePath = decodeURIComponent(pathMatch[1]);
+                    const { data: blob } = await supabase.storage.from('compliance').download(storagePath);
+                    if (blob) fileData = await blob.arrayBuffer();
+                  } else {
+                    const resp = await fetch(certDoc.file_url);
+                    if (resp.ok) fileData = await resp.arrayBuffer();
+                  }
+
+                  if (!fileData) continue;
+
+                  const fileName = (certDoc.original_file_name || '').toLowerCase();
+                  const fileType = (certDoc.file_type || '').toLowerCase();
+
+                  if (fileName.endsWith('.pdf') || fileType === 'application/pdf') {
+                    // Merge PDF pages
+                    const certPdf = await PDFDocument.load(fileData);
+                    const pages = await mergedPdf.copyPages(certPdf, certPdf.getPageIndices());
+                    pages.forEach(p => mergedPdf.addPage(p));
+                  } else if (fileName.match(/\.(jpg|jpeg|png)$/) || fileType.startsWith('image/')) {
+                    // Embed image as a new page
+                    const isJpg = fileName.match(/\.(jpg|jpeg)$/) || fileType === 'image/jpeg';
+                    const img = isJpg
+                      ? await mergedPdf.embedJpg(fileData)
+                      : await mergedPdf.embedPng(fileData);
+                    const imgDims = img.scale(1);
+                    const page = mergedPdf.addPage([imgDims.width, imgDims.height]);
+                    page.drawImage(img, { x: 0, y: 0, width: imgDims.width, height: imgDims.height });
+                  }
+                } catch (e) {
+                  console.warn('Could not append certificate:', certDoc.original_file_name, e);
+                }
+              }
+            }
+          }
+
+          const finalPdfBytes = await mergedPdf.save();
+          const pdfBlob = new Blob([finalPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+          const fileName = `CertsSent_${displayName.replace(/\s+/g, '')}_${sentDate}.pdf`;
+          const filePath = `${orgId}/${crypto.randomUUID()}.pdf`;
+
+          await supabase.storage.from('documents').upload(filePath, pdfBlob);
           const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath);
 
           await supabase.from('documents').insert({
