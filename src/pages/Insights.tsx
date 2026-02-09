@@ -44,7 +44,7 @@ import {
   type PortfolioInsights,
   type ActionItem,
 } from '@/lib/portfolioInsights';
-import { formatGBP, formatPercent } from '@/lib/calculations';
+import { formatGBP, formatPercent, formatGBPCompact } from '@/lib/calculations';
 import { OwnershipAttributionSection } from '@/components/insights/OwnershipAttributionSection';
 
 function InsightsPage() {
@@ -215,7 +215,7 @@ function InsightsPage() {
             icon={Percent}
             title="Weighted Avg Rate"
             value={formatPercent(portfolioInsights.debt.weightedAverageInterestRate, 2)}
-            subtitle={`£${(portfolioInsights.debt.totalMortgageBalance / 1000000).toFixed(1)}M debt`}
+            subtitle={`${formatGBPCompact(portfolioInsights.debt.totalMortgageBalance)} debt`}
           />
           <MetricCard
             icon={Wallet}
@@ -234,7 +234,7 @@ function InsightsPage() {
             icon={Bed}
             title="Rent / Bedroom"
             value={portfolioInsights.returns.rentPerBedroomMonthly 
-              ? `£${portfolioInsights.returns.rentPerBedroomMonthly.toFixed(0)}/mo`
+              ? `${formatGBP(portfolioInsights.returns.rentPerBedroomMonthly)}/mo`
               : '—'
             }
             subtitle={`${portfolioInsights.returns.totalBedrooms} total bedrooms`}
@@ -306,7 +306,7 @@ function InsightsPage() {
                         <div className="flex items-center gap-2">
                           <Progress value={lender.percent} className="w-24 h-2" />
                           <span className="w-12 text-right text-muted-foreground">
-                            {lender.percent.toFixed(0)}%
+                            {formatPercent(lender.percent, 0)}
                           </span>
                         </div>
                       </div>
@@ -384,7 +384,7 @@ function InsightsPage() {
                     className="w-20 h-2" 
                   />
                   <span className="text-sm font-medium">
-                    {portfolioInsights.operational.averagePassportCompleteness.toFixed(0)}%
+                    {formatPercent(portfolioInsights.operational.averagePassportCompleteness, 0)}
                   </span>
                 </div>
               </div>
