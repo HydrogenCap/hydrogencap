@@ -107,9 +107,8 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
         toast({ title: 'No active tenancy', description: 'Cannot send certificates without an active tenancy.', variant: 'destructive' });
         return;
       }
-      const recipientEmail = isCompany
-        ? (tenant.company_contact_email || tenant.email)
-        : tenant.email;
+      const recipientEmail = tenant.compliance_contact_email
+        || (isCompany ? (tenant.company_contact_email || tenant.email) : tenant.email);
       if (!recipientEmail) {
         toast({ title: 'No email address', description: 'This tenant has no email address on file.', variant: 'destructive' });
         return;
