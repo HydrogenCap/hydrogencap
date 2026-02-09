@@ -1,5 +1,6 @@
- import { useState } from 'react';
- import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import CreateMaintenanceRequestDialog from '@/components/maintenance/CreateMaintenanceRequestDialog';
  import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Home, User } from 'lucide-react';
  import { format } from 'date-fns';
  import { Button } from '@/components/ui/button';
@@ -91,6 +92,7 @@
  
  export default function MaintenanceRequests() {
     const [statusFilter, setStatusFilter] = useState<string>('open');
+    const [dialogOpen, setDialogOpen] = useState(false);
  
    const { data: requests, isLoading } = useMaintenanceRequests();
  
@@ -117,10 +119,10 @@
            </h1>
            <p className="text-muted-foreground">Track and manage maintenance issues</p>
          </div>
-          <Button disabled title="Coming soon">
-            <Plus className="h-4 w-4 mr-2" />
-            New Request
-         </Button>
+           <Button onClick={() => setDialogOpen(true)}>
+             <Plus className="h-4 w-4 mr-2" />
+             New Request
+          </Button>
        </div>
  
        {/* Stats */}
@@ -216,7 +218,7 @@
          </TabsContent>
        </Tabs>
  
-      {/* Maintenance dialog — coming soon */}
-     </div>
+        <CreateMaintenanceRequestDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+    </div>
    );
  }
