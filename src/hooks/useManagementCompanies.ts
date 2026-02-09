@@ -1,18 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 export interface ManagementCompany {
   id: string;
   org_id: string;
   name: string;
   created_at: string;
-}
-
-// Get user's org ID helper
-async function getUserOrgId(): Promise<string> {
-  const { data, error } = await supabase.rpc('get_user_org_id');
-  if (error) throw error;
-  return data;
 }
 
 // Fetch all management companies for the org

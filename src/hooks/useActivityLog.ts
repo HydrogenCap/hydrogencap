@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 type ActivityLog = Database['public']['Tables']['activity_log']['Row'];
 type ActivityLogInsert = Database['public']['Tables']['activity_log']['Insert'];
@@ -19,33 +20,6 @@ export type ActivityEntryType =
   | 'note_added'
   | 'manual'
   | 'go_live';
-
-async function getUserOrgId(): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.rpc('get_user_org_id');
-    
-    if (error) {
-      console.warn('Failed to get org_id via RPC:', error.message);
-      // Fallback to direct query
-      const { data: membership, error: membershipError } = await supabase
-        .from('memberships')
-        .select('org_id')
-        .limit(1)
-        .maybeSingle();
-      
-      if (membershipError || !membership) {
-        console.warn('Failed to get org_id from memberships:', membershipError?.message);
-        return null;
-      }
-      return membership.org_id;
-    }
-    
-    return data;
-  } catch (err) {
-    console.error('getUserOrgId error:', err);
-    return null;
-  }
-}
 
 export function useActivityLog(propertyId?: string) {
   return useQuery({

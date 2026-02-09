@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import type { Database } from '@/integrations/supabase/types';
 
 // Types from the database
@@ -26,17 +27,7 @@ export interface EffectiveOwnership {
   effectivePercent: number;
 }
 
-// Get user's org ID
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
-}
+// getUserOrgId replaced by shared fetchUserOrgId
 
 // ============================================
 // ENTITY HOOKS

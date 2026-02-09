@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,7 +16,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
         </header>
         <main className="flex-1 overflow-auto p-6">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </SidebarInset>
     </SidebarProvider>

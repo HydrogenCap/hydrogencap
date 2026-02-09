@@ -91,7 +91,7 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
   const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const { data: properties, isLoading } = useProperties();
+  const { data: properties, isLoading, isError, error } = useProperties();
   const { data: passports } = usePropertyPassports();
   const { data: allComplianceItems } = useAllCompliance();
   const { stats: missingStats } = useMissingInfo();
@@ -484,6 +484,19 @@ function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-5">
             {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-24" />)}
           </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
+          <h2 className="text-lg font-semibold">Failed to load dashboard</h2>
+          <p className="text-muted-foreground mb-4">{error?.message}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </AppLayout>
     );

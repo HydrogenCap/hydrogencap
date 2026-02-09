@@ -1,5 +1,6 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase } from '@/integrations/supabase/client';
+ import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
  
  export interface ManagedDocument {
@@ -77,17 +78,8 @@
    return 'other';
  }
  
- async function getUserOrgId(): Promise<string | null> {
-   const { data, error } = await supabase
-     .from('memberships')
-     .select('org_id')
-     .limit(1)
-     .maybeSingle();
-   
-   if (error || !data) return null;
-   return data.org_id;
- }
- 
+// getUserOrgId replaced by shared fetchUserOrgId
+
  // Get documents with filters
  export function useManagedDocuments(filters?: DocumentFilters) {
    return useQuery({

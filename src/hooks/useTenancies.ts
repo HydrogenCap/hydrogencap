@@ -1,5 +1,6 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase } from '@/integrations/supabase/client';
+ import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
  
  export type TenancyStatus = 'pending' | 'active' | 'notice' | 'ended';
@@ -47,15 +48,7 @@
    };
  }
  
- async function getUserOrgId(): Promise<string | null> {
-   const { data, error } = await supabase
-     .from('memberships')
-     .select('org_id')
-     .limit(1)
-     .maybeSingle();
-   if (error || !data) return null;
-   return data.org_id;
- }
+// getUserOrgId replaced by shared import
  
  export function useTenancies(filters?: { status?: TenancyStatus; tenantId?: string; propertyId?: string }) {
    return useQuery({

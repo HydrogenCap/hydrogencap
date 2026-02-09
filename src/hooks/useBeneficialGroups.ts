@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import type { Database } from '@/integrations/supabase/types';
 import { useOwnershipEntities } from './useOwnershipLookthrough';
 import type { PropertyWithFinancials } from './useProperties';
@@ -43,24 +44,7 @@ export interface PropertyAttributableOwnership {
   warnings: string[];
 }
 
-// Get user's org ID
-async function getUserOrgId(): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.rpc('get_user_org_id');
-    if (error || !data) {
-      const { data: membershipData, error: membershipError } = await supabase
-        .from('memberships')
-        .select('org_id')
-        .limit(1)
-        .maybeSingle();
-      if (membershipError || !membershipData) return null;
-      return membershipData.org_id;
-    }
-    return data;
-  } catch {
-    return null;
-  }
-}
+// getUserOrgId replaced by shared fetchUserOrgId
 
 // ============================================
 // BENEFICIAL GROUPS HOOKS
