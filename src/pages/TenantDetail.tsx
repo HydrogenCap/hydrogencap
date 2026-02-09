@@ -1,18 +1,20 @@
- import { useState } from 'react';
- import { useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 
- import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload } from 'lucide-react';
- import { format } from 'date-fns';
- import { AppLayout } from '@/components/layout/AppLayout';
+import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download } from 'lucide-react';
+import { format } from 'date-fns';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { supabase } from '@/integrations/supabase/client';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
- import { useTenant, TenantStatus } from '@/hooks/useTenants';
- import { useTenancies } from '@/hooks/useTenancies';
- import { LoadingState } from '@/components/common';
+import { useTenant, TenantStatus } from '@/hooks/useTenants';
+import { useTenancies } from '@/hooks/useTenancies';
+import { LoadingState } from '@/components/common';
 import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplianceChecklist';
 import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
+import { useQuery } from '@tanstack/react-query';
  
  const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
@@ -26,7 +28,57 @@ import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
    const [showTenancyDialog, setShowTenancyDialog] = useState(false);
  
    const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId!);
-   const { data: tenancies, isLoading: tenanciesLoading } = useTenancies({ tenantId });
+    const { data: tenancies, isLoading: tenanciesLoading } = useTenancies({ tenantId });
+
+    // Fetch documents linked to this tenant or their tenancies
+    const tenancyIds = tenancies?.map(t => t.id) || [];
+    const { data: tenantDocuments } = useQuery({
+      queryKey: ['tenant-documents', tenantId, tenancyIds],
+      queryFn: async () => {
+        // Get documents by tenant_id OR tenancy_id
+        let allDocs: any[] = [];
+        
+        // Docs linked directly to tenant
+        const { data: byTenant } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('tenant_id', tenantId!)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false });
+        if (byTenant) allDocs.push(...byTenant);
+
+        // Docs linked to tenancies
+        if (tenancyIds.length > 0) {
+          const { data: byTenancy } = await supabase
+            .from('documents')
+            .select('*')
+            .in('tenancy_id', tenancyIds)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: false });
+          if (byTenancy) allDocs.push(...byTenancy);
+        }
+
+        // Also include tenancy agreements stored as URLs on the tenancy record
+        const agreementDocs = tenancies
+          ?.filter(t => t.tenancy_agreement_url)
+          .map(t => ({
+            id: `agreement-${t.id}`,
+            original_file_name: `Tenancy Agreement - ${t.property.address_line}`,
+            file_url: t.tenancy_agreement_url,
+            created_at: t.start_date,
+            doc_type: 'tenancy_agreement',
+            category: 'tenancy',
+            _isAgreementUrl: true,
+          })) || [];
+
+        // Deduplicate by id
+        const docMap = new Map(allDocs.map(d => [d.id, d]));
+        agreementDocs.forEach(a => { if (!docMap.has(a.id)) docMap.set(a.id, a); });
+        
+        return Array.from(docMap.values());
+      },
+      enabled: !!tenantId && !tenanciesLoading,
+    });
  
   if (tenantLoading || tenanciesLoading) return <AppLayout><LoadingState text="Loading tenant..." /></AppLayout>;
    if (!tenant) return <AppLayout><div className="p-6">Tenant not found</div></AppLayout>;
@@ -322,14 +374,41 @@ import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
                  </Card>
                </TabsContent>
  
-               <TabsContent value="documents" className="mt-4">
-                 <Card>
-                   <CardContent className="py-8 text-center text-muted-foreground">
-                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                     Tenancy documents will be shown here
-                   </CardContent>
-                 </Card>
-               </TabsContent>
+                <TabsContent value="documents" className="mt-4">
+                  {!tenantDocuments || tenantDocuments.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        No documents yet
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-2">
+                      {tenantDocuments.map((doc: any) => (
+                        <Card key={doc.id}>
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{doc.display_name || doc.original_file_name}</p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {doc.doc_type && <Badge variant="outline" className="text-[10px]">{doc.doc_type}</Badge>}
+                                  {doc.created_at && <span>{format(new Date(doc.created_at), 'dd MMM yyyy')}</span>}
+                                </div>
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View
+                              </a>
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
              </Tabs>
            </div>
          </div>
