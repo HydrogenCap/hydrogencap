@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { supabase } from '@/integrations/supabase/client';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
- import { Badge } from '@/components/ui/badge';
- import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 import { useTenant, TenantStatus } from '@/hooks/useTenants';
 import { useTenancies } from '@/hooks/useTenancies';
 import { LoadingState } from '@/components/common';
 import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplianceChecklist';
 import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
  
- const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
    active: { label: 'Active', variant: 'default' },
    past: { label: 'Past', variant: 'secondary' },
@@ -24,10 +26,14 @@ import { useQuery } from '@tanstack/react-query';
  };
  
  export default function TenantDetail() {
-   const { tenantId } = useParams<{ tenantId: string }>();
-   const [showTenancyDialog, setShowTenancyDialog] = useState(false);
- 
-   const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId!);
+    const { tenantId } = useParams<{ tenantId: string }>();
+    const queryClient = useQueryClient();
+    const [showTenancyDialog, setShowTenancyDialog] = useState(false);
+    const [sendingCerts, setSendingCerts] = useState(false);
+    const [certsSent, setCertsSent] = useState(false);
+    const { toast } = useToast();
+
+    const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId!);
     const { data: tenancies, isLoading: tenanciesLoading } = useTenancies({ tenantId });
 
     // Fetch documents linked to this tenant or their tenancies
@@ -86,9 +92,47 @@ import { useQuery } from '@tanstack/react-query';
    const activeTenancy = tenancies?.find(t => t.status === 'active');
    const status = statusConfig[tenant.status];
    const isCompany = tenant.tenant_type === 'company';
-   const displayName = isCompany
-     ? (tenant.company_name || `${tenant.first_name} ${tenant.last_name}`)
-     : `${tenant.first_name} ${tenant.last_name}`;
+    const displayName = isCompany
+      ? (tenant.company_name || `${tenant.first_name} ${tenant.last_name}`)
+      : `${tenant.first_name} ${tenant.last_name}`;
+
+    const handleSendCertificates = async () => {
+      if (!activeTenancy) {
+        toast({ title: 'No active tenancy', description: 'Cannot send certificates without an active tenancy.', variant: 'destructive' });
+        return;
+      }
+      const recipientEmail = isCompany
+        ? (tenant.company_contact_email || tenant.email)
+        : tenant.email;
+      if (!recipientEmail) {
+        toast({ title: 'No email address', description: 'This tenant has no email address on file.', variant: 'destructive' });
+        return;
+      }
+
+      setSendingCerts(true);
+      setCertsSent(false);
+      try {
+        const { data, error } = await supabase.functions.invoke('send-tenant-certificates', {
+          body: {
+            tenantId: tenant.id,
+            tenancyId: activeTenancy.id,
+            propertyId: activeTenancy.property.id,
+            complianceTypes: ['EPC', 'Gas Safety Certificate (CP12)'],
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        setCertsSent(true);
+        toast({ title: 'Certificates sent', description: `EPC & Gas Safety emailed to ${data.sentTo}` });
+        queryClient.invalidateQueries({ queryKey: ['tenant-documents'] });
+      } catch (err: any) {
+        toast({ title: 'Failed to send', description: err.message, variant: 'destructive' });
+      } finally {
+        setSendingCerts(false);
+      }
+    };
  
    return (
      <AppLayout>
@@ -374,7 +418,33 @@ import { useQuery } from '@tanstack/react-query';
                  </Card>
                </TabsContent>
  
-                <TabsContent value="documents" className="mt-4">
+                <TabsContent value="documents" className="mt-4 space-y-4">
+                  {activeTenancy && (
+                    <Card>
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Send Compliance Certificates</p>
+                          <p className="text-sm text-muted-foreground">
+                            Email EPC & Gas Safety certificates to {isCompany ? (tenant.company_contact_email || tenant.email) : tenant.email}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={handleSendCertificates}
+                          disabled={sendingCerts}
+                          variant={certsSent ? 'outline' : 'default'}
+                        >
+                          {sendingCerts ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</>
+                          ) : certsSent ? (
+                            <><CheckCircle2 className="h-4 w-4 mr-2" />Sent</>
+                          ) : (
+                            <><Send className="h-4 w-4 mr-2" />Send Certificates</>
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {!tenantDocuments || tenantDocuments.length === 0 ? (
                     <Card>
                       <CardContent className="py-8 text-center text-muted-foreground">
