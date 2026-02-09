@@ -40,13 +40,24 @@
        throw priorityError;
      }
  
-     console.log(`Updated ${prioritiesUpdated} job priorities`);
- 
-     return new Response(JSON.stringify({
-       success: true,
-       jobs_created: jobsCreated,
-       priorities_updated: prioritiesUpdated,
-     }), {
+      console.log(`Updated ${prioritiesUpdated} job priorities`);
+
+      // Cancel jobs whose compliance items have since been renewed
+      const { data: cancelledCount, error: cancelError } = await supabase
+        .rpc('cancel_renewed_compliance_jobs');
+
+      if (cancelError) {
+        console.error('Error cancelling renewed jobs:', cancelError);
+      }
+
+      console.log(`Cancelled ${cancelledCount ?? 0} jobs for renewed compliance items`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        jobs_created: jobsCreated,
+        priorities_updated: prioritiesUpdated,
+        jobs_cancelled: cancelledCount ?? 0,
+      }), {
        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
      });
  

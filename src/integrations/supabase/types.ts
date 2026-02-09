@@ -4565,6 +4565,7 @@ export type Database = {
       }
     }
     Functions: {
+      cancel_renewed_compliance_jobs: { Args: never; Returns: number }
       create_jobs_for_expiring_compliance: { Args: never; Returns: number }
       find_matching_contractors: {
         Args: {
