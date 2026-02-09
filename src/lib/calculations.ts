@@ -372,7 +372,16 @@ export function calculateMonthlyCashflow(annualNetRent: number | null): number |
   return annualNetRent / 12;
 }
 
-// Calculate yield percentage (with divide-by-zero protection)
+// Calculate gross yield percentage
+export function calculateGrossYield(
+  annualRent: number | null | undefined,
+  currentValue: number | null | undefined
+): number | null {
+  if (!annualRent || !currentValue || currentValue === 0) return null;
+  return (annualRent / currentValue) * 100;
+}
+
+// Calculate net yield percentage (with divide-by-zero protection)
 export function calculateYield(
   annualNetRent: number | null | undefined,
   currentValue: number | null | undefined
