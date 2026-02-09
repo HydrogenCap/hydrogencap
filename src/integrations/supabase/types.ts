@@ -4266,6 +4266,72 @@ export type Database = {
           },
         ]
       }
+      tenancy_compliance_items: {
+        Row: {
+          completed_by: string | null
+          completed_date: string | null
+          created_at: string
+          document_url: string | null
+          due_date: string | null
+          id: string
+          is_applicable: boolean
+          is_required: boolean
+          item_type: string
+          label: string
+          notes: string | null
+          org_id: string
+          tenancy_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_by?: string | null
+          completed_date?: string | null
+          created_at?: string
+          document_url?: string | null
+          due_date?: string | null
+          id?: string
+          is_applicable?: boolean
+          is_required?: boolean
+          item_type: string
+          label: string
+          notes?: string | null
+          org_id: string
+          tenancy_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_by?: string | null
+          completed_date?: string | null
+          created_at?: string
+          document_url?: string | null
+          due_date?: string | null
+          id?: string
+          is_applicable?: boolean
+          is_required?: boolean
+          item_type?: string
+          label?: string
+          notes?: string | null
+          org_id?: string
+          tenancy_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenancy_compliance_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_compliance_items_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           annual_income: number | null
@@ -4521,6 +4587,10 @@ export type Database = {
       generate_rent_schedule: {
         Args: { p_months?: number; p_tenancy_id: string }
         Returns: number
+      }
+      generate_tenancy_compliance_items: {
+        Args: { tenancy_row: Database["public"]["Tables"]["tenancies"]["Row"] }
+        Returns: undefined
       }
       get_user_org_id: { Args: never; Returns: string }
       log_document_download: {

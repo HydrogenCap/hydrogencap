@@ -1,5 +1,6 @@
  import { useState } from 'react';
  import { useParams, Link } from 'react-router-dom';
+
  import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users } from 'lucide-react';
  import { format } from 'date-fns';
  import { AppLayout } from '@/components/layout/AppLayout';
@@ -10,6 +11,7 @@
  import { useTenant, TenantStatus } from '@/hooks/useTenants';
  import { useTenancies } from '@/hooks/useTenancies';
  import { LoadingState } from '@/components/common';
+ import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplianceChecklist';
  
  const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
@@ -253,35 +255,43 @@
                  ) : (
                    <div className="space-y-3">
                      {tenancies?.map(tenancy => (
-                       <Card key={tenancy.id}>
-                         <CardContent className="p-4">
-                           <div className="flex justify-between items-start">
-                             <div>
-                               <div className="flex items-center gap-2 mb-1">
-                                 <Home className="h-4 w-4" />
-                                 <span className="font-medium">{tenancy.room.room_name}</span>
-                                 <Badge variant={
-                                   tenancy.status === 'active' ? 'default' :
-                                   tenancy.status === 'notice' ? 'secondary' : 'outline'
-                                 }>
-                                   {tenancy.status}
-                                 </Badge>
+                       <div key={tenancy.id} className="space-y-3">
+                         <Card>
+                           <CardContent className="p-4">
+                             <div className="flex justify-between items-start">
+                               <div>
+                                 <div className="flex items-center gap-2 mb-1">
+                                   <Home className="h-4 w-4" />
+                                   <span className="font-medium">{tenancy.room.room_name}</span>
+                                   <Badge variant={
+                                     tenancy.status === 'active' ? 'default' :
+                                     tenancy.status === 'notice' ? 'secondary' : 'outline'
+                                   }>
+                                     {tenancy.status}
+                                   </Badge>
+                                 </div>
+                                 <p className="text-sm text-muted-foreground">
+                                   {tenancy.property.address_line}
+                                 </p>
+                                 <p className="text-sm text-muted-foreground mt-1">
+                                   {format(new Date(tenancy.start_date), 'dd MMM yyyy')} - 
+                                   {tenancy.end_date ? format(new Date(tenancy.end_date), ' dd MMM yyyy') : ' Present'}
+                                 </p>
                                </div>
-                               <p className="text-sm text-muted-foreground">
-                                 {tenancy.property.address_line}
-                               </p>
-                               <p className="text-sm text-muted-foreground mt-1">
-                                 {format(new Date(tenancy.start_date), 'dd MMM yyyy')} - 
-                                 {tenancy.end_date ? format(new Date(tenancy.end_date), ' dd MMM yyyy') : ' Present'}
-                               </p>
+                               <div className="text-right">
+                                 <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
+                                 <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
+                               </div>
                              </div>
-                             <div className="text-right">
-                               <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
-                               <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
-                             </div>
-                           </div>
-                         </CardContent>
-                       </Card>
+                           </CardContent>
+                         </Card>
+                         {(tenancy.status === 'active' || tenancy.status === 'pending') && (
+                           <TenancyComplianceChecklist
+                             tenancyId={tenancy.id}
+                             tenantType={tenant.tenant_type as 'individual' | 'company'}
+                           />
+                         )}
+                       </div>
                      ))}
                    </div>
                  )}

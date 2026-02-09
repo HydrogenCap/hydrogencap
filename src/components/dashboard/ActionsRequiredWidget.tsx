@@ -20,6 +20,7 @@ const riskIcons: Record<RiskType, React.ElementType> = {
   negative_cashflow: TrendingDown,
   hmo_licence: Shield,
   operational_data: AlertCircle,
+  tenancy_compliance: Shield,
 };
 
 type ActionCategory = 'all' | 'compliance' | 'financial' | 'data';
