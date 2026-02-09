@@ -433,19 +433,6 @@ function PropertyNewPage() {
                 <CardDescription>Title and tenure details (optional)</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="title_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="e.g. BK123456" className="bg-input" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <FormField
                   control={form.control}
