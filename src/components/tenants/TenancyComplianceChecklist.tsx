@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,17 +17,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle, CheckCircle2, Building2, Shield } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Building2, Shield, Upload, FileText, X, Loader2 } from 'lucide-react';
 import {
   useTenancyCompliance,
   useCompleteTenancyComplianceItem,
   useUncompleteTenancyComplianceItem,
   type TenancyComplianceItem,
 } from '@/hooks/useTenancyCompliance';
+import { supabase } from '@/integrations/supabase/client';
+import { useCreateDocument } from '@/hooks/useDocuments';
+import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
+import { useToast } from '@/hooks/use-toast';
 
 interface Props {
   tenancyId: string;
   tenantType: 'individual' | 'company';
+  tenantId?: string;
+  propertyId?: string;
 }
 
 const CATEGORY_ORDER = [
@@ -53,14 +60,19 @@ const ITEM_CATEGORIES: Record<string, string> = {
   smoke_co_alarms: 'Property Setup',
 };
 
-export function TenancyComplianceChecklist({ tenancyId, tenantType }: Props) {
+export function TenancyComplianceChecklist({ tenancyId, tenantType, tenantId, propertyId }: Props) {
   const { data: items, isLoading } = useTenancyCompliance(tenancyId);
   const completeMutation = useCompleteTenancyComplianceItem();
   const uncompleteMutation = useUncompleteTenancyComplianceItem();
+  const createDocument = useCreateDocument();
+  const { toast } = useToast();
 
   const [dialogItem, setDialogItem] = useState<TenancyComplianceItem | null>(null);
   const [dialogMode, setDialogMode] = useState<'complete' | 'uncomplete'>('complete');
   const [notes, setNotes] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isCompany = tenantType === 'company';
 
@@ -94,12 +106,59 @@ export function TenancyComplianceChecklist({ tenancyId, tenantType }: Props) {
     setDialogItem(item);
     setDialogMode(item.completed_date ? 'uncomplete' : 'complete');
     setNotes('');
+    setUploadFile(null);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!dialogItem) return;
     if (dialogMode === 'complete') {
-      completeMutation.mutate({ itemId: dialogItem.id, notes: notes || undefined });
+      setIsUploading(true);
+      try {
+        let documentUrl: string | undefined;
+
+        // Upload file if provided
+        if (uploadFile) {
+          const orgId = await getUserOrgId();
+          if (!orgId) throw new Error('No organization found');
+
+          const fileExt = uploadFile.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `${orgId}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('documents')
+            .upload(filePath, uploadFile);
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabase.storage
+            .from('documents')
+            .getPublicUrl(filePath);
+          documentUrl = urlData.publicUrl;
+
+          // Create document record linked to tenancy
+          await createDocument.mutateAsync({
+            file_url: documentUrl,
+            original_file_name: uploadFile.name,
+            display_name: `${dialogItem.label}`,
+            doc_type: dialogItem.item_type === 'inventory_completed' ? 'inventory' : dialogItem.item_type,
+            category: 'tenancy',
+            tenant_id: tenantId || null,
+            tenancy_id: tenancyId,
+            property_id: propertyId || null,
+            review_status: 'accepted',
+          });
+        }
+
+        completeMutation.mutate({
+          itemId: dialogItem.id,
+          notes: notes || undefined,
+          documentUrl,
+        });
+      } catch (err: any) {
+        toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      } finally {
+        setIsUploading(false);
+      }
     } else {
       uncompleteMutation.mutate(dialogItem.id);
     }
@@ -194,16 +253,62 @@ export function TenancyComplianceChecklist({ tenancyId, tenantType }: Props) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           {dialogMode === 'complete' && (
-            <Textarea
-              placeholder="Optional notes..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              className="mt-2"
-            />
+            <div className="space-y-3 mt-2">
+              <Textarea
+                placeholder="Optional notes..."
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+              />
+              <div className="space-y-2">
+                <Label className="text-sm">Attach document (optional)</Label>
+                {uploadFile ? (
+                  <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/30">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate flex-1">{uploadFile.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setUploadFile(null)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,image/jpeg,image/png,image/webp,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) setUploadFile(e.target.files[0]);
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose File
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           )}
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+            <AlertDialogCancel disabled={isUploading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm} disabled={isUploading}>
+              {isUploading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
+              ) : (
+                'Confirm'
+              )}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

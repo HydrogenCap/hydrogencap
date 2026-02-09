@@ -40,16 +40,20 @@ export function useCompleteTenancyComplianceItem() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ itemId, notes }: { itemId: string; notes?: string }) => {
+    mutationFn: async ({ itemId, notes, documentUrl }: { itemId: string; notes?: string; documentUrl?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
+      const updatePayload: Record<string, any> = {
+        completed_date: new Date().toISOString().split('T')[0],
+        completed_by: user?.email || 'Unknown',
+        notes: notes || null,
+        updated_at: new Date().toISOString(),
+      };
+      if (documentUrl) {
+        updatePayload.document_url = documentUrl;
+      }
       const { data, error } = await supabase
         .from('tenancy_compliance_items')
-        .update({
-          completed_date: new Date().toISOString().split('T')[0],
-          completed_by: user?.email || 'Unknown',
-          notes: notes || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', itemId)
         .select()
         .single();
