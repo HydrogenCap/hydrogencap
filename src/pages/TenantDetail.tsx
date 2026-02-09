@@ -642,7 +642,7 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                         <div>
                           <p className="font-medium">Send Compliance Certificates</p>
                           <p className="text-sm text-muted-foreground">
-                            Email EPC & Gas Safety certificates to {isCompany ? (tenant.company_contact_email || tenant.email) : tenant.email}
+                            Email EPC & Gas Safety certificates to {tenant.compliance_contact_email || (isCompany ? (tenant.company_contact_email || tenant.email) : tenant.email)}
                           </p>
                         </div>
                         <Button
