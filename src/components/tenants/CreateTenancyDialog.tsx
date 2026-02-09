@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
-import { Upload, FileText, ChevronLeft, ChevronRight, Loader2, Bot, AlertTriangle, CheckCircle2, Info, Sparkles } from 'lucide-react';
+import { Upload, FileText, ChevronLeft, ChevronRight, Loader2, Bot, AlertTriangle, CheckCircle2, Info, Sparkles, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useProperties } from '@/hooks/useProperties';
-import { useRoomsWithTenancy, useUpdateRoom } from '@/hooks/useRooms';
+import { useRoomsWithTenancy, useUpdateRoom, useCreateRoom } from '@/hooks/useRooms';
 import { useCreateTenancy } from '@/hooks/useTenancies';
 import { useUpdateTenant } from '@/hooks/useTenants';
 import { useToast } from '@/hooks/use-toast';
@@ -101,11 +101,40 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const { data: roomsWithTenancy } = useRoomsWithTenancy(propertyId);
   const createTenancy = useCreateTenancy();
   const updateRoom = useUpdateRoom();
+  const createRoom = useCreateRoom();
   const updateTenant = useUpdateTenant();
   const { toast } = useToast();
 
+  const selectedProperty = properties?.find(p => p.id === propertyId);
+  const isWholePropertyLet = selectedProperty && selectedProperty.asset_category !== 'HMO' && selectedProperty.asset_category !== 'HMO (Licensed)';
   const vacantRooms = roomsWithTenancy?.filter(r => r.status === 'vacant') || [];
   const selectedRoom = roomsWithTenancy?.find(r => r.id === roomId);
+
+  // Auto-create a "Whole Property" room for single-let properties that have no rooms
+  useEffect(() => {
+    if (isWholePropertyLet && propertyId && roomsWithTenancy && roomsWithTenancy.length === 0 && !createRoom.isPending) {
+      createRoom.mutateAsync({
+        property_id: propertyId,
+        room_name: 'Whole Property',
+        room_number: null,
+        floor: 0,
+        room_type: 'studio' as const,
+        target_rent_pcm: null,
+        status: 'vacant' as const,
+        description: 'Whole property let',
+        amenities: null,
+        square_footage: null,
+        photos: null,
+      });
+    }
+  }, [isWholePropertyLet, propertyId, roomsWithTenancy]);
+
+  // Auto-select room for whole-property lets
+  useEffect(() => {
+    if (isWholePropertyLet && vacantRooms.length === 1 && !roomId) {
+      setRoomId(vacantRooms[0].id);
+    }
+  }, [isWholePropertyLet, vacantRooms, roomId]);
 
   // Reset on close
   useEffect(() => {
@@ -231,7 +260,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
     if (file) handleFileUpload(file);
   }, [tenantName, tenantType]);
 
-  const canProceedStep2 = propertyId && roomId;
+  const canProceedStep2 = propertyId && (roomId || isWholePropertyLet);
   const canProceedStep3 = startDate && rentAmountPcm && Number(rentAmountPcm) > 0;
 
   const handleCreate = async () => {
@@ -360,7 +389,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
               </Select>
             </div>
 
-            {propertyId && (
+            {propertyId && !isWholePropertyLet && (
               <div className="space-y-2">
                 <Label>
                   Room *
@@ -386,6 +415,15 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
                   </Select>
                 )}
               </div>
+            )}
+
+            {propertyId && isWholePropertyLet && (
+              <Alert>
+                <Home className="h-4 w-4" />
+                <AlertDescription>
+                  This property is let as a whole — no room selection needed.
+                </AlertDescription>
+              </Alert>
             )}
           </div>
         )}
