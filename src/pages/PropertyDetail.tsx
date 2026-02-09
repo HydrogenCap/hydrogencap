@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, FinancialAttributionCard } from '@/components/ownership';
 import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveChecklist, QuickPerformanceCard } from '@/components/property';
+import { PropertyStatusBar } from '@/components/property/PropertyStatusBar';
 import { PassportForm, CoreIdentityCard } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
 import { FloorplanCard } from '@/components/floorplans';
@@ -203,6 +204,9 @@ function PropertyDetailPage() {
             </AlertDialog>
           </div>
         </div>
+
+        {/* Status Bar */}
+        <PropertyStatusBar propertyId={id!} lifecycleType={property.lifecycle_type || undefined} />
 
         {/* KPI Summary Row */}
         <div className="grid gap-4 md:grid-cols-4">
