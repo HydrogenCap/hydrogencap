@@ -221,7 +221,7 @@
          </div>
        </div>
  
-      {/* TODO: Create tenancy dialog */}
+      {/* Tenancy dialog — coming soon */}
      </div>
    );
  }

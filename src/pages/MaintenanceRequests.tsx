@@ -90,8 +90,7 @@
  }
  
  export default function MaintenanceRequests() {
-   const [statusFilter, setStatusFilter] = useState<string>('open');
-   const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [statusFilter, setStatusFilter] = useState<string>('open');
  
    const { data: requests, isLoading } = useMaintenanceRequests();
  
@@ -118,9 +117,9 @@
            </h1>
            <p className="text-muted-foreground">Track and manage maintenance issues</p>
          </div>
-         <Button onClick={() => setShowCreateDialog(true)}>
-           <Plus className="h-4 w-4 mr-2" />
-           New Request
+          <Button disabled title="Coming soon">
+            <Plus className="h-4 w-4 mr-2" />
+            New Request
          </Button>
        </div>
  
@@ -207,9 +206,9 @@
                icon={Wrench}
                title="No maintenance requests"
                description="Create a request when issues need to be tracked"
-               action={
-                { label: "New Request", onClick: () => setShowCreateDialog(true) }
-               }
+                action={
+                 { label: "New Request", onClick: () => {} }
+                }
              />
            ) : (
              requests?.map(request => <RequestCard key={request.id} request={request} />)
@@ -217,7 +216,7 @@
          </TabsContent>
        </Tabs>
  
-      {/* TODO: Create maintenance dialog */}
+      {/* Maintenance dialog — coming soon */}
      </div>
    );
  }

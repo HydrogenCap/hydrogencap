@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,63 +10,60 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
+import { LoadingState } from "@/components/common";
 
-// Pages
-import Auth from "./pages/Auth";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import Properties from "./pages/Properties";
-import PropertyNew from "./pages/PropertyNew";
-import PropertyEdit from "./pages/PropertyEdit";
-import PropertyDetail from "./pages/PropertyDetail";
-import Companies from "./pages/Companies";
-import CompanyDetail from "./pages/CompanyDetail";
-import Ownership from "./pages/Ownership";
-import Inbox from "./pages/Inbox";
-import Import from "./pages/Import";
-import ImportPassport from "./pages/ImportPassport";
-import Insights from "./pages/Insights";
-import MissingInfo from "./pages/MissingInfo";
-import Settings from "./pages/Settings";
-import DashboardMap from "./pages/DashboardMap";
-import Timeline from "./pages/Timeline";
-import RefinanceCalendar from "./pages/RefinanceCalendar";
-import ComplianceCalendar from "./pages/ComplianceCalendar";
-import Compliance from "./pages/Compliance";
-import Reports from "./pages/Reports";
-import Actions from "./pages/Actions";
-import Chat from "./pages/Chat";
-import Passport from "./pages/Passport";
-import Pipeline from "./pages/Pipeline";
-import SharedDocument from "./pages/SharedDocument";
-import NotFound from "./pages/NotFound";
-import Contractors from "./pages/Contractors";
-import Jobs from "./pages/Jobs";
-import JobDetail from "./pages/JobDetail";
-import Tenants from "./pages/Tenants";
-import TenantDetail from "./pages/TenantDetail";
-import RentCollection from "./pages/RentCollection";
-import MaintenanceRequests from "./pages/MaintenanceRequests";
+// Lazy-loaded pages
+const Auth = lazy(() => import("./pages/Auth"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Properties = lazy(() => import("./pages/Properties"));
+const PropertyNew = lazy(() => import("./pages/PropertyNew"));
+const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
+const PropertyDetail = lazy(() => import("./pages/PropertyDetail"));
+const Companies = lazy(() => import("./pages/Companies"));
+const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const Ownership = lazy(() => import("./pages/Ownership"));
+const Inbox = lazy(() => import("./pages/Inbox"));
+const Import = lazy(() => import("./pages/Import"));
+const ImportPassport = lazy(() => import("./pages/ImportPassport"));
+const Insights = lazy(() => import("./pages/Insights"));
+const MissingInfo = lazy(() => import("./pages/MissingInfo"));
+const Settings = lazy(() => import("./pages/Settings"));
+const DashboardMap = lazy(() => import("./pages/DashboardMap"));
+const Timeline = lazy(() => import("./pages/Timeline"));
+const RefinanceCalendar = lazy(() => import("./pages/RefinanceCalendar"));
+const ComplianceCalendar = lazy(() => import("./pages/ComplianceCalendar"));
+const Compliance = lazy(() => import("./pages/Compliance"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Actions = lazy(() => import("./pages/Actions"));
+const Chat = lazy(() => import("./pages/Chat"));
+const Passport = lazy(() => import("./pages/Passport"));
+const Pipeline = lazy(() => import("./pages/Pipeline"));
+const SharedDocument = lazy(() => import("./pages/SharedDocument"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Contractors = lazy(() => import("./pages/Contractors"));
+const Jobs = lazy(() => import("./pages/Jobs"));
+const JobDetail = lazy(() => import("./pages/JobDetail"));
+const Tenants = lazy(() => import("./pages/Tenants"));
+const TenantDetail = lazy(() => import("./pages/TenantDetail"));
+const RentCollection = lazy(() => import("./pages/RentCollection"));
+const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
 
 // Portal pages
-import {
-  AcceptInvite,
-  PortalDashboard,
-  PortalProperties,
-  PortalCompliance,
-} from "./pages/portal";
+const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
+const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
+const PortalProperties = lazy(() => import("./pages/portal/PortalProperties"));
+const PortalCompliance = lazy(() => import("./pages/portal/PortalCompliance"));
 
 // Marketing pages
-import {
-  MarketingHome,
-  MarketingProduct,
-  MarketingPortfolio,
-  MarketingCaseStudies,
-  MarketingAbout,
-  MarketingContact,
-  MarketingDemo,
-} from "./pages/marketing";
+const MarketingHome = lazy(() => import("./pages/marketing/Home"));
+const MarketingProduct = lazy(() => import("./pages/marketing/Product"));
+const MarketingPortfolio = lazy(() => import("./pages/marketing/Portfolio"));
+const MarketingCaseStudies = lazy(() => import("./pages/marketing/CaseStudies"));
+const MarketingAbout = lazy(() => import("./pages/marketing/About"));
+const MarketingContact = lazy(() => import("./pages/marketing/Contact"));
+const MarketingDemo = lazy(() => import("./pages/marketing/Demo"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +86,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <Suspense fallback={<LoadingState text="Loading..." />}>
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
@@ -357,7 +356,8 @@ const App = () => (
             
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
-              </Routes>
+          </Routes>
+                </Suspense>
               </BrowserRouter>
             </GoogleMapsProvider>
           </LifecycleFilterProvider>

@@ -76,9 +76,8 @@
  }
  
  export default function Tenants() {
-   const [search, setSearch] = useState('');
-   const [statusFilter, setStatusFilter] = useState<string>('all');
-   const [showAddDialog, setShowAddDialog] = useState(false);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string>('all');
  
    const { data: tenants, isLoading } = useTenantsWithProperty();
  
@@ -111,9 +110,9 @@
            </h1>
            <p className="text-muted-foreground">Manage tenant profiles and tenancies</p>
          </div>
-         <Button onClick={() => setShowAddDialog(true)}>
-           <Plus className="h-4 w-4 mr-2" />
-           Add Tenant
+          <Button disabled title="Coming soon">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Tenant
          </Button>
        </div>
  
@@ -181,7 +180,7 @@
                icon={Users}
                title="No tenants found"
                description={search ? "Try adjusting your search" : "Add your first tenant to get started"}
-              action={{ label: "Add Tenant", onClick: () => setShowAddDialog(true) }}
+              action={{ label: "Add Tenant", onClick: () => {} }}
              />
            ) : (
              <div className="grid gap-3">
@@ -193,7 +192,7 @@
          </TabsContent>
        </Tabs>
  
-      {/* TODO: Add tenant dialog */}
+      {/* Tenant dialog — coming soon */}
      </div>
    );
  }

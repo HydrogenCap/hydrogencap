@@ -232,7 +232,7 @@
          </TabsContent>
        </Tabs>
  
-      {/* TODO: Record payment dialog */}
+      {/* Payment dialog — coming soon */}
      </div>
    );
  }
