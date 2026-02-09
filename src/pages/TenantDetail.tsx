@@ -3,8 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 
 import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { jsPDF } from 'jspdf';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
@@ -156,22 +155,29 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
         // Create an audit document record
         const orgId = await getUserOrgId();
         if (orgId) {
-          // Generate audit cover page with jsPDF
-          const doc = new jsPDF();
-          const pageWidth = doc.internal.pageSize.getWidth();
+          // Create PDF entirely with pdf-lib
+          const mergedPdf = await PDFDocument.create();
+          const helvetica = await mergedPdf.embedFont(StandardFonts.Helvetica);
+          const helveticaBold = await mergedPdf.embedFont(StandardFonts.HelveticaBold);
 
-          // Header
-          doc.setFontSize(18);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Compliance Certificates — Audit Record', pageWidth / 2, 30, { align: 'center' });
+          // Cover page
+          const coverPage = mergedPdf.addPage([595, 842]); // A4
+          const { width: pw, height: ph } = coverPage.getSize();
 
-          doc.setDrawColor(200);
-          doc.line(20, 36, pageWidth - 20, 36);
+          // Title
+          coverPage.drawText('Compliance Certificates — Audit Record', {
+            x: 50, y: ph - 60, size: 18, font: helveticaBold, color: rgb(0, 0, 0),
+          });
+
+          // Line
+          coverPage.drawLine({
+            start: { x: 50, y: ph - 72 },
+            end: { x: pw - 50, y: ph - 72 },
+            thickness: 1,
+            color: rgb(0.78, 0.78, 0.78),
+          });
 
           // Details
-          doc.setFontSize(11);
-          doc.setFont('helvetica', 'normal');
-          let y = 50;
           const details = [
             ['Date Sent', sentDateFormatted],
             ['Tenant', displayName],
@@ -180,30 +186,27 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
             ['Certificates', 'EPC, Gas Safety Certificate (CP12)'],
             ['Sent To', data.sentTo || recipientEmail],
           ];
+          let y = ph - 100;
           for (const [label, value] of details) {
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${label}:`, 25, y);
-            doc.setFont('helvetica', 'normal');
-            doc.text(String(value), 70, y);
-            y += 8;
+            coverPage.drawText(`${label}:`, { x: 50, y, size: 11, font: helveticaBold });
+            coverPage.drawText(String(value), { x: 160, y, size: 11, font: helvetica });
+            y -= 20;
           }
 
-          y += 10;
-          doc.setFontSize(10);
-          doc.text(
-            'This document confirms that the above compliance certificates were emailed to the tenant',
-            25, y
+          y -= 15;
+          coverPage.drawText(
+            'This document confirms that the above compliance certificates were emailed',
+            { x: 50, y, size: 10, font: helvetica }
           );
-          doc.text('on the date shown. Copies of the certificates are appended below.', 25, y + 6);
+          coverPage.drawText(
+            'to the tenant on the date shown. Copies of the certificates are appended below.',
+            { x: 50, y: y - 14, size: 10, font: helvetica }
+          );
 
           // Footer
-          doc.setFontSize(8);
-          doc.setTextColor(150);
-          doc.text(`Generated ${sentDateFormatted} — Hydrogen Capital`, pageWidth / 2, 285, { align: 'center' });
-
-          // Convert cover page to pdf-lib format for merging
-          const coverBytes = doc.output('arraybuffer');
-          const mergedPdf = await PDFDocument.load(coverBytes);
+          coverPage.drawText(`Generated ${sentDateFormatted} — Hydrogen Capital`, {
+            x: pw / 2 - 80, y: 30, size: 8, font: helvetica, color: rgb(0.6, 0.6, 0.6),
+          });
 
           // Fetch compliance certificate files and append them
           const { data: compDocs } = await supabase
