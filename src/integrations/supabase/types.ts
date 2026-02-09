@@ -4348,6 +4348,8 @@ export type Database = {
           company_name: string | null
           company_number: string | null
           company_registered_address: string | null
+          compliance_contact_email: string | null
+          compliance_contact_name: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -4389,6 +4391,8 @@ export type Database = {
           company_name?: string | null
           company_number?: string | null
           company_registered_address?: string | null
+          compliance_contact_email?: string | null
+          compliance_contact_name?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -4430,6 +4434,8 @@ export type Database = {
           company_name?: string | null
           company_number?: string | null
           company_registered_address?: string | null
+          compliance_contact_email?: string | null
+          compliance_contact_name?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null

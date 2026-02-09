@@ -407,9 +407,36 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                          </a>
                        </div>
                      )}
-                   </CardContent>
-                 </Card>
-               </>
+                    </CardContent>
+                  </Card>
+
+                  {/* Compliance Contact */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        Compliance / Certificates Contact
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      {tenant.compliance_contact_name ? (
+                        <>
+                          <p className="font-medium">{tenant.compliance_contact_name}</p>
+                          {tenant.compliance_contact_email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <a href={`mailto:${tenant.compliance_contact_email}`} className="text-primary hover:underline">
+                                {tenant.compliance_contact_email}
+                              </a>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-muted-foreground italic">No compliance contact set</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
              ) : (
                <>
                  {/* Individual Contact */}
@@ -443,9 +470,36 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                          <span>{format(new Date(tenant.date_of_birth), 'dd MMM yyyy')}</span>
                        </div>
                      )}
-                   </CardContent>
-                 </Card>
- 
+                    </CardContent>
+                  </Card>
+
+                  {/* Compliance Contact */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Shield className="h-5 w-5" />
+                        Compliance / Certificates Contact
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      {tenant.compliance_contact_name ? (
+                        <>
+                          <p className="font-medium">{tenant.compliance_contact_name}</p>
+                          {tenant.compliance_contact_email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <a href={`mailto:${tenant.compliance_contact_email}`} className="text-primary hover:underline">
+                                {tenant.compliance_contact_email}
+                              </a>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-muted-foreground italic">No compliance contact set</p>
+                      )}
+                    </CardContent>
+                  </Card>
+  
                  {tenant.emergency_contact_name && (
                    <Card>
                      <CardHeader>

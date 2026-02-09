@@ -45,6 +45,8 @@ const companySchema = z.object({
   company_contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   company_contact_phone: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  compliance_contact_name: z.string().optional().nullable(),
+  compliance_contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   status: z.enum(['prospect', 'active']).default('prospect'),
 });
 
@@ -67,6 +69,8 @@ const individualSchema = z.object({
   guarantor_phone: z.string().optional().nullable(),
   guarantor_address: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  compliance_contact_name: z.string().optional().nullable(),
+  compliance_contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   status: z.enum(['prospect', 'active']).default('prospect'),
 });
 
@@ -188,6 +192,8 @@ export function AddTenantDialog({ open, onOpenChange }: AddTenantDialogProps) {
         previous_landlord_phone: null,
         reference_notes: null,
         portal_user_id: null,
+        compliance_contact_name: values.compliance_contact_name || null,
+        compliance_contact_email: values.compliance_contact_email || null,
       });
 
       onOpenChange(false);
@@ -233,6 +239,8 @@ export function AddTenantDialog({ open, onOpenChange }: AddTenantDialogProps) {
         trading_name: null,
         vat_registered: null,
         vat_number: null,
+        compliance_contact_name: values.compliance_contact_name || null,
+        compliance_contact_email: values.compliance_contact_email || null,
       });
 
       onOpenChange(false);
@@ -494,6 +502,37 @@ export function AddTenantDialog({ open, onOpenChange }: AddTenantDialogProps) {
                           </FormItem>
                         )}
                       />
+
+                      <div className="pt-4 border-t">
+                        <p className="text-sm font-medium mb-3">Compliance / Certificates Contact</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={companyForm.control}
+                            name="compliance_contact_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Contact name" {...field} value={field.value || ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={companyForm.control}
+                            name="compliance_contact_email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="email@example.com" {...field} value={field.value || ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </CollapsibleContent>
@@ -806,6 +845,37 @@ export function AddTenantDialog({ open, onOpenChange }: AddTenantDialogProps) {
                           </FormItem>
                         )}
                       />
+
+                      <div className="pt-4 border-t">
+                        <p className="text-sm font-medium mb-3">Compliance / Certificates Contact</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={individualForm.control}
+                            name="compliance_contact_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Contact name" {...field} value={field.value || ''} />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={individualForm.control}
+                            name="compliance_contact_email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <Input type="email" placeholder="email@example.com" {...field} value={field.value || ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </CollapsibleContent>
