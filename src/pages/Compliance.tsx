@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Shield, Search, Home, AlertTriangle, X, ChevronRight, 
-  Filter, ArrowUpDown, Loader2 
+  Filter, ArrowUpDown, Loader2, List, LayoutGrid, ChevronDown
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Select,
   SelectContent,
@@ -29,6 +31,7 @@ import {
   type ComplianceItemWithMissing,
   type PropertyForCompliance,
 } from '@/lib/complianceItemsWithMissing';
+import { cn } from '@/lib/utils';
 
 type FilterStatus = ComplianceStatus | 'all';
 
@@ -39,6 +42,7 @@ export default function Compliance() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'item' | 'property'>('item');
   
   // Upload dialog state
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -144,6 +148,51 @@ export default function Compliance() {
     
     return groups;
   }, [filteredItems]);
+
+  // Calculate per-property compliance scores for "By Property" view
+  const propertyScores = useMemo(() => {
+    // Use allItemsWithMissing (unfiltered) to calculate scores, but groupedByProperty for display
+    const scoreMap = new Map<string, { valid: number; expiring: number; expired: number; missing: number; total: number; score: number }>();
+    
+    allItemsWithMissing.forEach(item => {
+      if (item.status === 'not_required' || item.status === 'optional') return;
+      const existing = scoreMap.get(item.property_id) || { valid: 0, expiring: 0, expired: 0, missing: 0, total: 0, score: 0 };
+      existing.total++;
+      if (item.status === 'valid') existing.valid++;
+      else if (item.status === 'expiring_soon') existing.expiring++;
+      else if (item.status === 'expired') existing.expired++;
+      else if (item.status === 'unknown') existing.missing++;
+      scoreMap.set(item.property_id, existing);
+    });
+    
+    // Calculate percentage scores
+    scoreMap.forEach((stats) => {
+      stats.score = stats.total > 0 ? Math.round((stats.valid / stats.total) * 100) : 0;
+    });
+    
+    return scoreMap;
+  }, [allItemsWithMissing]);
+
+  // Sort properties by score (worst first) for "By Property" view
+  const sortedPropertyEntries = useMemo(() => {
+    return Array.from(groupedByProperty.entries()).sort(([a], [b]) => {
+      const scoreA = propertyScores.get(a)?.score ?? 0;
+      const scoreB = propertyScores.get(b)?.score ?? 0;
+      return scoreA - scoreB;
+    });
+  }, [groupedByProperty, propertyScores]);
+
+  // Portfolio compliance summary for "By Property" view
+  const portfolioCompliance = useMemo(() => {
+    const totalProperties = propertyScores.size;
+    let fullyCompliant = 0;
+    let itemsNeedAttention = 0;
+    propertyScores.forEach(stats => {
+      if (stats.expired === 0 && stats.missing === 0 && stats.expiring === 0) fullyCompliant++;
+      itemsNeedAttention += stats.expired + stats.missing;
+    });
+    return { totalProperties, fullyCompliant, itemsNeedAttention };
+  }, [propertyScores]);
 
   const hasItemsNeedingAction = summary.expired > 0;
 
@@ -310,7 +359,7 @@ export default function Compliance() {
           />
         </div>
 
-        {/* Search and Filter Bar - Enhanced */}
+        {/* Search, Filter Bar, and View Toggle */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative max-w-lg">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -334,6 +383,34 @@ export default function Compliance() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* View Toggle */}
+          <div className="flex items-center border border-border rounded-lg overflow-hidden h-11">
+            <button
+              onClick={() => setViewMode('item')}
+              className={cn(
+                'flex items-center gap-2 px-4 h-full text-sm font-medium transition-colors',
+                viewMode === 'item' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-card text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <List className="h-4 w-4" />
+              By Item
+            </button>
+            <button
+              onClick={() => setViewMode('property')}
+              className={cn(
+                'flex items-center gap-2 px-4 h-full text-sm font-medium transition-colors',
+                viewMode === 'property' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-card text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              By Property
+            </button>
+          </div>
         </div>
 
         {/* Active filter indicator */}
@@ -354,8 +431,8 @@ export default function Compliance() {
           </div>
         )}
 
-        {/* Compliance items grouped by property */}
-        {groupedByProperty.size === 0 ? (
+        {/* Content area */}
+        {filteredItems.length === 0 ? (
           <Card className="border-border bg-card">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
@@ -370,71 +447,25 @@ export default function Compliance() {
               </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-6 transition-opacity duration-200">
-            {Array.from(groupedByProperty.entries()).map(([propertyId, propertyItems]) => {
-              const property = propertyMap.get(propertyId);
-              const needsActionCount = propertyItems.filter(
-                i => i.status === 'expired' || i.status === 'unknown'
-              ).length;
-              const expiringCount = propertyItems.filter(
-                i => i.status === 'expiring_soon'
-              ).length;
-              
-              return (
-                <Card key={propertyId} className="border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
-                  {/* Property Header - Redesigned */}
-                  <div className="bg-gradient-to-r from-secondary to-card px-5 lg:px-6 py-4 border-b border-border">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      {/* Left side */}
-                      <div className="flex items-center gap-4">
-                        {/* Property icon */}
-                        <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Home className="h-6 w-6 text-primary" />
-                        </div>
-                        
-                        {/* Address */}
-                        <div className="min-w-0">
-                          <Link 
-                            to={`/properties/${propertyId}`}
-                            className="text-lg font-semibold text-foreground hover:text-primary transition-colors truncate block"
-                          >
-                            {property?.address_line || 'Unknown Property'}
-                          </Link>
-                          {property?.postcode && (
-                            <p className="text-sm text-muted-foreground">{property.postcode}</p>
-                          )}
-                        </div>
+        ) : viewMode === 'item' ? (
+          /* ===== BY ITEM VIEW - Flat list ===== */
+          <div className="space-y-1">
+            <Card className="border-border bg-card overflow-hidden">
+              <CardContent className="p-0">
+                {filteredItems.map(item => {
+                  const property = propertyMap.get(item.property_id);
+                  return (
+                    <div key={item.id} className="border-b border-border/50 last:border-b-0">
+                      <div className="px-5 pt-3 pb-0">
+                        <Link 
+                          to={`/properties/${item.property_id}`}
+                          className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          {property?.address_line || 'Unknown Property'}
+                          {property?.postcode && ` · ${property.postcode}`}
+                        </Link>
                       </div>
-                      
-                      {/* Right side - Badges */}
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        {needsActionCount > 0 && (
-                          <Badge className="bg-red-500/20 text-red-300 border-red-500/30 px-3 py-1.5">
-                            <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
-                            {needsActionCount} Need Action
-                          </Badge>
-                        )}
-                        {expiringCount > 0 && (
-                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 px-3 py-1.5">
-                            {expiringCount} Expiring
-                          </Badge>
-                        )}
-                        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
-                          <Link to={`/properties/${propertyId}?tab=compliance`}>
-                            View All
-                            <ChevronRight className="h-4 w-4 ml-1" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Compliance Items */}
-                  <CardContent className="p-0">
-                    {propertyItems.map(item => (
                       <ComplianceRegisterItem
-                        key={item.id}
                         id={item.id}
                         complianceType={item.compliance_type}
                         expiryDate={item.expiry_date}
@@ -445,9 +476,132 @@ export default function Compliance() {
                         alternativeType={item.alternativeType}
                         onUpload={() => handleUploadClick(item)}
                       />
-                    ))}
-                  </CardContent>
-                </Card>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          /* ===== BY PROPERTY VIEW - Grouped with scores ===== */
+          <div className="space-y-6 transition-opacity duration-200">
+            {/* Portfolio summary */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Shield className="h-4 w-4" />
+              <span>
+                <strong className="text-foreground">{portfolioCompliance.fullyCompliant}/{portfolioCompliance.totalProperties}</strong> properties fully compliant
+                {portfolioCompliance.itemsNeedAttention > 0 && (
+                  <> · <strong className="text-destructive">{portfolioCompliance.itemsNeedAttention}</strong> items need attention</>
+                )}
+              </span>
+            </div>
+
+            {sortedPropertyEntries.map(([propertyId, propertyItems]) => {
+              const property = propertyMap.get(propertyId);
+              const scores = propertyScores.get(propertyId) || { valid: 0, expiring: 0, expired: 0, missing: 0, total: 0, score: 0 };
+              const hasIssues = scores.expired > 0 || scores.missing > 0 || scores.expiring > 0;
+              
+              return (
+                <Collapsible key={propertyId} defaultOpen={hasIssues}>
+                  <Card className="border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+                    {/* Property Header with score */}
+                    <CollapsibleTrigger asChild>
+                      <button className="w-full text-left bg-gradient-to-r from-secondary to-card px-5 lg:px-6 py-4 border-b border-border hover:from-accent/50 transition-colors">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          {/* Left side */}
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                              <Home className="h-6 w-6 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-3">
+                                <span className="text-lg font-semibold text-foreground truncate">
+                                  {property?.address_line || 'Unknown Property'}
+                                </span>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+                              </div>
+                              {property?.postcode && (
+                                <p className="text-sm text-muted-foreground">{property.postcode}</p>
+                              )}
+                              {/* Score progress bar */}
+                              <div className="flex items-center gap-3 mt-2">
+                                <Progress 
+                                  value={scores.score} 
+                                  className={cn(
+                                    "h-2 flex-1 max-w-[200px]",
+                                    scores.score === 100 && "[&>div]:bg-green-500",
+                                    scores.score >= 70 && scores.score < 100 && "[&>div]:bg-amber-500",
+                                    scores.score < 70 && "[&>div]:bg-destructive",
+                                  )}
+                                />
+                                <span className={cn(
+                                  "text-xs font-semibold",
+                                  scores.score === 100 && "text-green-500",
+                                  scores.score >= 70 && scores.score < 100 && "text-amber-500",
+                                  scores.score < 70 && "text-destructive",
+                                )}>
+                                  {scores.score}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Right side - Summary badges */}
+                          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                            {scores.valid > 0 && (
+                              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 text-xs">
+                                {scores.valid} valid
+                              </Badge>
+                            )}
+                            {scores.expiring > 0 && (
+                              <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs">
+                                {scores.expiring} expiring
+                              </Badge>
+                            )}
+                            {scores.expired > 0 && (
+                              <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30 text-xs">
+                                {scores.expired} expired
+                              </Badge>
+                            )}
+                            {scores.missing > 0 && (
+                              <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                                {scores.missing} missing
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    </CollapsibleTrigger>
+                    
+                    {/* Expandable compliance items */}
+                    <CollapsibleContent>
+                      <CardContent className="p-0">
+                        {propertyItems.map(item => (
+                          <ComplianceRegisterItem
+                            key={item.id}
+                            id={item.id}
+                            complianceType={item.compliance_type}
+                            expiryDate={item.expiry_date}
+                            status={item.status}
+                            daysUntilExpiry={item.daysUntilExpiry}
+                            isMissing={item.isMissing}
+                            conditionalReason={item.conditionalReason}
+                            alternativeType={item.alternativeType}
+                            onUpload={() => handleUploadClick(item)}
+                          />
+                        ))}
+                      </CardContent>
+                      <div className="px-5 py-2 border-t border-border/50 bg-muted/30">
+                        <Button variant="ghost" size="sm" asChild className="text-xs text-muted-foreground hover:text-foreground">
+                          <Link to={`/properties/${propertyId}?tab=compliance`}>
+                            View property compliance
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
               );
             })}
           </div>
