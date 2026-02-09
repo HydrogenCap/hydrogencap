@@ -405,10 +405,12 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                             </CardContent>
                           </Card>
                          {(tenancy.status === 'active' || tenancy.status === 'pending') && (
-                           <TenancyComplianceChecklist
-                             tenancyId={tenancy.id}
-                             tenantType={tenant.tenant_type as 'individual' | 'company'}
-                           />
+                            <TenancyComplianceChecklist
+                              tenancyId={tenancy.id}
+                              tenantType={tenant.tenant_type as 'individual' | 'company'}
+                              tenantId={tenantId}
+                              propertyId={tenancy.property?.id}
+                            />
                          )}
                        </div>
                      ))}
