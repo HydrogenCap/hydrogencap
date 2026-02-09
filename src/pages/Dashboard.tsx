@@ -12,7 +12,7 @@ import { BankPresentationDialog } from '@/components/reports/BankPresentationDia
 import { useProperties } from '@/hooks/useProperties';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
-import { RecentActivityWidget } from '@/components/activity/RecentActivityWidget';
+
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
 import { BeneficialOwnerWidget } from '@/components/dashboard/BeneficialOwnerWidget';
@@ -314,91 +314,93 @@ function DashboardPage() {
               </Card>
             )}
 
-            {/* Main Content Grid */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <ErrorBoundary>
-                <ThisMonthWidget />
-              </ErrorBoundary>
-              {coreRentalProperties.length > 0 && (
+            {/* Sub-tabs: Today / Health / Portfolio */}
+            <Tabs defaultValue="today" className="w-full">
+              <TabsList className="grid w-full max-w-lg grid-cols-3">
+                <TabsTrigger value="today">Today</TabsTrigger>
+                <TabsTrigger value="health">Health</TabsTrigger>
+                <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+              </TabsList>
+
+              {/* TODAY TAB */}
+              <TabsContent value="today" className="space-y-6 mt-4">
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <ErrorBoundary>
+                    <ThisMonthWidget />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <ActionsRequiredWidget />
+                  </ErrorBoundary>
+                </div>
+              </TabsContent>
+
+              {/* HEALTH TAB */}
+              <TabsContent value="health" className="space-y-6 mt-4">
+                {coreRentalProperties.length > 0 && (
+                  <ErrorBoundary>
+                    <PortfolioHealthWidget
+                      properties={coreRentalProperties}
+                      onClick={() => handleMetricClick('health')}
+                    />
+                  </ErrorBoundary>
+                )}
                 <ErrorBoundary>
-                  <PortfolioHealthWidget
-                    properties={coreRentalProperties}
-                    onClick={() => handleMetricClick('health')}
-                  />
+                  <MissingComplianceWidget />
                 </ErrorBoundary>
-              )}
-            </div>
+                <ErrorBoundary>
+                  <UpcomingExpirationsWidget />
+                </ErrorBoundary>
+                <ErrorBoundary>
+                  {filteredProperties.length > 0 && (
+                    <DataQualityWidget properties={filteredProperties} />
+                  )}
+                </ErrorBoundary>
+                <ErrorBoundary>
+                  <StockConditionSection />
+                </ErrorBoundary>
+              </TabsContent>
 
-            {/* Actions Required */}
-            <ErrorBoundary>
-              <ActionsRequiredWidget />
-            </ErrorBoundary>
+              {/* PORTFOLIO TAB */}
+              <TabsContent value="portfolio" className="space-y-6 mt-4">
+                <SectionCard
+                  title="Property Map"
+                  icon={MapPin}
+                  onClick={() => navigate('/dashboard/map')}
+                  showArrow
+                  noPadding
+                  contentClassName="p-0"
+                >
+                  {hasPropertiesWithCoords ? (
+                    <div className="p-4">
+                      <PropertyMap
+                        properties={filteredProperties || []}
+                        className="h-[400px] rounded-lg pointer-events-none"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>Add properties with coordinates to see them on the map</p>
+                      </div>
+                    </div>
+                  )}
+                </SectionCard>
 
-            {/* Property Map */}
-            <SectionCard
-              title="Property Map"
-              icon={MapPin}
-              onClick={() => navigate('/dashboard/map')}
-              showArrow
-              noPadding
-              contentClassName="p-0"
-            >
-              {hasPropertiesWithCoords ? (
-                <div className="p-4">
-                  <PropertyMap
-                    properties={filteredProperties || []}
-                    className="h-[300px] rounded-lg pointer-events-none"
-                  />
+                <div className="grid gap-6 md:grid-cols-2">
+                  <LenderExposureChart lenderData={lenderData} />
+                  <ErrorBoundary>
+                    {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
+                  </ErrorBoundary>
                 </div>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Add properties with coordinates to see them on the map</p>
-                  </div>
-                </div>
-              )}
-            </SectionCard>
 
-            {/* Charts Row */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <LenderExposureChart lenderData={lenderData} />
-              <ErrorBoundary>
-                {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
-              </ErrorBoundary>
-            </div>
-
-            {/* Data Quality */}
-            <ErrorBoundary>
-              {filteredProperties.length > 0 && (
-                <DataQualityWidget properties={filteredProperties} />
-              )}
-            </ErrorBoundary>
-
-            {/* Beneficial Owners */}
-            <ErrorBoundary>
-              {coreRentalProperties.length > 0 && (
-                <BeneficialOwnerWidget properties={coreRentalProperties} />
-              )}
-            </ErrorBoundary>
-
-            {/* Stock Condition */}
-            <ErrorBoundary>
-              <StockConditionSection />
-            </ErrorBoundary>
-
-            {/* Compliance */}
-            <ErrorBoundary>
-              <MissingComplianceWidget />
-            </ErrorBoundary>
-            <ErrorBoundary>
-              <UpcomingExpirationsWidget />
-            </ErrorBoundary>
-
-            {/* Recent Activity */}
-            <ErrorBoundary>
-              <RecentActivityWidget />
-            </ErrorBoundary>
+                <ErrorBoundary>
+                  {coreRentalProperties.length > 0 && (
+                    <BeneficialOwnerWidget properties={coreRentalProperties} />
+                  )}
+                </ErrorBoundary>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Shareholders Tab */}

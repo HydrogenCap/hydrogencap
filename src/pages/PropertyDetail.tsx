@@ -41,6 +41,7 @@ import {
   calculateNetRent,
   calculateMonthlyCashflowAfterDebt,
   calculateYield,
+  calculateGrossYield,
   calculateROCE,
   getLTVStatus,
   getEPCStatus,
@@ -120,6 +121,7 @@ function PropertyDetailPage() {
   const mortgagePayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
   const monthlyCashflow = calculateMonthlyCashflowAfterDebt(annualRent, totalCosts, mortgagePayment);
   const yieldPercent = calculateYield(netRent, currentValue);
+  const grossYield = calculateGrossYield(annualRent, currentValue);
   const roce = calculateROCE(netRent, equity);
 
   const ltvStatus = getLTVStatus(ltv);
@@ -249,7 +251,10 @@ function PropertyDetailPage() {
               <div className={`text-2xl font-bold ${yieldPercent && yieldPercent >= 0 ? 'text-success' : ''}`}>
                 {formatPercent(yieldPercent)}
               </div>
-              <p className="text-xs text-muted-foreground">ROCE: {formatPercent(roce)}</p>
+              <div className="space-y-0.5 mt-1">
+                <p className="text-xs text-muted-foreground">Gross: {formatPercent(grossYield)}</p>
+                <p className="text-xs text-muted-foreground">ROCE: {formatPercent(roce)}</p>
+              </div>
             </CardContent>
           </Card>
         </div>
