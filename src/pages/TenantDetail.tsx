@@ -16,6 +16,7 @@ import { useTenancies } from '@/hooks/useTenancies';
 import { LoadingState } from '@/components/common';
 import { TenancyComplianceChecklist } from '@/components/tenants/TenancyComplianceChecklist';
 import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
+import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
  
 const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -28,9 +29,10 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
  export default function TenantDetail() {
     const { tenantId } = useParams<{ tenantId: string }>();
     const queryClient = useQueryClient();
-    const [showTenancyDialog, setShowTenancyDialog] = useState(false);
-    const [sendingCerts, setSendingCerts] = useState(false);
-    const [certsSent, setCertsSent] = useState(false);
+     const [showTenancyDialog, setShowTenancyDialog] = useState(false);
+     const [showUploadDoc, setShowUploadDoc] = useState(false);
+     const [sendingCerts, setSendingCerts] = useState(false);
+     const [certsSent, setCertsSent] = useState(false);
     const { toast } = useToast();
 
     const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId!);
@@ -423,8 +425,14 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                  </Card>
                </TabsContent>
  
-                <TabsContent value="documents" className="mt-4 space-y-4">
-                  {activeTenancy && (
+                 <TabsContent value="documents" className="mt-4 space-y-4">
+                   <div className="flex justify-end">
+                     <Button onClick={() => setShowUploadDoc(true)}>
+                       <Upload className="h-4 w-4 mr-2" />
+                       Upload Document
+                     </Button>
+                   </div>
+                   {activeTenancy && (
                     <Card>
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
@@ -488,14 +496,26 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
            </div>
          </div>
  
-          <CreateTenancyDialog
-            open={showTenancyDialog}
-            onOpenChange={setShowTenancyDialog}
-            tenantId={tenant.id}
-            tenantName={isCompany ? (tenant.company_name || `${tenant.first_name} ${tenant.last_name}`) : `${tenant.first_name} ${tenant.last_name}`}
-            tenantType={(tenant.tenant_type as 'individual' | 'company') || 'individual'}
-          />
-        </div>
+           <CreateTenancyDialog
+             open={showTenancyDialog}
+             onOpenChange={setShowTenancyDialog}
+             tenantId={tenant.id}
+             tenantName={isCompany ? (tenant.company_name || `${tenant.first_name} ${tenant.last_name}`) : `${tenant.first_name} ${tenant.last_name}`}
+             tenantType={(tenant.tenant_type as 'individual' | 'company') || 'individual'}
+           />
+
+           <UploadDocumentDialog
+             open={showUploadDoc}
+             onOpenChange={(open) => {
+               setShowUploadDoc(open);
+               if (!open) queryClient.invalidateQueries({ queryKey: ['tenant-documents'] });
+             }}
+             tenantId={tenantId}
+             tenancyId={activeTenancy?.id}
+             propertyId={activeTenancy?.property?.id}
+             entityType="tenancy"
+           />
+         </div>
      </AppLayout>
    );
  }
