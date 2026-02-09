@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 interface DismissedDuplicate {
   id: string;
@@ -10,17 +11,6 @@ interface DismissedDuplicate {
   dismissed_by: string;
   dismissed_at: string;
   reason: string | null;
-}
-
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
 }
 
 export function useDismissedDuplicates() {

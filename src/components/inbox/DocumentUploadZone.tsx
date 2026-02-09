@@ -5,21 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCreateDocument } from '@/hooks/useDocuments';
 import { useProperties } from '@/hooks/useProperties';
 import { useToast } from '@/hooks/use-toast';
+import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 
 interface DocumentUploadZoneProps {
   onUploadComplete?: () => void;
-}
-
-// Get the user's org_id for storage paths
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
 }
 
 export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps) {

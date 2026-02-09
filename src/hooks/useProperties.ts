@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { ActivityLoggers } from './useActivityLog';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
@@ -14,17 +15,6 @@ export interface PropertyWithFinancials extends Property {
   loans: Loan[];
   income: Income[];
   costs: Costs[];
-}
-
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
 }
 
 export function useProperties() {

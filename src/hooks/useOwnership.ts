@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 type OwnershipEntity = Database['public']['Tables']['ownership_entities']['Row'];
 type OwnershipEntityInsert = Database['public']['Tables']['ownership_entities']['Insert'];
@@ -9,17 +10,6 @@ type PropertyOwnershipInsert = Database['public']['Tables']['property_ownership'
 
 export interface PropertyOwnershipWithEntity extends PropertyOwnership {
   ownership_entities: OwnershipEntity;
-}
-
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
 }
 
 // Fetch all ownership entities for the user's organization

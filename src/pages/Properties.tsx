@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
-import { Plus, Search, Building2, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling, Download, Upload } from 'lucide-react';
+import { Plus, Search, Building2, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling, Download, Upload, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -580,6 +580,15 @@ function PropertiesPage() {
                   <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card className="bg-card border-border">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+              <h2 className="text-lg font-semibold mb-2">Failed to load properties</h2>
+              <p className="text-muted-foreground mb-4">{error?.message}</p>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
             </CardContent>
           </Card>
         ) : filteredAndSortedProperties.length === 0 ? (

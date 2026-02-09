@@ -67,7 +67,16 @@ import {
   MarketingDemo,
 } from "./pages/marketing";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,        // 2 min — data stays fresh
+      gcTime: 10 * 60 * 1000,           // 10 min garbage collection
+      refetchOnWindowFocus: false,       // Stop refetch on tab switch
+      retry: 1,                          // Single retry on failure
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

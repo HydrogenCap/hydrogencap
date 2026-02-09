@@ -1,17 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ComplianceItem, ComplianceDocument } from '@/lib/complianceTypes';
-
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
-}
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 // Fetch compliance items for a property
 export function usePropertyCompliance(propertyId: string | undefined) {

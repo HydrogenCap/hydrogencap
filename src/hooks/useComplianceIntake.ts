@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { DEFAULT_REMINDER_DAYS } from '@/lib/complianceTypes';
 
@@ -93,16 +94,7 @@ interface AcceptComplianceDocumentParams {
   };
 }
 
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
-}
+// getUserOrgId replaced by shared fetchUserOrgId
 
 // Compliance type to short code for filenames
 const COMPLIANCE_TYPE_CODES: Record<string, string> = {

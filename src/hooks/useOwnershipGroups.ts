@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 export interface OwnershipGroup {
   id: string;
@@ -28,16 +29,7 @@ export interface OwnershipGroupWithMembers extends OwnershipGroup {
   members: GroupMember[];
 }
 
-async function getUserOrgId(): Promise<string> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) throw new Error('No organization found');
-  return data.org_id;
-}
+// getUserOrgId replaced by shared fetchUserOrgId
 
 export function useOwnershipGroups() {
   return useQuery({

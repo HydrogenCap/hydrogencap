@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ValidatedRow } from '@/lib/csvParser';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
 interface ImportResult {
   success: number;
@@ -8,17 +9,6 @@ interface ImportResult {
   created: number;
   updated: number;
   errors: string[];
-}
-
-async function getUserOrgId(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('memberships')
-    .select('org_id')
-    .limit(1)
-    .maybeSingle();
-  
-  if (error || !data) return null;
-  return data.org_id;
 }
 
 export function useBatchImport() {
