@@ -262,8 +262,8 @@ import CreateTenancyDialog from '@/components/tenants/CreateTenancyDialog';
                              <div className="flex justify-between items-start">
                                <div>
                                  <div className="flex items-center gap-2 mb-1">
-                                   <Home className="h-4 w-4" />
-                                   <span className="font-medium">{tenancy.room.room_name}</span>
+                                    <Home className="h-4 w-4" />
+                                    <span className="font-medium">{tenancy.room.room_name === 'Whole Property' ? tenancy.property.address_line : tenancy.room.room_name}</span>
                                    <Badge variant={
                                      tenancy.status === 'active' ? 'default' :
                                      tenancy.status === 'notice' ? 'secondary' : 'outline'
