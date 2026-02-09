@@ -5,6 +5,7 @@ import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, H
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
  import { Button } from '@/components/ui/button';
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -126,9 +127,72 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
 
+        const sentDate = new Date().toISOString().split('T')[0];
+        const sentDateFormatted = format(new Date(), 'dd MMM yyyy');
+
+        // Auto-complete the tenancy compliance items for epc_to_tenant and gas_cert_to_tenant
+        const { data: complianceItems } = await supabase
+          .from('tenancy_compliance_items')
+          .select('id, item_type, label')
+          .eq('tenancy_id', activeTenancy.id)
+          .in('item_type', ['epc_to_tenant', 'gas_cert_to_tenant'])
+          .is('completed_date', null);
+
+        if (complianceItems && complianceItems.length > 0) {
+          const { data: { user } } = await supabase.auth.getUser();
+          await supabase
+            .from('tenancy_compliance_items')
+            .update({
+              completed_date: sentDate,
+              completed_by: user?.email || 'System',
+              notes: `Auto-completed: certificates emailed to ${recipientEmail} on ${sentDateFormatted}`,
+              updated_at: new Date().toISOString(),
+            })
+            .in('id', complianceItems.map(i => i.id));
+        }
+
+        // Create an audit document record
+        const orgId = await getUserOrgId();
+        if (orgId) {
+          const auditContent = [
+            `Compliance Certificates Sent — Audit Record`,
+            ``,
+            `Date: ${sentDateFormatted}`,
+            `Tenant: ${displayName}`,
+            `Email: ${recipientEmail}`,
+            `Property: ${activeTenancy.property.address_line}`,
+            `Certificates: EPC, Gas Safety Certificate (CP12)`,
+            `Sent via: ${data.sentTo || recipientEmail}`,
+            ``,
+            `This record confirms that the above compliance certificates were emailed to the tenant on the date shown.`,
+          ].join('\n');
+
+          const blob = new Blob([auditContent], { type: 'text/plain' });
+          const fileName = `CertsSent_${displayName.replace(/\s+/g, '')}_${sentDate}.txt`;
+          const filePath = `${orgId}/${crypto.randomUUID()}.txt`;
+
+          await supabase.storage.from('documents').upload(filePath, blob);
+          const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath);
+
+          await supabase.from('documents').insert({
+            org_id: orgId,
+            file_url: urlData.publicUrl,
+            original_file_name: fileName,
+            display_name: `Certificates Sent — ${displayName} — ${sentDateFormatted}`,
+            doc_type: 'other',
+            category: 'tenancy',
+            tenant_id: tenant.id,
+            tenancy_id: activeTenancy.id,
+            property_id: activeTenancy.property.id,
+            review_status: 'accepted',
+            description: `Audit record: EPC & Gas Safety certificates emailed to ${recipientEmail}`,
+          });
+        }
+
         setCertsSent(true);
         toast({ title: 'Certificates sent', description: `EPC & Gas Safety emailed to ${data.sentTo}` });
         queryClient.invalidateQueries({ queryKey: ['tenant-documents'] });
+        queryClient.invalidateQueries({ queryKey: ['tenancy-compliance'] });
       } catch (err: any) {
         toast({ title: 'Failed to send', description: err.message, variant: 'destructive' });
       } finally {
