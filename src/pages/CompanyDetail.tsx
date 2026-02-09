@@ -48,6 +48,7 @@ import { ComplianceFilingsCard, CompanyLinkedProperties, ShareCapitalCard, Compa
 import { CompanyOwnershipSection } from '@/components/ownership';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { formatDateUK, formatDateTimeUK } from '@/lib/calculations';
 
 const companyTypeLabels: Record<string, string> = {
   HOLDCO: 'Holding Co',
@@ -349,7 +350,7 @@ export default function CompanyDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">Incorporated</p>
                       <p className="font-medium">
-                        {new Date(company.ch_incorporation_date).toLocaleDateString()}
+                        {formatDateUK(company.ch_incorporation_date)}
                       </p>
                     </div>
                   </div>
@@ -372,7 +373,7 @@ export default function CompanyDetail() {
 
                 {company.ch_last_synced_at && (
                   <p className="text-xs text-muted-foreground">
-                    Last synced: {new Date(company.ch_last_synced_at).toLocaleString()}
+                    Last synced: {formatDateTimeUK(company.ch_last_synced_at)}
                   </p>
                 )}
               </CardContent>

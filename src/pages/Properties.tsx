@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';
 import { Plus, Search, Building2, Eye, Settings2, Image, RotateCcw, ChevronDown, Edit2, Zap, Loader2, PoundSterling, Download, Upload, AlertTriangle } from 'lucide-react';
@@ -82,6 +82,7 @@ function PropertiesPage() {
   }, [properties]);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearch = useDeferredValue(searchQuery);
   const activeFilter = searchParams.get('filter');
 
   const clearFilter = useCallback(() => {
@@ -164,9 +165,9 @@ function PropertiesPage() {
 
     // First apply text search filter
     let result = properties.filter(p => 
-      p.address_line.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.area_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.postcode?.toLowerCase().includes(searchQuery.toLowerCase())
+      p.address_line.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      p.area_name?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      p.postcode?.toLowerCase().includes(deferredSearch.toLowerCase())
     );
 
     // Then apply URL-based filters
@@ -342,7 +343,7 @@ function PropertiesPage() {
     });
 
     return result;
-  }, [properties, searchQuery, sortField, sortDirection, passportMap, activeFilter, getOwnershipNameForSort]);
+  }, [properties, deferredSearch, sortField, sortDirection, passportMap, activeFilter, getOwnershipNameForSort]);
 
   const handleSort = useCallback((field: ColumnKey) => {
     if (sortField === field) {
