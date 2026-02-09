@@ -5,28 +5,32 @@
  
  export type TenancyStatus = 'pending' | 'active' | 'notice' | 'ended';
  
- export interface Tenancy {
-   id: string;
-   org_id: string;
-   tenant_id: string;
-   room_id: string;
-   property_id: string;
-   start_date: string;
-   end_date: string | null;
-   rent_amount_pcm: number;
-   rent_due_day: number;
-   deposit_amount: number | null;
-   deposit_scheme: string | null;
-   deposit_reference: string | null;
-   deposit_protected_date: string | null;
-   tenancy_agreement_url: string | null;
-   status: TenancyStatus;
-   notice_date: string | null;
-   notice_period_weeks: number;
-   notes: string | null;
-   created_at: string;
-   updated_at: string;
- }
+export type PaymentMethod = 'bank_transfer' | 'standing_order' | 'direct_debit' | 'cash' | 'cheque';
+
+export interface Tenancy {
+  id: string;
+  org_id: string;
+  tenant_id: string;
+  room_id: string;
+  property_id: string;
+  start_date: string;
+  end_date: string | null;
+  rent_amount_pcm: number;
+  rent_due_day: number;
+  deposit_amount: number | null;
+  deposit_scheme: string | null;
+  deposit_reference: string | null;
+  deposit_protected_date: string | null;
+  tenancy_agreement_url: string | null;
+  status: TenancyStatus;
+  notice_date: string | null;
+  notice_period_weeks: number;
+  payment_method: PaymentMethod | null;
+  payment_reference: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
  
  export interface TenancyWithDetails extends Tenancy {
    tenant: {

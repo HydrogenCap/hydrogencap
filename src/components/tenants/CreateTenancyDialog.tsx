@@ -96,7 +96,8 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const [depositReference, setDepositReference] = useState('');
   const [depositProtectedDate, setDepositProtectedDate] = useState('');
   const [notes, setNotes] = useState('');
-
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
   const { data: properties } = useProperties();
   const { data: roomsWithTenancy } = useRoomsWithTenancy(propertyId);
   const createTenancy = useCreateTenancy();
@@ -155,6 +156,8 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       setDepositReference('');
       setDepositProtectedDate('');
       setNotes('');
+      setPaymentMethod('');
+      setPaymentReference('');
       setIsProcessing(false);
       setProcessingStep(0);
       setProcessingProgress(0);
@@ -281,6 +284,8 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
         status: 'active' as const,
         notice_date: null,
         notice_period_weeks: Number(noticePeriodWeeks) || 4,
+        payment_method: (paymentMethod || null) as any,
+        payment_reference: paymentReference || null,
         notes: notes || null,
       });
 
@@ -503,6 +508,34 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
                     </AlertDescription>
                   </Alert>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Payment Method */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Payment Method</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>How will rent be paid?</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standing_order">Standing Order</SelectItem>
+                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="direct_debit">Direct Debit</SelectItem>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="cheque">Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Reference / Account Details</Label>
+                    <Input value={paymentReference} onChange={e => setPaymentReference(e.target.value)} placeholder="e.g. Sort code & account" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

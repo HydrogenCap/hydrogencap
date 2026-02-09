@@ -376,24 +376,29 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                                  </p>
                                </div>
                                 <div className="text-right">
-                                  <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
-                                  <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
-                                  <div className="flex gap-1 mt-2 justify-end">
-                                    {tenancy.tenancy_agreement_url ? (
-                                      <Button variant="outline" size="sm" asChild>
-                                        <a href={tenancy.tenancy_agreement_url} target="_blank" rel="noopener noreferrer">
-                                          <FileText className="h-3 w-3 mr-1" />
-                                          View Agreement
-                                        </a>
-                                      </Button>
-                                    ) : (
-                                      <Button variant="outline" size="sm" className="text-amber-600">
-                                        <Upload className="h-3 w-3 mr-1" />
-                                        Upload Agreement
-                                      </Button>
-                                    )}
-                                  </div>
-                                </div>
+                                   <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
+                                   <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
+                                   {(tenancy as any).payment_method && (
+                                     <Badge variant="outline" className="mt-1 text-[10px]">
+                                       {(tenancy as any).payment_method.replace('_', ' ')}
+                                     </Badge>
+                                   )}
+                                   <div className="flex gap-1 mt-2 justify-end">
+                                     {tenancy.tenancy_agreement_url ? (
+                                       <Button variant="outline" size="sm" asChild>
+                                         <a href={tenancy.tenancy_agreement_url} target="_blank" rel="noopener noreferrer">
+                                           <FileText className="h-3 w-3 mr-1" />
+                                           View Agreement
+                                         </a>
+                                       </Button>
+                                     ) : (
+                                       <Button variant="outline" size="sm" className="text-amber-600">
+                                         <Upload className="h-3 w-3 mr-1" />
+                                         Upload Agreement
+                                       </Button>
+                                     )}
+                                   </div>
+                                 </div>
                               </div>
                             </CardContent>
                           </Card>

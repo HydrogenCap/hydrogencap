@@ -4181,6 +4181,8 @@ export type Database = {
           notice_date: string | null
           notice_period_weeks: number | null
           org_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          payment_reference: string | null
           property_id: string
           rent_amount_pcm: number
           rent_due_day: number
@@ -4203,6 +4205,8 @@ export type Database = {
           notice_date?: string | null
           notice_period_weeks?: number | null
           org_id: string
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payment_reference?: string | null
           property_id: string
           rent_amount_pcm: number
           rent_due_day?: number
@@ -4225,6 +4229,8 @@ export type Database = {
           notice_date?: string | null
           notice_period_weeks?: number | null
           org_id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          payment_reference?: string | null
           property_id?: string
           rent_amount_pcm?: number
           rent_due_day?: number
@@ -4650,6 +4656,12 @@ export type Database = {
         | "closed"
       maintenance_urgency: "emergency" | "urgent" | "normal" | "low"
       passport_change_reason: "ai_accept" | "manual_edit"
+      payment_method:
+        | "bank_transfer"
+        | "standing_order"
+        | "direct_debit"
+        | "cash"
+        | "cheque"
       rent_status: "upcoming" | "due" | "paid" | "partial" | "overdue"
       room_status: "vacant" | "occupied" | "notice" | "maintenance"
       room_type: "single" | "double" | "ensuite" | "studio"
@@ -4816,6 +4828,13 @@ export const Constants = {
       ],
       maintenance_urgency: ["emergency", "urgent", "normal", "low"],
       passport_change_reason: ["ai_accept", "manual_edit"],
+      payment_method: [
+        "bank_transfer",
+        "standing_order",
+        "direct_debit",
+        "cash",
+        "cheque",
+      ],
       rent_status: ["upcoming", "due", "paid", "partial", "overdue"],
       room_status: ["vacant", "occupied", "notice", "maintenance"],
       room_type: ["single", "double", "ensuite", "studio"],
