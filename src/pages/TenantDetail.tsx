@@ -263,7 +263,11 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
           }
 
           const finalPdfBytes = await mergedPdf.save();
-          const pdfBlob = new Blob([finalPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+          console.log('PDF generated, byte length:', finalPdfBytes.length);
+          // Create a clean ArrayBuffer copy to avoid Uint8Array/SharedArrayBuffer issues
+          const pdfArrayBuffer = new ArrayBuffer(finalPdfBytes.length);
+          new Uint8Array(pdfArrayBuffer).set(finalPdfBytes);
+          const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' });
           const fileName = `CertsSent_${displayName.replace(/\s+/g, '')}_${sentDate}.pdf`;
           const filePath = `${orgId}/${crypto.randomUUID()}.pdf`;
 
