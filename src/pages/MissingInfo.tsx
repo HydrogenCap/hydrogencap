@@ -228,7 +228,10 @@ export default function MissingInfoPage() {
 
         {/* Summary Chips */}
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-          <Card className="bg-green-500/10 border-green-500/30">
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md bg-green-500/10 border-green-500/30 ${missingTypeFilter === 'property' ? 'ring-2 ring-green-500' : ''}`}
+            onClick={() => setMissingTypeFilter(missingTypeFilter === 'property' ? 'all' : 'property')}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -243,7 +246,10 @@ export default function MissingInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-orange-500/10 border-orange-500/30">
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md bg-orange-500/10 border-orange-500/30 ${missingTypeFilter === 'income' ? 'ring-2 ring-orange-500' : ''}`}
+            onClick={() => setMissingTypeFilter(missingTypeFilter === 'income' ? 'all' : 'income')}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -258,7 +264,10 @@ export default function MissingInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-amber-500/10 border-amber-500/30">
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md bg-amber-500/10 border-amber-500/30 ${missingTypeFilter === 'finance' ? 'ring-2 ring-amber-500' : ''}`}
+            onClick={() => setMissingTypeFilter(missingTypeFilter === 'finance' ? 'all' : 'finance')}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -273,7 +282,10 @@ export default function MissingInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-purple-500/10 border-purple-500/30">
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md bg-purple-500/10 border-purple-500/30 ${missingTypeFilter === 'insurance' ? 'ring-2 ring-purple-500' : ''}`}
+            onClick={() => setMissingTypeFilter(missingTypeFilter === 'insurance' ? 'all' : 'insurance')}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -288,7 +300,10 @@ export default function MissingInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-500/10 border-blue-500/30">
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md bg-blue-500/10 border-blue-500/30 ${missingTypeFilter === 'passport' ? 'ring-2 ring-blue-500' : ''}`}
+            onClick={() => setMissingTypeFilter(missingTypeFilter === 'passport' ? 'all' : 'passport')}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -308,7 +323,10 @@ export default function MissingInfoPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-primary/10 border-primary/30">
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md bg-primary/10 border-primary/30 ${missingTypeFilter === 'all' ? 'ring-2 ring-primary' : ''}`}
+            onClick={() => setMissingTypeFilter('all')}
+          >
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
