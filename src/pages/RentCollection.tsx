@@ -6,8 +6,9 @@
  import { Badge } from '@/components/ui/badge';
  import { Progress } from '@/components/ui/progress';
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
- import { useRentSchedule, useArrears, RentStatus, RentScheduleWithDetails } from '@/hooks/useRentCollection';
- import { LoadingState, EmptyState } from '@/components/common';
+import { useRentSchedule, useArrears, RentStatus, RentScheduleWithDetails } from '@/hooks/useRentCollection';
+import { LoadingState, EmptyState } from '@/components/common';
+import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
  
  const statusConfig: Record<RentStatus, { label: string; color: string; icon: React.ElementType }> = {
    upcoming: { label: 'Upcoming', color: 'bg-gray-100 text-gray-800', icon: Clock },
@@ -232,7 +233,11 @@
          </TabsContent>
        </Tabs>
  
-      {/* Payment dialog — coming soon */}
-     </div>
+        <RecordPaymentDialog
+          item={paymentItem}
+          open={!!paymentItem}
+          onOpenChange={(open) => { if (!open) setPaymentItem(null); }}
+        />
+    </div>
    );
  }
