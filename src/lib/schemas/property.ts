@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeText } from '@/lib/utils';
 
 // UK Postcode regex - validates standard UK postcodes
 const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i;
@@ -28,7 +29,8 @@ export const propertySchema = z.object({
   address_line: z
     .string()
     .min(5, 'Address must be at least 5 characters')
-    .max(200, 'Address is too long'),
+    .max(200, 'Address is too long')
+    .transform(sanitizeText),
   
   postcode: z
     .string()

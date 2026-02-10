@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { sanitizeText } from '@/lib/utils';
 import {
   Sheet,
   SheetContent,
@@ -30,37 +31,37 @@ interface EditTenantDialogProps {
 }
 
 const schema = z.object({
-  first_name: z.string().optional().nullable(),
-  last_name: z.string().optional().nullable(),
+  first_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  last_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   email: z.string().email().optional().or(z.literal('')).nullable(),
   phone: z.string().optional().nullable(),
   date_of_birth: z.string().optional().nullable(),
   national_insurance: z.string().optional().nullable(),
-  company_name: z.string().optional().nullable(),
+  company_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   company_number: z.string().optional().nullable(),
-  company_registered_address: z.string().optional().nullable(),
-  company_contact_name: z.string().optional().nullable(),
+  company_registered_address: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  company_contact_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   company_contact_email: z.string().email().optional().or(z.literal('')).nullable(),
   company_contact_phone: z.string().optional().nullable(),
-  company_contact_role: z.string().optional().nullable(),
-  trading_name: z.string().optional().nullable(),
+  company_contact_role: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  trading_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   vat_number: z.string().optional().nullable(),
-  compliance_contact_name: z.string().optional().nullable(),
+  compliance_contact_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   compliance_contact_email: z.string().email().optional().or(z.literal('')).nullable(),
   employment_status: z.string().optional().nullable(),
-  employer_name: z.string().optional().nullable(),
+  employer_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   annual_income: z.coerce.number().optional().nullable(),
-  emergency_contact_name: z.string().optional().nullable(),
+  emergency_contact_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   emergency_contact_phone: z.string().optional().nullable(),
   emergency_contact_relationship: z.string().optional().nullable(),
-  guarantor_name: z.string().optional().nullable(),
+  guarantor_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   guarantor_email: z.string().optional().nullable(),
   guarantor_phone: z.string().optional().nullable(),
-  guarantor_address: z.string().optional().nullable(),
-  previous_address: z.string().optional().nullable(),
-  previous_landlord_name: z.string().optional().nullable(),
+  guarantor_address: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  previous_address: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  previous_landlord_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   previous_landlord_phone: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
+  notes: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   status: z.enum(['prospect', 'active', 'past', 'blacklisted']),
 });
 
