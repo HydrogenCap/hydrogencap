@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { PoundSterling, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, TrendingUp, Eye, Download, Ban } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -155,7 +156,7 @@ export default function RentCollection() {
     };
   }, [filteredSchedule, schedule]);
 
-  if (isLoading) return <LoadingState text="Loading rent schedule..." />;
+  if (isLoading) return <AppLayout><LoadingState text="Loading rent schedule..." /></AppLayout>;
 
   const renderRows = (items: RentScheduleWithDetails[]) =>
     items.length === 0 ? (
@@ -172,7 +173,8 @@ export default function RentCollection() {
     );
 
   return (
-    <div className="container py-6 space-y-6">
+    <AppLayout>
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -315,5 +317,6 @@ export default function RentCollection() {
         onOpenChange={(open) => { if (!open) setPaymentItem(null); }}
       />
     </div>
+    </AppLayout>
   );
 }
