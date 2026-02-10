@@ -180,97 +180,122 @@ export function validateAndTransformPassportRows(
     return { matchAddress, matchPostcode, matchedPropertyId: null, data, errors, isValid: errors.length === 0 };
   });
 }
+// Headers that come from the properties table (not passport) - these are auto-skipped
+const PROPERTIES_TABLE_HEADERS = new Set([
+  'listed status', 'conservation area', 'uprn', 'title number',
+  'property name', 'property type', 'bedrooms', 'bathrooms', 'beds', 'baths',
+  'tenure', 'owner tenure',
+]);
 
-// Auto-detect column mappings based on header names
+function normalizeHeader(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_\/\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[()%]/g, '')
+    .trim();
+}
+
+// Build a lookup from normalized label → field key for all PASSPORT_FIELDS
+function buildLabelLookup(): Map<string, PassportFieldKey> {
+  const lookup = new Map<string, PassportFieldKey>();
+  for (const field of PASSPORT_FIELDS) {
+    lookup.set(normalizeHeader(field.label), field.key);
+    // Also add the key itself as a possible match
+    lookup.set(normalizeHeader(field.key.replace(/_/g, ' ')), field.key);
+  }
+  // Add extra aliases for common variations
+  const aliases: Record<string, PassportFieldKey> = {
+    'address': 'address_match',
+    'address line': 'address_match',
+    'post code': 'postcode_match',
+    'zip': 'postcode_match',
+    'postcode': 'postcode_match',
+    'town': 'town_city',
+    'city': 'town_city',
+    'town city': 'town_city',
+    'area': 'county',
+    'county': 'county',
+    'storeys': 'number_of_storeys',
+    'no of storeys': 'number_of_storeys',
+    'floors': 'number_of_storeys',
+    'owner': 'owned_by',
+    'spv': 'owned_by',
+    'owned by': 'owned_by',
+    'gas supply': 'has_gas_supply',
+    'loft access': 'has_loft_access',
+    'loft access detail': 'loft_access',
+    'bin store': 'has_bin_store',
+    'cycle store': 'has_cycle_store',
+    'guest room': 'has_guest_room',
+    'keysafe': 'keysafe_code',
+    'key safe': 'keysafe_code',
+    'key safe code': 'keysafe_code',
+    'management company': 'management_company_text',
+    'management fee': 'property_management_fee_percent',
+    'local authority': 'local_authority',
+    'construction date band': 'construction_date_band',
+    'age band': 'construction_date_band',
+    'construction period': 'construction_date_band',
+    'communal living rooms': 'living_rooms_communal',
+    'communal living': 'living_rooms_communal',
+    'wc': 'wc_cloakroom',
+    'cloakroom': 'wc_cloakroom',
+    'wc cloakroom': 'wc_cloakroom',
+  };
+  for (const [alias, key] of Object.entries(aliases)) {
+    if (!lookup.has(alias)) lookup.set(alias, key);
+  }
+  return lookup;
+}
+
+// Auto-detect column mappings using normalized three-tier matching
 export function autoDetectPassportMapping(headers: string[]): PassportColumnMapping {
   const mapping: PassportColumnMapping = {};
-  
-  const headerPatterns: { pattern: RegExp; field: PassportFieldKey }[] = [
-    // Match fields
-    { pattern: /^address/i, field: 'address_match' },
-    { pattern: /^postcode|post\s*code|zip/i, field: 'postcode_match' },
-    
-    // Classification
-    { pattern: /^asset.*agreement.*category/i, field: 'asset_agreement_category' },
-    { pattern: /^asset.*performance/i, field: 'asset_performance_rating' },
-    { pattern: /^occupation\s*status/i, field: 'occupation_status' },
-    { pattern: /^owned\s*by|owner/i, field: 'owned_by' },
-    { pattern: /^council\s*tax/i, field: 'council_tax_band' },
+  const lookup = buildLabelLookup();
+  const usedFields = new Set<PassportFieldKey>();
 
-    // Details
-    { pattern: /^construction\s*type/i, field: 'construction_type' },
-    { pattern: /^construction.*date.*band|age\s*band/i, field: 'construction_date_band' },
-    { pattern: /^built\s*in\s*year/i, field: 'built_in_year' },
-    { pattern: /^storeys|number.*storeys/i, field: 'number_of_storeys' },
+  const normalizedHeaders = headers.map(normalizeHeader);
 
-    // Location
-    { pattern: /^town|city/i, field: 'town_city' },
-    { pattern: /^county|^area$/i, field: 'county' },
-    { pattern: /^maintenance\s*area/i, field: 'maintenance_area' },
-    { pattern: /^local\s*authority/i, field: 'local_authority' },
+  headers.forEach((header, idx) => {
+    const normalized = normalizedHeaders[idx];
 
-    // Accommodation
-    { pattern: /^kitchen/i, field: 'kitchens' },
-    { pattern: /^ensuite/i, field: 'ensuites' },
-    { pattern: /^communal\s*living/i, field: 'living_rooms_communal' },
-    { pattern: /^wc|cloakroom/i, field: 'wc_cloakroom' },
+    // Skip properties-table-only headers
+    if (PROPERTIES_TABLE_HEADERS.has(normalized)) {
+      mapping[header] = '';
+      return;
+    }
 
-    // Amenities
-    { pattern: /^parking/i, field: 'parking' },
-    { pattern: /^basement/i, field: 'basement' },
-    { pattern: /^carport/i, field: 'carport' },
-    { pattern: /^loft\s*access\s*detail/i, field: 'loft_access' },
-    { pattern: /^loft\s*access$/i, field: 'has_loft_access' },
-    { pattern: /^access\s*ramp/i, field: 'access_ramp' },
-    { pattern: /^bin\s*store/i, field: 'has_bin_store' },
-    { pattern: /^cycle\s*store/i, field: 'has_cycle_store' },
-    { pattern: /^guest\s*room/i, field: 'has_guest_room' },
-    { pattern: /^block\s*communal/i, field: 'block_communal_entrance' },
-    { pattern: /^communal\s*tv/i, field: 'communal_tv_supply' },
+    // Tier 1: Exact match
+    if (lookup.has(normalized) && !usedFields.has(lookup.get(normalized)!)) {
+      const field = lookup.get(normalized)!;
+      mapping[header] = field;
+      usedFields.add(field);
+      return;
+    }
 
-    // Utilities
-    { pattern: /^gas\s*supply/i, field: 'has_gas_supply' },
-    { pattern: /^electric\s*meter\s*location/i, field: 'electric_meter_location' },
-    { pattern: /^electric\s*meter\s*number/i, field: 'electric_meter_number' },
-    { pattern: /^gas\s*meter\s*location/i, field: 'gas_meter_location' },
-    { pattern: /^gas\s*meter\s*number/i, field: 'gas_meter_number' },
-    { pattern: /^water\s*meter\s*location/i, field: 'water_meter_location' },
-    { pattern: /^water\s*meter\s*number/i, field: 'water_meter_number' },
-    { pattern: /^water\s*stop\s*tap/i, field: 'water_stop_tap_location' },
-    { pattern: /^oil\s*supplier/i, field: 'oil_supplier' },
-    { pattern: /^oil\s*tank\s*location/i, field: 'oil_tank_location' },
-    { pattern: /^oil\s*tank\s*capacity/i, field: 'oil_tank_capacity_litres' },
-
-    // Access
-    { pattern: /^keysafe|key\s*safe/i, field: 'keysafe_code' },
-
-    // HMO
-    { pattern: /^hmo\s*licence\s*required/i, field: 'hmo_licence_required' },
-    { pattern: /^hmo\s*licence\s*number/i, field: 'hmo_licence_number' },
-    { pattern: /^hmo\s*licence\s*expiry/i, field: 'hmo_licence_expiry' },
-    { pattern: /^hmo\s*bed\s*spaces/i, field: 'hmo_bed_spaces' },
-    { pattern: /^hmo\s*licence$/i, field: 'hmo_licence' },
-
-    // Management
-    { pattern: /^management\s*company$/i, field: 'management_company_text' },
-    { pattern: /^property\s*management\s*company/i, field: 'property_management_company' },
-    { pattern: /^management\s*fee/i, field: 'property_management_fee_percent' },
-
-    // Links
-    { pattern: /^dropbox/i, field: 'dropbox_link' },
-    { pattern: /^photograph/i, field: 'photographs_link' },
-  ];
-
-  headers.forEach(header => {
-    for (const { pattern, field } of headerPatterns) {
-      if (pattern.test(header)) {
+    // Tier 2: Starts-with match
+    for (const [name, field] of lookup.entries()) {
+      if (!usedFields.has(field) && normalized.startsWith(name)) {
         mapping[header] = field;
-        break;
+        usedFields.add(field);
+        return;
       }
     }
-    if (!mapping[header]) {
-      mapping[header] = '';
+
+    // Tier 3: Contains match
+    for (const [name, field] of lookup.entries()) {
+      if (!usedFields.has(field) && name.length >= 4 && normalized.includes(name)) {
+        mapping[header] = field;
+        usedFields.add(field);
+        return;
+      }
     }
+
+    // No match found
+    mapping[header] = '';
   });
 
   return mapping;
