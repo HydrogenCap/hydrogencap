@@ -80,6 +80,7 @@ export default function Compliance() {
       lifecycle_type: p.lifecycle_type,
       is_grade_listed: p.is_grade_listed,
       listing_grade: p.listing_grade,
+      has_solar: p.has_solar,
     }));
 
     return generateComplianceItemsWithMissing(items, propertiesForCompliance);

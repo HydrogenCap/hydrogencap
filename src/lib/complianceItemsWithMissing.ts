@@ -34,6 +34,7 @@ export interface PropertyForCompliance {
   lifecycle_type: string | null;
   is_grade_listed: boolean | null;
   listing_grade: string | null;
+  has_solar: boolean | null;
 }
 
 // Define conditional pairs: when one exists, the other becomes optional/not_required
@@ -123,6 +124,7 @@ function getComplianceTypesForProperty(property: PropertyForCompliance): { requi
     listed_status: null,
     is_grade_listed: property.is_grade_listed,
     listing_grade: property.listing_grade,
+    has_solar: property.has_solar ?? false,
   };
 
   const required: string[] = [];
