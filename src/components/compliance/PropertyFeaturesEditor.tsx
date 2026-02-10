@@ -37,6 +37,7 @@ interface PropertyFeaturesEditorProps {
     co_alarm_required: boolean | null;
     is_grade_listed: boolean | null;
     listing_grade: string | null;
+    has_solar: boolean | null;
   };
   onUpdate?: () => void;
 }
@@ -78,6 +79,7 @@ export function PropertyFeaturesEditor({
           co_alarm_required: features.co_alarm_required,
           is_grade_listed: features.is_grade_listed,
           listing_grade: features.listing_grade,
+          has_solar: features.has_solar,
         })
         .eq('id', propertyId);
       
@@ -281,6 +283,18 @@ export function PropertyFeaturesEditor({
               <p className="text-xs text-muted-foreground">Historic England listing classification</p>
             </div>
           )}
+          
+          {/* Solar Panels */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Has Solar Panels</Label>
+              <p className="text-xs text-muted-foreground">Enables MCS certificate tracking</p>
+            </div>
+            <Switch 
+              checked={features.has_solar ?? false}
+              onCheckedChange={(v) => setFeatures({ ...features, has_solar: v })}
+            />
+          </div>
         </div>
         
         <div className="flex justify-end gap-2">

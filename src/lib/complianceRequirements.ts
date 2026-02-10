@@ -21,6 +21,7 @@ export interface PropertyComplianceFeatures {
   listed_status: string | null;
   is_grade_listed: boolean | null;
   listing_grade: string | null;
+  has_solar: boolean | null;
 }
 
 // Requirement status
@@ -172,6 +173,15 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     condition: () => true,
     reasonRequired: 'Buildings insurance mandatory for all properties',
     reasonNotRequired: 'Not applicable',
+  },
+  // Solar / Renewables
+  'MCS Certificate': {
+    category: 'Solar & Renewables',
+    defaultRequired: false,
+    validityYears: null, // MCS certificates don't expire but track for records
+    condition: (p: PropertyComplianceFeatures) => p.has_solar === true,
+    reasonRequired: 'Solar panels installed - MCS certificate required for FIT/SEG eligibility and compliance',
+    reasonNotRequired: 'No solar panels at property',
   },
 } as const;
 

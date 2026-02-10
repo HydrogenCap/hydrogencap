@@ -97,6 +97,7 @@ export function ComplianceTab({ propertyId, propertyAddress, lifecycleType = 'co
     co_alarm_required: propertyFeatures?.co_alarm_required ?? true,
     is_grade_listed: propertyFeatures?.is_grade_listed ?? false,
     listing_grade: propertyFeatures?.listing_grade ?? null,
+    has_solar: propertyFeatures?.has_solar ?? false,
   };
 
   if (isLoading) {

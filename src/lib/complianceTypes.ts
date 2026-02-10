@@ -17,6 +17,7 @@ export const COMPLIANCE_TYPES = [
   'Fire Panel Commissioning Certificate',
   'Insurance Schedule',
   'Floor Plans / Fire Plans',
+  'MCS Certificate',
   'Other',
 ] as const;
 

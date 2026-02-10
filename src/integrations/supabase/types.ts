@@ -2955,6 +2955,7 @@ export type Database = {
           has_emergency_lighting: boolean | null
           has_fire_alarm_system: boolean | null
           has_gas: boolean | null
+          has_solar: boolean | null
           heritage_notes: string | null
           id: string
           identity_updated_at: string | null
@@ -2989,6 +2990,12 @@ export type Database = {
           property_type: string | null
           purchase_price_gbp: number | null
           selective_licence_required: boolean | null
+          solar_feed_in_tariff: boolean | null
+          solar_install_date: string | null
+          solar_installer_name: string | null
+          solar_mcs_number: string | null
+          solar_seg: boolean | null
+          solar_system_size_kwp: number | null
           tenure: string | null
           title_number: string | null
           town_city: string | null
@@ -3026,6 +3033,7 @@ export type Database = {
           has_emergency_lighting?: boolean | null
           has_fire_alarm_system?: boolean | null
           has_gas?: boolean | null
+          has_solar?: boolean | null
           heritage_notes?: string | null
           id?: string
           identity_updated_at?: string | null
@@ -3060,6 +3068,12 @@ export type Database = {
           property_type?: string | null
           purchase_price_gbp?: number | null
           selective_licence_required?: boolean | null
+          solar_feed_in_tariff?: boolean | null
+          solar_install_date?: string | null
+          solar_installer_name?: string | null
+          solar_mcs_number?: string | null
+          solar_seg?: boolean | null
+          solar_system_size_kwp?: number | null
           tenure?: string | null
           title_number?: string | null
           town_city?: string | null
@@ -3097,6 +3111,7 @@ export type Database = {
           has_emergency_lighting?: boolean | null
           has_fire_alarm_system?: boolean | null
           has_gas?: boolean | null
+          has_solar?: boolean | null
           heritage_notes?: string | null
           id?: string
           identity_updated_at?: string | null
@@ -3131,6 +3146,12 @@ export type Database = {
           property_type?: string | null
           purchase_price_gbp?: number | null
           selective_licence_required?: boolean | null
+          solar_feed_in_tariff?: boolean | null
+          solar_install_date?: string | null
+          solar_installer_name?: string | null
+          solar_mcs_number?: string | null
+          solar_seg?: boolean | null
+          solar_system_size_kwp?: number | null
           tenure?: string | null
           title_number?: string | null
           town_city?: string | null
