@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Home,
   Upload,
+  Download,
   Filter,
   X,
   Landmark,
@@ -26,11 +27,14 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useProperties } from '@/hooks/useProperties';
+import { usePropertyPassports } from '@/hooks/usePropertyPassport';
 import { PROPERTY_TYPES, LISTED_STATUSES } from '@/hooks/useCoreIdentity';
 import { PassportRowEditor } from '@/components/passport/PassportRowEditor';
+import { exportPassportCSV } from '@/lib/passportCsvExporter';
 
 export default function Passport() {
   const { data: properties, isLoading } = useProperties();
+  const { data: passports } = usePropertyPassports();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   
@@ -95,12 +99,28 @@ export default function Passport() {
               Core property identity and operational data — click Edit to update inline
             </p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/import/passport">
-              <Upload className="h-4 w-4 mr-2" />
-              Import CSV
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!properties) return;
+                const passportMap = new Map(
+                  (passports || []).map(p => [p.property_id, p])
+                );
+                exportPassportCSV(properties, passportMap);
+              }}
+              disabled={!properties?.length}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/import/passport">
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
