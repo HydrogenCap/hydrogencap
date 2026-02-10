@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Shield, Search, Home, AlertTriangle, X, ChevronRight, 
-  Filter, ArrowUpDown, Loader2, List, LayoutGrid, ChevronDown
+  Filter, ArrowUpDown, Loader2, List, LayoutGrid, ChevronDown, CalendarCheck
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,9 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusFilterBox } from '@/components/compliance/StatusFilterBox';
 import { ComplianceRegisterItem } from '@/components/compliance/ComplianceRegisterItem';
 import { ComplianceUploadDialog } from '@/components/compliance/ComplianceUploadDialog';
+import { ComplianceCalendarContent } from '@/components/compliance/ComplianceCalendarContent';
 import { useAllCompliance, useCreateComplianceItem } from '@/hooks/useCompliance';
 import { useProperties } from '@/hooks/useProperties';
 import { COMPLIANCE_TYPES, type ComplianceStatus } from '@/lib/complianceTypes';
@@ -41,6 +43,8 @@ export default function Compliance() {
   const createComplianceItem = useCreateComplianceItem();
   const [searchParams] = useSearchParams();
   const initialStatus = (searchParams.get('status') as FilterStatus) || 'all';
+  const initialTab = searchParams.get('tab') === 'calendar' ? 'calendar' : 'register';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>(initialStatus);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -293,14 +297,31 @@ export default function Compliance() {
     <AppLayout>
       <div className="space-y-8 p-4 lg:p-6">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-            Compliance Register
-          </h1>
-          <p className="text-muted-foreground">
-            Portfolio-wide compliance tracking and document management
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              Compliance
+            </h1>
+            <p className="text-muted-foreground">
+              Portfolio-wide compliance tracking and document management
+            </p>
+          </div>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="register">
+              <Shield className="h-4 w-4 mr-2" />
+              Register
+            </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <CalendarCheck className="h-4 w-4 mr-2" />
+              Calendar
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="register" className="space-y-8 mt-6">
 
         {/* Alert Banner - Redesigned */}
         {hasItemsNeedingAction && (
@@ -624,6 +645,12 @@ export default function Compliance() {
             onSuccess={() => setSelectedItem(null)}
           />
         )}
+          </TabsContent>
+
+          <TabsContent value="calendar" className="mt-6">
+            <ComplianceCalendarContent />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
