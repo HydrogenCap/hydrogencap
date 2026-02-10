@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { useAllCompliance } from '@/hooks/useCompliance';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export default function Inbox() {
   const { data: documents, isLoading, refetch } = useInboxDocuments();
@@ -104,28 +106,32 @@ export default function Inbox() {
               </div>
             </CardContent>
           </Card>
-          <Card className={complianceStats.expiring > 0 ? 'border-amber-500/50' : ''}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
-                <span className="text-2xl font-bold">{complianceStats.expiring}</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className={complianceStats.expired > 0 ? 'border-destructive/50' : ''}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Expired</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                <span className="text-2xl font-bold">{complianceStats.expired}</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Link to="/compliance?status=expiring_soon">
+            <Card className={cn('cursor-pointer hover:bg-muted/50 transition-colors', complianceStats.expiring > 0 && 'border-amber-500/50')}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  <span className="text-2xl font-bold">{complianceStats.expiring}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/compliance?status=expired">
+            <Card className={cn('cursor-pointer hover:bg-muted/50 transition-colors', complianceStats.expired > 0 && 'border-destructive/50')}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Expired</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <span className="text-2xl font-bold">{complianceStats.expired}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Upload Zone */}
