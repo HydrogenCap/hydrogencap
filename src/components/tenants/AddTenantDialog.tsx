@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { sanitizeText } from '@/lib/utils';
 import { Building2, User, Loader2, CheckCircle2, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,17 +35,17 @@ import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 
 const companySchema = z.object({
   tenant_type: z.literal('company'),
-  company_name: z.string().min(1, 'Company name is required'),
+  company_name: z.string().min(1, 'Company name is required').transform(sanitizeText),
   company_number: z.string().optional().nullable(),
-  company_registered_address: z.string().optional().nullable(),
-  trading_name: z.string().optional().nullable(),
+  company_registered_address: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  trading_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   vat_registered: z.boolean().optional().nullable(),
   vat_number: z.string().optional().nullable(),
-  company_contact_name: z.string().min(1, 'Contact name is required'),
-  company_contact_role: z.string().optional().nullable(),
+  company_contact_name: z.string().min(1, 'Contact name is required').transform(sanitizeText),
+  company_contact_role: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   company_contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   company_contact_phone: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
+  notes: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   compliance_contact_name: z.string().optional().nullable(),
   compliance_contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   status: z.enum(['prospect', 'active']).default('prospect'),
@@ -52,24 +53,24 @@ const companySchema = z.object({
 
 const individualSchema = z.object({
   tenant_type: z.literal('individual'),
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
+  first_name: z.string().min(1, 'First name is required').transform(sanitizeText),
+  last_name: z.string().min(1, 'Last name is required').transform(sanitizeText),
   email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   phone: z.string().optional().nullable(),
   date_of_birth: z.string().optional().nullable(),
   national_insurance: z.string().optional().nullable(),
   employment_status: z.string().optional().nullable(),
-  employer_name: z.string().optional().nullable(),
+  employer_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   annual_income: z.number().optional().nullable(),
-  previous_address: z.string().optional().nullable(),
-  previous_landlord_name: z.string().optional().nullable(),
+  previous_address: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  previous_landlord_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   previous_landlord_phone: z.string().optional().nullable(),
-  guarantor_name: z.string().optional().nullable(),
+  guarantor_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   guarantor_email: z.string().optional().nullable(),
   guarantor_phone: z.string().optional().nullable(),
-  guarantor_address: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  compliance_contact_name: z.string().optional().nullable(),
+  guarantor_address: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  notes: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
+  compliance_contact_name: z.string().optional().nullable().transform((v) => v ? sanitizeText(v) : v),
   compliance_contact_email: z.string().email('Invalid email').optional().or(z.literal('')).nullable(),
   status: z.enum(['prospect', 'active']).default('prospect'),
 });
