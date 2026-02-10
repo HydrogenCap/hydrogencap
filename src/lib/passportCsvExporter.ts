@@ -6,11 +6,9 @@ interface PropertyWithPassport {
   postcode: string | null;
   area_name: string | null;
   property_type: string | null;
-  construction_type: string | null;
   listed_status: string | null;
   conservation_area: boolean | null;
   uprn: string | null;
-  title_number: string | null;
   town_city: string | null;
   property_name: string | null;
   passport?: PropertyPassport | null;
@@ -23,11 +21,10 @@ const PASSPORT_COLUMNS: { key: string; header: string }[] = [
   { key: 'area_name', header: 'Area' },
   { key: 'property_name', header: 'Property Name' },
   { key: 'property_type', header: 'Property Type' },
-  { key: 'construction_type', header: 'Construction Type' },
+  { key: 'p.construction_type', header: 'Construction Type' },
   { key: 'listed_status', header: 'Listed Status' },
   { key: 'conservation_area', header: 'Conservation Area' },
   { key: 'uprn', header: 'UPRN' },
-  { key: 'title_number', header: 'Title Number' },
   // Passport operational fields
   { key: 'p.asset_agreement_category', header: 'Asset Agreement Category' },
   { key: 'p.asset_performance_rating', header: 'Asset Performance Rating' },

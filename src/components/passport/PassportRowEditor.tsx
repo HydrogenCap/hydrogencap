@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useUpdateCoreIdentity, useTitleNumbers, useAddTitleNumber, useRemoveTitleNumber, PROPERTY_TYPES, CONSTRUCTION_TYPES, LISTED_STATUSES, formatUKPostcode } from '@/hooks/useCoreIdentity';
+import { useUpsertPassport } from '@/hooks/usePropertyPassport';
+import type { PropertyPassport } from '@/hooks/usePropertyPassport';
 import { toast } from '@/hooks/use-toast';
 
 interface Property {
@@ -20,24 +22,25 @@ interface Property {
   uprn: string | null;
   planning_authority: string | null;
   property_type: string | null;
-  construction_type: string | null;
-  year_built: string | null;
   listed_status: string | null;
   conservation_area: boolean | null;
 }
 
 interface PassportRowEditorProps {
   property: Property;
+  passport?: PropertyPassport | null;
   isExpanded: boolean;
   onToggle: () => void;
 }
 
-export function PassportRowEditor({ property, isExpanded, onToggle }: PassportRowEditorProps) {
+export function PassportRowEditor({ property, passport, isExpanded, onToggle }: PassportRowEditorProps) {
   const updateMutation = useUpdateCoreIdentity();
+  const upsertPassport = useUpsertPassport();
   const { data: titleNumbers = [] } = useTitleNumbers(property.id);
   const addTitleNumber = useAddTitleNumber();
   const removeTitleNumber = useRemoveTitleNumber();
 
+  // Identity fields → save to properties table
   const [formData, setFormData] = useState({
     property_name: property.property_name || '',
     address_line: property.address_line || '',
@@ -48,10 +51,14 @@ export function PassportRowEditor({ property, isExpanded, onToggle }: PassportRo
     uprn: property.uprn || '',
     planning_authority: property.planning_authority || '',
     property_type: property.property_type || '',
-    construction_type: property.construction_type || '',
-    year_built: property.year_built || '',
     listed_status: property.listed_status || 'Not listed',
     conservation_area: property.conservation_area || false,
+  });
+
+  // Building classification fields → save to property_passport table
+  const [passportData, setPassportData] = useState({
+    construction_type: passport?.construction_type || '',
+    built_in_year: passport?.built_in_year?.toString() || '',
   });
 
   const [newTitleNumber, setNewTitleNumber] = useState('');
@@ -60,6 +67,7 @@ export function PassportRowEditor({ property, isExpanded, onToggle }: PassportRo
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Save identity fields to properties table
       await updateMutation.mutateAsync({
         propertyId: property.id,
         data: {
@@ -67,7 +75,15 @@ export function PassportRowEditor({ property, isExpanded, onToggle }: PassportRo
           postcode: formData.postcode ? formatUKPostcode(formData.postcode) : null,
         },
       });
-      toast({ title: 'Saved', description: 'Core identity updated successfully.' });
+
+      // Save building classification to property_passport table
+      await upsertPassport.mutateAsync({
+        property_id: property.id,
+        construction_type: passportData.construction_type || null,
+        built_in_year: passportData.built_in_year ? parseInt(passportData.built_in_year) : null,
+      });
+
+      toast({ title: 'Saved', description: 'Property identity and passport updated successfully.' });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to save changes.', variant: 'destructive' });
     } finally {
@@ -207,10 +223,10 @@ export function PassportRowEditor({ property, isExpanded, onToggle }: PassportRo
           </Select>
         </div>
 
-        {/* Construction Type */}
+        {/* Construction Type — from property_passport */}
         <div className="space-y-1.5">
           <Label className="text-xs">Construction Type *</Label>
-          <Select value={formData.construction_type} onValueChange={(v) => setFormData({ ...formData, construction_type: v })}>
+          <Select value={passportData.construction_type} onValueChange={(v) => setPassportData({ ...passportData, construction_type: v })}>
             <SelectTrigger>
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -222,13 +238,13 @@ export function PassportRowEditor({ property, isExpanded, onToggle }: PassportRo
           </Select>
         </div>
 
-        {/* Year Built */}
+        {/* Year Built — from property_passport.built_in_year */}
         <div className="space-y-1.5">
           <Label className="text-xs">Year Built</Label>
           <Input
-            value={formData.year_built}
-            onChange={(e) => setFormData({ ...formData, year_built: e.target.value })}
-            placeholder="e.g. 1920 or c.1890"
+            value={passportData.built_in_year}
+            onChange={(e) => setPassportData({ ...passportData, built_in_year: e.target.value })}
+            placeholder="e.g. 1920"
           />
         </div>
 

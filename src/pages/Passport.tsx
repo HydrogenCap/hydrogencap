@@ -28,12 +28,14 @@ import {
 } from '@/components/ui/popover';
 import { useProperties } from '@/hooks/useProperties';
 import { usePropertyPassports } from '@/hooks/usePropertyPassport';
+import { usePassportPageData } from '@/hooks/usePassportPageData';
 import { PROPERTY_TYPES, LISTED_STATUSES } from '@/hooks/useCoreIdentity';
 import { PassportRowEditor } from '@/components/passport/PassportRowEditor';
 import { exportPassportCSV } from '@/lib/passportCsvExporter';
 
 export default function Passport() {
-  const { data: properties, isLoading } = useProperties();
+  const { data: passportPageData, isLoading } = usePassportPageData();
+  const { data: properties } = useProperties();
   const { data: passports } = usePropertyPassports();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -46,15 +48,14 @@ export default function Passport() {
   const activeFilterCount = [propertyTypeFilter, listedStatusFilter, conservationAreaFilter].filter(Boolean).length;
 
   // Filter properties based on search and filters
-  const filteredProperties = properties?.filter(p => {
+  const filteredProperties = passportPageData?.filter(p => {
     // Text search - address, postcode, uprn
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = !searchQuery || 
       p.address_line?.toLowerCase().includes(searchLower) ||
       p.postcode?.toLowerCase().includes(searchLower) ||
       p.area_name?.toLowerCase().includes(searchLower) ||
-      p.uprn?.toLowerCase().includes(searchLower) ||
-      p.title_number?.toLowerCase().includes(searchLower);
+      p.uprn?.toLowerCase().includes(searchLower);
 
     // Filters
     const matchesPropertyType = !propertyTypeFilter || p.property_type === propertyTypeFilter;
@@ -66,14 +67,14 @@ export default function Passport() {
     return matchesSearch && matchesPropertyType && matchesListedStatus && matchesConservation;
   }) || [];
 
-  // Calculate stats
-  const totalProperties = properties?.length || 0;
-  const withCoreIdentity = properties?.filter(p => 
-    p.property_type && p.construction_type && p.listed_status
+  // Calculate stats — construction_type now comes from property_passport
+  const totalProperties = passportPageData?.length || 0;
+  const withCoreIdentity = passportPageData?.filter(p => 
+    p.property_type && p.property_passport?.construction_type && p.listed_status
   )?.length || 0;
   
-  const conservationCount = properties?.filter(p => p.conservation_area === true)?.length || 0;
-  const listedCount = properties?.filter(p => p.listed_status && p.listed_status !== 'Not listed')?.length || 0;
+  const conservationCount = passportPageData?.filter(p => p.conservation_area === true)?.length || 0;
+  const listedCount = passportPageData?.filter(p => p.listed_status && p.listed_status !== 'Not listed')?.length || 0;
 
   const clearFilters = () => {
     setPropertyTypeFilter('');
@@ -344,10 +345,10 @@ export default function Passport() {
                           )}
                         </div>
 
-                        {/* Construction */}
+                        {/* Construction — from property_passport */}
                         <div>
-                          {property.construction_type ? (
-                            <span className="text-sm">{property.construction_type}</span>
+                          {property.property_passport?.construction_type ? (
+                            <span className="text-sm">{property.property_passport.construction_type}</span>
                           ) : (
                             <span className="text-muted-foreground text-sm">—</span>
                           )}
@@ -375,6 +376,7 @@ export default function Passport() {
                         <div className="flex items-center gap-2 justify-end">
                           <PassportRowEditor
                             property={property}
+                            passport={property.property_passport}
                             isExpanded={expandedRowId === property.id}
                             onToggle={() => toggleRow(property.id)}
                           />
@@ -392,6 +394,7 @@ export default function Passport() {
                       <div className="px-4 pb-4">
                         <PassportRowEditor
                           property={property}
+                          passport={property.property_passport}
                           isExpanded={true}
                           onToggle={() => toggleRow(property.id)}
                         />
