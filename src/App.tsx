@@ -285,7 +285,11 @@ const App = () => (
             />
             <Route
               path="/compliance-calendar"
-              element={<Navigate to="/compliance?tab=calendar" replace />}
+              element={
+                <ProtectedRoute>
+                  <ComplianceCalendar />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/contractors"
