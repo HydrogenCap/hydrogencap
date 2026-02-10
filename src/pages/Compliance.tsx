@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Shield, Search, Home, AlertTriangle, X, ChevronRight, 
   Filter, ArrowUpDown, Loader2, List, LayoutGrid, ChevronDown
@@ -39,7 +39,9 @@ export default function Compliance() {
   const { data: items, isLoading } = useAllCompliance();
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const createComplianceItem = useCreateComplianceItem();
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [searchParams] = useSearchParams();
+  const initialStatus = (searchParams.get('status') as FilterStatus) || 'all';
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>(initialStatus);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'item' | 'property'>('item');
