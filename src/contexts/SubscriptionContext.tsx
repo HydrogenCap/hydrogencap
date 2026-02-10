@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type SubscriptionTier = 'free' | 'starter' | 'professional' | 'enterprise';
+export type SubscriptionTier = 'free' | 'solo' | 'portfolio' | 'pro';
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -16,30 +16,37 @@ interface SubscriptionContextType extends SubscriptionState {
   checkSubscription: () => Promise<void>;
   hasFeature: (feature: FeatureFlag) => boolean;
   propertyLimit: number;
+  documentLimit: number;
 }
 
 export type FeatureFlag =
+  | 'full_compliance_tracking'
+  | 'tenant_rent_management'
+  | 'contractor_management'
+  | 'basic_reports'
   | 'ai_compliance_checker'
-  | 'portfolio_chat'
-  | 'passport_autofill'
   | 'ai_valuations'
-  | 'reports_exports'
-  | 'bank_presentation'
+  | 'bank_ready_reports'
   | 'ownership_attribution'
-  | 'company_secrets'
+  | 'portfolio_analytics'
+  | 'shareable_doc_links'
   | 'shareholder_portal'
+  | 'company_secrets'
+  | 'passport_autofill'
+  | 'api_access'
+  | 'team_roles'
   | 'unlimited_properties';
 
 const TIERS = {
-  starter: {
+  solo: {
     product_id: 'prod_TxJdFT8No80v9S',
     price_id: 'price_1SzP0MAZFDMuITvQvU1ICh4p',
   },
-  professional: {
+  portfolio: {
     product_id: 'prod_TxJeOM05Pg5FWE',
     price_id: 'price_1SzP1KAZFDMuITvQ4pZv6t5R',
   },
-  enterprise: {
+  pro: {
     product_id: 'prod_TxJeGRcMMMPHwP',
     price_id: 'price_1SzP1aAZFDMuITvQsijsXgos',
   },
@@ -49,40 +56,63 @@ export { TIERS };
 
 const TIER_FEATURES: Record<SubscriptionTier, FeatureFlag[]> = {
   free: [],
-  starter: [],
-  professional: [
-    'ai_compliance_checker',
-    'ai_valuations',
-    'reports_exports',
-    'bank_presentation',
-    'ownership_attribution',
+  solo: [
+    'full_compliance_tracking',
+    'tenant_rent_management',
+    'contractor_management',
+    'basic_reports',
   ],
-  enterprise: [
+  portfolio: [
+    'full_compliance_tracking',
+    'tenant_rent_management',
+    'contractor_management',
+    'basic_reports',
     'ai_compliance_checker',
-    'portfolio_chat',
-    'passport_autofill',
     'ai_valuations',
-    'reports_exports',
-    'bank_presentation',
+    'bank_ready_reports',
     'ownership_attribution',
-    'company_secrets',
+    'portfolio_analytics',
+    'shareable_doc_links',
+  ],
+  pro: [
+    'full_compliance_tracking',
+    'tenant_rent_management',
+    'contractor_management',
+    'basic_reports',
+    'ai_compliance_checker',
+    'ai_valuations',
+    'bank_ready_reports',
+    'ownership_attribution',
+    'portfolio_analytics',
+    'shareable_doc_links',
     'shareholder_portal',
+    'company_secrets',
+    'passport_autofill',
+    'api_access',
+    'team_roles',
     'unlimited_properties',
   ],
 };
 
 const TIER_PROPERTY_LIMITS: Record<SubscriptionTier, number> = {
-  free: 3,
-  starter: 10,
-  professional: 50,
-  enterprise: Infinity,
+  free: 2,
+  solo: 10,
+  portfolio: 50,
+  pro: Infinity,
+};
+
+const TIER_DOCUMENT_LIMITS: Record<SubscriptionTier, number> = {
+  free: 5,
+  solo: 100,
+  portfolio: Infinity,
+  pro: Infinity,
 };
 
 function productIdToTier(productId: string | null): SubscriptionTier {
   if (!productId) return 'free';
-  if (productId === TIERS.enterprise.product_id) return 'enterprise';
-  if (productId === TIERS.professional.product_id) return 'professional';
-  if (productId === TIERS.starter.product_id) return 'starter';
+  if (productId === TIERS.pro.product_id) return 'pro';
+  if (productId === TIERS.portfolio.product_id) return 'portfolio';
+  if (productId === TIERS.solo.product_id) return 'solo';
   return 'free';
 }
 
@@ -126,7 +156,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     checkSubscription();
   }, [checkSubscription]);
 
-  // Auto-refresh every 60s
   useEffect(() => {
     if (!user) return;
     const interval = setInterval(checkSubscription, 60_000);
@@ -138,9 +167,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [state.tier]);
 
   const propertyLimit = TIER_PROPERTY_LIMITS[state.tier];
+  const documentLimit = TIER_DOCUMENT_LIMITS[state.tier];
 
   return (
-    <SubscriptionContext.Provider value={{ ...state, checkSubscription, hasFeature, propertyLimit }}>
+    <SubscriptionContext.Provider value={{ ...state, checkSubscription, hasFeature, propertyLimit, documentLimit }}>
       {children}
     </SubscriptionContext.Provider>
   );
