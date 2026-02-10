@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Bed, Wallet, DoorOpen } from 'lucide-react';
+import { format } from 'date-fns';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +13,10 @@ import { BankPresentationDialog } from '@/components/reports/BankPresentationDia
 import { useProperties } from '@/hooks/useProperties';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
+import { useTenancies } from '@/hooks/useTenancies';
+import { useRentSchedule } from '@/hooks/useRentCollection';
+import { useRooms } from '@/hooks/useRooms';
+import { Progress } from '@/components/ui/progress';
 
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
 import { AreaExposureChart } from '@/components/dashboard/AreaExposureChart';
@@ -27,6 +32,9 @@ import { StockConditionSection } from '@/components/dashboard/StockConditionSect
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { ActionsRequiredWidget } from '@/components/dashboard/ActionsRequiredWidget';
+import { RentCollectionWidget } from '@/components/dashboard/RentCollectionWidget';
+import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
+import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
 import { DashboardShareholdersTab, prepareShareholderData } from '@/components/dashboard/DashboardShareholdersTab';
 import { LenderExposureChart, computeLenderData } from '@/components/dashboard/LenderExposureChart';
 import {
@@ -53,6 +61,12 @@ function DashboardPage() {
   const { stats: missingStats } = useMissingInfo();
   const { lifecycleFilter, filterProperties } = useLifecycleFilter();
   const { risks: portfolioRisks, criticalCount: portfolioCriticalCount } = usePortfolioRisks();
+
+  // Tenancy and rental data for dashboard stats
+  const { data: allTenancies } = useTenancies();
+  const { data: allRooms } = useRooms();
+  const currentDashMonth = format(new Date(), 'yyyy-MM');
+  const { data: rentSchedule } = useRentSchedule({ month: currentDashMonth });
 
   // Filter properties based on lifecycle selection
   const filteredProperties = useMemo(() => {
@@ -128,6 +142,41 @@ function DashboardPage() {
 
     return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt, rentPerBedroom: rentPerBedroom.monthly };
   }, [coreRentalProperties]);
+
+  // Rental & occupancy stats
+  const rentalStats = useMemo(() => {
+    const activeTenancies = allTenancies?.filter(t => t.status === 'active') || [];
+    const noticeTenancies = allTenancies?.filter(t => t.status === 'notice') || [];
+
+    const totalMonthlyRent = activeTenancies.reduce((sum, t) => sum + (t.rent_amount_pcm || 0), 0);
+
+    const rooms = allRooms || [];
+    const totalRooms = rooms.length;
+    const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
+    const vacantRooms = rooms.filter(r => r.status === 'vacant').length;
+    const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
+
+    const totalBedrooms = coreRentalProperties.reduce((sum, p) => sum + (p.beds ? Number(p.beds) : 0), 0);
+
+    const schedule = rentSchedule || [];
+    const totalDue = schedule.reduce((sum, r) => sum + (r.rent_amount || 0), 0);
+    const totalCollected = schedule.reduce((sum, r) => sum + (r.amount_paid || 0), 0);
+    const totalOverdue = schedule.filter(r => r.status === 'overdue').reduce((sum, r) => sum + (r.amount_outstanding || 0), 0);
+
+    return {
+      activeTenancies: activeTenancies.length,
+      noticeTenancies: noticeTenancies.length,
+      totalMonthlyRent,
+      totalRooms,
+      occupiedRooms,
+      vacantRooms,
+      occupancyRate,
+      totalBedrooms,
+      totalDue,
+      totalCollected,
+      totalOverdue,
+    };
+  }, [allTenancies, allRooms, rentSchedule, coreRentalProperties]);
 
   // Lender exposure data
   const lenderData = useMemo(() => computeLenderData(coreRentalProperties), [coreRentalProperties]);
@@ -271,6 +320,43 @@ function DashboardPage() {
               />
             </div>
 
+            {/* Rental KPI Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <KpiCard
+                label="Monthly Rent Roll"
+                value={formatGBP(rentalStats.totalMonthlyRent)}
+                subtitle={`${rentalStats.activeTenancies} active tenancies`}
+                icon={Wallet}
+                iconClassName="text-primary"
+                valueClassName="text-primary"
+              />
+              <KpiCard
+                label="Occupancy Rate"
+                value={formatPercent(rentalStats.occupancyRate)}
+                subtitle={`${rentalStats.occupiedRooms} of ${rentalStats.totalRooms} rooms let`}
+                icon={DoorOpen}
+                iconClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
+                valueClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
+              />
+              <KpiCard
+                label="Total Bedrooms"
+                value={String(rentalStats.totalBedrooms)}
+                subtitle={`Across ${coreRentalProperties.length} properties`}
+                icon={Bed}
+                iconClassName="text-primary"
+              />
+              <KpiCard
+                label="Rent Arrears"
+                value={rentalStats.totalOverdue > 0 ? formatGBP(rentalStats.totalOverdue) : '£0'}
+                subtitle={rentalStats.totalOverdue > 0 ? 'Outstanding this month' : 'All clear this month'}
+                icon={AlertTriangle}
+                iconClassName={rentalStats.totalOverdue > 0 ? 'text-destructive' : 'text-success'}
+                valueClassName={rentalStats.totalOverdue > 0 ? 'text-destructive' : 'text-success'}
+                onClick={rentalStats.totalOverdue > 0 ? () => navigate('/rent') : undefined}
+                className={rentalStats.totalOverdue > 0 ? 'border-destructive/40' : ''}
+              />
+            </div>
+
             {/* Missing Info Shortcut */}
             {missingStats.totalMissingFields > 0 && (
               <Card
@@ -324,12 +410,53 @@ function DashboardPage() {
 
               {/* TODAY TAB */}
               <TabsContent value="today" className="space-y-6 mt-4">
+                {/* Property Map — promoted to top */}
+                <SectionCard
+                  title="Property Map"
+                  subtitle={`${filteredProperties?.filter(p => p.latitude && p.longitude).length || 0} properties plotted`}
+                  icon={MapPin}
+                  onClick={() => navigate('/dashboard/map')}
+                  showArrow
+                  noPadding
+                  contentClassName="p-0"
+                >
+                  {hasPropertiesWithCoords ? (
+                    <div className="p-4">
+                      <PropertyMap
+                        properties={filteredProperties || []}
+                        className="h-[350px] rounded-lg"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>Add properties with coordinates to see them on the map</p>
+                      </div>
+                    </div>
+                  )}
+                </SectionCard>
+
+                {/* Widgets Row: This Month + Actions Required */}
                 <div className="grid gap-6 lg:grid-cols-2">
                   <ErrorBoundary>
                     <ThisMonthWidget />
                   </ErrorBoundary>
                   <ErrorBoundary>
                     <ActionsRequiredWidget />
+                  </ErrorBoundary>
+                </div>
+
+                {/* Widgets Row: Rent Collection + Occupancy + Tenancy Pipeline */}
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <ErrorBoundary>
+                    <RentCollectionWidget />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <OccupancyWidget />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <TenancyPipelineWidget />
                   </ErrorBoundary>
                 </div>
               </TabsContent>
