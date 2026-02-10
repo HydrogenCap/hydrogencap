@@ -59,6 +59,80 @@
 - Click property pin â†’ quick stats popup
 - Area analysis: concentration risk, expansion opportunities
 
+**7. Rent & Arrears Management** *(Critical — Major Overhaul Needed)*
+
+The /rent page must be the operational hub for all rent collection and arrears tracking. The current page shows a count of arrears (e.g. "21 tenant arrears") but provides no way to actually see, drill into, or act on them. This needs a complete rebuild around three views:
+
+**7a. Rent Overview Dashboard (default landing view)**
+- Summary cards at top:
+  - Total expected rent this month (£ sum)
+  - Total collected (£ sum + % of expected)
+  - Total outstanding / in arrears (£ sum, prominent red if > 0)
+  - Number of tenants in arrears (clickable → jumps to arrears table)
+- Rent collection progress bar (visual: collected vs expected vs overdue)
+- Month selector to review current or historical months
+- Quick stat: Average days late across all arrears
+
+**7b. Arrears Table (the core missing piece)**
+- Dedicated, filterable table showing EVERY tenant in arrears:
+  - Tenant name
+  - Property address (clickable → property detail)
+  - Room/unit (for HMOs)
+  - Monthly rent amount
+  - Amount overdue (£)
+  - Days overdue
+  - Arrears history (how many months in a row)
+  - Last payment date
+  - Last contact date
+  - Status badge: Late (1-7 days) | Overdue (8-30 days) | Serious Arrears (30+ days) | Legal Action
+  - Action buttons: Log Payment | Send Reminder | Add Note | Escalate
+- Sort by: amount owed (highest first), days overdue, property, company
+- Filter by: company, property, arrears severity, date range
+- Bulk actions: select multiple tenants → send bulk reminder, export arrears report
+- Export to CSV/PDF for accountant or legal proceedings
+
+**7c. Rent Roll (full tenant payment ledger)**
+- Complete list of ALL tenants across portfolio (not just arrears)
+- Columns: Tenant | Property | Room | Rent Due | Rent Paid | Balance | Status | Payment Method
+- Status: Paid | Partial | Unpaid | Overpaid | Vacant
+- Colour-coded rows: green (paid), amber (partial), red (unpaid), grey (vacant)
+- Click any tenant row → expand to show full payment history for that tenant
+- Filter by: payment status, property, company, date range
+- Monthly/weekly toggle for payment tracking frequency
+
+**7d. Payment Recording & Tracking**
+- Quick "Log Payment" modal accessible from anywhere on the rent page
+  - Select tenant (searchable dropdown)
+  - Amount received
+  - Date received
+  - Payment method (bank transfer, standing order, cash, housing benefit)
+  - Auto-calculates remaining balance
+  - Option to split across multiple months if lump sum received
+- Recurring payment setup: mark tenant as "standing order active" to auto-reconcile
+- Payment history per tenant with running balance
+- Flag partial payments and track remaining balance
+
+**7e. Arrears Workflow & Escalation**
+- Automated escalation ladder:
+  - Day 1 overdue → auto-flag as "Late"
+  - Day 3 → suggested action: send friendly reminder (template provided)
+  - Day 7 → status changes to "Overdue", priority increases
+  - Day 14 → suggested action: formal letter (template provided)
+  - Day 30+ → status "Serious Arrears", suggested action: Section 8 notice consideration
+- Communication log per tenant (notes, emails sent, calls made)
+- Reminder templates: friendly nudge, formal request, final warning
+- Link to generate arrears letters/notices (pre-filled with tenant and amount details)
+- Timeline view per tenant showing all arrears events and communications
+
+**7f. Rent Analytics**
+- Collection rate trend (% collected on time, monthly graph)
+- Worst-performing properties by arrears frequency
+- Arrears ageing report (how much is 0-7 days, 8-30 days, 30+ days)
+- Average time to collect late payments
+- Void period tracking (days between tenancies with no rent)
+- Rent vs market rate comparison per property
+
+
 ### Data Architecture (The Foundation)
 
 ```
@@ -113,6 +187,57 @@ FINANCIAL RECORDS
 - Amount
 - Frequency
 - Start/End dates
+
+TENANTS
+- Tenant ID (primary key)
+- Property ID (foreign key)
+- Room/Unit ID (for HMOs)
+- First name, Last name
+- Email, Phone
+- Move-in date
+- Lease end date (or periodic/rolling)
+- Monthly rent amount
+- Payment method (standing order, bank transfer, cash, housing benefit)
+- Deposit amount
+- Deposit scheme (DPS/TDS/MyDeposits)
+- Status (Active/Notice Period/Vacated)
+- Notes
+
+RENT_PAYMENTS
+- Payment ID (primary key)
+- Tenant ID (foreign key)
+- Property ID (foreign key)
+- Amount due
+- Amount paid
+- Payment date
+- Due date
+- Period (month/year the payment covers)
+- Payment method
+- Status (Paid/Partial/Unpaid/Overpaid)
+- Reference (bank transaction ref)
+- Notes
+
+ARREARS
+- Arrears ID (primary key)
+- Tenant ID (foreign key)
+- Property ID (foreign key)
+- Amount outstanding (£)
+- Days overdue
+- Consecutive months in arrears
+- Escalation status (Late/Overdue/Serious Arrears/Legal Action)
+- Last payment date
+- Last contact date
+- Auto-calculated from RENT_PAYMENTS (no manual entry needed)
+
+ARREARS_COMMUNICATIONS
+- Communication ID (primary key)
+- Arrears ID (foreign key)
+- Tenant ID (foreign key)
+- Type (Note/Email/Letter/Phone Call/SMS)
+- Date
+- Content/summary
+- Template used (if applicable)
+- Sent by (user)
 ```
 
 **Why This Structure Works:**
@@ -275,6 +400,29 @@ FINANCIAL RECORDS
 - âœ… Improve: Make Legal Pack upload more prominent
 - âœ… Add: Timeline view showing property history (purchased â†’ developed â†’ refinanced)
 
+**Rent Page (/rent):** *(Critical — Drastic Overhaul Required)*
+
+Current problems:
+- ❌ Shows "21 tenant arrears" as a count but you can’t see any of them
+- ❌ No way to drill into individual arrears or take action
+- ❌ No clear rent roll or payment ledger
+- ❌ Missing payment recording workflow
+- ❌ No escalation tracking or communication log
+
+Required fixes:
+- ✅ **Restructure into tabbed layout:** Overview | Arrears | Rent Roll | Analytics
+- ✅ **Arrears tab as default when arrears exist:** If there are arrears, land on the Arrears tab with full filterable table (not just a count)
+- ✅ **Every arrears row must be actionable:** Log Payment, Send Reminder, Add Note, Escalate buttons on each row
+- ✅ **Summary cards at top of every tab:** Total expected, total collected, total outstanding, collection rate %
+- ✅ **Clickable arrears count:** The "21 tenant arrears" badge must link directly to the arrears table with all 21 visible
+- ✅ **Colour-coded severity:** Red for 30+ days, amber for 8-30 days, yellow for 1-7 days
+- ✅ **Quick "Log Payment" button:** Persistent at top of page, accessible from any tab
+- ✅ **Bulk actions on arrears:** Select multiple → send reminder, export report
+- ✅ **Search & filter:** By tenant name, property, company, severity, date range
+- ✅ **Payment history per tenant:** Click to expand any row and see full ledger
+- ✅ **Export:** CSV and PDF export for arrears reports (for accountant/legal)
+
+
 ### Visual Design Improvements
 
 **Current Issues:**
@@ -305,10 +453,17 @@ FINANCIAL RECORDS
    - Audit database, identify duplicates
    - Implement proper foreign key relationships
    - Write data migration scripts
-2. Implement Companies House API integration
-3. Build proper property detail page with tabs
-4. Create compliance tracking system with alerts
-5. Improve dashboard to show actionable insights
+2. **Rebuild /rent page (PRIORITY)**
+   - Implement TENANTS, RENT_PAYMENTS, ARREARS, ARREARS_COMMUNICATIONS tables
+   - Build arrears table with full drill-down (replace useless count with actionable list)
+   - Add payment recording workflow (Log Payment modal)
+   - Create rent roll view with colour-coded payment status
+   - Add summary cards and collection progress bar
+   - Wire up "21 tenant arrears" badge to link directly to arrears table
+3. Implement Companies House API integration
+4. Build proper property detail page with tabs
+5. Create compliance tracking system with alerts
+6. Improve dashboard to show actionable insights
 
 ### Medium-term (Next 2 months)
 1. Build development property workflow
