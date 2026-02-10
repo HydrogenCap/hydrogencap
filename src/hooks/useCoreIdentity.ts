@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Types for Core Identity
+// Types for Core Identity — fields that live on the `properties` table
 export interface CoreIdentityData {
   property_name: string | null;
   address_line: string;
@@ -12,10 +12,9 @@ export interface CoreIdentityData {
   uprn: string | null;
   planning_authority: string | null;
   property_type: string | null;
-  construction_type: string | null;
-  year_built: string | null;
   listed_status: string | null;
   conservation_area: boolean;
+  // NOTE: construction_type and year_built have moved to property_passport table
 }
 
 export interface TitleNumber {
@@ -150,7 +149,7 @@ export interface CoreIdentityCompleteness {
 }
 
 export function calculateCoreIdentityCompleteness(
-  property: Partial<CoreIdentityData> | null,
+  property: Partial<CoreIdentityData> & { construction_type_from_passport?: string | null } | null,
   titleNumbers: TitleNumber[]
 ): CoreIdentityCompleteness {
   if (!property) {
@@ -169,7 +168,7 @@ export function calculateCoreIdentityCompleteness(
     { key: 'postcode', label: 'Postcode', check: () => !!property.postcode },
     { key: 'planning_authority', label: 'Planning Authority', check: () => !!property.planning_authority },
     { key: 'property_type', label: 'Property Type', check: () => !!property.property_type },
-    { key: 'construction_type', label: 'Construction Type', check: () => !!property.construction_type },
+    { key: 'construction_type', label: 'Construction Type', check: () => !!property.construction_type_from_passport },
     { key: 'listed_status', label: 'Listed Status', check: () => !!property.listed_status },
   ];
 

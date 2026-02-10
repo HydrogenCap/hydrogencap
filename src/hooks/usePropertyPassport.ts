@@ -149,12 +149,18 @@ export function calculatePassportCompleteness(passport: PropertyPassport | null)
     };
   }
 
-  // Only operational fields that exist in the passport table
-  // Note: Beds, Bathrooms, Tenure are now in the properties table (checked separately)
+  // Key passport fields for completeness tracking
   const requiredFields = [
-    { key: 'asset_agreement_category', label: 'Property Type', critical: true },
+    { key: 'construction_type', label: 'Construction Type', critical: true },
+    { key: 'built_in_year', label: 'Year Built', critical: false },
+    { key: 'number_of_storeys', label: 'Number of Storeys', critical: false },
+    { key: 'keysafe_code', label: 'Keysafe Code', critical: false },
+    { key: 'electric_meter_location', label: 'Electric Meter Location', critical: false },
+    { key: 'gas_meter_location', label: 'Gas Meter Location', critical: false },
+    { key: 'water_stop_tap_location', label: 'Water Stop Tap', critical: false },
     { key: 'kitchens', label: 'Kitchens', critical: false },
-    { key: 'management_company_id', label: 'Management Company', critical: false },
+    { key: 'bathrooms', label: 'Bathrooms', critical: false },
+    { key: 'bedrooms', label: 'Bedrooms', critical: false },
   ];
 
   const missingFields: string[] = [];

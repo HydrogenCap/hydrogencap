@@ -2938,7 +2938,6 @@ export type Database = {
           beneficial_override_percent: number | null
           co_alarm_required: boolean | null
           conservation_area: boolean
-          construction_type: string | null
           country: string | null
           county: string | null
           created_at: string
@@ -3003,7 +3002,6 @@ export type Database = {
           uprn: string | null
           valuation_confidence: string | null
           value_change_percent: number | null
-          year_built: string | null
         }
         Insert: {
           address_line: string
@@ -3016,7 +3014,6 @@ export type Database = {
           beneficial_override_percent?: number | null
           co_alarm_required?: boolean | null
           conservation_area?: boolean
-          construction_type?: string | null
           country?: string | null
           county?: string | null
           created_at?: string
@@ -3081,7 +3078,6 @@ export type Database = {
           uprn?: string | null
           valuation_confidence?: string | null
           value_change_percent?: number | null
-          year_built?: string | null
         }
         Update: {
           address_line?: string
@@ -3094,7 +3090,6 @@ export type Database = {
           beneficial_override_percent?: number | null
           co_alarm_required?: boolean | null
           conservation_area?: boolean
-          construction_type?: string | null
           country?: string | null
           county?: string | null
           created_at?: string
@@ -3159,7 +3154,6 @@ export type Database = {
           uprn?: string | null
           valuation_confidence?: string | null
           value_change_percent?: number | null
-          year_built?: string | null
         }
         Relationships: [
           {

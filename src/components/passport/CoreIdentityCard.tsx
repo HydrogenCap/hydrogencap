@@ -34,6 +34,7 @@ import {
   type CoreIdentityData,
 } from '@/hooks/useCoreIdentity';
 import { useProperty } from '@/hooks/useProperties';
+import { usePropertyPassport, useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
 import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { ExtendableSelect } from './ExtendableSelect';
@@ -66,8 +67,10 @@ interface CoreIdentityCardProps {
 export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
   const { toast } = useToast();
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
+  const { data: passport } = usePropertyPassport(propertyId);
   const { data: titleNumbers = [] } = useTitleNumbers(propertyId);
   const updateCoreIdentity = useUpdateCoreIdentity();
+  const upsertPassport = useUpsertPassport();
   
   // Local authorities for planning authority field
   const { data: localAuthorities = [] } = useLocalAuthorities();
@@ -105,23 +108,32 @@ export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
         uprn: property.uprn ?? null,
         planning_authority: property.planning_authority ?? null,
         property_type: property.property_type ?? null,
-        construction_type: property.construction_type ?? null,
-        year_built: property.year_built ?? null,
+        // Read construction_type and year_built from property_passport
+        construction_type: passport?.construction_type ?? null,
+        year_built: passport?.built_in_year?.toString() ?? null,
         listed_status: property.listed_status ?? 'Not listed',
         conservation_area: property.conservation_area ?? false,
       });
     }
-  }, [property, form]);
+  }, [property, passport, form]);
 
   const onSubmit = async (data: CoreIdentityFormData) => {
     try {
+      // Save identity fields to properties (exclude construction_type/year_built)
+      const { construction_type, year_built, ...identityData } = data;
       await updateCoreIdentity.mutateAsync({
         propertyId,
         data: {
-          ...data,
-          // Ensure conservation_area is always a boolean
+          ...identityData,
           conservation_area: data.conservation_area ?? false,
         },
+      });
+
+      // Save construction_type and year_built to property_passport
+      await upsertPassport.mutateAsync({
+        property_id: propertyId,
+        construction_type: construction_type || null,
+        built_in_year: year_built ? parseInt(year_built) : null,
       });
       toast({
         title: 'Core Identity saved',
@@ -139,7 +151,7 @@ export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
 
   // Calculate completeness
   const completeness = calculateCoreIdentityCompleteness(
-    property as CoreIdentityData | null,
+    property ? { ...property, construction_type_from_passport: passport?.construction_type ?? null } : null,
     titleNumbers
   );
 
