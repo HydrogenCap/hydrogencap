@@ -10,7 +10,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
-import { LoadingState } from "@/components/common";
+import { LoadingState, ErrorBoundary } from "@/components/common";
 
 // Lazy-loaded pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -73,6 +73,7 @@ const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000,           // 10 min garbage collection
       refetchOnWindowFocus: false,       // Stop refetch on tab switch
       retry: 1,                          // Single retry on failure
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   },
 });
@@ -87,6 +88,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <ErrorBoundary>
                 <Suspense fallback={<LoadingState text="Loading..." />}>
           <Routes>
             {/* Public routes */}
@@ -360,6 +362,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
                 </Suspense>
+                </ErrorBoundary>
               </BrowserRouter>
             </GoogleMapsProvider>
           </LifecycleFilterProvider>
