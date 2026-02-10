@@ -67,16 +67,21 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       throw uploadError;
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    // Get signed URL (bucket is private)
+    const { data: urlData, error: signedUrlError } = await supabase.storage
       .from('documents')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 600); // 10 min expiry
+
+    if (signedUrlError || !urlData?.signedUrl) {
+      throw new Error('Failed to generate signed URL for document');
+    }
 
     setUploadProgress(`Creating document record...`);
 
-    // Create document record
+    // Create document record - store the storage path for later signed URL generation
+    const storagePath = filePath;
     const document = await createDocument.mutateAsync({
-      file_url: urlData.publicUrl,
+      file_url: storagePath,
       original_file_name: file.name,
       extraction_status: 'pending',
       review_status: 'pending',
@@ -84,8 +89,8 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
     setUploadProgress(`Processing with AI...`);
 
-    // Trigger AI processing
-    await processWithAI(document.id, urlData.publicUrl);
+    // Trigger AI processing with signed URL
+    await processWithAI(document.id, urlData.signedUrl);
 
     return document;
   };
