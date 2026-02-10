@@ -50,23 +50,25 @@
    updated_at: string;
  }
  
- export interface TenantWithProperty extends Tenant {
-   current_tenancy?: {
-     id: string;
-     property_id: string;
-     room_id: string;
-     start_date: string;
-     end_date: string | null;
-     rent_amount_pcm: number;
-     property?: {
-       address_line: string;
-       postcode: string | null;
-     };
-     room?: {
-       room_name: string;
-     };
-   } | null;
- }
+export interface TenantWithProperty extends Tenant {
+  current_tenancies: {
+    id: string;
+    property_id: string;
+    room_id: string;
+    start_date: string;
+    end_date: string | null;
+    rent_amount_pcm: number;
+    status: string;
+    property?: {
+      address_line: string;
+      postcode: string | null;
+    };
+    room?: {
+      room_name: string;
+    };
+  }[];
+  total_rent_pcm: number;
+}
  
 // getUserOrgId replaced by shared import
  
@@ -103,27 +105,36 @@
        if (tenantsError) throw tenantsError;
  
        // Get active tenancies with property and room info
-       const { data: tenancies, error: tenanciesError } = await supabase
-         .from('tenancies')
-         .select(`
-           id, tenant_id, property_id, room_id, start_date, end_date, rent_amount_pcm,
-           property:properties(address_line, postcode),
-           room:rooms(room_name)
-         `)
-         .in('status', ['active', 'notice']);
- 
-       if (tenanciesError) throw tenanciesError;
- 
-       // Map tenancies to tenants
-       const tenancyMap = new Map(tenancies.map(t => [t.tenant_id, t]));
- 
-       return tenants.map(tenant => ({
-         ...tenant,
-         current_tenancy: tenancyMap.get(tenant.id) || null,
-       })) as TenantWithProperty[];
-     },
-   });
- }
+      const { data: tenancies, error: tenanciesError } = await supabase
+        .from('tenancies')
+        .select(`
+          id, tenant_id, property_id, room_id, start_date, end_date, rent_amount_pcm, status,
+          property:properties(address_line, postcode),
+          room:rooms(room_name)
+        `)
+        .in('status', ['active', 'notice']);
+
+      if (tenanciesError) throw tenanciesError;
+
+      // Group tenancies by tenant_id (supports multiple per tenant)
+      const tenancyMap = new Map<string, typeof tenancies>();
+      for (const t of tenancies) {
+        const existing = tenancyMap.get(t.tenant_id) || [];
+        existing.push(t);
+        tenancyMap.set(t.tenant_id, existing);
+      }
+
+      return tenants.map(tenant => {
+        const tenantTenancies = tenancyMap.get(tenant.id) || [];
+        return {
+          ...tenant,
+          current_tenancies: tenantTenancies,
+          total_rent_pcm: tenantTenancies.reduce((sum, t) => sum + (t.rent_amount_pcm || 0), 0),
+        };
+      }) as TenantWithProperty[];
+    },
+  });
+}
  
  export function useTenant(tenantId: string) {
    return useQuery({
