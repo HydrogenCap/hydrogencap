@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays, differenceInWeeks } from 'date-fns';
 import {
   ArrowLeft, PoundSterling, AlertTriangle, CheckCircle2, Clock,
-  Mail, Send, Ban, Trash2, Copy, Edit, Calendar
+  Send, Ban, Trash2, Copy, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +15,10 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useRentScheduleItem, useUpdateRentScheduleStatus, usePaymentReminders } from '@/hooks/useRentCollection';
+import {
+  useRentScheduleItem, useUpdateRentScheduleStatus,
+  usePaymentReminders, useDeleteRentSchedule, useDuplicateRentSchedule,
+} from '@/hooks/useRentCollection';
 import { LoadingState } from '@/components/common';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
@@ -26,6 +29,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
   paid: { label: 'Paid', color: 'bg-green-100 text-green-800', icon: CheckCircle2 },
   partial: { label: 'Partial', color: 'bg-amber-100 text-amber-800', icon: AlertTriangle },
   overdue: { label: 'Overdue', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
+  bad_debt: { label: 'Bad Debt', color: 'bg-red-200 text-red-900', icon: Ban },
 };
 
 export default function PaymentDetail() {
@@ -33,6 +37,8 @@ export default function PaymentDetail() {
   const navigate = useNavigate();
   const { data: item, isLoading } = useRentScheduleItem(scheduleId || '');
   const updateStatus = useUpdateRentScheduleStatus();
+  const deleteSchedule = useDeleteRentSchedule();
+  const duplicateSchedule = useDuplicateRentSchedule();
   const { data: reminders } = usePaymentReminders(scheduleId || '');
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showSendReminder, setShowSendReminder] = useState(false);
@@ -46,7 +52,7 @@ export default function PaymentDetail() {
   const dueDate = new Date(item.due_date);
   const daysOverdue = differenceInDays(today, dueDate);
   const weeksOverdue = differenceInWeeks(today, dueDate);
-  const isOverdue = daysOverdue > 0 && item.status !== 'paid';
+  const isOverdue = daysOverdue > 0 && item.status !== 'paid' && item.status !== 'bad_debt';
 
   const tenantName = `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`;
   const tenantEmail = (item.tenancy as any).tenant?.email || null;
@@ -59,6 +65,22 @@ export default function PaymentDetail() {
 
   const handleMarkPaid = () => {
     updateStatus.mutate({ id: item.id, status: 'paid' });
+  };
+
+  const handleMarkBadDebt = () => {
+    updateStatus.mutate({ id: item.id, status: 'bad_debt' });
+  };
+
+  const handleDelete = () => {
+    deleteSchedule.mutate(item.id, {
+      onSuccess: () => navigate('/rent'),
+    });
+  };
+
+  const handleDuplicate = () => {
+    duplicateSchedule.mutate(item, {
+      onSuccess: () => navigate('/rent'),
+    });
   };
 
   return (
@@ -203,8 +225,8 @@ export default function PaymentDetail() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Actions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {item.status !== 'paid' && (
+        <CardContent className="space-y-4">
+          {item.status !== 'paid' && item.status !== 'bad_debt' && (
             <div className="flex flex-wrap gap-3">
               <Button onClick={handleMarkPaid} disabled={updateStatus.isPending}>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -242,12 +264,79 @@ export default function PaymentDetail() {
               )}
             </div>
           )}
+
+          {/* Bad Debt */}
+          {item.status !== 'paid' && item.status !== 'bad_debt' && (
+            <div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                    <Ban className="h-4 w-4 mr-2" />
+                    Set as Bad Debt
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mark as bad debt?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will write off £{item.amount_outstanding.toLocaleString()} from {tenantName} as bad debt. This action can be reversed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleMarkBadDebt} className="bg-destructive hover:bg-destructive/90">
+                      Confirm Bad Debt
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
+          {item.status === 'bad_debt' && (
+            <p className="text-sm text-destructive flex items-center gap-2">
+              <Ban className="h-4 w-4" />
+              This payment has been written off as bad debt.
+            </p>
+          )}
+
           {item.status === 'paid' && (
             <p className="text-sm text-green-600 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
               This payment has been fully paid.
             </p>
           )}
+
+          {/* Secondary actions */}
+          <Separator />
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicateSchedule.isPending}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy to New
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this payment?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently remove this rent schedule item. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
 

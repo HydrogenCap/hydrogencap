@@ -3,7 +3,7 @@
  import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
  
- export type RentStatus = 'upcoming' | 'due' | 'paid' | 'partial' | 'overdue';
+ export type RentStatus = 'upcoming' | 'due' | 'paid' | 'partial' | 'overdue' | 'bad_debt';
  
  export interface RentScheduleItem {
    id: string;
@@ -288,6 +288,103 @@ export function useSendReminder() {
   });
 }
 
+export function useDeleteRentSchedule() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('rent_schedule').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: 'Payment deleted' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to delete', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useDuplicateRentSchedule() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (item: RentScheduleWithDetails) => {
+      const orgId = await getUserOrgId();
+      if (!orgId) throw new Error('No organization found');
+
+      // Generate new payment reference
+      const prefix = 'HYD';
+      const letters = Array.from({ length: 3 }, () =>
+        String.fromCharCode(65 + Math.floor(Math.random() * 26))
+      ).join('');
+      const numbers = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+
+      const { data, error } = await supabase
+        .from('rent_schedule')
+        .insert({
+          org_id: orgId,
+          tenancy_id: item.tenancy_id,
+          due_date: item.due_date,
+          period_start: item.period_start,
+          period_end: item.period_end,
+          rent_amount: item.rent_amount,
+          additional_charges: item.additional_charges,
+          amount_paid: 0,
+          amount_outstanding: item.rent_amount + item.additional_charges,
+          status: 'upcoming',
+          payment_reference: `${prefix}-${letters}${numbers}`,
+          notes: item.notes ? `Copy of: ${item.notes}` : null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: 'Payment duplicated' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to duplicate', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useUpdateRentScheduleNotes() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, notes, tags }: { id: string; notes?: string; tags?: string[] }) => {
+      const updates: Record<string, any> = {};
+      if (notes !== undefined) updates.notes = notes;
+      if (tags !== undefined) updates.tags = tags;
+
+      const { data, error } = await supabase
+        .from('rent_schedule')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: 'Updated' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useRentSummary(month?: string) {
   const { data: schedule } = useRentSchedule({ month });
 
@@ -308,5 +405,6 @@ export function useRentSummary(month?: string) {
     overdue: schedule.filter(s => s.status === 'overdue').length,
     upcoming: schedule.filter(s => s.status === 'upcoming').length,
     due: schedule.filter(s => s.status === 'due').length,
+    bad_debt: schedule.filter(s => s.status === 'bad_debt').length,
   };
 }

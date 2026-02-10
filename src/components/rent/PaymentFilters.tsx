@@ -12,6 +12,9 @@ interface PaymentFiltersProps {
   propertyFilter: string;
   onPropertyFilterChange: (value: string) => void;
   properties: { id: string; address_line: string }[];
+  tagFilter?: string;
+  onTagFilterChange?: (value: string) => void;
+  availableTags?: string[];
 }
 
 export default function PaymentFilters({
@@ -19,8 +22,11 @@ export default function PaymentFilters({
   statusFilter, onStatusFilterChange,
   propertyFilter, onPropertyFilterChange,
   properties,
+  tagFilter = 'all',
+  onTagFilterChange,
+  availableTags = [],
 }: PaymentFiltersProps) {
-  const hasFilters = search || statusFilter !== 'all' || propertyFilter !== 'all';
+  const hasFilters = search || statusFilter !== 'all' || propertyFilter !== 'all' || tagFilter !== 'all';
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -60,14 +66,31 @@ export default function PaymentFilters({
           <SelectItem value="paid">Paid</SelectItem>
           <SelectItem value="due">Due Today</SelectItem>
           <SelectItem value="upcoming">Upcoming</SelectItem>
+          <SelectItem value="bad_debt">Bad Debt</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Tags filter */}
+      {availableTags.length > 0 && onTagFilterChange && (
+        <Select value={tagFilter} onValueChange={onTagFilterChange}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Any tags" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any tags</SelectItem>
+            {availableTags.map((tag) => (
+              <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {hasFilters && (
         <Button variant="ghost" size="sm" onClick={() => {
           onSearchChange('');
           onStatusFilterChange('all');
           onPropertyFilterChange('all');
+          onTagFilterChange?.('all');
         }}>
           <X className="h-4 w-4 mr-1" /> Clear
         </Button>
