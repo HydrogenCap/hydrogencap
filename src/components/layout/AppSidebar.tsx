@@ -1,4 +1,4 @@
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
@@ -93,7 +93,6 @@ const adminItems: NavItem[] = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const { signOut, user } = useAuth();
   const { data: inboxDocuments } = useInboxDocuments();
   const { data: allCompliance } = useAllCompliance();
@@ -116,7 +115,7 @@ export function AppSidebar() {
 
   const complianceAlertCount = expiredCount + expiringCount;
 
-  const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox';
+  const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox' || location.pathname === '/compliance-calendar';
 
   const isActive = (href: string) =>
     location.pathname === href ||
@@ -222,9 +221,9 @@ export function AppSidebar() {
             <SidebarMenuSubItem>
               <SidebarMenuSubButton
                 asChild
-                isActive={searchParams.get('tab') === 'calendar'}
+                isActive={location.pathname === '/compliance-calendar'}
               >
-                <Link to="/compliance?tab=calendar">
+                <Link to="/compliance-calendar">
                   <CalendarCheck className="h-3 w-3" />
                   <span>Calendar</span>
                 </Link>
