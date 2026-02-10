@@ -153,7 +153,58 @@ serve(async (req) => {
       );
     }
 
-    const { documentId, fileUrl, properties }: ProcessDocumentRequest = await req.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = rawBody as Record<string, unknown>;
+    const documentId = typeof body.documentId === 'string' ? body.documentId : null;
+    const fileUrl = typeof body.fileUrl === 'string' ? body.fileUrl : null;
+    const properties = Array.isArray(body.properties) ? body.properties : null;
+
+    if (!documentId || !isValidUUID(documentId)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing documentId (must be UUID)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!fileUrl || fileUrl.length > 2048) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing fileUrl' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!properties || properties.length > 500) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or missing properties array' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate each property entry
+    const validatedProperties: ProcessDocumentRequest['properties'] = [];
+    for (const p of properties) {
+      if (typeof p !== 'object' || p === null || !isValidUUID(p.id) || typeof p.address_line !== 'string') {
+        return new Response(
+          JSON.stringify({ error: 'Invalid property entry in properties array' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      validatedProperties.push({
+        id: p.id,
+        address_line: p.address_line.slice(0, 500),
+        postcode: typeof p.postcode === 'string' ? p.postcode.slice(0, 20) : null,
+        title_number: typeof p.title_number === 'string' ? p.title_number.slice(0, 50) : null,
+      });
+    }
 
     console.log(`Processing compliance document ${documentId} for user ${claimsData.user.id}`);
 
@@ -186,7 +237,7 @@ serve(async (req) => {
     console.log(`File converted to data URL, MIME type: ${mimeType}`);
 
     // Build the prompt for Gemini - optimized for UK compliance documents
-    const propertyList = properties
+    const propertyList = validatedProperties
       .map((p, i) => `${i + 1}. ID: ${p.id}, Address: ${p.address_line}, Postcode: ${p.postcode || "N/A"}${p.title_number ? `, Title: ${p.title_number}` : ""}`)
       .join("\n");
 
