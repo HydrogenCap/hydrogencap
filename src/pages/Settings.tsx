@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
- import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard } from 'lucide-react';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
 import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
  import { ShareholderManagement } from '@/components/settings/ShareholderManagement';
  import { NotificationSettings } from '@/components/settings/NotificationSettings';
  import { ContractorDirectory } from '@/components/settings/ContractorDirectory';
+import { BillingSettings } from '@/components/settings/BillingSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
@@ -53,6 +54,10 @@ export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Read ?tab= from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const defaultTab = urlParams.get('tab') || 'profile';
 
   // Profile and Organization state
   const { data: profile } = useProfile();
@@ -282,7 +287,7 @@ export default function Settings() {
           <p className="text-muted-foreground">Manage your account, organization, data imports, and beneficial groups</p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className="flex-wrap">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
@@ -315,6 +320,10 @@ export default function Settings() {
              <TabsTrigger value="notifications" className="gap-2">
                <Bell className="h-4 w-4" />
                Notifications
+             </TabsTrigger>
+             <TabsTrigger value="billing" className="gap-2">
+               <CreditCard className="h-4 w-4" />
+               Billing
              </TabsTrigger>
            </TabsList>
 
@@ -718,6 +727,11 @@ export default function Settings() {
            <TabsContent value="notifications" className="space-y-6">
              <NotificationSettings />
              <ContractorDirectory />
+           </TabsContent>
+
+           {/* Billing Tab */}
+           <TabsContent value="billing" className="space-y-6">
+             <BillingSettings />
            </TabsContent>
         </Tabs>
       </div>

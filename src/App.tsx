@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
@@ -83,6 +84,7 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <AuthProvider>
+          <SubscriptionProvider>
           <LifecycleFilterProvider>
             <GoogleMapsProvider>
               <Toaster />
@@ -366,6 +368,7 @@ const App = () => (
               </BrowserRouter>
             </GoogleMapsProvider>
           </LifecycleFilterProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
