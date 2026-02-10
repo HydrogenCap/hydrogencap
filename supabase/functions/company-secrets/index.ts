@@ -105,14 +105,16 @@ serve(async (req) => {
       );
     }
 
-    const { action, company_id, auth_code, utr } = await req.json();
+    const body = await req.json();
+    const { action, company_id, auth_code, utr } = body;
 
     // Check user has admin/owner role for the company's org
     const { data: membership, error: membershipError } = await supabaseAdmin
       .from("memberships")
       .select("role, org_id")
       .eq("user_id", user.id)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (membershipError || !membership) {
       return new Response(
@@ -241,7 +243,7 @@ serve(async (req) => {
 
     } else if (action === "bulk_set") {
       // BULK SET for admin backfill
-      const { secrets: bulkSecrets } = await req.json();
+      const { secrets: bulkSecrets } = body;
       
       if (!Array.isArray(bulkSecrets)) {
         return new Response(
