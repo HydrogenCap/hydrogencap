@@ -63,6 +63,7 @@ export const COMPLIANCE_DOC_TYPE_LABELS: Record<string, string> = {
   epc_certificate: 'EPC',
   fire_alarm_certificate: 'Fire Alarm Certificate',
   emergency_lighting_certificate: 'Emergency Lighting Certificate',
+  fire_suppression_certificate: 'Fire Suppression System Certificate',
   pat_testing: 'PAT Testing',
   fire_risk_assessment: 'Fire Risk Assessment',
   hmo_licence: 'HMO Licence',
@@ -70,6 +71,10 @@ export const COMPLIANCE_DOC_TYPE_LABELS: Record<string, string> = {
   asbestos_survey: 'Asbestos Survey',
   legionella_assessment: 'Legionella Risk Assessment',
   planning_building_control: 'Planning/Building Control',
+  fire_door_certification: 'Fire Door Certification',
+  fire_panel_commissioning: 'Fire Panel Commissioning Certificate',
+  mcs_certificate: 'MCS Certificate',
+  floor_plans: 'Floor Plans / Fire Plans',
   other: 'Other',
 };
 
