@@ -4,56 +4,50 @@ import { parseCSV as baseParseCsv, type ParsedCSVRow, type ParsedCSV } from './c
 export { type ParsedCSVRow, type ParsedCSV };
 export const parseCSV = baseParseCsv;
 
-// Passport field definitions for mapping - comprehensive list
+// Passport field definitions for mapping - keys MUST match actual DB columns in property_passport
 export const PASSPORT_FIELDS = [
-  // Match fields
+  // Match fields (not DB columns - used for property matching only)
   { key: 'address_match', label: 'Address (for matching)', required: true, category: 'match' },
   { key: 'postcode_match', label: 'Postcode (for matching)', required: false, category: 'match' },
   
-  // Classification & Identity
-  { key: 'property_name', label: 'Property Name', required: false, category: 'classification' },
+  // Classification & Identity (actual DB columns)
   { key: 'asset_agreement_category', label: 'Asset Agreement Category', required: false, category: 'classification' },
   { key: 'asset_performance_rating', label: 'Asset Performance Rating', required: false, category: 'classification' },
   { key: 'occupation_status', label: 'Occupation Status', required: false, category: 'classification' },
   { key: 'owned_by', label: 'Owner / SPV', required: false, category: 'classification' },
-  { key: 'owner_tenure', label: 'Tenure', required: false, category: 'classification' },
-  { key: 'land_registry_title_number', label: 'Title Number', required: false, category: 'classification' },
-  { key: 'uprn', label: 'UPRN', required: false, category: 'classification' },
   { key: 'council_tax_band', label: 'Council Tax Band', required: false, category: 'classification' },
   
-  // Property details
-  { key: 'property_type', label: 'Property Type', required: false, category: 'details' },
+  // Construction & Details
   { key: 'construction_type', label: 'Construction Type', required: false, category: 'details' },
-  { key: 'listed_status', label: 'Listed Status', required: false, category: 'details' },
-  { key: 'conservation_area', label: 'Conservation Area', required: false, category: 'details' },
-  { key: 'storeys', label: 'Storeys', required: false, category: 'details' },
   { key: 'construction_date_band', label: 'Construction Period', required: false, category: 'details' },
   { key: 'built_in_year', label: 'Built In Year', required: false, category: 'details' },
+  { key: 'number_of_storeys', label: 'Storeys', required: false, category: 'details' },
+  { key: 'base_clarification', label: 'Base Clarification', required: false, category: 'details' },
 
-  // Location
+  // Location (actual DB columns)
   { key: 'town_city', label: 'Town / City', required: false, category: 'location' },
-  { key: 'area', label: 'Area', required: false, category: 'location' },
+  { key: 'county', label: 'County / Area', required: false, category: 'location' },
+  { key: 'postcode', label: 'Passport Postcode', required: false, category: 'location' },
   { key: 'maintenance_area', label: 'Maintenance Area', required: false, category: 'location' },
   { key: 'local_authority', label: 'Local Authority', required: false, category: 'location' },
+  { key: 'local_authority_text', label: 'Local Authority (text)', required: false, category: 'location' },
 
   // Accommodation
-  { key: 'bedrooms', label: 'Bedrooms', required: false, category: 'accommodation' },
   { key: 'kitchens', label: 'Kitchens', required: false, category: 'accommodation' },
   { key: 'ensuites', label: 'Ensuites', required: false, category: 'accommodation' },
   { key: 'living_rooms_communal', label: 'Communal Living Rooms', required: false, category: 'accommodation' },
-  { key: 'bathrooms', label: 'Bathrooms', required: false, category: 'accommodation' },
   { key: 'wc_cloakroom', label: 'WC / Cloakroom', required: false, category: 'accommodation' },
 
   // Amenities & Access
   { key: 'parking', label: 'Parking', required: false, category: 'amenities' },
   { key: 'basement', label: 'Basement', required: false, category: 'amenities' },
   { key: 'carport', label: 'Carport', required: false, category: 'amenities' },
-  { key: 'loft_access', label: 'Loft Access', required: false, category: 'amenities' },
-  { key: 'loft_access_detail', label: 'Loft Access Detail', required: false, category: 'amenities' },
+  { key: 'has_loft_access', label: 'Has Loft Access', required: false, category: 'amenities' },
+  { key: 'loft_access', label: 'Loft Access Detail', required: false, category: 'amenities' },
   { key: 'access_ramp', label: 'Access Ramp', required: false, category: 'amenities' },
   { key: 'has_bin_store', label: 'Bin Store', required: false, category: 'amenities' },
   { key: 'has_cycle_store', label: 'Cycle Store', required: false, category: 'amenities' },
-  { key: 'guest_room', label: 'Guest Room', required: false, category: 'amenities' },
+  { key: 'has_guest_room', label: 'Guest Room', required: false, category: 'amenities' },
   { key: 'block_communal_entrance', label: 'Block Communal Entrance', required: false, category: 'amenities' },
   { key: 'communal_tv_supply', label: 'Communal TV Supply', required: false, category: 'amenities' },
 
@@ -83,7 +77,7 @@ export const PASSPORT_FIELDS = [
   { key: 'hmo_bed_spaces', label: 'HMO Bed Spaces', required: false, category: 'licensing' },
 
   // Management
-  { key: 'management_company', label: 'Management Company', required: false, category: 'management' },
+  { key: 'management_company_text', label: 'Management Company', required: false, category: 'management' },
   { key: 'property_management_company', label: 'Property Management Company', required: false, category: 'management' },
   { key: 'property_management_fee_percent', label: 'Management Fee (%)', required: false, category: 'management' },
 
@@ -114,8 +108,8 @@ export interface PassportValidatedRow {
 }
 
 const INTEGER_FIELDS = new Set<string>([
-  'bedrooms', 'kitchens', 'ensuites', 'living_rooms_communal', 'bathrooms',
-  'wc_cloakroom', 'storeys', 'hmo_bed_spaces', 'built_in_year',
+  'kitchens', 'ensuites', 'living_rooms_communal',
+  'wc_cloakroom', 'number_of_storeys', 'hmo_bed_spaces', 'built_in_year',
 ]);
 
 const FLOAT_FIELDS = new Set<string>([
@@ -123,9 +117,9 @@ const FLOAT_FIELDS = new Set<string>([
 ]);
 
 const BOOLEAN_FIELDS = new Set<string>([
-  'conservation_area', 'basement', 'carport', 'loft_access', 'access_ramp',
-  'has_bin_store', 'has_cycle_store', 'guest_room', 'has_gas_supply',
-  'hmo_licence_required', 'block_communal_entrance', 'communal_tv_supply',
+  'basement', 'carport', 'has_loft_access', 'access_ramp',
+  'has_bin_store', 'has_cycle_store', 'has_guest_room', 'has_gas_supply',
+  'hmo_licence_required', 'hmo_licence', 'communal_tv_supply',
 ]);
 
 const DATE_FIELDS = new Set<string>(['hmo_licence_expiry']);
@@ -197,49 +191,40 @@ export function autoDetectPassportMapping(headers: string[]): PassportColumnMapp
     { pattern: /^postcode|post\s*code|zip/i, field: 'postcode_match' },
     
     // Classification
-    { pattern: /^property\s*name/i, field: 'property_name' },
     { pattern: /^asset.*agreement.*category/i, field: 'asset_agreement_category' },
     { pattern: /^asset.*performance/i, field: 'asset_performance_rating' },
     { pattern: /^occupation\s*status/i, field: 'occupation_status' },
     { pattern: /^owned\s*by|owner/i, field: 'owned_by' },
-    { pattern: /^tenure|owner\s*tenure/i, field: 'owner_tenure' },
-    { pattern: /^title\s*number/i, field: 'land_registry_title_number' },
-    { pattern: /^uprn$/i, field: 'uprn' },
     { pattern: /^council\s*tax/i, field: 'council_tax_band' },
 
     // Details
-    { pattern: /^property\s*type/i, field: 'property_type' },
     { pattern: /^construction\s*type/i, field: 'construction_type' },
-    { pattern: /^listed\s*status/i, field: 'listed_status' },
-    { pattern: /^conservation\s*area/i, field: 'conservation_area' },
-    { pattern: /^storeys/i, field: 'storeys' },
     { pattern: /^construction.*date.*band|age\s*band/i, field: 'construction_date_band' },
     { pattern: /^built\s*in\s*year/i, field: 'built_in_year' },
+    { pattern: /^storeys|number.*storeys/i, field: 'number_of_storeys' },
 
     // Location
     { pattern: /^town|city/i, field: 'town_city' },
-    { pattern: /^area$/i, field: 'area' },
+    { pattern: /^county|^area$/i, field: 'county' },
     { pattern: /^maintenance\s*area/i, field: 'maintenance_area' },
     { pattern: /^local\s*authority/i, field: 'local_authority' },
 
     // Accommodation
-    { pattern: /^bedroom|beds$/i, field: 'bedrooms' },
     { pattern: /^kitchen/i, field: 'kitchens' },
     { pattern: /^ensuite/i, field: 'ensuites' },
     { pattern: /^communal\s*living/i, field: 'living_rooms_communal' },
-    { pattern: /^bathroom|baths$/i, field: 'bathrooms' },
     { pattern: /^wc|cloakroom/i, field: 'wc_cloakroom' },
 
     // Amenities
     { pattern: /^parking/i, field: 'parking' },
     { pattern: /^basement/i, field: 'basement' },
     { pattern: /^carport/i, field: 'carport' },
-    { pattern: /^loft\s*access\s*detail/i, field: 'loft_access_detail' },
-    { pattern: /^loft\s*access$/i, field: 'loft_access' },
+    { pattern: /^loft\s*access\s*detail/i, field: 'loft_access' },
+    { pattern: /^loft\s*access$/i, field: 'has_loft_access' },
     { pattern: /^access\s*ramp/i, field: 'access_ramp' },
     { pattern: /^bin\s*store/i, field: 'has_bin_store' },
     { pattern: /^cycle\s*store/i, field: 'has_cycle_store' },
-    { pattern: /^guest\s*room/i, field: 'guest_room' },
+    { pattern: /^guest\s*room/i, field: 'has_guest_room' },
     { pattern: /^block\s*communal/i, field: 'block_communal_entrance' },
     { pattern: /^communal\s*tv/i, field: 'communal_tv_supply' },
 
@@ -267,7 +252,7 @@ export function autoDetectPassportMapping(headers: string[]): PassportColumnMapp
     { pattern: /^hmo\s*licence$/i, field: 'hmo_licence' },
 
     // Management
-    { pattern: /^management\s*company$/i, field: 'management_company' },
+    { pattern: /^management\s*company$/i, field: 'management_company_text' },
     { pattern: /^property\s*management\s*company/i, field: 'property_management_company' },
     { pattern: /^management\s*fee/i, field: 'property_management_fee_percent' },
 
