@@ -67,3 +67,12 @@ verify_jwt = false
  
  [functions.create-compliance-jobs]
  verify_jwt = false
+
+[functions.send-rent-reminder]
+verify_jwt = false
+
+[functions.auto-generate-rent-schedule]
+verify_jwt = false
+
+[functions.auto-send-rent-reminders]
+verify_jwt = false

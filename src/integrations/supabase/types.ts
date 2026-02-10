@@ -3816,6 +3816,7 @@ export type Database = {
           reminder_sent_at: string | null
           rent_amount: number
           status: Database["public"]["Enums"]["rent_status"]
+          tags: string[] | null
           tenancy_id: string
           updated_at: string
           warning_sent_at: string | null
@@ -3835,6 +3836,7 @@ export type Database = {
           reminder_sent_at?: string | null
           rent_amount: number
           status?: Database["public"]["Enums"]["rent_status"]
+          tags?: string[] | null
           tenancy_id: string
           updated_at?: string
           warning_sent_at?: string | null
@@ -3854,6 +3856,7 @@ export type Database = {
           reminder_sent_at?: string | null
           rent_amount?: number
           status?: Database["public"]["Enums"]["rent_status"]
+          tags?: string[] | null
           tenancy_id?: string
           updated_at?: string
           warning_sent_at?: string | null
@@ -4762,7 +4765,13 @@ export type Database = {
         | "direct_debit"
         | "cash"
         | "cheque"
-      rent_status: "upcoming" | "due" | "paid" | "partial" | "overdue"
+      rent_status:
+        | "upcoming"
+        | "due"
+        | "paid"
+        | "partial"
+        | "overdue"
+        | "bad_debt"
       room_status: "vacant" | "occupied" | "notice" | "maintenance"
       room_type: "single" | "double" | "ensuite" | "studio"
       tenancy_status: "pending" | "active" | "notice" | "ended"
@@ -4935,7 +4944,14 @@ export const Constants = {
         "cash",
         "cheque",
       ],
-      rent_status: ["upcoming", "due", "paid", "partial", "overdue"],
+      rent_status: [
+        "upcoming",
+        "due",
+        "paid",
+        "partial",
+        "overdue",
+        "bad_debt",
+      ],
       room_status: ["vacant", "occupied", "notice", "maintenance"],
       room_type: ["single", "double", "ensuite", "studio"],
       tenancy_status: ["pending", "active", "notice", "ended"],

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PoundSterling, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, TrendingUp, Eye } from 'lucide-react';
+import { PoundSterling, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, TrendingUp, Eye, Download, Ban } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { useRentSchedule, useArrears, RentStatus, RentScheduleWithDetails } from
 import { LoadingState, EmptyState } from '@/components/common';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import PaymentFilters from '@/components/rent/PaymentFilters';
+import { exportRentRollCSV, exportArrearsCSV } from '@/lib/rentCsvExporter';
 
 const statusConfig: Record<RentStatus, { label: string; color: string; icon: React.ElementType }> = {
   upcoming: { label: 'Upcoming', color: 'bg-gray-100 text-gray-800', icon: Clock },
@@ -17,6 +18,7 @@ const statusConfig: Record<RentStatus, { label: string; color: string; icon: Rea
   paid: { label: 'Paid', color: 'bg-green-100 text-green-800', icon: CheckCircle2 },
   partial: { label: 'Partial', color: 'bg-amber-100 text-amber-800', icon: AlertTriangle },
   overdue: { label: 'Overdue', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
+  bad_debt: { label: 'Bad Debt', color: 'bg-red-200 text-red-900', icon: Ban },
 };
 
 function RentScheduleRow({ item, onRecordPayment, onView }: { item: RentScheduleWithDetails; onRecordPayment: () => void; onView: () => void }) {
@@ -80,6 +82,7 @@ export default function RentCollection() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<RentStatus | 'all'>('all');
   const [propertyFilter, setPropertyFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
 
   const monthStr = format(selectedMonth, 'yyyy-MM');
   const { data: schedule, isLoading } = useRentSchedule({ month: monthStr });
@@ -100,6 +103,16 @@ export default function RentCollection() {
     return Array.from(map.values());
   }, [schedule]);
 
+  // Extract unique tags for filter
+  const availableTags = useMemo(() => {
+    if (!schedule) return [];
+    const tagSet = new Set<string>();
+    schedule.forEach(item => {
+      ((item as any).tags || []).forEach((t: string) => tagSet.add(t));
+    });
+    return Array.from(tagSet).sort();
+  }, [schedule]);
+
   // Apply filters
   const filteredSchedule = useMemo(() => {
     if (!schedule) return [];
@@ -112,6 +125,10 @@ export default function RentCollection() {
         const address = item.tenancy.property.address_line.toLowerCase();
         const ref = ((item as any).payment_reference || '').toLowerCase();
         if (!tenantName.includes(q) && !address.includes(q) && !ref.includes(q)) return false;
+      }
+      if (tagFilter !== 'all') {
+        const itemTags: string[] = (item as any).tags || [];
+        if (!itemTags.includes(tagFilter)) return false;
       }
       return true;
     });
@@ -165,6 +182,18 @@ export default function RentCollection() {
           </h1>
           <p className="text-muted-foreground">Track rent payments and arrears</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => exportRentRollCSV(filteredSchedule)}>
+            <Download className="h-4 w-4 mr-1" />
+            Export Rent Roll
+          </Button>
+          {arrears && arrears.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => exportArrearsCSV(arrears)}>
+              <Download className="h-4 w-4 mr-1" />
+              Export Arrears
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Month Navigator */}
@@ -189,6 +218,9 @@ export default function RentCollection() {
         propertyFilter={propertyFilter}
         onPropertyFilterChange={setPropertyFilter}
         properties={properties}
+        tagFilter={tagFilter}
+        onTagFilterChange={setTagFilter}
+        availableTags={availableTags}
       />
 
       {/* Summary Cards */}
