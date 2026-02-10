@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download, Send, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, User, Building2, Calendar, Briefcase, Shield, Home, PoundSterling, Edit, FileText, Users, Upload, ExternalLink, Download, Send, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -12,6 +12,10 @@ import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useTenancyCompliance } from '@/hooks/useTenancyCompliance';
+import type { TenancyWithDetails } from '@/hooks/useTenancies';
+import type { Tenant } from '@/hooks/useTenants';
 import { useToast } from '@/hooks/use-toast';
 import { useTenant, TenantStatus } from '@/hooks/useTenants';
 import { useTenancies } from '@/hooks/useTenancies';
@@ -29,6 +33,124 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
    blacklisted: { label: 'Blacklisted', variant: 'destructive' },
  };
  
+function TenancyComplianceBadge({ tenancyId }: { tenancyId: string }) {
+  const { data: items } = useTenancyCompliance(tenancyId);
+
+  if (!items) return null;
+
+  const applicable = items.filter(i => i.is_applicable && i.is_required);
+  const completed = applicable.filter(i => i.completed_date);
+  const total = applicable.length;
+  const done = completed.length;
+  const isComplete = done === total && total > 0;
+
+  if (total === 0) return null;
+
+  return (
+    <Badge
+      variant="outline"
+      className={`text-[10px] shrink-0 ${
+        isComplete
+          ? 'border-primary/30 bg-primary/5 text-primary'
+          : 'border-destructive/30 bg-destructive/5 text-destructive'
+      }`}
+    >
+      {isComplete ? <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> : <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />}
+      {done}/{total}
+    </Badge>
+  );
+}
+
+interface TenancyRowProps {
+  tenancy: TenancyWithDetails;
+  tenantType: 'individual' | 'company';
+  tenantId: string;
+  isCompany: boolean;
+  tenant: Tenant;
+}
+
+function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: TenancyRowProps) {
+  return (
+    <AccordionItem value={tenancy.id} className="border rounded-lg">
+      <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50 rounded-lg [&[data-state=open]]:rounded-b-none">
+        <div className="flex items-center justify-between w-full pr-2">
+          {/* Left: property name + date range */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <Home className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="text-left min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium truncate">
+                  {tenancy.room.room_name === 'Whole Property'
+                    ? tenancy.property.address_line
+                    : tenancy.room.room_name}
+                </span>
+                <Badge variant={
+                  tenancy.status === 'active' ? 'default' :
+                  tenancy.status === 'notice' ? 'secondary' : 'outline'
+                } className="shrink-0 text-xs">
+                  {tenancy.status}
+                </Badge>
+                <TenancyComplianceBadge tenancyId={tenancy.id} />
+              </div>
+              {tenancy.room.room_name !== 'Whole Property' && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {tenancy.property.address_line}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {format(new Date(tenancy.start_date), 'dd MMM yyyy')} –{' '}
+                {tenancy.end_date ? format(new Date(tenancy.end_date), 'dd MMM yyyy') : 'Present'}
+              </p>
+            </div>
+          </div>
+
+          {/* Right: rent + payment info */}
+          <div className="text-right shrink-0 ml-4">
+            <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
+            <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
+            {(tenancy as any).payment_method && (
+              <Badge variant="outline" className="text-[10px] mt-0.5">
+                {(tenancy as any).payment_method.replace('_', ' ')}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </AccordionTrigger>
+
+      <AccordionContent className="px-4 pb-4 pt-2 border-t">
+        <div className="space-y-3">
+          {/* Agreement button */}
+          <div className="flex gap-2">
+            {tenancy.tenancy_agreement_url ? (
+              <Button variant="outline" size="sm" asChild>
+                <a href={tenancy.tenancy_agreement_url} target="_blank" rel="noopener noreferrer">
+                  <FileText className="h-3 w-3 mr-1" />
+                  View Agreement
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" className="text-destructive">
+                <Upload className="h-3 w-3 mr-1" />
+                Upload Agreement
+              </Button>
+            )}
+          </div>
+
+          {/* Compliance checklist — only for active/pending tenancies */}
+          {(tenancy.status === 'active' || tenancy.status === 'pending') && (
+            <TenancyComplianceChecklist
+              tenancyId={tenancy.id}
+              tenantType={tenantType}
+              tenantId={tenantId}
+              propertyId={tenancy.property?.id}
+            />
+          )}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
+
  export default function TenantDetail() {
     const { tenantId } = useParams<{ tenantId: string }>();
     const queryClient = useQueryClient();
@@ -90,12 +212,38 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
         return Array.from(docMap.values());
       },
       enabled: !!tenantId && !tenanciesLoading,
-    });
- 
-  if (tenantLoading || tenanciesLoading) return <AppLayout><LoadingState text="Loading tenant..." /></AppLayout>;
-   if (!tenant) return <AppLayout><div className="p-6">Tenant not found</div></AppLayout>;
- 
+     });
+
    const activeTenancy = tenancies?.find(t => t.status === 'active');
+   const activeTenancies = tenancies?.filter(t => t.status === 'active' || t.status === 'notice') || [];
+
+   // Compute compliance summary from cached tenancy compliance queries
+   const complianceSummary = useMemo(() => {
+     if (!activeTenancies.length) return { compliant: 0, incomplete: 0 };
+     
+     let compliant = 0;
+     let incomplete = 0;
+     
+     for (const tenancy of activeTenancies) {
+       const cached = queryClient.getQueryData<any[]>(['tenancy-compliance', tenancy.id]);
+       if (!cached) continue;
+       
+       const applicable = cached.filter((i: any) => i.is_applicable && i.is_required);
+       const completed = applicable.filter((i: any) => i.completed_date);
+       
+       if (applicable.length > 0 && completed.length === applicable.length) {
+         compliant++;
+       } else if (applicable.length > 0) {
+         incomplete++;
+       }
+     }
+     
+     return { compliant, incomplete };
+   }, [activeTenancies, queryClient]);
+ 
+   if (tenantLoading || tenanciesLoading) return <AppLayout><LoadingState text="Loading tenant..." /></AppLayout>;
+   if (!tenant) return <AppLayout><div className="p-6">Tenant not found</div></AppLayout>;
+
    const status = statusConfig[tenant.status];
    const isCompany = tenant.tenant_type === 'company';
     const displayName = isCompany
@@ -322,11 +470,16 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                  <Badge variant="outline" className="text-xs">{tenant.company_number}</Badge>
                )}
              </div>
-             {activeTenancy && (
-               <p className="text-muted-foreground">
-                 {activeTenancy.room.room_name} at {activeTenancy.property.address_line}
-               </p>
-             )}
+              {tenancies && tenancies.length > 0 && (
+                <p className="text-muted-foreground">
+                  {activeTenancies.length > 1
+                    ? `${activeTenancies.length} active properties · £${activeTenancies.reduce((s, t) => s + t.rent_amount_pcm, 0).toLocaleString()}/mo total rent`
+                    : activeTenancy
+                      ? `${activeTenancy.room.room_name === 'Whole Property' ? activeTenancy.property.address_line : activeTenancy.room.room_name + ' at ' + activeTenancy.property.address_line}`
+                      : 'No active tenancies'
+                  }
+                </p>
+              )}
            </div>
             <Button variant="outline" onClick={() => setShowEditDialog(true)}>
               <Edit className="h-4 w-4 mr-2" />
@@ -553,96 +706,84 @@ const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | '
                  <TabsTrigger value="documents">Documents</TabsTrigger>
                </TabsList>
  
-               <TabsContent value="tenancies" className="mt-4 space-y-4">
-                 <div className="flex justify-between items-center">
-                   <h3 className="font-semibold">Tenancy History</h3>
-                   {tenant.status !== 'blacklisted' && (
-                     <Button onClick={() => setShowTenancyDialog(true)}>
-                       <Home className="h-4 w-4 mr-2" />
-                       Create Tenancy
-                     </Button>
-                   )}
-                 </div>
- 
-                 {tenancies?.length === 0 ? (
-                   <Card>
-                     <CardContent className="py-8 text-center text-muted-foreground">
-                       No tenancies yet
-                     </CardContent>
-                   </Card>
-                 ) : (
-                   <div className="space-y-3">
-                     {tenancies?.map(tenancy => (
-                       <div key={tenancy.id} className="space-y-3">
-                         <Card>
-                           <CardContent className="p-4">
-                             <div className="flex justify-between items-start">
-                               <div>
-                                 <div className="flex items-center gap-2 mb-1">
-                                    <Home className="h-4 w-4" />
-                                    <span className="font-medium">{tenancy.room.room_name === 'Whole Property' ? tenancy.property.address_line : tenancy.room.room_name}</span>
-                                   <Badge variant={
-                                     tenancy.status === 'active' ? 'default' :
-                                     tenancy.status === 'notice' ? 'secondary' : 'outline'
-                                   }>
-                                     {tenancy.status}
-                                   </Badge>
-                                 </div>
-                                 <p className="text-sm text-muted-foreground">
-                                   {tenancy.property.address_line}
-                                 </p>
-                                 <p className="text-sm text-muted-foreground mt-1">
-                                   {format(new Date(tenancy.start_date), 'dd MMM yyyy')} - 
-                                   {tenancy.end_date ? format(new Date(tenancy.end_date), ' dd MMM yyyy') : ' Present'}
-                                 </p>
-                               </div>
-                                <div className="text-right">
-                                   <p className="font-semibold">£{tenancy.rent_amount_pcm.toLocaleString()}/mo</p>
-                                   <p className="text-xs text-muted-foreground">Due day: {tenancy.rent_due_day}</p>
-                                   {(tenancy as any).payment_method && (
-                                     <Badge variant="outline" className="mt-1 text-[10px]">
-                                       {(tenancy as any).payment_method.replace('_', ' ')}
-                                     </Badge>
-                                   )}
-                                   <div className="flex gap-1 mt-2 justify-end">
-                                     {tenancy.tenancy_agreement_url ? (
-                                       <Button variant="outline" size="sm" asChild>
-                                         <a href={tenancy.tenancy_agreement_url} target="_blank" rel="noopener noreferrer">
-                                           <FileText className="h-3 w-3 mr-1" />
-                                           View Agreement
-                                         </a>
-                                       </Button>
-                                     ) : (
-                                       <Button variant="outline" size="sm" className="text-amber-600">
-                                         <Upload className="h-3 w-3 mr-1" />
-                                         Upload Agreement
-                                       </Button>
-                                     )}
-                                   </div>
-                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                         {(tenancy.status === 'active' || tenancy.status === 'pending') && (
-                            <TenancyComplianceChecklist
-                              tenancyId={tenancy.id}
-                              tenantType={tenant.tenant_type as 'individual' | 'company'}
-                              tenantId={tenantId}
-                              propertyId={tenancy.property?.id}
-                            />
-                         )}
-                       </div>
-                     ))}
-                   </div>
-                 )}
+                <TabsContent value="tenancies" className="mt-4 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold">Tenancy History</h3>
+                    {tenant.status !== 'blacklisted' && (
+                      <Button onClick={() => setShowTenancyDialog(true)}>
+                        <Home className="h-4 w-4 mr-2" />
+                        Create Tenancy
+                      </Button>
+                    )}
+                  </div>
 
-                  {activeTenancy && (
+                  {/* Portfolio Summary Strip — only show for 2+ active tenancies */}
+                  {activeTenancies.length > 1 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs text-muted-foreground">Active Properties</p>
+                          <p className="text-xl font-bold">{activeTenancies.length}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs text-muted-foreground">Total Monthly Rent</p>
+                          <p className="text-xl font-bold text-primary">
+                            £{activeTenancies.reduce((s, t) => s + t.rent_amount_pcm, 0).toLocaleString()}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs text-muted-foreground">Fully Compliant</p>
+                          <p className="text-xl font-bold text-primary">
+                            {complianceSummary.compliant}/{activeTenancies.length}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-3">
+                          <p className="text-xs text-muted-foreground">Needs Attention</p>
+                          <p className={`text-xl font-bold ${complianceSummary.incomplete > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            {complianceSummary.incomplete}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* Tenancies — use Accordion for expandable rows */}
+                  {tenancies?.length === 0 ? (
+                    <Card>
+                      <CardContent className="py-8 text-center text-muted-foreground">
+                        No tenancies yet
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Accordion type="single" collapsible className="space-y-2">
+                      {tenancies?.map(tenancy => (
+                        <TenancyRow
+                          key={tenancy.id}
+                          tenancy={tenancy}
+                          tenantType={tenant.tenant_type as 'individual' | 'company'}
+                          tenantId={tenantId!}
+                          isCompany={isCompany}
+                          tenant={tenant}
+                        />
+                      ))}
+                    </Accordion>
+                  )}
+
+                  {/* Send Certificates — for multi-property, show per-property or bulk */}
+                  {activeTenancies.length > 0 && (
                     <Card>
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
                           <p className="font-medium">Send Compliance Certificates</p>
                           <p className="text-sm text-muted-foreground">
                             Email EPC & Gas Safety certificates to {tenant.compliance_contact_email || (isCompany ? (tenant.company_contact_email || tenant.email) : tenant.email)}
+                            {activeTenancies.length > 1 && ` for ${activeTenancies.length} properties`}
                           </p>
                         </div>
                         <Button
