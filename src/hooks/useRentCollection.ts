@@ -408,3 +408,311 @@ export function useRentSummary(month?: string) {
     bad_debt: schedule.filter(s => s.status === 'bad_debt').length,
   };
 }
+
+// ─── Arrears Aging ───
+
+export interface ArrearsAgingRow {
+  property_id: string;
+  property_address: string;
+  property_postcode: string | null;
+  bucket_30: number;
+  bucket_60: number;
+  bucket_90: number;
+  bucket_more: number;
+  total: number;
+  tenancies: {
+    tenancy_id: string;
+    tenant_name: string;
+    room_name: string;
+    bucket_30: number;
+    bucket_60: number;
+    bucket_90: number;
+    bucket_more: number;
+    total: number;
+    schedule_items: RentScheduleWithDetails[];
+  }[];
+}
+
+export function useArrearsAging() {
+  return useQuery({
+    queryKey: ['rent_schedule', 'arrears_aging'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rent_schedule')
+        .select(`
+          *,
+          tenancy:tenancies(
+            id,
+            tenant:tenants(id, first_name, last_name, email, phone),
+            room:rooms(room_name),
+            property:properties(id, address_line, postcode)
+          )
+        `)
+        .in('status', ['overdue', 'partial', 'due'])
+        .lte('due_date', new Date().toISOString().split('T')[0])
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+      
+      const today = new Date();
+      const items = data as RentScheduleWithDetails[];
+      const propertyMap = new Map<string, ArrearsAgingRow>();
+      
+      for (const item of items) {
+        const propId = item.tenancy.property.id;
+        const daysOverdue = Math.floor(
+          (today.getTime() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const amount = item.amount_outstanding;
+        
+        let bucket: 'bucket_30' | 'bucket_60' | 'bucket_90' | 'bucket_more';
+        if (daysOverdue <= 30) bucket = 'bucket_30';
+        else if (daysOverdue <= 60) bucket = 'bucket_60';
+        else if (daysOverdue <= 90) bucket = 'bucket_90';
+        else bucket = 'bucket_more';
+        
+        if (!propertyMap.has(propId)) {
+          propertyMap.set(propId, {
+            property_id: propId,
+            property_address: item.tenancy.property.address_line,
+            property_postcode: item.tenancy.property.postcode,
+            bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
+            tenancies: [],
+          });
+        }
+        
+        const row = propertyMap.get(propId)!;
+        row[bucket] += amount;
+        row.total += amount;
+        
+        let tenancy = row.tenancies.find(t => t.tenancy_id === item.tenancy.id);
+        if (!tenancy) {
+          tenancy = {
+            tenancy_id: item.tenancy.id,
+            tenant_name: `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`,
+            room_name: item.tenancy.room.room_name,
+            bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
+            schedule_items: [],
+          };
+          row.tenancies.push(tenancy);
+        }
+        tenancy[bucket] += amount;
+        tenancy.total += amount;
+        tenancy.schedule_items.push(item);
+      }
+      
+      return Array.from(propertyMap.values()).sort((a, b) => b.total - a.total);
+    },
+  });
+}
+
+// ─── Month Summary ───
+
+export interface MonthSummaryData {
+  totalOverdue: number;
+  dueToday: number;
+  thisMonthExpected: number;
+  thisMonthCollected: number;
+  nextMonthExpected: number;
+}
+
+export function useMonthSummary() {
+  return useQuery({
+    queryKey: ['rent_schedule', 'month_summary'],
+    queryFn: async () => {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const thisMonthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      const nextMonthStart = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
+      const nextMonthEnd = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
+      
+      const [overdueRes, dueTodayRes, thisMonthRes, nextMonthRes] = await Promise.all([
+        supabase
+          .from('rent_schedule')
+          .select('amount_outstanding')
+          .in('status', ['overdue', 'partial'])
+          .lt('due_date', todayStr),
+        supabase
+          .from('rent_schedule')
+          .select('amount_outstanding')
+          .eq('due_date', todayStr)
+          .neq('status', 'paid'),
+        supabase
+          .from('rent_schedule')
+          .select('rent_amount, additional_charges, amount_paid')
+          .gte('due_date', thisMonthStart)
+          .lt('due_date', nextMonthStart),
+        supabase
+          .from('rent_schedule')
+          .select('rent_amount, additional_charges')
+          .gte('due_date', nextMonthStart)
+          .lte('due_date', nextMonthEnd.toISOString().split('T')[0]),
+      ]);
+
+      return {
+        totalOverdue: overdueRes.data?.reduce((s, r) => s + (r.amount_outstanding || 0), 0) || 0,
+        dueToday: dueTodayRes.data?.reduce((s, r) => s + (r.amount_outstanding || 0), 0) || 0,
+        thisMonthExpected: thisMonthRes.data?.reduce((s, r) => s + r.rent_amount + r.additional_charges, 0) || 0,
+        thisMonthCollected: thisMonthRes.data?.reduce((s, r) => s + (r.amount_paid || 0), 0) || 0,
+        nextMonthExpected: nextMonthRes.data?.reduce((s, r) => s + r.rent_amount + r.additional_charges, 0) || 0,
+      } as MonthSummaryData;
+    },
+  });
+}
+
+// ─── Tenancy Ledger ───
+
+export interface LedgerEntry {
+  id: string;
+  date: string;
+  type: 'rent' | 'payment';
+  description: string;
+  status: RentStatus | 'payment' | null;
+  amount: number;
+  running_balance: number;
+  rent_schedule_id: string | null;
+  payment_id: string | null;
+  is_future: boolean;
+}
+
+export function useTenancyLedger(tenancyId: string | undefined) {
+  return useQuery({
+    queryKey: ['tenancy_ledger', tenancyId],
+    queryFn: async () => {
+      const [schedRes, payRes] = await Promise.all([
+        supabase
+          .from('rent_schedule')
+          .select('*')
+          .eq('tenancy_id', tenancyId!)
+          .order('due_date', { ascending: true }),
+        supabase
+          .from('rent_payments')
+          .select('*')
+          .eq('tenancy_id', tenancyId!)
+          .order('payment_date', { ascending: true }),
+      ]);
+
+      if (schedRes.error) throw schedRes.error;
+      if (payRes.error) throw payRes.error;
+
+      const today = new Date().toISOString().split('T')[0];
+      const entries: LedgerEntry[] = [];
+      
+      for (const item of schedRes.data || []) {
+        const periodStart = new Date(item.period_start);
+        const periodEnd = new Date(item.period_end);
+        entries.push({
+          id: item.id,
+          date: item.due_date,
+          type: 'rent',
+          description: `Rent (${periodStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${periodEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })})`,
+          status: item.status as RentStatus,
+          amount: item.rent_amount + (item.additional_charges || 0),
+          running_balance: 0,
+          rent_schedule_id: item.id,
+          payment_id: null,
+          is_future: item.due_date > today,
+        });
+      }
+      
+      for (const payment of payRes.data || []) {
+        entries.push({
+          id: payment.id,
+          date: payment.payment_date,
+          type: 'payment',
+          description: payment.reference ? `Payment (${payment.reference})` : 'Payment',
+          status: 'payment',
+          amount: -payment.amount,
+          running_balance: 0,
+          rent_schedule_id: payment.rent_schedule_id,
+          payment_id: payment.id,
+          is_future: false,
+        });
+      }
+      
+      // Sort ascending: charges before payments on same date
+      entries.sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        if (a.type === 'rent' && b.type === 'payment') return -1;
+        if (a.type === 'payment' && b.type === 'rent') return 1;
+        return 0;
+      });
+      
+      // Calculate running balance (only for non-future items)
+      let balance = 0;
+      for (const entry of entries) {
+        if (!entry.is_future) {
+          balance += entry.amount;
+          entry.running_balance = balance;
+        }
+      }
+      
+      // Return in reverse chronological order for display
+      return entries.reverse();
+    },
+    enabled: !!tenancyId,
+  });
+}
+
+// ─── Paid On Time Stats ───
+
+export function usePaidOnTimeStats(tenancyId: string | undefined) {
+  return useQuery({
+    queryKey: ['paid_on_time', tenancyId],
+    queryFn: async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      const [paidRes, allPastRes, paymentsRes] = await Promise.all([
+        supabase
+          .from('rent_schedule')
+          .select('id, due_date')
+          .eq('tenancy_id', tenancyId!)
+          .lte('due_date', todayStr)
+          .eq('status', 'paid'),
+        supabase
+          .from('rent_schedule')
+          .select('id')
+          .eq('tenancy_id', tenancyId!)
+          .lte('due_date', todayStr)
+          .neq('status', 'upcoming'),
+        supabase
+          .from('rent_payments')
+          .select('rent_schedule_id, payment_date')
+          .eq('tenancy_id', tenancyId!),
+      ]);
+
+      const paidItems = paidRes.data || [];
+      const totalPast = allPastRes.data?.length || 0;
+      
+      // Calculate average days late
+      const paymentMap = new Map<string, string>();
+      for (const p of paymentsRes.data || []) {
+        if (p.rent_schedule_id && !paymentMap.has(p.rent_schedule_id)) {
+          paymentMap.set(p.rent_schedule_id, p.payment_date);
+        }
+      }
+
+      let totalDaysLate = 0;
+      let lateCount = 0;
+      for (const item of paidItems) {
+        const paymentDate = paymentMap.get(item.id);
+        if (paymentDate && paymentDate > item.due_date) {
+          const daysLate = Math.floor(
+            (new Date(paymentDate).getTime() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)
+          );
+          totalDaysLate += daysLate;
+          lateCount++;
+        }
+      }
+      
+      return {
+        percentOnTime: totalPast > 0 ? Math.round((paidItems.length / totalPast) * 100) : 0,
+        avgDaysLate: lateCount > 0 ? Math.round(totalDaysLate / lateCount * 10) / 10 : 0,
+        totalPast,
+      };
+    },
+    enabled: !!tenancyId,
+  });
+}

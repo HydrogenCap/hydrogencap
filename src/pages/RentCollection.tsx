@@ -1,322 +1,144 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PoundSterling, Calendar, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2, Clock, TrendingUp, Eye, Download, Ban } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth } from 'date-fns';
+import { PoundSterling, Download, Building2, Users, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRentSchedule, useArrears, RentStatus, RentScheduleWithDetails } from '@/hooks/useRentCollection';
-import { LoadingState, EmptyState } from '@/components/common';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { useArrearsAging, useMonthSummary, useRentSchedule } from '@/hooks/useRentCollection';
+import { LoadingState } from '@/components/common';
+import { RentSummaryCards } from '@/components/rent/RentSummaryCards';
+import { ArrearsAgingTable } from '@/components/rent/ArrearsAgingTable';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
-import PaymentFilters from '@/components/rent/PaymentFilters';
 import { exportRentRollCSV, exportArrearsCSV } from '@/lib/rentCsvExporter';
+import { cn } from '@/lib/utils';
+import { format, startOfMonth } from 'date-fns';
 
-const statusConfig: Record<RentStatus, { label: string; color: string; icon: React.ElementType }> = {
-  upcoming: { label: 'Upcoming', color: 'bg-gray-100 text-gray-800', icon: Clock },
-  due: { label: 'Due Today', color: 'bg-blue-100 text-blue-800', icon: Calendar },
-  paid: { label: 'Paid', color: 'bg-green-100 text-green-800', icon: CheckCircle2 },
-  partial: { label: 'Partial', color: 'bg-amber-100 text-amber-800', icon: AlertTriangle },
-  overdue: { label: 'Overdue', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
-  bad_debt: { label: 'Bad Debt', color: 'bg-red-200 text-red-900', icon: Ban },
-};
+type Grouping = 'property' | 'tenancy' | 'none';
 
-function RentScheduleRow({ item, onRecordPayment, onView }: { item: RentScheduleWithDetails; onRecordPayment: () => void; onView: () => void }) {
-  const status = statusConfig[item.status];
-  const StatusIcon = status.icon;
+export default function RentCollection() {
+  const navigate = useNavigate();
+  const [grouping, setGrouping] = useState<Grouping>('property');
+  const [search, setSearch] = useState('');
+  const [propertyFilter, setPropertyFilter] = useState('all');
+
+  const { data: monthSummary, isLoading: summaryLoading } = useMonthSummary();
+  const { data: arrearsData, isLoading: arrearsLoading } = useArrearsAging();
+
+  // For exports — fetch current month schedule
+  const monthStr = format(startOfMonth(new Date()), 'yyyy-MM');
+  const { data: currentMonthSchedule } = useRentSchedule({ month: monthStr });
+
+  const isLoading = summaryLoading || arrearsLoading;
+
+  // Extract properties for filter
+  const properties = useMemo(() => {
+    if (!arrearsData) return [];
+    return arrearsData.map(r => ({ id: r.property_id, address_line: r.property_address }));
+  }, [arrearsData]);
+
+  // Filter arrears data
+  const filteredArrears = useMemo(() => {
+    if (!arrearsData) return [];
+    return arrearsData.filter(row => {
+      if (propertyFilter !== 'all' && row.property_id !== propertyFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        const searchable = [
+          row.property_address,
+          row.property_postcode,
+          ...row.tenancies.map(t => t.tenant_name),
+          ...row.tenancies.map(t => t.room_name),
+        ].filter(Boolean).join(' ').toLowerCase();
+        if (!searchable.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [arrearsData, propertyFilter, search]);
+
+  if (isLoading) return <AppLayout><LoadingState text="Loading rent collection..." /></AppLayout>;
+
+  const groupingOptions: { value: Grouping; label: string; icon: React.ElementType }[] = [
+    { value: 'property', label: 'Property', icon: Building2 },
+    { value: 'tenancy', label: 'Tenancy', icon: Users },
+    { value: 'none', label: 'No Grouping', icon: List },
+  ];
 
   return (
-    <Card className={item.status === 'overdue' ? 'border-destructive/30' : ''}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                <StatusIcon className="h-3 w-3" />
-                {status.label}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                Due: {format(new Date(item.due_date), 'dd MMM yyyy')}
-              </span>
-            </div>
-            <h4 className="font-medium">
-              {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name}
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              {item.tenancy.room.room_name} • {item.tenancy.property.address_line}
-            </p>
+    <AppLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <PoundSterling className="h-6 w-6" />
+              Rent Collection
+            </h1>
+            <p className="text-muted-foreground">Track rent payments and arrears</p>
           </div>
-
-          <div className="text-right shrink-0">
-            <p className="text-lg font-semibold">£{item.rent_amount.toLocaleString()}</p>
-            {item.amount_paid > 0 && (
-              <p className="text-sm text-green-600">Paid: £{item.amount_paid.toLocaleString()}</p>
-            )}
-            {item.amount_outstanding > 0 && item.status !== 'upcoming' && (
-              <p className="text-sm text-destructive">Owed: £{item.amount_outstanding.toLocaleString()}</p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" variant="outline" onClick={onView}>
-              <Eye className="h-4 w-4 mr-1" /> View
-            </Button>
-            {item.status !== 'paid' && (
-              <Button size="sm" onClick={onRecordPayment}>
-                Record Payment
+          <div className="flex gap-2">
+            {currentMonthSchedule && (
+              <Button variant="outline" size="sm" onClick={() => exportRentRollCSV(currentMonthSchedule)}>
+                <Download className="h-4 w-4 mr-1" />
+                Export Rent Roll
               </Button>
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
 
-export default function RentCollection() {
-  const navigate = useNavigate();
-  const [selectedMonth, setSelectedMonth] = useState(startOfMonth(new Date()));
-  const [paymentItem, setPaymentItem] = useState<RentScheduleWithDetails | null>(null);
-  
-  // Filters
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RentStatus | 'all'>('all');
-  const [propertyFilter, setPropertyFilter] = useState('all');
-  const [tagFilter, setTagFilter] = useState('all');
+        {/* Summary Cards */}
+        {monthSummary && <RentSummaryCards data={monthSummary} />}
 
-  const monthStr = format(selectedMonth, 'yyyy-MM');
-  const { data: schedule, isLoading } = useRentSchedule({ month: monthStr });
-  const { data: arrears } = useArrears();
-
-  // Extract unique properties for filter dropdown
-  const properties = useMemo(() => {
-    if (!schedule) return [];
-    const map = new Map<string, { id: string; address_line: string }>();
-    schedule.forEach(item => {
-      if (!map.has(item.tenancy.property.id)) {
-        map.set(item.tenancy.property.id, {
-          id: item.tenancy.property.id,
-          address_line: item.tenancy.property.address_line,
-        });
-      }
-    });
-    return Array.from(map.values());
-  }, [schedule]);
-
-  // Extract unique tags for filter
-  const availableTags = useMemo(() => {
-    if (!schedule) return [];
-    const tagSet = new Set<string>();
-    schedule.forEach(item => {
-      ((item as any).tags || []).forEach((t: string) => tagSet.add(t));
-    });
-    return Array.from(tagSet).sort();
-  }, [schedule]);
-
-  // Apply filters
-  const filteredSchedule = useMemo(() => {
-    if (!schedule) return [];
-    return schedule.filter(item => {
-      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
-      if (propertyFilter !== 'all' && item.tenancy.property.id !== propertyFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        const tenantName = `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`.toLowerCase();
-        const address = item.tenancy.property.address_line.toLowerCase();
-        const ref = ((item as any).payment_reference || '').toLowerCase();
-        if (!tenantName.includes(q) && !address.includes(q) && !ref.includes(q)) return false;
-      }
-      if (tagFilter !== 'all') {
-        const itemTags: string[] = (item as any).tags || [];
-        if (!itemTags.includes(tagFilter)) return false;
-      }
-      return true;
-    });
-  }, [schedule, statusFilter, propertyFilter, search]);
-
-  const summary = useMemo(() => {
-    if (!filteredSchedule.length && !schedule?.length) return null;
-    const items = filteredSchedule;
-    const totalExpected = items.reduce((sum, item) => sum + item.rent_amount + item.additional_charges, 0);
-    const totalReceived = items.reduce((sum, item) => sum + item.amount_paid, 0);
-    const totalOutstanding = items.reduce((sum, item) => sum + item.amount_outstanding, 0);
-    return {
-      totalExpected,
-      totalReceived,
-      totalOutstanding,
-      collectionRate: totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0,
-      counts: {
-        paid: items.filter(s => s.status === 'paid').length,
-        partial: items.filter(s => s.status === 'partial').length,
-        overdue: items.filter(s => s.status === 'overdue').length,
-        due: items.filter(s => s.status === 'due').length,
-        upcoming: items.filter(s => s.status === 'upcoming').length,
-      }
-    };
-  }, [filteredSchedule, schedule]);
-
-  if (isLoading) return <AppLayout><LoadingState text="Loading rent schedule..." /></AppLayout>;
-
-  const renderRows = (items: RentScheduleWithDetails[]) =>
-    items.length === 0 ? (
-      <EmptyState icon={PoundSterling} title="No payments" description="No payments match your filters" />
-    ) : (
-      items.map(item => (
-        <RentScheduleRow
-          key={item.id}
-          item={item}
-          onRecordPayment={() => setPaymentItem(item)}
-          onView={() => navigate(`/rent/${item.id}`)}
-        />
-      ))
-    );
-
-  return (
-    <AppLayout>
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <PoundSterling className="h-6 w-6" />
-            Rent Collection
-          </h1>
-          <p className="text-muted-foreground">Track rent payments and arrears</p>
+        {/* Grouping Tabs */}
+        <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden w-fit">
+          {groupingOptions.map((opt) => {
+            const Icon = opt.icon;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setGrouping(opt.value)}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors',
+                  grouping === opt.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportRentRollCSV(filteredSchedule)}>
-            <Download className="h-4 w-4 mr-1" />
-            Export Rent Roll
-          </Button>
-          {arrears && arrears.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => exportArrearsCSV(arrears)}>
-              <Download className="h-4 w-4 mr-1" />
-              Export Arrears
-            </Button>
-          )}
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 min-w-[200px] max-w-lg">
+            <Input
+              placeholder="Search by property, tenant, or room..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-4"
+            />
+          </div>
+          <Select value={propertyFilter} onValueChange={setPropertyFilter}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="All properties" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All properties</SelectItem>
+              {properties.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.address_line}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Arrears Aging Table */}
+        <ArrearsAgingTable data={filteredArrears} grouping={grouping} />
       </div>
-
-      {/* Month Navigator */}
-      <div className="flex items-center justify-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => setSelectedMonth(subMonths(selectedMonth, 1))}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <h2 className="text-xl font-semibold min-w-[200px] text-center">
-          {format(selectedMonth, 'MMMM yyyy')}
-        </h2>
-        <Button variant="outline" size="icon" onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <PaymentFilters
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        propertyFilter={propertyFilter}
-        onPropertyFilterChange={setPropertyFilter}
-        properties={properties}
-        tagFilter={tagFilter}
-        onTagFilterChange={setTagFilter}
-        availableTags={availableTags}
-      />
-
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Expected</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">£{summary.totalExpected.toLocaleString()}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-green-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Received</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">£{summary.totalReceived.toLocaleString()}</p>
-            </CardContent>
-          </Card>
-          <Card className={summary.totalOutstanding > 0 ? 'border-destructive/30' : ''}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={`text-2xl font-bold ${summary.totalOutstanding > 0 ? 'text-destructive' : ''}`}>
-                £{summary.totalOutstanding.toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-4 w-4" />
-                Collection Rate
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{summary.collectionRate}%</p>
-              <Progress value={summary.collectionRate} className="mt-2" />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Arrears Alert */}
-      {arrears && arrears.length > 0 && (
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              <div>
-                <p className="font-medium">
-                  {arrears.length} tenant{arrears.length > 1 ? 's' : ''} in arrears
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Total outstanding: £{arrears.reduce((sum, a) => sum + a.amount_outstanding, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Schedule List */}
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All ({filteredSchedule.length})</TabsTrigger>
-          <TabsTrigger value="action">
-            Needs Action ({(summary?.counts.overdue || 0) + (summary?.counts.partial || 0) + (summary?.counts.due || 0)})
-          </TabsTrigger>
-          <TabsTrigger value="paid">Paid ({summary?.counts.paid || 0})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-4 space-y-3">
-          {renderRows(filteredSchedule)}
-        </TabsContent>
-
-        <TabsContent value="action" className="mt-4 space-y-3">
-          {renderRows(filteredSchedule.filter(s => ['overdue', 'partial', 'due'].includes(s.status)))}
-        </TabsContent>
-
-        <TabsContent value="paid" className="mt-4 space-y-3">
-          {renderRows(filteredSchedule.filter(s => s.status === 'paid'))}
-        </TabsContent>
-      </Tabs>
-
-      <RecordPaymentDialog
-        item={paymentItem}
-        open={!!paymentItem}
-        onOpenChange={(open) => { if (!open) setPaymentItem(null); }}
-      />
-    </div>
     </AppLayout>
   );
 }

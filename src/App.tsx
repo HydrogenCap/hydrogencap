@@ -50,6 +50,7 @@ const Tenants = lazy(() => import("./pages/Tenants"));
 const TenantDetail = lazy(() => import("./pages/TenantDetail"));
 const RentCollection = lazy(() => import("./pages/RentCollection"));
 const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
+const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
 
 // Portal pages
@@ -318,6 +319,7 @@ const App = () => (
             <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
             <Route path="/tenants/:tenantId" element={<ProtectedRoute><TenantDetail /></ProtectedRoute>} />
             <Route path="/rent" element={<ProtectedRoute><RentCollection /></ProtectedRoute>} />
+            <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><TenancyLedger /></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><PaymentDetail /></ProtectedRoute>} />
             <Route path="/maintenance" element={<ProtectedRoute><MaintenanceRequests /></ProtectedRoute>} />
 
