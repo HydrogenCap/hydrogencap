@@ -5,74 +5,96 @@ import { Badge } from '@/components/ui/badge';
 import { useSubscription, TIERS, type SubscriptionTier } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Crown, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
+import { Check, Crown, Loader2, ExternalLink, RefreshCw, Star, Shield, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 
 const PLAN_DETAILS: {
   tier: SubscriptionTier;
   name: string;
   price: string;
+  annualPrice?: string;
+  annualSaving?: string;
   priceId: string | null;
   features: string[];
   propertyLimit: string;
+  idealFor: string;
+  popular?: boolean;
 }[] = [
   {
     tier: 'free',
-    name: 'Free',
+    name: 'Explorer',
     price: '£0',
     priceId: null,
-    propertyLimit: '3 properties',
+    propertyLimit: '2 properties',
     features: [
       'Core property tracking',
-      'Basic compliance register',
-      'Document storage',
+      '5 document uploads',
+      'Compliance register (view only)',
+      'Community / email support (48–72 hrs)',
     ],
+    idealFor: 'Testing the system before committing.',
   },
   {
-    tier: 'starter',
-    name: 'Starter',
+    tier: 'solo',
+    name: 'Solo Landlord',
     price: '£29',
-    priceId: TIERS.starter.price_id,
-    propertyLimit: '10 properties',
+    annualPrice: '£24/mo billed annually',
+    annualSaving: 'Save £60/year',
+    priceId: TIERS.solo.price_id,
+    propertyLimit: 'Up to 10 properties',
     features: [
-      'Everything in Free',
       'Full compliance tracking',
-      'Contractor management',
+      '100 document storage',
       'Tenant & rent management',
+      'Contractor management',
+      'Basic reports',
+      'Email support (24 hrs)',
     ],
+    idealFor: 'Individual landlords and small portfolios.',
   },
   {
-    tier: 'professional',
-    name: 'Professional',
+    tier: 'portfolio',
+    name: 'Portfolio',
     price: '£79',
-    priceId: TIERS.professional.price_id,
-    propertyLimit: '50 properties',
+    annualPrice: '£64/mo billed annually',
+    annualSaving: 'Save £180/year',
+    priceId: TIERS.portfolio.price_id,
+    propertyLimit: 'Up to 50 properties',
+    popular: true,
     features: [
-      'Everything in Starter',
       'AI compliance checker',
       'AI property valuations',
       'Bank-ready reports',
       'Ownership attribution',
+      'Portfolio analytics dashboard',
+      'Shareable document links',
+      'Priority email support',
     ],
+    idealFor: 'Growing portfolios and professional investors.',
   },
   {
-    tier: 'enterprise',
-    name: 'Enterprise',
+    tier: 'pro',
+    name: 'Pro',
     price: '£199',
-    priceId: TIERS.enterprise.price_id,
+    annualPrice: '£169/mo billed annually',
+    annualSaving: 'Save £360/year',
+    priceId: TIERS.pro.price_id,
     propertyLimit: 'Unlimited properties',
     features: [
-      'Everything in Professional',
-      'Portfolio AI chat',
-      'Passport autofill',
       'Shareholder portal',
       'Company secrets vault',
+      'Passport autofill',
+      'API access',
+      'Team roles & permissions',
       'Priority support',
+      'Dedicated onboarding call',
+      'SLA uptime guarantee',
     ],
+    idealFor: 'Agencies, HMO operators, and large portfolios.',
   },
 ];
 
-const TIER_ORDER: SubscriptionTier[] = ['free', 'starter', 'professional', 'enterprise'];
+const TIER_ORDER: SubscriptionTier[] = ['free', 'solo', 'portfolio', 'pro'];
 
 export function BillingSettings() {
   const { tier, subscribed, subscriptionEnd, checkSubscription, loading } = useSubscription();
@@ -131,15 +153,21 @@ export function BillingSettings() {
   const currentTierIndex = TIER_ORDER.indexOf(tier);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-8 max-w-6xl">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">Pricing Plans</h2>
+        <p className="text-muted-foreground">Simple, transparent pricing for property developers, landlords, and portfolio managers.</p>
+      </div>
+
       {/* Current plan summary */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-primary" />
-                Current Plan: {PLAN_DETAILS.find(p => p.tier === tier)?.name ?? 'Free'}
+                Current Plan: {PLAN_DETAILS.find(p => p.tier === tier)?.name ?? 'Explorer'}
               </CardTitle>
               <CardDescription>
                 {subscribed && subscriptionEnd
@@ -164,7 +192,7 @@ export function BillingSettings() {
       </Card>
 
       {/* Plans grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
         {PLAN_DETAILS.map((plan) => {
           const isCurrent = plan.tier === tier;
           const planIndex = TIER_ORDER.indexOf(plan.tier);
@@ -174,60 +202,115 @@ export function BillingSettings() {
           return (
             <Card
               key={plan.tier}
-              className={`relative bg-card border-border ${isCurrent ? 'ring-2 ring-primary' : ''}`}
+              className={`relative bg-card border-border flex flex-col ${
+                isCurrent ? 'ring-2 ring-primary' : ''
+              } ${plan.popular ? 'border-primary/50' : ''}`}
             >
               {isCurrent && (
                 <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                   Your Plan
                 </Badge>
               )}
+              {plan.popular && !isCurrent && (
+                <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary/90 text-primary-foreground">
+                  <Star className="h-3 w-3 mr-1" /> Most Popular
+                </Badge>
+              )}
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">{plan.name}</CardTitle>
-                <div className="text-2xl font-bold text-foreground">
-                  {plan.price}
-                  {plan.tier !== 'free' && <span className="text-sm font-normal text-muted-foreground">/mo</span>}
+                <div className="space-y-1">
+                  <div className="text-2xl font-bold text-foreground">
+                    {plan.price}
+                    {plan.tier !== 'free' && <span className="text-sm font-normal text-muted-foreground">/mo</span>}
+                  </div>
+                  {plan.annualPrice && (
+                    <p className="text-xs text-muted-foreground">{plan.annualPrice}</p>
+                  )}
+                  {plan.annualSaving && (
+                    <Badge variant="secondary" className="text-xs">{plan.annualSaving}</Badge>
+                  )}
                 </div>
-                <CardDescription>{plan.propertyLimit}</CardDescription>
+                <CardDescription className="text-xs font-medium">{plan.propertyLimit}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2 text-sm">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <span className="text-muted-foreground">{f}</span>
-                    </li>
-                  ))}
-                </ul>
+              <CardContent className="flex-1 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  {plan.tier !== 'free' && plan.tier !== 'solo' && (
+                    <p className="text-xs text-muted-foreground italic">
+                      Everything in {plan.tier === 'portfolio' ? 'Solo Landlord' : 'Portfolio'}, plus:
+                    </p>
+                  )}
+                  <ul className="space-y-2 text-sm">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span className="text-muted-foreground">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+                    <span className="font-medium text-foreground">Ideal for:</span> {plan.idealFor}
+                  </p>
+                </div>
 
-                {isCurrent ? (
-                  <Button variant="secondary" className="w-full" disabled>
-                    Current Plan
-                  </Button>
-                ) : plan.priceId && isUpgrade ? (
-                  <Button
-                    className="w-full"
-                    onClick={() => handleCheckout(plan.priceId!)}
-                    disabled={!!checkoutLoading || loading}
-                  >
-                    {checkoutLoading === plan.priceId ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                    ) : null}
-                    Upgrade
-                  </Button>
-                ) : plan.priceId && isDowngrade ? (
-                  <Button variant="outline" className="w-full" onClick={handleManage} disabled={portalLoading}>
-                    Downgrade
-                  </Button>
-                ) : plan.tier === 'free' ? (
-                  <Button variant="ghost" className="w-full" disabled>
-                    Free
-                  </Button>
-                ) : null}
+                <div>
+                  {isCurrent ? (
+                    <Button variant="secondary" className="w-full" disabled>
+                      Current Plan
+                    </Button>
+                  ) : plan.priceId && isUpgrade ? (
+                    <Button
+                      className="w-full"
+                      onClick={() => handleCheckout(plan.priceId!)}
+                      disabled={!!checkoutLoading || loading}
+                    >
+                      {checkoutLoading === plan.priceId ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : null}
+                      Upgrade
+                    </Button>
+                  ) : plan.priceId && isDowngrade ? (
+                    <Button variant="outline" className="w-full" onClick={handleManage} disabled={portalLoading}>
+                      Downgrade
+                    </Button>
+                  ) : plan.tier === 'free' ? (
+                    <Button variant="ghost" className="w-full" disabled>
+                      Free Forever
+                    </Button>
+                  ) : null}
+                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Trust signals */}
+      <Card className="bg-card border-border">
+        <CardContent className="py-6">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+            {['GDPR Compliant', 'UK Data Hosting', 'Secure Document Vault', 'Bank-Grade Encryption', 'Cancel Anytime', 'No Hidden Fees'].map((item) => (
+              <div key={item} className="flex items-center gap-1.5">
+                <Shield className="h-4 w-4 text-primary" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Enterprise CTA */}
+      <Card className="bg-muted/30 border-dashed border-border text-center">
+        <CardContent className="py-8 space-y-3">
+          <Zap className="h-8 w-8 text-primary mx-auto" />
+          <h3 className="text-lg font-semibold text-foreground">Need Something Bigger?</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Managing <strong>250+ properties</strong> or require bespoke features? Contact us for custom enterprise pricing.
+          </p>
+          <Button variant="outline" asChild>
+            <a href="/contact">Contact Us</a>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
