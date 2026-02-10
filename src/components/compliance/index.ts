@@ -14,3 +14,4 @@ export { ComplianceUploadDialog } from './ComplianceUploadDialog';
 export type { StatusType } from './ComplianceStatusCard';
  export { QuickRenewalDialog } from './QuickRenewalDialog';
  export { CalendarExportButton } from './CalendarExportButton';
+ export { ComplianceCalendarContent } from './ComplianceCalendarContent';
