@@ -2794,6 +2794,76 @@ export type Database = {
           },
         ]
       }
+      payment_reminders: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          org_id: string
+          recipient_email: string | null
+          recipient_name: string | null
+          reminder_type: string
+          rent_schedule_id: string
+          resend_id: string | null
+          sent_at: string
+          sent_via: string
+          status: string
+          tenancy_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          org_id: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          reminder_type: string
+          rent_schedule_id: string
+          resend_id?: string | null
+          sent_at?: string
+          sent_via?: string
+          status?: string
+          tenancy_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          org_id?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          reminder_type?: string
+          rent_schedule_id?: string
+          resend_id?: string | null
+          sent_at?: string
+          sent_via?: string
+          status?: string
+          tenancy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_rent_schedule_id_fkey"
+            columns: ["rent_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "rent_schedule"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       photos: {
         Row: {
           created_at: string
@@ -3719,6 +3789,7 @@ export type Database = {
           id: string
           notes: string | null
           org_id: string
+          payment_reference: string | null
           period_end: string
           period_start: string
           reminder_sent_at: string | null
@@ -3737,6 +3808,7 @@ export type Database = {
           id?: string
           notes?: string | null
           org_id: string
+          payment_reference?: string | null
           period_end: string
           period_start: string
           reminder_sent_at?: string | null
@@ -3755,6 +3827,7 @@ export type Database = {
           id?: string
           notes?: string | null
           org_id?: string
+          payment_reference?: string | null
           period_end?: string
           period_start?: string
           reminder_sent_at?: string | null
