@@ -306,6 +306,62 @@ export function useAcceptComplianceDocument() {
           .eq('id', propertyId);
       }
 
+      // 9. Auto-populate insurance_policies when accepting an insurance document
+      if (docType === 'building_insurance' || docType === 'public_liability_insurance') {
+        // Fetch extracted certifier data from the document
+        const { data: docData } = await supabase
+          .from('documents')
+          .select('extracted_certifier_company, extracted_reference_number, expiry_date, extracted_issue_date')
+          .eq('id', documentId)
+          .single();
+
+        if (docData) {
+          const insurerName = docData.extracted_certifier_company || 'Unknown Insurer';
+          const policyNumber = docData.extracted_reference_number || null;
+          const renewalDate = calculatedExpiryDate || docData.expiry_date || null;
+          const startDate = issueDate || docData.extracted_issue_date || null;
+
+          if (renewalDate) {
+            // Check for existing policy for this property
+            const { data: existingPolicy } = await supabase
+              .from('insurance_policies')
+              .select('id')
+              .eq('property_id', propertyId)
+              .limit(1);
+
+            if (existingPolicy && existingPolicy.length > 0) {
+              // Update existing policy
+              await supabase
+                .from('insurance_policies')
+                .update({
+                  insurer_name: insurerName,
+                  policy_number: policyNumber,
+                  renewal_date: renewalDate,
+                  start_date: startDate,
+                  status: 'active',
+                  notes: 'Auto-updated from uploaded insurance document',
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', existingPolicy[0].id);
+            } else {
+              // Create new policy
+              await supabase
+                .from('insurance_policies')
+                .insert({
+                  property_id: propertyId,
+                  insurer_name: insurerName,
+                  policy_number: policyNumber,
+                  renewal_date: renewalDate,
+                  start_date: startDate,
+                  premium_gbp: 0, // User will need to fill this in
+                  status: 'active',
+                  notes: 'Auto-created from uploaded insurance document',
+                });
+            }
+          }
+        }
+      }
+
       return { 
         success: true, 
         complianceItemId,
@@ -318,6 +374,9 @@ export function useAcceptComplianceDocument() {
       queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
       queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
+      queryClient.invalidateQueries({ queryKey: ['insurance-totals'] });
+      queryClient.invalidateQueries({ queryKey: ['insurance_policies'] });
       
       toast({
         title: 'Document accepted',

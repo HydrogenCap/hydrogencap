@@ -398,6 +398,8 @@ Respond with valid JSON only (no markdown):
       extracted_address_text: extraction.extracted_address,
       extracted_reference_number: extraction.extracted_reference_number,
       extracted_epc_rating: extraction.extracted_epc_rating,
+      extracted_certifier_name: extraction.extracted_certifier_name,
+      extracted_certifier_company: extraction.extracted_certifier_company,
     };
 
     // Parse and set dates if valid

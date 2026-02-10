@@ -1196,6 +1196,8 @@ export type Database = {
           document_date: string | null
           expiry_date: string | null
           extracted_address_text: string | null
+          extracted_certifier_company: string | null
+          extracted_certifier_name: string | null
           extracted_epc_rating: string | null
           extracted_issue_date: string | null
           extracted_reference_number: string | null
@@ -1241,6 +1243,8 @@ export type Database = {
           document_date?: string | null
           expiry_date?: string | null
           extracted_address_text?: string | null
+          extracted_certifier_company?: string | null
+          extracted_certifier_name?: string | null
           extracted_epc_rating?: string | null
           extracted_issue_date?: string | null
           extracted_reference_number?: string | null
@@ -1286,6 +1290,8 @@ export type Database = {
           document_date?: string | null
           expiry_date?: string | null
           extracted_address_text?: string | null
+          extracted_certifier_company?: string | null
+          extracted_certifier_name?: string | null
           extracted_epc_rating?: string | null
           extracted_issue_date?: string | null
           extracted_reference_number?: string | null
