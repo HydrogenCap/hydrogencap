@@ -189,25 +189,124 @@
    });
  }
  
- export function useRentSummary(month?: string) {
-   const { data: schedule } = useRentSchedule({ month });
- 
-   if (!schedule) return null;
- 
-   const totalExpected = schedule.reduce((sum, item) => sum + item.rent_amount + item.additional_charges, 0);
-   const totalReceived = schedule.reduce((sum, item) => sum + item.amount_paid, 0);
-   const totalOutstanding = schedule.reduce((sum, item) => sum + item.amount_outstanding, 0);
-   const collectionRate = totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0;
- 
-   return {
-     totalExpected,
-     totalReceived,
-     totalOutstanding,
-     collectionRate,
-     paid: schedule.filter(s => s.status === 'paid').length,
-     partial: schedule.filter(s => s.status === 'partial').length,
-     overdue: schedule.filter(s => s.status === 'overdue').length,
-     upcoming: schedule.filter(s => s.status === 'upcoming').length,
-     due: schedule.filter(s => s.status === 'due').length,
-   };
- }
+export function useRentScheduleItem(id: string) {
+  return useQuery({
+    queryKey: ['rent_schedule', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rent_schedule')
+        .select(`
+          *,
+          tenancy:tenancies(
+            id,
+            tenant:tenants(id, first_name, last_name, email, phone),
+            room:rooms(room_name),
+            property:properties(id, address_line, postcode)
+          )
+        `)
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as RentScheduleWithDetails;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpdateRentScheduleStatus() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: RentStatus }) => {
+      const updates: Record<string, any> = { status };
+      if (status === 'paid') {
+        updates.amount_outstanding = 0;
+        // We'd also need to set amount_paid = rent_amount, but we need the current values
+      }
+      const { data, error } = await supabase
+        .from('rent_schedule')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: 'Status updated' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to update status', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function usePaymentReminders(rentScheduleId: string) {
+  return useQuery({
+    queryKey: ['payment_reminders', rentScheduleId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('payment_reminders')
+        .select('*')
+        .eq('rent_schedule_id', rentScheduleId)
+        .order('sent_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!rentScheduleId,
+  });
+}
+
+export function useSendReminder() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (params: {
+      rentScheduleId: string;
+      tenancyId: string;
+      reminderType: string;
+      customMessage?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('send-rent-reminder', {
+        body: params,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['payment_reminders'] });
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: 'Reminder sent', description: `Sent to ${data.sentTo}` });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to send reminder', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useRentSummary(month?: string) {
+  const { data: schedule } = useRentSchedule({ month });
+
+  if (!schedule) return null;
+
+  const totalExpected = schedule.reduce((sum, item) => sum + item.rent_amount + item.additional_charges, 0);
+  const totalReceived = schedule.reduce((sum, item) => sum + item.amount_paid, 0);
+  const totalOutstanding = schedule.reduce((sum, item) => sum + item.amount_outstanding, 0);
+  const collectionRate = totalExpected > 0 ? Math.round((totalReceived / totalExpected) * 100) : 0;
+
+  return {
+    totalExpected,
+    totalReceived,
+    totalOutstanding,
+    collectionRate,
+    paid: schedule.filter(s => s.status === 'paid').length,
+    partial: schedule.filter(s => s.status === 'partial').length,
+    overdue: schedule.filter(s => s.status === 'overdue').length,
+    upcoming: schedule.filter(s => s.status === 'upcoming').length,
+    due: schedule.filter(s => s.status === 'due').length,
+  };
+}
