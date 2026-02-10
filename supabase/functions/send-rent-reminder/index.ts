@@ -25,9 +25,36 @@ serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { rentScheduleId, tenancyId, reminderType, customMessage } = await req.json();
-    if (!rentScheduleId || !tenancyId || !reminderType) {
-      throw new Error("Missing required fields: rentScheduleId, tenancyId, reminderType");
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const body = rawBody as Record<string, unknown>;
+    const rentScheduleId = typeof body.rentScheduleId === "string" ? body.rentScheduleId : null;
+    const tenancyId = typeof body.tenancyId === "string" ? body.tenancyId : null;
+    const reminderType = typeof body.reminderType === "string" ? body.reminderType : null;
+    const customMessage = typeof body.customMessage === "string" ? body.customMessage.slice(0, 5000) : undefined;
+
+    const validReminderTypes = ["pre_due", "due_date", "overdue"];
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!rentScheduleId || !uuidRegex.test(rentScheduleId)) {
+      return new Response(JSON.stringify({ error: "Invalid or missing rentScheduleId" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    if (!tenancyId || !uuidRegex.test(tenancyId)) {
+      return new Response(JSON.stringify({ error: "Invalid or missing tenancyId" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    if (!reminderType || !validReminderTypes.includes(reminderType)) {
+      return new Response(JSON.stringify({ error: "Invalid reminderType. Must be: pre_due, due_date, or overdue" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
     }
 
     // Get schedule item with tenant info
