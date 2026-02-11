@@ -12,11 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Shield, Loader2, CheckCircle2, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
+
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(72, 'Password must be less than 72 characters'),
+  newPassword: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
@@ -190,6 +190,7 @@ export function SecuritySettings() {
                       />
                     </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
                   </FormItem>
                 )}
               />

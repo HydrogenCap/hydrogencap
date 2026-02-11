@@ -11,9 +11,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2 } from 'lucide-react';
 
+import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
+
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: passwordSchema,
   fullName: z.string().optional(),
 });
 
@@ -200,6 +202,9 @@ function AuthPage() {
                         />
                       </FormControl>
                       <FormMessage />
+                      {!isLogin && (
+                        <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
+                      )}
                     </FormItem>
                   )}
                 />

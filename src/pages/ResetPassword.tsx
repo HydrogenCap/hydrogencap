@@ -12,10 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, CheckCircle2, AlertCircle } from 'lucide-react';
 
+import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
+
 const resetPasswordSchema = z.object({
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(72, 'Password must be less than 72 characters'),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -189,6 +189,7 @@ export default function ResetPassword() {
                           />
                         </FormControl>
                         <FormMessage />
+                        <p className="text-xs text-muted-foreground">{PASSWORD_HINT}</p>
                       </FormItem>
                     )}
                   />
