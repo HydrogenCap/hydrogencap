@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { ShareLinkButton } from '@/components/documents/ShareLinkButton';
+import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
 
 interface DocumentViewerModalProps {
   open: boolean;
@@ -28,29 +29,24 @@ interface DocumentViewerModalProps {
  * Extract storage path from a Supabase storage URL
  */
 function extractStoragePath(fileUrl: string): string | null {
-  // Pattern: .../storage/v1/object/public/compliance/...
   const publicMatch = fileUrl.match(/\/storage\/v1\/object\/public\/compliance\/(.+)$/);
   if (publicMatch) return publicMatch[1];
   
-  // Pattern: .../storage/v1/object/sign/compliance/...
   const signedMatch = fileUrl.match(/\/storage\/v1\/object\/sign\/compliance\/(.+?)(\?|$)/);
   if (signedMatch) return signedMatch[1];
   
-  // Try to extract just the path after 'compliance/'
   const simpleMatch = fileUrl.match(/compliance\/(.+?)(\?|$)/);
   if (simpleMatch) return simpleMatch[1];
   
   return null;
 }
 
-/**
- * Determine if a file type can be previewed inline
- */
 function canPreviewInline(fileType: string | null, fileName: string): boolean {
   if (!fileType && !fileName) return false;
   
   const previewableTypes = [
     'application/pdf',
+    'pdf',
     'image/jpeg',
     'image/png',
     'image/gif',
@@ -60,29 +56,20 @@ function canPreviewInline(fileType: string | null, fileName: string): boolean {
   
   if (fileType && previewableTypes.includes(fileType)) return true;
   
-  // Fallback to extension check
   const ext = fileName.split('.').pop()?.toLowerCase();
   const previewableExts = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
   return ext ? previewableExts.includes(ext) : false;
 }
 
-/**
- * Check if file is an image
- */
 function isImageFile(fileType: string | null, fileName: string): boolean {
   if (fileType?.startsWith('image/')) return true;
-  
   const ext = fileName.split('.').pop()?.toLowerCase();
   const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
   return ext ? imageExts.includes(ext) : false;
 }
 
-/**
- * Check if file is a PDF
- */
 function isPdfFile(fileType: string | null, fileName: string): boolean {
   if (fileType === 'application/pdf' || fileType === 'pdf') return true;
-  
   const ext = fileName.split('.').pop()?.toLowerCase();
   return ext === 'pdf';
 }
@@ -94,25 +81,18 @@ export function DocumentViewerModal({
   title 
 }: DocumentViewerModalProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const blobUrlRef = useRef<string | null>(null);
+
+  const isPdf = document ? isPdfFile(document.file_type, document.original_file_name) : false;
+  const { blobUrl: pdfBlobUrl, loading: pdfLoading, error: pdfError } = usePdfBlobUrl(
+    isPdf && signedUrl ? signedUrl : null
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    
-    // Clean up previous blob URL
-    if (blobUrlRef.current) {
-      URL.revokeObjectURL(blobUrlRef.current);
-      blobUrlRef.current = null;
-      setBlobUrl(null);
-    }
-
     async function getSignedUrl() {
       if (!document || !open) {
         setSignedUrl(null);
-        setBlobUrl(null);
         return;
       }
 
@@ -132,58 +112,27 @@ export function DocumentViewerModal({
           .from('compliance')
           .createSignedUrl(path, 3600);
 
-        if (cancelled) return;
-
         if (signError) {
           console.error('Failed to create signed URL:', signError);
           setSignedUrl(document.file_url);
         } else {
           setSignedUrl(data.signedUrl);
-          
-          // For PDFs, fetch as blob to bypass Content-Disposition: attachment
-          if (isPdfFile(document.file_type, document.original_file_name)) {
-            try {
-              const response = await fetch(data.signedUrl);
-              if (cancelled) return;
-              const pdfBlob = await response.blob();
-              // Ensure correct MIME type for PDF rendering
-              const typedBlob = pdfBlob.type === 'application/pdf' 
-                ? pdfBlob 
-                : new Blob([pdfBlob], { type: 'application/pdf' });
-              const objectUrl = URL.createObjectURL(typedBlob);
-              blobUrlRef.current = objectUrl;
-              if (!cancelled) {
-                setBlobUrl(objectUrl);
-              }
-            } catch (fetchErr) {
-              console.error('Failed to fetch PDF blob:', fetchErr);
-            }
-          }
         }
       } catch (err) {
         console.error('Error getting signed URL:', err);
-        if (!cancelled) setSignedUrl(document.file_url);
+        setSignedUrl(document.file_url);
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     }
 
     getSignedUrl();
-    
-    return () => {
-      cancelled = true;
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
   }, [document, open]);
 
   if (!document) return null;
 
   const canPreview = canPreviewInline(document.file_type, document.original_file_name);
   const isImage = isImageFile(document.file_type, document.original_file_name);
-  const isPdf = isPdfFile(document.file_type, document.original_file_name);
 
   const handleDownload = async () => {
     if (!signedUrl) return;
@@ -200,7 +149,6 @@ export function DocumentViewerModal({
       window.URL.revokeObjectURL(url);
       window.document.body.removeChild(a);
     } catch (err) {
-      // Fallback: open in new tab
       window.open(signedUrl, '_blank');
     }
   };
@@ -210,6 +158,8 @@ export function DocumentViewerModal({
       window.open(signedUrl, '_blank');
     }
   };
+
+  const isLoadingAny = loading || (isPdf && pdfLoading && !!signedUrl);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -237,9 +187,12 @@ export function DocumentViewerModal({
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden rounded-lg border bg-muted/30 relative">
-          {loading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
+          {isLoadingAny ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {loading ? 'Loading document...' : 'Rendering PDF...'}
+              </p>
             </div>
           ) : error ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
@@ -272,12 +225,29 @@ export function DocumentViewerModal({
                 className="max-w-full max-h-full object-contain"
               />
             </div>
-          ) : isPdf && (blobUrl || signedUrl) ? (
-            <iframe
-              src={`${blobUrl || signedUrl}#toolbar=1&navpanes=0`}
-              className="w-full h-full border-0"
-              title={document.original_file_name}
-            />
+          ) : isPdf && signedUrl ? (
+            pdfError ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
+                <AlertCircle className="h-12 w-12 text-destructive" />
+                <p className="text-destructive">{pdfError}</p>
+                <div className="flex gap-2">
+                  <Button onClick={handleDownload}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Instead
+                  </Button>
+                  <Button variant="outline" onClick={handleOpenInNewTab}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open in New Tab
+                  </Button>
+                </div>
+              </div>
+            ) : pdfBlobUrl ? (
+              <iframe
+                src={`${pdfBlobUrl}#toolbar=1&navpanes=0`}
+                className="w-full h-full border-0"
+                title={document.original_file_name}
+              />
+            ) : null
           ) : null}
         </div>
       </DialogContent>
