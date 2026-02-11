@@ -179,8 +179,24 @@ export default function SharedDocument() {
           return;
         }
 
+        // Generate a fresh short-lived signed URL instead of exposing the raw file_url
+        let secureUrl = doc.file_url;
+        const storagePath = doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/(.+?)(?:\?.*)?$/)?.[1];
+        if (storagePath) {
+          // Extract bucket and path from the storage URL
+          const parts = storagePath.split('/');
+          const bucket = parts[0];
+          const filePath = parts.slice(1).join('/');
+          const { data: signedData } = await supabase.storage
+            .from(bucket)
+            .createSignedUrl(filePath, 3600); // 1 hour expiry
+          if (signedData?.signedUrl) {
+            secureUrl = signedData.signedUrl;
+          }
+        }
+
         setDocument({
-          file_url: doc.file_url,
+          file_url: secureUrl,
           file_name: doc.original_file_name || 'Document',
           expires_at: shareLink.expires_at,
           is_expired: false,
