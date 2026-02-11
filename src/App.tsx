@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
@@ -12,6 +12,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { LoadingState, ErrorBoundary } from "@/components/common";
+import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
 
 // Lazy-loaded pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -68,13 +69,40 @@ const MarketingAbout = lazy(() => import("./pages/marketing/About"));
 const MarketingContact = lazy(() => import("./pages/marketing/Contact"));
 const MarketingDemo = lazy(() => import("./pages/marketing/Demo"));
 
+function isAuthError(error: unknown): boolean {
+  if (error && typeof error === 'object') {
+    const e = error as Record<string, unknown>;
+    if (e.status === 401 || e.status === 403) return true;
+    if (typeof e.message === 'string' && (e.message.includes('JWT') || e.message.includes('token'))) return true;
+  }
+  return false;
+}
+
+const queryCache = new QueryCache({
+  onError: (error) => {
+    if (isAuthError(error)) {
+      window.dispatchEvent(new CustomEvent('session-expired'));
+    }
+  },
+});
+
+const mutationCache = new MutationCache({
+  onError: (error) => {
+    if (isAuthError(error)) {
+      window.dispatchEvent(new CustomEvent('session-expired'));
+    }
+  },
+});
+
 const queryClient = new QueryClient({
+  queryCache,
+  mutationCache,
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000,        // 2 min — data stays fresh
-      gcTime: 10 * 60 * 1000,           // 10 min garbage collection
-      refetchOnWindowFocus: false,       // Stop refetch on tab switch
-      retry: 1,                          // Single retry on failure
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   },
@@ -90,6 +118,7 @@ const App = () => (
             <GoogleMapsProvider>
               <Toaster />
               <Sonner />
+              <SessionExpiryModal />
               <BrowserRouter>
                 <ErrorBoundary>
                 <Suspense fallback={<LoadingState text="Loading..." />}>

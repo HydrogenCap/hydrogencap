@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { FileText, Clock, AlertTriangle, Download, ArrowLeft } from 'lucide-react';
+import { FileText, Clock, AlertTriangle, Download, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/common/LoadingState';
+import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
 import logoImage from '@/assets/logo.png';
 
 interface SharedDocumentData {
@@ -14,6 +15,102 @@ interface SharedDocumentData {
   expires_at: string;
   is_expired: boolean;
   view_limit_reached: boolean;
+}
+
+function isPdfUrl(url: string): boolean {
+  return url.toLowerCase().includes('.pdf');
+}
+
+function isImageUrl(url: string): boolean {
+  return !!url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+}
+
+function SharedDocumentPreview({ document }: { document: SharedDocumentData }) {
+  const isPdf = isPdfUrl(document.file_url) || isPdfUrl(document.file_name);
+  const { blobUrl, dataUrl, loading: pdfLoading, error: pdfError } = usePdfBlobUrl(
+    isPdf ? document.file_url : null
+  );
+
+  if (isPdf) {
+    if (pdfLoading) {
+      return (
+        <div className="aspect-[3/4] border rounded-lg flex items-center justify-center bg-muted/50">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Loading PDF…</p>
+          </div>
+        </div>
+      );
+    }
+    if (pdfError) {
+      return (
+        <div className="text-center py-12 bg-muted/50 rounded-lg">
+          <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground mb-2">Failed to load PDF preview</p>
+        </div>
+      );
+    }
+    if (blobUrl || dataUrl) {
+      return (
+        <div className="aspect-[3/4] border rounded-lg overflow-hidden">
+          <object
+            data={`${dataUrl || blobUrl}#toolbar=1&navpanes=0`}
+            type="application/pdf"
+            className="w-full h-full"
+            title={document.file_name}
+          >
+            <iframe
+              src={`${blobUrl || dataUrl}#toolbar=1&navpanes=0`}
+              className="w-full h-full border-0"
+              title={document.file_name}
+            />
+          </object>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  if (isImageUrl(document.file_url)) {
+    return (
+      <div className="border rounded-lg overflow-hidden">
+        <img src={document.file_url} alt={document.file_name} className="w-full h-auto" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center py-12 bg-muted/50 rounded-lg">
+      <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+      <p className="text-muted-foreground">Preview not available for this file type</p>
+    </div>
+  );
+}
+
+function DownloadButton({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      window.document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      window.document.body.removeChild(a);
+    } catch {
+      window.open(fileUrl, '_blank');
+    }
+  };
+
+  return (
+    <Button onClick={handleDownload} className="w-full">
+      <Download className="mr-2 h-4 w-4" />
+      Download Document
+    </Button>
+  );
 }
 
 export default function SharedDocument() {
@@ -169,36 +266,9 @@ export default function SharedDocument() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Preview area for PDFs/images */}
-              {document.file_url.toLowerCase().endsWith('.pdf') ? (
-                <div className="aspect-[3/4] border rounded-lg overflow-hidden">
-                  <iframe
-                    src={document.file_url}
-                    className="w-full h-full"
-                    title={document.file_name}
-                  />
-                </div>
-              ) : document.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <img
-                    src={document.file_url}
-                    alt={document.file_name}
-                    className="w-full h-auto"
-                  />
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-muted/50 rounded-lg">
-                  <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Preview not available for this file type</p>
-                </div>
-              )}
+              <SharedDocumentPreview document={document} />
 
-              <Button asChild className="w-full">
-                <a href={document.file_url} target="_blank" rel="noopener noreferrer">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Document
-                </a>
-              </Button>
+              <DownloadButton fileUrl={document.file_url} fileName={document.file_name} />
             </CardContent>
           </Card>
         )}
