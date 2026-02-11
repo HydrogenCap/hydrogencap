@@ -118,8 +118,8 @@ const App = () => (
             <GoogleMapsProvider>
               <Toaster />
               <Sonner />
-              <SessionExpiryModal />
               <BrowserRouter>
+                <SessionExpiryModal />
                 <ErrorBoundary>
                 <RouteBoundary>
                 <Suspense fallback={<LoadingState text="Loading..." />}>
