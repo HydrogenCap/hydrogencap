@@ -94,6 +94,7 @@ export function DocumentViewerModal({
   title 
 }: DocumentViewerModalProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +102,10 @@ export function DocumentViewerModal({
     async function getSignedUrl() {
       if (!document || !open) {
         setSignedUrl(null);
+        if (blobUrl) {
+          URL.revokeObjectURL(blobUrl);
+          setBlobUrl(null);
+        }
         return;
       }
 
@@ -111,23 +116,32 @@ export function DocumentViewerModal({
         const path = extractStoragePath(document.file_url);
         
         if (!path) {
-          // If we can't extract path, try using the URL directly
           setSignedUrl(document.file_url);
           setLoading(false);
           return;
         }
 
-        // Generate signed URL (valid for 1 hour)
         const { data, error: signError } = await supabase.storage
           .from('compliance')
           .createSignedUrl(path, 3600);
 
         if (signError) {
           console.error('Failed to create signed URL:', signError);
-          // Fallback to original URL
           setSignedUrl(document.file_url);
         } else {
           setSignedUrl(data.signedUrl);
+          
+          // For PDFs, fetch as blob to bypass Content-Disposition: attachment
+          if (isPdfFile(document.file_type, document.original_file_name)) {
+            try {
+              const response = await fetch(data.signedUrl);
+              const blob = await response.blob();
+              const objectUrl = URL.createObjectURL(blob);
+              setBlobUrl(objectUrl);
+            } catch (fetchErr) {
+              console.error('Failed to fetch PDF blob:', fetchErr);
+            }
+          }
         }
       } catch (err) {
         console.error('Error getting signed URL:', err);
@@ -138,6 +152,12 @@ export function DocumentViewerModal({
     }
 
     getSignedUrl();
+    
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
   }, [document, open]);
 
   if (!document) return null;
@@ -233,9 +253,9 @@ export function DocumentViewerModal({
                 className="max-w-full max-h-full object-contain"
               />
             </div>
-          ) : isPdf && signedUrl ? (
+          ) : isPdf && (blobUrl || signedUrl) ? (
             <iframe
-              src={`${signedUrl}#toolbar=1&navpanes=0`}
+              src={`${blobUrl || signedUrl}#toolbar=1&navpanes=0`}
               className="w-full h-full border-0"
               title={document.original_file_name}
             />
