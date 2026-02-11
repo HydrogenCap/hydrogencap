@@ -88,14 +88,6 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     reasonRequired: 'Smoke alarms required on every floor (Smoke and CO Alarm Regs 2015)',
     reasonNotRequired: 'Not applicable',
   },
-  'Carbon Monoxide Alarm Declaration': {
-    category: 'Safety & Legal',
-    defaultRequired: true,
-    validityYears: null,
-    condition: (p: PropertyComplianceFeatures) => p.co_alarm_required !== false,
-    reasonRequired: 'CO alarms required in rooms with combustion appliances (gas, solid fuel)',
-    reasonNotRequired: 'No combustion appliances at property',
-  },
   'Fire Risk Assessment (FRA)': {
     category: 'Safety & Legal',
     defaultRequired: true,
