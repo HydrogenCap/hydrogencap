@@ -25,6 +25,7 @@ import {
   Upload,
   ShieldCheck,
 } from 'lucide-react';
+import { usePortfolioComplianceRequirements } from '@/hooks/useComplianceRequirements';
 import {
   Sidebar,
   SidebarContent,
@@ -45,10 +46,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
-import { useAllCompliance } from '@/hooks/useCompliance';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
-import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import logoImage from '@/assets/logo.png';
 
 interface NavItem {
@@ -95,7 +94,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { data: inboxDocuments } = useInboxDocuments();
-  const { data: allCompliance } = useAllCompliance();
+  const { stats: complianceStats } = usePortfolioComplianceRequirements();
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
   const { data: jobCounts } = useJobCounts();
 
@@ -105,14 +104,8 @@ export function AppSidebar() {
     d => d.review_status === 'pending' && d.extraction_status === 'completed'
   ).length || 0;
 
-  const expiredCount = allCompliance?.filter(
-    c => getComplianceItemStatus(c.expiry_date) === 'expired'
-  ).length || 0;
-
-  const expiringCount = allCompliance?.filter(
-    c => getComplianceItemStatus(c.expiry_date) === 'expiring_soon'
-  ).length || 0;
-
+  const expiredCount = complianceStats.totalExpired + complianceStats.totalMissing;
+  const expiringCount = complianceStats.totalExpiringSoon;
   const complianceAlertCount = expiredCount + expiringCount;
 
   const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox' || location.pathname === '/compliance-calendar';
