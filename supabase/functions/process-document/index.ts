@@ -36,7 +36,7 @@ const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "pat_testing": "PAT Testing",
   "fire_risk_assessment": "Fire Risk Assessment (FRA)",
   "hmo_licence": "HMO Licence",
-  "building_insurance": "Insurance Schedule",
+  "building_insurance": "Buildings Insurance Schedule",
   "public_liability_insurance": "Insurance Schedule",
   "asbestos_survey": "Asbestos Survey",
   "legionella_assessment": "Legionella Risk Assessment",

@@ -15,7 +15,7 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "pat_testing": "PAT Testing",
   "fire_risk_assessment": "Fire Risk Assessment (FRA)",
   "hmo_licence": "HMO Licence",
-  "building_insurance": "Insurance Schedule",
+  "building_insurance": "Buildings Insurance Schedule",
   "asbestos_survey": "Asbestos Survey",
   "legionella_assessment": "Legionella Risk Assessment",
   "planning_building_control": "Building Control Certificate",
@@ -114,7 +114,7 @@ const COMPLIANCE_TYPE_CODES: Record<string, string> = {
   'HMO Licence': 'HMOLicence',
   'Asbestos Survey': 'Asbestos',
   'Building Control Certificate': 'BuildingControl',
-  'Insurance Schedule': 'Insurance',
+  'Buildings Insurance Schedule': 'Insurance',
 };
 
 function generateComplianceFilename(params: {
