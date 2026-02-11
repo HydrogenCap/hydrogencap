@@ -85,7 +85,7 @@ export function DocumentViewerModal({
   const [error, setError] = useState<string | null>(null);
 
   const isPdf = document ? isPdfFile(document.file_type, document.original_file_name) : false;
-  const { blobUrl: pdfBlobUrl, loading: pdfLoading, error: pdfError } = usePdfBlobUrl(
+  const { blobUrl: pdfBlobUrl, dataUrl: pdfDataUrl, loading: pdfLoading, error: pdfError } = usePdfBlobUrl(
     isPdf && signedUrl ? signedUrl : null
   );
 
@@ -241,12 +241,19 @@ export function DocumentViewerModal({
                   </Button>
                 </div>
               </div>
-            ) : pdfBlobUrl ? (
-              <iframe
-                src={`${pdfBlobUrl}#toolbar=1&navpanes=0`}
-                className="w-full h-full border-0"
+            ) : (pdfBlobUrl || pdfDataUrl) ? (
+              <object
+                data={`${pdfDataUrl || pdfBlobUrl}#toolbar=1&navpanes=0`}
+                type="application/pdf"
+                className="w-full h-full"
                 title={document.original_file_name}
-              />
+              >
+                <iframe
+                  src={`${pdfBlobUrl || pdfDataUrl}#toolbar=1&navpanes=0`}
+                  className="w-full h-full border-0"
+                  title={document.original_file_name}
+                />
+              </object>
             ) : null
           ) : null}
         </div>

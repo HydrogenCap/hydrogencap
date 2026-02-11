@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 
 /**
  * Fetches a PDF from a URL and returns a blob: URL with correct MIME type.
- * This is needed because Supabase signed URLs often set Content-Disposition: attachment
- * which prevents inline PDF rendering in iframes.
+ * Also provides a base64 data URL as fallback for environments where
+ * Chrome blocks blob URLs in nested iframes.
  */
 export function usePdfBlobUrl(sourceUrl: string | null) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const blobUrlRef = useRef<string | null>(null);
@@ -20,6 +21,7 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
 
     if (!sourceUrl) {
       setBlobUrl(null);
+      setDataUrl(null);
       setLoading(false);
       setError(null);
       return;
@@ -48,6 +50,18 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
         
         blobUrlRef.current = url;
         setBlobUrl(url);
+
+        // Also create a base64 data URL as fallback for Chrome iframe restrictions
+        const uint8 = new Uint8Array(arrayBuffer);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+          binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+        }
+        const base64 = btoa(binary);
+        if (!cancelled) {
+          setDataUrl(`data:application/pdf;base64,${base64}`);
+        }
       } catch (err: any) {
         if (!cancelled) {
           console.error('PDF blob fetch error:', err);
@@ -71,5 +85,5 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
     };
   }, [sourceUrl]);
 
-  return { blobUrl, loading, error };
+  return { blobUrl, dataUrl, loading, error };
 }
