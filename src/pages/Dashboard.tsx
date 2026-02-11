@@ -28,6 +28,7 @@ import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
 import { ThisMonthWidget } from '@/components/dashboard/ThisMonthWidget';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import { UpcomingExpirationsWidget } from '@/components/dashboard/UpcomingExpirationsWidget';
+import { DashboardCalendarWidget } from '@/components/dashboard/DashboardCalendarWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SectionCard } from '@/components/dashboard/SectionCard';
@@ -437,13 +438,16 @@ function DashboardPage() {
                   )}
                 </SectionCard>
 
-                {/* Widgets Row: This Month + Actions Required */}
-                <div className="grid gap-6 lg:grid-cols-2">
+                {/* Widgets Row: This Month + Actions Required + Calendar */}
+                <div className="grid gap-6 lg:grid-cols-3">
                   <ErrorBoundary>
                     <ThisMonthWidget />
                   </ErrorBoundary>
                   <ErrorBoundary>
                     <ActionsRequiredWidget />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <DashboardCalendarWidget />
                   </ErrorBoundary>
                 </div>
 
@@ -475,7 +479,7 @@ function DashboardPage() {
                   <MissingComplianceWidget />
                 </ErrorBoundary>
                 <ErrorBoundary>
-                  <UpcomingExpirationsWidget />
+                  <DashboardCalendarWidget />
                 </ErrorBoundary>
                 <ErrorBoundary>
                   {filteredProperties.length > 0 && (
