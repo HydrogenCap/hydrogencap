@@ -33,7 +33,7 @@ const MissingInfo = lazy(() => import("./pages/MissingInfo"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DashboardMap = lazy(() => import("./pages/DashboardMap"));
 const Timeline = lazy(() => import("./pages/Timeline"));
-const RefinanceCalendar = lazy(() => import("./pages/RefinanceCalendar"));
+// RefinanceCalendar removed — merged into ComplianceCalendar
 const ComplianceCalendar = lazy(() => import("./pages/ComplianceCalendar"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const Reports = lazy(() => import("./pages/Reports"));
@@ -270,11 +270,7 @@ const App = () => (
             />
             <Route
               path="/refinance-calendar"
-              element={
-                <ProtectedRoute>
-                  <RefinanceCalendar />
-                </ProtectedRoute>
-              }
+              element={<Navigate to="/compliance-calendar" replace />}
             />
             <Route
               path="/chat"

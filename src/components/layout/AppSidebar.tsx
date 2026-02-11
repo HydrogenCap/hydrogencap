@@ -8,14 +8,12 @@ import {
   Inbox,
   TrendingUp,
   Shield,
-  ChevronDown,
   FileText,
   MessageSquare,
   AlertCircle,
   ClipboardList,
   Construction,
   History,
-  CalendarDays,
   CalendarCheck,
   AlertTriangle,
   HardHat,
@@ -23,7 +21,6 @@ import {
   PoundSterling,
   Wrench,
   Upload,
-  ShieldCheck,
 } from 'lucide-react';
 import { usePortfolioComplianceRequirements } from '@/hooks/useComplianceRequirements';
 import {
@@ -37,12 +34,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
@@ -54,7 +47,7 @@ interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  badgeType?: 'actions' | 'jobs';
+  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox';
 }
 
 const portfolioItems: NavItem[] = [
@@ -67,7 +60,9 @@ const portfolioItems: NavItem[] = [
 
 const operationsItems: NavItem[] = [
   { title: 'Actions', icon: AlertTriangle, href: '/actions', badgeType: 'actions' },
-  // Compliance is rendered separately as a collapsible
+  { title: 'Compliance', icon: Shield, href: '/compliance', badgeType: 'compliance' },
+  { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
+  { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
   { title: 'Tenants', icon: Users, href: '/tenants' },
@@ -78,7 +73,6 @@ const operationsItems: NavItem[] = [
 const intelligenceItems: NavItem[] = [
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
   { title: 'Reports', icon: FileText, href: '/reports' },
-  { title: 'Refinance', icon: CalendarDays, href: '/refinance-calendar' },
   { title: 'Timeline', icon: History, href: '/timeline' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
 ];
@@ -108,8 +102,6 @@ export function AppSidebar() {
   const expiringCount = complianceStats.totalExpiringSoon;
   const complianceAlertCount = expiredCount + expiringCount;
 
-  const isComplianceActive = location.pathname === '/compliance' || location.pathname === '/inbox' || location.pathname === '/compliance-calendar';
-
   const isActive = (href: string) =>
     location.pathname === href ||
     (href !== '/dashboard' && location.pathname.startsWith(href));
@@ -122,6 +114,26 @@ export function AppSidebar() {
           className="h-5 min-w-5 px-1.5 text-xs"
         >
           {actionsCount}
+        </Badge>
+      );
+    }
+    if (item.badgeType === 'compliance' && complianceAlertCount > 0) {
+      return (
+        <Badge
+          variant={expiredCount > 0 ? "destructive" : "secondary"}
+          className="h-5 min-w-5 px-1.5 text-xs"
+        >
+          {complianceAlertCount}
+        </Badge>
+      );
+    }
+    if (item.badgeType === 'inbox' && pendingCount > 0) {
+      return (
+        <Badge
+          variant="secondary"
+          className="h-5 min-w-5 px-1.5 text-xs"
+        >
+          {pendingCount}
         </Badge>
       );
     }
@@ -154,80 +166,6 @@ export function AppSidebar() {
     </>
   );
 
-  const renderComplianceCollapsible = () => (
-    <Collapsible defaultOpen={isComplianceActive} className="group/collapsible">
-      <SidebarMenuItem>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton isActive={isComplianceActive}>
-            <Shield className="h-4 w-4" />
-            <span className="flex-1">Compliance</span>
-            {(complianceAlertCount > 0 || pendingCount > 0) && (
-              <Badge
-                variant={expiredCount > 0 ? "destructive" : "secondary"}
-                className="h-5 min-w-5 px-1.5 text-xs mr-1"
-              >
-                {complianceAlertCount + pendingCount}
-              </Badge>
-            )}
-            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-          </SidebarMenuButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarMenuSub>
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                asChild
-                isActive={location.pathname === '/compliance'}
-              >
-                <Link to="/compliance">
-                  <span>Register</span>
-                  {complianceAlertCount > 0 && (
-                    <Badge
-                      variant={expiredCount > 0 ? "destructive" : "secondary"}
-                      className="h-5 min-w-5 px-1.5 text-xs ml-auto"
-                    >
-                      {complianceAlertCount}
-                    </Badge>
-                  )}
-                </Link>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                asChild
-                isActive={location.pathname === '/inbox'}
-              >
-                <Link to="/inbox">
-                  <Inbox className="h-3 w-3" />
-                  <span>Inbox</span>
-                  {pendingCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="h-5 min-w-5 px-1.5 text-xs ml-auto"
-                    >
-                      {pendingCount}
-                    </Badge>
-                  )}
-                </Link>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-            <SidebarMenuSubItem>
-              <SidebarMenuSubButton
-                asChild
-                isActive={location.pathname === '/compliance-calendar'}
-              >
-                <Link to="/compliance-calendar">
-                  <CalendarCheck className="h-3 w-3" />
-                  <span>Calendar</span>
-                </Link>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          </SidebarMenuSub>
-        </CollapsibleContent>
-      </SidebarMenuItem>
-    </Collapsible>
-  );
-
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
@@ -257,7 +195,6 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {renderNavItems(operationsItems)}
-              {renderComplianceCollapsible()}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
