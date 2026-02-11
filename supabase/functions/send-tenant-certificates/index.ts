@@ -33,6 +33,16 @@ serve(async (req: Request) => {
       throw new Error("Missing required fields: tenantId, propertyId, complianceTypes");
     }
 
+    // Verify user belongs to an org and scope queries
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("org_id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!membership?.org_id) throw new Error("User has no organization");
+
     // Get tenant details
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
@@ -153,14 +163,8 @@ serve(async (req: Request) => {
 
     console.log("Email sent:", emailResult);
 
-    // Get org_id for the document record
-    const { data: orgData } = await supabase
-      .from("profiles")
-      .select("org_id")
-      .eq("id", user.id)
-      .single();
-
-    const orgId = orgData?.org_id;
+    // Use the org_id already verified from membership
+    const orgId = membership.org_id;
 
     if (orgId) {
       // Record proof of sending in documents table
