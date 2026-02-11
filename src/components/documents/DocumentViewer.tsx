@@ -45,7 +45,7 @@ export function DocumentViewer({
     document.file_type === 'application/pdf' ||
     document.original_file_name?.toLowerCase().endsWith('.pdf');
 
-  const { blobUrl: pdfBlobUrl, loading: pdfLoading, error: pdfError } = usePdfBlobUrl(
+  const { blobUrl: pdfBlobUrl, dataUrl: pdfDataUrl, loading: pdfLoading, error: pdfError } = usePdfBlobUrl(
     isPdf && open ? document.file_url : null
   );
 
@@ -105,12 +105,19 @@ export function DocumentViewer({
                     Download to View
                   </Button>
                 </div>
-              ) : pdfBlobUrl ? (
-                <iframe
-                  src={`${pdfBlobUrl}#view=FitH`}
-                  className="w-full h-full border-0"
+              ) : (pdfBlobUrl || pdfDataUrl) ? (
+                <object
+                  data={`${pdfDataUrl || pdfBlobUrl}#view=FitH`}
+                  type="application/pdf"
+                  className="w-full h-full"
                   title={document.display_name || document.original_file_name}
-                />
+                >
+                  <iframe
+                    src={`${pdfBlobUrl || pdfDataUrl}#view=FitH`}
+                    className="w-full h-full border-0"
+                    title={document.display_name || document.original_file_name}
+                  />
+                </object>
               ) : null
             ) : (
               <div className="text-center">
