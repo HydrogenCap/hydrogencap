@@ -658,6 +658,243 @@ export function useTenancyLedger(tenancyId: string | undefined) {
 
 // ─── Paid On Time Stats ───
 
+// ─── Bulk Actions ───
+
+export function useBulkMarkPaid() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      items,
+      paymentMethod,
+      paymentDate,
+      notes,
+      onProgress,
+    }: {
+      items: RentScheduleWithDetails[];
+      paymentMethod: string;
+      paymentDate: 'due_date' | string;
+      notes: string;
+      onProgress?: (count: number) => void;
+    }) => {
+      const orgId = await getUserOrgId();
+      if (!orgId) throw new Error('No organization found');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const results = { success: 0, failed: 0, errors: [] as string[] };
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        try {
+          const actualPaymentDate = paymentDate === 'due_date'
+            ? item.due_date
+            : paymentDate;
+
+          const { error: payError } = await supabase
+            .from('rent_payments')
+            .insert({
+              org_id: orgId,
+              tenancy_id: item.tenancy_id,
+              rent_schedule_id: item.id,
+              amount: item.amount_outstanding,
+              payment_date: actualPaymentDate,
+              payment_method: paymentMethod,
+              reference: null,
+              notes,
+              recorded_by: user?.id || null,
+            });
+
+          if (payError) throw payError;
+
+          const { error: schedError } = await supabase
+            .from('rent_schedule')
+            .update({
+              status: 'paid',
+              amount_paid: item.rent_amount + (item.additional_charges || 0),
+              amount_outstanding: 0,
+            })
+            .eq('id', item.id);
+
+          if (schedError) throw schedError;
+
+          results.success++;
+        } catch (err: any) {
+          results.failed++;
+          results.errors.push(
+            `${item.tenancy.property.address_line}: ${err.message}`
+          );
+        }
+        onProgress?.(i + 1);
+      }
+
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['rent_payments'] });
+
+      if (results.failed === 0) {
+        toast({ title: `${results.success} payments recorded` });
+      } else {
+        toast({
+          title: `${results.success} succeeded, ${results.failed} failed`,
+          description: results.errors.slice(0, 3).join('\n'),
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      toast({ title: 'Bulk payment failed', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useBulkWriteOff() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      items,
+      reason,
+    }: {
+      items: RentScheduleWithDetails[];
+      reason?: string;
+    }) => {
+      const ids = items.map(item => item.id);
+      const { error } = await supabase
+        .from('rent_schedule')
+        .update({
+          status: 'bad_debt',
+          notes: reason ? `Bad debt write-off: ${reason}` : 'Bulk write-off as bad debt',
+        })
+        .in('id', ids);
+
+      if (error) throw error;
+      return { count: ids.length };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: `${result.count} items written off` });
+    },
+    onError: (error) => {
+      toast({ title: 'Write-off failed', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useBulkAddNote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      items,
+      note,
+      mode,
+    }: {
+      items: RentScheduleWithDetails[];
+      note: string;
+      mode: 'append' | 'replace';
+    }) => {
+      const today = new Date().toLocaleDateString('en-GB');
+      let count = 0;
+
+      for (const item of items) {
+        let newNotes: string;
+        if (mode === 'replace') {
+          newNotes = note;
+        } else {
+          const separator = `\n--- ${today} ---\n`;
+          newNotes = item.notes
+            ? `${item.notes}${separator}${note}`
+            : note;
+        }
+
+        const { error } = await supabase
+          .from('rent_schedule')
+          .update({ notes: newNotes })
+          .eq('id', item.id);
+
+        if (!error) count++;
+      }
+
+      return { count };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: `Note added to ${result.count} items` });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to add notes', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useBulkSendReminder() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      items,
+      reminderType,
+      customMessage,
+    }: {
+      items: RentScheduleWithDetails[];
+      reminderType: string;
+      customMessage?: string;
+    }) => {
+      const results = { sent: 0, skipped: 0, failed: 0 };
+
+      for (const item of items) {
+        const tenant = item.tenancy?.tenant as any;
+        const email = tenant?.email;
+        if (!email) {
+          results.skipped++;
+          continue;
+        }
+
+        try {
+          const { error } = await supabase.functions.invoke('send-rent-reminder', {
+            body: {
+              rentScheduleId: item.id,
+              tenancyId: item.tenancy_id,
+              reminderType,
+              customMessage,
+            },
+          });
+          if (error) throw error;
+          results.sent++;
+        } catch {
+          results.failed++;
+        }
+      }
+
+      return results;
+    },
+    onSuccess: (results) => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['payment_reminders'] });
+
+      const parts = [];
+      if (results.sent > 0) parts.push(`${results.sent} sent`);
+      if (results.skipped > 0) parts.push(`${results.skipped} skipped (no email)`);
+      if (results.failed > 0) parts.push(`${results.failed} failed`);
+
+      toast({
+        title: 'Reminders processed',
+        description: parts.join(', '),
+        variant: results.failed > 0 ? 'destructive' : 'default',
+      });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to send reminders', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function usePaidOnTimeStats(tenancyId: string | undefined) {
   return useQuery({
     queryKey: ['paid_on_time', tenancyId],
