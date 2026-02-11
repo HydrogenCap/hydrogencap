@@ -1,6 +1,7 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase } from '@/integrations/supabase/client';
  import { useToast } from '@/hooks/use-toast';
+ import { fetchUserOrgId } from './useUserOrg';
  
  export interface InsurancePolicy {
    id: string;
@@ -137,27 +138,29 @@
        contentsCoverGbp?: number;
        notes?: string;
      }) => {
-       const { data, error } = await supabase
-         .from('insurance_policies')
-         .insert({
-           property_id: policy.propertyId,
-           insurer_name: policy.insurerName,
-           policy_number: policy.policyNumber || null,
-           policy_type: policy.policyType || 'landlord',
-           cover_type: policy.coverType || null,
-           start_date: policy.startDate || null,
-           renewal_date: policy.renewalDate,
-           premium_gbp: policy.premiumGbp,
-           excess_gbp: policy.excessGbp || null,
-           payment_frequency: policy.paymentFrequency || 'annual',
-           auto_renew: policy.autoRenew || false,
-           buildings_cover_gbp: policy.buildingsCoverGbp || null,
-           contents_cover_gbp: policy.contentsCoverGbp || null,
-           notes: policy.notes || null,
-           status: 'active',
-         })
-         .select()
-         .single();
+        const orgId = await fetchUserOrgId();
+        const { data, error } = await supabase
+          .from('insurance_policies')
+          .insert({
+            org_id: orgId,
+            property_id: policy.propertyId,
+            insurer_name: policy.insurerName,
+            policy_number: policy.policyNumber || null,
+            policy_type: policy.policyType || 'landlord',
+            cover_type: policy.coverType || null,
+            start_date: policy.startDate || null,
+            renewal_date: policy.renewalDate,
+            premium_gbp: policy.premiumGbp,
+            excess_gbp: policy.excessGbp || null,
+            payment_frequency: policy.paymentFrequency || 'annual',
+            auto_renew: policy.autoRenew || false,
+            buildings_cover_gbp: policy.buildingsCoverGbp || null,
+            contents_cover_gbp: policy.contentsCoverGbp || null,
+            notes: policy.notes || null,
+            status: 'active',
+          })
+          .select()
+          .single();
  
        if (error) throw error;
        return data;

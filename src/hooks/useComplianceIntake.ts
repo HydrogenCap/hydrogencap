@@ -353,12 +353,13 @@ export function useAcceptComplianceDocument() {
               await supabase
                 .from('insurance_policies')
                 .insert({
+                  org_id: orgId,
                   property_id: propertyId,
                   insurer_name: insurerName,
                   policy_number: policyNumber,
                   renewal_date: renewalDate,
                   start_date: startDate,
-                  premium_gbp: 0, // User will need to fill this in
+                  premium_gbp: 0,
                   status: 'active',
                   notes: 'Auto-created from uploaded insurance document',
                 });
