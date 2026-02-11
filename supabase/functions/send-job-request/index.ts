@@ -126,7 +126,25 @@
      return new Response('ok', { headers: corsHeaders });
    }
  
-   try {
+  try {
+     // Authenticate the caller
+     const authHeader = req.headers.get('Authorization');
+     if (!authHeader?.startsWith('Bearer ')) {
+       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+         status: 401,
+         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+       });
+     }
+
+     const token = authHeader.replace('Bearer ', '');
+     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+     if (authError || !user) {
+       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+         status: 401,
+         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+       });
+     }
+
      const { jobId, customMessage }: JobRequestParams = await req.json();
  
      if (!jobId) {
@@ -135,7 +153,15 @@
          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
        });
      }
- 
+
+     // Verify user belongs to the same org as the job
+     const { data: membership } = await supabase
+       .from('memberships')
+       .select('org_id')
+       .eq('user_id', user.id)
+       .limit(1)
+       .maybeSingle();
+
      console.log('Processing job request:', jobId);
  
     // Get job details with related data
@@ -154,6 +180,14 @@
        console.error('Job not found:', jobError);
        return new Response(JSON.stringify({ error: 'Job not found' }), { 
          status: 404,
+         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+       });
+     }
+
+     // Verify the job belongs to the user's org
+     if (membership && job.org_id !== membership.org_id) {
+       return new Response(JSON.stringify({ error: 'Access denied' }), {
+         status: 403,
          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
        });
      }

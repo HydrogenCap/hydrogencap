@@ -149,10 +149,11 @@ serve(async (req: Request) => {
 
     // Get org_id
     const { data: orgData } = await supabase
-      .from("profiles")
+      .from("memberships")
       .select("org_id")
-      .eq("id", user.id)
-      .single();
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
 
     if (orgData?.org_id) {
       // Record reminder
