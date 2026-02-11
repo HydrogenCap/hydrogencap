@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Download, ExternalLink, X, FileText, Loader2, AlertCircle, Link2 } from 'lucide-react';
 import {
   Dialog,
@@ -81,7 +81,7 @@ function isImageFile(fileType: string | null, fileName: string): boolean {
  * Check if file is a PDF
  */
 function isPdfFile(fileType: string | null, fileName: string): boolean {
-  if (fileType === 'application/pdf') return true;
+  if (fileType === 'application/pdf' || fileType === 'pdf') return true;
   
   const ext = fileName.split('.').pop()?.toLowerCase();
   return ext === 'pdf';
@@ -97,15 +97,22 @@ export function DocumentViewerModal({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    
+    // Clean up previous blob URL
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+      setBlobUrl(null);
+    }
+
     async function getSignedUrl() {
       if (!document || !open) {
         setSignedUrl(null);
-        if (blobUrl) {
-          URL.revokeObjectURL(blobUrl);
-          setBlobUrl(null);
-        }
+        setBlobUrl(null);
         return;
       }
 
@@ -125,6 +132,8 @@ export function DocumentViewerModal({
           .from('compliance')
           .createSignedUrl(path, 3600);
 
+        if (cancelled) return;
+
         if (signError) {
           console.error('Failed to create signed URL:', signError);
           setSignedUrl(document.file_url);
@@ -135,9 +144,17 @@ export function DocumentViewerModal({
           if (isPdfFile(document.file_type, document.original_file_name)) {
             try {
               const response = await fetch(data.signedUrl);
-              const blob = await response.blob();
-              const objectUrl = URL.createObjectURL(blob);
-              setBlobUrl(objectUrl);
+              if (cancelled) return;
+              const pdfBlob = await response.blob();
+              // Ensure correct MIME type for PDF rendering
+              const typedBlob = pdfBlob.type === 'application/pdf' 
+                ? pdfBlob 
+                : new Blob([pdfBlob], { type: 'application/pdf' });
+              const objectUrl = URL.createObjectURL(typedBlob);
+              blobUrlRef.current = objectUrl;
+              if (!cancelled) {
+                setBlobUrl(objectUrl);
+              }
             } catch (fetchErr) {
               console.error('Failed to fetch PDF blob:', fetchErr);
             }
@@ -145,17 +162,19 @@ export function DocumentViewerModal({
         }
       } catch (err) {
         console.error('Error getting signed URL:', err);
-        setSignedUrl(document.file_url);
+        if (!cancelled) setSignedUrl(document.file_url);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     getSignedUrl();
     
     return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
+      cancelled = true;
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
       }
     };
   }, [document, open]);
