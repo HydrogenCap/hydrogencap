@@ -11,7 +11,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
-import { LoadingState, ErrorBoundary } from "@/components/common";
+import { LoadingState, ErrorBoundary, RouteBoundary } from "@/components/common";
 import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
 
 // Lazy-loaded pages
@@ -121,6 +121,7 @@ const App = () => (
               <SessionExpiryModal />
               <BrowserRouter>
                 <ErrorBoundary>
+                <RouteBoundary>
                 <Suspense fallback={<LoadingState text="Loading..." />}>
           <Routes>
             {/* Public routes */}
@@ -391,6 +392,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
                 </Suspense>
+                </RouteBoundary>
                 </ErrorBoundary>
               </BrowserRouter>
             </GoogleMapsProvider>
