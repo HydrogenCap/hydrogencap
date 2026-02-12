@@ -13,6 +13,7 @@ import { PortalProtectedRoute } from "@/components/portal";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { LoadingState, ErrorBoundary, RouteBoundary } from "@/components/common";
 import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
+import { CookieConsent } from "@/components/common/CookieConsent";
 
 // Lazy-loaded pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -68,6 +69,8 @@ const MarketingCaseStudies = lazy(() => import("./pages/marketing/CaseStudies"))
 const MarketingAbout = lazy(() => import("./pages/marketing/About"));
 const MarketingContact = lazy(() => import("./pages/marketing/Contact"));
 const MarketingDemo = lazy(() => import("./pages/marketing/Demo"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 function isAuthError(error: unknown): boolean {
   if (error && typeof error === 'object') {
@@ -120,6 +123,7 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <SessionExpiryModal />
+                <CookieConsent />
                 <ErrorBoundary>
                 <RouteBoundary>
                 <Suspense fallback={<LoadingState text="Loading..." />}>
@@ -357,6 +361,8 @@ const App = () => (
             <Route path="/about" element={<MarketingAbout />} />
             <Route path="/contact" element={<MarketingContact />} />
             <Route path="/demo" element={<MarketingDemo />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             
             {/* Shared document viewer (public) */}
             <Route path="/shared/:token" element={<SharedDocument />} />

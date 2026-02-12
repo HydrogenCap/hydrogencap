@@ -3105,6 +3105,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          onboarding_completed: boolean
           updated_at: string
           user_id: string
         }
@@ -3113,6 +3114,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean
           updated_at?: string
           user_id: string
         }
@@ -3121,6 +3123,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -4966,6 +4969,17 @@ export type Database = {
         Returns: undefined
       }
       get_user_org_id: { Args: never; Returns: string }
+      get_user_role: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       log_document_download: {
         Args: { p_document_id: string }
         Returns: undefined
