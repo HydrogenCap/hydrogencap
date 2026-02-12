@@ -98,8 +98,8 @@ export default function AcceptInvite() {
 
       toast.success('Invitation accepted! Welcome to the portal.');
       navigate('/portal');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to accept invitation');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to accept invitation');
     }
   };
 
@@ -118,8 +118,8 @@ export default function AcceptInvite() {
         if (error) throw error;
         // Auto-accept will trigger via useEffect
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Authentication failed');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setSubmitting(false);
     }

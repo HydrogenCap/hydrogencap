@@ -73,9 +73,9 @@ export function useCompaniesHouse() {
 
       setSearchResults(data.companies || []);
       return data.companies || [];
-    } catch (err: any) {
+    } catch (err) {
       console.error('Companies House search error:', err);
-      setError(err.message || 'Failed to search Companies House');
+      setError(err instanceof Error ? err.message : 'Failed to search Companies House');
       setSearchResults([]);
       return [];
     } finally {
@@ -113,9 +113,9 @@ export function useCompaniesHouse() {
 
       setLookupResult(result);
       return result;
-    } catch (err: any) {
+    } catch (err) {
       console.error('Companies House lookup error:', err);
-      setError(err.message || 'Failed to lookup company');
+      setError(err instanceof Error ? err.message : 'Failed to lookup company');
       setLookupResult(null);
       return null;
     } finally {

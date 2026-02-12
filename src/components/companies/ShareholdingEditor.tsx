@@ -145,10 +145,11 @@ export function ShareholdingEditor({
         toast({ title: 'Shareholder added' });
       }
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save shareholding';
       toast({
         title: 'Error',
-        description: err.message || 'Failed to save shareholding',
+        description: message,
         variant: 'destructive',
       });
     }

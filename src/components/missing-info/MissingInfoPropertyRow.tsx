@@ -87,23 +87,23 @@ export function MissingInfoPropertyRow({ item }: Props) {
     }
   };
 
-  const handlePropertyChange = (field: string, value: any) => {
+  const handlePropertyChange = (field: string, value: string | number | boolean | null) => {
     setPropertyChanges(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleIncomeChange = (field: string, value: any) => {
+  const handleIncomeChange = (field: string, value: string | number | boolean | null) => {
     setIncomeChanges(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFinanceChange = (field: string, value: any) => {
+  const handleFinanceChange = (field: string, value: string | number | boolean | null) => {
     setFinanceChanges(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleInsuranceChange = (field: string, value: any) => {
+  const handleInsuranceChange = (field: string, value: string | number | boolean | null) => {
     setInsuranceChanges(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePassportChange = (field: string, value: any) => {
+  const handlePassportChange = (field: string, value: string | number | boolean | null) => {
     setPassportChanges(prev => ({ ...prev, [field]: value }));
   };
 

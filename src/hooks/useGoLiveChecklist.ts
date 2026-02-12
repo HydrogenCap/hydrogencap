@@ -60,11 +60,30 @@ export interface ChecklistSection {
 }
 
 // Validate data against actual property/compliance records
+interface ComplianceItemBasic {
+  compliance_type: string;
+  expiry_date: string | null;
+  issue_date: string | null;
+}
+
+interface OwnershipLinkBasic {
+  subject_type: string;
+  subject_id: string;
+  effective_to: string | null;
+  percent: number | null;
+}
+
+interface PassportBasic {
+  local_authority_id?: string | null;
+  local_authority_text?: string | null;
+  local_authority?: string | null;
+}
+
 export function validatePropertyData(
   property: PropertyWithFinancials | null,
-  complianceItems: any[],
-  ownershipLinks: any[],
-  passport?: any
+  complianceItems: ComplianceItemBasic[],
+  ownershipLinks: OwnershipLinkBasic[],
+  passport?: PassportBasic
 ): {
   hasLegalOwner: boolean;
   ownershipComplete: boolean;
@@ -122,10 +141,10 @@ export function validatePropertyData(
   } else {
     // Check direct property ownership links
     const propertyOwnership = ownershipLinks.filter(
-      (l: any) => l.subject_type === 'PROPERTY' && l.subject_id === property.id && !l.effective_to
+      (l) => l.subject_type === 'PROPERTY' && l.subject_id === property.id && !l.effective_to
     );
     if (propertyOwnership.length > 0) {
-      const totalOwnership = propertyOwnership.reduce((sum: number, l: any) => sum + (l.percent || 0), 0);
+      const totalOwnership = propertyOwnership.reduce((sum: number, l) => sum + (l.percent || 0), 0);
       ownershipComplete = totalOwnership >= 99.9 && totalOwnership <= 100.1;
     }
   }
@@ -146,7 +165,7 @@ export function validatePropertyData(
 
   // Check compliance documents
   const hasValidDoc = (type: string) => {
-    const item = complianceItems.find((c: any) => c.compliance_type === type);
+    const item = complianceItems.find((c) => c.compliance_type === type);
     if (!item) return false;
     // Check if has valid (non-expired) document
     if (!item.expiry_date) return !!item.issue_date;
