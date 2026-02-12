@@ -317,23 +317,23 @@ export default function Compliance() {
 
         {/* Alert Banner - Redesigned */}
         {hasItemsNeedingAction && (
-          <div className="bg-gradient-to-r from-red-950/50 to-red-900/30 border-l-4 border-red-500 rounded-lg p-4 shadow-sm">
+          <div className="bg-destructive/10 border-l-4 border-destructive rounded-lg p-4 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                <div className="w-10 h-10 bg-destructive/15 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
                 </div>
               </div>
               
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-red-300 mb-1">
+                <h3 className="font-semibold text-destructive mb-1">
                   Compliance Alert
                 </h3>
-                <p className="text-sm text-red-200/80">
+                <p className="text-sm text-muted-foreground">
                   {summary.expired} compliance item{summary.expired !== 1 ? 's have' : ' has'} expired or {summary.expired !== 1 ? 'are' : 'is'} missing across your portfolio.
                   <button 
                     onClick={() => handleStatusFilterClick('expired')}
-                    className="font-medium underline ml-1.5 hover:text-red-100 transition-colors"
+                    className="font-medium underline ml-1.5 text-destructive hover:text-destructive/80 transition-colors"
                   >
                     Take action now
                   </button>
@@ -545,15 +545,15 @@ export default function Compliance() {
                                   value={scores.score} 
                                   className={cn(
                                     "h-2 flex-1 max-w-[200px]",
-                                    scores.score === 100 && "[&>div]:bg-green-500",
-                                    scores.score >= 70 && scores.score < 100 && "[&>div]:bg-amber-500",
+                                    scores.score === 100 && "[&>div]:bg-success",
+                                    scores.score >= 70 && scores.score < 100 && "[&>div]:bg-warning",
                                     scores.score < 70 && "[&>div]:bg-destructive",
                                   )}
                                 />
                                 <span className={cn(
                                   "text-xs font-semibold",
-                                  scores.score === 100 && "text-green-500",
-                                  scores.score >= 70 && scores.score < 100 && "text-amber-500",
+                                  scores.score === 100 && "text-success",
+                                  scores.score >= 70 && scores.score < 100 && "text-warning",
                                   scores.score < 70 && "text-destructive",
                                 )}>
                                   {scores.score}%
@@ -565,17 +565,17 @@ export default function Compliance() {
                           {/* Right side - Summary badges */}
                           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                             {scores.valid > 0 && (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 text-xs">
+                              <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs">
                                 {scores.valid} valid
                               </Badge>
                             )}
                             {scores.expiring > 0 && (
-                              <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs">
+                              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs">
                                 {scores.expiring} expiring
                               </Badge>
                             )}
                             {scores.expired > 0 && (
-                              <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/30 text-xs">
+                              <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-xs">
                                 {scores.expired} expired
                               </Badge>
                             )}

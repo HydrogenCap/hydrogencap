@@ -4,8 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+interface TenantDocument {
+  id: string;
+  display_name?: string | null;
+  original_file_name: string;
+  doc_type?: string | null;
+  file_url: string;
+  created_at: string;
+  [key: string]: unknown;
+}
+
 interface TenantDocumentsTabProps {
-  documents: any[] | undefined;
+  documents: TenantDocument[] | undefined;
   onUploadClick: () => void;
 }
 
@@ -28,7 +38,7 @@ export function TenantDocumentsTab({ documents, onUploadClick }: TenantDocuments
         </Card>
       ) : (
         <div className="space-y-2">
-          {documents.map((doc: any) => (
+          {documents.map((doc) => (
             <Card key={doc.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">

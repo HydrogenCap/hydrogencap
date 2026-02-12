@@ -149,8 +149,8 @@ export function useUpdateComplianceItem() {
       );
       
       // Optimistically update 'all with properties' cache
-      queryClient.setQueryData(['compliance', 'all', 'with-properties'], (old: unknown[] | undefined) => 
-        old?.map((item: any) => 
+      queryClient.setQueryData(['compliance', 'all', 'with-properties'], (old: Array<{ id: string; [key: string]: unknown }> | undefined) => 
+        old?.map((item) => 
           item.id === newItem.id ? { ...item, ...newItem } : item
         )
       );

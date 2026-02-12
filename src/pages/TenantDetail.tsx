@@ -172,7 +172,7 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
       queryKey: ['tenant-documents', tenantId, tenancyIds],
       queryFn: async () => {
         // Get documents by tenant_id OR tenancy_id
-        let allDocs: any[] = [];
+        let allDocs: Array<{ id: string; original_file_name: string; file_url: string; created_at: string; [key: string]: unknown }> = [];
         
         // Docs linked directly to tenant
         const { data: byTenant } = await supabase
@@ -227,11 +227,11 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
      let incomplete = 0;
      
      for (const tenancy of activeTenancies) {
-       const cached = queryClient.getQueryData<any[]>(['tenancy-compliance', tenancy.id]);
+       const cached = queryClient.getQueryData<Array<{ is_applicable: boolean; is_required: boolean; completed_date: string | null }>>(['tenancy-compliance', tenancy.id]);
        if (!cached) continue;
        
-       const applicable = cached.filter((i: any) => i.is_applicable && i.is_required);
-       const completed = applicable.filter((i: any) => i.completed_date);
+       const applicable = cached.filter((i) => i.is_applicable && i.is_required);
+       const completed = applicable.filter((i) => i.completed_date);
        
        if (applicable.length > 0 && completed.length === applicable.length) {
          compliant++;
@@ -443,8 +443,9 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
         toast({ title: 'Certificates sent', description: `EPC & Gas Safety emailed to ${data.sentTo}` });
         queryClient.invalidateQueries({ queryKey: ['tenant-documents'] });
         queryClient.invalidateQueries({ queryKey: ['tenancy-compliance'] });
-      } catch (err: any) {
-        toast({ title: 'Failed to send', description: err.message, variant: 'destructive' });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        toast({ title: 'Failed to send', description: message, variant: 'destructive' });
       } finally {
         setSendingCerts(false);
       }

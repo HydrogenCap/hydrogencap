@@ -168,10 +168,11 @@ export function UnifiedOwnershipEditor({
       }
 
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save ownership';
       toast({ 
         title: 'Error', 
-        description: err.message || 'Failed to save ownership', 
+        description: message, 
         variant: 'destructive' 
       });
     }

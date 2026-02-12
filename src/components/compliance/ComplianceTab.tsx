@@ -187,26 +187,26 @@ export function ComplianceTab({ propertyId, propertyAddress, lifecycleType = 'co
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Valid</CardTitle>
+            <CardTitle className="text-sm font-medium text-success">Valid</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.valid}</div>
+            <div className="text-2xl font-bold text-success">{summary.valid}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-amber-600">Expiring Soon</CardTitle>
+            <CardTitle className="text-sm font-medium text-warning">Expiring Soon</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{summary.expiring}</div>
+            <div className="text-2xl font-bold text-warning">{summary.expiring}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Expired</CardTitle>
+            <CardTitle className="text-sm font-medium text-destructive">Expired</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{summary.expired}</div>
+            <div className="text-2xl font-bold text-destructive">{summary.expired}</div>
           </CardContent>
         </Card>
       </div>
