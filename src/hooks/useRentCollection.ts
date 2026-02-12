@@ -221,7 +221,7 @@ export function useUpdateRentScheduleStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RentStatus }) => {
-      const updates: Record<string, any> = { status };
+      const updates: Record<string, any> = { status: status as any };
       const { data, error } = await supabase
         .from('rent_schedule')
         .update(updates)
@@ -333,7 +333,7 @@ export function useDuplicateRentSchedule() {
           additional_charges: item.additional_charges,
           amount_paid: 0,
           amount_outstanding: item.rent_amount + item.additional_charges,
-          status: 'upcoming',
+          status: 'upcoming' as any,
           payment_reference: `${prefix}-${letters}${numbers}`,
           notes: item.notes ? `Copy of: ${item.notes}` : null,
         })
@@ -710,7 +710,7 @@ export function useBulkMarkPaid() {
           const { error: schedError } = await supabase
             .from('rent_schedule')
             .update({
-              status: 'paid',
+              status: 'paid' as any,
               amount_paid: item.rent_amount + (item.additional_charges || 0),
             })
             .eq('id', item.id);
@@ -765,7 +765,7 @@ export function useBulkWriteOff() {
       const { error } = await supabase
         .from('rent_schedule')
         .update({
-          status: 'bad_debt',
+          status: 'bad_debt' as any,
           notes: reason ? `Bad debt write-off: ${reason}` : 'Bulk write-off as bad debt',
         })
         .in('id', ids);
