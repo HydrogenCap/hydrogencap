@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { BACKUP_TABLES, formatBytes, type TableExportConfig } from '@/lib/backupConfig';
@@ -325,11 +325,24 @@ export function usePortfolioBackup() {
           (meta) => patch({ overallPercent: 90 + Math.round(meta.percent * 0.1) }),
         );
 
-        saveAs(blob, `hydrogencap-backup-${dateStr}.zip`);
+        // Use direct blob URL download instead of file-saver for better large-file support
+        const fileName = `hydrogencap-backup-${dateStr}.zip`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        // Clean up after a delay to allow the download to start
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 5000);
 
         patch({
           phase: 'complete',
-          currentStep: `Backup complete — hydrogencap-backup-${dateStr}.zip`,
+          currentStep: `Backup complete — ${fileName}`,
           overallPercent: 100,
           tableCount: tableSummary.length,
           recordCount: totalRecords,
