@@ -26,6 +26,8 @@ export interface BackupProgress {
   fileCount: number;
   fileSizeBytes: number;
   warnings: string[];
+  downloadUrl: string | null;
+  downloadFileName: string | null;
 }
 
 interface FileIndexEntry {
@@ -125,6 +127,8 @@ const INITIAL_PROGRESS: BackupProgress = {
   fileCount: 0,
   fileSizeBytes: 0,
   warnings: [],
+  downloadUrl: null,
+  downloadFileName: null,
 };
 
 export function usePortfolioBackup() {
@@ -265,7 +269,7 @@ export function usePortfolioBackup() {
               .download(storagePath);
 
             if (error) {
-              warnings.push(`${entry.bucket}/${shortName}: ${error.message}`);
+              warnings.push(`${entry.bucket}/${shortName}: ${error.message || JSON.stringify(error)}`);
             } else if (data) {
               const buf = await data.arrayBuffer();
               zip.file(entry.zipPath, buf);
@@ -334,11 +338,7 @@ export function usePortfolioBackup() {
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        // Clean up after a delay to allow the download to start
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 5000);
+        document.body.removeChild(a);
 
         patch({
           phase: 'complete',
@@ -349,6 +349,8 @@ export function usePortfolioBackup() {
           fileCount: totalFiles,
           fileSizeBytes: totalFileSize,
           warnings: [...warnings],
+          downloadUrl: url,
+          downloadFileName: fileName,
         });
       } catch (err: any) {
         patch({
@@ -365,7 +367,13 @@ export function usePortfolioBackup() {
     abortRef.current = true;
   }, []);
 
-  const resetBackup = useCallback(() => setProgress(INITIAL_PROGRESS), []);
+  const resetBackup = useCallback(() => {
+    // Revoke the blob URL to free memory
+    setProgress(prev => {
+      if (prev.downloadUrl) URL.revokeObjectURL(prev.downloadUrl);
+      return INITIAL_PROGRESS;
+    });
+  }, []);
 
   return { progress, startBackup, cancelBackup, resetBackup };
 }
