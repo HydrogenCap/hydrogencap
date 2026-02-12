@@ -151,10 +151,26 @@ function DashboardPage() {
 
     const totalMonthlyRent = activeTenancies.reduce((sum, t) => sum + (t.rent_amount_pcm || 0), 0);
 
+    // Build a map of property_id -> beds for whole-property rooms
+    const propertyBedsMap = new Map<string, number>();
+    for (const p of coreRentalProperties) {
+      if (p.beds) propertyBedsMap.set(p.id, Number(p.beds));
+    }
+
     const rooms = allRooms || [];
-    const totalRooms = rooms.length;
-    const occupiedRooms = rooms.filter(r => r.status === 'occupied').length;
-    const vacantRooms = rooms.filter(r => r.status === 'vacant').length;
+    // For "Whole Property" rooms, count the property's bedroom count instead of 1
+    let totalRooms = 0;
+    let occupiedRooms = 0;
+    let vacantRooms = 0;
+    for (const r of rooms) {
+      const isWholeProperty = r.room_name?.toLowerCase() === 'whole property';
+      const weight = isWholeProperty && r.property_id && propertyBedsMap.has(r.property_id)
+        ? propertyBedsMap.get(r.property_id)!
+        : 1;
+      totalRooms += weight;
+      if (r.status === 'occupied') occupiedRooms += weight;
+      if (r.status === 'vacant') vacantRooms += weight;
+    }
     const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
 
     const totalBedrooms = coreRentalProperties.reduce((sum, p) => sum + (p.beds ? Number(p.beds) : 0), 0);
@@ -334,7 +350,7 @@ function DashboardPage() {
               <KpiCard
                 label="Occupancy Rate"
                 value={formatPercent(rentalStats.occupancyRate)}
-                subtitle={`${rentalStats.occupiedRooms} of ${rentalStats.totalRooms} rooms let`}
+                subtitle={`${rentalStats.occupiedRooms} of ${rentalStats.totalRooms} bedrooms let`}
                 icon={DoorOpen}
                 iconClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
                 valueClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
