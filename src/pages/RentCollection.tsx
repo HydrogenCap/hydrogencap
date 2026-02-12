@@ -248,6 +248,7 @@ export default function RentCollection() {
           <div className="relative flex-1 min-w-[200px] max-w-lg">
             <Input
               placeholder="Search by property, tenant, or room..."
+              aria-label="Search rent collection"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-4"
