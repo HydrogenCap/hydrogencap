@@ -98,6 +98,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
+  const [wholePropertyHmo, setWholePropertyHmo] = useState(false);
   const { data: properties } = useProperties();
   const { data: roomsWithTenancy } = useRoomsWithTenancy(propertyId);
   const createTenancy = useCreateTenancy();
@@ -107,7 +108,9 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const { toast } = useToast();
 
   const selectedProperty = properties?.find(p => p.id === propertyId);
-  const isWholePropertyLet = selectedProperty && selectedProperty.asset_category !== 'HMO' && selectedProperty.asset_category !== 'HMO (Licensed)';
+  const isNonHmoSingleLet = selectedProperty && selectedProperty.asset_category !== 'HMO' && selectedProperty.asset_category !== 'HMO (Licensed)';
+  const isHmo = selectedProperty && (selectedProperty.asset_category === 'HMO' || selectedProperty.asset_category === 'HMO (Licensed)');
+  const isWholePropertyLet = isNonHmoSingleLet || (isHmo && wholePropertyHmo);
   const vacantRooms = roomsWithTenancy?.filter(r => r.status === 'vacant') || [];
   const selectedRoom = roomsWithTenancy?.find(r => r.id === roomId);
 
@@ -161,6 +164,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       setIsProcessing(false);
       setProcessingStep(0);
       setProcessingProgress(0);
+      setWholePropertyHmo(false);
     }
   }, [open]);
 
@@ -269,10 +273,14 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
 
   const handleCreate = async () => {
     try {
+      // For whole-property HMO lets, use the first room and mark all as occupied
+      const allRooms = roomsWithTenancy || [];
+      const effectiveRoomId = wholePropertyHmo && allRooms.length > 0 ? allRooms[0].id : roomId;
+
       await createTenancy.mutateAsync({
         tenant_id: tenantId,
         property_id: propertyId,
-        room_id: roomId,
+        room_id: effectiveRoomId,
         start_date: startDate,
         end_date: endDate || null,
         rent_amount_pcm: Number(rentAmountPcm),
@@ -287,11 +295,15 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
         notice_period_weeks: Number(noticePeriodWeeks) || 4,
         payment_method: (paymentMethod || null) as any,
         payment_reference: paymentReference || null,
-        notes: notes || null,
+        notes: wholePropertyHmo ? `${notes || ''}\nWhole property let (${allRooms.length} rooms)`.trim() : (notes || null),
       });
 
-      // Update room to occupied
-      await updateRoom.mutateAsync({ id: roomId, status: 'occupied' });
+      // Mark rooms as occupied
+      if (wholePropertyHmo) {
+        await Promise.all(allRooms.map(r => updateRoom.mutateAsync({ id: r.id, status: 'occupied' })));
+      } else {
+        await updateRoom.mutateAsync({ id: effectiveRoomId, status: 'occupied' });
+      }
 
       // Update tenant to active if prospect
       updateTenant.mutate({ id: tenantId, status: 'active' });
@@ -395,35 +407,65 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
               </Select>
             </div>
 
-            {propertyId && !isWholePropertyLet && (
-              <div className="space-y-2">
-                <Label>
-                  Room *
-                  {extraction?.room_or_unit && (
-                    <span className="text-sm text-muted-foreground ml-2">(AI hint: {extraction.room_or_unit})</span>
-                  )}
-                </Label>
-                {vacantRooms.length === 0 ? (
-                  <p className="text-sm text-destructive">No vacant rooms at this property</p>
-                ) : (
-                  <Select value={roomId} onValueChange={setRoomId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select vacant room" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vacantRooms.map(r => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.room_name} ({r.room_type})
-                          {r.target_rent_pcm ? ` — £${r.target_rent_pcm}/mo target` : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            {propertyId && isHmo && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant={wholePropertyHmo ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => { setWholePropertyHmo(true); setRoomId(''); }}
+                  >
+                    <Home className="h-4 w-4 mr-1" /> Whole Property
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={!wholePropertyHmo ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setWholePropertyHmo(false)}
+                  >
+                    Individual Room
+                  </Button>
+                </div>
+                {wholePropertyHmo && (
+                  <Alert>
+                    <Home className="h-4 w-4" />
+                    <AlertDescription>
+                      Tenant will rent the entire property ({roomsWithTenancy?.length || 0} rooms). All rooms will be marked as occupied.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {!wholePropertyHmo && (
+                  <div className="space-y-2">
+                    <Label>
+                      Room *
+                      {extraction?.room_or_unit && (
+                        <span className="text-sm text-muted-foreground ml-2">(AI hint: {extraction.room_or_unit})</span>
+                      )}
+                    </Label>
+                    {vacantRooms.length === 0 ? (
+                      <p className="text-sm text-destructive">No vacant rooms at this property</p>
+                    ) : (
+                      <Select value={roomId} onValueChange={setRoomId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vacant room" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vacantRooms.map(r => (
+                            <SelectItem key={r.id} value={r.id}>
+                              {r.room_name} ({r.room_type})
+                              {r.target_rent_pcm ? ` — £${r.target_rent_pcm}/mo target` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
-            {propertyId && isWholePropertyLet && (
+            {propertyId && isNonHmoSingleLet && (
               <Alert>
                 <Home className="h-4 w-4" />
                 <AlertDescription>
