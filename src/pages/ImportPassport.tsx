@@ -126,7 +126,8 @@ export default function ImportPassport() {
           ...row.data as any,
         });
         success++;
-      } catch {
+      } catch (err) {
+        console.error('Failed to import passport row:', err);
         failed++;
       }
     }

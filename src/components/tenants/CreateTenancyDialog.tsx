@@ -296,8 +296,8 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       updateTenant.mutate({ id: tenantId, status: 'active' });
 
       onOpenChange(false);
-    } catch {
-      // Error handled by mutation toast
+    } catch (err) {
+      console.error('Failed to create tenancy:', err);
     }
   };
 

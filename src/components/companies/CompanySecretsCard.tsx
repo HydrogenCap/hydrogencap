@@ -41,8 +41,8 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
     try {
       const result = await revealSecrets.mutateAsync(companyId);
       setRevealed(result);
-    } catch {
-      // Error handled by mutation
+    } catch (err) {
+      console.error('Failed to reveal secrets:', err);
     }
   };
 
@@ -73,8 +73,8 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
       });
       setEditOpen(false);
       setRevealed(null); // Hide after edit
-    } catch {
-      // Error handled by mutation
+    } catch (err) {
+      console.error('Failed to save secrets:', err);
     }
   };
 
