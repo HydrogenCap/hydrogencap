@@ -18,7 +18,7 @@ import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManag
 import { ExtendableSelect } from './ExtendableSelect';
 import { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
 import { useGenerateSuggestions } from '@/hooks/usePassportAutofill';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 
 // Simplified schema - only essential fields
 const passportSchema = z.object({
@@ -168,11 +168,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
     setIsEstimatingConstruction(true);
     setConstructionEstimate(null);
     try {
-      const { data, error } = await supabase.functions.invoke('estimate-construction-year', {
-        body: { propertyId },
-      });
-
-      if (error) throw error;
+      const data = await invokeEdgeFunction<{ success: boolean; error?: string; suggestion: { estimatedYear: number; constructionDateBand: string; confidence: string; reasoning: string } }>('estimate-construction-year', { propertyId });
       if (!data?.success) throw new Error(data?.error || 'Failed to estimate');
 
       setConstructionEstimate(data.suggestion);

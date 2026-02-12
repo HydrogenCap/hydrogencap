@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUpdateProperty } from '@/hooks/useProperties';
+import { formatDateUK } from '@/lib/calculations';
 import { 
   useGoLiveChecklist,
   validatePropertyData,
@@ -228,7 +229,7 @@ export function LifecycleSwitcher({
           {operationalDate && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CalendarDays className="h-4 w-4" />
-              Operational since: {new Date(operationalDate).toLocaleDateString('en-GB')}
+              Operational since: {formatDateUK(operationalDate)}
             </div>
           )}
         </div>

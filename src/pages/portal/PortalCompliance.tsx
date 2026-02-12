@@ -9,6 +9,7 @@ import { useShareholderSession } from '@/hooks/useShareholderSession';
 import { useShareholderPortfolioData } from '@/hooks/useShareholderPortfolioData';
 import { LoadingState } from '@/components/common/LoadingState';
 import { Navigate } from 'react-router-dom';
+import { formatPercent } from '@/lib/calculations';
 
 const COMPLIANCE_TYPES = [
   'gas_safety',
@@ -128,7 +129,7 @@ export default function PortalCompliance() {
               <CardTitle className="text-sm font-medium">Compliance Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{complianceRate.toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{formatPercent(complianceRate, 0)}</div>
               <Progress value={complianceRate} className="mt-2" />
             </CardContent>
           </Card>

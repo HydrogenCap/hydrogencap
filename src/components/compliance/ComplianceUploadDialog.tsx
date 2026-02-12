@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadToStorage, getPublicUrl, removeFromStorage } from '@/hooks/useStorageUpload';
+import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 import { useToast } from '@/hooks/use-toast';
 import { useUpdateComplianceItem, useUploadComplianceDocument } from '@/hooks/useCompliance';
 
@@ -119,38 +120,30 @@ export function ComplianceUploadDialog({
       const fileExt = file.name.split('.').pop();
       const tempPath = `temp/${Date.now()}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('compliance')
-        .upload(tempPath, file);
+      await uploadToStorage('compliance', tempPath, file);
 
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('compliance')
-        .getPublicUrl(tempPath);
+      const publicUrl = getPublicUrl('compliance', tempPath);
 
       setProgress(40);
 
       // Call AI analysis edge function
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke(
-        'process-document',
-        {
-          body: {
-            documentUrl: urlData.publicUrl,
-            documentType: complianceType,
-            propertyAddress,
-            extractMode: 'compliance',
-          },
-        }
-      );
+      const analysisData = await invokeEdgeFunction<{
+        extracted_issue_date?: string; expiry_date?: string; extracted_reference_number?: string;
+        engineer_name?: string; is_expired?: boolean; days_until_expiry?: number;
+        address_match?: boolean; issues?: { message: string; severity: 'critical' | 'warning' }[];
+        confidence?: number;
+      }>('process-document', {
+        documentUrl: publicUrl,
+        documentType: complianceType,
+        propertyAddress,
+        extractMode: 'compliance',
+      });
 
       clearInterval(progressInterval);
       setProgress(100);
 
       // Clean up temp file
-      await supabase.storage.from('compliance').remove([tempPath]);
-
-      if (analysisError) throw analysisError;
+      await removeFromStorage('compliance', [tempPath]);
 
       // Parse AI response into our format
       const result: AIAnalysisResult = {

@@ -10,6 +10,7 @@
  import { useContractors, type Contractor } from '@/hooks/useContractors';
  import { useCreateJob, useSendJobRequest } from '@/hooks/useContractorJobs';
  import { cn } from '@/lib/utils';
+ import { formatDateUK } from '@/lib/calculations';
  
  interface RequestJobDialogProps {
    open: boolean;
@@ -91,7 +92,7 @@
              {propertyAddress}
              {expiryDate && (
                <span className="text-amber-600 ml-2">
-                 Expires: {new Date(expiryDate).toLocaleDateString('en-GB')}
+                 Expires: {formatDateUK(expiryDate)}
                </span>
              )}
            </DialogDescription>

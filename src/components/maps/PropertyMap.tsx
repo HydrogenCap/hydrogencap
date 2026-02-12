@@ -59,8 +59,8 @@ function getPropertyFlags(property: PropertyWithFinancials): PropertyFlags {
   const hasMissingFinance = !property.current_value_gbp || 
     (loan && !loan.current_mortgage_balance_gbp);
 
-  // Missing insurance (would need insurance table - simplified for now)
-  const hasMissingInsurance = false; // TODO: Check insurance_policies table
+  // Insurance check not yet implemented
+  const hasMissingInsurance = false;
 
   // Renewal soon (fixed rate expiry)
   let hasRenewalSoon = false;
