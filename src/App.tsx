@@ -55,11 +55,18 @@ const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
 
-// Portal pages
+// Portal pages (shareholder)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
 const PortalProperties = lazy(() => import("./pages/portal/PortalProperties"));
 const PortalCompliance = lazy(() => import("./pages/portal/PortalCompliance"));
+
+// Tenant portal pages
+const TenantAcceptInvite = lazy(() => import("./pages/tenant-portal/TenantAcceptInvite"));
+const TenantPortalHome = lazy(() => import("./pages/tenant-portal/TenantPortalHome"));
+const TenantRentHistory = lazy(() => import("./pages/tenant-portal/TenantRentHistory"));
+const TenantMaintenance = lazy(() => import("./pages/tenant-portal/TenantMaintenance"));
+const TenantDocuments = lazy(() => import("./pages/tenant-portal/TenantDocuments"));
 
 // Marketing pages
 const MarketingHome = lazy(() => import("./pages/marketing/Home"));
@@ -393,6 +400,13 @@ const App = () => (
                 </PortalProtectedRoute>
               }
             />
+            
+            {/* Tenant portal routes */}
+            <Route path="/tenant-portal/accept/:token" element={<TenantAcceptInvite />} />
+            <Route path="/tenant-portal" element={<TenantPortalHome />} />
+            <Route path="/tenant-portal/rent" element={<TenantRentHistory />} />
+            <Route path="/tenant-portal/maintenance" element={<TenantMaintenance />} />
+            <Route path="/tenant-portal/documents" element={<TenantDocuments />} />
             
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
