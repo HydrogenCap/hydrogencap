@@ -414,7 +414,6 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
           }
 
           const finalPdfBytes = await mergedPdf.save();
-          console.log('PDF generated, byte length:', finalPdfBytes.length);
           // Create a clean ArrayBuffer copy to avoid Uint8Array/SharedArrayBuffer issues
           const pdfArrayBuffer = new ArrayBuffer(finalPdfBytes.length);
           new Uint8Array(pdfArrayBuffer).set(finalPdfBytes);
