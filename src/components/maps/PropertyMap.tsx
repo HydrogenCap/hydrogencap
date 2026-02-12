@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, forwardRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -125,12 +125,12 @@ function MapBoundsUpdater({ properties }: { properties: PropertyWithFinancials[]
   return null;
 }
 
-export function PropertyMap({ 
+export const PropertyMap = forwardRef<HTMLDivElement, PropertyMapProps>(function PropertyMap({ 
   properties, 
   filters,
   onPropertyClick,
   className = 'h-[600px]',
-}: PropertyMapProps) {
+}, ref) {
   // Apply filters
   const filteredProperties = useMemo(() => {
     let result = properties.filter(p => p.latitude && p.longitude);
@@ -198,7 +198,7 @@ export function PropertyMap({
   }
 
   return (
-    <div className={className}>
+    <div ref={ref} className={className}>
       <MapContainer
         center={defaultCenter}
         zoom={6}
@@ -403,4 +403,4 @@ export function PropertyMap({
       </MapContainer>
     </div>
   );
-}
+});
