@@ -1,4 +1,4 @@
- import { useState } from 'react';
+ import { useState, useDeferredValue } from 'react';
  import { Link } from 'react-router-dom';
  import { Users, Plus, Search, Filter, Mail, Phone, Home, UserCheck, UserX, Clock, Building2 } from 'lucide-react';
  import { Button } from '@/components/ui/button';
@@ -135,6 +135,7 @@ function TenantCard({ tenant }: { tenant: TenantWithProperty }) {
  
  export default function Tenants() {
     const [search, setSearch] = useState('');
+    const deferredSearch = useDeferredValue(search);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [typeFilter, setTypeFilter] = useState<string>('all');
     const [showAddDialog, setShowAddDialog] = useState(false);
@@ -145,9 +146,9 @@ function TenantCard({ tenant }: { tenant: TenantWithProperty }) {
      const searchText = tenant.tenant_type === 'company'
        ? `${tenant.company_name || ''} ${tenant.company_contact_name || ''} ${tenant.company_number || ''}`
        : `${tenant.first_name} ${tenant.last_name}`;
-     const matchesSearch = search === '' || 
-       searchText.toLowerCase().includes(search.toLowerCase()) ||
-       tenant.email?.toLowerCase().includes(search.toLowerCase());
+     const matchesSearch = deferredSearch === '' || 
+       searchText.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+       tenant.email?.toLowerCase().includes(deferredSearch.toLowerCase());
      
      const matchesStatus = statusFilter === 'all' || tenant.status === statusFilter;
      const matchesType = typeFilter === 'all' || tenant.tenant_type === typeFilter;

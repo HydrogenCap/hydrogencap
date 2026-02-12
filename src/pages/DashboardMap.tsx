@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,6 +36,7 @@ export default function DashboardMap() {
   }, [properties]);
   
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [missingType, setMissingType] = useState<'all' | 'finance' | 'insurance'>('all');
   const [renewalDays, setRenewalDays] = useState<30 | 60 | 90 | undefined>();
   const [selectedCity, setSelectedCity] = useState<string>('');
@@ -274,17 +275,33 @@ export default function DashboardMap() {
         {/* Map */}
         <Card className="bg-card border-border">
           <CardContent className="p-0">
-            <PropertyMap
-              properties={properties || []}
-              filters={{
-                search,
-                city: selectedCity || undefined,
-                lender: selectedLender || undefined,
-                renewalDays,
-                missingType: missingType === 'all' ? undefined : missingType,
-              }}
-              className="h-[600px] rounded-lg"
-            />
+            {propertiesWithCoords.length === 0 ? (
+              <div className="h-[600px] rounded-lg flex flex-col items-center justify-center bg-muted/30 text-center p-8">
+                <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No properties with location data</h3>
+                <p className="text-muted-foreground mb-4 max-w-md">
+                  Add coordinates to your properties to see them on the map. You can geocode addresses from Settings → Locations.
+                </p>
+                <Button variant="outline" asChild>
+                  <Link to="/settings?tab=locations">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Go to Locations Settings
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <PropertyMap
+                properties={properties || []}
+                filters={{
+                  search: deferredSearch,
+                  city: selectedCity || undefined,
+                  lender: selectedLender || undefined,
+                  renewalDays,
+                  missingType: missingType === 'all' ? undefined : missingType,
+                }}
+                className="h-[600px] rounded-lg"
+              />
+            )}
           </CardContent>
         </Card>
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Shield, Search, Home, AlertTriangle, X, ChevronRight, 
@@ -44,6 +44,7 @@ export default function Compliance() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>(initialStatus);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearch = useDeferredValue(searchQuery);
   const [viewMode, setViewMode] = useState<'item' | 'property'>('item');
   
   // Upload dialog state
@@ -108,8 +109,8 @@ export default function Compliance() {
       }
       
       // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
+      if (deferredSearch.trim()) {
+        const query = deferredSearch.toLowerCase();
         const property = propertyMap.get(item.property_id);
         const searchableText = [
           item.compliance_type,
@@ -122,7 +123,7 @@ export default function Compliance() {
       
       return true;
     });
-  }, [allItemsWithMissing, statusFilter, typeFilter, searchQuery, propertyMap]);
+  }, [allItemsWithMissing, statusFilter, typeFilter, deferredSearch, propertyMap]);
 
   // Group items by property
   const groupedByProperty = useMemo(() => {

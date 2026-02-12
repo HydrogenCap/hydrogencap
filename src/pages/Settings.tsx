@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,8 +61,8 @@ export default function Settings() {
   const defaultTab = urlParams.get('tab') || 'profile';
 
   // Profile and Organization state
-  const { data: profile } = useProfile();
-  const { data: organization } = useOrganization();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: organization, isLoading: orgLoading } = useOrganization();
   const updateProfile = useUpdateProfile();
   const updateOrganization = useUpdateOrganization();
   const [fullName, setFullName] = useState('');
@@ -277,6 +278,18 @@ export default function Settings() {
   const passHasAddressMapping = Object.values(passMapping).includes('address_match') || 
                                 Object.values(passMapping).includes('postcode_match');
   const passValidRowCount = passValidatedRows.filter(r => r.isValid && r.matchedPropertyId).length;
+
+  if (profileLoading || orgLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-full max-w-3xl" />
+          <Skeleton className="h-[400px]" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
