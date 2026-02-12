@@ -391,12 +391,38 @@ export function calculateYield(
 }
 
 // Calculate ROCE (Return on Capital Employed) with divide-by-zero protection
+// Uses capital invested (deposit + stamp duty + refurb + fees) if available, otherwise falls back to equity
 export function calculateROCE(
   annualNetRent: number | null | undefined,
-  equity: number | null | undefined
+  equity: number | null | undefined,
+  capitalInvested?: number | null
 ): number | null {
-  if (annualNetRent == null || !equity || equity <= 0) return null;
-  return (annualNetRent / equity) * 100;
+  const denominator = capitalInvested && capitalInvested > 0 ? capitalInvested : equity;
+  if (annualNetRent == null || !denominator || denominator <= 0) return null;
+  return (annualNetRent / denominator) * 100;
+}
+
+// Calculate total capital invested from acquisition cost components
+export function calculateCapitalInvested(property: {
+  purchase_price_gbp?: number | null;
+  stamp_duty_gbp?: number | null;
+  refurb_cost_gbp?: number | null;
+  legal_fees_gbp?: number | null;
+  other_acquisition_costs_gbp?: number | null;
+  loans?: Array<{ current_mortgage_balance_gbp?: number | null }>;
+}): number | null {
+  const pp = property.purchase_price_gbp ? Number(property.purchase_price_gbp) : null;
+  if (!pp) return null;
+  
+  const mortgage = property.loans?.[0]?.current_mortgage_balance_gbp
+    ? Number(property.loans[0].current_mortgage_balance_gbp) : 0;
+  const deposit = pp - mortgage;
+  const stamp = property.stamp_duty_gbp ? Number(property.stamp_duty_gbp) : 0;
+  const refurb = property.refurb_cost_gbp ? Number(property.refurb_cost_gbp) : 0;
+  const legal = property.legal_fees_gbp ? Number(property.legal_fees_gbp) : 0;
+  const other = property.other_acquisition_costs_gbp ? Number(property.other_acquisition_costs_gbp) : 0;
+  
+  return deposit + stamp + refurb + legal + other;
 }
 
 // Days until a date

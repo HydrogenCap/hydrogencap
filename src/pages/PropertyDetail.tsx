@@ -13,6 +13,8 @@ import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveCh
 import { VoidPeriodsPanel } from '@/components/property/VoidPeriodsPanel';
 import { LeaseholdDetailsCard } from '@/components/property/LeaseholdDetailsCard';
 import { HmoComplianceCard } from '@/components/property/HmoComplianceCard';
+import { DocumentChecklist } from '@/components/property/DocumentChecklist';
+import { CapexTracker } from '@/components/property/CapexTracker';
 import { PropertyStatusBar } from '@/components/property/PropertyStatusBar';
 import { PassportForm, CoreIdentityCard } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
@@ -47,6 +49,7 @@ import {
   calculateYield,
   calculateGrossYield,
   calculateROCE,
+  calculateCapitalInvested,
   getLTVStatus,
   getEPCStatus,
 } from '@/lib/calculations';
@@ -126,7 +129,8 @@ function PropertyDetailPage() {
   const monthlyCashflow = calculateMonthlyCashflowAfterDebt(annualRent, totalCosts, mortgagePayment);
   const yieldPercent = calculateYield(netRent, currentValue);
   const grossYield = calculateGrossYield(annualRent, currentValue);
-  const roce = calculateROCE(netRent, equity);
+  const capitalInvested = calculateCapitalInvested(property);
+  const roce = calculateROCE(netRent, equity, capitalInvested);
 
   const ltvStatus = getLTVStatus(ltv);
   const epcStatus = getEPCStatus(property.epc_rating);
@@ -360,6 +364,14 @@ function PropertyDetailPage() {
             {/* Void Periods */}
             <VoidPeriodsPanel propertyId={id!} />
 
+            {/* Document Checklist */}
+            <DocumentChecklist
+              propertyId={id!}
+              isHmo={property.is_hmo_licensed || false}
+              hasGas={property.has_gas !== false}
+              tenure={property.tenure}
+            />
+
             {/* HMO Compliance */}
             <HmoComplianceCard
               propertyId={id!}
@@ -419,6 +431,9 @@ function PropertyDetailPage() {
               />
               <ComparableSalesTable propertyId={id!} />
             </div>
+
+            {/* Capital Works */}
+            <CapexTracker propertyId={id!} />
           </TabsContent>
 
           {/* OPERATIONS TAB - Renamed from Passport */}

@@ -25,7 +25,8 @@ export type ReportType =
   | 'portfolio_compliance' 
   | 'property_compliance_pack' 
   | 'mortgage_broker_pack' 
-  | 'insurance_broker_pack';
+  | 'insurance_broker_pack'
+  | 'tenant_schedule';
 
 export interface ReportTemplate {
   id: ReportType;
@@ -68,6 +69,14 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     icon: '🛡️',
     requiresSingleProperty: false,
     availableFor: ['core_rental', 'development', 'all'],
+  },
+  {
+    id: 'tenant_schedule',
+    name: 'Tenant Schedule',
+    description: 'Complete schedule of all tenants, rent amounts, lease dates, and room allocations across the portfolio.',
+    icon: '👥',
+    requiresSingleProperty: false,
+    availableFor: ['core_rental', 'all'],
   },
 ];
 

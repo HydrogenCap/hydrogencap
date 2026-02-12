@@ -91,6 +91,122 @@ export type Database = {
           },
         ]
       }
+      capex_line_items: {
+        Row: {
+          actual_gbp: number
+          budget_gbp: number
+          category: string
+          created_at: string
+          description: string
+          id: string
+          invoice_ref: string | null
+          notes: string | null
+          paid_date: string | null
+          project_id: string
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_gbp?: number
+          budget_gbp?: number
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          invoice_ref?: string | null
+          notes?: string | null
+          paid_date?: string | null
+          project_id: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_gbp?: number
+          budget_gbp?: number
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_ref?: string | null
+          notes?: string | null
+          paid_date?: string | null
+          project_id?: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capex_line_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "capex_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capex_projects: {
+        Row: {
+          actual_end_date: string | null
+          actual_gbp: number
+          budget_gbp: number
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          org_id: string
+          property_id: string
+          start_date: string | null
+          status: string
+          target_end_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          actual_gbp?: number
+          budget_gbp?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          org_id: string
+          property_id: string
+          start_date?: string | null
+          status?: string
+          target_end_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          actual_gbp?: number
+          budget_gbp?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          property_id?: string
+          start_date?: string | null
+          status?: string
+          target_end_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capex_projects_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "capex_projects_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificate_type_mappings: {
         Row: {
           ai_detected_type: string
@@ -3020,6 +3136,7 @@ export type Database = {
           beds: number | null
           beneficial_override_notes: string | null
           beneficial_override_percent: number | null
+          capital_invested_gbp: number | null
           co_alarm_required: boolean | null
           conservation_area: boolean
           country: string | null
@@ -3050,6 +3167,7 @@ export type Database = {
           last_valuation_estimate: number | null
           latitude: number | null
           lease_years_remaining: number | null
+          legal_fees_gbp: number | null
           legal_owner_company_id: string | null
           legal_owner_party_id: string | null
           lifecycle_status_date: string | null
@@ -3063,6 +3181,7 @@ export type Database = {
           operational_date: string | null
           org_id: string
           original_purchase_date: string | null
+          other_acquisition_costs_gbp: number | null
           ownership_entity: string | null
           ownership_percent: number | null
           place_id: string | null
@@ -3072,6 +3191,7 @@ export type Database = {
           property_name: string | null
           property_type: string | null
           purchase_price_gbp: number | null
+          refurb_cost_gbp: number | null
           selective_licence_required: boolean | null
           solar_feed_in_tariff: boolean | null
           solar_install_date: string | null
@@ -3079,6 +3199,7 @@ export type Database = {
           solar_mcs_number: string | null
           solar_seg: boolean | null
           solar_system_size_kwp: number | null
+          stamp_duty_gbp: number | null
           tenure: string | null
           title_number: string | null
           town_city: string | null
@@ -3096,6 +3217,7 @@ export type Database = {
           beds?: number | null
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
+          capital_invested_gbp?: number | null
           co_alarm_required?: boolean | null
           conservation_area?: boolean
           country?: string | null
@@ -3126,6 +3248,7 @@ export type Database = {
           last_valuation_estimate?: number | null
           latitude?: number | null
           lease_years_remaining?: number | null
+          legal_fees_gbp?: number | null
           legal_owner_company_id?: string | null
           legal_owner_party_id?: string | null
           lifecycle_status_date?: string | null
@@ -3139,6 +3262,7 @@ export type Database = {
           operational_date?: string | null
           org_id: string
           original_purchase_date?: string | null
+          other_acquisition_costs_gbp?: number | null
           ownership_entity?: string | null
           ownership_percent?: number | null
           place_id?: string | null
@@ -3148,6 +3272,7 @@ export type Database = {
           property_name?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
+          refurb_cost_gbp?: number | null
           selective_licence_required?: boolean | null
           solar_feed_in_tariff?: boolean | null
           solar_install_date?: string | null
@@ -3155,6 +3280,7 @@ export type Database = {
           solar_mcs_number?: string | null
           solar_seg?: boolean | null
           solar_system_size_kwp?: number | null
+          stamp_duty_gbp?: number | null
           tenure?: string | null
           title_number?: string | null
           town_city?: string | null
@@ -3172,6 +3298,7 @@ export type Database = {
           beds?: number | null
           beneficial_override_notes?: string | null
           beneficial_override_percent?: number | null
+          capital_invested_gbp?: number | null
           co_alarm_required?: boolean | null
           conservation_area?: boolean
           country?: string | null
@@ -3202,6 +3329,7 @@ export type Database = {
           last_valuation_estimate?: number | null
           latitude?: number | null
           lease_years_remaining?: number | null
+          legal_fees_gbp?: number | null
           legal_owner_company_id?: string | null
           legal_owner_party_id?: string | null
           lifecycle_status_date?: string | null
@@ -3215,6 +3343,7 @@ export type Database = {
           operational_date?: string | null
           org_id?: string
           original_purchase_date?: string | null
+          other_acquisition_costs_gbp?: number | null
           ownership_entity?: string | null
           ownership_percent?: number | null
           place_id?: string | null
@@ -3224,6 +3353,7 @@ export type Database = {
           property_name?: string | null
           property_type?: string | null
           purchase_price_gbp?: number | null
+          refurb_cost_gbp?: number | null
           selective_licence_required?: boolean | null
           solar_feed_in_tariff?: boolean | null
           solar_install_date?: string | null
@@ -3231,6 +3361,7 @@ export type Database = {
           solar_mcs_number?: string | null
           solar_seg?: boolean | null
           solar_system_size_kwp?: number | null
+          stamp_duty_gbp?: number | null
           tenure?: string | null
           title_number?: string | null
           town_city?: string | null
