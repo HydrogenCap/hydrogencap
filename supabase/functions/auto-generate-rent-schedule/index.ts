@@ -69,7 +69,34 @@ serve(async (req: Request) => {
         // Calculate period start/end
         const periodStart = new Date(targetYear, normalizedMonth, clampedDay);
         const periodEnd = new Date(targetYear, normalizedMonth + 1, clampedDay - 1);
-        const periodEndStr = periodEnd.toISOString().split("T")[0];
+
+        // Adjust for pro-rata: first period starts at tenancy start, last period ends at tenancy end
+        let actualPeriodStart = periodStart;
+        let actualPeriodEnd = periodEnd;
+
+        if (tenancy.start_date) {
+          const tenancyStart = new Date(tenancy.start_date);
+          if (tenancyStart > periodStart && tenancyStart <= periodEnd) {
+            actualPeriodStart = tenancyStart;
+          }
+        }
+        if (tenancy.end_date) {
+          const tenancyEnd = new Date(tenancy.end_date);
+          if (tenancyEnd >= periodStart && tenancyEnd < periodEnd) {
+            actualPeriodEnd = tenancyEnd;
+          }
+        }
+
+        const actualPeriodStartStr = actualPeriodStart.toISOString().split("T")[0];
+        const actualPeriodEndStr = actualPeriodEnd.toISOString().split("T")[0];
+
+        // Pro-rata calculation
+        const fullPeriodDays = Math.round((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const actualDays = Math.round((actualPeriodEnd.getTime() - actualPeriodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const isProRata = actualDays < fullPeriodDays;
+        const rentAmount = isProRata
+          ? Math.round((tenancy.rent_amount_pcm * actualDays / fullPeriodDays) * 100) / 100
+          : tenancy.rent_amount_pcm;
 
         // Generate payment reference
         const prefix = "HYD";
@@ -86,12 +113,12 @@ serve(async (req: Request) => {
             org_id: tenancy.org_id,
             tenancy_id: tenancy.id,
             due_date: dueDateStr,
-            period_start: dueDateStr,
-            period_end: periodEndStr,
-            rent_amount: tenancy.rent_amount_pcm,
+            period_start: actualPeriodStartStr,
+            period_end: actualPeriodEndStr,
+            rent_amount: rentAmount,
             additional_charges: 0,
             amount_paid: 0,
-            amount_outstanding: tenancy.rent_amount_pcm,
+            amount_outstanding: rentAmount,
             payment_reference: paymentReference,
           }, { onConflict: 'tenancy_id,due_date', ignoreDuplicates: true });
 
