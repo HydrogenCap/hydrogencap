@@ -220,6 +220,15 @@ export function BackupExportSection() {
 
             <Warnings list={progress.warnings} />
 
+            {progress.downloadUrl && progress.downloadFileName && (
+              <Button className="w-full" size="lg" asChild>
+                <a href={progress.downloadUrl} download={progress.downloadFileName}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download {progress.downloadFileName}
+                </a>
+              </Button>
+            )}
+
             <Button variant="outline" className="w-full" onClick={resetBackup}>
               Done
             </Button>
