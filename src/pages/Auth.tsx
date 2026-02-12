@@ -40,7 +40,13 @@ function AuthPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      const searchParams = new URLSearchParams(window.location.search);
+      const returnTo = searchParams.get('returnTo');
+      if (returnTo && returnTo.startsWith('/')) {
+        navigate(returnTo, { replace: true });
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [user, navigate]);
 
@@ -70,7 +76,9 @@ function AuthPage() {
           title: 'Welcome back!',
           description: 'You have successfully signed in.',
         });
-        navigate('/dashboard');
+        const searchParams = new URLSearchParams(window.location.search);
+        const returnTo = searchParams.get('returnTo');
+        navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard');
       } else {
         const { error } = await signUp(data.email, data.password, data.fullName);
         if (error) {
