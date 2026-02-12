@@ -4647,6 +4647,138 @@ export type Database = {
           },
         ]
       }
+      tenant_portal_access: {
+        Row: {
+          can_submit_maintenance: boolean
+          can_view_documents: boolean
+          can_view_rent: boolean
+          granted_at: string
+          id: string
+          invite_id: string | null
+          org_id: string
+          revoked_at: string | null
+          tenancy_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          can_submit_maintenance?: boolean
+          can_view_documents?: boolean
+          can_view_rent?: boolean
+          granted_at?: string
+          id?: string
+          invite_id?: string | null
+          org_id: string
+          revoked_at?: string | null
+          tenancy_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          can_submit_maintenance?: boolean
+          can_view_documents?: boolean
+          can_view_rent?: boolean
+          granted_at?: string
+          id?: string
+          invite_id?: string | null
+          org_id?: string
+          revoked_at?: string | null
+          tenancy_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_portal_access_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_portal_invites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_access_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_access_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_access_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_portal_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          org_id: string
+          tenancy_id: string
+          tenant_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          org_id: string
+          tenancy_id: string
+          tenant_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          org_id?: string
+          tenancy_id?: string
+          tenant_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_portal_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_invites_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_invites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           annual_income: number | null
@@ -4968,6 +5100,7 @@ export type Database = {
         Args: { tenancy_row: Database["public"]["Tables"]["tenancies"]["Row"] }
         Returns: undefined
       }
+      get_tenant_org_id: { Args: never; Returns: string }
       get_user_org_id: { Args: never; Returns: string }
       get_user_role: {
         Args: { _org_id: string; _user_id: string }
@@ -5004,6 +5137,15 @@ export type Database = {
         Args: { check_org_id: string }
         Returns: boolean
       }
+      user_has_tenant_access: {
+        Args: { check_tenancy_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_access_by_tenant_id: {
+        Args: { check_tenant_id: string }
+        Returns: boolean
+      }
+      user_is_tenant_portal_user: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "owner" | "admin" | "viewer"
