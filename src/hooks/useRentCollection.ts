@@ -27,11 +27,13 @@
  export interface RentScheduleWithDetails extends RentScheduleItem {
    tenancy: {
      id: string;
-     tenant: {
-       id: string;
-       first_name: string;
-       last_name: string;
-     };
+    tenant: {
+        id: string;
+        first_name: string;
+        last_name: string;
+        tenant_type?: string;
+        company_name?: string | null;
+      };
      room: {
        room_name: string;
      };
@@ -74,7 +76,7 @@
            *,
            tenancy:tenancies(
              id,
-             tenant:tenants(id, first_name, last_name),
+             tenant:tenants(id, first_name, last_name, tenant_type, company_name),
              room:rooms(room_name),
              property:properties(id, address_line, postcode)
            )
@@ -114,7 +116,7 @@
            *,
            tenancy:tenancies(
              id,
-             tenant:tenants(id, first_name, last_name, email, phone),
+              tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
              room:rooms(room_name),
              property:properties(id, address_line, postcode)
            )
@@ -199,7 +201,7 @@ export function useRentScheduleItem(id: string) {
           *,
           tenancy:tenancies(
             id,
-            tenant:tenants(id, first_name, last_name, email, phone),
+             tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
             room:rooms(room_name),
             property:properties(id, address_line, postcode)
           )
@@ -443,7 +445,7 @@ export function useArrearsAging() {
           *,
           tenancy:tenancies(
             id,
-            tenant:tenants(id, first_name, last_name, email, phone),
+            tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
             room:rooms(room_name),
             property:properties(id, address_line, postcode)
           )
@@ -489,7 +491,9 @@ export function useArrearsAging() {
         if (!tenancy) {
           tenancy = {
             tenancy_id: item.tenancy.id,
-            tenant_name: `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`,
+            tenant_name: item.tenancy.tenant.tenant_type === 'company'
+              ? (item.tenancy.tenant.company_name || `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`)
+              : `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`,
             room_name: item.tenancy.room.room_name,
             bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
             schedule_items: [],
