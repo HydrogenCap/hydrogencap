@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, AlertCircle, Check } from 'lucide-react';
 import { useGoogleMaps } from './GoogleMapsProvider';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 
 declare global {
   interface Window {
@@ -145,11 +145,14 @@ export function AddressAutocomplete({
 
     setIsValidating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('geocode-address', {
-        body: { address: inputValue },
-      });
+      const data = await invokeEdgeFunction<{ success: boolean; data: {
+        place_id: string; formatted_address: string; address_line1: string;
+        address_line2?: string | null; postcode?: string | null; town_city?: string | null;
+        county?: string | null; country: string; latitude: number; longitude: number;
+        geocode_confidence: 'exact' | 'approximate' | 'unknown';
+      } }>('geocode-address', { address: inputValue });
 
-      if (error || !data?.success) {
+      if (!data?.success) {
         setValidationStatus('invalid');
         return;
       }

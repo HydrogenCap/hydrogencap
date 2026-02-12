@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCompany, type CompanyWithDetails } from '@/hooks/useCompanies';
-import { formatPercent } from '@/lib/calculations';
+import { formatPercent, formatDateUK } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 
 interface CompanyCardProps {
@@ -106,7 +106,7 @@ export function CompanyCard({ companyId, onViewDetails, onRefreshFromCH, isRefre
           {company.ch_incorporation_date && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Inc. {new Date(company.ch_incorporation_date).toLocaleDateString()}</span>
+              <span>Inc. {formatDateUK(company.ch_incorporation_date)}</span>
             </div>
           )}
           {company.ch_registered_address && (

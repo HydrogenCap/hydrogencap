@@ -20,6 +20,7 @@ import {
   useSetCompanySecrets,
 } from '@/hooks/useCompanySecrets';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateUK } from '@/lib/calculations';
 
 interface CompanySecretsCardProps {
   companyId: string;
@@ -218,7 +219,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
 
           {maskedSecrets?.updated_at && (
             <p className="text-xs text-muted-foreground">
-              Last updated: {new Date(maskedSecrets.updated_at).toLocaleDateString()}
+              Last updated: {formatDateUK(maskedSecrets.updated_at)}
             </p>
           )}
         </CardContent>

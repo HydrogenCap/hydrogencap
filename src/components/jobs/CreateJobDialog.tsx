@@ -22,6 +22,7 @@
  import { useProperties } from '@/hooks/useProperties';
 import { useAllCompliance } from '@/hooks/useCompliance';
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
+ import { formatDateUK } from '@/lib/calculations';
  
  interface CreateJobDialogProps {
    open: boolean;
@@ -155,7 +156,7 @@ import { useAllCompliance } from '@/hooks/useCompliance';
                          {item.compliance_type}
                          {item.expiry_date && (
                            <span className="text-muted-foreground ml-2">
-                             (expires {new Date(item.expiry_date).toLocaleDateString()})
+                             (expires {formatDateUK(item.expiry_date)})
                            </span>
                          )}
                        </SelectItem>
