@@ -45,6 +45,7 @@ const Passport = lazy(() => import("./pages/Passport"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
 const SharedDocument = lazy(() => import("./pages/SharedDocument"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Install = lazy(() => import("./pages/Install"));
 const Contractors = lazy(() => import("./pages/Contractors"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
@@ -370,6 +371,7 @@ const App = () => (
             <Route path="/demo" element={<MarketingDemo />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/install" element={<Install />} />
             
             {/* Shared document viewer (public) */}
             <Route path="/shared/:token" element={<SharedDocument />} />
