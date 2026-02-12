@@ -5132,6 +5132,7 @@ export type Database = {
         Returns: boolean
       }
       update_job_priorities: { Args: never; Returns: number }
+      update_rent_schedule_statuses: { Args: never; Returns: undefined }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }
       user_has_shareholder_access: {
         Args: { check_org_id: string }

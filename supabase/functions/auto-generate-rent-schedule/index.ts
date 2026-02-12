@@ -100,20 +100,8 @@ serve(async (req: Request) => {
       }
     }
 
-    // Also update past-due 'upcoming' items to 'due' or 'overdue'
-    const todayStr = now.toISOString().split("T")[0];
-
-    await supabase
-      .from("rent_schedule")
-      .update({ status: "overdue" })
-      .eq("status", "upcoming")
-      .lt("due_date", todayStr);
-
-    await supabase
-      .from("rent_schedule")
-      .update({ status: "due" })
-      .eq("status", "upcoming")
-      .eq("due_date", todayStr);
+    // Update past-due statuses via DB function (avoids enum type mismatch)
+    await supabase.rpc("update_rent_schedule_statuses");
 
     return new Response(
       JSON.stringify({ success: true, created, message: `Generated ${created} schedule items` }),
