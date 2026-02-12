@@ -1,41 +1,43 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
- import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
- import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { useToast } from '@/hooks/use-toast';
+import { generateStructuredFilename } from '@/lib/documentNaming';
  
- export interface ManagedDocument {
-   id: string;
-   org_id: string;
-   file_url: string;
-   original_file_name: string;
-   display_name: string | null;
-   description: string | null;
-   category: string | null;
-   tags: string[] | null;
-   file_type: string | null;
-   file_size_bytes: number | null;
-   mime_type: string | null;
-   property_id: string | null;
-   company_id: string | null;
-   tenant_id: string | null;
-   tenancy_id: string | null;
-   compliance_item_id: string | null;
-   contractor_job_id: string | null;
-   document_date: string | null;
-   expiry_date: string | null;
-   is_confidential: boolean | null;
-   visible_to_shareholders: boolean | null;
-   visible_to_tenants: boolean | null;
-   version: number | null;
-   is_current_version: boolean | null;
-   uploaded_by: string | null;
-   created_at: string;
-   updated_at: string;
-   deleted_at: string | null;
-   // Joined data
-   property?: { address_line: string } | null;
-   company?: { legal_name: string } | null;
- }
+export interface ManagedDocument {
+  id: string;
+  org_id: string;
+  file_url: string;
+  original_file_name: string;
+  display_name: string | null;
+  final_file_name: string | null;
+  description: string | null;
+  category: string | null;
+  tags: string[] | null;
+  file_type: string | null;
+  file_size_bytes: number | null;
+  mime_type: string | null;
+  property_id: string | null;
+  company_id: string | null;
+  tenant_id: string | null;
+  tenancy_id: string | null;
+  compliance_item_id: string | null;
+  contractor_job_id: string | null;
+  document_date: string | null;
+  expiry_date: string | null;
+  is_confidential: boolean | null;
+  visible_to_shareholders: boolean | null;
+  visible_to_tenants: boolean | null;
+  version: number | null;
+  is_current_version: boolean | null;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  // Joined data
+  property?: { address_line: string } | null;
+  company?: { legal_name: string } | null;
+}
  
  export interface DocumentCategory {
    id: string;
@@ -196,67 +198,138 @@
        visibleToShareholders?: boolean;
        visibleToTenants?: boolean;
      }) => {
-       const orgId = await getUserOrgId();
-       if (!orgId) throw new Error('No organization found');
- 
-       const { data: userData } = await supabase.auth.getUser();
- 
-       // Generate unique file path
-       const fileExt = file.name.split('.').pop();
-       const filePath = `${orgId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
- 
-       // Upload to storage
-       const { error: uploadError } = await supabase.storage
-         .from('documents')
-         .upload(filePath, file);
- 
-       if (uploadError) throw uploadError;
- 
-       // Get public URL
-       const { data: urlData } = supabase.storage
-         .from('documents')
-         .getPublicUrl(filePath);
- 
-       // Create document record
-       const { data, error } = await supabase
-         .from('documents')
-         .insert({
-           org_id: orgId,
-           file_url: urlData.publicUrl,
-           original_file_name: file.name,
-           display_name: displayName,
-           description: description || null,
-           category,
-           file_type: getFileType(file.type, file.name),
-           file_size_bytes: file.size,
-           mime_type: file.type || null,
-           property_id: propertyId || null,
-           company_id: companyId || null,
-           tenant_id: tenantId || null,
-           tenancy_id: tenancyId || null,
-           compliance_item_id: complianceItemId || null,
-           contractor_job_id: jobId || null,
-           document_date: documentDate || null,
-           expiry_date: expiryDate || null,
-           is_confidential: isConfidential || false,
-           visible_to_shareholders: visibleToShareholders || false,
-           visible_to_tenants: visibleToTenants || false,
-           uploaded_by: userData.user?.id || null,
-         })
-         .select()
-         .single();
- 
-       if (error) throw error;
- 
-       // Log activity
-       await supabase.from('document_activity').insert({
-         document_id: data.id,
-         action: 'uploaded',
-         performed_by: userData.user?.id || null,
-       });
- 
-       return data;
-     },
+      const orgId = await getUserOrgId();
+        if (!orgId) throw new Error('No organization found');
+
+        const { data: userData } = await supabase.auth.getUser();
+
+        // Look up entity names for structured filename
+        let propertyAddress: string | null = null;
+        let companyName: string | null = null;
+        let tenantName: string | null = null;
+
+        if (propertyId) {
+          const { data: prop } = await supabase
+            .from('properties')
+            .select('address_line')
+            .eq('id', propertyId)
+            .single();
+          propertyAddress = prop?.address_line || null;
+        }
+
+        if (!propertyAddress && companyId) {
+          const { data: comp } = await supabase
+            .from('companies')
+            .select('legal_name')
+            .eq('id', companyId)
+            .single();
+          companyName = comp?.legal_name || null;
+        }
+
+        if (!propertyAddress && !companyName && tenantId) {
+          const { data: tenant } = await supabase
+            .from('tenants')
+            .select('first_name, last_name')
+            .eq('id', tenantId)
+            .single();
+          if (tenant) {
+            tenantName = [tenant.first_name, tenant.last_name].filter(Boolean).join(' ') || null;
+          }
+        }
+
+        // Fallback: resolve property from tenancy
+        if (!propertyAddress && tenancyId) {
+          const { data: tenancy } = await supabase
+            .from('tenancies')
+            .select('property_id, properties(address_line)')
+            .eq('id', tenancyId)
+            .single();
+          if (tenancy?.properties) {
+            propertyAddress = (tenancy.properties as any).address_line || null;
+          }
+        }
+
+        // Fallback: resolve property from job
+        if (!propertyAddress && jobId) {
+          const { data: job } = await supabase
+            .from('contractor_jobs')
+            .select('property_id, properties(address_line)')
+            .eq('id', jobId)
+            .single();
+          if (job?.properties) {
+            propertyAddress = (job.properties as any).address_line || null;
+          }
+        }
+
+        // Generate structured filename
+        const finalFileName = generateStructuredFilename({
+          category,
+          displayName,
+          originalFilename: file.name,
+          documentDate,
+          propertyAddress,
+          companyName,
+          tenantName,
+        });
+
+        // Generate unique storage path
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${orgId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+
+        // Create document record with structured filename
+        const { data, error } = await supabase
+          .from('documents')
+          .insert({
+            org_id: orgId,
+            file_url: urlData.publicUrl,
+            original_file_name: file.name,
+            display_name: displayName,
+            final_file_name: finalFileName,
+            renamed_at: new Date().toISOString(),
+            description: description || null,
+            category,
+            file_type: getFileType(file.type, file.name),
+            file_size_bytes: file.size,
+            mime_type: file.type || null,
+            property_id: propertyId || null,
+            company_id: companyId || null,
+            tenant_id: tenantId || null,
+            tenancy_id: tenancyId || null,
+            compliance_item_id: complianceItemId || null,
+            contractor_job_id: jobId || null,
+            document_date: documentDate || null,
+            expiry_date: expiryDate || null,
+            is_confidential: isConfidential || false,
+            visible_to_shareholders: visibleToShareholders || false,
+            visible_to_tenants: visibleToTenants || false,
+            uploaded_by: userData.user?.id || null,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Log activity
+        await supabase.from('document_activity').insert({
+          document_id: data.id,
+          action: 'uploaded',
+          performed_by: userData.user?.id || null,
+        });
+
+        return data;
+      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
        toast({ title: 'Document uploaded successfully' });
@@ -375,7 +448,7 @@
        const url = window.URL.createObjectURL(blob);
        const a = window.document.createElement('a');
        a.href = url;
-       a.download = document.original_file_name;
+       a.download = document.final_file_name || document.display_name || document.original_file_name;
        window.document.body.appendChild(a);
        a.click();
        window.URL.revokeObjectURL(url);

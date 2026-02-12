@@ -17,6 +17,7 @@ import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
  import { ContractorDirectory } from '@/components/settings/ContractorDirectory';
 import { BillingSettings } from '@/components/settings/BillingSettings';
 import { BackupExportSection } from '@/components/settings/BackupExportSection';
+import { DocumentRenamingSection } from '@/components/settings/DocumentRenamingSection';
 import { TeamMembersSettings } from '@/components/settings/TeamMembersSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
@@ -764,8 +765,9 @@ export default function Settings() {
 
            {/* Backup & Export Tab */}
            <TabsContent value="backup" className="space-y-6 max-w-2xl">
-             <BackupExportSection />
-           </TabsContent>
+              <BackupExportSection />
+              <DocumentRenamingSection />
+            </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
