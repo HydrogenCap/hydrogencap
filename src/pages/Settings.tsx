@@ -16,6 +16,7 @@ import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
  import { NotificationSettings } from '@/components/settings/NotificationSettings';
  import { ContractorDirectory } from '@/components/settings/ContractorDirectory';
 import { BillingSettings } from '@/components/settings/BillingSettings';
+import { TeamMembersSettings } from '@/components/settings/TeamMembersSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
@@ -334,10 +335,14 @@ export default function Settings() {
                <Bell className="h-4 w-4" />
                Notifications
              </TabsTrigger>
-             <TabsTrigger value="billing" className="gap-2">
-               <CreditCard className="h-4 w-4" />
-               Billing
-             </TabsTrigger>
+              <TabsTrigger value="billing" className="gap-2">
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </TabsTrigger>
+              <TabsTrigger value="team" className="gap-2">
+                <Users className="h-4 w-4" />
+                Team
+              </TabsTrigger>
            </TabsList>
 
           <TabsContent value="profile" className="space-y-6 max-w-2xl">
@@ -745,6 +750,11 @@ export default function Settings() {
            {/* Billing Tab */}
            <TabsContent value="billing" className="space-y-6">
              <BillingSettings />
+           </TabsContent>
+
+           {/* Team Tab */}
+           <TabsContent value="team" className="space-y-6 max-w-2xl">
+             <TeamMembersSettings />
            </TabsContent>
         </Tabs>
       </div>

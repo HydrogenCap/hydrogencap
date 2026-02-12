@@ -3,6 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, MailCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,8 +12,9 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, signOut } = useAuth();
+  const { data: onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
 
-  if (loading) {
+  if (loading || (user && onboardingLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -47,6 +50,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         </Card>
       </div>
     );
+  }
+
+  // Show onboarding wizard for new users
+  if (onboardingCompleted === false) {
+    return <OnboardingWizard />;
   }
 
   return <>{children}</>;
