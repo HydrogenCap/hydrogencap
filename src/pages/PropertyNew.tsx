@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,8 @@ import { AutoPopulateButton } from '@/components/property/AutoPopulateButton';
 import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
 import { AddressAutocomplete, AddressData } from '@/components/maps/AddressAutocomplete';
 import { GeocodeStatusBadge } from '@/components/geocoding';
+import { useUnitUsage } from '@/hooks/useUnitUsage';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const propertySchema = z.object({
   address_line: z.string().min(1, 'Address is required').max(255),
@@ -71,6 +73,7 @@ function PropertyNewPage() {
   const createLoan = useCreateLoan();
   const upsertIncome = useUpsertIncome();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { atLimit, totalUnits, limit } = useUnitUsage();
   const [geocodeData, setGeocodeData] = useState<AddressData | null>(null);
 
   const form = useForm<PropertyFormData>({
@@ -245,6 +248,16 @@ function PropertyNewPage() {
             <p className="text-muted-foreground">Enter the property details</p>
           </div>
         </div>
+
+        {atLimit && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              You've reached your plan limit of {limit === Infinity ? 'unlimited' : limit} properties/rooms ({totalUnits} used).{' '}
+              <a href="/settings" className="underline font-medium">Upgrade your plan</a> to add more.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -692,7 +705,7 @@ function PropertyNewPage() {
 
             {/* Actions */}
             <div className="flex gap-4">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || atLimit}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Add Property
               </Button>

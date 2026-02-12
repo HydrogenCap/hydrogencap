@@ -142,6 +142,7 @@
      },
      onSuccess: (data) => {
        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+       queryClient.invalidateQueries({ queryKey: ['unit-usage-count'] });
        toast({ title: 'Room created', description: `${data.room_name} has been added.` });
      },
      onError: (error) => {
@@ -187,6 +188,7 @@
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+       queryClient.invalidateQueries({ queryKey: ['unit-usage-count'] });
        toast({ title: 'Room deleted' });
      },
      onError: (error) => {

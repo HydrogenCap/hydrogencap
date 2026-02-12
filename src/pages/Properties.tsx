@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { formatGBP, formatGBPDecimal, formatPercent, formatDateUK } from '@/lib/calculations';
 import { downloadCSV } from '@/lib/csvExporter';
 import { useToast } from '@/hooks/use-toast';
+import { useUnitUsage } from '@/hooks/useUnitUsage';
 
 // Extracted modules
 import { 
@@ -72,6 +73,7 @@ function PropertiesPage() {
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrich();
   const { enrichAll: enrichPricePaid, isEnriching: isEnrichingPricePaid } = useBulkPricePaidEnrich();
   const { toast } = useToast();
+  const { atLimit, totalUnits, limit } = useUnitUsage();
   
   // Calculate properties missing data
   const propertiesMissingEpc = useMemo(() => {
@@ -479,11 +481,15 @@ function PropertiesPage() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Button asChild>
-              <Link to="/properties/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Property
-              </Link>
+            <Button asChild={!atLimit} disabled={atLimit} title={atLimit ? `Plan limit reached (${totalUnits}/${limit === Infinity ? '∞' : limit} units)` : undefined}>
+              {atLimit ? (
+                <span><Plus className="h-4 w-4 mr-2" />Add Property</span>
+              ) : (
+                <Link to="/properties/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Property
+                </Link>
+              )}
             </Button>
           </div>
         </div>
@@ -606,13 +612,19 @@ function PropertiesPage() {
               <p className="text-muted-foreground mb-4">
                 {searchQuery ? 'Try a different search term' : 'Get started by adding your first property'}
               </p>
-              {!searchQuery && (
+              {!searchQuery && !atLimit && (
                 <Button asChild>
                   <Link to="/properties/new">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Property
                   </Link>
                 </Button>
+              )}
+              {!searchQuery && atLimit && (
+                <p className="text-sm text-muted-foreground">
+                  You've reached your plan limit ({totalUnits}/{limit === Infinity ? '∞' : limit} units).{' '}
+                  <Link to="/settings" className="underline font-medium text-primary">Upgrade your plan</Link>
+                </p>
               )}
             </CardContent>
           </Card>
