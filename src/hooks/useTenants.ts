@@ -76,10 +76,10 @@ export interface TenantWithProperty extends Tenant {
    return useQuery({
      queryKey: ['tenants', status],
      queryFn: async () => {
-       let query = supabase
-         .from('tenants')
-         .select('*')
-         .order('created_at', { ascending: false });
+        let query = supabase
+          .from('tenants')
+          .select('id, org_id, tenant_type, first_name, last_name, email, phone, company_name, company_number, status, notes, created_at, updated_at')
+          .order('created_at', { ascending: false });
  
        if (status) {
          query = query.eq('status', status);
@@ -97,10 +97,10 @@ export interface TenantWithProperty extends Tenant {
      queryKey: ['tenants', 'with-property'],
      queryFn: async () => {
        // Get all tenants
-       const { data: tenants, error: tenantsError } = await supabase
-         .from('tenants')
-         .select('*')
-         .order('created_at', { ascending: false });
+        const { data: tenants, error: tenantsError } = await supabase
+          .from('tenants')
+          .select('*')
+          .order('created_at', { ascending: false });
  
        if (tenantsError) throw tenantsError;
  

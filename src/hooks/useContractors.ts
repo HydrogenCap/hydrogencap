@@ -47,13 +47,13 @@
    return useQuery({
      queryKey: ['contractors', filters],
      queryFn: async () => {
-       let query = supabase
-         .from('contractors')
-         .select('*')
-         .order('is_preferred', { ascending: false })
-         .order('average_rating', { ascending: false, nullsFirst: false })
-         .order('name');
- 
+      let query = supabase
+          .from('contractors')
+          .select('id, org_id, name, company_name, email, phone, website, compliance_types, service_areas, notes, is_preferred, is_active, average_rating, total_jobs, avg_response_hours, hourly_rate_gbp, call_out_fee_gbp, typical_costs, availability_notes, last_used_at')
+          .order('is_preferred', { ascending: false })
+          .order('average_rating', { ascending: false, nullsFirst: false })
+          .order('name');
+  
        if (filters?.complianceType) {
          query = query.contains('compliance_types', [filters.complianceType]);
        }
