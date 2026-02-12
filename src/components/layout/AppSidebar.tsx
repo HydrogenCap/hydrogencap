@@ -22,7 +22,7 @@ import {
   Wrench,
   Upload,
 } from 'lucide-react';
-import { usePortfolioComplianceRequirements } from '@/hooks/useComplianceRequirements';
+import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
   Sidebar,
   SidebarContent,
@@ -88,7 +88,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { data: inboxDocuments } = useInboxDocuments();
-  const { stats: complianceStats } = usePortfolioComplianceRequirements();
+  const { stats: complianceStats } = usePortfolioComplianceStats();
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
   const { data: jobCounts } = useJobCounts();
 
@@ -98,9 +98,8 @@ export function AppSidebar() {
     d => d.review_status === 'pending' && d.extraction_status === 'completed'
   ).length || 0;
 
-  const expiredCount = complianceStats.totalExpired + complianceStats.totalMissing;
-  const expiringCount = complianceStats.totalExpiringSoon;
-  const complianceAlertCount = expiredCount + expiringCount;
+  const complianceAlertCount = complianceStats.expired + complianceStats.expiring;
+  const expiredCount = complianceStats.expired;
 
   const isActive = (href: string) =>
     location.pathname === href ||

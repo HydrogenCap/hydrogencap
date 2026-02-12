@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePortfolioComplianceRequirements, useMissingCompliance } from '@/hooks/useComplianceRequirements';
+import { useMissingCompliance } from '@/hooks/useComplianceRequirements';
+import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import { getRequirementStatusColor } from '@/lib/complianceRequirements';
 
 export function MissingComplianceWidget() {
-  const { stats, isLoading: loadingStats } = usePortfolioComplianceRequirements();
+  const { stats, isLoading: loadingStats } = usePortfolioComplianceStats();
   const { data: missingItems, isLoading: loadingMissing } = useMissingCompliance();
   
   const isLoading = loadingStats || loadingMissing;
@@ -30,7 +31,7 @@ export function MissingComplianceWidget() {
     );
   }
   
-  const totalIssues = stats.totalMissing + stats.totalExpired + stats.totalExpiringSoon;
+  const totalIssues = stats.expired + stats.expiring;
   const hasIssues = totalIssues > 0;
   
   // Show top 5 issues
@@ -59,23 +60,23 @@ export function MissingComplianceWidget() {
         {/* Portfolio compliance score */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Portfolio Compliance Score</span>
+            <span className="text-muted-foreground">Portfolio Compliance</span>
             <span className={`font-semibold ${
-              stats.averageComplianceScore >= 80 
+              stats.total > 0 && stats.valid / stats.total >= 0.8
                 ? 'text-green-600' 
-                : stats.averageComplianceScore >= 50 
+                : stats.total > 0 && stats.valid / stats.total >= 0.5
                 ? 'text-amber-600' 
                 : 'text-red-600'
             }`}>
-              {stats.averageComplianceScore}%
+              {stats.total > 0 ? Math.round((stats.valid / stats.total) * 100) : 100}%
             </span>
           </div>
           <Progress 
-            value={stats.averageComplianceScore} 
+            value={stats.total > 0 ? (stats.valid / stats.total) * 100 : 100} 
             className={`h-2 ${
-              stats.averageComplianceScore >= 80 
+              stats.total > 0 && stats.valid / stats.total >= 0.8
                 ? '[&>div]:bg-green-500' 
-                : stats.averageComplianceScore >= 50 
+                : stats.total > 0 && stats.valid / stats.total >= 0.5
                 ? '[&>div]:bg-amber-500' 
                 : '[&>div]:bg-red-500'
             }`}
@@ -83,32 +84,20 @@ export function MissingComplianceWidget() {
         </div>
         
         {/* Summary stats */}
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
           <div className="p-2 rounded bg-green-100 dark:bg-green-900/20">
-            <div className="font-bold text-green-700 dark:text-green-400">{stats.totalValid}</div>
+            <div className="font-bold text-green-700 dark:text-green-400">{stats.valid}</div>
             <div className="text-green-600 dark:text-green-500">Valid</div>
           </div>
           <div className="p-2 rounded bg-amber-100 dark:bg-amber-900/20">
-            <div className="font-bold text-amber-700 dark:text-amber-400">{stats.totalExpiringSoon}</div>
+            <div className="font-bold text-amber-700 dark:text-amber-400">{stats.expiring}</div>
             <div className="text-amber-600 dark:text-amber-500">Expiring</div>
           </div>
           <div className="p-2 rounded bg-red-100 dark:bg-red-900/20">
-            <div className="font-bold text-red-700 dark:text-red-400">{stats.totalExpired}</div>
-            <div className="text-red-600 dark:text-red-500">Expired</div>
-          </div>
-          <div className="p-2 rounded bg-red-100 dark:bg-red-900/20">
-            <div className="font-bold text-red-700 dark:text-red-400">{stats.totalMissing}</div>
-            <div className="text-red-600 dark:text-red-500">Missing</div>
+            <div className="font-bold text-red-700 dark:text-red-400">{stats.expired}</div>
+            <div className="text-red-600 dark:text-red-500">Expired / Missing</div>
           </div>
         </div>
-        
-        {/* Properties with issues */}
-        {stats.propertiesWithIssues > 0 && (
-          <div className="text-sm text-muted-foreground">
-            <AlertTriangle className="h-4 w-4 inline text-amber-500 mr-1" />
-            {stats.propertiesWithIssues} of {stats.totalProperties} properties have compliance issues
-          </div>
-        )}
         
         {/* Top issues list */}
         {topIssues.length > 0 && (
