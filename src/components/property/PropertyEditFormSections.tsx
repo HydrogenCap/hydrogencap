@@ -197,8 +197,8 @@ export function ValuationSection({ form }: { form: UseFormReturn<any> }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle>Valuation</CardTitle>
-        <CardDescription>Purchase and current value</CardDescription>
+        <CardTitle>Valuation & Acquisition Costs</CardTitle>
+        <CardDescription>Purchase price, current value, and capital invested</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
         <FormField control={form.control} name="purchase_price_gbp" render={({ field }) => (
@@ -209,6 +209,18 @@ export function ValuationSection({ form }: { form: UseFormReturn<any> }) {
         )} />
         <FormField control={form.control} name="current_value_gbp" render={({ field }) => (
           <FormItem><FormLabel>Current Value (£)</FormLabel><FormControl><Input {...field} type="number" min="0" step="1000" className="bg-input" /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="stamp_duty_gbp" render={({ field }) => (
+          <FormItem><FormLabel>Stamp Duty (£)</FormLabel><FormControl><Input {...field} type="number" min="0" step="100" className="bg-input" placeholder="0" /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="refurb_cost_gbp" render={({ field }) => (
+          <FormItem><FormLabel>Refurbishment Cost (£)</FormLabel><FormControl><Input {...field} type="number" min="0" step="100" className="bg-input" placeholder="0" /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="legal_fees_gbp" render={({ field }) => (
+          <FormItem><FormLabel>Legal Fees (£)</FormLabel><FormControl><Input {...field} type="number" min="0" step="100" className="bg-input" placeholder="0" /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={form.control} name="other_acquisition_costs_gbp" render={({ field }) => (
+          <FormItem><FormLabel>Other Costs (£)</FormLabel><FormControl><Input {...field} type="number" min="0" step="100" className="bg-input" placeholder="0" /></FormControl><FormMessage /></FormItem>
         )} />
       </CardContent>
     </Card>

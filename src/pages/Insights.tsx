@@ -26,6 +26,7 @@ import {
   Users,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { StressTestPanel } from '@/components/property/StressTestPanel';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -197,9 +198,13 @@ function InsightsPage() {
         {/* Tabs for different insight views */}
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+           <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="stress-test" className="flex items-center gap-2">
+              <TrendingDown className="h-4 w-4" />
+              Stress Test
             </TabsTrigger>
             <TabsTrigger value="ownership" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -548,6 +553,11 @@ function InsightsPage() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Stress Test Tab */}
+          <TabsContent value="stress-test">
+            <StressTestPanel />
           </TabsContent>
 
           {/* Ownership Attribution Tab */}
