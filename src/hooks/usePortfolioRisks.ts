@@ -3,6 +3,7 @@ import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { useTenancyComplianceStats, type TenancyComplianceItemWithDetails } from '@/hooks/useTenancyCompliance';
+import { useInsurancePolicies, type InsurancePolicy } from '@/hooks/useInsurance';
 import {
   calculateLTV,
   getLTVStatus,
@@ -15,7 +16,7 @@ import {
   formatGBP,
 } from '@/lib/calculations';
 
-export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance';
+export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance' | 'insurance' | 'leasehold';
 
 export interface RiskItem {
   id: string;
@@ -36,6 +37,8 @@ export const riskTypeLabels: Record<RiskType, string> = {
   hmo_licence: 'HMO Licence',
   operational_data: 'Missing Data',
   tenancy_compliance: 'Tenancy Compliance',
+  insurance: 'Insurance',
+  leasehold: 'Leasehold',
 };
 
 /**
@@ -47,7 +50,8 @@ export function calculatePortfolioRisks(
   properties: PropertyWithFinancials[],
   passportMap: Map<string, PropertyPassport>,
   complianceByPropertyMap: Map<string, any[]>,
-  tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = []
+  tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = [],
+  insurancePolicies: InsurancePolicy[] = []
 ): RiskItem[] {
   const riskItems: RiskItem[] = [];
   const currentYear = new Date().getFullYear();
@@ -229,6 +233,74 @@ export function calculatePortfolioRisks(
       }
     }
 
+    // ========== INSURANCE GAP ANALYSIS ==========
+    const propertyInsurance = insurancePolicies.filter(p => p.property_id === property.id);
+    if (propertyInsurance.length === 0) {
+      riskItems.push({
+        id: `insurance-missing-${property.id}`,
+        propertyId: property.id,
+        address: property.address_line,
+        type: 'insurance',
+        severity: 'critical',
+        message: 'No insurance policy on record',
+        targetUrl: `/properties/${property.id}?tab=compliance`,
+      });
+    } else {
+      const now = new Date();
+      propertyInsurance.forEach(policy => {
+        if (policy.renewal_date) {
+          const renewalDate = new Date(policy.renewal_date);
+          const daysToRenewal = Math.ceil((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysToRenewal <= 0) {
+            riskItems.push({
+              id: `insurance-expired-${policy.id}`,
+              propertyId: property.id,
+              address: property.address_line,
+              type: 'insurance',
+              severity: 'critical',
+              message: `Insurance policy expired (${policy.insurer_name})`,
+              targetUrl: `/properties/${property.id}?tab=compliance`,
+            });
+          } else if (daysToRenewal <= 30) {
+            riskItems.push({
+              id: `insurance-expiring-${policy.id}`,
+              propertyId: property.id,
+              address: property.address_line,
+              type: 'insurance',
+              severity: 'warning',
+              message: `Insurance renews in ${daysToRenewal} days (${policy.insurer_name})`,
+              targetUrl: `/properties/${property.id}?tab=compliance`,
+            });
+          }
+        }
+      });
+    }
+
+    // ========== LEASEHOLD RISKS ==========
+    if ((property.tenure === 'Leasehold' || property.tenure === 'Share of Freehold') && property.lease_years_remaining) {
+      if (property.lease_years_remaining < 60) {
+        riskItems.push({
+          id: `lease-critical-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'leasehold',
+          severity: 'critical',
+          message: `Lease ${property.lease_years_remaining} yrs — below 60yr mortgage threshold`,
+          targetUrl: `/properties/${property.id}`,
+        });
+      } else if (property.lease_years_remaining < 80) {
+        riskItems.push({
+          id: `lease-warning-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'leasehold',
+          severity: 'warning',
+          message: `Lease ${property.lease_years_remaining} yrs — approaching 80yr marriage value threshold`,
+          targetUrl: `/properties/${property.id}`,
+        });
+      }
+    }
+
     // ========== PROPERTY DATA COMPLETENESS ==========
     
     // Check core property fields (in properties table, edited via Property Edit page)
@@ -305,6 +377,7 @@ export function usePortfolioRisks() {
   const { data: passports, isLoading: passportsLoading } = usePropertyPassports();
   const { data: allComplianceItems, isLoading: complianceLoading } = useAllCompliance();
   const { data: tenancyStats, isLoading: tenancyComplianceLoading } = useTenancyComplianceStats();
+  const { data: insurancePolicies, isLoading: insuranceLoading } = useInsurancePolicies();
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -331,9 +404,10 @@ export function usePortfolioRisks() {
       properties,
       passportMap,
       complianceByPropertyMap,
-      tenancyStats?.overdueItems || []
+      tenancyStats?.overdueItems || [],
+      insurancePolicies || []
     );
-  }, [properties, passportMap, complianceByPropertyMap, tenancyStats?.overdueItems]);
+  }, [properties, passportMap, complianceByPropertyMap, tenancyStats?.overdueItems, insurancePolicies]);
 
   const criticalCount = useMemo(() => risks.filter(r => r.severity === 'critical').length, [risks]);
   const warningCount = useMemo(() => risks.filter(r => r.severity === 'warning').length, [risks]);
@@ -343,7 +417,7 @@ export function usePortfolioRisks() {
     criticalCount,
     warningCount,
     totalCount: risks.length,
-    isLoading: propertiesLoading || passportsLoading || complianceLoading || tenancyComplianceLoading,
+    isLoading: propertiesLoading || passportsLoading || complianceLoading || tenancyComplianceLoading || insuranceLoading,
     passportMap,
     complianceByPropertyMap,
   };

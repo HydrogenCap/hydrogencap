@@ -10,6 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ActivityTimeline } from '@/components/activity/ActivityTimeline';
 import { OwnershipSection, FinancialAttributionCard } from '@/components/ownership';
 import { LocationRegistryCard, PropertyMediaHeader, FinanceSummaryCard, GoLiveChecklist, QuickPerformanceCard } from '@/components/property';
+import { VoidPeriodsPanel } from '@/components/property/VoidPeriodsPanel';
+import { LeaseholdDetailsCard } from '@/components/property/LeaseholdDetailsCard';
+import { HmoComplianceCard } from '@/components/property/HmoComplianceCard';
 import { PropertyStatusBar } from '@/components/property/PropertyStatusBar';
 import { PassportForm, CoreIdentityCard } from '@/components/passport';
 import { PhotoGallery } from '@/components/photos';
@@ -345,6 +348,24 @@ function PropertyDetailPage() {
               uprn={property.uprn}
               landRegistryLink={property.land_registry_link}
               address={`${property.address_line}, ${property.postcode || ''}`}
+            />
+
+            {/* Leasehold Details */}
+            <LeaseholdDetailsCard
+              propertyId={id!}
+              leaseYearsRemaining={property.lease_years_remaining}
+              tenure={property.tenure}
+            />
+
+            {/* Void Periods */}
+            <VoidPeriodsPanel propertyId={id!} />
+
+            {/* HMO Compliance */}
+            <HmoComplianceCard
+              propertyId={id!}
+              isHmo={property.is_hmo_licensed || false}
+              beds={property.beds}
+              bathrooms={property.bathrooms}
             />
 
             {/* Ownership Section */}
