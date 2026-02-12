@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
- import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive } from 'lucide-react';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
 import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
@@ -16,6 +16,7 @@ import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
  import { NotificationSettings } from '@/components/settings/NotificationSettings';
  import { ContractorDirectory } from '@/components/settings/ContractorDirectory';
 import { BillingSettings } from '@/components/settings/BillingSettings';
+import { BackupExportSection } from '@/components/settings/BackupExportSection';
 import { TeamMembersSettings } from '@/components/settings/TeamMembersSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
@@ -342,6 +343,10 @@ export default function Settings() {
               <TabsTrigger value="team" className="gap-2">
                 <Users className="h-4 w-4" />
                 Team
+              </TabsTrigger>
+              <TabsTrigger value="backup" className="gap-2">
+                <HardDrive className="h-4 w-4" />
+                Backup
               </TabsTrigger>
            </TabsList>
 
@@ -755,6 +760,11 @@ export default function Settings() {
            {/* Team Tab */}
            <TabsContent value="team" className="space-y-6 max-w-2xl">
              <TeamMembersSettings />
+            </TabsContent>
+
+           {/* Backup & Export Tab */}
+           <TabsContent value="backup" className="space-y-6 max-w-2xl">
+             <BackupExportSection />
            </TabsContent>
         </Tabs>
       </div>
