@@ -27,6 +27,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EditTenantDialog } from '@/components/tenants/EditTenantDialog';
 import { TenantContactCards } from '@/components/tenants/TenantContactCards';
 import { TenantDocumentsTab } from '@/components/tenants/TenantDocumentsTab';
+import { InviteTenantPortalDialog } from '@/components/tenants/InviteTenantPortalDialog';
  
 const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
@@ -161,6 +162,7 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
      const [sendingCerts, setSendingCerts] = useState(false);
       const [certsSent, setCertsSent] = useState(false);
       const [showEditDialog, setShowEditDialog] = useState(false);
+      const [showPortalInvite, setShowPortalInvite] = useState(false);
     const { toast } = useToast();
 
     const { data: tenant, isLoading: tenantLoading } = useTenant(tenantId!);
@@ -483,10 +485,14 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
                 </p>
               )}
            </div>
-            <Button variant="outline" onClick={() => setShowEditDialog(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Tenant
+            <Button variant="outline" onClick={() => setShowPortalInvite(true)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Portal Access
             </Button>
+            <Button variant="outline" onClick={() => setShowEditDialog(true)}>
+               <Edit className="h-4 w-4 mr-2" />
+               Edit Tenant
+             </Button>
          </div>
  
          <div className="grid lg:grid-cols-3 gap-6">
@@ -645,6 +651,13 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
               tenant={tenant}
               open={showEditDialog}
               onOpenChange={setShowEditDialog}
+            />
+
+            <InviteTenantPortalDialog
+              open={showPortalInvite}
+              onOpenChange={setShowPortalInvite}
+              tenant={tenant}
+              tenancies={tenancies || []}
             />
           </div>
      </AppLayout>
