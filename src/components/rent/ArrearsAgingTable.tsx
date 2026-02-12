@@ -95,7 +95,7 @@ function PropertyRow({
           <TableCell className="pl-10">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">├</span>
-              <span>{t.room_name} — {t.tenant_name}</span>
+              <span>{t.room_name === 'Whole Property' ? t.tenant_name : `${t.room_name} — ${t.tenant_name}`}</span>
               <Link
                 to={`/rent/tenancy/${t.tenancy_id}`}
                 className="text-xs text-primary hover:underline ml-auto"
