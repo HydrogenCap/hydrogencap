@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
+import { InlineTenancyLedger } from './InlineTenancyLedger';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -32,6 +33,7 @@ function PropertyRow({
   onToggleSelection?: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [expandedTenancies, setExpandedTenancies] = useState<Set<string>>(new Set());
 
   // Check if all schedule items in this property are selected
   const allItemIds = row.tenancies.flatMap(t => t.schedule_items.map(s => s.id));
@@ -42,17 +44,26 @@ function PropertyRow({
   const togglePropertySelection = () => {
     if (!onToggleSelection) return;
     if (isAllPropertySelected) {
-      // Deselect all
       allItemIds.forEach(id => {
         if (selectedIds?.has(id)) onToggleSelection(id);
       });
     } else {
-      // Select all
       allItemIds.forEach(id => {
         if (!selectedIds?.has(id)) onToggleSelection(id);
       });
     }
   };
+
+  const toggleTenancyLedger = (tenancyId: string) => {
+    setExpandedTenancies(prev => {
+      const next = new Set(prev);
+      if (next.has(tenancyId)) next.delete(tenancyId);
+      else next.add(tenancyId);
+      return next;
+    });
+  };
+
+  const colSpan = onToggleSelection ? 8 : 7;
 
   return (
     <>
@@ -89,28 +100,37 @@ function PropertyRow({
         <TableCell className="text-right font-bold tabular-nums">{fmt(row.total)}</TableCell>
       </TableRow>
 
-      {expanded && row.tenancies.map((t) => (
-        <TableRow key={t.tenancy_id} className="bg-muted/30">
-          {onToggleSelection && <TableCell className="w-10" />}
-          <TableCell className="pl-10">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">├</span>
-              <span>{t.room_name === 'Whole Property' ? t.tenant_name : `${t.room_name} — ${t.tenant_name}`}</span>
-              <Link
-                to={`/rent/tenancy/${t.tenancy_id}`}
-                className="text-xs text-primary hover:underline ml-auto"
-              >
-                View Ledger →
-              </Link>
-            </div>
-          </TableCell>
-          <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_30)}</TableCell>
-          <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_60)}</TableCell>
-          <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_90)}</TableCell>
-          <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_more)}</TableCell>
-          <TableCell className="text-right font-semibold tabular-nums">{fmt(t.total)}</TableCell>
-        </TableRow>
-      ))}
+      {expanded && row.tenancies.map((t) => {
+        const isTenancyExpanded = expandedTenancies.has(t.tenancy_id);
+        return (
+          <>
+            <TableRow
+              key={t.tenancy_id}
+              className="bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => toggleTenancyLedger(t.tenancy_id)}
+            >
+              {onToggleSelection && <TableCell className="w-10" />}
+              <TableCell className="pl-10">
+                <div className="flex items-center gap-2">
+                  {isTenancyExpanded
+                    ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  }
+                  <span>{t.room_name === 'Whole Property' ? t.tenant_name : `${t.room_name} — ${t.tenant_name}`}</span>
+                </div>
+              </TableCell>
+              <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_30)}</TableCell>
+              <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_60)}</TableCell>
+              <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_90)}</TableCell>
+              <TableCell className="text-right tabular-nums text-muted-foreground">{fmt(t.bucket_more)}</TableCell>
+              <TableCell className="text-right font-semibold tabular-nums">{fmt(t.total)}</TableCell>
+            </TableRow>
+            {isTenancyExpanded && (
+              <InlineTenancyLedger tenancyId={t.tenancy_id} colSpan={colSpan} />
+            )}
+          </>
+        );
+      })}
     </>
   );
 }
@@ -153,92 +173,16 @@ export function ArrearsAgingTable({
     ).sort((a, b) => b.total - a.total);
 
     return (
-      <Card className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {showCheckboxes && (
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
-                    onCheckedChange={onToggleAll}
-                    aria-label="Select all"
-                  />
-                </TableHead>
-              )}
-              <TableHead>Tenant</TableHead>
-              <TableHead>Room</TableHead>
-              <TableHead>Property</TableHead>
-              <TableHead className="text-right">30 Days</TableHead>
-              <TableHead className="text-right">60 Days</TableHead>
-              <TableHead className="text-right">90 Days</TableHead>
-              <TableHead className="text-right">90+</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {allTenancies.map((t) => {
-              const tenancyItemIds = t.schedule_items.map(s => s.id);
-              const tenancySelectedCount = tenancyItemIds.filter(id => selectedIds?.has(id)).length;
-              const isAllTenancySelected = tenancyItemIds.length > 0 && tenancySelectedCount === tenancyItemIds.length;
-              const isPartialTenancy = tenancySelectedCount > 0 && tenancySelectedCount < tenancyItemIds.length;
-
-              const toggleTenancySelection = () => {
-                if (!onToggleSelection) return;
-                if (isAllTenancySelected) {
-                  tenancyItemIds.forEach(id => { if (selectedIds?.has(id)) onToggleSelection(id); });
-                } else {
-                  tenancyItemIds.forEach(id => { if (!selectedIds?.has(id)) onToggleSelection(id); });
-                }
-              };
-
-              return (
-                <TableRow
-                  key={t.tenancy_id}
-                  className={cn(
-                    isAllTenancySelected && 'bg-primary/5'
-                  )}
-                >
-                  {showCheckboxes && (
-                    <TableCell className="w-10">
-                      <Checkbox
-                        checked={isAllTenancySelected ? true : isPartialTenancy ? 'indeterminate' : false}
-                        onCheckedChange={toggleTenancySelection}
-                        aria-label={`Select ${t.tenant_name}`}
-                      />
-                    </TableCell>
-                  )}
-                  <TableCell className="font-medium">{t.tenant_name}</TableCell>
-                  <TableCell>{t.room_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{t.property_address}</TableCell>
-                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_30)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_60)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_90)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_more)}</TableCell>
-                  <TableCell className="text-right font-bold tabular-nums">{fmt(t.total)}</TableCell>
-                  <TableCell>
-                    <Link to={`/rent/tenancy/${t.tenancy_id}`} className="text-xs text-primary hover:underline">
-                      Ledger →
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={showCheckboxes ? 4 : 3} className="font-bold">Portfolio Total</TableCell>
-              <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_30)}</TableCell>
-              <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_60)}</TableCell>
-              <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_90)}</TableCell>
-              <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_more)}</TableCell>
-              <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.total)}</TableCell>
-              <TableCell></TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </Card>
+      <TenancyGroupingTable
+        allTenancies={allTenancies}
+        showCheckboxes={showCheckboxes}
+        isAllSelected={isAllSelected}
+        isPartiallySelected={isPartiallySelected}
+        onToggleAll={onToggleAll}
+        selectedIds={selectedIds}
+        onToggleSelection={onToggleSelection}
+        portfolioTotal={portfolioTotal}
+      />
     );
   }
 
@@ -356,6 +300,140 @@ export function ArrearsAgingTable({
             <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_90)}</TableCell>
             <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_more)}</TableCell>
             <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.total)}</TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    </Card>
+  );
+}
+
+function TenancyGroupingTable({
+  allTenancies,
+  showCheckboxes,
+  isAllSelected,
+  isPartiallySelected,
+  onToggleAll,
+  selectedIds,
+  onToggleSelection,
+  portfolioTotal,
+}: {
+  allTenancies: any[];
+  showCheckboxes: boolean;
+  isAllSelected?: boolean;
+  isPartiallySelected?: boolean;
+  onToggleAll?: () => void;
+  selectedIds?: Set<string>;
+  onToggleSelection?: (id: string) => void;
+  portfolioTotal: { bucket_30: number; bucket_60: number; bucket_90: number; bucket_more: number; total: number };
+}) {
+  const [expandedTenancies, setExpandedTenancies] = useState<Set<string>>(new Set());
+
+  const toggleTenancyLedger = (tenancyId: string) => {
+    setExpandedTenancies(prev => {
+      const next = new Set(prev);
+      if (next.has(tenancyId)) next.delete(tenancyId);
+      else next.add(tenancyId);
+      return next;
+    });
+  };
+
+  const colSpan = showCheckboxes ? 11 : 10;
+
+  return (
+    <Card className="overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {showCheckboxes && (
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
+                  onCheckedChange={onToggleAll}
+                  aria-label="Select all"
+                />
+              </TableHead>
+            )}
+            <TableHead>Tenant</TableHead>
+            <TableHead>Room</TableHead>
+            <TableHead>Property</TableHead>
+            <TableHead className="text-right">30 Days</TableHead>
+            <TableHead className="text-right">60 Days</TableHead>
+            <TableHead className="text-right">90 Days</TableHead>
+            <TableHead className="text-right">90+</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+            <TableHead></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {allTenancies.map((t) => {
+            const tenancyItemIds = t.schedule_items.map((s: any) => s.id);
+            const tenancySelectedCount = tenancyItemIds.filter((id: string) => selectedIds?.has(id)).length;
+            const isAllTenancySelected = tenancyItemIds.length > 0 && tenancySelectedCount === tenancyItemIds.length;
+            const isPartialTenancy = tenancySelectedCount > 0 && tenancySelectedCount < tenancyItemIds.length;
+            const isTenancyExpanded = expandedTenancies.has(t.tenancy_id);
+
+            const toggleTenancySelection = () => {
+              if (!onToggleSelection) return;
+              if (isAllTenancySelected) {
+                tenancyItemIds.forEach((id: string) => { if (selectedIds?.has(id)) onToggleSelection(id); });
+              } else {
+                tenancyItemIds.forEach((id: string) => { if (!selectedIds?.has(id)) onToggleSelection(id); });
+              }
+            };
+
+            return (
+              <>
+                <TableRow
+                  key={t.tenancy_id}
+                  className={cn(
+                    'cursor-pointer hover:bg-muted/50 transition-colors',
+                    isAllTenancySelected && 'bg-primary/5'
+                  )}
+                  onClick={() => toggleTenancyLedger(t.tenancy_id)}
+                >
+                  {showCheckboxes && (
+                    <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={isAllTenancySelected ? true : isPartialTenancy ? 'indeterminate' : false}
+                        onCheckedChange={toggleTenancySelection}
+                        aria-label={`Select ${t.tenant_name}`}
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {isTenancyExpanded
+                        ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                        : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                      }
+                      {t.tenant_name}
+                    </div>
+                  </TableCell>
+                  <TableCell>{t.room_name}</TableCell>
+                  <TableCell className="text-muted-foreground">{t.property_address}</TableCell>
+                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_30)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_60)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_90)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{fmt(t.bucket_more)}</TableCell>
+                  <TableCell className="text-right font-bold tabular-nums">{fmt(t.total)}</TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+                {isTenancyExpanded && (
+                  <InlineTenancyLedger tenancyId={t.tenancy_id} colSpan={colSpan} />
+                )}
+              </>
+            );
+          })}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={showCheckboxes ? 4 : 3} className="font-bold">Portfolio Total</TableCell>
+            <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_30)}</TableCell>
+            <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_60)}</TableCell>
+            <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_90)}</TableCell>
+            <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.bucket_more)}</TableCell>
+            <TableCell className="text-right font-bold tabular-nums">{fmt(portfolioTotal.total)}</TableCell>
+            <TableCell></TableCell>
           </TableRow>
         </TableFooter>
       </Table>
