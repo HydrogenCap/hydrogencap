@@ -204,11 +204,12 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
         .upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData, error: urlError } = await supabase.storage
         .from('documents')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 600); // 10 min expiry
+      if (urlError || !urlData?.signedUrl) throw new Error('Failed to create signed URL');
       
-      setAgreementUrl(urlData.publicUrl);
+      setAgreementUrl(urlData.signedUrl);
       setProcessingStep(1);
       setProcessingProgress(30);
 
@@ -218,7 +219,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
 
       const { data, error } = await supabase.functions.invoke('process-tenancy-agreement', {
         body: {
-          fileUrl: urlData.publicUrl,
+          fileUrl: urlData.signedUrl,
           tenantName,
           tenantType,
           propertyAddress: '',
