@@ -3,13 +3,11 @@
  
  const corsHeaders = {
    "Access-Control-Allow-Origin": "*",
-   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
  };
  
  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
  const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
- 
- const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
  
  // Land Registry SPARQL endpoint
  const LAND_REGISTRY_ENDPOINT = "https://landregistry.data.gov.uk/landregistry/query";
@@ -113,8 +111,32 @@
    }
  
    try {
+     // Authenticate the request
+     const authHeader = req.headers.get("Authorization");
+     if (!authHeader?.startsWith("Bearer ")) {
+       return new Response(JSON.stringify({ error: "Unauthorized" }), {
+         status: 401,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+     }
+
+     const supabaseAnon = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+       global: { headers: { Authorization: authHeader } },
+     });
+
+     const { data: userData, error: authError } = await supabaseAnon.auth.getUser();
+     if (authError || !userData?.user) {
+       return new Response(JSON.stringify({ error: "Unauthorized" }), {
+         status: 401,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+     }
+
+     // Use service-role client for DB operations
+     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
      const { propertyId } = await req.json();
-     
+      
      if (!propertyId) {
        return new Response(JSON.stringify({ error: "propertyId required" }), { 
          status: 400,
