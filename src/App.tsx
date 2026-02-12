@@ -68,6 +68,7 @@ const TenantPortalHome = lazy(() => import("./pages/tenant-portal/TenantPortalHo
 const TenantRentHistory = lazy(() => import("./pages/tenant-portal/TenantRentHistory"));
 const TenantMaintenance = lazy(() => import("./pages/tenant-portal/TenantMaintenance"));
 const TenantDocuments = lazy(() => import("./pages/tenant-portal/TenantDocuments"));
+const AcceptTeamInvite = lazy(() => import("./pages/AcceptTeamInvite"));
 
 // Marketing pages
 const MarketingHome = lazy(() => import("./pages/marketing/Home"));
@@ -410,6 +411,9 @@ const App = () => (
             <Route path="/tenant-portal/maintenance" element={<TenantMaintenance />} />
             <Route path="/tenant-portal/documents" element={<TenantDocuments />} />
             
+            {/* Team invite acceptance */}
+            <Route path="/team/accept/:token" element={<AcceptTeamInvite />} />
+
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -18,7 +18,7 @@ import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
 import { BillingSettings } from '@/components/settings/BillingSettings';
 import { BackupExportSection } from '@/components/settings/BackupExportSection';
 import { DocumentRenamingSection } from '@/components/settings/DocumentRenamingSection';
-import { TeamMembersSettings } from '@/components/settings/TeamMembersSettings';
+import { TeamManagement } from '@/components/settings/TeamManagement';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
@@ -759,8 +759,8 @@ export default function Settings() {
            </TabsContent>
 
            {/* Team Tab */}
-           <TabsContent value="team" className="space-y-6 max-w-2xl">
-             <TeamMembersSettings />
+           <TabsContent value="team" className="space-y-6 max-w-3xl">
+              <TeamManagement />
             </TabsContent>
 
            {/* Backup & Export Tab */}
