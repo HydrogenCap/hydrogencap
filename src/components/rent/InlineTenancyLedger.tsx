@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { PoundSterling, Loader2 } from 'lucide-react';
+import { PoundSterling, Loader2, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { useTenancyLedger, useRentSchedule, type LedgerEntry } from '@/hooks/useRentCollection';
+import { useTenancyLedger, useRentSchedule, type LedgerEntry, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
+import BulkMarkPaidDialog from '@/components/rent/BulkMarkPaidDialog';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
@@ -23,9 +25,48 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
   const { data: ledger, isLoading } = useTenancyLedger(tenancyId);
   const { data: scheduleItems } = useRentSchedule({ tenancyId });
   const [paymentItem, setPaymentItem] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [markPaidMode, setMarkPaidMode] = useState<'on_time' | 'late' | null>(null);
 
   // Only show past & current entries (not future) in inline view
   const visibleEntries = ledger?.filter(e => !e.is_future) ?? [];
+
+  // Unpaid rent entries that can be selected
+  const selectableEntries = useMemo(() =>
+    visibleEntries.filter(e => e.type === 'rent' && e.status !== 'paid' && e.rent_schedule_id),
+    [visibleEntries]
+  );
+
+  const scheduleMap = useMemo(() => {
+    const map = new Map<string, RentScheduleWithDetails>();
+    scheduleItems?.forEach(s => map.set(s.id, s));
+    return map;
+  }, [scheduleItems]);
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.size === selectableEntries.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableEntries.map(e => e.rent_schedule_id!)));
+    }
+  };
+
+  const selectedItems = useMemo(() =>
+    Array.from(selectedIds).map(id => scheduleMap.get(id)).filter(Boolean) as RentScheduleWithDetails[],
+    [selectedIds, scheduleMap]
+  );
+
+  const isAllSelected = selectableEntries.length > 0 && selectedIds.size === selectableEntries.length;
+  const isPartial = selectedIds.size > 0 && selectedIds.size < selectableEntries.length;
 
   if (isLoading) {
     return (
@@ -63,6 +104,16 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold text-foreground">Tenancy Ledger</h4>
               <div className="flex items-center gap-2">
+                {selectedItems.length > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setMarkPaidMode('on_time')}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Mark {selectedItems.length} as Paid
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -83,6 +134,15 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
               <Table>
                 <TableHeader>
                   <TableRow className="text-xs">
+                    <TableHead className="py-2 w-10">
+                      {selectableEntries.length > 0 && (
+                        <Checkbox
+                          checked={isAllSelected ? true : isPartial ? 'indeterminate' : false}
+                          onCheckedChange={toggleAll}
+                          aria-label="Select all unpaid"
+                        />
+                      )}
+                    </TableHead>
                     <TableHead className="py-2">Date</TableHead>
                     <TableHead className="py-2">Type</TableHead>
                     <TableHead className="py-2">Status</TableHead>
@@ -93,7 +153,13 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
                 </TableHeader>
                 <TableBody>
                   {visibleEntries.map((entry) => (
-                    <InlineLedgerRow key={entry.id} entry={entry} />
+                    <InlineLedgerRow
+                      key={entry.id}
+                      entry={entry}
+                      isSelected={!!entry.rent_schedule_id && selectedIds.has(entry.rent_schedule_id)}
+                      isSelectable={entry.type === 'rent' && entry.status !== 'paid' && !!entry.rent_schedule_id}
+                      onToggle={() => entry.rent_schedule_id && toggleSelection(entry.rent_schedule_id)}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -107,15 +173,44 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
         open={!!paymentItem}
         onOpenChange={(open) => { if (!open) setPaymentItem(null); }}
       />
+
+      {markPaidMode && (
+        <BulkMarkPaidDialog
+          items={selectedItems}
+          open={!!markPaidMode}
+          onOpenChange={(open) => { if (!open) setMarkPaidMode(null); }}
+          mode={markPaidMode}
+          onSuccess={() => setSelectedIds(new Set())}
+        />
+      )}
     </>
   );
 }
 
-function InlineLedgerRow({ entry }: { entry: LedgerEntry }) {
+function InlineLedgerRow({
+  entry,
+  isSelected,
+  isSelectable,
+  onToggle,
+}: {
+  entry: LedgerEntry;
+  isSelected: boolean;
+  isSelectable: boolean;
+  onToggle: () => void;
+}) {
   const isPayment = entry.type === 'payment';
 
   return (
-    <TableRow className={cn('text-sm', isPayment && 'bg-green-50/50 dark:bg-green-950/10')}>
+    <TableRow className={cn('text-sm', isPayment && 'bg-green-50/50 dark:bg-green-950/10', isSelected && 'bg-primary/5')}>
+      <TableCell className="py-1.5 w-10">
+        {isSelectable && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onToggle}
+            aria-label={`Select ${entry.description}`}
+          />
+        )}
+      </TableCell>
       <TableCell className={cn('py-1.5 tabular-nums', isPayment && 'text-green-600')}>
         {format(new Date(entry.date), 'dd MMM yyyy')}
       </TableCell>
