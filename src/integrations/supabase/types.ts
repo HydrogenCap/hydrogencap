@@ -5072,6 +5072,10 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_update_rent_schedule_status: {
+        Args: { p_ids: string[]; p_notes?: string; p_status: string }
+        Returns: undefined
+      }
       cancel_renewed_compliance_jobs: { Args: never; Returns: number }
       create_jobs_for_expiring_compliance: { Args: never; Returns: number }
       find_matching_contractors: {
@@ -5113,6 +5117,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_rent_schedule_item: {
+        Args: {
+          p_additional_charges?: number
+          p_amount_outstanding?: number
+          p_amount_paid?: number
+          p_due_date: string
+          p_notes?: string
+          p_org_id: string
+          p_payment_reference?: string
+          p_period_end: string
+          p_period_start: string
+          p_rent_amount: number
+          p_status?: string
+          p_tenancy_id: string
+        }
+        Returns: string
+      }
       log_document_download: {
         Args: { p_document_id: string }
         Returns: undefined
@@ -5132,6 +5153,16 @@ export type Database = {
         Returns: boolean
       }
       update_job_priorities: { Args: never; Returns: number }
+      update_rent_schedule_item_status: {
+        Args: {
+          p_amount_outstanding?: number
+          p_amount_paid?: number
+          p_id: string
+          p_notes?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       update_rent_schedule_statuses: { Args: never; Returns: undefined }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }
       user_has_shareholder_access: {

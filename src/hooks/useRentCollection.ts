@@ -221,15 +221,12 @@ export function useUpdateRentScheduleStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RentStatus }) => {
-      const updates: Record<string, any> = { status: status as any };
-      const { data, error } = await supabase
-        .from('rent_schedule')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const { error } = await supabase.rpc('update_rent_schedule_item_status', {
+        p_id: id,
+        p_status: status,
+      });
       if (error) throw error;
-      return data;
+      return { id, status };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
@@ -321,27 +318,23 @@ export function useDuplicateRentSchedule() {
       ).join('');
       const numbers = Math.floor(Math.random() * 100).toString().padStart(2, '0');
 
-      const { data, error } = await supabase
-        .from('rent_schedule')
-        .insert({
-          org_id: orgId,
-          tenancy_id: item.tenancy_id,
-          due_date: item.due_date,
-          period_start: item.period_start,
-          period_end: item.period_end,
-          rent_amount: item.rent_amount,
-          additional_charges: item.additional_charges,
-          amount_paid: 0,
-          amount_outstanding: item.rent_amount + item.additional_charges,
-          status: 'upcoming' as any,
-          payment_reference: `${prefix}-${letters}${numbers}`,
-          notes: item.notes ? `Copy of: ${item.notes}` : null,
-        })
-        .select()
-        .single();
+      const { data: newId, error } = await supabase.rpc('insert_rent_schedule_item', {
+        p_org_id: orgId,
+        p_tenancy_id: item.tenancy_id,
+        p_due_date: item.due_date,
+        p_period_start: item.period_start,
+        p_period_end: item.period_end,
+        p_rent_amount: item.rent_amount,
+        p_additional_charges: item.additional_charges,
+        p_amount_paid: 0,
+        p_amount_outstanding: item.rent_amount + item.additional_charges,
+        p_status: 'upcoming',
+        p_payment_reference: `${prefix}-${letters}${numbers}`,
+        p_notes: item.notes ? `Copy of: ${item.notes}` : null,
+      });
 
       if (error) throw error;
-      return data;
+      return { id: newId };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
@@ -707,13 +700,11 @@ export function useBulkMarkPaid() {
 
           if (payError) throw payError;
 
-          const { error: schedError } = await supabase
-            .from('rent_schedule')
-            .update({
-              status: 'paid' as any,
-              amount_paid: item.rent_amount + (item.additional_charges || 0),
-            })
-            .eq('id', item.id);
+          const { error: schedError } = await supabase.rpc('update_rent_schedule_item_status', {
+            p_id: item.id,
+            p_status: 'paid',
+            p_amount_paid: item.rent_amount + (item.additional_charges || 0),
+          });
 
           if (schedError) throw schedError;
 
@@ -762,13 +753,11 @@ export function useBulkWriteOff() {
       reason?: string;
     }) => {
       const ids = items.map(item => item.id);
-      const { error } = await supabase
-        .from('rent_schedule')
-        .update({
-          status: 'bad_debt' as any,
-          notes: reason ? `Bad debt write-off: ${reason}` : 'Bulk write-off as bad debt',
-        })
-        .in('id', ids);
+      const { error } = await supabase.rpc('bulk_update_rent_schedule_status', {
+        p_ids: ids,
+        p_status: 'bad_debt',
+        p_notes: reason ? `Bad debt write-off: ${reason}` : 'Bulk write-off as bad debt',
+      });
 
       if (error) throw error;
       return { count: ids.length };
