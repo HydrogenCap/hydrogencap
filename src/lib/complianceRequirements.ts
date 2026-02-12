@@ -84,9 +84,9 @@ export const COMPLIANCE_REQUIREMENT_DEFINITIONS = {
     category: 'Safety & Legal',
     defaultRequired: true,
     validityYears: null, // No expiry - must be in place
-    condition: () => true,
+    condition: (p: PropertyComplianceFeatures) => p.has_fire_alarm_system !== true,
     reasonRequired: 'Smoke alarms required on every floor (Smoke and CO Alarm Regs 2015)',
-    reasonNotRequired: 'Not applicable',
+    reasonNotRequired: 'Property has integrated fire alarm panel - standalone smoke alarms not required',
   },
   'Fire Risk Assessment (FRA)': {
     category: 'Safety & Legal',
