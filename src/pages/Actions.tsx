@@ -13,6 +13,7 @@ import {
   Home,
   FileWarning,
   Shield,
+  ShieldAlert,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,6 +51,8 @@ const riskTypeIcons: Record<RiskType, React.ReactNode> = {
   hmo_licence: <Home className="h-4 w-4" />,
   operational_data: <FileWarning className="h-4 w-4" />,
   tenancy_compliance: <Shield className="h-4 w-4" />,
+  insurance: <ShieldAlert className="h-4 w-4" />,
+  leasehold: <Building2 className="h-4 w-4" />,
 };
 
 export default function ActionsPage() {
@@ -204,6 +207,8 @@ export default function ActionsPage() {
                   <SelectItem value="hmo_licence">HMO Licence</SelectItem>
                   <SelectItem value="operational_data">Missing Data</SelectItem>
                   <SelectItem value="tenancy_compliance">Tenancy Compliance</SelectItem>
+                  <SelectItem value="insurance">Insurance</SelectItem>
+                  <SelectItem value="leasehold">Leasehold</SelectItem>
                 </SelectContent>
               </Select>
 

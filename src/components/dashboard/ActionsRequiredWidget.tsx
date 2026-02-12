@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   AlertTriangle, AlertCircle, Calendar, TrendingDown, 
-  Shield, FileWarning, ChevronRight, CheckCircle2
+  Shield, FileWarning, ChevronRight, CheckCircle2, ShieldAlert, Building
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,14 +21,16 @@ const riskIcons: Record<RiskType, React.ElementType> = {
   hmo_licence: Shield,
   operational_data: AlertCircle,
   tenancy_compliance: Shield,
+  insurance: ShieldAlert,
+  leasehold: Building,
 };
 
 type ActionCategory = 'all' | 'compliance' | 'financial' | 'data';
 
 const categories: Record<ActionCategory, { label: string; types: RiskType[] }> = {
   all: { label: 'All', types: [] },
-  compliance: { label: 'Compliance', types: ['hmo_licence'] },
-  financial: { label: 'Financial', types: ['ltv', 'rate_expiry', 'negative_cashflow'] },
+  compliance: { label: 'Compliance', types: ['hmo_licence', 'insurance', 'tenancy_compliance'] },
+  financial: { label: 'Financial', types: ['ltv', 'rate_expiry', 'negative_cashflow', 'leasehold'] },
   data: { label: 'Data', types: ['epc', 'operational_data'] },
 };
 

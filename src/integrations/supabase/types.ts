@@ -2042,6 +2042,84 @@ export type Database = {
           },
         ]
       }
+      leasehold_details: {
+        Row: {
+          created_at: string
+          ground_rent_annual: number | null
+          ground_rent_escalation: string | null
+          ground_rent_review_date: string | null
+          id: string
+          lease_start_date: string | null
+          managing_agent: string | null
+          managing_agent_email: string | null
+          managing_agent_phone: string | null
+          next_review_date: string | null
+          notes: string | null
+          org_id: string
+          original_term_years: number | null
+          property_id: string
+          section_20_notices_pending: boolean | null
+          service_charge_annual: number | null
+          service_charge_review_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ground_rent_annual?: number | null
+          ground_rent_escalation?: string | null
+          ground_rent_review_date?: string | null
+          id?: string
+          lease_start_date?: string | null
+          managing_agent?: string | null
+          managing_agent_email?: string | null
+          managing_agent_phone?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          org_id: string
+          original_term_years?: number | null
+          property_id: string
+          section_20_notices_pending?: boolean | null
+          service_charge_annual?: number | null
+          service_charge_review_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ground_rent_annual?: number | null
+          ground_rent_escalation?: string | null
+          ground_rent_review_date?: string | null
+          id?: string
+          lease_start_date?: string | null
+          managing_agent?: string | null
+          managing_agent_email?: string | null
+          managing_agent_phone?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          org_id?: string
+          original_term_years?: number | null
+          property_id?: string
+          section_20_notices_pending?: boolean | null
+          service_charge_annual?: number | null
+          service_charge_review_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasehold_details_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasehold_details_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           broker_contact: string | null
@@ -4628,6 +4706,60 @@ export type Database = {
           },
           {
             foreignKeyName: "valuation_alerts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      void_periods: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          estimated_monthly_cost: number | null
+          id: string
+          org_id: string
+          property_id: string
+          reason: string | null
+          reason_notes: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          estimated_monthly_cost?: number | null
+          id?: string
+          org_id: string
+          property_id: string
+          reason?: string | null
+          reason_notes?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          estimated_monthly_cost?: number | null
+          id?: string
+          org_id?: string
+          property_id?: string
+          reason?: string | null
+          reason_notes?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "void_periods_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "void_periods_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
