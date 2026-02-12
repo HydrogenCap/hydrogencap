@@ -88,8 +88,8 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
       });
       setShowFloorplanUpload(false);
       setFloorplanVersionLabel('Current');
-    } catch {
-      // Toast handled in hook
+    } catch (err) {
+      console.error('Failed to upload floorplan:', err);
     }
   };
 

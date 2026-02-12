@@ -867,7 +867,8 @@ export function useBulkSendReminder() {
           });
           if (error) throw error;
           results.sent++;
-        } catch {
+        } catch (err) {
+          console.error('Failed to send reminder:', err);
           results.failed++;
         }
       }
