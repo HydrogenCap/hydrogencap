@@ -25,7 +25,7 @@ const PLAN_DETAILS: {
     name: 'Explorer',
     price: '£0',
     priceId: null,
-    propertyLimit: '2 properties',
+    propertyLimit: 'Up to 2 properties or rooms',
     features: [
       'Core property tracking',
       '5 document uploads',
@@ -41,7 +41,7 @@ const PLAN_DETAILS: {
     annualPrice: '£24/mo billed annually',
     annualSaving: 'Save £60/year',
     priceId: TIERS.solo.price_id,
-    propertyLimit: 'Up to 10 properties',
+    propertyLimit: 'Up to 10 properties or rooms',
     features: [
       'Full compliance tracking',
       '100 document storage',
@@ -59,7 +59,7 @@ const PLAN_DETAILS: {
     annualPrice: '£64/mo billed annually',
     annualSaving: 'Save £180/year',
     priceId: TIERS.portfolio.price_id,
-    propertyLimit: 'Up to 50 properties',
+    propertyLimit: 'Up to 50 properties or rooms',
     popular: true,
     features: [
       'AI compliance checker',
@@ -79,7 +79,7 @@ const PLAN_DETAILS: {
     annualPrice: '£169/mo billed annually',
     annualSaving: 'Save £360/year',
     priceId: TIERS.pro.price_id,
-    propertyLimit: 'Unlimited properties',
+    propertyLimit: 'Unlimited properties & rooms',
     features: [
       'Shareholder portal',
       'Company secrets vault',
