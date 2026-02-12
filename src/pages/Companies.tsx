@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Building2, Plus, Search, Filter, ExternalLink, ArrowUpDown } from 'lucide-react';
+import { Building2, Plus, Search, Filter, ExternalLink, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,7 +73,7 @@ type SortDirection = 'asc' | 'desc';
 export default function Companies() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: companies, isLoading } = useCompanies();
+  const { data: companies, isLoading, isError, error } = useCompanies();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<CompanyType | 'ALL'>('ALL');
@@ -184,6 +184,33 @@ export default function Companies() {
     acc[c.company_type] = (acc[c.company_type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>) || {};
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-6 p-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+          </div>
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-lg font-semibold">Failed to load companies</h2>
+          <p className="text-muted-foreground">{error instanceof Error ? error.message : 'Unknown error'}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">Retry</Button>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

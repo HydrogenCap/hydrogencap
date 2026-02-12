@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 type FilterStatus = ComplianceStatus | 'all';
 
 export default function Compliance() {
-  const { data: items, isLoading } = useAllCompliance();
+  const { data: items, isLoading, isError, error } = useAllCompliance();
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const createComplianceItem = useCreateComplianceItem();
   const [searchParams] = useSearchParams();
@@ -284,6 +284,19 @@ export default function Compliance() {
               <Skeleton key={i} className="h-64 rounded-xl" />
             ))}
           </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-lg font-semibold">Failed to load compliance data</h2>
+          <p className="text-muted-foreground">{error instanceof Error ? error.message : 'Unknown error'}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">Retry</Button>
         </div>
       </AppLayout>
     );
