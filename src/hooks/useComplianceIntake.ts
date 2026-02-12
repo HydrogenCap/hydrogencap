@@ -19,6 +19,10 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "asbestos_survey": "Asbestos Survey",
   "legionella_assessment": "Legionella Risk Assessment",
   "planning_building_control": "Building Control Certificate",
+  "fire_door_certification": "Fire Door Certification",
+  "fire_panel_commissioning": "Fire Panel Commissioning Certificate",
+  "mcs_certificate": "MCS Certificate",
+  "floor_plans": "Floor Plans / Fire Plans",
 };
 
 // Standard validity periods in years for UK compliance certificates
