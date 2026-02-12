@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Plus, Search, Filter, ExternalLink, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -76,6 +76,7 @@ export default function Companies() {
   const { data: companies, isLoading, isError, error } = useCompanies();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearch = useDeferredValue(searchQuery);
   const [typeFilter, setTypeFilter] = useState<CompanyType | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<CompanyStatus | 'ALL'>('ALL');
   const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>(
@@ -116,9 +117,9 @@ export default function Companies() {
   const filteredCompanies = useMemo(() => {
     let filtered = companies?.filter((company) => {
       const matchesSearch = 
-        company.legal_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        company.trading_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        company.company_number?.toLowerCase().includes(searchQuery.toLowerCase());
+        company.legal_name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+        company.trading_name?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+        company.company_number?.toLowerCase().includes(deferredSearch.toLowerCase());
       
       const matchesType = typeFilter === 'ALL' || company.company_type === typeFilter;
       const matchesStatus = statusFilter === 'ALL' || company.status === statusFilter;
@@ -177,7 +178,7 @@ export default function Companies() {
     });
 
     return filtered;
-  }, [companies, searchQuery, typeFilter, statusFilter, complianceFilter, sortField, sortDirection]);
+  }, [companies, deferredSearch, typeFilter, statusFilter, complianceFilter, sortField, sortDirection]);
 
   // Group by type for summary
   const typeCounts = companies?.reduce((acc, c) => {

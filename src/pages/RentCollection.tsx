@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PoundSterling, Download, Building2, Users, List } from 'lucide-react';
@@ -24,6 +24,7 @@ export default function RentCollection() {
   const navigate = useNavigate();
   const [grouping, setGrouping] = useState<Grouping>('property');
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [propertyFilter, setPropertyFilter] = useState('all');
 
   // Selection state
@@ -55,8 +56,8 @@ export default function RentCollection() {
     if (!arrearsData) return [];
     return arrearsData.filter(row => {
       if (propertyFilter !== 'all' && row.property_id !== propertyFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
+      if (deferredSearch) {
+        const q = deferredSearch.toLowerCase();
         const searchable = [
           row.property_address,
           row.property_postcode,
@@ -67,7 +68,7 @@ export default function RentCollection() {
       }
       return true;
     });
-  }, [arrearsData, propertyFilter, search]);
+  }, [arrearsData, propertyFilter, deferredSearch]);
 
   // All schedule items from filtered data (for selection)
   const allScheduleItems = useMemo(() => {

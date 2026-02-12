@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, 
@@ -57,6 +57,7 @@ export default function ActionsPage() {
   const { risks, criticalCount, warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [typeFilter, setTypeFilter] = useState<RiskTypeFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [sortField, setSortField] = useState<SortField>('severity');
@@ -67,8 +68,8 @@ export default function ActionsPage() {
     let result = [...risks];
 
     // Search
-    if (search) {
-      const searchLower = search.toLowerCase();
+    if (deferredSearch) {
+      const searchLower = deferredSearch.toLowerCase();
       result = result.filter(r => 
         r.address.toLowerCase().includes(searchLower) ||
         r.message.toLowerCase().includes(searchLower)
@@ -99,7 +100,7 @@ export default function ActionsPage() {
     });
 
     return result;
-  }, [risks, search, typeFilter, severityFilter, sortField, sortDir]);
+  }, [risks, deferredSearch, typeFilter, severityFilter, sortField, sortDir]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {

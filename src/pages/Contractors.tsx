@@ -1,4 +1,4 @@
- import React, { useState } from 'react';
+ import React, { useState, useDeferredValue } from 'react';
  import { Plus, Search, Star, Briefcase, Filter, HardHat } from 'lucide-react';
  import { AppLayout } from '@/components/layout/AppLayout';
  import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { ContractorCard, AddContractorDialog, ContractorDetailDrawer } from '@/c
  
  export default function Contractors() {
    const [searchTerm, setSearchTerm] = useState('');
+   const deferredSearch = useDeferredValue(searchTerm);
    const [complianceFilter, setComplianceFilter] = useState<string>('all');
    const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedContractorId, setSelectedContractorId] = useState<string | null>(null);
@@ -23,8 +24,8 @@ import { ContractorCard, AddContractorDialog, ContractorDetailDrawer } from '@/c
    });
  
    const filteredContractors = contractors?.filter(c =>
-     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     c.company_name?.toLowerCase().includes(searchTerm.toLowerCase())
+     c.name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+     c.company_name?.toLowerCase().includes(deferredSearch.toLowerCase())
    );
  
    const preferredContractors = filteredContractors?.filter(c => c.is_preferred) || [];
