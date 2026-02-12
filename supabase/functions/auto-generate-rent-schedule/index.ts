@@ -79,12 +79,10 @@ serve(async (req: Request) => {
         const numbers = Math.floor(Math.random() * 100).toString().padStart(2, "0");
         const paymentReference = `${prefix}-${letters}${numbers}`;
 
-        // Determine status based on date
-        const status = dueDate <= now ? "due" : "upcoming";
-
+        // Use upsert to avoid duplicates (unique index on tenancy_id, due_date)
         const { error: insertError } = await supabase
           .from("rent_schedule")
-          .insert({
+          .upsert({
             org_id: tenancy.org_id,
             tenancy_id: tenancy.id,
             due_date: dueDateStr,
@@ -94,9 +92,8 @@ serve(async (req: Request) => {
             additional_charges: 0,
             amount_paid: 0,
             amount_outstanding: tenancy.rent_amount_pcm,
-            status,
             payment_reference: paymentReference,
-          });
+          }, { onConflict: 'tenancy_id,due_date', ignoreDuplicates: true });
 
         if (!insertError) created++;
         else console.error("Insert error:", insertError);
