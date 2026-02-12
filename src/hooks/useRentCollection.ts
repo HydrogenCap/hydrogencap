@@ -222,10 +222,6 @@ export function useUpdateRentScheduleStatus() {
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RentStatus }) => {
       const updates: Record<string, any> = { status };
-      if (status === 'paid') {
-        updates.amount_outstanding = 0;
-        // We'd also need to set amount_paid = rent_amount, but we need the current values
-      }
       const { data, error } = await supabase
         .from('rent_schedule')
         .update(updates)
@@ -716,7 +712,6 @@ export function useBulkMarkPaid() {
             .update({
               status: 'paid',
               amount_paid: item.rent_amount + (item.additional_charges || 0),
-              amount_outstanding: 0,
             })
             .eq('id', item.id);
 
