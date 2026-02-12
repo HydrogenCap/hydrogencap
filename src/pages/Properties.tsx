@@ -522,6 +522,7 @@ function PropertiesPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by address, area, or postcode..."
+              aria-label="Search properties"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-input border-border"

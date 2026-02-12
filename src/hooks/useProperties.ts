@@ -111,10 +111,28 @@ export function useUpdateProperty() {
       
       return data;
     },
-    onSuccess: (data) => {
+    // Optimistic update for instant UI feedback
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ['property', newData.id] });
+      const previousProperty = queryClient.getQueryData<PropertyWithFinancials>(['property', newData.id]);
+      
+      if (previousProperty) {
+        queryClient.setQueryData(['property', newData.id], {
+          ...previousProperty,
+          ...newData,
+        });
+      }
+      
+      return { previousProperty };
+    },
+    onError: (_err, newData, context) => {
+      if (context?.previousProperty) {
+        queryClient.setQueryData(['property', newData.id], context.previousProperty);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['property', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      queryClient.invalidateQueries({ queryKey: ['property', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
     },
   });
 }
@@ -153,15 +171,8 @@ export function useCreateLoan() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
-      // Log activity
-      ActivityLoggers.mortgageUpdated(
-        data.property_id, 
-        data.lender, 
-        data.current_mortgage_balance_gbp ? Number(data.current_mortgage_balance_gbp) : null
-      );
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
     },
   });
 }
@@ -196,7 +207,6 @@ export function useUpdateLoan() {
           data.fixed_rate_expires || undefined
         );
       } else if (loan.current_mortgage_balance_gbp !== undefined) {
-        // Log mortgage update if balance changed
         ActivityLoggers.mortgageUpdated(
           data.property_id,
           data.lender,
@@ -207,9 +217,8 @@ export function useUpdateLoan() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
     },
   });
 }
@@ -230,9 +239,8 @@ export function useUpsertIncome() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       // Log activity
       ActivityLoggers.incomeUpdated(
         data.property_id, 
@@ -259,9 +267,8 @@ export function useUpsertCosts() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       // Calculate total from manual fields
       const total = [
         data.management_gbp_manual,

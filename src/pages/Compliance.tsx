@@ -381,6 +381,7 @@ export default function Compliance() {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Search by property, postcode, or type..."
+              aria-label="Search compliance items"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-11 h-11 bg-card border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
