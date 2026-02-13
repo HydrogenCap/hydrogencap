@@ -28,7 +28,8 @@ import {
   useComplianceDocumentExport,
   type ExportPhase,
 } from '@/hooks/useComplianceDocumentExport';
-import { useProperties } from '@/hooks/useProperties';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const PHASE_LABELS: Record<ExportPhase, string> = {
   idle: '',
@@ -41,7 +42,31 @@ const PHASE_LABELS: Record<ExportPhase, string> = {
 
 export function ComplianceExportButton() {
   const { progress, startExport, cancelExport, resetExport } = useComplianceDocumentExport();
-  const { data: properties } = useProperties();
+  const { data: properties } = useQuery({
+    queryKey: ['properties-list-light'],
+    queryFn: async () => {
+      const allData: { id: string; address_line: string }[] = [];
+      let offset = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('id, address_line')
+          .order('address_line')
+          .range(offset, offset + batchSize - 1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData.push(...data);
+          offset += batchSize;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
+      return allData;
+    },
+  });
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const isRunning = progress.phase !== 'idle' && progress.phase !== 'complete' && progress.phase !== 'error';
@@ -60,9 +85,7 @@ export function ComplianceExportButton() {
     setDialogOpen(false);
   };
 
-  const sortedProperties = (properties || [])
-    .slice()
-    .sort((a, b) => (a.address_line || '').localeCompare(b.address_line || ''));
+  const sortedProperties = properties || [];
 
   return (
     <>
