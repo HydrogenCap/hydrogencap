@@ -88,3 +88,12 @@ verify_jwt = false
 
 [functions.categorise-documents]
 verify_jwt = false
+
+[functions.freeagent-oauth-callback]
+verify_jwt = false
+
+[functions.freeagent-sync-payments]
+verify_jwt = false
+
+[functions.freeagent-fetch-categories]
+verify_jwt = false

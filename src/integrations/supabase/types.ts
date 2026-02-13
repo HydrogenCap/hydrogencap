@@ -1758,6 +1758,153 @@ export type Database = {
           },
         ]
       }
+      freeagent_connections: {
+        Row: {
+          access_token_encrypted: string
+          auto_sync_enabled: boolean | null
+          bank_account_url: string | null
+          company_id: string
+          connected_at: string
+          connected_by: string | null
+          expense_category_url: string | null
+          freeagent_company_name: string | null
+          freeagent_company_url: string | null
+          id: string
+          last_sync_at: string | null
+          last_sync_error: string | null
+          last_sync_items_count: number | null
+          last_sync_status: string | null
+          org_id: string
+          refresh_token_encrypted: string
+          rent_income_category_url: string | null
+          sync_expenses: boolean | null
+          sync_rent_payments: boolean | null
+          token_expires_at: string
+          updated_at: string
+          use_sandbox: boolean | null
+        }
+        Insert: {
+          access_token_encrypted: string
+          auto_sync_enabled?: boolean | null
+          bank_account_url?: string | null
+          company_id: string
+          connected_at?: string
+          connected_by?: string | null
+          expense_category_url?: string | null
+          freeagent_company_name?: string | null
+          freeagent_company_url?: string | null
+          id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_items_count?: number | null
+          last_sync_status?: string | null
+          org_id: string
+          refresh_token_encrypted: string
+          rent_income_category_url?: string | null
+          sync_expenses?: boolean | null
+          sync_rent_payments?: boolean | null
+          token_expires_at: string
+          updated_at?: string
+          use_sandbox?: boolean | null
+        }
+        Update: {
+          access_token_encrypted?: string
+          auto_sync_enabled?: boolean | null
+          bank_account_url?: string | null
+          company_id?: string
+          connected_at?: string
+          connected_by?: string | null
+          expense_category_url?: string | null
+          freeagent_company_name?: string | null
+          freeagent_company_url?: string | null
+          id?: string
+          last_sync_at?: string | null
+          last_sync_error?: string | null
+          last_sync_items_count?: number | null
+          last_sync_status?: string | null
+          org_id?: string
+          refresh_token_encrypted?: string
+          rent_income_category_url?: string | null
+          sync_expenses?: boolean | null
+          sync_rent_payments?: boolean | null
+          token_expires_at?: string
+          updated_at?: string
+          use_sandbox?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freeagent_connections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freeagent_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      freeagent_sync_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          freeagent_connection_id: string
+          freeagent_contact_url: string | null
+          freeagent_invoice_url: string | null
+          id: string
+          org_id: string
+          source_id: string
+          source_table: string
+          status: string
+          synced_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          freeagent_connection_id: string
+          freeagent_contact_url?: string | null
+          freeagent_invoice_url?: string | null
+          id?: string
+          org_id: string
+          source_id: string
+          source_table: string
+          status?: string
+          synced_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          freeagent_connection_id?: string
+          freeagent_contact_url?: string | null
+          freeagent_invoice_url?: string | null
+          id?: string
+          org_id?: string
+          source_id?: string
+          source_table?: string
+          status?: string
+          synced_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freeagent_sync_log_freeagent_connection_id_fkey"
+            columns: ["freeagent_connection_id"]
+            isOneToOne: false
+            referencedRelation: "freeagent_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freeagent_sync_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       go_live_checklists: {
         Row: {
           build_fire_alarm_installed: boolean

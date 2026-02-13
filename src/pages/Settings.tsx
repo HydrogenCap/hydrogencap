@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
- import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug } from 'lucide-react';
+import { FreeAgentIntegrationPanel } from '@/components/settings/FreeAgentIntegrationPanel';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
 import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
@@ -344,6 +345,10 @@ export default function Settings() {
               <TabsTrigger value="team" className="gap-2">
                 <Users className="h-4 w-4" />
                 Team
+              </TabsTrigger>
+              <TabsTrigger value="integrations" className="gap-2">
+                <Plug className="h-4 w-4" />
+                Integrations
               </TabsTrigger>
               <TabsTrigger value="backup" className="gap-2">
                 <HardDrive className="h-4 w-4" />
@@ -762,6 +767,11 @@ export default function Settings() {
            <TabsContent value="team" className="space-y-6 max-w-3xl">
               <TeamManagement />
             </TabsContent>
+
+           {/* Integrations Tab */}
+           <TabsContent value="integrations" className="space-y-6">
+             <FreeAgentIntegrationPanel />
+           </TabsContent>
 
            {/* Backup & Export Tab */}
            <TabsContent value="backup" className="space-y-6 max-w-2xl">
