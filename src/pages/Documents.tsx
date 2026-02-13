@@ -163,9 +163,14 @@ export default function Documents() {
         body: { dryRun: false },
       });
       if (error) throw error;
+      const parts = [];
+      if (data.categorised > 0) parts.push(`${data.categorised} categorised`);
+      if (data.renamed > 0) parts.push(`${data.renamed} renamed`);
       toast({
-        title: 'Categorisation complete',
-        description: `${data.updated} document${data.updated !== 1 ? 's' : ''} categorised successfully.`,
+        title: 'AI processing complete',
+        description: parts.length > 0
+          ? `${parts.join(', ')}.`
+          : 'All documents are already organised.',
       });
       queryClient.invalidateQueries({ queryKey: ['document-vault'] });
       queryClient.invalidateQueries({ queryKey: ['document-vault-summaries'] });
