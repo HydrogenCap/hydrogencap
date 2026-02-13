@@ -134,8 +134,17 @@ export function AddTenantDialog({ open, onOpenChange }: AddTenantDialogProps) {
   });
 
   const handleCHLookup = async () => {
-    const companyNumber = companyForm.getValues('company_number');
+    const companyNumber = companyForm.getValues('company_number')?.trim();
     if (!companyNumber) return;
+
+    // Validate: UK company numbers are 8 chars, digits or prefixed (SC/NI/OC etc.)
+    const isValidFormat = /^[A-Za-z]{0,2}\d{6,8}$/.test(companyNumber);
+    if (!isValidFormat) {
+      companyForm.setError('company_number', {
+        message: 'Enter a valid company number (e.g. 12345678), not a company name',
+      });
+      return;
+    }
 
     const result = await lookupCompany(companyNumber);
     if (result?.company) {
