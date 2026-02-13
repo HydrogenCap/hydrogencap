@@ -40,6 +40,15 @@ serve(async (req) => {
     const { companyId, orgId, userId, useSandbox } = stateData;
 
     const apiBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
+    const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
+
+    console.log("OAuth debug:", {
+      apiBase,
+      redirectUri,
+      clientIdPrefix: FREEAGENT_CLIENT_ID.substring(0, 6) + "...",
+      secretPrefix: FREEAGENT_CLIENT_SECRET.substring(0, 4) + "...",
+      useSandbox,
+    });
 
     // Exchange authorization code for tokens
     const tokenResponse = await fetch(`${apiBase}/v2/token_endpoint`, {
@@ -51,7 +60,7 @@ serve(async (req) => {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`,
+        redirect_uri: redirectUri,
       }),
     });
 
