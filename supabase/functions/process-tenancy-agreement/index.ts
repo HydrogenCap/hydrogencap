@@ -14,9 +14,38 @@ interface ProcessTenancyRequest {
 }
 
 async function fetchFileAsDataUrl(
-  fileUrl: string
+  fileUrl: string,
+  authHeader: string
 ): Promise<{ dataUrl: string; mimeType: string }> {
-  const response = await fetch(fileUrl);
+  // For Supabase storage URLs, use the service role to download private files
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  let response: Response;
+
+  if (fileUrl.includes(supabaseUrl) && fileUrl.includes("/storage/")) {
+    // Extract bucket and path from the URL
+    // URL format: .../storage/v1/object/public|sign/bucket/path
+    const storageMatch = fileUrl.match(/\/storage\/v1\/object\/(?:public|sign(?:ed)?)\/([^/]+)\/(.+)/);
+    if (storageMatch) {
+      const [, bucket, path] = storageMatch;
+      const downloadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${decodeURIComponent(path)}`;
+      response = await fetch(downloadUrl, {
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+        },
+      });
+    } else {
+      // Try fetching with the user's auth token as fallback
+      response = await fetch(fileUrl, {
+        headers: { Authorization: authHeader },
+      });
+    }
+  } else {
+    response = await fetch(fileUrl);
+  }
+
   if (!response.ok) throw new Error(`Failed to fetch file: ${response.status}`);
   const arrayBuffer = await response.arrayBuffer();
   const uint8Array = new Uint8Array(arrayBuffer);
@@ -71,7 +100,7 @@ serve(async (req) => {
 
     console.log("Processing tenancy agreement for:", tenantName);
 
-    const { dataUrl } = await fetchFileAsDataUrl(fileUrl);
+    const { dataUrl } = await fetchFileAsDataUrl(fileUrl, authHeader);
 
     const systemPrompt = `You are a UK property solicitor's assistant. Analyze this tenancy agreement PDF and extract the key terms.
 
