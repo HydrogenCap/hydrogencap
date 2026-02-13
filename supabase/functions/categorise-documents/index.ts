@@ -373,6 +373,103 @@ Return ONLY a JSON array of objects: [{"index": 1, "category": "slug"}]`;
           }
         }
       }
+
+      // Phase 1b: Content-based AI analysis for docs still stuck in "other"
+      // (e.g. files named "download.pdf" where filename gives no clue)
+      const stillOther = needsAi.filter(d => {
+        const assigned = docCategoryMap.get(d.id);
+        return !assigned || assigned === "other";
+      });
+
+      if (stillOther.length > 0 && LOVABLE_API_KEY) {
+        // Process up to 5 docs with vision to avoid timeout
+        const visionBatch = stillOther.slice(0, 5);
+        
+        for (const doc of visionBatch) {
+          try {
+            // Download the file from storage
+            const fileUrl = doc.original_file_name; // We need the storage path
+            // Extract storage path from file_url
+            const { data: fullDoc } = await supabase
+              .from("documents")
+              .select("file_url")
+              .eq("id", doc.id)
+              .single();
+            
+            if (!fullDoc?.file_url) continue;
+
+            // Download file content
+            const urlParts = fullDoc.file_url.split("/documents/");
+            if (urlParts.length < 2) continue;
+            const storagePath = urlParts[urlParts.length - 1].split("?")[0];
+            
+            const { data: fileData, error: dlErr } = await supabase.storage
+              .from("documents")
+              .download(storagePath);
+            
+            if (dlErr || !fileData) {
+              console.error("Failed to download doc for vision:", doc.id, dlErr);
+              continue;
+            }
+
+            // Convert to base64 data URL
+            const arrayBuf = await fileData.arrayBuffer();
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
+            const mimeType = fileData.type || "application/pdf";
+            const dataUrl = `data:${mimeType};base64,${base64}`;
+
+            const visionPrompt = `Analyse this UK property management document and classify it into exactly ONE of these categories:
+${JSON.stringify(validCategories)}
+
+Also identify the doc_type from: gas_safety_certificate, electrical_certificate, epc_certificate, fire_alarm_certificate, fire_risk_assessment, emergency_lighting_certificate, hmo_licence, building_insurance, pat_testing, legionella_assessment, mcs_certificate, or null if unclear.
+
+Return ONLY JSON: {"category": "slug", "doc_type": "type_or_null"}`;
+
+            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash",
+                messages: [
+                  { role: "system", content: "You classify UK property management documents by analysing their content. Return only valid JSON." },
+                  { role: "user", content: [
+                    { type: "image_url", image_url: { url: dataUrl } },
+                    { type: "text", text: visionPrompt },
+                  ]},
+                ],
+              }),
+            });
+
+            if (aiResp.ok) {
+              const aiData = await aiResp.json();
+              const content = aiData.choices?.[0]?.message?.content || "";
+              const jsonMatch = content.match(/\{[\s\S]*?\}/);
+              if (jsonMatch) {
+                const result = JSON.parse(jsonMatch[0]) as { category: string; doc_type?: string };
+                if (result.category && validCategories.includes(result.category) && result.category !== "other") {
+                  catResults.push({
+                    id: doc.id,
+                    oldCategory: doc.category,
+                    newCategory: result.category,
+                    method: "ai_vision",
+                  });
+                  docCategoryMap.set(doc.id, result.category);
+                  
+                  // Also update doc_type if identified
+                  if (result.doc_type) {
+                    await supabase.from("documents").update({ doc_type: result.doc_type }).eq("id", doc.id);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Vision analysis error for doc:", doc.id, e);
+          }
+        }
+      }
     }
 
     // Phase 2: Renaming — generate display_name for docs that don't have one (or have a poor one)
