@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatPropertyAddress } from '@/utils/formatAddress';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -66,7 +67,7 @@ export default function BulkWriteOffDialog({ items, open, onOpenChange, onSucces
                     {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {item.tenancy.room.room_name} • {[item.tenancy.property.address_line, item.tenancy.property.town_city].filter(Boolean).join(', ')}
+                    {item.tenancy.room.room_name} • {formatPropertyAddress(item.tenancy.property.address_line, item.tenancy.property.town_city)}
                   </p>
                 </div>
                 <span className="font-medium text-destructive shrink-0 ml-3">
