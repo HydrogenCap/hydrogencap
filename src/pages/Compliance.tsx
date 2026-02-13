@@ -22,6 +22,7 @@ import {
 import { StatusFilterBox } from '@/components/compliance/StatusFilterBox';
 import { ComplianceRegisterItem } from '@/components/compliance/ComplianceRegisterItem';
 import { ComplianceUploadDialog } from '@/components/compliance/ComplianceUploadDialog';
+import { ComplianceExportButton } from '@/components/compliance/ComplianceExportButton';
 import { useAllCompliance, useCreateComplianceItem } from '@/hooks/useCompliance';
 import { useProperties } from '@/hooks/useProperties';
 import { COMPLIANCE_TYPES, type ComplianceStatus } from '@/lib/complianceTypes';
@@ -307,13 +308,16 @@ export default function Compliance() {
     <AppLayout>
       <div className="space-y-8 p-4 lg:p-6">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-            Compliance Register
-          </h1>
-          <p className="text-muted-foreground">
-            Portfolio-wide compliance tracking and document management
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              Compliance Register
+            </h1>
+            <p className="text-muted-foreground">
+              Portfolio-wide compliance tracking and document management
+            </p>
+          </div>
+          <ComplianceExportButton />
         </div>
 
         {/* Alert Banner - Redesigned */}
