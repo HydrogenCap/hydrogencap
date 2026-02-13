@@ -10,11 +10,13 @@ type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
 type Loan = Database['public']['Tables']['loans']['Row'];
 type Income = Database['public']['Tables']['income']['Row'];
 type Costs = Database['public']['Tables']['costs']['Row'];
+type Tenancy = Database['public']['Tables']['tenancies']['Row'];
 
 export interface PropertyWithFinancials extends Property {
   loans: Loan[];
   income: Income[];
   costs: Costs[];
+  tenancies: Tenancy[];
 }
 
 export function useProperties() {
@@ -27,7 +29,8 @@ export function useProperties() {
           *,
           loans(*),
           income(*),
-          costs(*)
+          costs(*),
+          tenancies(*)
         `)
         .order('created_at', { ascending: false });
 
@@ -49,7 +52,8 @@ export function useProperty(id: string | undefined) {
           *,
           loans(*),
           income(*),
-          costs(*)
+          costs(*),
+          tenancies(*)
         `)
         .eq('id', id)
         .maybeSingle();

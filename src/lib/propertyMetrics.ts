@@ -51,7 +51,16 @@ export function getPropertyMetrics(property: PropertyWithFinancials): PropertyMe
   const mortgageBalance = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : null;
   const currentValue = property.current_value_gbp ? Number(property.current_value_gbp) : null;
   const purchasePrice = property.purchase_price_gbp ? Number(property.purchase_price_gbp) : null;
-  const annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
+  
+  // Derive annual rent: prefer income table, fallback to sum of active tenancy PCMs * 12
+  let annualRent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
+  if (annualRent === null && property.tenancies?.length) {
+    const activeTenancies = property.tenancies.filter(t => t.status === 'active');
+    if (activeTenancies.length > 0) {
+      const totalPcm = activeTenancies.reduce((sum, t) => sum + (Number(t.rent_amount_pcm) || 0), 0);
+      if (totalPcm > 0) annualRent = totalPcm * 12;
+    }
+  }
   
   // Use effective costs (auto-calculated with manual overrides)
   const effectiveCosts = getEffectiveCosts(annualRent, currentValue, costs);
