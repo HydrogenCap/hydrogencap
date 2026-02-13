@@ -1,11 +1,14 @@
 import { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PoundSterling, Download, Building2, Users, List } from 'lucide-react';
+import { PoundSterling, Download, Building2, Users, List, Clock, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useArrearsAging, useMonthSummary, useRentSchedule, type RentScheduleWithDetails, type RentStatus } from '@/hooks/useRentCollection';
+import { useTenancies, type TenancyWithDetails } from '@/hooks/useTenancies';
 import { LoadingState } from '@/components/common';
 import { RentSummaryCards } from '@/components/rent/RentSummaryCards';
 import { ArrearsAgingTable } from '@/components/rent/ArrearsAgingTable';
@@ -38,6 +41,22 @@ export default function RentCollection() {
 
   const { data: monthSummary, isLoading: summaryLoading } = useMonthSummary();
   const { data: arrearsData, isLoading: arrearsLoading } = useArrearsAging();
+  const { data: allTenancies } = useTenancies();
+
+  // Tenancies expiring within 90 days or already expired but still active
+  const expiringTenancies = useMemo(() => {
+    if (!allTenancies) return [];
+    const now = new Date();
+    const ninetyDays = new Date(now.getTime() + 90 * 86400000);
+
+    return allTenancies
+      .filter(t =>
+        (t.status === 'active' || t.status === 'notice') &&
+        t.end_date &&
+        new Date(t.end_date) <= ninetyDays
+      )
+      .sort((a, b) => new Date(a.end_date!).getTime() - new Date(b.end_date!).getTime());
+  }, [allTenancies]);
 
   // For exports — fetch current month schedule
   const monthStr = format(startOfMonth(new Date()), 'yyyy-MM');
@@ -176,6 +195,61 @@ export default function RentCollection() {
 
         {/* Summary Cards */}
         {monthSummary && <RentSummaryCards data={monthSummary} />}
+
+        {/* Tenancy Expiry Alerts */}
+        {expiringTenancies.length > 0 && (
+          <Card className="border-amber-200 dark:border-amber-800/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-500" />
+                Tenancy Renewals Due
+                <Badge variant="secondary">{expiringTenancies.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {expiringTenancies.map(tenancy => {
+                const daysLeft = tenancy.end_date
+                  ? Math.ceil((new Date(tenancy.end_date).getTime() - Date.now()) / 86400000)
+                  : null;
+                const isExpired = daysLeft !== null && daysLeft < 0;
+                const isCritical = daysLeft !== null && daysLeft <= 30;
+
+                return (
+                  <div
+                    key={tenancy.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                    onClick={() => navigate(`/tenants/${tenancy.tenant_id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">
+                        {tenancy.tenant.first_name} {tenancy.tenant.last_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {tenancy.room?.room_name ? `${tenancy.room.room_name} · ` : ''}
+                        {tenancy.property.address_line}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {tenancy.end_date && (
+                        <>
+                          <p className={`text-sm font-medium ${isExpired ? 'text-destructive' : isCritical ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                            {isExpired
+                              ? `Expired ${Math.abs(daysLeft!)} days ago`
+                              : `${daysLeft} days left`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(tenancy.end_date), 'dd MMM yyyy')}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground ml-2 shrink-0" />
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Grouping Tabs */}
         <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden w-fit">
