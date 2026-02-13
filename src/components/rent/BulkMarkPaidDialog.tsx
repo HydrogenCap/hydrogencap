@@ -22,7 +22,7 @@ interface BulkMarkPaidDialogProps {
 
 export default function BulkMarkPaidDialog({ items, open, onOpenChange, mode, onSuccess }: BulkMarkPaidDialogProps) {
   const bulkMarkPaid = useBulkMarkPaid();
-  const [paymentMethod, setPaymentMethod] = useState('standing_order');
+  const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
   const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [processedCount, setProcessedCount] = useState(0);
   const processedRef = useRef(0);
