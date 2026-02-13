@@ -57,6 +57,8 @@ import {
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { VaultUploadZone } from '@/components/documents/VaultUploadZone';
+import { ValuationSummaryInline } from '@/components/documents/ValuationSummaryInline';
+import { ValuationMasterDashboard } from '@/components/documents/ValuationMasterDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -223,70 +225,75 @@ export default function Documents() {
     return groups;
   }, [sortBy, sortedDocuments]);
 
-  const renderListRow = (doc: any, FileIcon: any, catMeta: any) => (
-    <div
-      key={doc.id}
-      className="flex items-center gap-4 p-3.5 hover:bg-muted/50 cursor-pointer transition-colors"
-      onClick={() => setViewingDoc(doc as ManagedDocument)}
-    >
-      <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
-        <FileIcon className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{doc.display_name || doc.original_file_name}</p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-          {catMeta && (
-            <Badge variant="outline" className="text-[10px] h-5">{catMeta.name}</Badge>
-          )}
-          {doc.property && (
-            <span className="flex items-center gap-1">
-              <Home className="h-3 w-3" />{doc.property.address_line}
-            </span>
-          )}
-          {doc.company && (
-            <span className="flex items-center gap-1">
-              <Building2 className="h-3 w-3" />{doc.company.legal_name}
-            </span>
-          )}
-          <span>{formatBytes(doc.file_size_bytes || 0)}</span>
+  const renderListRow = (doc: any, FileIcon: any, catMeta: any) => {
+    const isValuation = doc.category === 'valuations';
+    return (
+      <div key={doc.id}>
+        <div
+          className="flex items-center gap-4 p-3.5 hover:bg-muted/50 cursor-pointer transition-colors"
+          onClick={() => setViewingDoc(doc as ManagedDocument)}
+        >
+          <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
+            <FileIcon className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{doc.display_name || doc.original_file_name}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+              {catMeta && (
+                <Badge variant="outline" className="text-[10px] h-5">{catMeta.name}</Badge>
+              )}
+              {doc.property && (
+                <span className="flex items-center gap-1">
+                  <Home className="h-3 w-3" />{doc.property.address_line}
+                </span>
+              )}
+              {doc.company && (
+                <span className="flex items-center gap-1">
+                  <Building2 className="h-3 w-3" />{doc.company.legal_name}
+                </span>
+              )}
+              <span>{formatBytes(doc.file_size_bytes || 0)}</span>
+            </div>
+          </div>
+          <div className="text-right shrink-0 hidden sm:block">
+            <p className="text-sm text-muted-foreground">{format(new Date(doc.created_at), 'dd MMM yyyy')}</p>
+            {doc.expiry_date && (
+              <p className={cn(
+                'text-xs',
+                new Date(doc.expiry_date) < new Date() ? 'text-destructive' :
+                new Date(doc.expiry_date) < new Date(Date.now() + 30 * 86400000) ? 'text-amber-500' : 'text-muted-foreground'
+              )}>
+                Exp: {format(new Date(doc.expiry_date), 'dd MMM yyyy')}
+              </p>
+            )}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setViewingDoc(doc as ManagedDocument); }}>
+                <Eye className="h-4 w-4 mr-2" /> View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadDoc.mutate(doc as ManagedDocument); }}>
+                <Download className="h-4 w-4 mr-2" /> Download
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingDoc(doc as ManagedDocument); }}>
+                <Pencil className="h-4 w-4 mr-2" /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc as ManagedDocument); }}>
+                <Trash2 className="h-4 w-4 mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+        {isValuation && <ValuationSummaryInline documentId={doc.id} compact />}
       </div>
-      <div className="text-right shrink-0 hidden sm:block">
-        <p className="text-sm text-muted-foreground">{format(new Date(doc.created_at), 'dd MMM yyyy')}</p>
-        {doc.expiry_date && (
-          <p className={cn(
-            'text-xs',
-            new Date(doc.expiry_date) < new Date() ? 'text-destructive' :
-            new Date(doc.expiry_date) < new Date(Date.now() + 30 * 86400000) ? 'text-amber-500' : 'text-muted-foreground'
-          )}>
-            Exp: {format(new Date(doc.expiry_date), 'dd MMM yyyy')}
-          </p>
-        )}
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setViewingDoc(doc as ManagedDocument); }}>
-            <Eye className="h-4 w-4 mr-2" /> View
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadDoc.mutate(doc as ManagedDocument); }}>
-            <Download className="h-4 w-4 mr-2" /> Download
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingDoc(doc as ManagedDocument); }}>
-            <Pencil className="h-4 w-4 mr-2" /> Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc as ManagedDocument); }}>
-            <Trash2 className="h-4 w-4 mr-2" /> Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
+    );
+  };
 
   const groupedSummaries = useMemo(() => {
     if (!summaryData) return [];
@@ -544,6 +551,8 @@ export default function Documents() {
             </span>
           </div>
         )}
+        {/* Valuation Master Dashboard */}
+        {filters.category === 'valuations' && <ValuationMasterDashboard />}
 
         {/* Document List/Grid */}
         {docsLoading ? (

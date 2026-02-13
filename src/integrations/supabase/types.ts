@@ -1293,6 +1293,117 @@ export type Database = {
           },
         ]
       }
+      document_summaries: {
+        Row: {
+          ai_confidence: number | null
+          ai_model: string | null
+          comparable_evidence: Json | null
+          condition_notes: string | null
+          condition_rating: string | null
+          created_at: string
+          document_id: string
+          executive_summary: string | null
+          gross_internal_area_sqft: number | null
+          id: string
+          key_observations: string[] | null
+          org_id: string
+          price_per_sqft: number | null
+          property_id: string | null
+          property_type_noted: string | null
+          raw_extraction: Json | null
+          recommended_actions: string[] | null
+          risk_factors: string[] | null
+          special_assumptions: string[] | null
+          status: string
+          summary_type: string
+          surveyor_firm: string | null
+          surveyor_name: string | null
+          surveyor_rics_number: string | null
+          tenure: string | null
+          updated_at: string
+          valuation_basis: string | null
+          valuation_date: string | null
+          valuation_figure_gbp: number | null
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_model?: string | null
+          comparable_evidence?: Json | null
+          condition_notes?: string | null
+          condition_rating?: string | null
+          created_at?: string
+          document_id: string
+          executive_summary?: string | null
+          gross_internal_area_sqft?: number | null
+          id?: string
+          key_observations?: string[] | null
+          org_id: string
+          price_per_sqft?: number | null
+          property_id?: string | null
+          property_type_noted?: string | null
+          raw_extraction?: Json | null
+          recommended_actions?: string[] | null
+          risk_factors?: string[] | null
+          special_assumptions?: string[] | null
+          status?: string
+          summary_type?: string
+          surveyor_firm?: string | null
+          surveyor_name?: string | null
+          surveyor_rics_number?: string | null
+          tenure?: string | null
+          updated_at?: string
+          valuation_basis?: string | null
+          valuation_date?: string | null
+          valuation_figure_gbp?: number | null
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_model?: string | null
+          comparable_evidence?: Json | null
+          condition_notes?: string | null
+          condition_rating?: string | null
+          created_at?: string
+          document_id?: string
+          executive_summary?: string | null
+          gross_internal_area_sqft?: number | null
+          id?: string
+          key_observations?: string[] | null
+          org_id?: string
+          price_per_sqft?: number | null
+          property_id?: string | null
+          property_type_noted?: string | null
+          raw_extraction?: Json | null
+          recommended_actions?: string[] | null
+          risk_factors?: string[] | null
+          special_assumptions?: string[] | null
+          status?: string
+          summary_type?: string
+          surveyor_firm?: string | null
+          surveyor_name?: string | null
+          surveyor_rics_number?: string | null
+          tenure?: string | null
+          updated_at?: string
+          valuation_basis?: string | null
+          valuation_date?: string | null
+          valuation_figure_gbp?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_summaries_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_summaries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           ai_doc_type_confidence: number | null
