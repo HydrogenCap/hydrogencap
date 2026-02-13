@@ -75,9 +75,6 @@ export function DocumentViewer({
               <ExternalLink className="h-4 w-4 mr-2" />
               Open
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </div>
 
