@@ -218,17 +218,46 @@ export default function Documents() {
     }
   }, [documents, sortBy]);
 
-  // Split into current and archived (expired) documents
+  // Split into current and archived documents
+  // A document is archived if: (a) it's expired, OR (b) a newer document of the
+  // same category+property exists (only one "live" file per type per property).
   const { currentDocuments, archivedDocuments } = useMemo(() => {
     const now = new Date();
     const current: typeof sortedDocuments = [];
     const archived: typeof sortedDocuments = [];
+
+    // Build a map of newest document per (property_id + category) combo
+    // so we can mark older duplicates as superseded
+    const newestByKey = new Map<string, { date: number; id: string }>();
     for (const doc of sortedDocuments) {
+      if (!doc.property_id || !doc.category) continue;
+      const key = `${doc.property_id}::${doc.category}`;
+      const docDate = doc.document_date
+        ? new Date(doc.document_date).getTime()
+        : new Date(doc.created_at).getTime();
+      const existing = newestByKey.get(key);
+      if (!existing || docDate > existing.date) {
+        newestByKey.set(key, { date: docDate, id: doc.id });
+      }
+    }
+
+    for (const doc of sortedDocuments) {
+      // Rule 1: expired documents go to archive
       if (doc.expiry_date && new Date(doc.expiry_date) < now) {
         archived.push(doc);
-      } else {
-        current.push(doc);
+        continue;
       }
+      // Rule 2: if there's a newer doc of the same category for the same property,
+      // this one is superseded → archive
+      if (doc.property_id && doc.category) {
+        const key = `${doc.property_id}::${doc.category}`;
+        const newest = newestByKey.get(key);
+        if (newest && newest.id !== doc.id) {
+          archived.push(doc);
+          continue;
+        }
+      }
+      current.push(doc);
     }
     return { currentDocuments: current, archivedDocuments: archived };
   }, [sortedDocuments]);
@@ -624,7 +653,7 @@ export default function Documents() {
               </div>
             ) : null}
 
-            {/* Archived (expired) documents */}
+            {/* Archived (expired or superseded) documents */}
             {archivedDocuments.length > 0 && (
               <div>
                 <button
@@ -633,7 +662,7 @@ export default function Documents() {
                 >
                   {showArchived ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   <Archive className="h-4 w-4" />
-                  Archived (Expired)
+                  Archived
                   <Badge variant="secondary" className="ml-1">{archivedDocuments.length}</Badge>
                 </button>
                 {showArchived && (
@@ -716,7 +745,7 @@ export default function Documents() {
                 >
                   {showArchived ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   <Archive className="h-4 w-4" />
-                  Archived (Expired)
+                  Archived
                   <Badge variant="secondary" className="ml-1">{archivedDocuments.length}</Badge>
                 </button>
                 {showArchived && (
