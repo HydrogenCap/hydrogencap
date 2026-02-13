@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import CreateMaintenanceRequestDialog from '@/components/maintenance/CreateMaintenanceRequestDialog';
+import { AppLayout } from '@/components/layout/AppLayout';
  import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Home, User } from 'lucide-react';
  import { format } from 'date-fns';
  import { Button } from '@/components/ui/button';
@@ -106,10 +107,11 @@ import CreateMaintenanceRequestDialog from '@/components/maintenance/CreateMaint
      urgent: openRequests.filter(r => r.urgency === 'urgent').length,
    };
  
-  if (isLoading) return <LoadingState text="Loading maintenance requests..." />;
+   if (isLoading) return <AppLayout><LoadingState text="Loading maintenance requests..." /></AppLayout>;
  
-   return (
-     <div className="container py-6 space-y-6">
+    return (
+      <AppLayout>
+      <div className="container py-6 space-y-6">
        {/* Header */}
        <div className="flex items-center justify-between">
          <div>
@@ -218,7 +220,8 @@ import CreateMaintenanceRequestDialog from '@/components/maintenance/CreateMaint
          </TabsContent>
        </Tabs>
  
-        <CreateMaintenanceRequestDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-    </div>
-   );
- }
+         <CreateMaintenanceRequestDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+     </div>
+      </AppLayout>
+    );
+  }
