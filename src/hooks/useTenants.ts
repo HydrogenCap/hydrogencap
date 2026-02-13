@@ -109,7 +109,7 @@ export interface TenantWithProperty extends Tenant {
         .from('tenancies')
         .select(`
           id, tenant_id, property_id, room_id, start_date, end_date, rent_amount_pcm, status,
-          property:properties(address_line, postcode),
+          property:properties(address_line, town_city, postcode),
           room:rooms(room_name)
         `)
         .in('status', ['active', 'notice']);

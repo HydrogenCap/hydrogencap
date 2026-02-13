@@ -1,6 +1,7 @@
  import { useState, useDeferredValue } from 'react';
  import { Link } from 'react-router-dom';
  import { Users, Plus, Search, Filter, Mail, Phone, Home, UserCheck, UserX, Clock, Building2 } from 'lucide-react';
+ import { formatPropertyAddress } from '@/utils/formatAddress';
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,13 +81,13 @@ function TenantCard({ tenant }: { tenant: TenantWithProperty }) {
                       <Home className="h-3 w-3" />
                       <span className="truncate">
                         {tenancies[0].room?.room_name === 'Whole Property'
-                          ? tenancies[0].property?.address_line
+                          ? formatPropertyAddress(tenancies[0].property?.address_line, (tenancies[0].property as any)?.town_city)
                           : tenancies[0].room?.room_name}
                       </span>
                     </div>
                     {tenancies[0].room?.room_name !== 'Whole Property' && (
                       <p className="text-xs text-muted-foreground truncate">
-                        {tenancies[0].property?.address_line}
+                        {formatPropertyAddress(tenancies[0].property?.address_line, (tenancies[0].property as any)?.town_city)}
                       </p>
                     )}
                     <p className="font-semibold text-foreground">
@@ -102,7 +103,7 @@ function TenantCard({ tenant }: { tenant: TenantWithProperty }) {
                             <Home className="h-3 w-3 shrink-0" />
                             <span className="truncate text-xs">
                               {t.room?.room_name === 'Whole Property'
-                                ? t.property?.address_line
+                                ? formatPropertyAddress(t.property?.address_line, (t.property as any)?.town_city)
                                 : t.room?.room_name}
                             </span>
                           </div>
