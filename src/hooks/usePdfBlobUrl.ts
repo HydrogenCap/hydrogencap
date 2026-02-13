@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Fetches a PDF from Supabase storage (handling private buckets via signed URLs)
- * and returns a URL suitable for rendering in an iframe.
- * For Supabase storage URLs, generates a signed URL.
- * For other URLs, returns a blob URL.
+ * Fetches a PDF and returns a blob: URL for rendering in an iframe.
+ * For Supabase private storage, uses the SDK to download with auth.
  */
 export function usePdfBlobUrl(sourceUrl: string | null) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
@@ -15,7 +13,6 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
   const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Clean up previous blob URL
     if (blobUrlRef.current) {
       URL.revokeObjectURL(blobUrlRef.current);
       blobUrlRef.current = null;
@@ -36,42 +33,40 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
       setError(null);
 
       try {
-        // Try to extract storage path from Supabase URL
-        const bucketMatch = sourceUrl!.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?|$)/);
-        
+        let blob: Blob;
+
+        // Extract storage path from Supabase URL and download via SDK (handles private buckets)
+        const bucketMatch = sourceUrl!.match(
+          /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?|$)/
+        );
+
         if (bucketMatch) {
           const [, bucket, path] = bucketMatch;
           const decodedPath = decodeURIComponent(path);
-          
-          // Create a signed URL for private bucket access
-          const { data: signedData, error: signError } = await supabase.storage
+          const { data, error: dlError } = await supabase.storage
             .from(bucket)
-            .createSignedUrl(decodedPath, 3600);
-          
-          if (signError || !signedData?.signedUrl) {
-            throw new Error(`Failed to create signed URL: ${signError?.message || 'No URL returned'}`);
-          }
+            .download(decodedPath);
 
-          if (!cancelled) {
-            setBlobUrl(signedData.signedUrl);
-            setDataUrl(signedData.signedUrl);
+          if (dlError || !data) {
+            throw new Error(`Storage download failed: ${dlError?.message || 'No data'}`);
           }
+          // Ensure correct MIME type
+          blob = new Blob([data], { type: 'application/pdf' });
         } else {
-          // Fallback: direct fetch for non-Supabase URLs
           const response = await fetch(sourceUrl!);
           if (!response.ok) {
             throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
           }
           const arrayBuffer = await response.arrayBuffer();
-
-          if (cancelled) return;
-
-          const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          blobUrlRef.current = url;
-          setBlobUrl(url);
-          setDataUrl(url);
+          blob = new Blob([arrayBuffer], { type: 'application/pdf' });
         }
+
+        if (cancelled) return;
+
+        const url = URL.createObjectURL(blob);
+        blobUrlRef.current = url;
+        setBlobUrl(url);
+        setDataUrl(url);
       } catch (err: any) {
         if (!cancelled) {
           console.error('PDF fetch error:', err);
