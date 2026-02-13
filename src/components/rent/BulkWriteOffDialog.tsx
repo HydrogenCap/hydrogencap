@@ -66,7 +66,7 @@ export default function BulkWriteOffDialog({ items, open, onOpenChange, onSucces
                     {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {item.tenancy.room.room_name} • {[item.tenancy.property.address_line, (item.tenancy.property as any).town_city].filter(Boolean).join(', ')}
+                    {item.tenancy.room.room_name} • {[item.tenancy.property.address_line, item.tenancy.property.town_city].filter(Boolean).join(', ')}
                   </p>
                 </div>
                 <span className="font-medium text-destructive shrink-0 ml-3">
