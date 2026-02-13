@@ -87,6 +87,28 @@ export function useVaultDocuments(filters: VaultFilters) {
   return useQuery({
     queryKey: ['document-vault', filters],
     queryFn: async () => {
+      // If filtering by company, first resolve which properties are owned by that company
+      let companyPropertyIds: string[] | null = null;
+      if (filters.companyId) {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('party_id')
+          .eq('id', filters.companyId)
+          .single();
+
+        if (company?.party_id) {
+          const { data: links } = await supabase
+            .from('ownership_links')
+            .select('subject_id')
+            .eq('owner_party_id', company.party_id)
+            .eq('subject_type', 'property')
+            .eq('ownership_type', 'legal')
+            .is('effective_to', null);
+
+          companyPropertyIds = (links || []).map(l => l.subject_id);
+        }
+      }
+
       let query = supabase
         .from('documents')
         .select(`
@@ -103,8 +125,13 @@ export function useVaultDocuments(filters: VaultFilters) {
       if (filters.propertyId) {
         query = query.eq('property_id', filters.propertyId);
       }
-      if (filters.companyId) {
-        query = query.eq('company_id', filters.companyId);
+      // For company filter: match docs with company_id OR docs on properties owned by the company
+      if (filters.companyId && companyPropertyIds !== null) {
+        if (companyPropertyIds.length > 0) {
+          query = query.or(`company_id.eq.${filters.companyId},property_id.in.(${companyPropertyIds.join(',')})`);
+        } else {
+          query = query.eq('company_id', filters.companyId);
+        }
       }
       if (filters.dateFrom) {
         query = query.gte('document_date', filters.dateFrom);
