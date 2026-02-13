@@ -97,7 +97,7 @@ export function ComplianceExportButton() {
             <ChevronDown className="h-3 w-3 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuContent align="end" className="w-72 max-h-80 overflow-y-auto">
           <DropdownMenuItem onClick={() => handleExport()}>
             <FileArchive className="h-4 w-4 mr-2" />
             All Properties
@@ -105,14 +105,12 @@ export function ComplianceExportButton() {
           {sortedProperties.length > 0 && (
             <>
               <DropdownMenuSeparator />
-              <ScrollArea className="max-h-64">
-                {sortedProperties.map((p) => (
-                  <DropdownMenuItem key={p.id} onClick={() => handleExport(p.id)}>
-                    <Home className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span className="truncate">{p.address_line}</span>
-                  </DropdownMenuItem>
-                ))}
-              </ScrollArea>
+              {sortedProperties.map((p) => (
+                <DropdownMenuItem key={p.id} onClick={() => handleExport(p.id)}>
+                  <Home className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{p.address_line}</span>
+                </DropdownMenuItem>
+              ))}
             </>
           )}
         </DropdownMenuContent>
