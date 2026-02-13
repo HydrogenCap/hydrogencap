@@ -104,9 +104,10 @@ export function DocumentViewer({
                   </Button>
                 </div>
               ) : (pdfBlobUrl || pdfDataUrl) ? (
-                <iframe
+                <embed
                   src={`${pdfBlobUrl || pdfDataUrl}#view=FitH`}
-                  className="w-full h-full border-0"
+                  type="application/pdf"
+                  className="w-full h-full"
                   title={document.display_name || document.original_file_name}
                 />
                 
