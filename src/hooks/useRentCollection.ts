@@ -78,7 +78,7 @@
              id,
              tenant:tenants(id, first_name, last_name, tenant_type, company_name),
              room:rooms(room_name),
-             property:properties(id, address_line, postcode)
+              property:properties(id, address_line, town_city, postcode)
            )
          `)
          .order('due_date', { ascending: true });
@@ -118,7 +118,7 @@
              id,
               tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
              room:rooms(room_name),
-             property:properties(id, address_line, postcode)
+              property:properties(id, address_line, town_city, postcode)
            )
          `)
          .in('status', ['overdue', 'partial'])
@@ -203,7 +203,7 @@ export function useRentScheduleItem(id: string) {
             id,
              tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
             room:rooms(room_name),
-            property:properties(id, address_line, postcode)
+            property:properties(id, address_line, town_city, postcode)
           )
         `)
         .eq('id', id)
@@ -436,7 +436,7 @@ export function useArrearsAging() {
             id,
             tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
             room:rooms(room_name),
-            property:properties(id, address_line, postcode)
+            property:properties(id, address_line, town_city, postcode)
           )
         `)
         .in('status', ['overdue', 'partial', 'due'])
@@ -465,7 +465,7 @@ export function useArrearsAging() {
         if (!propertyMap.has(propId)) {
           propertyMap.set(propId, {
             property_id: propId,
-            property_address: item.tenancy.property.address_line,
+            property_address: [item.tenancy.property.address_line, (item.tenancy.property as any).town_city].filter(Boolean).join(', '),
             property_postcode: item.tenancy.property.postcode,
             bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
             tenancies: [],
