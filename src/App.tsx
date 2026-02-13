@@ -55,6 +55,7 @@ const RentCollection = lazy(() => import("./pages/RentCollection"));
 const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
+const Documents = lazy(() => import("./pages/Documents"));
 
 // Portal pages (shareholder)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
@@ -361,6 +362,7 @@ const App = () => (
             <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><TenancyLedger /></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><PaymentDetail /></ProtectedRoute>} />
             <Route path="/maintenance" element={<ProtectedRoute><MaintenanceRequests /></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
 
             {/* Marketing pages (public) */}
             <Route path="/" element={<MarketingHome />} />

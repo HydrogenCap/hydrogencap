@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ClipboardList,
   Construction,
+  FolderOpen,
   History,
   CalendarCheck,
   AlertTriangle,
@@ -56,6 +57,7 @@ const portfolioItems: NavItem[] = [
   { title: 'Pipeline', icon: Construction, href: '/pipeline' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Ownership', icon: Users, href: '/ownership' },
+  { title: 'Documents', icon: FolderOpen, href: '/documents' },
 ];
 
 const operationsItems: NavItem[] = [
