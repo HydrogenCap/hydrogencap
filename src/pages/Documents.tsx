@@ -116,7 +116,7 @@ const CATEGORY_GROUPS = [
 export default function Documents() {
   const [filters, setFilters] = useState<VaultFilters>({ category: 'all' });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [showUploadZone, setShowUploadZone] = useState(false);
+  
   const [editingDoc, setEditingDoc] = useState<ManagedDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<ManagedDocument | null>(null);
   const [deletingDoc, setDeletingDoc] = useState<ManagedDocument | null>(null);
@@ -327,26 +327,26 @@ export default function Documents() {
               {summaryData?.totalCount || 0} documents across {summaryData?.summaries.filter(s => s.count > 0).length || 0} categories
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleCategorise}
-              disabled={isCategorising}
-              className="gap-2"
-            >
-              {isCategorising ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {isCategorising ? 'Categorising...' : 'AI Categorise'}
-            </Button>
-            <Button onClick={() => setShowUploadZone(prev => !prev)} className="gap-2">
-              <Upload className="h-4 w-4" />
-              Upload Document
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={handleCategorise}
+            disabled={isCategorising}
+            className="gap-2"
+          >
+            {isCategorising ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {isCategorising ? 'Categorising...' : 'AI Categorise'}
+          </Button>
         </div>
+
+        {/* Always-visible drag & drop upload zone */}
+        <VaultUploadZone onUploadComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['document-vault'] });
+          queryClient.invalidateQueries({ queryKey: ['document-vault-summaries'] });
+        }} />
 
         {/* Category Overview */}
         {showCategoryOverview && (
@@ -508,14 +508,6 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* Upload Zone */}
-        {showUploadZone && (
-          <VaultUploadZone
-            propertyId={filters.propertyId}
-            companyId={filters.companyId}
-            onUploadComplete={() => setShowUploadZone(false)}
-          />
-        )}
 
         {/* Active filter pills */}
         {hasActiveFilters && (
@@ -568,10 +560,9 @@ export default function Documents() {
                   ? 'Try adjusting your filters or search query.'
                   : 'Upload your first document to get started.'}
               </p>
-              <Button onClick={() => setShowUploadZone(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Upload Document
-              </Button>
+              <p className="text-sm text-muted-foreground mt-1">
+                Drag & drop files into the upload zone above to get started.
+              </p>
             </CardContent>
           </Card>
         ) : viewMode === 'list' ? (
