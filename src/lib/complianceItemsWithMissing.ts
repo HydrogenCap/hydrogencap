@@ -46,6 +46,7 @@ const CONDITIONAL_PAIRS: Record<string, { alternative: string; priority: 'this' 
 // Compliance types that should always be shown as optional (not counted as missing/expired when not uploaded)
 const ALWAYS_OPTIONAL_TYPES = [
   'Legionella Risk Assessment',
+  'Fire Risk Assessment (FRA)',
 ];
 
 // Compliance types that do NOT expire — once uploaded they are permanently valid
@@ -59,6 +60,7 @@ const NON_EXPIRING_TYPES = [
 // Reason text for optional items
 const OPTIONAL_TYPE_REASONS: Record<string, string> = {
   'Legionella Risk Assessment': 'Optional - not required by law for most residential properties',
+  'Fire Risk Assessment (FRA)': 'Recommended - nice to have but not urgent for most properties',
 };
 
 /**
