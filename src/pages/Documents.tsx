@@ -23,6 +23,9 @@ import {
   Sparkles,
   Loader2,
   ArrowUpDown,
+  Archive,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -126,6 +129,7 @@ export default function Documents() {
   const [showCategoryOverview, setShowCategoryOverview] = useState(true);
   const [isCategorising, setIsCategorising] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'property' | 'name'>('date');
+  const [showArchived, setShowArchived] = useState(false);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -214,17 +218,32 @@ export default function Documents() {
     }
   }, [documents, sortBy]);
 
+  // Split into current and archived (expired) documents
+  const { currentDocuments, archivedDocuments } = useMemo(() => {
+    const now = new Date();
+    const current: typeof sortedDocuments = [];
+    const archived: typeof sortedDocuments = [];
+    for (const doc of sortedDocuments) {
+      if (doc.expiry_date && new Date(doc.expiry_date) < now) {
+        archived.push(doc);
+      } else {
+        current.push(doc);
+      }
+    }
+    return { currentDocuments: current, archivedDocuments: archived };
+  }, [sortedDocuments]);
+
   // Group by property when sorting by property
   const groupedByProperty = useMemo(() => {
-    if (sortBy !== 'property' || !sortedDocuments.length) return null;
-    const groups = new Map<string, typeof sortedDocuments>();
-    for (const doc of sortedDocuments) {
+    if (sortBy !== 'property' || !currentDocuments.length) return null;
+    const groups = new Map<string, typeof currentDocuments>();
+    for (const doc of currentDocuments) {
       const key = doc.property?.address_line || 'Unassigned';
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(doc);
     }
     return groups;
-  }, [sortBy, sortedDocuments]);
+  }, [sortBy, currentDocuments]);
 
   const renderListRow = (doc: any, FileIcon: any, catMeta: any) => {
     const isValuation = doc.category === 'valuations';
@@ -577,6 +596,7 @@ export default function Documents() {
           </Card>
         ) : viewMode === 'list' ? (
           <div className="space-y-4">
+            {/* Current documents */}
             {sortBy === 'property' && groupedByProperty ? (
               Array.from(groupedByProperty.entries()).map(([propertyName, docs]) => (
                 <div key={propertyName}>
@@ -594,72 +614,138 @@ export default function Documents() {
                   </div>
                 </div>
               ))
-            ) : (
+            ) : currentDocuments.length > 0 ? (
               <div className="border rounded-xl divide-y">
-                {sortedDocuments.map(doc => {
+                {currentDocuments.map(doc => {
                   const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
                   const catMeta = categories?.find(c => c.slug === doc.category);
                   return renderListRow(doc, FileIcon, catMeta);
                 })}
               </div>
+            ) : null}
+
+            {/* Archived (expired) documents */}
+            {archivedDocuments.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+                >
+                  {showArchived ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  <Archive className="h-4 w-4" />
+                  Archived (Expired)
+                  <Badge variant="secondary" className="ml-1">{archivedDocuments.length}</Badge>
+                </button>
+                {showArchived && (
+                  <div className="border rounded-xl divide-y opacity-70">
+                    {archivedDocuments.map(doc => {
+                      const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
+                      const catMeta = categories?.find(c => c.slug === doc.category);
+                      return renderListRow(doc, FileIcon, catMeta);
+                    })}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {sortedDocuments.map(doc => {
-              const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {currentDocuments.map(doc => {
+                const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
 
-              return (
-                <Card
-                  key={doc.id}
-                  className="group cursor-pointer hover:shadow-md transition-all relative"
-                  onClick={() => setViewingDoc(doc as ManagedDocument)}
+                return (
+                  <Card
+                    key={doc.id}
+                    className="group cursor-pointer hover:shadow-md transition-all relative"
+                    onClick={() => setViewingDoc(doc as ManagedDocument)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="aspect-[4/3] bg-muted rounded-md mb-2 flex items-center justify-center overflow-hidden">
+                        {doc.file_type === 'image' ? (
+                          <img
+                            src={doc.file_url}
+                            alt={doc.display_name || doc.original_file_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <FileIcon className="h-12 w-12 text-muted-foreground/40" />
+                        )}
+                      </div>
+                      <p className="text-sm font-medium truncate" title={doc.display_name || doc.original_file_name}>
+                        {doc.display_name || doc.original_file_name}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                        <span>{formatBytes(doc.file_size_bytes || 0)}</span>
+                        <span>{format(new Date(doc.created_at), 'dd MMM')}</span>
+                      </div>
+
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="secondary" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadDoc.mutate(doc as ManagedDocument); }}>
+                              <Download className="h-4 w-4 mr-2" /> Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingDoc(doc as ManagedDocument); }}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc as ManagedDocument); }}>
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Archived grid */}
+            {archivedDocuments.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
                 >
-                  <CardContent className="p-3">
-                    <div className="aspect-[4/3] bg-muted rounded-md mb-2 flex items-center justify-center overflow-hidden">
-                      {doc.file_type === 'image' ? (
-                        <img
-                          src={doc.file_url}
-                          alt={doc.display_name || doc.original_file_name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <FileIcon className="h-12 w-12 text-muted-foreground/40" />
-                      )}
-                    </div>
-                    <p className="text-sm font-medium truncate" title={doc.display_name || doc.original_file_name}>
-                      {doc.display_name || doc.original_file_name}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                      <span>{formatBytes(doc.file_size_bytes || 0)}</span>
-                      <span>{format(new Date(doc.created_at), 'dd MMM')}</span>
-                    </div>
-
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="secondary" size="icon" className="h-7 w-7">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadDoc.mutate(doc as ManagedDocument); }}>
-                            <Download className="h-4 w-4 mr-2" /> Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingDoc(doc as ManagedDocument); }}>
-                            <Pencil className="h-4 w-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc as ManagedDocument); }}>
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  {showArchived ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  <Archive className="h-4 w-4" />
+                  Archived (Expired)
+                  <Badge variant="secondary" className="ml-1">{archivedDocuments.length}</Badge>
+                </button>
+                {showArchived && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 opacity-70">
+                    {archivedDocuments.map(doc => {
+                      const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
+                      return (
+                        <Card
+                          key={doc.id}
+                          className="group cursor-pointer hover:shadow-md transition-all relative"
+                          onClick={() => setViewingDoc(doc as ManagedDocument)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="aspect-[4/3] bg-muted rounded-md mb-2 flex items-center justify-center overflow-hidden">
+                              <FileIcon className="h-12 w-12 text-muted-foreground/40" />
+                            </div>
+                            <p className="text-sm font-medium truncate">{doc.display_name || doc.original_file_name}</p>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                              <span>{formatBytes(doc.file_size_bytes || 0)}</span>
+                              <Badge variant="outline" className="text-[10px] h-4 text-destructive border-destructive/30">Expired</Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
