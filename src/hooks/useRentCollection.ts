@@ -2,6 +2,7 @@
  import { supabase } from '@/integrations/supabase/client';
  import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
+ import { formatPropertyAddress } from '@/utils/formatAddress';
  
  export type RentStatus = 'upcoming' | 'due' | 'paid' | 'partial' | 'overdue' | 'bad_debt';
  
@@ -466,7 +467,7 @@ export function useArrearsAging() {
         if (!propertyMap.has(propId)) {
           propertyMap.set(propId, {
             property_id: propId,
-            property_address: [item.tenancy.property.address_line, item.tenancy.property.town_city].filter(Boolean).join(', '),
+            property_address: formatPropertyAddress(item.tenancy.property.address_line, item.tenancy.property.town_city),
             property_postcode: item.tenancy.property.postcode,
             bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
             tenancies: [],

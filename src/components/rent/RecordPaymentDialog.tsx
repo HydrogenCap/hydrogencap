@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatPropertyAddress } from '@/utils/formatAddress';
 import { format } from 'date-fns';
 import { PoundSterling } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -73,7 +74,7 @@ export default function RecordPaymentDialog({ item, open, onOpenChange }: Record
             Record Payment
           </DialogTitle>
           <DialogDescription>
-            {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name} — {[item.tenancy.property.address_line, item.tenancy.property.town_city].filter(Boolean).join(', ')}
+            {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name} — {formatPropertyAddress(item.tenancy.property.address_line, item.tenancy.property.town_city)}
           </DialogDescription>
         </DialogHeader>
 
