@@ -85,3 +85,6 @@ verify_jwt = false
 
 [functions.customer-portal]
 verify_jwt = false
+
+[functions.categorise-documents]
+verify_jwt = false

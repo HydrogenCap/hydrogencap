@@ -20,6 +20,8 @@ import {
   Home,
   Clock,
   AlertTriangle,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -54,6 +56,9 @@ import {
 import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useDocumentCategories,
   useDownloadDocument,
@@ -115,6 +120,10 @@ export default function Documents() {
   const [viewingDoc, setViewingDoc] = useState<ManagedDocument | null>(null);
   const [deletingDoc, setDeletingDoc] = useState<ManagedDocument | null>(null);
   const [showCategoryOverview, setShowCategoryOverview] = useState(true);
+  const [isCategorising, setIsCategorising] = useState(false);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: summaryData, isLoading: summariesLoading } = useDocumentCategorySummaries();
   const { data: documents, isLoading: docsLoading } = useVaultDocuments(filters);
@@ -146,6 +155,33 @@ export default function Documents() {
     await deleteDoc.mutateAsync(deletingDoc.id);
     setDeletingDoc(null);
   };
+
+  const handleCategorise = async () => {
+    setIsCategorising(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('categorise-documents', {
+        body: { dryRun: false },
+      });
+      if (error) throw error;
+      toast({
+        title: 'Categorisation complete',
+        description: `${data.updated} document${data.updated !== 1 ? 's' : ''} categorised successfully.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['document-vault'] });
+      queryClient.invalidateQueries({ queryKey: ['document-vault-summaries'] });
+    } catch (err) {
+      console.error('Categorise error:', err);
+      toast({
+        title: 'Categorisation failed',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCategorising(false);
+    }
+  };
+
+
 
   const groupedSummaries = useMemo(() => {
     if (!summaryData) return [];
@@ -186,10 +222,25 @@ export default function Documents() {
               {summaryData?.totalCount || 0} documents across {summaryData?.summaries.filter(s => s.count > 0).length || 0} categories
             </p>
           </div>
-          <Button onClick={() => setShowUpload(true)} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Upload Document
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCategorise}
+              disabled={isCategorising}
+              className="gap-2"
+            >
+              {isCategorising ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              {isCategorising ? 'Categorising...' : 'AI Categorise'}
+            </Button>
+            <Button onClick={() => setShowUpload(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Upload Document
+            </Button>
+          </div>
         </div>
 
         {/* Category Overview */}
