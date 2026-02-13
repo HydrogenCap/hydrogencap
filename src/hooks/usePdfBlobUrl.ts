@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Fetches a PDF from a URL and returns a blob: URL with correct MIME type.
+ * Fetches a PDF from Supabase storage (handling private buckets via signed URLs)
+ * and returns a blob: URL with correct MIME type.
  * Also provides a base64 data URL as fallback for environments where
  * Chrome blocks blob URLs in nested iframes.
  */
@@ -34,14 +36,30 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
       setError(null);
 
       try {
-        const response = await fetch(sourceUrl!);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+        let arrayBuffer: ArrayBuffer;
+
+        // Try to extract storage path from Supabase URL and download via SDK (handles private buckets)
+        const bucketMatch = sourceUrl!.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?|$)/);
+        if (bucketMatch) {
+          const [, bucket, path] = bucketMatch;
+          const decodedPath = decodeURIComponent(path);
+          const { data, error: dlError } = await supabase.storage
+            .from(bucket)
+            .download(decodedPath);
+          
+          if (dlError || !data) {
+            throw new Error(`Storage download failed: ${dlError?.message || 'No data'}`);
+          }
+          arrayBuffer = await data.arrayBuffer();
+        } else {
+          // Fallback: direct fetch for non-Supabase URLs
+          const response = await fetch(sourceUrl!);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+          }
+          arrayBuffer = await response.arrayBuffer();
         }
 
-        const arrayBuffer = await response.arrayBuffer();
-        
         if (cancelled) return;
 
         // Create blob with explicit PDF MIME type
