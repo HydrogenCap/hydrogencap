@@ -198,8 +198,33 @@ export interface ManagedDocument {
        visibleToShareholders?: boolean;
        visibleToTenants?: boolean;
      }) => {
-      const orgId = await getUserOrgId();
-        if (!orgId) throw new Error('No organization found');
+       const orgId = await getUserOrgId();
+         if (!orgId) throw new Error('No organization found');
+
+         // ── Duplicate prevention ──────────────────────────────
+         // Check if a document with same original filename & size already exists
+         // for the same property (or same org if no property)
+         {
+           let dupQuery = supabase
+             .from('documents')
+             .select('id, display_name')
+             .eq('org_id', orgId)
+             .eq('original_file_name', file.name)
+             .eq('file_size_bytes', file.size)
+             .is('deleted_at', null)
+             .limit(1);
+
+           if (propertyId) {
+             dupQuery = dupQuery.eq('property_id', propertyId);
+           }
+
+           const { data: existingDocs } = await dupQuery;
+           if (existingDocs && existingDocs.length > 0) {
+             throw new Error(
+               `A document with the same file already exists: "${existingDocs[0].display_name}". Please remove the duplicate or rename the file.`
+             );
+           }
+         }
 
         const { data: userData } = await supabase.auth.getUser();
 
