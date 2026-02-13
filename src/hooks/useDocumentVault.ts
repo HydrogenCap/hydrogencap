@@ -90,23 +90,13 @@ export function useVaultDocuments(filters: VaultFilters) {
       // If filtering by company, first resolve which properties are owned by that company
       let companyPropertyIds: string[] | null = null;
       if (filters.companyId) {
-        const { data: company } = await supabase
-          .from('companies')
-          .select('party_id')
-          .eq('id', filters.companyId)
-          .single();
+        // Get properties where this company is the legal owner
+        const { data: ownedProperties } = await supabase
+          .from('properties')
+          .select('id')
+          .eq('legal_owner_company_id', filters.companyId);
 
-        if (company?.party_id) {
-          const { data: links } = await supabase
-            .from('ownership_links')
-            .select('subject_id')
-            .eq('owner_party_id', company.party_id)
-            .eq('subject_type', 'property')
-            .eq('ownership_type', 'legal')
-            .is('effective_to', null);
-
-          companyPropertyIds = (links || []).map(l => l.subject_id);
-        }
+        companyPropertyIds = (ownedProperties || []).map(p => p.id);
       }
 
       let query = supabase
