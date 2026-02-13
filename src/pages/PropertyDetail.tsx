@@ -22,6 +22,7 @@ import { FloorplanCard } from '@/components/floorplans';
 import { ComplianceTab } from '@/components/compliance';
 import { PropertyValuationCard, ComparableSalesTable } from '@/components/valuations';
 import { InsurancePanel } from '@/components/insurance';
+import { RoomManagementPanel } from '@/components/rooms/RoomManagementPanel';
 import { LifecycleSwitcher, LifecycleBadge } from '@/components/property/LifecycleSwitcher';
 import { LifecycleType } from '@/contexts/LifecycleFilterContext';
 import { useSearchParams } from 'react-router-dom';
@@ -438,6 +439,7 @@ function PropertyDetailPage() {
 
           {/* OPERATIONS TAB - Renamed from Passport */}
           <TabsContent value="operations" className="space-y-6">
+            <RoomManagementPanel propertyId={id!} />
             <CoreIdentityCard propertyId={id!} />
             <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
           </TabsContent>
