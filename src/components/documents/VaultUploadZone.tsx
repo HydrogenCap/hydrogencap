@@ -48,11 +48,9 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
         const file = validFiles[i];
         setUploadProgress(`Uploading ${i + 1}/${validFiles.length}: ${file.name}...`);
 
-        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-
         await uploadDocument.mutateAsync({
           file,
-          displayName: nameWithoutExt,
+          displayName: file.name,
           category: 'other',
           propertyId,
           companyId,

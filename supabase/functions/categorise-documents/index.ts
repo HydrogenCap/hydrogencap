@@ -381,8 +381,15 @@ Return ONLY a JSON array of objects: [{"index": 1, "category": "slug"}]`;
       const propAddr = doc.property_id ? propertyMap.get(doc.property_id) || null : null;
       const compName = doc.company_id ? companyMap.get(doc.company_id) || null : null;
 
-      // Skip docs that already have a good display_name (not matching original filename)
-      if (doc.display_name && doc.display_name !== doc.original_file_name) {
+      // Skip docs that already have a professionally structured display_name
+      // (contains underscore separators and doesn't match original filename)
+      const hasStructuredName = doc.display_name && 
+        doc.display_name !== doc.original_file_name &&
+        doc.display_name !== doc.original_file_name.replace(/\.[^/.]+$/, "") &&
+        doc.display_name.includes("_") &&
+        doc.display_name !== "download";
+      
+      if (hasStructuredName) {
         continue;
       }
 
