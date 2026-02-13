@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type ManagedDocument, useDocumentActivity } from '@/hooks/useDocumentManagement';
 import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
+import { ValuationSummaryInline } from './ValuationSummaryInline';
 
 interface DocumentViewerProps {
   open: boolean;
@@ -137,6 +138,13 @@ export function DocumentViewer({
           <ScrollArea className="w-80 border-l shrink-0">
             <div className="p-4">
               <h3 className="font-medium mb-4">Document Details</h3>
+
+              {/* AI Valuation Summary */}
+              {document.category === 'valuations' && (
+                <div className="mb-4">
+                  <ValuationSummaryInline documentId={document.id} />
+                </div>
+              )}
 
               <div className="space-y-4">
                 {/* Description */}
