@@ -48,6 +48,14 @@ const ALWAYS_OPTIONAL_TYPES = [
   'Legionella Risk Assessment',
 ];
 
+// Compliance types that do NOT expire — once uploaded they are permanently valid
+const NON_EXPIRING_TYPES = [
+  'MCS Certificate',
+  'Floor Plans / Fire Plans',
+  'Asbestos Survey',
+  'Building Control Certificate',
+];
+
 // Reason text for optional items
 const OPTIONAL_TYPE_REASONS: Record<string, string> = {
   'Legionella Risk Assessment': 'Optional - not required by law for most residential properties',
@@ -198,10 +206,19 @@ export function generateComplianceItemsWithMissing(
         // Use actual item
         const { status, daysUntilExpiry } = calculateItemStatus(existingItem.expiry_date);
         
-        // For optional types without valid docs, keep as optional; otherwise show actual status
-        const finalStatus = isOptionalType && status === 'unknown' 
-          ? 'optional' 
-          : (conditionalStatus && status === 'unknown' ? conditionalStatus : status);
+        // For non-expiring types: if it exists, it's always valid (no expiry needed)
+        const isNonExpiring = NON_EXPIRING_TYPES.includes(complianceType);
+        let finalStatus: ComplianceStatus;
+        
+        if (isNonExpiring && (status === 'unknown' || !existingItem.expiry_date)) {
+          finalStatus = 'valid';
+        } else if (isOptionalType && status === 'unknown') {
+          finalStatus = 'optional';
+        } else if (conditionalStatus && status === 'unknown') {
+          finalStatus = conditionalStatus;
+        } else {
+          finalStatus = status;
+        }
         
         result.push({
           id: existingItem.id,
