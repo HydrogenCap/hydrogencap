@@ -96,7 +96,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const [depositReference, setDepositReference] = useState('');
   const [depositProtectedDate, setDepositProtectedDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
   const [paymentReference, setPaymentReference] = useState('');
   const [wholePropertyHmo, setWholePropertyHmo] = useState(false);
   const { data: properties } = useProperties();
@@ -159,7 +159,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       setDepositReference('');
       setDepositProtectedDate('');
       setNotes('');
-      setPaymentMethod('');
+      setPaymentMethod('bank_transfer');
       setPaymentReference('');
       setIsProcessing(false);
       setProcessingStep(0);
