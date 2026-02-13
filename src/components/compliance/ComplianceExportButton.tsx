@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   FileArchive,
+  ChevronDown,
+  Home,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -16,9 +18,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   useComplianceDocumentExport,
   type ExportPhase,
 } from '@/hooks/useComplianceDocumentExport';
+import { useProperties } from '@/hooks/useProperties';
 
 const PHASE_LABELS: Record<ExportPhase, string> = {
   idle: '',
@@ -31,13 +41,14 @@ const PHASE_LABELS: Record<ExportPhase, string> = {
 
 export function ComplianceExportButton() {
   const { progress, startExport, cancelExport, resetExport } = useComplianceDocumentExport();
+  const { data: properties } = useProperties();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const isRunning = progress.phase !== 'idle' && progress.phase !== 'complete' && progress.phase !== 'error';
 
-  const handleClick = () => {
+  const handleExport = (propertyId?: string) => {
     setDialogOpen(true);
-    startExport();
+    startExport(propertyId ? { propertyId } : undefined);
   };
 
   const handleClose = () => {
@@ -49,17 +60,40 @@ export function ComplianceExportButton() {
     setDialogOpen(false);
   };
 
+  const sortedProperties = (properties || [])
+    .slice()
+    .sort((a, b) => (a.address_line || '').localeCompare(b.address_line || ''));
+
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleClick}
-        className="gap-2"
-      >
-        <Download className="h-4 w-4" />
-        Download All Documents
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Download className="h-4 w-4" />
+            Download Documents
+            <ChevronDown className="h-3 w-3 opacity-50" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-72">
+          <DropdownMenuItem onClick={() => handleExport()}>
+            <FileArchive className="h-4 w-4 mr-2" />
+            All Properties
+          </DropdownMenuItem>
+          {sortedProperties.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <ScrollArea className="max-h-64">
+                {sortedProperties.map((p) => (
+                  <DropdownMenuItem key={p.id} onClick={() => handleExport(p.id)}>
+                    <Home className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">{p.address_line}</span>
+                  </DropdownMenuItem>
+                ))}
+              </ScrollArea>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="sm:max-w-md">
@@ -70,7 +104,7 @@ export function ComplianceExportButton() {
             </DialogTitle>
             <DialogDescription>
               {progress.phase === 'idle'
-                ? 'Preparing to download all compliance documents as a ZIP file.'
+                ? 'Preparing to download compliance documents as a ZIP file.'
                 : PHASE_LABELS[progress.phase]}
             </DialogDescription>
           </DialogHeader>

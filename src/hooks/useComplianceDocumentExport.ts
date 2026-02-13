@@ -64,7 +64,7 @@ export function useComplianceDocumentExport() {
     [],
   );
 
-  const startExport = useCallback(async () => {
+  const startExport = useCallback(async (options?: { propertyId?: string }) => {
     abortRef.current = false;
     const errors: string[] = [];
 
@@ -72,7 +72,7 @@ export function useComplianceDocumentExport() {
 
     patch({ ...INITIAL, phase: 'loading', currentStep: 'Loading compliance data…' });
 
-    const query = supabase
+    let query = supabase
       .from('compliance_items')
       .select(`
         id,
@@ -92,6 +92,10 @@ export function useComplianceDocumentExport() {
         )
       `)
       .order('property_id');
+
+    if (options?.propertyId) {
+      query = query.eq('property_id', options.propertyId);
+    }
 
     const { data: items, error: queryError } = await query;
 
