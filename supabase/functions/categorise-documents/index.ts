@@ -374,100 +374,188 @@ Return ONLY a JSON array of objects: [{"index": 1, "category": "slug"}]`;
         }
       }
 
-      // Phase 1b: Content-based AI analysis for docs still stuck in "other"
-      // (e.g. files named "download.pdf" where filename gives no clue)
-      const stillOther = needsAi.filter(d => {
-        const assigned = docCategoryMap.get(d.id);
-        return !assigned || assigned === "other";
-      });
+    }
 
-      if (stillOther.length > 0 && LOVABLE_API_KEY) {
-        // Process up to 5 docs with vision to avoid timeout
-        const visionBatch = stillOther.slice(0, 5);
-        
-        for (const doc of visionBatch) {
-          try {
-            // Download the file from storage
-            const fileUrl = doc.original_file_name; // We need the storage path
-            // Extract storage path from file_url
-            const { data: fullDoc } = await supabase
-              .from("documents")
-              .select("file_url")
-              .eq("id", doc.id)
-              .single();
-            
-            if (!fullDoc?.file_url) continue;
+    // ── Phase 1b: Content-based AI vision for ALL docs needing better analysis ──
+    // This covers: docs still in "other", docs with generic filenames (download.pdf),
+    // and docs missing property/company associations.
+    const LOVABLE_API_KEY_VISION = Deno.env.get("LOVABLE_API_KEY");
 
-            // Download file content
-            const urlParts = fullDoc.file_url.split("/documents/");
-            if (urlParts.length < 2) continue;
-            const storagePath = urlParts[urlParts.length - 1].split("?")[0];
-            
-            const { data: fileData, error: dlErr } = await supabase.storage
-              .from("documents")
-              .download(storagePath);
-            
-            if (dlErr || !fileData) {
-              console.error("Failed to download doc for vision:", doc.id, dlErr);
-              continue;
-            }
+    // Fetch all companies and properties for matching
+    const { data: allCompanies } = await supabase.from("companies").select("id, legal_name");
+    const { data: allProperties } = await supabase.from("properties").select("id, address_line, postcode");
 
-            // Convert to base64 data URL
-            const arrayBuf = await fileData.arrayBuffer();
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuf)));
-            const mimeType = fileData.type || "application/pdf";
-            const dataUrl = `data:${mimeType};base64,${base64}`;
+    const companyList = (allCompanies || []).map(c => ({ id: c.id, name: c.legal_name }));
+    const propertyList = (allProperties || []).map(p => ({ id: p.id, address: p.address_line, postcode: p.postcode }));
 
-            const visionPrompt = `Analyse this UK property management document and classify it into exactly ONE of these categories:
-${JSON.stringify(validCategories)}
+    // Identify docs that need vision analysis:
+    // 1. Still categorised as "other"
+    // 2. Have generic filenames (download, unnamed, untitled, document)
+    // 3. Missing property_id and company_id
+    const needsVision = (docs || []).filter((d: DocInput) => {
+      const cat = docCategoryMap.get(d.id) || d.category || "other";
+      const isGenericName = /^(download|unnamed|untitled|document|file)\s*(\(\d+\))?$/i.test(
+        d.original_file_name.replace(/\.[^/.]+$/, "")
+      );
+      const isOther = cat === "other";
+      const missingLinks = !d.property_id && !d.company_id;
+      return isOther || isGenericName || (missingLinks && cat !== "other");
+    });
 
-Also identify the doc_type from: gas_safety_certificate, electrical_certificate, epc_certificate, fire_alarm_certificate, fire_risk_assessment, emergency_lighting_certificate, hmo_licence, building_insurance, pat_testing, legionella_assessment, mcs_certificate, or null if unclear.
+    // Store vision results for use in renaming phase
+    const visionInsights = new Map<string, {
+      title?: string;
+      category?: string;
+      doc_type?: string;
+      company_name?: string;
+      property_address?: string;
+      date?: string;
+    }>();
 
-Return ONLY JSON: {"category": "slug", "doc_type": "type_or_null"}`;
+    if (needsVision.length > 0 && LOVABLE_API_KEY_VISION) {
+      // Process up to 10 docs with vision
+      const visionBatch = needsVision.slice(0, 10);
 
-            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${LOVABLE_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
-                messages: [
-                  { role: "system", content: "You classify UK property management documents by analysing their content. Return only valid JSON." },
-                  { role: "user", content: [
-                    { type: "image_url", image_url: { url: dataUrl } },
-                    { type: "text", text: visionPrompt },
-                  ]},
-                ],
-              }),
-            });
+      for (const doc of visionBatch) {
+        try {
+          const { data: fullDoc } = await supabase
+            .from("documents")
+            .select("file_url")
+            .eq("id", doc.id)
+            .single();
 
-            if (aiResp.ok) {
-              const aiData = await aiResp.json();
-              const content = aiData.choices?.[0]?.message?.content || "";
-              const jsonMatch = content.match(/\{[\s\S]*?\}/);
-              if (jsonMatch) {
-                const result = JSON.parse(jsonMatch[0]) as { category: string; doc_type?: string };
-                if (result.category && validCategories.includes(result.category) && result.category !== "other") {
-                  catResults.push({
-                    id: doc.id,
-                    oldCategory: doc.category,
-                    newCategory: result.category,
-                    method: "ai_vision",
-                  });
-                  docCategoryMap.set(doc.id, result.category);
-                  
-                  // Also update doc_type if identified
-                  if (result.doc_type) {
-                    await supabase.from("documents").update({ doc_type: result.doc_type }).eq("id", doc.id);
-                  }
+          if (!fullDoc?.file_url) continue;
+
+          const urlParts = fullDoc.file_url.split("/documents/");
+          if (urlParts.length < 2) continue;
+          const storagePath = urlParts[urlParts.length - 1].split("?")[0];
+
+          const { data: fileData, error: dlErr } = await supabase.storage
+            .from("documents")
+            .download(storagePath);
+
+          if (dlErr || !fileData) {
+            console.error("Failed to download doc for vision:", doc.id, dlErr);
+            continue;
+          }
+
+          const arrayBuf = await fileData.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuf);
+          // Build base64 in chunks to avoid stack overflow
+          let base64 = "";
+          const chunkSize = 8192;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            base64 += String.fromCharCode(...bytes.slice(i, i + chunkSize));
+          }
+          base64 = btoa(base64);
+          const mimeType = fileData.type || "application/pdf";
+          const dataUrl = `data:${mimeType};base64,${base64}`;
+
+          const visionPrompt = `Analyse this UK property management document carefully and extract:
+
+1. **category**: classify into exactly ONE of: ${JSON.stringify(validCategories)}
+2. **doc_type**: one of gas_safety_certificate, electrical_certificate, epc_certificate, fire_alarm_certificate, fire_risk_assessment, emergency_lighting_certificate, hmo_licence, building_insurance, pat_testing, legionella_assessment, mcs_certificate, or null
+3. **title**: a concise descriptive title for this document (e.g. "Certificate of Incorporation", "Gas Safety Record", "EICR Report")
+4. **company_name**: any company/limited company name mentioned (e.g. "PINETO LTD", "HYDROGEN CAPITAL LTD"), or null
+5. **property_address**: any property address mentioned in the document, or null
+6. **date**: the most relevant date (issue date, certificate date) in YYYY-MM-DD format, or null
+
+Known companies in this portfolio: ${companyList.map(c => c.name).join(", ")}
+Known properties: ${propertyList.map(p => `${p.address} ${p.postcode}`).join(", ")}
+
+Return ONLY JSON: {"category":"slug","doc_type":"type_or_null","title":"string","company_name":"name_or_null","property_address":"address_or_null","date":"YYYY-MM-DD_or_null"}`;
+
+          const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY_VISION}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: [
+                { role: "system", content: "You analyse UK property management documents. Extract structured metadata accurately. Return only valid JSON." },
+                { role: "user", content: [
+                  { type: "image_url", image_url: { url: dataUrl } },
+                  { type: "text", text: visionPrompt },
+                ]},
+              ],
+            }),
+          });
+
+          if (aiResp.ok) {
+            const aiData = await aiResp.json();
+            const content = aiData.choices?.[0]?.message?.content || "";
+            const jsonMatch = content.match(/\{[\s\S]*?\}/);
+            if (jsonMatch) {
+              const result = JSON.parse(jsonMatch[0]) as {
+                category?: string;
+                doc_type?: string;
+                title?: string;
+                company_name?: string;
+                property_address?: string;
+                date?: string;
+              };
+
+              visionInsights.set(doc.id, result);
+
+              // Update category if better than current
+              const currentCat = docCategoryMap.get(doc.id) || doc.category || "other";
+              if (result.category && validCategories.includes(result.category) && result.category !== "other" && currentCat === "other") {
+                catResults.push({
+                  id: doc.id,
+                  oldCategory: doc.category,
+                  newCategory: result.category,
+                  method: "ai_vision",
+                });
+                docCategoryMap.set(doc.id, result.category);
+              }
+
+              // Update doc_type
+              if (result.doc_type && !doc.doc_type) {
+                await supabase.from("documents").update({ doc_type: result.doc_type }).eq("id", doc.id);
+              }
+
+              // Match company
+              if (result.company_name && !doc.company_id) {
+                const normalised = result.company_name.toUpperCase().replace(/\s+/g, " ").trim();
+                const match = companyList.find(c => 
+                  c.name.toUpperCase() === normalised ||
+                  c.name.toUpperCase().includes(normalised) ||
+                  normalised.includes(c.name.toUpperCase())
+                );
+                if (match) {
+                  await supabase.from("documents").update({ company_id: match.id }).eq("id", doc.id);
+                  companyMap.set(match.id, match.name);
+                  // Update in-memory doc reference
+                  (doc as any).company_id = match.id;
                 }
               }
+
+              // Match property
+              if (result.property_address && !doc.property_id) {
+                const normAddr = result.property_address.toUpperCase().replace(/[^A-Z0-9]/g, "");
+                const match = propertyList.find(p => {
+                  const pNorm = (p.address + " " + p.postcode).toUpperCase().replace(/[^A-Z0-9]/g, "");
+                  return pNorm.includes(normAddr) || normAddr.includes(pNorm) ||
+                    // Try postcode match + partial address
+                    (p.postcode && normAddr.includes(p.postcode.replace(/\s/g, "").toUpperCase()));
+                });
+                if (match) {
+                  await supabase.from("documents").update({ property_id: match.id }).eq("id", doc.id);
+                  propertyMap.set(match.id, match.address || "");
+                  (doc as any).property_id = match.id;
+                }
+              }
+
+              // Update document_date if extracted
+              if (result.date) {
+                await supabase.from("documents").update({ document_date: result.date }).eq("id", doc.id);
+              }
             }
-          } catch (e) {
-            console.error("Vision analysis error for doc:", doc.id, e);
           }
+        } catch (e) {
+          console.error("Vision analysis error for doc:", doc.id, e);
         }
       }
     }
@@ -483,20 +571,55 @@ Return ONLY JSON: {"category": "slug", "doc_type": "type_or_null"}`;
       const propAddr = doc.property_id ? propertyMap.get(doc.property_id) || null : null;
       const compName = doc.company_id ? companyMap.get(doc.company_id) || null : null;
 
+      // Check if vision gave us better naming info
+      const vision = visionInsights.get(doc.id);
+
       // Skip docs that already have a professionally structured display_name
-      // (contains underscore separators and doesn't match original filename)
+      // BUT re-process if vision found new entity links or the name is clearly placeholder
       const hasStructuredName = doc.display_name && 
         doc.display_name !== doc.original_file_name &&
         doc.display_name !== doc.original_file_name.replace(/\.[^/.]+$/, "") &&
         doc.display_name.includes("_") &&
-        doc.display_name !== "download";
+        doc.display_name !== "download" &&
+        !doc.display_name.includes("Unknown") &&
+        !doc.display_name.includes("YYYY");
       
-      if (hasStructuredName) {
+      const visionImprovedContext = vision && (vision.title || vision.company_name || vision.property_address);
+      
+      if (hasStructuredName && !visionImprovedContext) {
         continue;
       }
 
-      // If we have enough context, generate deterministically
-      if (category !== "other" || doc.doc_type) {
+      // Use vision title + entity info for better naming
+      if (vision?.title && (category !== "other" || doc.doc_type || vision.category)) {
+        const effectiveCategory = category !== "other" ? category : (vision.category || "other");
+        const effectivePropAddr = propAddr || (vision.property_address ? vision.property_address.split(",")[0].trim() : null);
+        const effectiveCompName = compName || vision.company_name || null;
+        
+        const label = (doc.doc_type && DOC_TYPE_LABEL[doc.doc_type]) ||
+          CATEGORY_LABEL[effectiveCategory] ||
+          sanitiseForFilename(vision.title);
+
+        let entity = "";
+        if (effectivePropAddr) entity = sanitiseForFilename(effectivePropAddr);
+        else if (effectiveCompName) entity = sanitiseForFilename(effectiveCompName);
+
+        const dateStr = vision.date || (doc.created_at ? doc.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10));
+        const ext = getFileExtension(doc.original_file_name);
+
+        const parts = [label];
+        if (entity) parts.push(entity);
+        parts.push(dateStr);
+        const newDisplayName = parts.join("_") + ext;
+
+        if (newDisplayName !== doc.display_name) {
+          renameResults.push({
+            id: doc.id,
+            oldName: doc.display_name,
+            newName: newDisplayName,
+          });
+        }
+      } else if (category !== "other" || doc.doc_type) {
         const newDisplayName = generateDisplayName(doc, category, propAddr, compName);
         if (newDisplayName !== doc.display_name) {
           renameResults.push({
@@ -506,7 +629,6 @@ Return ONLY JSON: {"category": "slug", "doc_type": "type_or_null"}`;
           });
         }
       } else {
-        // Need AI help to figure out a good name
         needsAiRename.push(doc);
       }
     }
