@@ -21,9 +21,9 @@ const DOC_TYPE_TO_CATEGORY: Record<string, string> = {
   hmo_licence: "hmo-licence",
   building_insurance: "insurance",
   public_liability_insurance: "insurance",
-  legionella_assessment: "other",
-  pat_testing: "other",
-  mcs_certificate: "other",
+  legionella_assessment: "legionella",
+  pat_testing: "pat-testing",
+  mcs_certificate: "mcs-certificate",
   floor_plan: "floor-plans",
 };
 
@@ -58,6 +58,9 @@ const CATEGORY_LABEL: Record<string, string> = {
   "contracts": "Contract",
   "licences-permits": "Licence",
   "photos": "Photo",
+  "pat-testing": "PATTest",
+  "legionella": "Legionella",
+  "mcs-certificate": "MCSCert",
   "other": "Document",
 };
 
@@ -112,8 +115,9 @@ const FILENAME_KEYWORDS: [RegExp, string][] = [
   [/reference/i, "other"],
   [/id\s*doc|passport|driv.*licen/i, "id-document"],
   [/emergency\s*light/i, "fire-safety"],
-  [/legionella/i, "other"],
-  [/pat\s*test/i, "other"],
+  [/legionella/i, "legionella"],
+  [/pat\s*test/i, "pat-testing"],
+  [/mcs\s*cert/i, "mcs-certificate"],
 ];
 
 interface DocInput {
@@ -305,7 +309,8 @@ serve(async (req) => {
       "photos", "inventories", "tenancy-agreements", "tenant-references", "rent-statements",
       "board-minutes", "share-certificates", "company-formation", "correspondence",
       "gas-safety", "eicr", "epc", "fire-safety", "hmo-licence", "planning",
-      "building-control", "id-document", "shareholder-agreement", "title-deeds", "other",
+      "building-control", "id-document", "shareholder-agreement", "title-deeds",
+      "pat-testing", "legionella", "mcs-certificate", "other",
     ];
 
     if (needsAi.length > 0) {
