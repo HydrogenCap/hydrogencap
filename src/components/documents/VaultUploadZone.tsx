@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUploadManagedDocument } from '@/hooks/useDocumentManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 
 interface VaultUploadZoneProps {
   propertyId?: string;
@@ -44,9 +45,52 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
     setIsUploading(true);
 
     try {
-      for (let i = 0; i < validFiles.length; i++) {
-        const file = validFiles[i];
-        setUploadProgress(`Uploading ${i + 1}/${validFiles.length}: ${file.name}...`);
+      const orgId = await getUserOrgId();
+
+      // Check for duplicates before uploading
+      const fileNames = validFiles.map(f => f.name);
+      const { data: existingDocs } = await supabase
+        .from('documents')
+        .select('original_file_name, property_id')
+        .eq('org_id', orgId!)
+        .is('deleted_at', null)
+        .in('original_file_name', fileNames);
+
+      const existingSet = new Set(
+        (existingDocs || []).map(d => `${d.original_file_name}|${d.property_id || ''}`)
+      );
+
+      const duplicates: string[] = [];
+      const newFiles: File[] = [];
+
+      for (const file of validFiles) {
+        const key = `${file.name}|${propertyId || ''}`;
+        if (existingSet.has(key)) {
+          duplicates.push(file.name);
+        } else {
+          newFiles.push(file);
+        }
+      }
+
+      if (duplicates.length > 0) {
+        toast({
+          title: `${duplicates.length} duplicate${duplicates.length > 1 ? 's' : ''} skipped`,
+          description: duplicates.length <= 3
+            ? duplicates.join(', ')
+            : `${duplicates.slice(0, 2).join(', ')} and ${duplicates.length - 2} more`,
+          variant: 'destructive',
+        });
+      }
+
+      if (newFiles.length === 0) {
+        setIsUploading(false);
+        setUploadProgress(null);
+        return;
+      }
+
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
+        setUploadProgress(`Uploading ${i + 1}/${newFiles.length}: ${file.name}...`);
 
         await uploadDocument.mutateAsync({
           file,
