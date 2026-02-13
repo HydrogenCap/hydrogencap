@@ -73,7 +73,7 @@ export default function RecordPaymentDialog({ item, open, onOpenChange }: Record
             Record Payment
           </DialogTitle>
           <DialogDescription>
-            {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name} — {item.tenancy.property.address_line}
+            {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name} — {[item.tenancy.property.address_line, (item.tenancy.property as any).town_city].filter(Boolean).join(', ')}
           </DialogDescription>
         </DialogHeader>
 
