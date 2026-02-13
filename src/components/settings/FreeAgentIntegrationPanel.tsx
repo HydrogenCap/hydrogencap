@@ -133,7 +133,7 @@ export function FreeAgentIntegrationPanel() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const authUrl = buildFreeAgentAuthUrl(connectingCompany, orgId, user.id, useSandbox);
-    window.location.href = authUrl;
+    window.open(authUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleDisconnect = async () => {
