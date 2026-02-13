@@ -151,7 +151,7 @@ export function useOwnershipFlowchartData() {
         });
       }
 
-      // Build people list
+      // Build people list - count direct + indirect companies
       const peopleList: FlowchartPerson[] = [];
       for (const partyId of individualPartyIds) {
         const link = (links || []).find(l => {
@@ -159,8 +159,16 @@ export function useOwnershipFlowchartData() {
           return op?.id === partyId;
         });
         const name = (link?.owner_party as any)?.display_name || 'Unknown';
-        const count = personToCompanyEdges.filter(e => e.from === partyId).length;
-        peopleList.push({ id: partyId, name, companyCount: count });
+        // Count all reachable companies (direct + via holding companies)
+        const reachable = new Set<string>();
+        const queue = personToCompanyEdges.filter(e => e.from === partyId).map(e => e.to);
+        while (queue.length > 0) {
+          const cur = queue.pop()!;
+          if (reachable.has(cur)) continue;
+          reachable.add(cur);
+          companyToCompanyEdges.filter(e => e.from === cur).forEach(e => queue.push(e.to));
+        }
+        peopleList.push({ id: partyId, name, companyCount: reachable.size });
       }
 
       // Build companies list
