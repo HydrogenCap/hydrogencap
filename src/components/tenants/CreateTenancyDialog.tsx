@@ -178,8 +178,27 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
     if (ext.notice_period_weeks) { setNoticePeriodWeeks(String(ext.notice_period_weeks)); filled.add('notice_period_weeks'); }
     if (ext.deposit_amount) { setDepositAmount(String(ext.deposit_amount)); filled.add('deposit_amount'); }
     if (ext.deposit_scheme) { setDepositScheme(ext.deposit_scheme); filled.add('deposit_scheme'); }
+
+    // Auto-match AI-detected property address to a property in the list
+    if (ext.property_address_on_agreement && properties?.length) {
+      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const aiAddr = normalize(ext.property_address_on_agreement);
+      // Try to find best match: check if the property address or postcode is contained
+      const match = properties.find(p => {
+        const full = normalize(`${p.address_line || ''} ${p.postcode || ''}`);
+        // Match if one contains the other or they share a significant overlap
+        return full.includes(aiAddr) || aiAddr.includes(full) ||
+          (p.postcode && aiAddr.includes(normalize(p.postcode)) &&
+           normalize(p.address_line || '').split('').filter(c => aiAddr.includes(c)).length > (p.address_line?.length || 0) * 0.5);
+      });
+      if (match) {
+        setPropertyId(match.id);
+        filled.add('property');
+      }
+    }
+
     setAiFilledFields(filled);
-  }, []);
+  }, [properties]);
 
   const handleFileUpload = async (file: File) => {
     if (file.type !== 'application/pdf') {
