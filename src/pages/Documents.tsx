@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   Sparkles,
   Loader2,
+  ArrowUpDown,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -53,9 +54,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { UploadDocumentDialog } from '@/components/documents/UploadDocumentDialog';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
+import { VaultUploadZone } from '@/components/documents/VaultUploadZone';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -115,12 +116,13 @@ const CATEGORY_GROUPS = [
 export default function Documents() {
   const [filters, setFilters] = useState<VaultFilters>({ category: 'all' });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [showUpload, setShowUpload] = useState(false);
+  const [showUploadZone, setShowUploadZone] = useState(false);
   const [editingDoc, setEditingDoc] = useState<ManagedDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<ManagedDocument | null>(null);
   const [deletingDoc, setDeletingDoc] = useState<ManagedDocument | null>(null);
   const [showCategoryOverview, setShowCategoryOverview] = useState(true);
   const [isCategorising, setIsCategorising] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'property' | 'name'>('date');
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -186,7 +188,105 @@ export default function Documents() {
     }
   };
 
+  // Sort documents
+  const sortedDocuments = useMemo(() => {
+    if (!documents) return [];
+    const docs = [...documents];
+    switch (sortBy) {
+      case 'property':
+        return docs.sort((a, b) => {
+          const propA = a.property?.address_line || 'zzz';
+          const propB = b.property?.address_line || 'zzz';
+          return propA.localeCompare(propB);
+        });
+      case 'name':
+        return docs.sort((a, b) => {
+          const nameA = a.display_name || a.original_file_name;
+          const nameB = b.display_name || b.original_file_name;
+          return nameA.localeCompare(nameB);
+        });
+      case 'date':
+      default:
+        return docs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  }, [documents, sortBy]);
 
+  // Group by property when sorting by property
+  const groupedByProperty = useMemo(() => {
+    if (sortBy !== 'property' || !sortedDocuments.length) return null;
+    const groups = new Map<string, typeof sortedDocuments>();
+    for (const doc of sortedDocuments) {
+      const key = doc.property?.address_line || 'Unassigned';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(doc);
+    }
+    return groups;
+  }, [sortBy, sortedDocuments]);
+
+  const renderListRow = (doc: any, FileIcon: any, catMeta: any) => (
+    <div
+      key={doc.id}
+      className="flex items-center gap-4 p-3.5 hover:bg-muted/50 cursor-pointer transition-colors"
+      onClick={() => setViewingDoc(doc as ManagedDocument)}
+    >
+      <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
+        <FileIcon className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium truncate">{doc.display_name || doc.original_file_name}</p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+          {catMeta && (
+            <Badge variant="outline" className="text-[10px] h-5">{catMeta.name}</Badge>
+          )}
+          {doc.property && (
+            <span className="flex items-center gap-1">
+              <Home className="h-3 w-3" />{doc.property.address_line}
+            </span>
+          )}
+          {doc.company && (
+            <span className="flex items-center gap-1">
+              <Building2 className="h-3 w-3" />{doc.company.legal_name}
+            </span>
+          )}
+          <span>{formatBytes(doc.file_size_bytes || 0)}</span>
+        </div>
+      </div>
+      <div className="text-right shrink-0 hidden sm:block">
+        <p className="text-sm text-muted-foreground">{format(new Date(doc.created_at), 'dd MMM yyyy')}</p>
+        {doc.expiry_date && (
+          <p className={cn(
+            'text-xs',
+            new Date(doc.expiry_date) < new Date() ? 'text-destructive' :
+            new Date(doc.expiry_date) < new Date(Date.now() + 30 * 86400000) ? 'text-amber-500' : 'text-muted-foreground'
+          )}>
+            Exp: {format(new Date(doc.expiry_date), 'dd MMM yyyy')}
+          </p>
+        )}
+      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setViewingDoc(doc as ManagedDocument); }}>
+            <Eye className="h-4 w-4 mr-2" /> View
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadDoc.mutate(doc as ManagedDocument); }}>
+            <Download className="h-4 w-4 mr-2" /> Download
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingDoc(doc as ManagedDocument); }}>
+            <Pencil className="h-4 w-4 mr-2" /> Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc as ManagedDocument); }}>
+            <Trash2 className="h-4 w-4 mr-2" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 
   const groupedSummaries = useMemo(() => {
     if (!summaryData) return [];
@@ -241,7 +341,7 @@ export default function Documents() {
               )}
               {isCategorising ? 'Categorising...' : 'AI Categorise'}
             </Button>
-            <Button onClick={() => setShowUpload(true)} className="gap-2">
+            <Button onClick={() => setShowUploadZone(prev => !prev)} className="gap-2">
               <Upload className="h-4 w-4" />
               Upload Document
             </Button>
@@ -376,6 +476,18 @@ export default function Documents() {
             </SelectContent>
           </Select>
 
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'property' | 'name')}>
+            <SelectTrigger className="w-44 h-10">
+              <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Sort by Date</SelectItem>
+              <SelectItem value="property">Sort by Property</SelectItem>
+              <SelectItem value="name">Sort by Name</SelectItem>
+            </SelectContent>
+          </Select>
+
           <div className="flex border rounded-lg overflow-hidden h-10">
             <Button
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
@@ -395,6 +507,15 @@ export default function Documents() {
             </Button>
           </div>
         </div>
+
+        {/* Upload Zone */}
+        {showUploadZone && (
+          <VaultUploadZone
+            propertyId={filters.propertyId}
+            companyId={filters.companyId}
+            onUploadComplete={() => setShowUploadZone(false)}
+          />
+        )}
 
         {/* Active filter pills */}
         {hasActiveFilters && (
@@ -437,7 +558,7 @@ export default function Documents() {
           <div className="space-y-2">
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </div>
-        ) : !documents?.length ? (
+        ) : !sortedDocuments.length ? (
           <Card>
             <CardContent className="py-16 text-center">
               <FolderOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
@@ -447,98 +568,44 @@ export default function Documents() {
                   ? 'Try adjusting your filters or search query.'
                   : 'Upload your first document to get started.'}
               </p>
-              <Button onClick={() => setShowUpload(true)}>
+              <Button onClick={() => setShowUploadZone(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Document
               </Button>
             </CardContent>
           </Card>
         ) : viewMode === 'list' ? (
-          <div className="border rounded-xl divide-y">
-            {documents.map(doc => {
-              const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
-              const catMeta = categories?.find(c => c.slug === doc.category);
-
-              return (
-                <div
-                  key={doc.id}
-                  className="flex items-center gap-4 p-3.5 hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => setViewingDoc(doc as ManagedDocument)}
-                >
-                  <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                    <FileIcon className="h-5 w-5 text-muted-foreground" />
+          <div className="space-y-4">
+            {sortBy === 'property' && groupedByProperty ? (
+              Array.from(groupedByProperty.entries()).map(([propertyName, docs]) => (
+                <div key={propertyName}>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <Home className="h-4 w-4" />
+                    {propertyName}
+                    <Badge variant="secondary" className="ml-1">{docs.length}</Badge>
+                  </h4>
+                  <div className="border rounded-xl divide-y">
+                    {docs.map(doc => {
+                      const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
+                      const catMeta = categories?.find(c => c.slug === doc.category);
+                      return renderListRow(doc, FileIcon, catMeta);
+                    })}
                   </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">
-                      {doc.display_name || doc.original_file_name}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                      {catMeta && (
-                        <Badge variant="outline" className="text-[10px] h-5">
-                          {catMeta.name}
-                        </Badge>
-                      )}
-                      {doc.property && (
-                        <span className="flex items-center gap-1">
-                          <Home className="h-3 w-3" />
-                          {doc.property.address_line}
-                        </span>
-                      )}
-                      {doc.company && (
-                        <span className="flex items-center gap-1">
-                          <Building2 className="h-3 w-3" />
-                          {doc.company.legal_name}
-                        </span>
-                      )}
-                      <span>{formatBytes(doc.file_size_bytes || 0)}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0 hidden sm:block">
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(doc.created_at), 'dd MMM yyyy')}
-                    </p>
-                    {doc.expiry_date && (
-                      <p className={cn(
-                        'text-xs',
-                        new Date(doc.expiry_date) < new Date() ? 'text-destructive' :
-                        new Date(doc.expiry_date) < new Date(Date.now() + 30 * 86400000) ? 'text-amber-500' : 'text-muted-foreground'
-                      )}>
-                        Exp: {format(new Date(doc.expiry_date), 'dd MMM yyyy')}
-                      </p>
-                    )}
-                  </div>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setViewingDoc(doc as ManagedDocument); }}>
-                        <Eye className="h-4 w-4 mr-2" /> View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadDoc.mutate(doc as ManagedDocument); }}>
-                        <Download className="h-4 w-4 mr-2" /> Download
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditingDoc(doc as ManagedDocument); }}>
-                        <Pencil className="h-4 w-4 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingDoc(doc as ManagedDocument); }}>
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
-              );
-            })}
+              ))
+            ) : (
+              <div className="border rounded-xl divide-y">
+                {sortedDocuments.map(doc => {
+                  const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
+                  const catMeta = categories?.find(c => c.slug === doc.category);
+                  return renderListRow(doc, FileIcon, catMeta);
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {documents.map(doc => {
+            {sortedDocuments.map(doc => {
               const FileIcon = FILE_ICONS[doc.file_type || 'other'] || File;
 
               return (
@@ -597,12 +664,6 @@ export default function Documents() {
       </div>
 
       {/* Dialogs */}
-      <UploadDocumentDialog
-        open={showUpload}
-        onOpenChange={setShowUpload}
-        propertyId={filters.propertyId}
-        companyId={filters.companyId}
-      />
 
       {editingDoc && (
         <EditDocumentDialog
