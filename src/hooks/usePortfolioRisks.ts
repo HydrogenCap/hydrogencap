@@ -4,6 +4,7 @@ import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassp
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { useTenancyComplianceStats, type TenancyComplianceItemWithDetails } from '@/hooks/useTenancyCompliance';
 import { useInsurancePolicies, type InsurancePolicy } from '@/hooks/useInsurance';
+import { useTenancies, type TenancyWithDetails } from '@/hooks/useTenancies';
 import {
   calculateLTV,
   getLTVStatus,
@@ -16,7 +17,7 @@ import {
   formatGBP,
 } from '@/lib/calculations';
 
-export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance' | 'insurance' | 'leasehold';
+export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance' | 'insurance' | 'leasehold' | 'lease_expiry';
 
 export interface RiskItem {
   id: string;
@@ -39,6 +40,7 @@ export const riskTypeLabels: Record<RiskType, string> = {
   tenancy_compliance: 'Tenancy Compliance',
   insurance: 'Insurance',
   leasehold: 'Leasehold',
+  lease_expiry: 'Lease Expiry',
 };
 
 /**
@@ -51,7 +53,8 @@ export function calculatePortfolioRisks(
   passportMap: Map<string, PropertyPassport>,
   complianceByPropertyMap: Map<string, any[]>,
   tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = [],
-  insurancePolicies: InsurancePolicy[] = []
+  insurancePolicies: InsurancePolicy[] = [],
+  tenancies: TenancyWithDetails[] = []
 ): RiskItem[] {
   const riskItems: RiskItem[] = [];
   const currentYear = new Date().getFullYear();
@@ -365,6 +368,55 @@ export function calculatePortfolioRisks(
     });
   });
 
+  // ========== LEASE EXPIRY RISKS ==========
+  if (tenancies && tenancies.length > 0) {
+    const now = new Date();
+    const thirtyDays = new Date(now.getTime() + 30 * 86400000);
+    const ninetyDays = new Date(now.getTime() + 90 * 86400000);
+
+    for (const tenancy of tenancies) {
+      if (tenancy.status !== 'active' && tenancy.status !== 'notice') continue;
+      if (!tenancy.end_date) continue;
+
+      const endDate = new Date(tenancy.end_date);
+      const tenantName = `${tenancy.tenant.first_name} ${tenancy.tenant.last_name}`;
+      const roomName = tenancy.room?.room_name || '';
+      const address = tenancy.property.address_line;
+
+      if (endDate < now) {
+        riskItems.push({
+          id: `lease-expired-${tenancy.id}`,
+          propertyId: tenancy.property.id,
+          address,
+          type: 'lease_expiry',
+          severity: 'critical',
+          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expired on ${endDate.toLocaleDateString('en-GB')}. Needs renewal or end of tenancy.`,
+          targetUrl: `/tenants/${tenancy.tenant.id}`,
+        });
+      } else if (endDate <= thirtyDays) {
+        riskItems.push({
+          id: `lease-critical-${tenancy.id}`,
+          propertyId: tenancy.property.id,
+          address,
+          type: 'lease_expiry',
+          severity: 'critical',
+          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires in ${Math.ceil((endDate.getTime() - now.getTime()) / 86400000)} days (${endDate.toLocaleDateString('en-GB')}).`,
+          targetUrl: `/tenants/${tenancy.tenant.id}`,
+        });
+      } else if (endDate <= ninetyDays) {
+        riskItems.push({
+          id: `lease-warning-${tenancy.id}`,
+          propertyId: tenancy.property.id,
+          address,
+          type: 'lease_expiry',
+          severity: 'warning',
+          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires on ${endDate.toLocaleDateString('en-GB')} (${Math.ceil((endDate.getTime() - now.getTime()) / 86400000)} days).`,
+          targetUrl: `/tenants/${tenancy.tenant.id}`,
+        });
+      }
+    }
+  }
+
   return riskItems;
 }
 
@@ -378,6 +430,7 @@ export function usePortfolioRisks() {
   const { data: allComplianceItems, isLoading: complianceLoading } = useAllCompliance();
   const { data: tenancyStats, isLoading: tenancyComplianceLoading } = useTenancyComplianceStats();
   const { data: insurancePolicies, isLoading: insuranceLoading } = useInsurancePolicies();
+  const { data: allTenancies, isLoading: tenanciesLoading } = useTenancies();
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -405,9 +458,10 @@ export function usePortfolioRisks() {
       passportMap,
       complianceByPropertyMap,
       tenancyStats?.overdueItems || [],
-      insurancePolicies || []
+      insurancePolicies || [],
+      allTenancies || []
     );
-  }, [properties, passportMap, complianceByPropertyMap, tenancyStats?.overdueItems, insurancePolicies]);
+  }, [properties, passportMap, complianceByPropertyMap, tenancyStats?.overdueItems, insurancePolicies, allTenancies]);
 
   const criticalCount = useMemo(() => risks.filter(r => r.severity === 'critical').length, [risks]);
   const warningCount = useMemo(() => risks.filter(r => r.severity === 'warning').length, [risks]);
@@ -417,7 +471,7 @@ export function usePortfolioRisks() {
     criticalCount,
     warningCount,
     totalCount: risks.length,
-    isLoading: propertiesLoading || passportsLoading || complianceLoading || tenancyComplianceLoading || insuranceLoading,
+    isLoading: propertiesLoading || passportsLoading || complianceLoading || tenancyComplianceLoading || insuranceLoading || tenanciesLoading,
     passportMap,
     complianceByPropertyMap,
   };
