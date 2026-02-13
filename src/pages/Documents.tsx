@@ -105,11 +105,12 @@ function formatBytes(bytes: number): string {
 }
 
 const CATEGORY_GROUPS = [
-  { label: 'Legal', slugs: ['legal-pack', 'contracts', 'licences-permits'] },
-  { label: 'Financial', slugs: ['mortgage-offers', 'valuations', 'insurance', 'tax-accounts', 'invoices-receipts'] },
-  { label: 'Property', slugs: ['surveys', 'floor-plans', 'photos', 'inventories'] },
-  { label: 'Tenancy', slugs: ['tenancy-agreements', 'tenant-references', 'rent-statements'] },
-  { label: 'Company', slugs: ['board-minutes', 'share-certificates', 'company-formation'] },
+  { label: 'Compliance', slugs: ['gas-safety', 'eicr', 'epc', 'fire-safety', 'pat-testing', 'legionella', 'hmo-licence', 'mcs-certificate', 'building-control', 'planning'] },
+  { label: 'Legal', slugs: ['legal-pack', 'contracts', 'licences-permits', 'title-deeds'] },
+  { label: 'Financial', slugs: ['mortgage-offers', 'mortgage', 'valuations', 'valuation', 'insurance', 'tax-accounts', 'company-accounts', 'invoices-receipts', 'invoice', 'quote'] },
+  { label: 'Property', slugs: ['surveys', 'survey', 'floor-plans', 'photos', 'photo', 'inventories', 'inventory'] },
+  { label: 'Tenancy', slugs: ['tenancy-agreements', 'tenancy-agreement', 'tenant-references', 'reference', 'rent-statements', 'id-document'] },
+  { label: 'Company', slugs: ['board-minutes', 'share-certificates', 'shareholder-agreement', 'company-formation'] },
   { label: 'General', slugs: ['correspondence', 'other'] },
 ];
 
