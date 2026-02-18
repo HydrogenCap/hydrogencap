@@ -55,10 +55,14 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
     conservation_area: property.conservation_area || false,
   });
 
-  // Building classification fields → save to property_passport table
+  // Building classification + operational fields → save to property_passport table
   const [passportData, setPassportData] = useState({
     construction_type: passport?.construction_type || '',
     built_in_year: passport?.built_in_year?.toString() || '',
+    electric_meter_location: passport?.electric_meter_location || '',
+    electric_meter_number: passport?.electric_meter_number || '',
+    gas_meter_location: passport?.gas_meter_location || '',
+    gas_meter_number: passport?.gas_meter_number || '',
   });
 
   const [newTitleNumber, setNewTitleNumber] = useState('');
@@ -76,11 +80,15 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
         },
       });
 
-      // Save building classification to property_passport table
+      // Save building classification + operational fields to property_passport table
       await upsertPassport.mutateAsync({
         property_id: property.id,
         construction_type: passportData.construction_type || null,
         built_in_year: passportData.built_in_year ? parseInt(passportData.built_in_year) : null,
+        electric_meter_location: passportData.electric_meter_location || null,
+        electric_meter_number: passportData.electric_meter_number || null,
+        gas_meter_location: passportData.gas_meter_location || null,
+        gas_meter_number: passportData.gas_meter_number || null,
       });
 
       toast({ title: 'Saved', description: 'Property identity and passport updated successfully.' });
@@ -275,6 +283,46 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
               {formData.conservation_area ? 'Yes' : 'No'}
             </span>
           </div>
+        </div>
+
+        {/* Electric Meter Location */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Electric Meter Location</Label>
+          <Input
+            value={passportData.electric_meter_location}
+            onChange={(e) => setPassportData({ ...passportData, electric_meter_location: e.target.value })}
+            placeholder="e.g. Under stairs"
+          />
+        </div>
+
+        {/* Electric Meter Number */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Electric Meter Number</Label>
+          <Input
+            value={passportData.electric_meter_number}
+            onChange={(e) => setPassportData({ ...passportData, electric_meter_number: e.target.value })}
+            placeholder="MPAN / meter serial"
+          />
+        </div>
+
+        {/* Gas Meter Location */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Gas Meter Location</Label>
+          <Input
+            value={passportData.gas_meter_location}
+            onChange={(e) => setPassportData({ ...passportData, gas_meter_location: e.target.value })}
+            placeholder="e.g. External box, left side"
+          />
+        </div>
+
+        {/* Gas Meter Number */}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Gas Meter Number</Label>
+          <Input
+            value={passportData.gas_meter_number}
+            onChange={(e) => setPassportData({ ...passportData, gas_meter_number: e.target.value })}
+            placeholder="MPRN / meter serial"
+          />
         </div>
 
         {/* Title Numbers */}
