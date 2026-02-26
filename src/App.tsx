@@ -26,6 +26,8 @@ const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
 const PropertyDetail = lazy(() => import("./pages/PropertyDetail"));
 const Companies = lazy(() => import("./pages/Companies"));
 const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+const Entities = lazy(() => import("./pages/Entities"));
+const EntityDetail = lazy(() => import("./pages/EntityDetail"));
 const Ownership = lazy(() => import("./pages/Ownership"));
 const Inbox = lazy(() => import("./pages/Inbox"));
 const Import = lazy(() => import("./pages/Import"));
@@ -205,6 +207,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CompanyDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/entities"
+              element={
+                <ProtectedRoute>
+                  <Entities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/entities/:id"
+              element={
+                <ProtectedRoute>
+                  <EntityDetail />
                 </ProtectedRoute>
               }
             />

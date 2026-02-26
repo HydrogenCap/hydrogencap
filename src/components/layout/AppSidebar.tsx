@@ -55,6 +55,7 @@ const portfolioItems: NavItem[] = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Properties', icon: Building2, href: '/properties' },
   { title: 'Pipeline', icon: Construction, href: '/pipeline' },
+  { title: 'Entities', icon: Briefcase, href: '/entities' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Ownership', icon: Users, href: '/ownership' },
   { title: 'Documents', icon: FolderOpen, href: '/documents' },
