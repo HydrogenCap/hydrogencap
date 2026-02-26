@@ -54,6 +54,7 @@ interface NavItem {
 const portfolioItems: NavItem[] = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Properties', icon: Building2, href: '/properties' },
+  { title: 'Properties v2', icon: Building2, href: '/properties-v2' },
   { title: 'Pipeline', icon: Construction, href: '/pipeline' },
   { title: 'Entities', icon: Briefcase, href: '/entities' },
   { title: 'Companies', icon: Briefcase, href: '/companies' },

@@ -3799,6 +3799,111 @@ export type Database = {
           },
         ]
       }
+      properties_v2: {
+        Row: {
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          council_area: string | null
+          council_name: string | null
+          country: string | null
+          county: string | null
+          created_at: string | null
+          current_valuation: number | null
+          entity_id: string
+          has_gas_supply: boolean | null
+          id: string
+          latitude: number | null
+          lifecycle_stage: string
+          listing_grade: string
+          longitude: number | null
+          notes: string | null
+          org_id: string
+          postcode: string
+          property_type: string
+          purchase_date: string | null
+          purchase_price: number | null
+          total_floors: number | null
+          total_lettable_rooms: number | null
+          updated_at: string | null
+          valuation_date: string | null
+          year_built: number | null
+        }
+        Insert: {
+          address_line_1: string
+          address_line_2?: string | null
+          city: string
+          council_area?: string | null
+          council_name?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          current_valuation?: number | null
+          entity_id: string
+          has_gas_supply?: boolean | null
+          id?: string
+          latitude?: number | null
+          lifecycle_stage?: string
+          listing_grade?: string
+          longitude?: number | null
+          notes?: string | null
+          org_id: string
+          postcode: string
+          property_type: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          total_floors?: number | null
+          total_lettable_rooms?: number | null
+          updated_at?: string | null
+          valuation_date?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          council_area?: string | null
+          council_name?: string | null
+          country?: string | null
+          county?: string | null
+          created_at?: string | null
+          current_valuation?: number | null
+          entity_id?: string
+          has_gas_supply?: boolean | null
+          id?: string
+          latitude?: number | null
+          lifecycle_stage?: string
+          listing_grade?: string
+          longitude?: number | null
+          notes?: string | null
+          org_id?: string
+          postcode?: string
+          property_type?: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          total_floors?: number | null
+          total_lettable_rooms?: number | null
+          updated_at?: string | null
+          valuation_date?: string | null
+          year_built?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_v2_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_beneficial_owners: {
         Row: {
           beneficial_percent: number

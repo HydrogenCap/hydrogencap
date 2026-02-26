@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { DirectorFormModal } from '@/components/entities/DirectorFormModal';
 import { ShareholderFormModal } from '@/components/entities/ShareholderFormModal';
+import { useEntityPropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { format } from 'date-fns';
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -75,6 +76,7 @@ export default function EntityDetail() {
   const { data: entity, isLoading } = useLegalEntity(id);
   const { data: directors } = useEntityDirectors(id);
   const { data: shareholders } = useEntityShareholders(id);
+  const { data: entityProperties } = useEntityPropertiesV2(id);
   const deleteEntity = useDeleteLegalEntity();
   const deleteDirector = useDeleteDirector();
   const deleteShareholder = useDeleteShareholder();
@@ -343,15 +345,41 @@ export default function EntityDetail() {
           </CardContent>
         </Card>
 
-        {/* Properties placeholder */}
+        {/* Properties */}
         <Card>
-          <CardHeader>
-            <CardTitle>Properties</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Properties <Badge variant="secondary" className="ml-2">{entityProperties?.length || 0}</Badge></CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground text-center py-6">
-              Properties owned by this entity will appear here once the properties table is linked.
-            </p>
+            {entityProperties && entityProperties.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {entityProperties.map(p => {
+                  const typeLabel = PROPERTY_TYPES.find(t => t.value === p.property_type)?.label || p.property_type;
+                  const stageLabel = LIFECYCLE_STAGES.find(s => s.value === p.lifecycle_stage)?.label || p.lifecycle_stage;
+                  return (
+                    <Card
+                      key={p.id}
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(`/properties-v2/${p.id}`)}
+                    >
+                      <CardContent className="pt-3 pb-2 space-y-1">
+                        <p className="font-semibold text-sm text-foreground">{p.address_line_1}, {p.city}</p>
+                        <p className="text-xs text-muted-foreground">{p.postcode}</p>
+                        <div className="flex gap-1.5 flex-wrap">
+                          <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
+                          <Badge variant="secondary" className="text-xs">{stageLabel}</Badge>
+                          <span className="text-xs text-muted-foreground">{p.total_lettable_rooms || 0} rooms</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-6">
+                No properties linked to this entity yet.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
