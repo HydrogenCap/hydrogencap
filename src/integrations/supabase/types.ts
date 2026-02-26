@@ -472,6 +472,68 @@ export type Database = {
           },
         ]
       }
+      compliance_contractors_v2: {
+        Row: {
+          company_name: string
+          contact_name: string | null
+          coverage_area: string | null
+          created_at: string | null
+          email: string | null
+          gas_safe_number: string | null
+          id: string
+          is_preferred: boolean | null
+          niceic_number: string | null
+          notes: string | null
+          org_id: string
+          phone: string | null
+          rating: number | null
+          service_types: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_name?: string | null
+          coverage_area?: string | null
+          created_at?: string | null
+          email?: string | null
+          gas_safe_number?: string | null
+          id?: string
+          is_preferred?: boolean | null
+          niceic_number?: string | null
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          rating?: number | null
+          service_types?: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_name?: string | null
+          coverage_area?: string | null
+          created_at?: string | null
+          email?: string | null
+          gas_safe_number?: string | null
+          id?: string
+          is_preferred?: boolean | null
+          niceic_number?: string | null
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          rating?: number | null
+          service_types?: string[]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_contractors_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_documents: {
         Row: {
           archived_at: string | null
@@ -519,6 +581,130 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "compliance_items"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_documents_v2: {
+        Row: {
+          ai_confidence_score: number | null
+          ai_extracted: boolean | null
+          certificate_number: string | null
+          contractor_id: string | null
+          cost: number | null
+          created_at: string | null
+          document_type: string
+          expiry_date: string | null
+          file_hash: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          is_current: boolean | null
+          issue_date: string
+          issuer_name: string | null
+          next_review_date: string | null
+          notes: string | null
+          org_id: string
+          property_id: string
+          status: string
+          supersedes_id: string | null
+          updated_at: string | null
+          uploaded_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          ai_confidence_score?: number | null
+          ai_extracted?: boolean | null
+          certificate_number?: string | null
+          contractor_id?: string | null
+          cost?: number | null
+          created_at?: string | null
+          document_type: string
+          expiry_date?: string | null
+          file_hash?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_current?: boolean | null
+          issue_date: string
+          issuer_name?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          org_id: string
+          property_id: string
+          status?: string
+          supersedes_id?: string | null
+          updated_at?: string | null
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          ai_confidence_score?: number | null
+          ai_extracted?: boolean | null
+          certificate_number?: string | null
+          contractor_id?: string | null
+          cost?: number | null
+          created_at?: string | null
+          document_type?: string
+          expiry_date?: string | null
+          file_hash?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_current?: boolean | null
+          issue_date?: string
+          issuer_name?: string | null
+          next_review_date?: string | null
+          notes?: string | null
+          org_id?: string
+          property_id?: string
+          status?: string
+          supersedes_id?: string | null
+          updated_at?: string | null
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_documents_v2_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_v2_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_documents_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_v2_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_matrix_v2"
+            referencedColumns: ["document_id"]
           },
         ]
       }
@@ -626,6 +812,73 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contractors"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_requirements_v2: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          id: string
+          is_required: boolean | null
+          lead_time_days: number | null
+          notes: string | null
+          org_id: string
+          override_reason: string | null
+          property_id: string
+          requirement_reason: string | null
+          review_frequency_months: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          id?: string
+          is_required?: boolean | null
+          lead_time_days?: number | null
+          notes?: string | null
+          org_id: string
+          override_reason?: string | null
+          property_id: string
+          requirement_reason?: string | null
+          review_frequency_months?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          id?: string
+          is_required?: boolean | null
+          lead_time_days?: number | null
+          notes?: string | null
+          org_id?: string
+          override_reason?: string | null
+          property_id?: string
+          requirement_reason?: string | null
+          review_frequency_months?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_requirements_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
           },
         ]
       }
@@ -6082,6 +6335,56 @@ export type Database = {
           },
         ]
       }
+      compliance_matrix_v2: {
+        Row: {
+          ai_extracted: boolean | null
+          calculated_status: string | null
+          certificate_number: string | null
+          cost: number | null
+          days_remaining: number | null
+          document_id: string | null
+          document_notes: string | null
+          document_type: string | null
+          entity_name: string | null
+          expiry_date: string | null
+          file_url: string | null
+          is_required: boolean | null
+          issue_date: string | null
+          issuer_name: string | null
+          lead_time_days: number | null
+          org_id: string | null
+          override_reason: string | null
+          property_address: string | null
+          property_id: string | null
+          property_type: string | null
+          requirement_id: string | null
+          review_frequency_months: number | null
+          urgency_score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_requirements_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       loan_alerts: {
         Row: {
           covenant_icr_min: number | null
@@ -6131,6 +6434,18 @@ export type Database = {
             referencedColumns: ["property_id"]
           },
         ]
+      }
+      portfolio_compliance_score_v2: {
+        Row: {
+          compliance_score_pct: number | null
+          total_critical: number | null
+          total_expired: number | null
+          total_expiring_soon: number | null
+          total_missing: number | null
+          total_required: number | null
+          total_valid: number | null
+        }
+        Relationships: []
       }
       portfolio_debt_summary: {
         Row: {
@@ -6252,6 +6567,10 @@ export type Database = {
           typical_cost: number
         }[]
       }
+      generate_compliance_requirements_v2: {
+        Args: { target_property_id: string }
+        Returns: undefined
+      }
       generate_rent_schedule: {
         Args: { p_months?: number; p_tenancy_id: string }
         Returns: number
@@ -6295,6 +6614,7 @@ export type Database = {
         Returns: undefined
       }
       log_document_view: { Args: { p_document_id: string }; Returns: undefined }
+      refresh_compliance_statuses_v2: { Args: never; Returns: undefined }
       restore_document: { Args: { p_document_id: string }; Returns: boolean }
       schedule_compliance_reminders: {
         Args: {
