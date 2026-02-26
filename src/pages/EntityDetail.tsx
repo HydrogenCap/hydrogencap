@@ -39,6 +39,7 @@ import { DirectorFormModal } from '@/components/entities/DirectorFormModal';
 import { ShareholderFormModal } from '@/components/entities/ShareholderFormModal';
 import { useEntityPropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { format } from 'date-fns';
+import { EntityFinancialSection } from '@/components/financials/EntityFinancialSection';
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   spv: Building2,
@@ -344,6 +345,9 @@ export default function EntityDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Financial Summary */}
+        <EntityFinancialSection entityId={entity.id} entityProperties={entityProperties} />
 
         {/* Properties */}
         <Card>

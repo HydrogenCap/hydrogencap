@@ -39,6 +39,43 @@ export function useEntityFinancialSummary(month?: string) {
   });
 }
 
+// ── Entity Monthly Snapshots (for entity detail) ──
+export function useEntityMonthlySnapshots(entityId: string | undefined, months = 12) {
+  return useQuery({
+    queryKey: ['entity_financial_summary_monthly', entityId, months],
+    queryFn: async () => {
+      if (!entityId) return [];
+      const { data, error } = await supabase
+        .from('entity_financial_summary' as any)
+        .select('*')
+        .eq('entity_id', entityId)
+        .order('snapshot_month', { ascending: false })
+        .limit(months);
+      if (error) throw error;
+      return (data || []) as unknown as EntityFinancialSummary[];
+    },
+    enabled: !!entityId,
+  });
+}
+
+// ── Entity property breakdown for a month ──
+export function useEntityPropertyBreakdown(entityId: string | undefined, month?: string) {
+  return useQuery({
+    queryKey: ['entity_property_breakdown', entityId, month],
+    queryFn: async () => {
+      if (!entityId || !month) return [];
+      const { data, error } = await supabase
+        .from('financial_snapshots')
+        .select('property_id, gross_rent_received, total_costs, net_operating_income, net_cash_flow, mortgage_payments')
+        .eq('entity_id', entityId)
+        .eq('snapshot_month', month);
+      if (error) throw error;
+      return (data || []) as { property_id: string; gross_rent_received: number; total_costs: number; net_operating_income: number; net_cash_flow: number; mortgage_payments: number }[];
+    },
+    enabled: !!entityId && !!month,
+  });
+}
+
 // ── Property Annual Performance ──
 export function usePropertyAnnualPerformance() {
   return useQuery({
