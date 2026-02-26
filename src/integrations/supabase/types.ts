@@ -1654,6 +1654,91 @@ export type Database = {
           },
         ]
       }
+      entity_directors: {
+        Row: {
+          appointment_date: string
+          created_at: string
+          director_name: string
+          entity_id: string
+          id: string
+          is_current: boolean | null
+          resignation_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          created_at?: string
+          director_name: string
+          entity_id: string
+          id?: string
+          is_current?: boolean | null
+          resignation_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          created_at?: string
+          director_name?: string
+          entity_id?: string
+          id?: string
+          is_current?: boolean | null
+          resignation_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_directors_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_shareholders: {
+        Row: {
+          created_at: string
+          effective_date: string
+          entity_id: string
+          id: string
+          percentage: number
+          share_class: string | null
+          shareholder_name: string
+          shares_held: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_date: string
+          entity_id: string
+          id?: string
+          percentage: number
+          share_class?: string | null
+          shareholder_name: string
+          shares_held: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_date?: string
+          entity_id?: string
+          id?: string
+          percentage?: number
+          share_class?: string | null
+          shareholder_name?: string
+          shares_held?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_shareholders_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_shareholdings: {
         Row: {
           created_at: string
@@ -2490,6 +2575,65 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: true
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_entities: {
+        Row: {
+          company_number: string | null
+          corporation_tax_ref: string | null
+          created_at: string
+          entity_name: string
+          entity_type: string
+          id: string
+          incorporation_date: string | null
+          notes: string | null
+          org_id: string
+          registered_address: string | null
+          status: string
+          updated_at: string
+          vat_number: string | null
+          vat_registered: boolean | null
+        }
+        Insert: {
+          company_number?: string | null
+          corporation_tax_ref?: string | null
+          created_at?: string
+          entity_name: string
+          entity_type: string
+          id?: string
+          incorporation_date?: string | null
+          notes?: string | null
+          org_id: string
+          registered_address?: string | null
+          status?: string
+          updated_at?: string
+          vat_number?: string | null
+          vat_registered?: boolean | null
+        }
+        Update: {
+          company_number?: string | null
+          corporation_tax_ref?: string | null
+          created_at?: string
+          entity_name?: string
+          entity_type?: string
+          id?: string
+          incorporation_date?: string | null
+          notes?: string | null
+          org_id?: string
+          registered_address?: string | null
+          status?: string
+          updated_at?: string
+          vat_number?: string | null
+          vat_registered?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_entities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
