@@ -58,6 +58,8 @@ const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
 const Documents = lazy(() => import("./pages/Documents"));
+const PropertiesV2 = lazy(() => import("./pages/PropertiesV2"));
+const PropertyDetailV2 = lazy(() => import("./pages/PropertyDetailV2"));
 
 // Portal pages (shareholder)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
@@ -223,6 +225,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <EntityDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties-v2"
+              element={
+                <ProtectedRoute>
+                  <PropertiesV2 />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/properties-v2/:id"
+              element={
+                <ProtectedRoute>
+                  <PropertyDetailV2 />
                 </ProtectedRoute>
               }
             />
