@@ -4666,6 +4666,69 @@ export type Database = {
           },
         ]
       }
+      rooms_v2: {
+        Row: {
+          created_at: string | null
+          current_rent_pcm: number | null
+          floor: number | null
+          has_ensuite: boolean | null
+          id: string
+          is_lettable: boolean | null
+          notes: string | null
+          occupancy_status: string
+          property_id: string
+          room_name: string
+          room_type: string
+          target_rent_pcm: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_rent_pcm?: number | null
+          floor?: number | null
+          has_ensuite?: boolean | null
+          id?: string
+          is_lettable?: boolean | null
+          notes?: string | null
+          occupancy_status?: string
+          property_id: string
+          room_name: string
+          room_type: string
+          target_rent_pcm?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_rent_pcm?: number | null
+          floor?: number | null
+          has_ensuite?: boolean | null
+          id?: string
+          is_lettable?: boolean | null
+          notes?: string | null
+          occupancy_status?: string
+          property_id?: string
+          room_name?: string
+          room_type?: string
+          target_rent_pcm?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       scheduled_email_runs: {
         Row: {
           created_at: string
@@ -5629,6 +5692,16 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_room_summary_v2: {
+        Row: {
+          gross_rent_pcm: number | null
+          potential_rent_pcm: number | null
+          property_id: string | null
+          total_lettable: number | null
+          total_occupied: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {

@@ -11,9 +11,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { usePropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, getPropertyComplianceStatus } from '@/hooks/usePropertiesV2';
+import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
+import type { PropertyRoomSummary } from '@/hooks/useRoomsV2';
 
 // Badge colour maps
 const ENTITY_TYPE_BG: Record<string, string> = {
@@ -80,6 +82,7 @@ type SortOption = 'address_asc' | 'purchase_date_desc' | 'purchase_date_asc' | '
 
 export default function PropertiesV2() {
   const { data: properties, isLoading } = usePropertiesV2();
+  const { data: roomSummaries } = usePropertyRoomSummaries();
   const { data: entities } = useLegalEntities();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
@@ -125,6 +128,12 @@ export default function PropertiesV2() {
   const avgRooms = totalCount > 0
     ? (properties!.reduce((s, p) => s + (p.total_lettable_rooms || 0), 0) / totalCount).toFixed(1)
     : '0';
+  const totalMonthlyRent = useMemo(() => {
+    if (!roomSummaries) return 0;
+    let total = 0;
+    roomSummaries.forEach(s => { total += s.gross_rent_pcm; });
+    return total;
+  }, [roomSummaries]);
   const stageCounts = useMemo(() => {
     const m: Record<string, number> = {};
     properties?.forEach(p => { m[p.lifecycle_stage] = (m[p.lifecycle_stage] || 0) + 1; });
@@ -144,7 +153,7 @@ export default function PropertiesV2() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card><CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Properties</p>
             <p className="text-2xl font-bold text-foreground">{totalCount}</p>
@@ -152,6 +161,10 @@ export default function PropertiesV2() {
           <Card><CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Valuation</p>
             <p className="text-2xl font-bold text-foreground">{totalValuation > 0 ? formatGBPShort(totalValuation) : '—'}</p>
+          </CardContent></Card>
+          <Card><CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Monthly Rent</p>
+            <p className="text-2xl font-bold text-foreground">{totalMonthlyRent > 0 ? formatGBP(totalMonthlyRent) : '—'}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg Lettable Rooms</p>
@@ -233,7 +246,7 @@ export default function PropertiesV2() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(p => (
-              <PropertyCard key={p.id} property={p} onClick={() => navigate(`/properties-v2/${p.id}`)} />
+              <PropertyCard key={p.id} property={p} roomSummary={roomSummaries?.get(p.id)} onClick={() => navigate(`/properties-v2/${p.id}`)} />
             ))}
           </div>
         )}
@@ -244,8 +257,11 @@ export default function PropertiesV2() {
   );
 }
 
-function PropertyCard({ property: p, onClick }: { property: PropertyWithEntity; onClick: () => void }) {
+function PropertyCard({ property: p, roomSummary, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; onClick: () => void }) {
   const status = getPropertyComplianceStatus(p.id);
+  const occupied = roomSummary?.total_occupied ?? 0;
+  const lettable = roomSummary?.total_lettable ?? (p.total_lettable_rooms || 0);
+  const grossRent = roomSummary?.gross_rent_pcm ?? 0;
   return (
     <Card
       className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'}`}
@@ -265,8 +281,8 @@ function PropertyCard({ property: p, onClick }: { property: PropertyWithEntity; 
           <Badge variant="secondary" className={`text-xs ${LIFECYCLE_BG[p.lifecycle_stage] || ''}`}>{getLifecycleLabel(p.lifecycle_stage)}</Badge>
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground pt-1">
-          <span>{p.total_lettable_rooms || 0} rooms</span>
-          <span>—</span>
+          <span>{occupied}/{lettable} rooms</span>
+          <span>{grossRent > 0 ? formatGBP(grossRent) + ' /mo' : '—'}</span>
         </div>
       </CardContent>
     </Card>
