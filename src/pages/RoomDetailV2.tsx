@@ -1,15 +1,19 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Edit, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRoom, useUpdateRoom, ROOM_TYPES, OCCUPANCY_STATUSES } from '@/hooks/useRoomsV2';
+import { useTenancyAgreements, TENANCY_TYPES } from '@/hooks/useTenancyAgreements';
 import { RoomFormModal } from '@/components/properties-v2/RoomFormModal';
+import { CreateTenancyAgreementModal } from '@/components/tenants-v2/CreateTenancyAgreementModal';
 import { useToast } from '@/hooks/use-toast';
+import { format, differenceInDays } from 'date-fns';
 
 const ROOM_TYPE_BG: Record<string, string> = {
   single: 'bg-slate-100 text-slate-700', double: 'bg-blue-100 text-blue-700',
@@ -37,10 +41,46 @@ export default function RoomDetailV2() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: room, isLoading } = useRoom(id);
+  const { data: roomAgreements } = useTenancyAgreements({ roomId: id });
   const updateRoom = useUpdateRoom();
   const [showEdit, setShowEdit] = useState(false);
+  const [showCreateAgreement, setShowCreateAgreement] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+
+  const activeAgreement = useMemo(() => roomAgreements?.find(a => a.status === 'active' || a.status === 'notice_period'), [roomAgreements]);
+
+  // Void periods
+  const voidPeriods = useMemo(() => {
+    if (!roomAgreements || roomAgreements.length === 0) return [];
+    const ended = roomAgreements.filter(a => a.actual_end_date).sort((a, b) => a.actual_end_date!.localeCompare(b.actual_end_date!));
+    const periods: { start: string; end: string | null; days: number; cost: number }[] = [];
+    const targetRent = room?.target_rent_pcm || room?.current_rent_pcm || 0;
+    for (let i = 0; i < ended.length; i++) {
+      const endDate = ended[i].actual_end_date!;
+      const nextStart = ended[i + 1]?.start_date || (activeAgreement ? activeAgreement.start_date : null);
+      if (nextStart && nextStart > endDate) {
+        const days = differenceInDays(new Date(nextStart), new Date(endDate));
+        periods.push({ start: endDate, end: nextStart, days, cost: days * targetRent / 30.44 });
+      }
+    }
+    // Current void
+    if (!activeAgreement && ended.length > 0) {
+      const lastEnd = ended[ended.length - 1].actual_end_date!;
+      const days = differenceInDays(new Date(), new Date(lastEnd));
+      if (days > 0) periods.push({ start: lastEnd, end: null, days, cost: days * targetRent / 30.44 });
+    }
+    return periods;
+  }, [roomAgreements, activeAgreement, room]);
+
+  // Rent trend
+  const rentTrend = useMemo(() => {
+    if (!roomAgreements || roomAgreements.length < 2) return null;
+    const sorted = [...roomAgreements].sort((a, b) => a.start_date.localeCompare(b.start_date));
+    const first = sorted[0].rent_amount_pcm;
+    const last = sorted[sorted.length - 1].rent_amount_pcm;
+    return last > first ? 'up' : last < first ? 'down' : 'flat';
+  }, [roomAgreements]);
 
   if (isLoading) {
     return <AppLayout><div className="space-y-6"><Skeleton className="h-10 w-64" /><Skeleton className="h-48 w-full" /></div></AppLayout>;
@@ -139,9 +179,23 @@ export default function RoomDetailV2() {
 
         {/* Tenant */}
         <Card>
-          <CardHeader><CardTitle>Tenant</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Current Tenant</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-muted-foreground text-center py-6">Tenant history will appear here once the tenants module is built.</p>
+            {activeAgreement ? (
+              <div className="space-y-2 text-sm">
+                <Row label="Tenant" value={<Link to={`/tenants-v2/${activeAgreement.tenant_id}`} className="text-primary underline font-medium">{activeAgreement.tenant_name || '—'}</Link>} />
+                <Row label="Type" value={<Badge variant="secondary">{TENANCY_TYPES.find(t => t.value === activeAgreement.tenancy_type)?.label || activeAgreement.tenancy_type}</Badge>} />
+                <Row label="Start Date" value={format(new Date(activeAgreement.start_date), 'dd/MM/yyyy')} />
+                <Row label="Rent PCM" value={fmtRent(activeAgreement.rent_amount_pcm)} />
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground mb-3">No current tenant</p>
+                <Button onClick={() => setShowCreateAgreement(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Assign Tenant
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -149,9 +203,69 @@ export default function RoomDetailV2() {
         <Card>
           <CardHeader><CardTitle>Void History</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-muted-foreground text-center py-6">Void period tracking will appear here once tenancy agreements are linked.</p>
+            {voidPeriods.length === 0 ? (
+              <p className="text-muted-foreground text-center py-6">No void periods recorded.</p>
+            ) : (
+              <div className="space-y-3">
+                {voidPeriods.map((v, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
+                    <div>
+                      <span>{format(new Date(v.start), 'dd/MM/yyyy')}</span>
+                      <span className="mx-2">→</span>
+                      <span>{v.end ? format(new Date(v.end), 'dd/MM/yyyy') : 'Present'}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-muted-foreground">{v.days} days</span>
+                      <span className="text-destructive font-semibold">-£{v.cost.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="border-t pt-2 flex justify-between text-sm font-semibold">
+                  <span>Total void cost</span>
+                  <span className="text-destructive">-£{voidPeriods.reduce((s, v) => s + v.cost, 0).toFixed(2)}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* Rent History */}
+        {roomAgreements && roomAgreements.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Rent History</CardTitle>
+              {rentTrend && (
+                <Badge className={rentTrend === 'up' ? 'bg-emerald-100 text-emerald-700' : rentTrend === 'down' ? 'bg-red-100 text-red-700' : 'bg-muted text-muted-foreground'}>
+                  Rents trending {rentTrend}
+                </Badge>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tenant</TableHead>
+                      <TableHead>Start</TableHead>
+                      <TableHead>End</TableHead>
+                      <TableHead className="text-right">Rent PCM</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {roomAgreements.map(a => (
+                      <TableRow key={a.id}>
+                        <TableCell><Link to={`/tenants-v2/${a.tenant_id}`} className="text-primary underline">{a.tenant_name || '—'}</Link></TableCell>
+                        <TableCell>{format(new Date(a.start_date), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell>{a.actual_end_date ? format(new Date(a.actual_end_date), 'dd/MM/yyyy') : '—'}</TableCell>
+                        <TableCell className="text-right font-medium">{fmtRent(a.rent_amount_pcm)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notes */}
         <Card>
@@ -184,6 +298,12 @@ export default function RoomDetailV2() {
         onOpenChange={setShowEdit}
         propertyId={room.property_id}
         editingRoom={room}
+      />
+      <CreateTenancyAgreementModal
+        open={showCreateAgreement}
+        onOpenChange={setShowCreateAgreement}
+        preselectedPropertyId={room.property_id}
+        preselectedRoomId={room.id}
       />
     </AppLayout>
   );

@@ -5204,6 +5204,123 @@ export type Database = {
           },
         ]
       }
+      tenancy_agreements: {
+        Row: {
+          actual_end_date: string | null
+          created_at: string | null
+          deposit_amount: number | null
+          deposit_protected_date: string | null
+          deposit_reference: string | null
+          deposit_scheme: string | null
+          how_to_rent_served_date: string | null
+          id: string
+          initial_end_date: string | null
+          is_periodic: boolean | null
+          notes: string | null
+          notice_served_date: string | null
+          notice_type: string | null
+          org_id: string
+          prescribed_info_served_date: string | null
+          property_id: string
+          rent_amount_pcm: number
+          rent_frequency: string
+          room_id: string
+          start_date: string
+          status: string
+          tenancy_type: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          actual_end_date?: string | null
+          created_at?: string | null
+          deposit_amount?: number | null
+          deposit_protected_date?: string | null
+          deposit_reference?: string | null
+          deposit_scheme?: string | null
+          how_to_rent_served_date?: string | null
+          id?: string
+          initial_end_date?: string | null
+          is_periodic?: boolean | null
+          notes?: string | null
+          notice_served_date?: string | null
+          notice_type?: string | null
+          org_id: string
+          prescribed_info_served_date?: string | null
+          property_id: string
+          rent_amount_pcm: number
+          rent_frequency?: string
+          room_id: string
+          start_date: string
+          status?: string
+          tenancy_type?: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          actual_end_date?: string | null
+          created_at?: string | null
+          deposit_amount?: number | null
+          deposit_protected_date?: string | null
+          deposit_reference?: string | null
+          deposit_scheme?: string | null
+          how_to_rent_served_date?: string | null
+          id?: string
+          initial_end_date?: string | null
+          is_periodic?: boolean | null
+          notes?: string | null
+          notice_served_date?: string | null
+          notice_type?: string | null
+          org_id?: string
+          prescribed_info_served_date?: string | null
+          property_id?: string
+          rent_amount_pcm?: number
+          rent_frequency?: string
+          room_id?: string
+          start_date?: string
+          status?: string
+          tenancy_type?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenancy_agreements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenancy_compliance_items: {
         Row: {
           completed_by: string | null
@@ -5542,6 +5659,71 @@ export type Database = {
           },
         ]
       }
+      tenants_v2: {
+        Row: {
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          first_name: string
+          id: string
+          last_name: string
+          national_insurance: string | null
+          notes: string | null
+          org_id: string
+          phone: string | null
+          referral_source: string | null
+          status: string
+          tenant_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          national_insurance?: string | null
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          referral_source?: string | null
+          status?: string
+          tenant_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          national_insurance?: string | null
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          referral_source?: string | null
+          status?: string
+          tenant_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       valuation_alerts: {
         Row: {
           alert_type: string
@@ -5702,6 +5884,62 @@ export type Database = {
           total_occupied: number | null
         }
         Relationships: []
+      }
+      tenancy_compliance_check_v2: {
+        Row: {
+          deposit_amount: number | null
+          deposit_compliance: string | null
+          deposit_protected_date: string | null
+          deposit_scheme: string | null
+          how_to_rent_compliance: string | null
+          how_to_rent_served_date: string | null
+          org_id: string | null
+          prescribed_info_served_date: string | null
+          property_id: string | null
+          room_id: string | null
+          section_21_ready: boolean | null
+          status: string | null
+          tenancy_id: string | null
+          tenant_id: string | null
+          tenant_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenancy_agreements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_v2"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
