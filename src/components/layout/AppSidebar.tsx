@@ -69,6 +69,7 @@ const operationsItems: NavItem[] = [
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Lending', icon: PoundSterling, href: '/lending' },
+  { title: 'Financials', icon: TrendingUp, href: '/financials' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
   { title: 'Tenants', icon: Users, href: '/tenants' },

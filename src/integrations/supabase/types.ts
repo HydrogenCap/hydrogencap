@@ -2043,6 +2043,161 @@ export type Database = {
           },
         ]
       }
+      financial_categories: {
+        Row: {
+          category_name: string
+          category_type: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          maps_to_snapshot_field: string
+        }
+        Insert: {
+          category_name: string
+          category_type: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          maps_to_snapshot_field: string
+        }
+        Update: {
+          category_name?: string
+          category_type?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          maps_to_snapshot_field?: string
+        }
+        Relationships: []
+      }
+      financial_snapshots: {
+        Row: {
+          council_tax: number | null
+          created_at: string | null
+          entity_id: string
+          gross_rent_due: number | null
+          gross_rent_received: number | null
+          id: string
+          insurance_costs: number | null
+          is_locked: boolean | null
+          licensing_costs: number | null
+          locked_at: string | null
+          locked_by: string | null
+          maintenance_costs: number | null
+          management_fees: number | null
+          mortgage_payments: number | null
+          net_cash_flow: number | null
+          net_operating_income: number | null
+          notes: string | null
+          occupancy_rate: number | null
+          org_id: string
+          other_costs: number | null
+          other_income: number | null
+          professional_fees: number | null
+          property_id: string
+          rent_collection_rate: number | null
+          snapshot_month: string
+          total_costs: number | null
+          updated_at: string | null
+          utilities: number | null
+          void_loss: number | null
+        }
+        Insert: {
+          council_tax?: number | null
+          created_at?: string | null
+          entity_id: string
+          gross_rent_due?: number | null
+          gross_rent_received?: number | null
+          id?: string
+          insurance_costs?: number | null
+          is_locked?: boolean | null
+          licensing_costs?: number | null
+          locked_at?: string | null
+          locked_by?: string | null
+          maintenance_costs?: number | null
+          management_fees?: number | null
+          mortgage_payments?: number | null
+          net_cash_flow?: number | null
+          net_operating_income?: number | null
+          notes?: string | null
+          occupancy_rate?: number | null
+          org_id: string
+          other_costs?: number | null
+          other_income?: number | null
+          professional_fees?: number | null
+          property_id: string
+          rent_collection_rate?: number | null
+          snapshot_month: string
+          total_costs?: number | null
+          updated_at?: string | null
+          utilities?: number | null
+          void_loss?: number | null
+        }
+        Update: {
+          council_tax?: number | null
+          created_at?: string | null
+          entity_id?: string
+          gross_rent_due?: number | null
+          gross_rent_received?: number | null
+          id?: string
+          insurance_costs?: number | null
+          is_locked?: boolean | null
+          licensing_costs?: number | null
+          locked_at?: string | null
+          locked_by?: string | null
+          maintenance_costs?: number | null
+          management_fees?: number | null
+          mortgage_payments?: number | null
+          net_cash_flow?: number | null
+          net_operating_income?: number | null
+          notes?: string | null
+          occupancy_rate?: number | null
+          org_id?: string
+          other_costs?: number | null
+          other_income?: number | null
+          professional_fees?: number | null
+          property_id?: string
+          rent_collection_rate?: number | null
+          snapshot_month?: string
+          total_costs?: number | null
+          updated_at?: string | null
+          utilities?: number | null
+          void_loss?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       floorplans: {
         Row: {
           created_at: string
@@ -6385,6 +6540,37 @@ export type Database = {
           },
         ]
       }
+      entity_financial_summary: {
+        Row: {
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          org_id: string | null
+          property_count: number | null
+          snapshot_month: string | null
+          total_cash_flow: number | null
+          total_costs: number | null
+          total_mortgage_payments: number | null
+          total_noi: number | null
+          total_rent_received: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_alerts: {
         Row: {
           covenant_icr_min: number | null
@@ -6471,6 +6657,73 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_monthly_summary: {
+        Row: {
+          avg_occupancy_rate: number | null
+          org_id: string | null
+          portfolio_collection_rate: number | null
+          property_count: number | null
+          snapshot_month: string | null
+          total_cash_flow: number | null
+          total_costs: number | null
+          total_mortgage_payments: number | null
+          total_noi: number | null
+          total_rent_due: number | null
+          total_rent_received: number | null
+          total_void_loss: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_annual_performance: {
+        Row: {
+          annual_cash_flow: number | null
+          annual_costs: number | null
+          annual_mortgage_payments: number | null
+          annual_noi: number | null
+          annual_rent_received: number | null
+          avg_collection_rate: number | null
+          avg_occupancy: number | null
+          cash_on_cash_return_pct: number | null
+          current_valuation: number | null
+          entity_name: string | null
+          net_yield_pct: number | null
+          org_id: string | null
+          property_address: string | null
+          property_id: string | null
+          purchase_price: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
           },
         ]
       }
