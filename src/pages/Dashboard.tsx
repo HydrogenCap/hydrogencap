@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Bed, Wallet, DoorOpen } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -51,6 +51,7 @@ import { MetricKey, METRICS_CONFIG, MetricBreakdown } from '@/lib/metricsConfig'
 import { usePropertyPassports, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useMissingInfo } from '@/hooks/useMissingInfo';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
+import { usePortfolioMonthlySummary, usePropertyAnnualPerformance } from '@/hooks/useFinancialSnapshots';
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -62,6 +63,10 @@ function DashboardPage() {
   const { stats: missingStats } = useMissingInfo();
   const { lifecycleFilter, filterProperties } = useLifecycleFilter();
   const { risks: portfolioRisks, criticalCount: portfolioCriticalCount } = usePortfolioRisks();
+
+  // Financial snapshot data for dashboard KPIs
+  const { data: portfolioMonthlySummary } = usePortfolioMonthlySummary(12);
+  const { data: annualPerformance } = usePropertyAnnualPerformance();
 
   // Tenancy and rental data for dashboard stats
   const { data: allTenancies } = useTenancies();
@@ -197,6 +202,22 @@ function DashboardPage() {
 
   // Lender exposure data
   const lenderData = useMemo(() => computeLenderData(coreRentalProperties), [coreRentalProperties]);
+
+  // Financial snapshot KPIs
+  const snapshotKPIs = useMemo(() => {
+    const latestMonth = portfolioMonthlySummary?.[0];
+    const monthlyCashPosition = latestMonth?.total_cash_flow ?? null;
+    const latestMonthLabel = latestMonth?.snapshot_month
+      ? format(new Date(latestMonth.snapshot_month), 'MMM yyyy')
+      : null;
+
+    // Net Yield = trailing 12m NOI / sum of current valuations × 100
+    const totalAnnualNOI = annualPerformance?.reduce((sum, p) => sum + (p.annual_noi || 0), 0) ?? 0;
+    const totalValuation = coreRentalProperties.reduce((sum, p) => sum + (p.current_value_gbp ? Number(p.current_value_gbp) : 0), 0);
+    const netYield = totalValuation > 0 ? (totalAnnualNOI / totalValuation) * 100 : null;
+
+    return { monthlyCashPosition, latestMonthLabel, netYield };
+  }, [portfolioMonthlySummary, annualPerformance, coreRentalProperties]);
 
   // Shareholder data
   const shareholderData = useMemo(() => prepareShareholderData(attribution), [attribution]);
@@ -356,21 +377,22 @@ function DashboardPage() {
                 valueClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
               />
               <KpiCard
-                label="Total Bedrooms"
-                value={String(rentalStats.totalBedrooms)}
-                subtitle={`Across ${coreRentalProperties.length} properties`}
-                icon={Bed}
+                label="Portfolio Net Yield"
+                value={snapshotKPIs.netYield !== null ? formatPercent(snapshotKPIs.netYield) : '—'}
+                subtitle={snapshotKPIs.netYield !== null ? 'Trailing 12m NOI / valuation' : 'No snapshot data yet'}
+                icon={TrendingUp}
                 iconClassName="text-primary"
+                valueClassName={snapshotKPIs.netYield !== null && snapshotKPIs.netYield >= 6 ? 'text-success' : snapshotKPIs.netYield !== null && snapshotKPIs.netYield < 4 ? 'text-warning' : ''}
+                onClick={() => navigate('/financials')}
               />
               <KpiCard
-                label="Rent Arrears"
-                value={rentalStats.totalOverdue > 0 ? formatGBP(rentalStats.totalOverdue) : '£0'}
-                subtitle={rentalStats.totalOverdue > 0 ? 'Outstanding this month' : 'All clear this month'}
-                icon={AlertTriangle}
-                iconClassName={rentalStats.totalOverdue > 0 ? 'text-destructive' : 'text-success'}
-                valueClassName={rentalStats.totalOverdue > 0 ? 'text-destructive' : 'text-success'}
-                onClick={rentalStats.totalOverdue > 0 ? () => navigate('/rent') : undefined}
-                className={rentalStats.totalOverdue > 0 ? 'border-destructive/40' : ''}
+                label="Monthly Cash Position"
+                value={snapshotKPIs.monthlyCashPosition !== null ? formatGBP(snapshotKPIs.monthlyCashPosition) : '—'}
+                subtitle={snapshotKPIs.latestMonthLabel ? `As of ${snapshotKPIs.latestMonthLabel}` : 'No snapshot data yet'}
+                icon={PoundSterling}
+                iconClassName={snapshotKPIs.monthlyCashPosition !== null && snapshotKPIs.monthlyCashPosition >= 0 ? 'text-success' : 'text-destructive'}
+                valueClassName={snapshotKPIs.monthlyCashPosition !== null && snapshotKPIs.monthlyCashPosition >= 0 ? 'text-success' : 'text-destructive'}
+                onClick={() => navigate('/financials')}
               />
             </div>
 
