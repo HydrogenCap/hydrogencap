@@ -70,6 +70,7 @@ const operationsItems: NavItem[] = [
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
   { title: 'Tenants', icon: Users, href: '/tenants' },
+  { title: 'Tenants v2', icon: Users, href: '/tenants-v2' },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
 ];
