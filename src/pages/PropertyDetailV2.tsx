@@ -10,8 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { usePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
 import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSection';
+import { PropertyLoansSection } from '@/components/lending/PropertyLoansSection';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 const ENTITY_TYPE_BG: Record<string, string> = {
   spv: 'bg-blue-100 text-blue-700', personal: 'bg-emerald-100 text-emerald-700',
@@ -61,6 +65,20 @@ export default function PropertyDetailV2() {
   const [showEdit, setShowEdit] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+
+  const { data: entities = [] } = useQuery({
+    queryKey: ['legal_entities_list'],
+    queryFn: async () => {
+      const orgId = await fetchUserOrgId();
+      const { data, error } = await supabase
+        .from('legal_entities')
+        .select('id, entity_name')
+        .eq('org_id', orgId)
+        .order('entity_name');
+      if (error) throw error;
+      return data as { id: string; entity_name: string }[];
+    },
+  });
 
   if (isLoading) {
     return <AppLayout><div className="space-y-6"><Skeleton className="h-10 w-80" /><Skeleton className="h-64 w-full" /></div></AppLayout>;
@@ -162,12 +180,12 @@ export default function PropertyDetailV2() {
         </Card>
 
         {/* Loans */}
-        <Card>
-          <CardHeader><CardTitle>Mortgage & Lending</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-6">Loan facility details will be available once the lending module is built.</p>
-          </CardContent>
-        </Card>
+        <PropertyLoansSection
+          propertyId={property.id}
+          entityId={property.entity_id}
+          entities={entities}
+          propertyValuation={property.current_valuation}
+        />
 
         {/* Documents */}
         <Card>
