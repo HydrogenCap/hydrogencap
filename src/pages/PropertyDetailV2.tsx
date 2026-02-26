@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { usePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
+import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSection';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -146,15 +147,7 @@ export default function PropertyDetailV2() {
         </Card>
 
         {/* Rooms */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Rooms <Badge variant="secondary" className="ml-2">{property.total_lettable_rooms || 0}</Badge></CardTitle>
-            <Button size="sm" disabled>Add Room</Button>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-6">Room management will be available in the next update.</p>
-          </CardContent>
-        </Card>
+        <PropertyRoomsSection propertyId={property.id} />
 
         {/* Compliance */}
         <Card>
