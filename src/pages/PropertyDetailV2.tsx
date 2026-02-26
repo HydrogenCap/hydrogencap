@@ -12,6 +12,7 @@ import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal'
 import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSection';
 import { PropertyLoansSection } from '@/components/lending/PropertyLoansSection';
 import { PropertyComplianceSection } from '@/components/compliance-v2/PropertyComplianceSection';
+import { PropertyFinancialSection } from '@/components/financials/PropertyFinancialSection';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -176,10 +177,7 @@ export default function PropertyDetailV2() {
         </Card>
 
         {/* Financials */}
-        <Card>
-          <CardHeader><CardTitle>Financial Performance</CardTitle></CardHeader>
-          <CardContent><PropertyFinancialChart /></CardContent>
-        </Card>
+        <PropertyFinancialSection propertyId={property.id} currentValuation={property.current_valuation} />
 
         {/* Loans */}
         <PropertyLoansSection

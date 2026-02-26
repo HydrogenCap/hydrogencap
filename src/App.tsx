@@ -65,6 +65,7 @@ const TenantsV2 = lazy(() => import("./pages/TenantsV2"));
 const TenantDetailV2 = lazy(() => import("./pages/TenantDetailV2"));
 const Lending = lazy(() => import("./pages/Lending"));
 const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
+const Financials = lazy(() => import("./pages/Financials"));
 
 // Portal pages (shareholder)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
@@ -410,6 +411,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ComplianceV2 />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/financials"
+              element={
+                <ProtectedRoute>
+                  <Financials />
                 </ProtectedRoute>
               }
             />
