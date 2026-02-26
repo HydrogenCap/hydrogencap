@@ -11,6 +11,8 @@ import { usePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, L
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
 import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSection';
 import { PropertyLoansSection } from '@/components/lending/PropertyLoansSection';
+import { PropertyComplianceSection } from '@/components/compliance-v2/PropertyComplianceSection';
+import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
@@ -187,6 +189,9 @@ export default function PropertyDetailV2() {
           propertyValuation={property.current_valuation}
         />
 
+        {/* Compliance */}
+        <PropertyComplianceSectionWrapper propertyId={property.id} orgId={property.org_id} />
+
         {/* Documents */}
         <Card>
           <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
@@ -233,4 +238,18 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
       <span className="font-medium text-foreground">{value}</span>
     </div>
   );
+}
+
+function PropertyComplianceSectionWrapper({ propertyId, orgId }: { propertyId: string; orgId: string }) {
+  const { data: matrixRows, isLoading } = usePropertyComplianceV2(propertyId);
+  if (isLoading) return <Skeleton className="h-48" />;
+  if (!matrixRows || matrixRows.length === 0) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Compliance</CardTitle></CardHeader>
+        <CardContent><p className="text-muted-foreground text-center py-6">No compliance requirements generated yet.</p></CardContent>
+      </Card>
+    );
+  }
+  return <PropertyComplianceSection matrixRows={matrixRows} propertyId={propertyId} orgId={orgId} />;
 }
