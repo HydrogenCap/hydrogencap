@@ -63,6 +63,7 @@ const PropertyDetailV2 = lazy(() => import("./pages/PropertyDetailV2"));
 const RoomDetailV2 = lazy(() => import("./pages/RoomDetailV2"));
 const TenantsV2 = lazy(() => import("./pages/TenantsV2"));
 const TenantDetailV2 = lazy(() => import("./pages/TenantDetailV2"));
+const Lending = lazy(() => import("./pages/Lending"));
 
 // Portal pages (shareholder)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
@@ -392,6 +393,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ComplianceCalendar />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lending"
+              element={
+                <ProtectedRoute>
+                  <Lending />
                 </ProtectedRoute>
               }
             />

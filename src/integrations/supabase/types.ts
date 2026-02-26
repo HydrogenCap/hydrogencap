@@ -2638,6 +2638,213 @@ export type Database = {
           },
         ]
       }
+      lenders: {
+        Row: {
+          broker_email: string | null
+          broker_name: string | null
+          broker_phone: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          id: string
+          lender_name: string
+          lender_type: string
+          notes: string | null
+          org_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          broker_email?: string | null
+          broker_name?: string | null
+          broker_phone?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          lender_name: string
+          lender_type: string
+          notes?: string | null
+          org_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          broker_email?: string | null
+          broker_name?: string | null
+          broker_phone?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          lender_name?: string
+          lender_type?: string
+          notes?: string | null
+          org_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lenders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_facilities: {
+        Row: {
+          account_reference: string | null
+          arrangement_fee: number | null
+          covenant_icr_min: number | null
+          covenant_ltv_max: number | null
+          created_at: string | null
+          current_balance: number
+          current_ltv: number | null
+          early_repayment_charge_until: string | null
+          entity_id: string
+          erc_percentage: number | null
+          facility_type: string
+          id: string
+          interest_only: boolean | null
+          interest_rate: number
+          legal_fee: number | null
+          lender_id: string
+          ltv_at_drawdown: number | null
+          monthly_payment: number | null
+          notes: string | null
+          org_id: string
+          original_amount: number
+          product_name: string | null
+          property_id: string
+          rate_expiry_date: string | null
+          rate_type: string
+          repayment_type: string
+          revert_rate: number | null
+          status: string
+          term_end_date: string
+          term_start_date: string
+          total_setup_costs: number | null
+          updated_at: string | null
+          valuation_fee: number | null
+        }
+        Insert: {
+          account_reference?: string | null
+          arrangement_fee?: number | null
+          covenant_icr_min?: number | null
+          covenant_ltv_max?: number | null
+          created_at?: string | null
+          current_balance: number
+          current_ltv?: number | null
+          early_repayment_charge_until?: string | null
+          entity_id: string
+          erc_percentage?: number | null
+          facility_type: string
+          id?: string
+          interest_only?: boolean | null
+          interest_rate: number
+          legal_fee?: number | null
+          lender_id: string
+          ltv_at_drawdown?: number | null
+          monthly_payment?: number | null
+          notes?: string | null
+          org_id: string
+          original_amount: number
+          product_name?: string | null
+          property_id: string
+          rate_expiry_date?: string | null
+          rate_type: string
+          repayment_type?: string
+          revert_rate?: number | null
+          status?: string
+          term_end_date: string
+          term_start_date: string
+          total_setup_costs?: number | null
+          updated_at?: string | null
+          valuation_fee?: number | null
+        }
+        Update: {
+          account_reference?: string | null
+          arrangement_fee?: number | null
+          covenant_icr_min?: number | null
+          covenant_ltv_max?: number | null
+          created_at?: string | null
+          current_balance?: number
+          current_ltv?: number | null
+          early_repayment_charge_until?: string | null
+          entity_id?: string
+          erc_percentage?: number | null
+          facility_type?: string
+          id?: string
+          interest_only?: boolean | null
+          interest_rate?: number
+          legal_fee?: number | null
+          lender_id?: string
+          ltv_at_drawdown?: number | null
+          monthly_payment?: number | null
+          notes?: string | null
+          org_id?: string
+          original_amount?: number
+          product_name?: string | null
+          property_id?: string
+          rate_expiry_date?: string | null
+          rate_type?: string
+          repayment_type?: string
+          revert_rate?: number | null
+          status?: string
+          term_end_date?: string
+          term_start_date?: string
+          total_setup_costs?: number | null
+          updated_at?: string | null
+          valuation_fee?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_facilities_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_lender_id_fkey"
+            columns: ["lender_id"]
+            isOneToOne: false
+            referencedRelation: "lenders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_lender_id_fkey"
+            columns: ["lender_id"]
+            isOneToOne: false
+            referencedRelation: "portfolio_debt_summary"
+            referencedColumns: ["lender_id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           broker_contact: string | null
@@ -5871,6 +6078,83 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: true
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_alerts: {
+        Row: {
+          covenant_icr_min: number | null
+          covenant_ltv_max: number | null
+          current_balance: number | null
+          current_ltv: number | null
+          days_to_erc_end: number | null
+          days_to_rate_expiry: number | null
+          days_to_term_end: number | null
+          early_repayment_charge_until: string | null
+          erc_alert: string | null
+          facility_type: string | null
+          interest_rate: number | null
+          lender_name: string | null
+          loan_id: string | null
+          ltv_covenant_alert: string | null
+          org_id: string | null
+          property_address: string | null
+          property_id: string | null
+          rate_alert: string | null
+          rate_expiry_date: string | null
+          rate_type: string | null
+          revert_rate: number | null
+          term_alert: string | null
+          term_end_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_facilities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
+      portfolio_debt_summary: {
+        Row: {
+          avg_interest_rate: number | null
+          facility_count: number | null
+          fixed_balance: number | null
+          fixed_count: number | null
+          lender_id: string | null
+          lender_name: string | null
+          lender_type: string | null
+          nearest_rate_expiry: string | null
+          nearest_term_end: string | null
+          org_id: string | null
+          total_exposure: number | null
+          total_monthly_payments: number | null
+          variable_balance: number | null
+          variable_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lenders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
