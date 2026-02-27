@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
- import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark } from 'lucide-react';
 import { FreeAgentIntegrationPanel } from '@/components/settings/FreeAgentIntegrationPanel';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
@@ -20,6 +20,7 @@ import { BillingSettings } from '@/components/settings/BillingSettings';
 import { BackupExportSection } from '@/components/settings/BackupExportSection';
 import { DocumentRenamingSection } from '@/components/settings/DocumentRenamingSection';
 import { TeamManagement } from '@/components/settings/TeamManagement';
+import { BankAccountSettings } from '@/components/settings/BankAccountSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
@@ -353,6 +354,10 @@ export default function Settings() {
               <TabsTrigger value="backup" className="gap-2">
                 <HardDrive className="h-4 w-4" />
                 Backup
+              </TabsTrigger>
+              <TabsTrigger value="bank-accounts" className="gap-2">
+                <Landmark className="h-4 w-4" />
+                Bank Accounts
               </TabsTrigger>
            </TabsList>
 
@@ -777,7 +782,12 @@ export default function Settings() {
            <TabsContent value="backup" className="space-y-6 max-w-2xl">
               <BackupExportSection />
               <DocumentRenamingSection />
-            </TabsContent>
+             </TabsContent>
+
+           {/* Bank Accounts Tab */}
+           <TabsContent value="bank-accounts" className="space-y-6">
+             <BankAccountSettings />
+           </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
