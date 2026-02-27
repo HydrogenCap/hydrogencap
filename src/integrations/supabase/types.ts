@@ -6965,6 +6965,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      seed_compliance_requirements_v2: {
+        Args: { target_property_id: string }
+        Returns: undefined
+      }
       soft_delete_document: {
         Args: { p_document_id: string }
         Returns: boolean
