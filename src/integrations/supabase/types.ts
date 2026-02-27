@@ -3053,6 +3053,7 @@ export type Database = {
           entity_type: string
           id: string
           incorporation_date: string | null
+          issued_shares: number | null
           notes: string | null
           org_id: string
           registered_address: string | null
@@ -3069,6 +3070,7 @@ export type Database = {
           entity_type: string
           id?: string
           incorporation_date?: string | null
+          issued_shares?: number | null
           notes?: string | null
           org_id: string
           registered_address?: string | null
@@ -3085,6 +3087,7 @@ export type Database = {
           entity_type?: string
           id?: string
           incorporation_date?: string | null
+          issued_shares?: number | null
           notes?: string | null
           org_id?: string
           registered_address?: string | null
