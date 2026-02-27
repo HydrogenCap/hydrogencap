@@ -24,6 +24,11 @@ export interface FinancialSnapshot {
   net_cash_flow: number;
   occupancy_rate: number | null;
   rent_collection_rate: number;
+  // Balance sheet point-in-time fields
+  valuation_at_snapshot: number | null;
+  debt_at_snapshot: number | null;
+  equity_at_snapshot: number | null;
+  ltv_at_snapshot: number | null;
   notes: string | null;
   is_locked: boolean;
   locked_at: string | null;
@@ -45,6 +50,11 @@ export interface PortfolioMonthlySummary {
   total_cash_flow: number;
   portfolio_collection_rate: number;
   avg_occupancy_rate: number | null;
+  // Aggregated balance sheet
+  total_valuation: number | null;
+  total_debt: number | null;
+  total_equity: number | null;
+  portfolio_ltv: number | null;
 }
 
 export interface EntityFinancialSummary {

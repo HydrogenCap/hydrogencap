@@ -64,7 +64,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
     queryFn: async () => {
       const { data } = await supabase
         .from('loan_facilities')
-        .select('property_id, monthly_payment, status')
+        .select('property_id, monthly_payment, current_balance, status')
         .eq('status', 'active');
       return data || [];
     },
@@ -91,9 +91,16 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
 
     const loans = loanSuggestions?.filter(l => l.property_id === propertyId) || [];
     const mortgagePayments = loans.reduce((s, l) => s + (l.monthly_payment || 0), 0);
+    const totalDebt = loans.reduce((s, l) => s + ((l as any).current_balance || 0), 0);
 
-    return { grossRentDue, voidLoss, occupancyRate, mortgagePayments };
-  }, [roomSuggestions, loanSuggestions]);
+    // Get valuation from property
+    const property = properties?.find(p => p.id === propertyId);
+    const valuation = property?.current_valuation || 0;
+    const equity = valuation - totalDebt;
+    const ltv = valuation > 0 ? Math.round((totalDebt / valuation) * 10000) / 100 : 0;
+
+    return { grossRentDue, voidLoss, occupancyRate, mortgagePayments, totalDebt, valuation, equity, ltv };
+  }, [roomSuggestions, loanSuggestions, properties]);
 
   const getExistingSnapshot = useCallback((propertyId: string) => {
     return existingSnapshots?.find(s => s.property_id === propertyId);
@@ -194,7 +201,7 @@ interface EntryProps {
   property: PropertyWithEntity;
   month: string;
   existing: any;
-  suggestions: { grossRentDue: number; voidLoss: number; occupancyRate: number; mortgagePayments: number };
+  suggestions: { grossRentDue: number; voidLoss: number; occupancyRate: number; mortgagePayments: number; totalDebt: number; valuation: number; equity: number; ltv: number };
   isExpanded: boolean;
   onToggle: () => void;
   isLocked: boolean;
@@ -218,7 +225,13 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
     professional_fees: existing?.professional_fees ?? 0,
     other_costs: existing?.other_costs ?? 0,
     notes: existing?.notes ?? '',
+    // Balance sheet
+    valuation_at_snapshot: existing?.valuation_at_snapshot ?? suggestions.valuation,
+    debt_at_snapshot: existing?.debt_at_snapshot ?? suggestions.totalDebt,
   }));
+
+  const equityAtSnapshot = (values.valuation_at_snapshot || 0) - (values.debt_at_snapshot || 0);
+  const ltvAtSnapshot = values.valuation_at_snapshot > 0 ? Math.round(((values.debt_at_snapshot || 0) / values.valuation_at_snapshot) * 10000) / 100 : 0;
 
   const totalCosts = values.management_fees + values.maintenance_costs + values.insurance_costs +
     values.utilities + values.council_tax + values.licensing_costs + values.professional_fees + values.other_costs;
@@ -232,6 +245,9 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
       snapshot_month: month,
       ...values,
       occupancy_rate: suggestions.occupancyRate,
+      // Balance sheet derived fields
+      equity_at_snapshot: equityAtSnapshot,
+      ltv_at_snapshot: ltvAtSnapshot,
       is_locked: false,
       locked_at: null,
       locked_by: null,
@@ -285,6 +301,22 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
                 <NumberField label="Professional Fees" value={values.professional_fees} onChange={v => setField('professional_fees', v)} disabled={isLocked} />
                 <NumberField label="Other Costs" value={values.other_costs} onChange={v => setField('other_costs', v)} disabled={isLocked} />
               </div>
+              {/* Balance Sheet */}
+              <div className="space-y-3 md:col-span-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Balance Sheet (Point-in-Time)</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <NumberField label="Valuation" value={values.valuation_at_snapshot} onChange={v => setField('valuation_at_snapshot', v)} disabled={isLocked} />
+                  <NumberField label="Total Debt" value={values.debt_at_snapshot} onChange={v => setField('debt_at_snapshot', v)} disabled={isLocked} />
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs w-32 shrink-0">Equity</Label>
+                    <span className={cn('text-sm font-bold', equityAtSnapshot >= 0 ? 'text-success' : 'text-destructive')}>{formatGBPDecimal(equityAtSnapshot)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs w-32 shrink-0">LTV</Label>
+                    <span className={cn('text-sm font-bold', ltvAtSnapshot > 75 ? 'text-destructive' : 'text-foreground')}>{ltvAtSnapshot.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Calculated fields */}
@@ -295,11 +327,11 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">NOI</span>
-                <p className={cn('font-bold', noi >= 0 ? 'text-emerald-600' : 'text-red-600')}>{formatGBPDecimal(noi)}</p>
+                <p className={cn('font-bold', noi >= 0 ? 'text-success' : 'text-destructive')}>{formatGBPDecimal(noi)}</p>
               </div>
               <div>
                 <span className="text-xs text-muted-foreground">Cash Flow</span>
-                <p className={cn('font-bold', cashflow >= 0 ? 'text-emerald-600' : 'text-red-600')}>{formatGBPDecimal(cashflow)}</p>
+                <p className={cn('font-bold', cashflow >= 0 ? 'text-success' : 'text-destructive')}>{formatGBPDecimal(cashflow)}</p>
               </div>
             </div>
 
@@ -387,6 +419,11 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
         professional_fees: 0,
         other_costs: r.other_costs,
         occupancy_rate: suggestions.occupancyRate,
+        // Balance sheet auto-populated from current property/loan data
+        valuation_at_snapshot: suggestions.valuation || null,
+        debt_at_snapshot: suggestions.totalDebt || null,
+        equity_at_snapshot: (suggestions.valuation || 0) - (suggestions.totalDebt || 0) || null,
+        ltv_at_snapshot: suggestions.valuation > 0 ? Math.round((suggestions.totalDebt / suggestions.valuation) * 10000) / 100 : null,
         notes: null,
         is_locked: false,
         locked_at: null,
