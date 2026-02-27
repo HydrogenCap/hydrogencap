@@ -1,13 +1,16 @@
-import { useMemo } from 'react';
-import { Building2, TrendingUp, Percent, PoundSterling, Banknote, Wallet } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Building2, TrendingUp, Percent, PoundSterling, Banknote, Wallet, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { PortalLayout } from '@/components/portal/PortalLayout';
 import { useShareholderSession } from '@/hooks/useShareholderSession';
 import { useShareholderPortfolioData } from '@/hooks/useShareholderPortfolioData';
+import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
+import { useHydrogenKPIs } from '@/hooks/useHydrogenKPIs';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP, formatPercent } from '@/lib/calculations';
+import { cn } from '@/lib/utils';
 
 // Helper to calculate property financials
 interface PortalProperty {
@@ -52,6 +55,11 @@ function getPropertyFinancials(property: PortalProperty) {
 export default function PortalDashboard() {
   const { canViewFinancials } = useShareholderSession();
   const { properties, isLoading } = useShareholderPortfolioData();
+  const [kpiView, setKpiView] = useState<'gross' | 'hydrogen'>('gross');
+
+  // Cast portal properties to work with portfolio attribution hook
+  const { data: attribution } = usePortfolioAttribution(properties as any);
+  const hydrogenKPIs = useHydrogenKPIs(attribution);
 
   const stats = useMemo(() => {
     if (!properties?.length) return null;
@@ -142,6 +150,32 @@ export default function PortalDashboard() {
           </p>
         </div>
 
+        {/* KPI View Toggle */}
+        {canViewFinancials && hydrogenKPIs.isAvailable && (
+          <div className="inline-flex items-center rounded-lg bg-muted/50 p-1 border border-border/50">
+            <button
+              className={cn(
+                'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                kpiView === 'gross' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+              onClick={() => setKpiView('gross')}
+            >
+              <Building2 className="h-3.5 w-3.5 inline mr-1.5" />
+              Gross Portfolio
+            </button>
+            <button
+              className={cn(
+                'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                kpiView === 'hydrogen' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+              onClick={() => setKpiView('hydrogen')}
+            >
+              <Users className="h-3.5 w-3.5 inline mr-1.5" />
+              Hydrogen Attributable
+            </button>
+          </div>
+        )}
+
         {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -150,7 +184,9 @@ export default function PortalDashboard() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.propertyCount || 0}</div>
+              <div className="text-2xl font-bold">
+                {kpiView === 'hydrogen' ? hydrogenKPIs.propertyCount : (stats?.propertyCount || 0)}
+              </div>
               <p className="text-xs text-muted-foreground">Total assets</p>
             </CardContent>
           </Card>
@@ -159,25 +195,37 @@ export default function PortalDashboard() {
             <>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Portfolio Value</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {kpiView === 'hydrogen' ? 'Hydrogen Equity' : 'Portfolio Value'}
+                  </CardTitle>
                   <PoundSterling className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {formatGBP(stats?.totalValue || 0)}
+                    {kpiView === 'hydrogen'
+                      ? formatGBP(hydrogenKPIs.totalEquity)
+                      : formatGBP(stats?.totalValue || 0)}
                   </div>
-                  <p className="text-xs text-muted-foreground">Current valuation</p>
+                  <p className="text-xs text-muted-foreground">
+                    {kpiView === 'hydrogen'
+                      ? `Value: ${formatGBP(hydrogenKPIs.totalValue)}`
+                      : 'Current valuation'}
+                  </p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Equity</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {kpiView === 'hydrogen' ? 'Attributed Equity' : 'Total Equity'}
+                  </CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-primary">
-                    {formatGBP(stats?.totalEquity || 0)}
+                    {kpiView === 'hydrogen'
+                      ? formatGBP(hydrogenKPIs.totalEquity)
+                      : formatGBP(stats?.totalEquity || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">Value minus debt</p>
                 </CardContent>
@@ -190,9 +238,11 @@ export default function PortalDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {formatPercent(stats?.avgLtv || 0)}
+                    {formatPercent(kpiView === 'hydrogen' ? hydrogenKPIs.averageLTV : (stats?.avgLtv || 0))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Loan to value</p>
+                  <p className="text-xs text-muted-foreground">
+                    Debt: {formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalDebt : (stats?.totalDebt || 0))}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -203,7 +253,7 @@ export default function PortalDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-success">
-                  {formatGBP(stats?.totalAnnualRent || 0)}
+                  {formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalRent : (stats?.totalAnnualRent || 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">Gross rental income</p>
               </CardContent>
@@ -215,8 +265,11 @@ export default function PortalDashboard() {
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${(stats?.totalMonthlyCashflow || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {formatGBP(stats?.totalMonthlyCashflow || 0)}
+                <div className={`text-2xl font-bold ${
+                  (kpiView === 'hydrogen' ? hydrogenKPIs.monthlyCashflow : (stats?.totalMonthlyCashflow || 0)) >= 0
+                    ? 'text-success' : 'text-destructive'
+                }`}>
+                  {formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.monthlyCashflow : (stats?.totalMonthlyCashflow || 0))}
                 </div>
                 <p className="text-xs text-muted-foreground">Net after debt service</p>
               </CardContent>
