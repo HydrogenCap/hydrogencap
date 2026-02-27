@@ -176,7 +176,7 @@ export default function MigrationDashboard() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Run Full Migration?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will migrate all V1 data to V2 tables in order: Companies → Properties → Rooms → Tenants → Tenancies → Compliance. V1 data will not be deleted.
+                    This will migrate all V1 data to V2 tables in order: Companies → Properties → Rooms → Tenants → Tenancies → Compliance → Loans → Financials → Contractors. V1 data will not be deleted.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
