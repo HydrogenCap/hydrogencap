@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useTenancyLedger, useRentSchedule, type LedgerEntry, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
+import { useReconciledScheduleIds } from '@/hooks/useReconciliation';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import BulkMarkPaidDialog from '@/components/rent/BulkMarkPaidDialog';
 
@@ -24,6 +25,7 @@ interface InlineTenancyLedgerProps {
 export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerProps) {
   const { data: ledger, isLoading } = useTenancyLedger(tenancyId);
   const { data: scheduleItems } = useRentSchedule({ tenancyId });
+  const { data: reconciledIds } = useReconciledScheduleIds();
   const [paymentItem, setPaymentItem] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [markPaidMode, setMarkPaidMode] = useState<'on_time' | 'late' | null>(null);
@@ -158,6 +160,7 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
                       entry={entry}
                       isSelected={!!entry.rent_schedule_id && selectedIds.has(entry.rent_schedule_id)}
                       isSelectable={entry.type === 'rent' && entry.status !== 'paid' && !!entry.rent_schedule_id}
+                      isReconciled={!!entry.rent_schedule_id && !!reconciledIds?.has(entry.rent_schedule_id)}
                       onToggle={() => entry.rent_schedule_id && toggleSelection(entry.rent_schedule_id)}
                     />
                   ))}
@@ -191,11 +194,13 @@ function InlineLedgerRow({
   entry,
   isSelected,
   isSelectable,
+  isReconciled,
   onToggle,
 }: {
   entry: LedgerEntry;
   isSelected: boolean;
   isSelectable: boolean;
+  isReconciled: boolean;
   onToggle: () => void;
 }) {
   const isPayment = entry.type === 'payment';
@@ -215,7 +220,16 @@ function InlineLedgerRow({
         {format(new Date(entry.date), 'dd MMM yyyy')}
       </TableCell>
       <TableCell className="py-1.5">{entry.description}</TableCell>
-      <TableCell className="py-1.5">{getStatusBadge(entry)}</TableCell>
+      <TableCell className="py-1.5">
+        <div className="flex items-center gap-1">
+          {getStatusBadge(entry)}
+          {isReconciled && (
+            <Badge variant="outline" className="text-[10px] py-0 border-green-500/40 text-green-600 dark:text-green-400">
+              ✓ Reconciled
+            </Badge>
+          )}
+        </div>
+      </TableCell>
       <TableCell className={cn('text-right py-1.5 tabular-nums font-medium', isPayment ? 'text-green-600' : '')}>
         {isPayment ? `−${fmt(Math.abs(entry.amount))}` : fmt(entry.amount)}
       </TableCell>
