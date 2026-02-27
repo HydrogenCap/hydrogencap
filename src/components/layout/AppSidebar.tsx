@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
+  ArrowRight,
   LayoutDashboard,
   Building2,
   Briefcase,
@@ -54,27 +55,23 @@ interface NavItem {
 
 const portfolioItems: NavItem[] = [
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-  { title: 'Properties', icon: Building2, href: '/properties' },
-  { title: 'Properties v2', icon: Building2, href: '/properties-v2' },
+  { title: 'Properties', icon: Building2, href: '/properties-v2' },
   { title: 'Pipeline', icon: Construction, href: '/pipeline' },
   { title: 'Entities', icon: Briefcase, href: '/entities' },
-  { title: 'Companies', icon: Briefcase, href: '/companies' },
   { title: 'Ownership', icon: Users, href: '/ownership' },
   { title: 'Documents', icon: FolderOpen, href: '/documents' },
 ];
 
 const operationsItems: NavItem[] = [
   { title: 'Actions', icon: AlertTriangle, href: '/actions', badgeType: 'actions' },
-  { title: 'Compliance', icon: Shield, href: '/compliance', badgeType: 'compliance' },
-  { title: 'Compliance v2', icon: Shield, href: '/compliance-v2' },
+  { title: 'Compliance', icon: Shield, href: '/compliance-v2', badgeType: 'compliance' },
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Lending', icon: PoundSterling, href: '/lending' },
   { title: 'Financials', icon: TrendingUp, href: '/financials' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
-  { title: 'Tenants', icon: Users, href: '/tenants' },
-  { title: 'Tenants v2', icon: Users, href: '/tenants-v2' },
+  { title: 'Tenants', icon: Users, href: '/tenants-v2' },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
 ];
@@ -88,6 +85,7 @@ const intelligenceItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   { title: 'Audit Log', icon: ScrollText, href: '/audit-log' },
+  { title: 'Migration', icon: ArrowRight, href: '/migrate' },
   { title: 'Import', icon: Upload, href: '/import' },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },

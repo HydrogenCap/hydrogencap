@@ -6912,8 +6912,21 @@ export type Database = {
         Returns: undefined
       }
       log_document_view: { Args: { p_document_id: string }; Returns: undefined }
+      migrate_companies_to_entities: {
+        Args: { p_org_id: string }
+        Returns: Json
+      }
+      migrate_compliance_to_v2: { Args: { p_org_id: string }; Returns: Json }
+      migrate_properties_to_v2: { Args: { p_org_id: string }; Returns: Json }
+      migrate_rooms_to_v2: { Args: { p_org_id: string }; Returns: Json }
+      migrate_tenancies_to_agreements: {
+        Args: { p_org_id: string }
+        Returns: Json
+      }
+      migrate_tenants_to_v2: { Args: { p_org_id: string }; Returns: Json }
       refresh_compliance_statuses_v2: { Args: never; Returns: undefined }
       restore_document: { Args: { p_document_id: string }; Returns: boolean }
+      run_v1_to_v2_migration: { Args: { p_org_id: string }; Returns: Json }
       schedule_compliance_reminders: {
         Args: {
           p_compliance_item_id: string
