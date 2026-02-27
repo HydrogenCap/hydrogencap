@@ -13,6 +13,7 @@ import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSe
 import { PropertyLoansSection } from '@/components/lending/PropertyLoansSection';
 import { PropertyComplianceSection } from '@/components/compliance-v2/PropertyComplianceSection';
 import { PropertyFinancialSection } from '@/components/financials/PropertyFinancialSection';
+import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -220,6 +221,13 @@ export default function PropertyDetailV2() {
             ) : (
               <p className={property.notes ? 'text-foreground' : 'text-muted-foreground'}>{property.notes || 'No notes'}</p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Change History */}
+        <Card>
+          <CardContent className="pt-4">
+            <InlineAuditHistory tableName="properties_v2" recordId={id} title="Property Change History" />
           </CardContent>
         </Card>
       </div>

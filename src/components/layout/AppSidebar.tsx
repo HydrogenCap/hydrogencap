@@ -22,6 +22,7 @@ import {
   PoundSterling,
   Wrench,
   Upload,
+  ScrollText,
 } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
@@ -86,6 +87,7 @@ const intelligenceItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
+  { title: 'Audit Log', icon: ScrollText, href: '/audit-log' },
   { title: 'Import', icon: Upload, href: '/import' },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },

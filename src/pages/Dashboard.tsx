@@ -36,6 +36,7 @@ import { ActionsRequiredWidget } from '@/components/dashboard/ActionsRequiredWid
 import { RentCollectionWidget } from '@/components/dashboard/RentCollectionWidget';
 import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
 import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
+import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { DashboardShareholdersTab, prepareShareholderData } from '@/components/dashboard/DashboardShareholdersTab';
 import { LenderExposureChart, computeLenderData } from '@/components/dashboard/LenderExposureChart';
 import {
@@ -501,6 +502,11 @@ function DashboardPage() {
                     <TenancyPipelineWidget />
                   </ErrorBoundary>
                 </div>
+
+                {/* Recent Activity Feed */}
+                <ErrorBoundary>
+                  <RecentActivityWidget />
+                </ErrorBoundary>
               </TabsContent>
 
               {/* HEALTH TAB */}
