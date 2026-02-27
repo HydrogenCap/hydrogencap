@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUploadZone } from '@/components/inbox/DocumentUploadZone';
 import { ComplianceReviewCard } from '@/components/inbox/ComplianceReviewCard';
+import { AIProcessingDashboard } from '@/components/inbox/AIProcessingDashboard';
+import { AISettingsPanel } from '@/components/inbox/AISettingsPanel';
 import { useInboxDocuments } from '@/hooks/useDocuments';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
@@ -170,6 +172,14 @@ export default function Inbox() {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="dashboard" className="gap-2">
+              <Brain className="h-3.5 w-3.5" />
+              AI Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings2 className="h-3.5 w-3.5" />
+              Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-3">
@@ -227,6 +237,13 @@ export default function Inbox() {
                 <ComplianceReviewCard key={doc.id} document={doc} />
               ))
             )}
+          </TabsContent>
+          <TabsContent value="dashboard">
+            <AIProcessingDashboard />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <AISettingsPanel />
           </TabsContent>
         </Tabs>
       </div>
