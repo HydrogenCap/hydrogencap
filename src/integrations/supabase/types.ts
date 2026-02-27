@@ -1706,6 +1706,7 @@ export type Database = {
           source: string | null
           status: string
           updated_at: string
+          work_order_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -1747,6 +1748,7 @@ export type Database = {
           source?: string | null
           status?: string
           updated_at?: string
+          work_order_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -1788,6 +1790,7 @@ export type Database = {
           source?: string | null
           status?: string
           updated_at?: string
+          work_order_id?: string | null
         }
         Relationships: [
           {
@@ -1838,6 +1841,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8231,6 +8241,229 @@ export type Database = {
           },
         ]
       }
+      work_order_costs: {
+        Row: {
+          amount: number
+          category: string
+          contractor_job_id: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_reference: string | null
+          is_estimated: boolean
+          org_id: string
+          receipt_url: string | null
+          vat_amount: number | null
+          work_order_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          contractor_job_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          invoice_reference?: string | null
+          is_estimated?: boolean
+          org_id: string
+          receipt_url?: string | null
+          vat_amount?: number | null
+          work_order_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          contractor_job_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_reference?: string | null
+          is_estimated?: boolean
+          org_id?: string
+          receipt_url?: string | null
+          vat_amount?: number | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_costs_contractor_job_id_fkey"
+            columns: ["contractor_job_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_costs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_costs_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          actual_completion_date: string | null
+          actual_cost: number | null
+          actual_start_date: string | null
+          approved_at: string | null
+          approved_budget: number | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          description: string | null
+          entity_id: string
+          estimated_cost: number | null
+          id: string
+          internal_notes: string | null
+          invoice_amount: number | null
+          invoice_date: string | null
+          invoice_reference: string | null
+          maintenance_request_id: string | null
+          org_id: string
+          payment_status: string | null
+          priority: string
+          property_id: string | null
+          raised_by: string | null
+          rejected_reason: string | null
+          room_id: string | null
+          status: string
+          target_completion_date: string | null
+          target_start_date: string | null
+          title: string
+          updated_at: string
+          wo_number: string
+        }
+        Insert: {
+          actual_completion_date?: string | null
+          actual_cost?: number | null
+          actual_start_date?: string | null
+          approved_at?: string | null
+          approved_budget?: number | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          entity_id: string
+          estimated_cost?: number | null
+          id?: string
+          internal_notes?: string | null
+          invoice_amount?: number | null
+          invoice_date?: string | null
+          invoice_reference?: string | null
+          maintenance_request_id?: string | null
+          org_id: string
+          payment_status?: string | null
+          priority?: string
+          property_id?: string | null
+          raised_by?: string | null
+          rejected_reason?: string | null
+          room_id?: string | null
+          status?: string
+          target_completion_date?: string | null
+          target_start_date?: string | null
+          title: string
+          updated_at?: string
+          wo_number: string
+        }
+        Update: {
+          actual_completion_date?: string | null
+          actual_cost?: number | null
+          actual_start_date?: string | null
+          approved_at?: string | null
+          approved_budget?: number | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string
+          estimated_cost?: number | null
+          id?: string
+          internal_notes?: string | null
+          invoice_amount?: number | null
+          invoice_date?: string | null
+          invoice_reference?: string | null
+          maintenance_request_id?: string | null
+          org_id?: string
+          payment_status?: string | null
+          priority?: string
+          property_id?: string | null
+          raised_by?: string | null
+          rejected_reason?: string | null
+          room_id?: string | null
+          status?: string
+          target_completion_date?: string | null
+          target_start_date?: string | null
+          title?: string
+          updated_at?: string
+          wo_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "work_orders_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_overview"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "work_orders_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "work_orders_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       works_orders: {
         Row: {
           after_photo_urls: string[] | null
@@ -9280,6 +9513,10 @@ export type Database = {
       generate_tenancy_compliance_items: {
         Args: { tenancy_row: Database["public"]["Tables"]["tenancies"]["Row"] }
         Returns: undefined
+      }
+      generate_wo_number: {
+        Args: { p_entity_id: string; p_org_id: string }
+        Returns: string
       }
       generate_works_order_number: { Args: never; Returns: string }
       get_tenant_org_id: { Args: never; Returns: string }

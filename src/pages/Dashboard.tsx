@@ -41,6 +41,7 @@ import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
 import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { MaintenanceWidget } from '@/components/dashboard/MaintenanceWidget';
+import { WorkOrdersWidget } from '@/components/dashboard/WorkOrdersWidget';
 import { CHFilingAlertsWidget } from '@/components/dashboard/CHFilingAlertsWidget';
 import { DashboardShareholdersTab } from '@/components/dashboard/DashboardShareholdersTab';
 import { LenderExposureChart, computeLenderData } from '@/components/dashboard/LenderExposureChart';
@@ -560,6 +561,7 @@ function DashboardPage() {
                 </div>
 
                 <ErrorBoundary><MaintenanceWidget /></ErrorBoundary>
+                <ErrorBoundary><WorkOrdersWidget /></ErrorBoundary>
                 <ErrorBoundary><RecentActivityWidget /></ErrorBoundary>
               </TabsContent>
 
