@@ -1,10 +1,11 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, LayoutDashboard, Shield, LogOut, User } from 'lucide-react';
+import { Building2, LayoutDashboard, Shield, LogOut, User, Wallet, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShareholderSession } from '@/hooks/useShareholderSession';
+import { usePortalInvestorData } from '@/hooks/usePortalInvestorData';
 import logo from '@/assets/logo.png';
 
 interface PortalLayoutProps {
@@ -15,6 +16,8 @@ const navItems = [
   { path: '/portal', icon: LayoutDashboard, label: 'Overview', permission: null },
   { path: '/portal/properties', icon: Building2, label: 'Properties', permission: null },
   { path: '/portal/compliance', icon: Shield, label: 'Compliance', permission: 'can_view_compliance' },
+  { path: '/portal/investments', icon: Wallet, label: 'Investments', permission: 'investor_only' },
+  { path: '/portal/statements', icon: FileText, label: 'Statements', permission: 'investor_only' },
 ];
 
 export function PortalLayout({ children }: PortalLayoutProps) {
@@ -22,6 +25,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { access, canViewCompliance } = useShareholderSession();
+  const { isInvestorUser } = usePortalInvestorData();
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,6 +34,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
 
   const filteredNav = navItems.filter((item) => {
     if (item.permission === 'can_view_compliance') return canViewCompliance;
+    if (item.permission === 'investor_only') return isInvestorUser;
     return true;
   });
 

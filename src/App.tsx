@@ -74,11 +74,13 @@ const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 
-// Portal pages (shareholder)
+// Portal pages (shareholder + investor)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
 const PortalProperties = lazy(() => import("./pages/portal/PortalProperties"));
 const PortalCompliance = lazy(() => import("./pages/portal/PortalCompliance"));
+const PortalInvestments = lazy(() => import("./pages/portal/PortalInvestments"));
+const PortalStatements = lazy(() => import("./pages/portal/PortalStatements"));
 
 // Tenant portal pages
 const TenantAcceptInvite = lazy(() => import("./pages/tenant-portal/TenantAcceptInvite"));
@@ -538,6 +540,22 @@ const App = () => (
               element={
                 <PortalProtectedRoute>
                   <PortalCompliance />
+                </PortalProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/investments"
+              element={
+                <PortalProtectedRoute>
+                  <PortalInvestments />
+                </PortalProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/statements"
+              element={
+                <PortalProtectedRoute>
+                  <PortalStatements />
                 </PortalProtectedRoute>
               }
             />
