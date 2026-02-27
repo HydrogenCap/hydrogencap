@@ -1,240 +1,333 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, CheckCircle2, Link2, Loader2, Zap } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useUnreconciledTransactions } from '@/hooks/useBankTransactions';
-import { useRentSchedule, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
-import { useReconcileTransaction, useBulkReconcile } from '@/hooks/useBankTransactions';
-import { findMatches, getConfidenceLabel, type ReconciliationMatch } from '@/lib/reconciliationMatcher';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Upload, Wand2, Check, X, Ban, ArrowLeft } from 'lucide-react';
+import { formatGBP } from '@/lib/calculations';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
-const fmt = (v: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
+import { useBankAccounts } from '@/hooks/useBankAccounts';
+import {
+  useImportStatement,
+  useUnmatchedTransactions,
+  useMatchedTransactions,
+  useRunAutoMatch,
+  useConfirmMatch,
+  useBulkConfirmMatches,
+  useRejectMatch,
+  useExcludeTransaction,
+  useReconciliationSummary,
+} from '@/hooks/useReconciliation';
+import { confidenceLabel, confidenceBadgeClass } from '@/lib/reconciliationEngine';
+
+// ─── Import Section ──────────────────────────────────────────────────
+
+function ImportSection({ bankAccountId }: { bankAccountId: string }) {
+  const importStatement = useImportStatement();
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    importStatement.mutate({ csvText: text, bankAccountId });
+    e.target.value = '';
+  }, [bankAccountId, importStatement]);
+
+  return (
+    <label className="cursor-pointer">
+      <input type="file" accept=".csv,.ofx" className="hidden" onChange={handleFileUpload} />
+      <div className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed",
+        "border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors",
+        "text-sm font-medium text-primary"
+      )}>
+        <Upload className="h-4 w-4" />
+        Import Statement
+      </div>
+    </label>
+  );
+}
+
+// ─── Transaction Row ─────────────────────────────────────────────────
+
+function TransactionRow({
+  txn,
+  confidence,
+  onConfirm,
+  onReject,
+  onExclude,
+  isConfirming,
+}: {
+  txn: any;
+  confidence?: number;
+  onConfirm?: () => void;
+  onReject?: () => void;
+  onExclude?: () => void;
+  isConfirming?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{formatGBP(txn.amount)}</span>
+          <span className="text-xs text-muted-foreground">
+            {format(new Date(txn.transaction_date), 'dd MMM yyyy')}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">{txn.description}</p>
+        {txn.reference && (
+          <p className="text-xs text-muted-foreground/70 truncate">Ref: {txn.reference}</p>
+        )}
+        {confidence !== undefined && (
+          <Badge className={cn('text-[10px] mt-1', confidenceBadgeClass(confidence))}>
+            {confidenceLabel(confidence)} ({confidence}%)
+          </Badge>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0">
+        {onConfirm && (
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-green-600"
+            onClick={onConfirm} disabled={isConfirming}>
+            <Check className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {onReject && (
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive"
+            onClick={onReject}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {onExclude && (
+          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground"
+            onClick={onExclude} title="Not rent">
+            <Ban className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────
 
 export default function Reconciliation() {
   const navigate = useNavigate();
-  const { data: transactions, isLoading: txnLoading } = useUnreconciledTransactions();
-  const { data: schedule, isLoading: schedLoading } = useRentSchedule();
-  const reconcile = useReconcileTransaction();
-  const bulkReconcile = useBulkReconcile();
+  const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>();
 
-  const [confirmedIds, setConfirmedIds] = useState<Set<string>>(new Set());
-  const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
+  const { data: accounts } = useBankAccounts();
+  const { data: unmatched } = useUnmatchedTransactions(selectedAccountId);
+  const { data: matched } = useMatchedTransactions(selectedAccountId);
+  const { data: summary } = useReconciliationSummary(selectedAccountId);
 
-  const matches = useMemo(() => {
-    if (!transactions || !schedule) return [];
-    return findMatches(transactions, schedule);
-  }, [transactions, schedule]);
+  const autoMatch = useRunAutoMatch();
+  const confirmMatch = useConfirmMatch();
+  const bulkConfirm = useBulkConfirmMatches();
+  const rejectMatch = useRejectMatch();
+  const excludeTxn = useExcludeTransaction();
 
-  const visibleMatches = matches.filter(
-    m => !confirmedIds.has(m.transaction.id) && !rejectedIds.has(m.transaction.id)
-  );
+  // Split unmatched into suggested vs truly unmatched
+  const suggested = useMemo(() =>
+    (unmatched || []).filter((t: any) => t.status === 'suggested'),
+  [unmatched]);
 
-  const highConfidence = visibleMatches.filter(m => m.confidence >= 0.85);
-  const unmatchedTxns = useMemo(() => {
-    if (!transactions) return [];
-    const matchedIds = new Set(matches.map(m => m.transaction.id));
-    return transactions.filter(t => !matchedIds.has(t.id) && !confirmedIds.has(t.id));
-  }, [transactions, matches, confirmedIds]);
+  const trulyUnmatched = useMemo(() =>
+    (unmatched || []).filter((t: any) => t.status === 'unmatched'),
+  [unmatched]);
 
-  const handleConfirm = (match: ReconciliationMatch) => {
-    reconcile.mutate({
-      transactionId: match.transaction.id,
-      rentScheduleId: match.scheduleItem.id,
-      amount: match.transaction.amount,
-      paymentDate: match.transaction.transaction_date,
-      tenancyId: match.scheduleItem.tenancy_id,
-      confidence: match.confidence,
-    }, {
-      onSuccess: () => setConfirmedIds(prev => new Set(prev).add(match.transaction.id)),
-    });
-  };
-
-  const handleReject = (txnId: string) => {
-    setRejectedIds(prev => new Set(prev).add(txnId));
-  };
-
-  const handleBulkConfirm = () => {
-    const items = highConfidence.map(m => ({
-      transactionId: m.transaction.id,
-      rentScheduleId: m.scheduleItem.id,
-      amount: m.transaction.amount,
-      paymentDate: m.transaction.transaction_date,
-      tenancyId: m.scheduleItem.tenancy_id,
-      confidence: m.confidence,
-    }));
-    bulkReconcile.mutate(items, {
-      onSuccess: () => {
-        const ids = new Set(confirmedIds);
-        highConfidence.forEach(m => ids.add(m.transaction.id));
-        setConfirmedIds(ids);
-      },
-    });
-  };
-
-  const isLoading = txnLoading || schedLoading;
+  // Auto-select first account
+  const effectiveAccountId = selectedAccountId || accounts?.[0]?.id;
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/rent')}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Link2 className="h-6 w-6" />
-              Reconciliation
-            </h1>
-            <p className="text-muted-foreground">Match bank transactions to rent entries</p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/rent')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Rent Reconciliation</h1>
+              <p className="text-muted-foreground">Match bank statement entries to rent payments</p>
+            </div>
           </div>
-        </div>
-
-        {/* Summary */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Unreconciled Transactions</p>
-              <p className="text-2xl font-bold">{transactions?.length ?? 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">Suggested Matches</p>
-              <p className="text-2xl font-bold">{visibleMatches.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">High Confidence</p>
-              <p className="text-2xl font-bold text-green-600">{highConfidence.length}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bulk confirm */}
-        {highConfidence.length > 0 && (
-          <Button onClick={handleBulkConfirm} disabled={bulkReconcile.isPending}>
-            {bulkReconcile.isPending ? (
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-            ) : (
-              <Zap className="h-4 w-4 mr-1" />
+          <div className="flex items-center gap-3">
+            {effectiveAccountId && (
+              <ImportSection bankAccountId={effectiveAccountId} />
             )}
-            Confirm All High-Confidence Matches ({highConfidence.length})
+          </div>
+        </div>
+
+        {/* Bank Account Selector + Auto-Match */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <Select value={effectiveAccountId} onValueChange={setSelectedAccountId}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Select bank account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts?.map(a => (
+                <SelectItem key={a.id} value={a.id}>{a.account_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="outline"
+            onClick={() => autoMatch.mutate(effectiveAccountId)}
+            disabled={autoMatch.isPending}
+            className="gap-2"
+          >
+            <Wand2 className="h-4 w-4" />
+            Auto-Match
           </Button>
-        )}
 
-        {/* Matches */}
-        {visibleMatches.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Suggested Matches</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="text-xs">
-                    <TableHead>Bank Transaction</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Rent Entry</TableHead>
-                    <TableHead>Confidence</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visibleMatches.map(match => {
-                    const { label, color } = getConfidenceLabel(match.confidence);
-                    return (
-                      <TableRow key={match.transaction.id}>
-                        <TableCell>
-                          <div className="text-sm font-medium">{match.transaction.description}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {format(new Date(match.transaction.transaction_date), 'dd MMM yyyy')}
-                            {match.transaction.reference && ` · ${match.transaction.reference}`}
-                          </div>
-                        </TableCell>
-                        <TableCell className="tabular-nums font-medium text-green-600">
-                          {fmt(match.transaction.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {match.scheduleItem.tenancy.tenant.first_name} {match.scheduleItem.tenancy.tenant.last_name}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {match.scheduleItem.tenancy.room.room_name} · {fmt(match.scheduleItem.amount_outstanding)} outstanding
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={cn('text-xs', color)}>{label}</Badge>
-                          <p className="text-xs text-muted-foreground mt-1">{match.reason}</p>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button size="sm" onClick={() => handleConfirm(match)} disabled={reconcile.isPending}>
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                              Confirm
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleReject(match.transaction.id)}>
-                              Reject
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
+          {suggested.length > 0 && (
+            <Button
+              variant="default"
+              onClick={() => {
+                const pairs = suggested
+                  .filter((t: any) => t.matched_schedule_id)
+                  .map((t: any) => ({ transactionId: t.id, scheduleId: t.matched_schedule_id! }));
+                bulkConfirm.mutate(pairs);
+              }}
+              disabled={bulkConfirm.isPending}
+              className="gap-2"
+            >
+              <Check className="h-4 w-4" />
+              Confirm All ({suggested.length})
+            </Button>
+          )}
+        </div>
 
-        {/* Unmatched */}
-        {unmatchedTxns.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Unmatched Transactions ({unmatchedTxns.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="text-xs">
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {unmatchedTxns.map(txn => (
-                    <TableRow key={txn.id}>
-                      <TableCell className="tabular-nums text-sm">
-                        {format(new Date(txn.transaction_date), 'dd MMM yyyy')}
-                      </TableCell>
-                      <TableCell className="text-sm">{txn.description}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{txn.reference || '—'}</TableCell>
-                      <TableCell className="text-right tabular-nums font-medium text-green-600">
-                        {fmt(txn.amount)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {!isLoading && visibleMatches.length === 0 && unmatchedTxns.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-green-500" />
-            <p className="font-medium">All caught up!</p>
-            <p className="text-sm">No unreconciled transactions. Import a bank statement to get started.</p>
+        {/* Summary Cards */}
+        {summary && (
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs text-muted-foreground uppercase">Unmatched</p>
+                <p className="text-xl font-bold">{summary.unmatched.count}</p>
+                <p className="text-xs text-muted-foreground">{formatGBP(summary.unmatched.total)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-500/30">
+              <CardContent className="pt-4">
+                <p className="text-xs text-amber-600 dark:text-amber-400 uppercase">Suggested</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.suggested.count}</p>
+                <p className="text-xs text-muted-foreground">{formatGBP(summary.suggested.total)}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-green-500/30">
+              <CardContent className="pt-4">
+                <p className="text-xs text-green-600 dark:text-green-400 uppercase">Matched</p>
+                <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.matched.count}</p>
+                <p className="text-xs text-muted-foreground">{formatGBP(summary.matched.total)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4">
+                <p className="text-xs text-muted-foreground uppercase">Excluded / Non-Rent</p>
+                <p className="text-xl font-bold">{summary.excluded.count + summary.non_rent.count}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatGBP(summary.excluded.total + summary.non_rent.total)}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         )}
+
+        {/* Three-column layout */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Column 1: Unmatched */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                Unmatched
+                {trulyUnmatched.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">{trulyUnmatched.length}</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+              {trulyUnmatched.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  All transactions matched or excluded
+                </p>
+              ) : (
+                trulyUnmatched.map((txn: any) => (
+                  <TransactionRow
+                    key={txn.id}
+                    txn={txn}
+                    onExclude={() => excludeTxn.mutate({ id: txn.id, reason: 'non_rent' })}
+                  />
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Column 2: Suggested Matches */}
+          <Card className="border-amber-500/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                Suggested Matches
+                {suggested.length > 0 && (
+                  <Badge variant="outline" className="ml-2 text-amber-600 dark:text-amber-400 border-amber-500/40">
+                    {suggested.length}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+              {suggested.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Run Auto-Match to find suggestions
+                </p>
+              ) : (
+                suggested.map((txn: any) => (
+                  <TransactionRow
+                    key={txn.id}
+                    txn={txn}
+                    onConfirm={() => confirmMatch.mutate({
+                      transactionId: txn.id,
+                      scheduleId: txn.matched_schedule_id!,
+                    })}
+                    onReject={() => rejectMatch.mutate(txn.id)}
+                    isConfirming={confirmMatch.isPending}
+                  />
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Column 3: Confirmed */}
+          <Card className="border-green-500/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                Confirmed
+                {matched && matched.length > 0 && (
+                  <Badge variant="outline" className="ml-2 text-green-600 dark:text-green-400 border-green-500/40">
+                    {matched.length}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+              {(!matched || matched.length === 0) ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  No confirmed matches yet
+                </p>
+              ) : (
+                matched.slice(0, 50).map((txn: any) => (
+                  <TransactionRow key={txn.id} txn={txn} />
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );
