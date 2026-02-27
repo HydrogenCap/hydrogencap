@@ -97,3 +97,6 @@ verify_jwt = false
 
 [functions.freeagent-fetch-categories]
 verify_jwt = false
+
+[functions.ai-gap-fill]
+verify_jwt = false

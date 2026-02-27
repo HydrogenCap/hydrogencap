@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   usePropertyGaps, useRoomGaps, useTenantGaps, useTenancyGaps,
@@ -16,6 +16,7 @@ import {
 import { PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { ROOM_TYPES } from '@/hooks/useRoomsV2';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 function computeCompleteness(records: any[], fields: string[]): number {
   if (!records.length) return 100;
@@ -86,6 +87,7 @@ function PropertiesGapFill() {
   const { data: properties, isLoading } = usePropertyGaps();
   const batchUpdate = useBatchUpdateProperties();
   const [edits, setEdits] = useState<Record<string, Record<string, any>>>({});
+  const [isAiFilling, setIsAiFilling] = useState(false);
 
   const gapFields = ['has_gas_supply', 'year_built', 'total_lettable_rooms', 'total_floors', 'current_valuation', 'purchase_price', 'council_name', 'council_area'];
   const completeness = properties ? computeCompleteness(properties, gapFields) : 0;
@@ -96,6 +98,41 @@ function PropertiesGapFill() {
 
   const getVal = (record: any, field: string) => {
     return edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  };
+
+  const handleAiFill = async () => {
+    if (!properties?.length) return;
+    // Only send records with at least one gap
+    const withGaps = properties.filter(p =>
+      ['has_gas_supply', 'year_built', 'total_floors', 'council_name', 'council_area'].some(f => p[f] === null || p[f] === undefined)
+    );
+    if (!withGaps.length) return toast.info('No gaps to fill with AI');
+    setIsAiFilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-gap-fill', {
+        body: { type: 'properties', records: withGaps },
+      });
+      if (error) throw error;
+      const suggestions = data?.suggestions || [];
+      if (!suggestions.length) return toast.info('AI had no suggestions');
+      let filled = 0;
+      for (const s of suggestions) {
+        const { id, ...fields } = s;
+        const record = properties.find(p => p.id === id);
+        if (!record) continue;
+        for (const [field, value] of Object.entries(fields)) {
+          if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
+            setField(id, field, value);
+            filled++;
+          }
+        }
+      }
+      toast.success(`AI suggested ${filled} values across ${suggestions.length} properties — review & save`);
+    } catch (e: any) {
+      toast.error(`AI fill failed: ${e.message}`);
+    } finally {
+      setIsAiFilling(false);
+    }
   };
 
   const handleSave = async () => {
@@ -116,10 +153,16 @@ function PropertiesGapFill() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Badge variant="outline" className="text-xs">Properties: {completeness}% complete</Badge>
-        <Button size="sm" onClick={handleSave} disabled={batchUpdate.isPending || !Object.keys(edits).length}>
-          {batchUpdate.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-          Save Changes ({Object.keys(edits).length})
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleAiFill} disabled={isAiFilling || !properties?.length}>
+            {isAiFilling ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+            AI Fill Gaps
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={batchUpdate.isPending || !Object.keys(edits).length}>
+            {batchUpdate.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+            Save Changes ({Object.keys(edits).length})
+          </Button>
+        </div>
       </div>
       <div className="overflow-x-auto border rounded-md">
         <table className="w-full text-xs">
@@ -164,6 +207,7 @@ function RoomsGapFill() {
   const { data: rooms, isLoading } = useRoomGaps();
   const batchUpdate = useBatchUpdateRooms();
   const [edits, setEdits] = useState<Record<string, Record<string, any>>>({});
+  const [isAiFilling, setIsAiFilling] = useState(false);
 
   const gapFields = ['current_rent_pcm', 'target_rent_pcm', 'has_ensuite', 'floor'];
   const completeness = rooms ? computeCompleteness(rooms, gapFields) : 0;
@@ -172,6 +216,40 @@ function RoomsGapFill() {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
   const getVal = (record: any, field: string) => edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+
+  const handleAiFill = async () => {
+    if (!rooms?.length) return;
+    const withGaps = rooms.filter((r: any) =>
+      ['target_rent_pcm', 'floor'].some(f => r[f] === null || r[f] === undefined)
+    );
+    if (!withGaps.length) return toast.info('No gaps to fill with AI');
+    setIsAiFilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-gap-fill', {
+        body: { type: 'rooms', records: withGaps },
+      });
+      if (error) throw error;
+      const suggestions = data?.suggestions || [];
+      if (!suggestions.length) return toast.info('AI had no suggestions');
+      let filled = 0;
+      for (const s of suggestions) {
+        const { id, ...fields } = s;
+        const record = rooms.find((r: any) => r.id === id);
+        if (!record) continue;
+        for (const [field, value] of Object.entries(fields)) {
+          if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
+            setField(id, field, value);
+            filled++;
+          }
+        }
+      }
+      toast.success(`AI suggested ${filled} values across ${suggestions.length} rooms — review & save`);
+    } catch (e: any) {
+      toast.error(`AI fill failed: ${e.message}`);
+    } finally {
+      setIsAiFilling(false);
+    }
+  };
 
   const handleSave = async () => {
     const updates = Object.entries(edits).map(([id, fields]) => ({ id, ...fields }));
@@ -189,10 +267,16 @@ function RoomsGapFill() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Badge variant="outline" className="text-xs">Rooms: {completeness}% complete</Badge>
-        <Button size="sm" onClick={handleSave} disabled={batchUpdate.isPending || !Object.keys(edits).length}>
-          {batchUpdate.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-          Save ({Object.keys(edits).length})
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleAiFill} disabled={isAiFilling || !rooms?.length}>
+            {isAiFilling ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+            AI Fill Gaps
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={batchUpdate.isPending || !Object.keys(edits).length}>
+            {batchUpdate.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+            Save ({Object.keys(edits).length})
+          </Button>
+        </div>
       </div>
       <div className="overflow-x-auto border rounded-md">
         <table className="w-full text-xs">
