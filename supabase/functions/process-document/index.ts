@@ -44,6 +44,22 @@ const DEFAULT_VALIDITY_YEARS: Record<string, number> = {
 
 const DEFAULT_REMINDER_DAYS = [90, 60, 30, 14, 7];
 
+// Mapping from AI doc_type to compliance_documents_v2 document_type
+const DOC_TYPE_TO_V2_TYPE: Record<string, string> = {
+  "gas_safety_certificate": "gas_safety_certificate",
+  "electrical_certificate": "eicr",
+  "epc_certificate": "epc",
+  "fire_alarm_certificate": "fire_alarm_cert",
+  "emergency_lighting_certificate": "emergency_lighting_cert",
+  "pat_testing": "pat_testing",
+  "fire_risk_assessment": "fire_risk_assessment",
+  "hmo_licence": "hmo_licence",
+  "building_insurance": "buildings_insurance",
+  "public_liability_insurance": "landlord_liability_insurance",
+  "asbestos_survey": "asbestos_survey",
+  "legionella_assessment": "legionella_risk_assessment",
+};
+
 interface AIExtractionResult {
   doc_type: string;
   doc_type_confidence: number;
@@ -221,6 +237,53 @@ async function autoFileDocument(
       final_file_name: structuredFilename,
       renamed_at: new Date().toISOString(),
     }).eq('id', documentId);
+
+    // === Also file into compliance_documents_v2 for /compliance-v2 page ===
+    const v2DocType = DOC_TYPE_TO_V2_TYPE[extraction.doc_type];
+    if (v2DocType && extraction.matched_property_id) {
+      // Look up v1 property to get postcode for v2 matching
+      const { data: v1Prop } = await supabase.from('properties')
+        .select('postcode, address_line')
+        .eq('id', extraction.matched_property_id)
+        .maybeSingle();
+
+      // Find corresponding v2 property by postcode match
+      let v2PropertyId: string | null = null;
+      if (v1Prop?.postcode) {
+        const { data: v2Prop } = await supabase.from('properties_v2')
+          .select('id')
+          .eq('postcode', v1Prop.postcode)
+          .limit(1)
+          .maybeSingle();
+        v2PropertyId = v2Prop?.id || null;
+      }
+
+      if (v2PropertyId) {
+        // Mark any existing v2 docs of this type as not current
+        await supabase.from('compliance_documents_v2')
+          .update({ is_current: false })
+          .eq('property_id', v2PropertyId)
+          .eq('document_type', v2DocType)
+          .eq('is_current', true);
+
+        await supabase.from('compliance_documents_v2').insert({
+          org_id: orgId,
+          property_id: v2PropertyId,
+          document_type: v2DocType,
+          issue_date: extraction.extracted_issue_date || new Date().toISOString().split('T')[0],
+          expiry_date: calculatedExpiryDate,
+          status: 'valid',
+          is_current: true,
+          file_url: fileUrl,
+          file_name: structuredFilename,
+          certificate_number: extraction.extracted_reference_number,
+          issuer_name: extraction.extracted_certifier_company || extraction.extracted_certifier_name,
+          ai_extracted: true,
+          ai_confidence_score: extraction.doc_type_confidence,
+          notes: 'Auto-filed via AI Document Processing',
+        });
+      }
+    }
 
     // Sync EPC rating
     if (extraction.doc_type === 'epc_certificate' && extraction.extracted_epc_rating) {
