@@ -30,12 +30,21 @@ async function fetchEPC(postcode: string, addressLine: string) {
     const apiKey = Deno.env.get('EPC_API_KEY');
     const headers: Record<string, string> = { 'Accept': 'application/json' };
     if (apiKey) {
-      headers['Authorization'] = `Basic ${btoa(apiKey + ':')}`;
+      // EPC API expects Basic auth with the token as-is (already base64 from the site)
+      // or email:key pair base64-encoded
+      headers['Authorization'] = `Basic ${btoa(apiKey)}`;
     }
     const res = await fetch(url, { headers });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`EPC API ${res.status} for ${clean}: ${body.substring(0, 200)}`);
+      return null;
+    }
     const data = await res.json();
-    if (!data.rows?.length) return null;
+    if (!data.rows?.length) {
+      console.log(`No EPC rows found for postcode ${clean}`);
+      return null;
+    }
 
     let best = data.rows[0], bestScore = 0;
     for (const row of data.rows) {
