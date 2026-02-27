@@ -1,6 +1,6 @@
 // CSV export utilities for property data
 
-import type { PropertyWithFinancials } from '@/hooks/useProperties';
+import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 
 export interface ExportableProperty {
   id: string;

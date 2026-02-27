@@ -8,7 +8,7 @@ import { format, differenceInMonths } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePortfolioValuationSummaries } from '@/hooks/useDocumentSummary';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { cn } from '@/lib/utils';
 
 const fmt = (n: number) =>

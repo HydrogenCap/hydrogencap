@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useUpdateDocument, useDeleteDocument } from '@/hooks/useDocuments';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useToast } from '@/hooks/use-toast';
 import { createFinalFilename } from '@/lib/documentNaming';
 import type { Database } from '@/integrations/supabase/types';

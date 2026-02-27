@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, Edit2, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
-import type { PropertyWithFinancials } from '@/hooks/useProperties';
+import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import type { PropertyPassport } from '@/hooks/usePropertyPassport';
 import { getPropertyMetrics, calculatePropertyRisk, type PropertyMetrics } from '@/lib/propertyMetrics';
 import { formatGBPDecimal, formatPercent, formatDateUK } from '@/lib/calculations';

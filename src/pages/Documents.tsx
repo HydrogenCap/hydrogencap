@@ -76,7 +76,7 @@ import {
   useVaultDocuments,
   type VaultFilters,
 } from '@/hooks/useDocumentVault';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useCompanies } from '@/hooks/useCompanies';
 import { cn } from '@/lib/utils';
 

@@ -24,7 +24,7 @@ import { ComplianceRegisterItem } from '@/components/compliance/ComplianceRegist
 import { ComplianceUploadDialog } from '@/components/compliance/ComplianceUploadDialog';
 import { ComplianceExportButton } from '@/components/compliance/ComplianceExportButton';
 import { useAllCompliance, useCreateComplianceItem } from '@/hooks/useCompliance';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { COMPLIANCE_TYPES, type ComplianceStatus } from '@/lib/complianceTypes';
 import { 
   generateComplianceItemsWithMissing, 

@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { formatGBP, formatPercent } from './calculations';
-import { type PropertyWithFinancials } from '@/hooks/useProperties';
+import { type PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { getPropertyMetrics } from './propertyMetrics';
 
 export interface EnhancedPresentationOptions {

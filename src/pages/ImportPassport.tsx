@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ImportStepper } from '@/components/import/ImportStepper';
 import { useToast } from '@/hooks/use-toast';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';

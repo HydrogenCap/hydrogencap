@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useAllCompliance } from '@/hooks/useCompliance';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useCalendarEvents, type CalendarEvent, type CalendarEventType } from '@/hooks/useCalendarEvents';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import { ComplianceStatusCard, type StatusType } from '@/components/compliance/ComplianceStatusCard';

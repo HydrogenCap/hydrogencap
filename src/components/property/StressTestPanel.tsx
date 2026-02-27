@@ -4,7 +4,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { calculateLTV, calculateEquity, calculateMonthlyCashflowAfterDebt, calculateNetRent, getEffectiveCosts, formatGBP, formatPercent } from '@/lib/calculations';
 
 export function StressTestPanel() {

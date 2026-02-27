@@ -3,7 +3,7 @@
 // Centralized financial metrics and risk calculations
 // ============================================
 
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { type PropertyPassport } from '@/hooks/usePropertyPassport';
 import {
   calculateLTV,

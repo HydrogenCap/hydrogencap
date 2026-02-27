@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import type { PropertyWithFinancials } from '@/hooks/useProperties';
+import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 
 type Color = [number, number, number];
 

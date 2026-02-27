@@ -19,7 +19,7 @@
    SelectValue 
  } from '@/components/ui/select';
  import { useCreateJob, JOB_PRIORITIES, JobPriority } from '@/hooks/useContractorJobs';
- import { useProperties } from '@/hooks/useProperties';
+ import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useAllCompliance } from '@/hooks/useCompliance';
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
  import { formatDateUK } from '@/lib/calculations';

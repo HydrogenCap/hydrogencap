@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useDashboardPropertiesV2 } from '@/hooks/useDashboardDataV2';
-import type { PropertyWithFinancials } from '@/hooks/useProperties';
+import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useComplianceMatrix } from '@/hooks/useComplianceV2';
 import { useTenancyComplianceStats, type TenancyComplianceItemWithDetails } from '@/hooks/useTenancyCompliance';

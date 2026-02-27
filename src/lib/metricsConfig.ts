@@ -3,7 +3,7 @@
  * Centralized definitions for all dashboard metrics with breakdown logic
  */
 
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { PropertyPassport } from '@/hooks/usePropertyPassport';
 import {
   formatGBP,

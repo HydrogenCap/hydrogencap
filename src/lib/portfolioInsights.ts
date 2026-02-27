@@ -3,7 +3,7 @@
  * All metrics are calculated from actual portfolio data, no guessing.
  */
 
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { PropertyPassport, calculatePassportCompleteness } from '@/hooks/usePropertyPassport';
 import {
   calculateLTV,

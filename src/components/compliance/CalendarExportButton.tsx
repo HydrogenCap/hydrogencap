@@ -3,7 +3,7 @@
  import { Button } from '@/components/ui/button';
  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
  import { useAllCompliance } from '@/hooks/useCompliance';
- import { useProperties } from '@/hooks/useProperties';
+ import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
  import { useToast } from '@/hooks/use-toast';
  
  interface CalendarEvent {

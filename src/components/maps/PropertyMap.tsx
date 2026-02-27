@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import { ExternalLink, FileWarning, TrendingDown, Calendar, Bed, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { formatGBP, formatPercent, getExpiryStatus, daysUntil, calculateLTV, calculateMonthlyCashflowAfterDebt, getEffectiveCosts } from '@/lib/calculations';
 
 // Fix Leaflet default marker icon

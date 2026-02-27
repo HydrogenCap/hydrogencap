@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties, PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { usePropertyPassports, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { toast } from 'sonner';
 

@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRecentActivity } from '@/hooks/useActivityLog';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import type { Database } from '@/integrations/supabase/types';
 
 type ActivityLog = Database['public']['Tables']['activity_log']['Row'];
