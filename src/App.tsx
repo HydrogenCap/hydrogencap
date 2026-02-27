@@ -20,12 +20,11 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Properties = lazy(() => import("./pages/Properties"));
+
 const PropertyNew = lazy(() => import("./pages/PropertyNew"));
 const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
-const PropertyDetail = lazy(() => import("./pages/PropertyDetail"));
-const Companies = lazy(() => import("./pages/Companies"));
-const CompanyDetail = lazy(() => import("./pages/CompanyDetail"));
+
+
 const Entities = lazy(() => import("./pages/Entities"));
 const EntityDetail = lazy(() => import("./pages/EntityDetail"));
 const Ownership = lazy(() => import("./pages/Ownership"));
@@ -39,7 +38,7 @@ const DashboardMap = lazy(() => import("./pages/DashboardMap"));
 const Timeline = lazy(() => import("./pages/Timeline"));
 // RefinanceCalendar removed — merged into ComplianceCalendar
 const ComplianceCalendar = lazy(() => import("./pages/ComplianceCalendar"));
-const Compliance = lazy(() => import("./pages/Compliance"));
+
 const Reports = lazy(() => import("./pages/Reports"));
 const Actions = lazy(() => import("./pages/Actions"));
 const Chat = lazy(() => import("./pages/Chat"));
@@ -51,8 +50,8 @@ const Install = lazy(() => import("./pages/Install"));
 const Contractors = lazy(() => import("./pages/Contractors"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
-const Tenants = lazy(() => import("./pages/Tenants"));
-const TenantDetail = lazy(() => import("./pages/TenantDetail"));
+
+
 const RentCollection = lazy(() => import("./pages/RentCollection"));
 const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
@@ -180,14 +179,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/properties"
-              element={
-                <ProtectedRoute>
-                  <Properties />
-                </ProtectedRoute>
-              }
-            />
+
+
             <Route
               path="/properties/new"
               element={
@@ -204,30 +197,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/properties/:id"
-              element={
-                <ProtectedRoute>
-                  <PropertyDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies"
-              element={
-                <ProtectedRoute>
-                  <Companies />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/companies/:id"
-              element={
-                <ProtectedRoute>
-                  <CompanyDetail />
-                </ProtectedRoute>
-              }
-            />
+
+
             <Route
               path="/entities"
               element={
@@ -348,14 +319,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/compliance"
-              element={
-                <ProtectedRoute>
-                  <Compliance />
-                </ProtectedRoute>
-              }
-            />
+
+
             <Route
               path="/reports"
               element={
@@ -488,8 +453,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
-            <Route path="/tenants/:tenantId" element={<ProtectedRoute><TenantDetail /></ProtectedRoute>} />
+
+
             <Route path="/rent" element={<ProtectedRoute><RentCollection /></ProtectedRoute>} />
             <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><TenancyLedger /></ProtectedRoute>} />
             <Route path="/rent/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
@@ -503,8 +468,8 @@ const App = () => (
             {/* V1 redirects */}
             <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
             <Route path="/properties/:id" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/:id/edit" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/new" element={<Navigate to="/properties-v2" replace />} />
+
+
             <Route path="/companies" element={<Navigate to="/entities" replace />} />
             <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
             <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
