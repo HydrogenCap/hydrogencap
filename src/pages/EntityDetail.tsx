@@ -43,6 +43,7 @@ import { CHDataPanel } from '@/components/entities/CHDataPanel';
 import { useEntityPropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { format } from 'date-fns';
 import { EntityFinancialSection } from '@/components/financials/EntityFinancialSection';
+import { EntityInvestorSection } from '@/components/entities/EntityInvestorSection';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -403,6 +404,9 @@ export default function EntityDetail() {
 
         {/* Financial Summary */}
         <EntityFinancialSection entityId={entity.id} entityProperties={entityProperties} />
+
+        {/* Investor Capital */}
+        <EntityInvestorSection entityId={entity.id} />
 
         {/* Change History */}
         <Card>
