@@ -70,6 +70,7 @@ const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
 const ComplianceTasks = lazy(() => import("./pages/ComplianceTasks"));
 const Financials = lazy(() => import("./pages/Financials"));
 const Investors = lazy(() => import("./pages/Investors"));
+const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 
@@ -441,6 +442,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Investors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/investors/:id"
+              element={
+                <ProtectedRoute>
+                  <InvestorDetail />
                 </ProtectedRoute>
               }
             />
