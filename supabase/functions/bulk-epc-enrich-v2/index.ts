@@ -27,7 +27,12 @@ async function fetchEPC(postcode: string, addressLine: string) {
   try {
     const clean = postcode.replace(/\s+/g, '').toUpperCase();
     const url = `https://epc.opendatacommunities.org/api/v1/domestic/search?postcode=${encodeURIComponent(clean)}&size=100`;
-    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const apiKey = Deno.env.get('EPC_API_KEY');
+    const headers: Record<string, string> = { 'Accept': 'application/json' };
+    if (apiKey) {
+      headers['Authorization'] = `Basic ${btoa(apiKey + ':')}`;
+    }
+    const res = await fetch(url, { headers });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.rows?.length) return null;
