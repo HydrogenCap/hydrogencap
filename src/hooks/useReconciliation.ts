@@ -419,7 +419,7 @@ export function useReconciledScheduleIds() {
       const { data, error } = await supabase
         .from('bank_transactions')
         .select('matched_schedule_id')
-        .eq('is_reconciled', true)
+        .eq('status', 'matched')
         .not('matched_schedule_id', 'is', null);
       if (error) throw error;
       return new Set((data || []).map((r: any) => r.matched_schedule_id));
