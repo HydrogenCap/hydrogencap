@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
-import { useProperties, PropertyWithFinancials } from '@/hooks/useProperties';
+import { useDashboardPropertiesV2 } from '@/hooks/useDashboardDataV2';
+import type { PropertyWithFinancials } from '@/hooks/useProperties';
 import { usePropertyPassports, calculatePassportCompleteness, type PropertyPassport } from '@/hooks/usePropertyPassport';
-import { useAllCompliance } from '@/hooks/useCompliance';
+import { useComplianceMatrix } from '@/hooks/useComplianceV2';
 import { useTenancyComplianceStats, type TenancyComplianceItemWithDetails } from '@/hooks/useTenancyCompliance';
 import { useInsurancePolicies, type InsurancePolicy } from '@/hooks/useInsurance';
-import { useTenancies, type TenancyWithDetails } from '@/hooks/useTenancies';
+import { useDashboardTenanciesV2 } from '@/hooks/useDashboardDataV2';
+import type { ComplianceMatrixRow } from '@/lib/complianceV2Types';
 import {
   calculateLTV,
   getLTVStatus,
@@ -51,13 +53,21 @@ export const riskTypeLabels: Record<RiskType, string> = {
 export function calculatePortfolioRisks(
   properties: PropertyWithFinancials[],
   passportMap: Map<string, PropertyPassport>,
-  complianceByPropertyMap: Map<string, any[]>,
+  complianceMatrix: ComplianceMatrixRow[],
   tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = [],
   insurancePolicies: InsurancePolicy[] = [],
-  tenancies: TenancyWithDetails[] = []
+  tenancies: any[] = []
 ): RiskItem[] {
   const riskItems: RiskItem[] = [];
   const currentYear = new Date().getFullYear();
+
+  // Build compliance matrix lookup by property
+  const complianceByProperty = new Map<string, ComplianceMatrixRow[]>();
+  for (const row of complianceMatrix) {
+    const existing = complianceByProperty.get(row.property_id) || [];
+    existing.push(row);
+    complianceByProperty.set(row.property_id, existing);
+  }
 
   // Only process core rental properties
   const coreRentalProperties = properties.filter(p => p.lifecycle_type === 'core_rental');
@@ -77,7 +87,6 @@ export function calculatePortfolioRisks(
     const totalCosts = effectiveCostsRisk.total;
 
     // Calculate effective monthly mortgage payment
-    // Use stored mortgage_payment_gbp as fallback when auto-calc fails
     const storedPaymentRisk = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
     const paymentOverrideRisk = loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : storedPaymentRisk;
 
@@ -90,10 +99,12 @@ export function calculatePortfolioRisks(
     });
 
     const ltv = calculateLTV(mortgage, value);
-    // Calculate annual cashflow after debt for risk assessment
     const annualCashflowAfterDebt = rent !== null
       ? (rent - totalCosts - (mortgagePaymentResult.effective || 0) * 12)
       : null;
+
+    // V2 property detail URL
+    const propertyUrl = `/properties-v2/${property.id}`;
 
     // LTV risks
     const ltvStatus = getLTVStatus(ltv);
@@ -105,7 +116,7 @@ export function calculatePortfolioRisks(
         type: 'ltv',
         severity: 'critical',
         message: `LTV at ${formatPercent(ltv)} (>85%)`,
-        targetUrl: `/properties/${property.id}/edit`,
+        targetUrl: propertyUrl,
       });
     } else if (ltvStatus === 'warning') {
       riskItems.push({
@@ -115,7 +126,7 @@ export function calculatePortfolioRisks(
         type: 'ltv',
         severity: 'warning',
         message: `LTV at ${formatPercent(ltv)} (>75%)`,
-        targetUrl: `/properties/${property.id}/edit`,
+        targetUrl: propertyUrl,
       });
     }
 
@@ -130,7 +141,7 @@ export function calculatePortfolioRisks(
         type: 'epc',
         severity: 'warning',
         message: `EPC rating ${property.epc_rating} (below C)`,
-        targetUrl: `/properties/${property.id}`,
+        targetUrl: propertyUrl,
       });
     }
 
@@ -147,7 +158,7 @@ export function calculatePortfolioRisks(
           type: 'rate_expiry',
           severity: 'critical',
           message: 'Fixed rate has expired',
-          targetUrl: `/properties/${property.id}/edit`,
+          targetUrl: propertyUrl,
         });
       } else if (status === 'critical') {
         riskItems.push({
@@ -157,7 +168,7 @@ export function calculatePortfolioRisks(
           type: 'rate_expiry',
           severity: 'critical',
           message: `Fixed rate expires in ${days} days`,
-          targetUrl: `/properties/${property.id}/edit`,
+          targetUrl: propertyUrl,
         });
       } else if (status === 'warning') {
         riskItems.push({
@@ -167,7 +178,7 @@ export function calculatePortfolioRisks(
           type: 'rate_expiry',
           severity: 'warning',
           message: `Fixed rate expires in ${days} days`,
-          targetUrl: `/properties/${property.id}/edit`,
+          targetUrl: propertyUrl,
         });
       }
     }
@@ -181,22 +192,18 @@ export function calculatePortfolioRisks(
         type: 'negative_cashflow',
         severity: 'warning',
         message: `Negative cashflow: ${formatGBP(annualCashflowAfterDebt)}/year`,
-        targetUrl: `/properties/${property.id}/edit`,
+        targetUrl: propertyUrl,
       });
     }
 
-    // ========== COMPLIANCE-BASED RISKS ==========
+    // ========== COMPLIANCE-BASED RISKS (V2 matrix) ==========
+    const propertyCompliance = complianceByProperty.get(property.id) || [];
 
-    // HMO licence risks - use compliance_items as source of truth
+    // HMO licence risks
     if (property.is_hmo_licensed) {
-      const propertyComplianceItems = complianceByPropertyMap.get(property.id) || [];
-      const hmoItem = propertyComplianceItems.find((item: any) =>
-        item.compliance_type.toLowerCase().replace(/\s+/g, '_') === 'hmo_licence' ||
-        item.compliance_type === 'HMO Licence'
-      );
+      const hmoRow = propertyCompliance.find(r => r.document_type === 'hmo_licence' && r.is_required);
 
-      if (!hmoItem || !hmoItem.expiry_date) {
-        // HMO required but no compliance item recorded
+      if (!hmoRow || hmoRow.calculated_status === 'missing') {
         riskItems.push({
           id: `hmo-missing-${property.id}`,
           propertyId: property.id,
@@ -204,131 +211,72 @@ export function calculatePortfolioRisks(
           type: 'hmo_licence',
           severity: 'critical',
           message: 'HMO licence required but missing',
-          targetUrl: `/properties/${property.id}?tab=compliance`,
+          targetUrl: propertyUrl,
         });
-      } else {
-        // Check expiry status
-        const expiry = new Date(hmoItem.expiry_date);
-        const now = new Date();
-        const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (daysUntilExpiry <= 0) {
-          riskItems.push({
-            id: `hmo-${property.id}`,
-            propertyId: property.id,
-            address: property.address_line,
-            type: 'hmo_licence',
-            severity: 'critical',
-            message: 'HMO licence has expired',
-            targetUrl: `/properties/${property.id}?tab=compliance`,
-          });
-        } else if (daysUntilExpiry <= 60) {
-          riskItems.push({
-            id: `hmo-${property.id}`,
-            propertyId: property.id,
-            address: property.address_line,
-            type: 'hmo_licence',
-            severity: 'warning',
-            message: `HMO licence expires in ${daysUntilExpiry} days`,
-            targetUrl: `/properties/${property.id}?tab=compliance`,
-          });
-        }
+      } else if (hmoRow.calculated_status === 'expired') {
+        riskItems.push({
+          id: `hmo-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'hmo_licence',
+          severity: 'critical',
+          message: 'HMO licence has expired',
+          targetUrl: propertyUrl,
+        });
+      } else if ((hmoRow.calculated_status === 'expiring_soon' || hmoRow.calculated_status === 'critical') && hmoRow.days_remaining !== null) {
+        riskItems.push({
+          id: `hmo-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'hmo_licence',
+          severity: 'warning',
+          message: `HMO licence expires in ${hmoRow.days_remaining} days`,
+          targetUrl: propertyUrl,
+        });
       }
     }
 
     // ========== INSURANCE GAP ANALYSIS ==========
-    const propertyInsurance = insurancePolicies.filter(p => p.property_id === property.id);
-    if (propertyInsurance.length === 0) {
-      riskItems.push({
-        id: `insurance-missing-${property.id}`,
-        propertyId: property.id,
-        address: property.address_line,
-        type: 'insurance',
-        severity: 'critical',
-        message: 'No insurance policy on record',
-        targetUrl: `/properties/${property.id}?tab=compliance`,
-      });
-    } else {
-      const now = new Date();
-      propertyInsurance.forEach(policy => {
-        if (policy.renewal_date) {
-          const renewalDate = new Date(policy.renewal_date);
-          const daysToRenewal = Math.ceil((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          if (daysToRenewal <= 0) {
-            riskItems.push({
-              id: `insurance-expired-${policy.id}`,
-              propertyId: property.id,
-              address: property.address_line,
-              type: 'insurance',
-              severity: 'critical',
-              message: `Insurance policy expired (${policy.insurer_name})`,
-              targetUrl: `/properties/${property.id}?tab=compliance`,
-            });
-          } else if (daysToRenewal <= 30) {
-            riskItems.push({
-              id: `insurance-expiring-${policy.id}`,
-              propertyId: property.id,
-              address: property.address_line,
-              type: 'insurance',
-              severity: 'warning',
-              message: `Insurance renews in ${daysToRenewal} days (${policy.insurer_name})`,
-              targetUrl: `/properties/${property.id}?tab=compliance`,
-            });
-          }
-        }
-      });
-    }
-
-    // ========== LEASEHOLD RISKS ==========
-    if ((property.tenure === 'Leasehold' || property.tenure === 'Share of Freehold') && property.lease_years_remaining) {
-      if (property.lease_years_remaining < 60) {
+    // Check V2 compliance matrix for buildings insurance
+    const insuranceRow = propertyCompliance.find(r => r.document_type === 'buildings_insurance' && r.is_required);
+    if (insuranceRow) {
+      if (insuranceRow.calculated_status === 'missing') {
         riskItems.push({
-          id: `lease-critical-${property.id}`,
+          id: `insurance-missing-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
-          type: 'leasehold',
+          type: 'insurance',
           severity: 'critical',
-          message: `Lease ${property.lease_years_remaining} yrs — below 60yr mortgage threshold`,
-          targetUrl: `/properties/${property.id}`,
+          message: 'No buildings insurance on record',
+          targetUrl: propertyUrl,
         });
-      } else if (property.lease_years_remaining < 80) {
+      } else if (insuranceRow.calculated_status === 'expired') {
         riskItems.push({
-          id: `lease-warning-${property.id}`,
+          id: `insurance-expired-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
-          type: 'leasehold',
+          type: 'insurance',
+          severity: 'critical',
+          message: 'Buildings insurance has expired',
+          targetUrl: propertyUrl,
+        });
+      } else if (insuranceRow.calculated_status === 'critical' && insuranceRow.days_remaining !== null) {
+        riskItems.push({
+          id: `insurance-expiring-${property.id}`,
+          propertyId: property.id,
+          address: property.address_line,
+          type: 'insurance',
           severity: 'warning',
-          message: `Lease ${property.lease_years_remaining} yrs — approaching 80yr marriage value threshold`,
-          targetUrl: `/properties/${property.id}`,
+          message: `Buildings insurance renews in ${insuranceRow.days_remaining} days`,
+          targetUrl: propertyUrl,
         });
       }
     }
 
     // ========== PROPERTY DATA COMPLETENESS ==========
-    
-    // Check core property fields (in properties table, edited via Property Edit page)
-    const missingPropertyFields: string[] = [];
-    if (!property.tenure) missingPropertyFields.push('Tenure');
-    if (property.beds === null || property.beds === undefined) missingPropertyFields.push('Bedrooms');
-    if (property.bathrooms === null || property.bathrooms === undefined) missingPropertyFields.push('Bathrooms');
-    
-    if (missingPropertyFields.length > 0) {
-      riskItems.push({
-        id: `property-data-${property.id}`,
-        propertyId: property.id,
-        address: property.address_line,
-        type: 'operational_data',
-        severity: 'warning',
-        message: `Missing: ${missingPropertyFields.join(', ')}`,
-        targetUrl: `/properties/${property.id}/edit`,
-      });
-    }
-
-    // Operational data risks (from passport - now only operational fields)
     if (passport) {
       const completeness = calculatePassportCompleteness(passport);
       if (completeness.criticalMissing.length > 0) {
-        // Only show top 2 missing items in risk message
         const missingItems = completeness.criticalMissing.slice(0, 2).join(', ');
         const moreCount = completeness.criticalMissing.length > 2
           ? ` +${completeness.criticalMissing.length - 2} more`
@@ -340,7 +288,7 @@ export function calculatePortfolioRisks(
           type: 'operational_data',
           severity: 'warning',
           message: `Missing: ${missingItems}${moreCount}`,
-          targetUrl: `/properties/${property.id}?tab=operations`,
+          targetUrl: `${propertyUrl}?tab=operations`,
         });
       }
     }
@@ -368,50 +316,53 @@ export function calculatePortfolioRisks(
     });
   });
 
-  // ========== LEASE EXPIRY RISKS ==========
+  // ========== LEASE EXPIRY RISKS (V2 tenancies) ==========
   if (tenancies && tenancies.length > 0) {
     const now = new Date();
     const thirtyDays = new Date(now.getTime() + 30 * 86400000);
     const ninetyDays = new Date(now.getTime() + 90 * 86400000);
 
     for (const tenancy of tenancies) {
-      if (tenancy.status !== 'active' && tenancy.status !== 'notice') continue;
-      if (!tenancy.end_date) continue;
+      if (tenancy.status !== 'active' && tenancy.status !== 'notice_period' && tenancy.status !== 'notice_served') continue;
+      const endDate = tenancy.end_date ? new Date(tenancy.end_date) : null;
+      if (!endDate) continue;
 
-      const endDate = new Date(tenancy.end_date);
-      const tenantName = `${tenancy.tenant.first_name} ${tenancy.tenant.last_name}`;
+      const tenantName = tenancy.tenant
+        ? `${tenancy.tenant.first_name} ${tenancy.tenant.last_name}`.trim()
+        : 'Unknown tenant';
       const roomName = tenancy.room?.room_name || '';
-      const address = tenancy.property.address_line;
+      const address = tenancy.property?.address_line || 'Unknown';
+      const propertyId = tenancy.property_id || tenancy.property?.id || '';
 
       if (endDate < now) {
         riskItems.push({
           id: `lease-expired-${tenancy.id}`,
-          propertyId: tenancy.property.id,
+          propertyId,
           address,
           type: 'lease_expiry',
           severity: 'critical',
           message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expired on ${endDate.toLocaleDateString('en-GB')}. Needs renewal or end of tenancy.`,
-          targetUrl: `/tenants/${tenancy.tenant.id}`,
+          targetUrl: `/tenants/${tenancy.tenant?.id || tenancy.tenant_id}`,
         });
       } else if (endDate <= thirtyDays) {
         riskItems.push({
           id: `lease-critical-${tenancy.id}`,
-          propertyId: tenancy.property.id,
+          propertyId,
           address,
           type: 'lease_expiry',
           severity: 'critical',
           message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires in ${Math.ceil((endDate.getTime() - now.getTime()) / 86400000)} days (${endDate.toLocaleDateString('en-GB')}).`,
-          targetUrl: `/tenants/${tenancy.tenant.id}`,
+          targetUrl: `/tenants/${tenancy.tenant?.id || tenancy.tenant_id}`,
         });
       } else if (endDate <= ninetyDays) {
         riskItems.push({
           id: `lease-warning-${tenancy.id}`,
-          propertyId: tenancy.property.id,
+          propertyId,
           address,
           type: 'lease_expiry',
           severity: 'warning',
           message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires on ${endDate.toLocaleDateString('en-GB')} (${Math.ceil((endDate.getTime() - now.getTime()) / 86400000)} days).`,
-          targetUrl: `/tenants/${tenancy.tenant.id}`,
+          targetUrl: `/tenants/${tenancy.tenant?.id || tenancy.tenant_id}`,
         });
       }
     }
@@ -422,15 +373,16 @@ export function calculatePortfolioRisks(
 
 /**
  * Hook to fetch and calculate all portfolio risks.
+ * Uses V2 data sources (properties_v2, compliance_matrix_v2, tenancy_agreements).
  * Returns the same data for both Dashboard and Actions pages.
  */
 export function usePortfolioRisks() {
-  const { data: properties, isLoading: propertiesLoading } = useProperties();
+  const { data: properties, isLoading: propertiesLoading } = useDashboardPropertiesV2();
   const { data: passports, isLoading: passportsLoading } = usePropertyPassports();
-  const { data: allComplianceItems, isLoading: complianceLoading } = useAllCompliance();
+  const { data: complianceMatrix, isLoading: complianceLoading } = useComplianceMatrix();
   const { data: tenancyStats, isLoading: tenancyComplianceLoading } = useTenancyComplianceStats();
   const { data: insurancePolicies, isLoading: insuranceLoading } = useInsurancePolicies();
-  const { data: allTenancies, isLoading: tenanciesLoading } = useTenancies();
+  const { data: allTenancies, isLoading: tenanciesLoading } = useDashboardTenanciesV2();
 
   // Create a map of passports by property_id for quick lookup
   const passportMap = useMemo(() => {
@@ -439,29 +391,18 @@ export function usePortfolioRisks() {
     return map;
   }, [passports]);
 
-  // Create a map of compliance items by property_id
-  const complianceByPropertyMap = useMemo(() => {
-    const map = new Map<string, typeof allComplianceItems>();
-    allComplianceItems?.forEach(item => {
-      const existing = map.get(item.property_id) || [];
-      existing.push(item);
-      map.set(item.property_id, existing);
-    });
-    return map;
-  }, [allComplianceItems]);
-
   // Calculate risks
   const risks = useMemo(() => {
     if (!properties) return [];
     return calculatePortfolioRisks(
       properties,
       passportMap,
-      complianceByPropertyMap,
+      complianceMatrix || [],
       tenancyStats?.overdueItems || [],
       insurancePolicies || [],
       allTenancies || []
     );
-  }, [properties, passportMap, complianceByPropertyMap, tenancyStats?.overdueItems, insurancePolicies, allTenancies]);
+  }, [properties, passportMap, complianceMatrix, tenancyStats?.overdueItems, insurancePolicies, allTenancies]);
 
   const criticalCount = useMemo(() => risks.filter(r => r.severity === 'critical').length, [risks]);
   const warningCount = useMemo(() => risks.filter(r => r.severity === 'warning').length, [risks]);
@@ -473,6 +414,5 @@ export function usePortfolioRisks() {
     totalCount: risks.length,
     isLoading: propertiesLoading || passportsLoading || complianceLoading || tenancyComplianceLoading || insuranceLoading || tenanciesLoading,
     passportMap,
-    complianceByPropertyMap,
   };
 }

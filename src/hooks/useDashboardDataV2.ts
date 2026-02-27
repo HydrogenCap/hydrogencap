@@ -122,8 +122,8 @@ export function useDashboardPropertiesV2() {
           beds: p.total_lettable_rooms,
           bathrooms: null,
           tenure: null,
-          epc_rating: null,
-          epc_required: true,
+          epc_rating: p.epc_rating || null,
+          epc_required: p.listing_grade === 'none' || !p.listing_grade,
           
           // HMO
           is_hmo_licensed: isHmo,
