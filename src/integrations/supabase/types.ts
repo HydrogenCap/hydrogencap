@@ -407,11 +407,17 @@ export type Database = {
           description: string
           id: string
           import_batch_id: string | null
+          import_hash: string | null
           import_source: string | null
           is_duplicate: boolean | null
           is_reconciled: boolean | null
+          matched_at: string | null
+          matched_by: string | null
+          matched_payment_id: string | null
+          matched_schedule_id: string | null
           org_id: string
           reference: string | null
+          status: string
           transaction_date: string
           transaction_type: string
         }
@@ -424,11 +430,17 @@ export type Database = {
           description: string
           id?: string
           import_batch_id?: string | null
+          import_hash?: string | null
           import_source?: string | null
           is_duplicate?: boolean | null
           is_reconciled?: boolean | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_payment_id?: string | null
+          matched_schedule_id?: string | null
           org_id: string
           reference?: string | null
+          status?: string
           transaction_date: string
           transaction_type: string
         }
@@ -441,11 +453,17 @@ export type Database = {
           description?: string
           id?: string
           import_batch_id?: string | null
+          import_hash?: string | null
           import_source?: string | null
           is_duplicate?: boolean | null
           is_reconciled?: boolean | null
+          matched_at?: string | null
+          matched_by?: string | null
+          matched_payment_id?: string | null
+          matched_schedule_id?: string | null
           org_id?: string
           reference?: string | null
+          status?: string
           transaction_date?: string
           transaction_type?: string
         }
@@ -462,6 +480,20 @@ export type Database = {
             columns: ["import_batch_id"]
             isOneToOne: false
             referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_payment_id_fkey"
+            columns: ["matched_payment_id"]
+            isOneToOne: false
+            referencedRelation: "rent_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_schedule_id_fkey"
+            columns: ["matched_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "rent_schedule"
             referencedColumns: ["id"]
           },
           {
