@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
 
 const ENTITY_TYPE_BG: Record<string, string> = {
   spv: 'bg-blue-100 text-blue-700', personal: 'bg-emerald-100 text-emerald-700',
@@ -69,6 +70,7 @@ export default function PropertyDetailV2() {
   const [showEdit, setShowEdit] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+  const coverPhoto = usePropertyPhotoV2(id);
 
   const { data: entities = [] } = useQuery({
     queryKey: ['legal_entities_list'],
@@ -108,6 +110,12 @@ export default function PropertyDetailV2() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Cover Photo */}
+        {coverPhoto && (
+          <div className="h-48 md:h-64 w-full rounded-lg overflow-hidden">
+            <img src={coverPhoto} alt={property.address_line_1} className="w-full h-full object-cover" />
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-2">
