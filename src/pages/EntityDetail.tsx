@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,6 +58,7 @@ import { useEntityPropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks
 import { format } from 'date-fns';
 import { EntityFinancialSection } from '@/components/financials/EntityFinancialSection';
 import { EntityInvestorSection } from '@/components/entities/EntityInvestorSection';
+import { EntityOwnershipCard } from '@/components/entities/EntityOwnershipCard';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { EntityAccountingSection } from '@/components/accounting/EntityAccountingSection';
 import { cn } from '@/lib/utils';
@@ -93,6 +96,7 @@ export default function EntityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: entity, isLoading } = useLegalEntity(id);
   const { data: directors } = useEntityDirectors(id);
   const { data: shareholders } = useEntityShareholders(id);
@@ -319,6 +323,39 @@ export default function EntityDetail() {
                 <Badge variant="outline" className="text-xs">
                   CH: {(entity as any).ch_company_status}
                 </Badge>
+              )}
+              {entity.entity_type !== 'personal' && (
+                <div className="flex items-center gap-2 ml-2">
+                  <Switch
+                    checked={entity.is_group_parent || false}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        if (checked) {
+                          await supabase
+                            .from('legal_entities')
+                            .update({ is_group_parent: false } as any)
+                            .eq('org_id', entity.org_id)
+                            .eq('is_group_parent', true);
+                        }
+                        await supabase
+                          .from('legal_entities')
+                          .update({ is_group_parent: checked } as any)
+                          .eq('id', entity.id);
+                        queryClient.invalidateQueries({ queryKey: ['legal_entities'] });
+                        queryClient.invalidateQueries({ queryKey: ['legal_entity', entity.id] });
+                        queryClient.invalidateQueries({ queryKey: ['ownership_data_v2'] });
+                        toast({ title: checked ? 'Set as group parent' : 'Removed group parent status' });
+                      } catch (err: any) {
+                        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                      }
+                    }}
+                    className="scale-75"
+                  />
+                  <span className="text-xs text-muted-foreground">Group parent</span>
+                  {entity.is_group_parent && (
+                    <Badge variant="default" className="text-[10px]">Group Parent</Badge>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -683,6 +720,9 @@ export default function EntityDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Ownership Structure (V2 Engine) */}
+        <EntityOwnershipCard entityId={entity.id} entityName={entity.entity_name} />
 
         {/* Companies House Data */}
         {entity.entity_type === 'spv' && entity.company_number && (
