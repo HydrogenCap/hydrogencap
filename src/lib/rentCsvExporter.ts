@@ -1,5 +1,6 @@
 import { format, differenceInWeeks } from 'date-fns';
 import type { RentScheduleWithDetails } from '@/hooks/useRentCollection';
+import { normalizeRentItem } from '@/hooks/useRentCollection';
 
 function escapeCSV(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
@@ -18,15 +19,16 @@ export function exportRentRollCSV(items: RentScheduleWithDetails[]): void {
   ];
 
   const rows = items.map(item => {
+    const display = normalizeRentItem(item);
     const dueDate = new Date(item.due_date);
     const weeksOverdue = item.status === 'overdue' || item.status === 'partial'
       ? Math.max(0, differenceInWeeks(today, dueDate))
       : 0;
 
     return [
-      escapeCSV(item.tenancy.property.address_line),
-      escapeCSV(item.tenancy.room.room_name),
-      escapeCSV(`${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`),
+      escapeCSV(display.propertyAddress),
+      escapeCSV(display.roomName),
+      escapeCSV(display.tenantName),
       escapeCSV(item.rent_amount.toFixed(2)),
       escapeCSV(format(dueDate, 'dd/MM/yyyy')),
       escapeCSV(item.status),
@@ -48,12 +50,13 @@ export function exportArrearsCSV(items: (RentScheduleWithDetails & { days_overdu
   ];
 
   const rows = items.map(item => {
+    const display = normalizeRentItem(item);
     const dueDate = new Date(item.due_date);
     const weeksOverdue = Math.max(0, differenceInWeeks(today, dueDate));
 
     return [
-      escapeCSV(item.tenancy.property.address_line),
-      escapeCSV(`${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`),
+      escapeCSV(display.propertyAddress),
+      escapeCSV(display.tenantName),
       escapeCSV(item.amount_outstanding.toFixed(2)),
       escapeCSV(weeksOverdue),
       escapeCSV(format(dueDate, 'dd/MM/yyyy')),

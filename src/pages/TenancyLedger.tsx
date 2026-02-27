@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   ArrowLeft, PoundSterling, AlertTriangle, CheckCircle2,
-  Calendar, TrendingUp, Eye, ToggleLeft,
+  Calendar, TrendingUp,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 import { LoadingState, EmptyState } from '@/components/common';
 import {
   useTenancyLedger, usePaidOnTimeStats,
-  useRentSchedule, type LedgerEntry,
+  useRentSchedule, normalizeRentItem, type LedgerEntry,
 } from '@/hooks/useRentCollection';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import { cn } from '@/lib/utils';
@@ -39,13 +39,12 @@ export default function TenancyLedger() {
   if (isLoading) return <AppLayout><LoadingState text="Loading ledger..." /></AppLayout>;
   if (!ledger || !tenancyId) return <AppLayout><EmptyState icon={PoundSterling} title="Ledger not found" description="No data for this tenancy." /></AppLayout>;
 
-  // Get tenancy info from first schedule item
+  // Get tenancy info from first schedule item using normalizeRentItem
   const firstItem = scheduleItems?.[0];
-  const tenantName = firstItem
-    ? `${firstItem.tenancy.tenant.first_name} ${firstItem.tenancy.tenant.last_name}`
-    : 'Unknown Tenant';
-  const roomName = firstItem?.tenancy.room.room_name || '';
-  const propertyAddress = firstItem?.tenancy.property.address_line || '';
+  const display = firstItem ? normalizeRentItem(firstItem) : null;
+  const tenantName = display?.tenantName || 'Unknown Tenant';
+  const roomName = display?.roomName || '';
+  const propertyAddress = display?.propertyAddress || '';
 
   // Calculate summary stats from ledger
   const totalOverdue = ledger

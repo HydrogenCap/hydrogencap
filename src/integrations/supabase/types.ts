@@ -6548,6 +6548,7 @@ export type Database = {
       }
       rent_payments: {
         Row: {
+          agreement_id: string | null
           amount: number
           bank_transaction_id: string | null
           created_at: string
@@ -6565,6 +6566,7 @@ export type Database = {
           tenancy_id: string
         }
         Insert: {
+          agreement_id?: string | null
           amount: number
           bank_transaction_id?: string | null
           created_at?: string
@@ -6582,6 +6584,7 @@ export type Database = {
           tenancy_id: string
         }
         Update: {
+          agreement_id?: string | null
           amount?: number
           bank_transaction_id?: string | null
           created_at?: string
@@ -6599,6 +6602,20 @@ export type Database = {
           tenancy_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rent_payments_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
+          },
           {
             foreignKeyName: "rent_payments_bank_transaction_id_fkey"
             columns: ["bank_transaction_id"]
@@ -6632,6 +6649,7 @@ export type Database = {
       rent_schedule: {
         Row: {
           additional_charges: number | null
+          agreement_id: string | null
           amount_outstanding: number | null
           amount_paid: number | null
           created_at: string
@@ -6652,6 +6670,7 @@ export type Database = {
         }
         Insert: {
           additional_charges?: number | null
+          agreement_id?: string | null
           amount_outstanding?: number | null
           amount_paid?: number | null
           created_at?: string
@@ -6672,6 +6691,7 @@ export type Database = {
         }
         Update: {
           additional_charges?: number | null
+          agreement_id?: string | null
           amount_outstanding?: number | null
           amount_paid?: number | null
           created_at?: string
@@ -6691,6 +6711,20 @@ export type Database = {
           warning_sent_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "rent_schedule_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_schedule_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
+          },
           {
             foreignKeyName: "rent_schedule_org_id_fkey"
             columns: ["org_id"]
@@ -9139,10 +9173,16 @@ export type Database = {
         Args: { target_property_id: string }
         Returns: undefined
       }
-      generate_rent_schedule: {
-        Args: { p_months?: number; p_tenancy_id: string }
-        Returns: number
-      }
+      generate_rent_schedule:
+        | { Args: { p_months?: number; p_tenancy_id: string }; Returns: number }
+        | {
+            Args: {
+              p_agreement_id?: string
+              p_months?: number
+              p_tenancy_id: string
+            }
+            Returns: number
+          }
       generate_tax_year_summary: {
         Args: {
           target_entity_id: string
@@ -9169,23 +9209,42 @@ export type Database = {
         }
         Returns: boolean
       }
-      insert_rent_schedule_item: {
-        Args: {
-          p_additional_charges?: number
-          p_amount_outstanding?: number
-          p_amount_paid?: number
-          p_due_date: string
-          p_notes?: string
-          p_org_id: string
-          p_payment_reference?: string
-          p_period_end: string
-          p_period_start: string
-          p_rent_amount: number
-          p_status?: string
-          p_tenancy_id: string
-        }
-        Returns: string
-      }
+      insert_rent_schedule_item:
+        | {
+            Args: {
+              p_additional_charges?: number
+              p_amount_outstanding?: number
+              p_amount_paid?: number
+              p_due_date: string
+              p_notes?: string
+              p_org_id: string
+              p_payment_reference?: string
+              p_period_end: string
+              p_period_start: string
+              p_rent_amount: number
+              p_status?: string
+              p_tenancy_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_additional_charges?: number
+              p_agreement_id?: string
+              p_amount_outstanding?: number
+              p_amount_paid?: number
+              p_due_date: string
+              p_notes?: string
+              p_org_id: string
+              p_payment_reference?: string
+              p_period_end: string
+              p_period_start: string
+              p_rent_amount: number
+              p_status?: string
+              p_tenancy_id: string
+            }
+            Returns: string
+          }
       log_document_download: {
         Args: { p_document_id: string }
         Returns: undefined

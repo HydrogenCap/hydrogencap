@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertTriangle, Mail } from 'lucide-react';
-import { useBulkSendReminder, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
+import { useBulkSendReminder, normalizeRentItem, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
@@ -23,16 +23,15 @@ export default function BulkSendReminderDialog({ items, open, onOpenChange, onSu
   const [customMessage, setCustomMessage] = useState('');
 
   const { withEmail, withoutEmail } = useMemo(() => {
-    const withEmail: (RentScheduleWithDetails & { email: string })[] = [];
-    const withoutEmail: RentScheduleWithDetails[] = [];
+    const withEmail: (RentScheduleWithDetails & { email: string; displayName: string })[] = [];
+    const withoutEmail: (RentScheduleWithDetails & { displayName: string })[] = [];
 
     for (const item of items) {
-      const tenant = item.tenancy?.tenant as any;
-      const email = tenant?.email;
-      if (email) {
-        withEmail.push({ ...item, email });
+      const d = normalizeRentItem(item);
+      if (d.tenantEmail) {
+        withEmail.push({ ...item, email: d.tenantEmail, displayName: d.tenantName });
       } else {
-        withoutEmail.push(item);
+        withoutEmail.push({ ...item, displayName: d.tenantName });
       }
     }
     return { withEmail, withoutEmail };
@@ -98,9 +97,7 @@ export default function BulkSendReminderDialog({ items, open, onOpenChange, onSu
                   <div className="flex items-center gap-2 min-w-0">
                     <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <div className="min-w-0">
-                      <p className="font-medium truncate">
-                        {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name}
-                      </p>
+                      <p className="font-medium truncate">{item.displayName}</p>
                       <p className="text-xs text-muted-foreground truncate">{item.email}</p>
                     </div>
                   </div>
@@ -112,9 +109,7 @@ export default function BulkSendReminderDialog({ items, open, onOpenChange, onSu
                   <div className="flex items-center gap-2 min-w-0">
                     <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                     <div className="min-w-0">
-                      <p className="font-medium truncate">
-                        {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name}
-                      </p>
+                      <p className="font-medium truncate">{item.displayName}</p>
                       <p className="text-xs text-amber-600 dark:text-amber-400">No email on file</p>
                     </div>
                   </div>
