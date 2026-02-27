@@ -6,6 +6,7 @@ export interface FreeAgentConnection {
   id: string;
   org_id: string;
   company_id: string;
+  entity_id: string | null;
   freeagent_company_name: string | null;
   freeagent_company_url: string | null;
   token_expires_at: string;
@@ -57,6 +58,23 @@ export function useFreeAgentConnections() {
   });
 }
 
+export function useFreeAgentConnectionForEntity(entityId: string) {
+  return useQuery({
+    queryKey: ['freeagent-connections', entityId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('freeagent_connections')
+        .select('*')
+        .eq('entity_id', entityId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as FreeAgentConnection | null;
+    },
+    enabled: !!entityId,
+  });
+}
+
+/** @deprecated Use useFreeAgentConnectionForEntity instead */
 export function useFreeAgentConnectionForCompany(companyId: string) {
   return useQuery({
     queryKey: ['freeagent-connections', companyId],
@@ -73,17 +91,17 @@ export function useFreeAgentConnectionForCompany(companyId: string) {
   });
 }
 
-export function useFreeAgentCategories(companyId: string) {
+export function useFreeAgentCategories(entityOrCompanyId: string) {
   return useQuery({
-    queryKey: ['freeagent-categories', companyId],
+    queryKey: ['freeagent-categories', entityOrCompanyId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('freeagent-fetch-categories', {
-        body: { companyId },
+        body: { entityId: entityOrCompanyId },
       });
       if (error) throw error;
       return data as { categories: FreeAgentCategory[]; bank_accounts: FreeAgentBankAccount[] };
     },
-    enabled: !!companyId,
+    enabled: !!entityOrCompanyId,
     staleTime: 1000 * 60 * 10,
   });
 }
@@ -135,9 +153,9 @@ export function useSyncToFreeAgent() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (companyId: string) => {
+    mutationFn: async (entityOrCompanyId: string) => {
       const { data, error } = await supabase.functions.invoke('freeagent-sync-payments', {
-        body: { companyId },
+        body: { entityId: entityOrCompanyId },
       });
       if (error) throw error;
       return data;
@@ -156,7 +174,7 @@ export function useSyncToFreeAgent() {
 }
 
 export function buildFreeAgentAuthUrl(
-  companyId: string,
+  entityId: string,
   orgId: string,
   userId: string,
   useSandbox: boolean = false
@@ -164,7 +182,7 @@ export function buildFreeAgentAuthUrl(
   const FREEAGENT_CLIENT_ID = 'ctJauXO4z3j4tDVb8JMCXw';
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
   const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
-  const state = btoa(JSON.stringify({ companyId, orgId, userId, useSandbox }));
+  const state = btoa(JSON.stringify({ entityId, orgId, userId, useSandbox }));
 
   const authBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
 

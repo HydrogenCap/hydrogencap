@@ -3117,6 +3117,7 @@ export type Database = {
           company_id: string
           connected_at: string
           connected_by: string | null
+          entity_id: string | null
           expense_category_url: string | null
           freeagent_company_name: string | null
           freeagent_company_url: string | null
@@ -3141,6 +3142,7 @@ export type Database = {
           company_id: string
           connected_at?: string
           connected_by?: string | null
+          entity_id?: string | null
           expense_category_url?: string | null
           freeagent_company_name?: string | null
           freeagent_company_url?: string | null
@@ -3165,6 +3167,7 @@ export type Database = {
           company_id?: string
           connected_at?: string
           connected_by?: string | null
+          entity_id?: string | null
           expense_category_url?: string | null
           freeagent_company_name?: string | null
           freeagent_company_url?: string | null
@@ -3188,6 +3191,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freeagent_connections_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "freeagent_connections_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
