@@ -18,12 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
 import {
   useCreateLegalEntity,
   useUpdateLegalEntity,
   type LegalEntity,
 } from '@/hooks/useLegalEntities';
+import { useCompaniesHouse, type CHCompanySearchResult } from '@/hooks/useCompaniesHouse';
+import { CompanySearchInput } from '@/components/companies/CompanySearchInput';
 import { useToast } from '@/hooks/use-toast';
 
 interface EntityFormModalProps {
@@ -50,7 +54,10 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
   const { data: org } = useOrganization();
   const createEntity = useCreateLegalEntity();
   const updateEntity = useUpdateLegalEntity();
+  const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const isEditing = !!editingEntity;
+
+  const [createTab, setCreateTab] = useState<'search' | 'manual'>('search');
 
   const [form, setForm] = useState({
     entity_name: '',
@@ -68,6 +75,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
 
   useEffect(() => {
     if (open) {
+      setCreateTab('search');
       if (editingEntity) {
         setForm({
           entity_name: editingEntity.entity_name,
@@ -102,6 +110,20 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
 
   const isSPV = form.entity_type === 'spv';
   const isPending = createEntity.isPending || updateEntity.isPending;
+
+  const handleSelectFromSearch = async (company: CHCompanySearchResult) => {
+    const details = await lookupCompany(company.company_number);
+    if (details) {
+      setForm(prev => ({
+        ...prev,
+        entity_name: details.company.company_name,
+        company_number: details.company.company_number,
+        incorporation_date: details.company.date_of_creation || '',
+        registered_address: details.company.registered_address || '',
+      }));
+      setCreateTab('manual');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!form.entity_name.trim()) {
@@ -147,6 +169,25 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
 
   const update = (field: string, value: any) => setForm(prev => ({ ...prev, [field]: value }));
 
+  const spvFields = (
+    <>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Company Number</Label>
+          <Input value={form.company_number} onChange={(e) => update('company_number', e.target.value)} placeholder="e.g. 12345678" />
+        </div>
+        <div className="space-y-2">
+          <Label>Incorporation Date</Label>
+          <Input type="date" value={form.incorporation_date} onChange={(e) => update('incorporation_date', e.target.value)} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Corporation Tax Reference</Label>
+        <Input value={form.corporation_tax_ref} onChange={(e) => update('corporation_tax_ref', e.target.value)} placeholder="UTR number" />
+      </div>
+    </>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -185,24 +226,40 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
             </div>
           </div>
 
-          {isSPV && (
-            <>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Company Number</Label>
-                  <Input value={form.company_number} onChange={(e) => update('company_number', e.target.value)} placeholder="e.g. 12345678" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Incorporation Date</Label>
-                  <Input type="date" value={form.incorporation_date} onChange={(e) => update('incorporation_date', e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Corporation Tax Reference</Label>
-                <Input value={form.corporation_tax_ref} onChange={(e) => update('corporation_tax_ref', e.target.value)} placeholder="UTR number" />
-              </div>
-            </>
+          {/* SPV creation: tabbed CH search + manual */}
+          {isSPV && !isEditing && (
+            <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as 'search' | 'manual')}>
+              <TabsList className="w-full">
+                <TabsTrigger value="search" className="flex-1">Search Companies House</TabsTrigger>
+                <TabsTrigger value="manual" className="flex-1">Enter Manually</TabsTrigger>
+              </TabsList>
+              <TabsContent value="search" className="mt-4">
+                <CompanySearchInput
+                  onSelect={handleSelectFromSearch}
+                  placeholder="Search by company name or number..."
+                />
+                {isLookingUp && (
+                  <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading company details...
+                  </div>
+                )}
+                {form.company_number && (
+                  <div className="mt-3 p-3 rounded-lg border bg-muted/50 text-sm space-y-1">
+                    <p className="font-medium">{form.entity_name}</p>
+                    <p className="text-muted-foreground">#{form.company_number}</p>
+                    {form.registered_address && <p className="text-muted-foreground">{form.registered_address}</p>}
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="manual" className="mt-4 space-y-4">
+                {spvFields}
+              </TabsContent>
+            </Tabs>
           )}
+
+          {/* SPV editing: show fields directly */}
+          {isSPV && isEditing && spvFields}
 
           <div className="space-y-2">
             <Label>Issued Shares</Label>

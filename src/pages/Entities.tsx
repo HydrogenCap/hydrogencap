@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, Clock, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, Clock, RefreshCw, Loader2, AlertCircle as AlertCircleIcon, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/table';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useEntityVerificationStatus, useSyncEntity, EntityVerification } from '@/hooks/useCompaniesHouseV2';
+import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
+import { getComplianceStatus } from '@/lib/complianceStatus';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,9 +41,28 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   dissolved: { label: 'Dissolved', className: 'bg-destructive/10 text-destructive border-destructive/20' },
 };
 
+function ComplianceStatusIndicator({ dueDate }: { dueDate: string }) {
+  const status = getComplianceStatus(dueDate);
+  const icons = {
+    overdue: <AlertCircleIcon className="h-3.5 w-3.5 text-destructive" />,
+    due_soon: <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />,
+    ok: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />,
+    unknown: null,
+  };
+  return (
+    <span className="flex items-center gap-1.5 text-xs">
+      {icons[status.status]}
+      <span className={status.status === 'overdue' ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+        {status.label}
+      </span>
+    </span>
+  );
+}
+
 export default function Entities() {
   const { data: entities, isLoading } = useLegalEntities();
   const { data: verifications } = useEntityVerificationStatus();
+  const { data: allPropertiesV2 } = usePropertiesV2();
   const syncEntity = useSyncEntity();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -55,6 +76,14 @@ export default function Entities() {
     verifications?.forEach(v => { map[v.entity_id] = v; });
     return map;
   }, [verifications]);
+
+  const propertyCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    allPropertiesV2?.forEach(p => {
+      map.set(p.entity_id, (map.get(p.entity_id) || 0) + 1);
+    });
+    return map;
+  }, [allPropertiesV2]);
 
   const filtered = useMemo(() => {
     if (!entities) return [];
@@ -80,7 +109,7 @@ export default function Entities() {
         await syncEntity.mutateAsync({ entityId: spv.id, companyNumber: spv.company_number! });
         synced++;
       } catch { /* continue */ }
-      await new Promise(r => setTimeout(r, 500)); // rate limit respect
+      await new Promise(r => setTimeout(r, 500));
     }
     setBulkSyncing(false);
     const issues = verifications?.filter(v => v.verification_status === 'status_mismatch').length || 0;
@@ -94,17 +123,6 @@ export default function Entities() {
     if (!v || v.verification_status === 'not_synced') return <Badge variant="secondary" className="text-xs">Not Synced</Badge>;
     if (v.verification_status === 'verified') return <span className="text-emerald-600 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Verified</span>;
     return <span className="text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Mismatch</span>;
-  };
-
-  const FilingsCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
-    if (entityType !== 'spv') return <span className="text-muted-foreground text-xs">N/A</span>;
-    const v = verificationMap[entityId];
-    if (!v || v.verification_status === 'not_synced') return <span className="text-muted-foreground text-xs">—</span>;
-    const hasOverdue = v.accounts_filing_status === 'overdue' || v.confirmation_filing_status === 'overdue';
-    const hasDueSoon = v.accounts_filing_status === 'due_soon' || v.confirmation_filing_status === 'due_soon';
-    if (hasOverdue) return <span className="text-destructive flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Overdue</span>;
-    if (hasDueSoon) return <span className="text-amber-600 flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Due Soon</span>;
-    return <span className="text-emerald-600 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> OK</span>;
   };
 
   return (
@@ -165,15 +183,18 @@ export default function Entities() {
                   <TableHead>Entity Name</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Company Number</TableHead>
+                  <TableHead>Properties</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>CH Status</TableHead>
-                  <TableHead>Filings</TableHead>
+                  <TableHead>Accounts</TableHead>
+                  <TableHead>Conf. Statement</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((entity) => {
                   const typeConfig = TYPE_CONFIG[entity.entity_type];
                   const statusConfig = STATUS_CONFIG[entity.status];
+                  const v = verificationMap[entity.id];
                   return (
                     <TableRow
                       key={entity.id}
@@ -190,13 +211,33 @@ export default function Entities() {
                       <TableCell className="text-muted-foreground font-mono text-sm">
                         {entity.company_number || '—'}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {propertyCountMap.get(entity.id) || 0}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusConfig.className}>
                           {statusConfig.label}
                         </Badge>
                       </TableCell>
                       <TableCell><CHStatusCell entityId={entity.id} entityType={entity.entity_type} /></TableCell>
-                      <TableCell><FilingsCell entityId={entity.id} entityType={entity.entity_type} /></TableCell>
+                      <TableCell>
+                        {entity.company_number && v?.ch_accounts_next_due ? (
+                          <ComplianceStatusIndicator dueDate={v.ch_accounts_next_due} />
+                        ) : entity.company_number ? (
+                          <span className="text-xs text-muted-foreground">Not synced</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {entity.company_number && v?.ch_confirmation_next_due ? (
+                          <ComplianceStatusIndicator dueDate={v.ch_confirmation_next_due} />
+                        ) : entity.company_number ? (
+                          <span className="text-xs text-muted-foreground">Not synced</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

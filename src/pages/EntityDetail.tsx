@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle, RefreshCw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +32,9 @@ import {
   useDeleteLegalEntity,
   useDeleteDirector,
   useDeleteShareholder,
+  useUpdateLegalEntity,
 } from '@/hooks/useLegalEntities';
+import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
 import { useToast } from '@/hooks/use-toast';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
@@ -40,12 +42,14 @@ import { DirectorFormModal } from '@/components/entities/DirectorFormModal';
 import { ShareholderFormModal } from '@/components/entities/ShareholderFormModal';
 import { CHVerificationBanner } from '@/components/entities/CHVerificationBanner';
 import { CHDataPanel } from '@/components/entities/CHDataPanel';
+import { ComplianceFilingsCard } from '@/components/companies/ComplianceFilingsCard';
 import { useEntityPropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { format } from 'date-fns';
 import { EntityFinancialSection } from '@/components/financials/EntityFinancialSection';
 import { EntityInvestorSection } from '@/components/entities/EntityInvestorSection';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { EntityAccountingSection } from '@/components/accounting/EntityAccountingSection';
+import { cn } from '@/lib/utils';
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   spv: Building2,
@@ -90,11 +94,81 @@ export default function EntityDetail() {
   const deleteDirector = useDeleteDirector();
   const deleteShareholder = useDeleteShareholder();
 
+  const { lookupCompany, isLookingUp } = useCompaniesHouse();
+  const updateEntity = useUpdateLegalEntity();
+  const hasAutoSynced = useRef(false);
+
   const [showEditEntity, setShowEditEntity] = useState(false);
   const [showAddDirector, setShowAddDirector] = useState(false);
   const [editingDirector, setEditingDirector] = useState<any>(null);
   const [showAddShareholder, setShowAddShareholder] = useState(false);
   const [editingShareholder, setEditingShareholder] = useState<any>(null);
+
+  // Auto-sync from CH if stale (>24hrs)
+  const performAutoSync = useCallback(async () => {
+    if (!entity?.company_number || isLookingUp || hasAutoSynced.current) return;
+
+    const lastSynced = (entity as any).ch_last_synced_at ? new Date((entity as any).ch_last_synced_at as string) : null;
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    if (!lastSynced || lastSynced < twentyFourHoursAgo) {
+      hasAutoSynced.current = true;
+      try {
+        const result = await lookupCompany(entity.company_number);
+        if (result) {
+          await updateEntity.mutateAsync({
+            id: entity.id,
+            registered_address: result.company.registered_address,
+            incorporation_date: result.company.date_of_creation,
+            ch_last_synced_at: new Date().toISOString(),
+            ch_company_status: result.company.company_status,
+            ch_company_type: result.company.company_type,
+            accounts_due_date: result.compliance.accounts_due_date,
+            accounts_period_end: result.compliance.accounts_period_end,
+            accounts_last_filed_date: result.compliance.accounts_last_filed_date,
+            confirmation_statement_due_date: result.compliance.confirmation_statement_due_date,
+            confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
+            confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
+          } as any);
+          toast({ title: 'Auto-synced from Companies House' });
+        }
+      } catch (err) {
+        console.error('Auto-sync failed:', err);
+      }
+    }
+  }, [entity, isLookingUp, lookupCompany, updateEntity, toast]);
+
+  useEffect(() => {
+    if (entity && !isLoading) {
+      performAutoSync();
+    }
+  }, [entity, isLoading, performAutoSync]);
+
+  const handleRefreshFromCH = async () => {
+    if (!entity?.company_number) return;
+    try {
+      const result = await lookupCompany(entity.company_number);
+      if (result) {
+        await updateEntity.mutateAsync({
+          id: entity.id,
+          registered_address: result.company.registered_address,
+          incorporation_date: result.company.date_of_creation,
+          ch_last_synced_at: new Date().toISOString(),
+          ch_company_status: result.company.company_status,
+          ch_company_type: result.company.company_type,
+          accounts_due_date: result.compliance.accounts_due_date,
+          accounts_period_end: result.compliance.accounts_period_end,
+          accounts_last_filed_date: result.compliance.accounts_last_filed_date,
+          confirmation_statement_due_date: result.compliance.confirmation_statement_due_date,
+          confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
+          confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
+        } as any);
+        toast({ title: 'Synced from Companies House', description: 'Company details and compliance dates updated' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to sync from Companies House', variant: 'destructive' });
+    }
+  };
 
   const handleDeleteEntity = async () => {
     if (!id) return;
@@ -163,9 +237,20 @@ export default function EntityDetail() {
               {entity.company_number && (
                 <span className="text-sm text-muted-foreground font-mono">#{entity.company_number}</span>
               )}
+              {(entity as any).ch_company_status && (
+                <Badge variant="outline" className="text-xs">
+                  CH: {(entity as any).ch_company_status}
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {entity.company_number && (
+              <Button variant="outline" onClick={handleRefreshFromCH} disabled={isLookingUp}>
+                <RefreshCw className={cn('h-4 w-4 mr-2', isLookingUp && 'animate-spin')} />
+                Sync from CH
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setShowEditEntity(true)}>
               <Edit className="h-4 w-4 mr-2" /> Edit
             </Button>
@@ -194,7 +279,7 @@ export default function EntityDetail() {
         </div>
 
         {/* Entity Details */}
-        {(entity.registered_address || entity.corporation_tax_ref || entity.vat_number || entity.incorporation_date || entity.notes) && (
+        {(entity.registered_address || entity.corporation_tax_ref || entity.vat_number || entity.incorporation_date || entity.notes || entity.company_number) && (
           <Card>
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -222,6 +307,27 @@ export default function EntityDetail() {
                     <p className="font-medium font-mono">{entity.vat_number || 'Registered (no number)'}</p>
                   </div>
                 )}
+                {entity.company_number && (
+                  <div>
+                    <span className="text-muted-foreground">Companies House</span>
+                    <p>
+                      <a
+                        href={`https://find-and-update.company-information.service.gov.uk/company/${entity.company_number}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline font-medium"
+                      >
+                        View on Companies House ↗
+                      </a>
+                    </p>
+                  </div>
+                )}
+                {(entity as any).ch_last_synced_at && (
+                  <div>
+                    <span className="text-muted-foreground">Last CH Sync</span>
+                    <p className="font-medium">{formatDate((entity as any).ch_last_synced_at)}</p>
+                  </div>
+                )}
                 {entity.notes && (
                   <div className="col-span-full">
                     <span className="text-muted-foreground">Notes</span>
@@ -231,6 +337,29 @@ export default function EntityDetail() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Companies House Filings */}
+        {entity.company_number && (
+          <ComplianceFilingsCard
+            data={{
+              accounts_due_date: (entity as any).accounts_due_date,
+              accounts_period_end: (entity as any).accounts_period_end,
+              accounts_last_filed_date: (entity as any).accounts_last_filed_date,
+              confirmation_statement_due_date: (entity as any).confirmation_statement_due_date,
+              confirmation_statement_last_made_up_to: (entity as any).confirmation_statement_last_made_up_to,
+              confirmation_statement_last_filed_date: (entity as any).confirmation_statement_last_filed_date,
+              ch_last_synced_at: (entity as any).ch_last_synced_at,
+              company_number: entity.company_number,
+            }}
+            onUpdate={async (updates) => {
+              await updateEntity.mutateAsync({ id: entity.id, ...updates } as any);
+              toast({ title: 'Filing dates updated' });
+            }}
+            onSyncFromCH={handleRefreshFromCH}
+            isSyncing={isLookingUp}
+            isUpdating={updateEntity.isPending}
+          />
         )}
 
         {/* Directors Section */}
