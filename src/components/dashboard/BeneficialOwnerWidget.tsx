@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, User, Building2, ChevronDown, ChevronUp, ExternalLink, TrendingUp, Wallet, PiggyBank } from 'lucide-react';
+import { Users, User, Building2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -10,29 +9,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { usePortfolioAttribution, type OwnerAttribution } from '@/hooks/useOwnershipAttribution';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
-import { formatGBP, formatPercent } from '@/lib/calculations';
+import { usePortfolioOwnershipV2, type PortfolioOwnerV2 } from '@/hooks/useOwnershipAttributionV2';
+import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
+import { formatPercent } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 
-interface BeneficialOwnerWidgetProps {
-  properties: PropertyWithFinancials[];
-}
-
-const ownerTypeIcons: Record<string, React.ReactNode> = {
-  INDIVIDUAL: <User className="h-4 w-4" />,
-  COMPANY: <Building2 className="h-4 w-4" />,
-  TRUST: <Users className="h-4 w-4" />,
-  SPV: <Building2 className="h-4 w-4" />,
-  Person: <User className="h-4 w-4" />,
-};
-
-function OwnerRow({ owner, totalEquity }: { owner: OwnerAttribution; totalEquity: number }) {
+function OwnerRow({ owner }: { owner: PortfolioOwnerV2 }) {
   const [isOpen, setIsOpen] = useState(false);
-  
-  const equityShare = totalEquity > 0
-    ? (owner.totals.totalAttributableEquity / totalEquity) * 100
-    : 0;
+
+  const minPct = Math.min(...owner.properties.map(p => p.effectivePercent));
+  const maxPct = Math.max(...owner.properties.map(p => p.effectivePercent));
+  const pctLabel = minPct === maxPct
+    ? `${minPct.toFixed(1)}%`
+    : `${minPct.toFixed(1)}–${maxPct.toFixed(1)}%`;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -42,23 +31,14 @@ function OwnerRow({ owner, totalEquity }: { owner: OwnerAttribution; totalEquity
           isOpen ? "bg-primary/10" : "bg-muted/50 hover:bg-muted"
         )}>
           <div className="p-2 rounded-lg bg-background">
-            {ownerTypeIcons[owner.ownerType] || <User className="h-4 w-4" />}
+            {owner.ownerType === 'individual'
+              ? <User className="h-4 w-4" />
+              : <Building2 className="h-4 w-4" />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-medium text-sm truncate">{owner.ownerName}</div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{owner.totals.propertyCount} properties</span>
-              <span>•</span>
-              <span className="font-medium text-primary">{formatPercent(equityShare, 1)} equity</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="font-semibold text-sm">{formatGBP(owner.totals.totalAttributableEquity)}</div>
-            <div className={cn(
-              "text-xs",
-              owner.totals.totalAttributableCashflow >= 0 ? "text-success" : "text-destructive"
-            )}>
-              {formatGBP(owner.totals.totalAttributableCashflow)}/yr
+            <div className="text-xs text-muted-foreground">
+              {owner.totalEffectiveProperties} properties · {pctLabel} effective
             </div>
           </div>
           <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
@@ -66,74 +46,54 @@ function OwnerRow({ owner, totalEquity }: { owner: OwnerAttribution; totalEquity
           </Button>
         </div>
       </CollapsibleTrigger>
-      
+
       <CollapsibleContent>
-        <div className="mt-2 ml-4 space-y-2">
-          {/* Summary metrics */}
-          <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-muted/30 text-xs">
-            <div>
-              <span className="text-muted-foreground">Value:</span>
-              <span className="ml-1 font-medium">{formatGBP(owner.totals.totalAttributableValue)}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Debt:</span>
-              <span className="ml-1 font-medium">{formatGBP(owner.totals.totalAttributableDebt)}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">NOI:</span>
-              <span className={cn(
-                "ml-1 font-medium",
-                owner.totals.totalAttributableNOI >= 0 ? "text-success" : "text-destructive"
-              )}>
-                {formatGBP(owner.totals.totalAttributableNOI)}
-              </span>
-            </div>
-          </div>
-          
-          {/* Property breakdown */}
-          <div className="space-y-1">
-            {owner.properties.slice(0, 5).map((prop) => (
-              <Link
-                key={prop.propertyId}
-                to={`/properties/${prop.propertyId}`}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate">{prop.propertyAddress}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatPercent(prop.effectivePercent, 1)} stake
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-right text-xs">
-                    <div>{formatGBP(prop.attributableEquity)}</div>
-                    <div className={cn(
-                      prop.attributableCashflow >= 0 ? "text-success" : "text-destructive"
-                    )}>
-                      {formatGBP(prop.attributableCashflow)}/yr
-                    </div>
-                  </div>
-                  <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </Link>
-            ))}
-            {owner.properties.length > 5 && (
-              <Link
-                to="/insights"
-                className="block text-center text-xs text-primary hover:underline py-1"
-              >
-                +{owner.properties.length - 5} more properties →
-              </Link>
-            )}
-          </div>
+        <div className="mt-2 ml-4 space-y-1">
+          {owner.properties.slice(0, 5).map((prop) => (
+            <Link
+              key={prop.propertyId}
+              to={`/properties/${prop.propertyId}`}
+              className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors group"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium truncate">{prop.propertyAddress}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">
+                  {formatPercent(prop.effectivePercent, 1)}
+                </span>
+                <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </Link>
+          ))}
+          {owner.properties.length > 5 && (
+            <Link
+              to="/insights"
+              className="block text-center text-xs text-primary hover:underline py-1"
+            >
+              +{owner.properties.length - 5} more properties →
+            </Link>
+          )}
         </div>
       </CollapsibleContent>
     </Collapsible>
   );
 }
 
-export function BeneficialOwnerWidget({ properties }: BeneficialOwnerWidgetProps) {
-  const { data: attribution, isLoading } = usePortfolioAttribution(properties);
+export function BeneficialOwnerWidget() {
+  const { data: properties } = usePropertiesV2();
+  const coreProperties = (properties || [])
+    .filter(p => ['stabilised', 'letting'].includes(p.lifecycle_stage))
+    .map(p => ({
+      id: p.id,
+      address_line_1: p.address_line_1,
+      city: p.city,
+      entity_id: p.entity_id,
+    }));
+
+  const { data: ownershipV2, isLoading } = usePortfolioOwnershipV2(
+    coreProperties.length > 0 ? coreProperties : undefined
+  );
 
   if (isLoading) {
     return (
@@ -151,7 +111,9 @@ export function BeneficialOwnerWidget({ properties }: BeneficialOwnerWidgetProps
     );
   }
 
-  if (!attribution || attribution.length === 0) {
+  const owners = ownershipV2?.portfolioOwners || [];
+
+  if (owners.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -159,9 +121,7 @@ export function BeneficialOwnerWidget({ properties }: BeneficialOwnerWidgetProps
             <Users className="h-5 w-5" />
             Beneficial Owners
           </CardTitle>
-          <CardDescription>
-            Financial attribution by owner
-          </CardDescription>
+          <CardDescription>Ownership attribution by beneficial owner</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6 text-muted-foreground">
@@ -173,12 +133,6 @@ export function BeneficialOwnerWidget({ properties }: BeneficialOwnerWidgetProps
       </Card>
     );
   }
-
-  // Calculate total equity for percentage display
-  const totalEquity = attribution.reduce(
-    (sum, owner) => sum + owner.totals.totalAttributableEquity,
-    0
-  );
 
   return (
     <Card>
@@ -195,19 +149,19 @@ export function BeneficialOwnerWidget({ properties }: BeneficialOwnerWidgetProps
           </Link>
         </div>
         <CardDescription>
-          {attribution.length} owners across {properties.length} properties
+          {owners.length} owners across {coreProperties.length} properties
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {attribution.slice(0, 6).map((owner) => (
-          <OwnerRow key={owner.ownerId} owner={owner} totalEquity={totalEquity} />
+        {owners.slice(0, 6).map((owner) => (
+          <OwnerRow key={owner.ownerEntityId || owner.ownerName} owner={owner} />
         ))}
-        {attribution.length > 6 && (
+        {owners.length > 6 && (
           <Link
             to="/insights"
             className="block text-center text-sm text-primary hover:underline py-2"
           >
-            +{attribution.length - 6} more owners →
+            +{owners.length - 6} more owners →
           </Link>
         )}
       </CardContent>

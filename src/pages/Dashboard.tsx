@@ -11,9 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
-import { useDashboardPropertiesV2, useDashboardTenanciesV2, useDashboardRoomsV2 } from '@/hooks/useDashboardDataV2';
-import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
-import { useHydrogenKPIs } from '@/hooks/useHydrogenKPIs';
+
+// V2 data sources
+import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
+import { usePortfolioKPIs } from '@/hooks/usePortfolioKPIs';
+import { useDashboardTenanciesV2, useDashboardRoomsV2 } from '@/hooks/useDashboardDataV2';
 import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
 import { useRentSchedule } from '@/hooks/useRentCollection';
 import { Progress } from '@/components/ui/progress';
@@ -31,6 +33,7 @@ import { UpcomingExpirationsWidget } from '@/components/dashboard/UpcomingExpira
 import { DashboardCalendarWidget } from '@/components/dashboard/DashboardCalendarWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
 import { KpiCard } from '@/components/dashboard/KpiCard';
+import { DualKpiCard } from '@/components/dashboard/DualKpiCard';
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { ActionsRequiredWidget } from '@/components/dashboard/ActionsRequiredWidget';
 import { RentCollectionWidget } from '@/components/dashboard/RentCollectionWidget';
@@ -39,137 +42,86 @@ import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWid
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { MaintenanceWidget } from '@/components/dashboard/MaintenanceWidget';
 import { CHFilingAlertsWidget } from '@/components/dashboard/CHFilingAlertsWidget';
-import { DashboardShareholdersTab, prepareShareholderData } from '@/components/dashboard/DashboardShareholdersTab';
+import { DashboardShareholdersTab } from '@/components/dashboard/DashboardShareholdersTab';
 import { LenderExposureChart, computeLenderData } from '@/components/dashboard/LenderExposureChart';
-import {
-  formatGBP,
-  formatPercent,
-  getEffectiveCosts,
-  calculateMonthlyCashflowAfterDebt,
-  calculateMonthlyMortgagePayment,
-} from '@/lib/calculations';
-import { calculatePortfolioRentPerBedroom } from '@/lib/mortgageCalculations';
-import { MetricKey, METRICS_CONFIG, MetricBreakdown } from '@/lib/metricsConfig';
+import { formatGBP, formatPercent } from '@/lib/calculations';
+import { MetricKey, MetricBreakdown } from '@/lib/metricsConfig';
 
-import { usePropertyPassports, type PropertyPassport } from '@/hooks/usePropertyPassport';
+import { usePropertyPassports } from '@/hooks/usePropertyPassport';
 import { useMissingInfo } from '@/hooks/useMissingInfo';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
-import { usePortfolioMonthlySummary, usePropertyAnnualPerformance } from '@/hooks/useFinancialSnapshots';
+import { usePortfolioMonthlySummary } from '@/hooks/useFinancialSnapshots';
+
+// V1 bridge — still needed for widgets that haven't migrated yet
+import { useDashboardPropertiesV2 } from '@/hooks/useDashboardDataV2';
 
 function DashboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
   const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
-  // kpiView toggle removed — now showing dual-column (gross + attributed) on each card
-  const [attributionDate, setAttributionDate] = useState<string>(''); // '' = current/today
-  const { data: properties, isLoading, isError, error } = useDashboardPropertiesV2();
+  const { lifecycleFilter, filterProperties } = useLifecycleFilter();
+
+  // V2 data sources
+  const { data: propertiesV2, isLoading: propsLoading } = usePropertiesV2();
+  const { data: portfolioKPIs, isLoading: kpisLoading } = usePortfolioKPIs();
+
+  // V1 bridge data — still needed for PortfolioHealthWidget, DataQualityWidget, LenderExposureChart
+  const { data: v1Properties } = useDashboardPropertiesV2();
+
+  const isLoading = propsLoading || kpisLoading;
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
-  const { lifecycleFilter, filterProperties } = useLifecycleFilter();
   const { risks: portfolioRisks, criticalCount: portfolioCriticalCount } = usePortfolioRisks();
 
-  // Financial snapshot data for dashboard KPIs
+  // Financial snapshot data for rental KPI row (Track C - unchanged)
   const { data: portfolioMonthlySummary } = usePortfolioMonthlySummary(12);
-  const { data: annualPerformance } = usePropertyAnnualPerformance();
 
-  // V2 tenancy and room data for dashboard stats
+  // V2 tenancy and room data
   const { data: allTenancies } = useDashboardTenanciesV2();
   const { data: allRooms } = useDashboardRoomsV2();
   const currentDashMonth = format(new Date(), 'yyyy-MM');
   const { data: rentSchedule } = useRentSchedule({ month: currentDashMonth });
 
-  // Filter properties based on lifecycle selection
+  // Filter properties using V2 data
   const filteredProperties = useMemo(() => {
-    if (!properties) return [];
-    return filterProperties(properties);
-  }, [properties, filterProperties]);
+    if (!propertiesV2) return [];
+    if (lifecycleFilter === 'all') return propertiesV2;
+    // Map V2 lifecycle_stage to V1 lifecycle_type for filter compatibility
+    const stageMap: Record<string, string> = {
+      stabilised: 'core_rental',
+      letting: 'core_rental',
+      pipeline: 'development',
+      acquisition: 'development',
+      refurbishment: 'development',
+      disposal: 'development',
+    };
+    return propertiesV2.filter(p => stageMap[p.lifecycle_stage] === lifecycleFilter || lifecycleFilter === p.lifecycle_stage);
+  }, [propertiesV2, lifecycleFilter]);
 
-  // Core rental properties only (for KPIs that should exclude development)
   const coreRentalProperties = useMemo(() => {
-    if (!properties) return [];
-    return properties.filter(p => (p.lifecycle_type ?? 'development') === 'core_rental');
-  }, [properties]);
+    if (!propertiesV2) return [];
+    return propertiesV2.filter(p => ['stabilised', 'letting'].includes(p.lifecycle_stage));
+  }, [propertiesV2]);
 
-  const { data: attribution, isLoading: isAttributionLoading } = usePortfolioAttribution(coreRentalProperties, attributionDate || undefined);
-  const hydrogenKPIs = useHydrogenKPIs(attribution);
+  // V1 bridge properties for widgets that still need V1 shape
+  const v1CoreRentalProperties = useMemo(() => {
+    if (!v1Properties) return [];
+    return v1Properties.filter(p => (p.lifecycle_type ?? 'development') === 'core_rental');
+  }, [v1Properties]);
 
-  // Calculate portfolio totals - ONLY from core rental properties for income KPIs
-  const portfolioStats = useMemo(() => {
-    const kpiProperties = coreRentalProperties;
-    if (!kpiProperties?.length) {
-      return {
-        totalValue: 0,
-        totalMortgage: 0,
-        totalEquity: 0,
-        averageLTV: 0,
-        monthlyCashflow: 0,
-        rentPerBedroom: null as number | null,
-      };
-    }
-
-    const currentYear = new Date().getFullYear();
-    let totalValue = 0;
-    let totalMortgage = 0;
-    let totalMonthlyCashflowAfterDebt = 0;
-
-    kpiProperties.forEach(property => {
-      const loan = property.loans?.[0];
-      const income = property.income?.find(i => i.year === currentYear);
-      const costs = property.costs?.find(c => c.year === currentYear);
-
-      const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
-      const mortgage = loan?.current_mortgage_balance_gbp ? Number(loan.current_mortgage_balance_gbp) : 0;
-      const rent = income?.annual_rent_gbp ? Number(income.annual_rent_gbp) : null;
-      const effectiveCosts = getEffectiveCosts(rent, value, costs);
-      const totalCosts = effectiveCosts.total;
-
-      const storedPayment = loan?.mortgage_payment_gbp ? Number(loan.mortgage_payment_gbp) : null;
-      const paymentOverride = loan?.payment_override_gbp ? Number(loan.payment_override_gbp) : storedPayment;
-      const mortgagePaymentResult = calculateMonthlyMortgagePayment({
-        balance: mortgage || null,
-        interestRate: loan?.interest_rate_percent ? Number(loan.interest_rate_percent) : null,
-        termMonths: loan?.loan_term_months ? Number(loan.loan_term_months) : null,
-        isInterestOnly: loan?.capital_or_interest === 'interest',
-        paymentOverride,
-      });
-
-      totalValue += value;
-      totalMortgage += mortgage;
-      const monthlyCashflow = calculateMonthlyCashflowAfterDebt(rent, totalCosts, mortgagePaymentResult.effective);
-      totalMonthlyCashflowAfterDebt += monthlyCashflow || 0;
-    });
-
-    const totalEquity = totalValue - totalMortgage;
-    const averageLTV = totalValue > 0 ? (totalMortgage / totalValue) * 100 : 0;
-
-    const rentPerBedroomData = kpiProperties.map(p => {
-      const inc = p.income?.find(i => i.year === currentYear);
-      return {
-        annualRent: inc?.annual_rent_gbp ? Number(inc.annual_rent_gbp) : null,
-        bedrooms: p.beds ? Number(p.beds) : null,
-      };
-    });
-    const rentPerBedroom = calculatePortfolioRentPerBedroom(rentPerBedroomData);
-
-    return { totalValue, totalMortgage, totalEquity, averageLTV, monthlyCashflow: totalMonthlyCashflowAfterDebt, rentPerBedroom: rentPerBedroom.monthly };
-  }, [coreRentalProperties]);
-
-  // Rental & occupancy stats
+  // Rental & occupancy stats (Track C — leave unchanged)
   const rentalStats = useMemo(() => {
     const activeTenancies = allTenancies?.filter(t => t.status === 'active') || [];
     const noticeTenancies = allTenancies?.filter(t => t.status === 'notice') || [];
-
     const totalMonthlyRent = activeTenancies.reduce((sum, t) => sum + (t.rent_amount_pcm || 0), 0);
 
-    // Build a map of property_id -> beds for whole-property rooms
     const propertyBedsMap = new Map<string, number>();
     for (const p of coreRentalProperties) {
-      if (p.beds) propertyBedsMap.set(p.id, Number(p.beds));
+      if (p.total_lettable_rooms) propertyBedsMap.set(p.id, Number(p.total_lettable_rooms));
     }
 
     const rooms = allRooms || [];
-    // For "Whole Property" rooms, count the property's bedroom count instead of 1
     let totalRooms = 0;
     let occupiedRooms = 0;
     let vacantRooms = 0;
@@ -184,8 +136,6 @@ function DashboardPage() {
     }
     const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
 
-    const totalBedrooms = coreRentalProperties.reduce((sum, p) => sum + (p.beds ? Number(p.beds) : 0), 0);
-
     const schedule = rentSchedule || [];
     const totalDue = schedule.reduce((sum, r) => sum + (r.rent_amount || 0), 0);
     const totalCollected = schedule.reduce((sum, r) => sum + (r.amount_paid || 0), 0);
@@ -199,74 +149,140 @@ function DashboardPage() {
       occupiedRooms,
       vacantRooms,
       occupancyRate,
-      totalBedrooms,
       totalDue,
       totalCollected,
       totalOverdue,
     };
   }, [allTenancies, allRooms, rentSchedule, coreRentalProperties]);
 
-  // Lender exposure data
-  const lenderData = useMemo(() => computeLenderData(coreRentalProperties), [coreRentalProperties]);
+  // Lender exposure data — TODO: migrate to use loan_facilities + lenders directly
+  const lenderData = useMemo(() => computeLenderData(v1CoreRentalProperties), [v1CoreRentalProperties]);
 
-  // Financial snapshot KPIs
+  // Snapshot KPIs for rental row (Track C — unchanged)
   const snapshotKPIs = useMemo(() => {
     const latestMonth = portfolioMonthlySummary?.[0];
     const monthlyCashPosition = latestMonth?.total_cash_flow ?? null;
     const latestMonthLabel = latestMonth?.snapshot_month
       ? format(new Date(latestMonth.snapshot_month), 'MMM yyyy')
       : null;
+    return { monthlyCashPosition, latestMonthLabel };
+  }, [portfolioMonthlySummary]);
 
-    // Net Yield = trailing 12m NOI / sum of current valuations × 100
-    const totalAnnualNOI = annualPerformance?.reduce((sum, p) => sum + (p.annual_noi || 0), 0) ?? 0;
-    const totalValuation = coreRentalProperties.reduce((sum, p) => sum + (p.current_value_gbp ? Number(p.current_value_gbp) : 0), 0);
-    const netYield = totalValuation > 0 ? (totalAnnualNOI / totalValuation) * 100 : null;
-
-    return { monthlyCashPosition, latestMonthLabel, netYield };
-  }, [portfolioMonthlySummary, annualPerformance, coreRentalProperties]);
-
-  // Shareholder data
-  const shareholderData = useMemo(() => prepareShareholderData(attribution), [attribution]);
-
-  // Map check
-  const hasPropertiesWithCoords = useMemo(() => {
-    if (!filteredProperties?.length) return false;
-    return filteredProperties.some(p => p.latitude && p.longitude);
+  // Map adapter for PropertyMap
+  const mapProperties = useMemo(() => {
+    return filteredProperties
+      .filter(p => p.latitude && p.longitude)
+      .map(p => ({
+        id: p.id,
+        address_line: p.address_line_1,
+        postcode: p.postcode,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        lifecycle_type: ['stabilised', 'letting'].includes(p.lifecycle_stage) ? 'core_rental' : 'development',
+        town_city: p.city,
+      })) as any[];
   }, [filteredProperties]);
+
+  const hasPropertiesWithCoords = mapProperties.length > 0;
 
   // Handle metric card click
   const handleMetricClick = useCallback((metricKey: MetricKey) => {
     setSelectedMetric(metricKey);
   }, []);
 
-  // Get breakdown for selected metric
+  // V2 metric breakdown using portfolioKPIs
   const selectedBreakdown = useMemo<MetricBreakdown | null>(() => {
-    if (!selectedMetric || !coreRentalProperties) return null;
-    const config = METRICS_CONFIG[selectedMetric];
-    return config.getBreakdown(coreRentalProperties, passports || []);
-  }, [selectedMetric, coreRentalProperties, passports]);
+    if (!selectedMetric || !portfolioKPIs) return null;
+
+    const { gross, attributable, properties: propRows, groupParentName } = portfolioKPIs;
+
+    const buildBreakdown = (
+      title: string,
+      summaryValue: string,
+      calculationText: string,
+      formula: string,
+      columns: MetricBreakdown['columns'],
+      rows: MetricBreakdown['rows'],
+    ): MetricBreakdown => ({ title, summaryValue, calculationText, formula, columns, rows });
+
+    switch (selectedMetric) {
+      case 'equity':
+        return buildBreakdown(
+          'Portfolio Value & Equity',
+          `Gross: ${formatGBP(gross.totalEquity)} | ${groupParentName}: ${formatGBP(attributable.totalEquity)}`,
+          `${propRows.length} core rental properties`,
+          'Equity = Value − Debt',
+          [
+            { key: 'address', label: 'Property', align: 'left' },
+            { key: 'value', label: 'Value', align: 'right' },
+            { key: 'equity', label: 'Equity', align: 'right' },
+            { key: 'attrEquity', label: `${groupParentName} Equity`, align: 'right' },
+          ],
+          [...propRows].sort((a, b) => b.equity - a.equity).map(p => ({
+            propertyId: p.propertyId,
+            address: `${p.address}, ${p.city}`,
+            values: {
+              value: formatGBP(p.value),
+              equity: formatGBP(p.equity),
+              attrEquity: `${formatGBP(p.attrEquity)} (${p.groupOwnershipPct.toFixed(0)}%)`,
+            },
+          })),
+        );
+      case 'cashflow':
+        return buildBreakdown(
+          'Monthly Cashflow',
+          `Gross: ${formatGBP(gross.monthlyCashflow)} | ${groupParentName}: ${formatGBP(attributable.monthlyCashflow)}`,
+          'After debt service',
+          'Cashflow = Rent − Costs − Mortgage',
+          [
+            { key: 'address', label: 'Property', align: 'left' },
+            { key: 'cashflow', label: 'Monthly', align: 'right' },
+            { key: 'attrCashflow', label: `${groupParentName}`, align: 'right' },
+          ],
+          [...propRows].sort((a, b) => b.annualCashflow - a.annualCashflow).map(p => ({
+            propertyId: p.propertyId,
+            address: `${p.address}, ${p.city}`,
+            values: {
+              cashflow: formatGBP(p.annualCashflow / 12),
+              attrCashflow: `${formatGBP(p.attrCashflow / 12)} (${p.groupOwnershipPct.toFixed(0)}%)`,
+            },
+            // highlight: p.annualCashflow < 0,
+          })),
+        );
+      case 'ltv':
+        return buildBreakdown(
+          'Loan-to-Value',
+          `Gross: ${formatPercent(gross.weightedLTV)} | ${groupParentName}: ${formatPercent(attributable.weightedLTV)}`,
+          'Per property',
+          'LTV = Debt ÷ Value × 100',
+          [
+            { key: 'address', label: 'Property', align: 'left' },
+            { key: 'ltv', label: 'LTV', align: 'right' },
+            { key: 'debt', label: 'Debt', align: 'right' },
+          ],
+          [...propRows].filter(p => p.debt > 0).sort((a, b) => b.ltv - a.ltv).map(p => ({
+            propertyId: p.propertyId,
+            address: `${p.address}, ${p.city}`,
+            values: {
+              ltv: formatPercent(p.ltv),
+              debt: `${formatGBP(p.debt)} on ${formatGBP(p.value)}`,
+            },
+            // highlight: p.ltv > 80,
+          })),
+        );
+      default:
+        return null;
+    }
+  }, [selectedMetric, portfolioKPIs]);
 
   if (isLoading) {
     return (
       <AppLayout>
         <div className="space-y-6">
           <Skeleton className="h-8 w-48" />
-          <div className="grid gap-4 md:grid-cols-5">
-            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-24" />)}
+          <div className="grid gap-4 md:grid-cols-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-28" />)}
           </div>
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (isError) {
-    return (
-      <AppLayout>
-        <div className="text-center py-12">
-          <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
-          <h2 className="text-lg font-semibold">Failed to load dashboard</h2>
-          <p className="text-muted-foreground mb-4">{error?.message}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </AppLayout>
     );
@@ -280,8 +296,8 @@ function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground">
-              {filteredProperties?.length || 0} {lifecycleFilter === 'all' ? '' : lifecycleFilter === 'core_rental' ? 'core rental ' : 'development '}
-              properties{lifecycleFilter !== 'all' && properties && properties.length > filteredProperties.length ? ` (${properties.length} total)` : ''}
+              {filteredProperties?.length || 0} properties
+              {propertiesV2 && filteredProperties.length < propertiesV2.length ? ` (${propertiesV2.length} total)` : ''}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -309,83 +325,113 @@ function DashboardPage() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
-            {/* KPI Cards — Gross with attributed secondary */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <KpiCard
-                label="Portfolio Equity"
-                value={formatGBP(portfolioStats.totalEquity)}
-                subtitle={`Value: ${formatGBP(portfolioStats.totalValue)}`}
-                icon={TrendingUp}
-                iconClassName="text-primary"
-                valueClassName="text-primary"
-                onClick={() => handleMetricClick('equity')}
-                {...(hydrogenKPIs.isAvailable ? {
-                  secondaryLabel: hydrogenKPIs.principalName ?? 'Attributed',
-                  secondaryValue: formatGBP(hydrogenKPIs.totalEquity),
-                  secondaryValueClassName: 'text-primary',
-                } : {})}
-              />
-              <KpiCard
-                label={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
-                value={formatGBP(
-                  cashflowPeriod === 'monthly' ? portfolioStats.monthlyCashflow : portfolioStats.monthlyCashflow * 12
-                )}
-                subtitle="After debt service"
-                icon={PoundSterling}
-                iconClassName="text-success"
-                valueClassName={portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
-                onClick={() => handleMetricClick('cashflow')}
-                headerAction={
-                  <button
-                    className="text-xs px-2 py-1 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground transition-colors font-medium"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCashflowPeriod(cashflowPeriod === 'monthly' ? 'annual' : 'monthly');
-                    }}
-                    aria-label={`Switch to ${cashflowPeriod === 'monthly' ? 'annual' : 'monthly'} view`}
-                  >
-                    {cashflowPeriod === 'monthly' ? '/mo' : '/yr'}
-                  </button>
-                }
-                {...(hydrogenKPIs.isAvailable ? {
-                  secondaryLabel: hydrogenKPIs.principalName ?? 'Attributed',
-                  secondaryValue: formatGBP(
-                    cashflowPeriod === 'monthly' ? hydrogenKPIs.monthlyCashflow : hydrogenKPIs.totalCashflow
-                  ),
-                  secondaryValueClassName: hydrogenKPIs.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive',
-                } : {})}
-              />
-              <KpiCard
-                label="Average LTV"
-                value={formatPercent(portfolioStats.averageLTV)}
-                subtitle={`Debt: ${formatGBP(portfolioStats.totalMortgage)}`}
-                icon={Percent}
-                valueClassName={
-                  portfolioStats.averageLTV > 85 ? 'text-destructive' :
-                  portfolioStats.averageLTV > 75 ? 'text-warning' : ''
-                }
-                onClick={() => handleMetricClick('ltv')}
-                {...(hydrogenKPIs.isAvailable ? {
-                  secondaryLabel: hydrogenKPIs.principalName ?? 'Attributed',
-                  secondaryValue: formatPercent(hydrogenKPIs.averageLTV),
-                  secondaryValueClassName:
-                    hydrogenKPIs.averageLTV > 85 ? 'text-destructive' :
-                    hydrogenKPIs.averageLTV > 75 ? 'text-warning' : '',
-                } : {})}
-              />
-              <KpiCard
-                label="Action Required"
-                value={portfolioRisks.length === 0 ? '✓' : String(portfolioRisks.length)}
-                subtitle={portfolioRisks.length === 0 ? 'All clear' : `${portfolioCriticalCount} critical`}
-                icon={AlertTriangle}
-                iconClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
-                valueClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
-                onClick={() => navigate('/actions')}
-                className={portfolioRisks.length > 0 ? 'border-warning/40' : 'border-success/40'}
-              />
-            </div>
+            {/* KPI Cards — Gross vs Attributable */}
+            {portfolioKPIs && (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <DualKpiCard
+                    label="Portfolio Value"
+                    grossValue={formatGBP(portfolioKPIs.gross.totalValue)}
+                    attrValue={formatGBP(portfolioKPIs.attributable.totalValue)}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    subtitle={`${portfolioKPIs.gross.propertyCount} properties`}
+                    icon={TrendingUp}
+                    iconClassName="text-primary"
+                    grossClassName="text-primary"
+                    attrClassName="text-primary"
+                    onClick={() => handleMetricClick('equity')}
+                  />
+                  <DualKpiCard
+                    label="Equity"
+                    grossValue={formatGBP(portfolioKPIs.gross.totalEquity)}
+                    attrValue={formatGBP(portfolioKPIs.attributable.totalEquity)}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    subtitle={`Debt: ${formatGBP(portfolioKPIs.gross.totalDebt)}`}
+                    icon={TrendingUp}
+                    iconClassName="text-primary"
+                    grossClassName="text-primary"
+                    attrClassName="text-primary"
+                    onClick={() => handleMetricClick('equity')}
+                  />
+                  <DualKpiCard
+                    label={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
+                    grossValue={formatGBP(
+                      cashflowPeriod === 'monthly'
+                        ? portfolioKPIs.gross.monthlyCashflow
+                        : portfolioKPIs.gross.annualCashflow
+                    )}
+                    attrValue={formatGBP(
+                      cashflowPeriod === 'monthly'
+                        ? portfolioKPIs.attributable.monthlyCashflow
+                        : portfolioKPIs.attributable.annualCashflow
+                    )}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    subtitle="After debt service"
+                    icon={PoundSterling}
+                    iconClassName="text-success"
+                    grossClassName={portfolioKPIs.gross.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
+                    attrClassName={portfolioKPIs.attributable.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
+                    onClick={() => handleMetricClick('cashflow')}
+                    headerAction={
+                      <button
+                        className="text-xs px-2 py-1 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground transition-colors font-medium"
+                        onClick={(e) => { e.stopPropagation(); setCashflowPeriod(p => p === 'monthly' ? 'annual' : 'monthly'); }}
+                      >
+                        {cashflowPeriod === 'monthly' ? '/mo' : '/yr'}
+                      </button>
+                    }
+                  />
+                </div>
 
-            {/* Rental KPI Cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <DualKpiCard
+                    label="Weighted LTV"
+                    grossValue={formatPercent(portfolioKPIs.gross.weightedLTV)}
+                    attrValue={formatPercent(portfolioKPIs.attributable.weightedLTV)}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    icon={Percent}
+                    grossClassName={
+                      portfolioKPIs.gross.weightedLTV > 85 ? 'text-destructive' :
+                      portfolioKPIs.gross.weightedLTV > 75 ? 'text-warning' : ''
+                    }
+                    attrClassName={
+                      portfolioKPIs.attributable.weightedLTV > 85 ? 'text-destructive' :
+                      portfolioKPIs.attributable.weightedLTV > 75 ? 'text-warning' : ''
+                    }
+                    onClick={() => handleMetricClick('ltv')}
+                  />
+                  <DualKpiCard
+                    label="Net Yield"
+                    grossValue={portfolioKPIs.gross.netYieldPct !== null ? formatPercent(portfolioKPIs.gross.netYieldPct) : '—'}
+                    attrValue={portfolioKPIs.attributable.netYieldPct !== null ? formatPercent(portfolioKPIs.attributable.netYieldPct) : '—'}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    subtitle="Annual NOI ÷ Value"
+                    icon={TrendingUp}
+                    onClick={() => navigate('/financials')}
+                  />
+                  <DualKpiCard
+                    label="Annual Rent"
+                    grossValue={formatGBP(portfolioKPIs.gross.annualRent)}
+                    attrValue={formatGBP(portfolioKPIs.attributable.annualRent)}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    icon={Wallet}
+                    iconClassName="text-primary"
+                  />
+                  <KpiCard
+                    label="Action Required"
+                    value={portfolioRisks.length === 0 ? '✓' : String(portfolioRisks.length)}
+                    subtitle={portfolioRisks.length === 0 ? 'All clear' : `${portfolioCriticalCount} critical`}
+                    icon={AlertTriangle}
+                    iconClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
+                    valueClassName={portfolioRisks.length > 0 ? 'text-warning' : 'text-success'}
+                    onClick={() => navigate('/actions')}
+                    className={portfolioRisks.length > 0 ? 'border-warning/40' : 'border-success/40'}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Rental KPI Cards — Track C, unchanged */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <KpiCard
                 label="Monthly Rent Roll"
@@ -405,11 +451,10 @@ function DashboardPage() {
               />
               <KpiCard
                 label="Portfolio Net Yield"
-                value={snapshotKPIs.netYield !== null ? formatPercent(snapshotKPIs.netYield) : '—'}
-                subtitle={snapshotKPIs.netYield !== null ? 'Trailing 12m NOI / valuation' : 'No snapshot data yet'}
+                value={portfolioKPIs?.gross.netYieldPct !== null && portfolioKPIs?.gross.netYieldPct !== undefined ? formatPercent(portfolioKPIs.gross.netYieldPct) : '—'}
+                subtitle={portfolioKPIs?.gross.netYieldPct !== null ? 'Annual NOI / valuation' : 'No data yet'}
                 icon={TrendingUp}
                 iconClassName="text-primary"
-                valueClassName={snapshotKPIs.netYield !== null && snapshotKPIs.netYield >= 6 ? 'text-success' : snapshotKPIs.netYield !== null && snapshotKPIs.netYield < 4 ? 'text-warning' : ''}
                 onClick={() => navigate('/financials')}
               />
               <KpiCard
@@ -476,10 +521,9 @@ function DashboardPage() {
 
               {/* TODAY TAB */}
               <TabsContent value="today" className="space-y-6 mt-4">
-                {/* Property Map — promoted to top */}
                 <SectionCard
                   title="Property Map"
-                  subtitle={`${filteredProperties?.filter(p => p.latitude && p.longitude).length || 0} properties plotted`}
+                  subtitle={`${mapProperties.length} properties plotted`}
                   icon={MapPin}
                   onClick={() => navigate('/dashboard/map')}
                   showArrow
@@ -489,7 +533,7 @@ function DashboardPage() {
                   {hasPropertiesWithCoords ? (
                     <div className="p-4">
                       <PropertyMap
-                        properties={filteredProperties || []}
+                        properties={mapProperties}
                         className="h-[350px] rounded-lg"
                       />
                     </div>
@@ -503,72 +547,43 @@ function DashboardPage() {
                   )}
                 </SectionCard>
 
-                {/* Widgets Row: This Month + Actions Required + Calendar */}
                 <div className="grid gap-6 lg:grid-cols-3">
-                  <ErrorBoundary>
-                    <ThisMonthWidget />
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <ActionsRequiredWidget />
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <DashboardCalendarWidget />
-                  </ErrorBoundary>
+                  <ErrorBoundary><ThisMonthWidget /></ErrorBoundary>
+                  <ErrorBoundary><ActionsRequiredWidget /></ErrorBoundary>
+                  <ErrorBoundary><DashboardCalendarWidget /></ErrorBoundary>
                 </div>
 
-                {/* Widgets Row: Rent Collection + Occupancy + Tenancy Pipeline */}
                 <div className="grid gap-6 lg:grid-cols-3">
-                  <ErrorBoundary>
-                    <RentCollectionWidget />
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <OccupancyWidget />
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <TenancyPipelineWidget />
-                  </ErrorBoundary>
+                  <ErrorBoundary><RentCollectionWidget /></ErrorBoundary>
+                  <ErrorBoundary><OccupancyWidget /></ErrorBoundary>
+                  <ErrorBoundary><TenancyPipelineWidget /></ErrorBoundary>
                 </div>
 
-                {/* Maintenance Widget */}
-                <ErrorBoundary>
-                  <MaintenanceWidget />
-                </ErrorBoundary>
-
-                {/* Recent Activity Feed */}
-                <ErrorBoundary>
-                  <RecentActivityWidget />
-                </ErrorBoundary>
+                <ErrorBoundary><MaintenanceWidget /></ErrorBoundary>
+                <ErrorBoundary><RecentActivityWidget /></ErrorBoundary>
               </TabsContent>
 
               {/* HEALTH TAB */}
               <TabsContent value="health" className="space-y-6 mt-4">
-                {coreRentalProperties.length > 0 && (
+                {v1CoreRentalProperties.length > 0 && (
                   <ErrorBoundary>
                     <PortfolioHealthWidget
-                      properties={coreRentalProperties}
+                      properties={v1CoreRentalProperties}
                       onClick={() => handleMetricClick('health')}
                     />
                   </ErrorBoundary>
                 )}
                 <div className="grid gap-6 lg:grid-cols-2">
-                  <ErrorBoundary>
-                    <MissingComplianceWidget />
-                  </ErrorBoundary>
-                  <ErrorBoundary>
-                    <CHFilingAlertsWidget />
-                  </ErrorBoundary>
+                  <ErrorBoundary><MissingComplianceWidget /></ErrorBoundary>
+                  <ErrorBoundary><CHFilingAlertsWidget /></ErrorBoundary>
                 </div>
+                <ErrorBoundary><DashboardCalendarWidget /></ErrorBoundary>
                 <ErrorBoundary>
-                  <DashboardCalendarWidget />
-                </ErrorBoundary>
-                <ErrorBoundary>
-                  {filteredProperties.length > 0 && (
-                    <DataQualityWidget properties={filteredProperties} />
+                  {v1Properties && v1Properties.length > 0 && (
+                    <DataQualityWidget properties={v1Properties} />
                   )}
                 </ErrorBoundary>
-                <ErrorBoundary>
-                  <StockConditionSection />
-                </ErrorBoundary>
+                <ErrorBoundary><StockConditionSection /></ErrorBoundary>
               </TabsContent>
 
               {/* PORTFOLIO TAB */}
@@ -584,7 +599,7 @@ function DashboardPage() {
                   {hasPropertiesWithCoords ? (
                     <div className="p-4">
                       <PropertyMap
-                        properties={filteredProperties || []}
+                        properties={mapProperties}
                         className="h-[400px] rounded-lg pointer-events-none"
                       />
                     </div>
@@ -601,14 +616,12 @@ function DashboardPage() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <LenderExposureChart lenderData={lenderData} />
                   <ErrorBoundary>
-                    {filteredProperties && <AreaExposureChart properties={filteredProperties} />}
+                    {v1Properties && <AreaExposureChart properties={v1Properties} />}
                   </ErrorBoundary>
                 </div>
 
                 <ErrorBoundary>
-                  {coreRentalProperties.length > 0 && (
-                    <BeneficialOwnerWidget properties={coreRentalProperties} />
-                  )}
+                  <BeneficialOwnerWidget />
                 </ErrorBoundary>
               </TabsContent>
             </Tabs>
@@ -616,28 +629,7 @@ function DashboardPage() {
 
           {/* Shareholders Tab */}
           <TabsContent value="shareholders">
-            <div className="flex items-center gap-3 mt-6 mb-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>As of:</span>
-              </div>
-              <input
-                type="date"
-                value={attributionDate}
-                max={format(new Date(), 'yyyy-MM-dd')}
-                onChange={(e) => setAttributionDate(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-              {attributionDate && (
-                <Button variant="ghost" size="sm" onClick={() => setAttributionDate('')}>
-                  Reset to today
-                </Button>
-              )}
-            </div>
-            <DashboardShareholdersTab
-              shareholderData={shareholderData}
-              isLoading={isAttributionLoading}
-            />
+            <DashboardShareholdersTab />
           </TabsContent>
         </Tabs>
 

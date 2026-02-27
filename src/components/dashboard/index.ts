@@ -13,6 +13,7 @@ export { ThisMonthWidget } from './ThisMonthWidget';
 
 // New shared dashboard UI components (matching Demo styling)
 export { KpiCard } from './KpiCard';
+export { DualKpiCard } from './DualKpiCard';
 export { SectionCard } from './SectionCard';
 export { DashboardTable } from './DashboardTable';
 export { MetricValue, StatusBadge, PercentBadge } from './MetricValue';
