@@ -67,6 +67,7 @@ const Lending = lazy(() => import("./pages/Lending"));
 const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
 const Financials = lazy(() => import("./pages/Financials"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
+const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 
 // Portal pages (shareholder)
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
@@ -455,6 +456,18 @@ const App = () => (
             <Route path="/maintenance" element={<ProtectedRoute><MaintenanceRequests /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
+            <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
+
+            {/* V1 redirects */}
+            <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
+            <Route path="/properties/:id" element={<Navigate to="/properties-v2" replace />} />
+            <Route path="/properties/:id/edit" element={<Navigate to="/properties-v2" replace />} />
+            <Route path="/properties/new" element={<Navigate to="/properties-v2" replace />} />
+            <Route path="/companies" element={<Navigate to="/entities" replace />} />
+            <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
+            <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
+            <Route path="/tenants/:tenantId" element={<Navigate to="/tenants-v2" replace />} />
+            <Route path="/compliance" element={<Navigate to="/compliance-v2" replace />} />
 
             {/* Marketing pages (public) */}
             <Route path="/" element={<MarketingHome />} />
