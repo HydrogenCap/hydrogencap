@@ -131,11 +131,16 @@ export default function PropertiesV2() {
     ? (properties!.reduce((s, p) => s + (p.total_lettable_rooms || 0), 0) / totalCount).toFixed(1)
     : '0';
   const totalMonthlyRent = useMemo(() => {
-    if (!roomSummaries) return 0;
     let total = 0;
-    roomSummaries.forEach(s => { total += s.gross_rent_pcm; });
+    properties?.forEach(p => {
+      if (p.rent_basis === 'whole_house') {
+        total += p.whole_house_rent_pcm || 0;
+      } else {
+        total += roomSummaries?.get(p.id)?.gross_rent_pcm || 0;
+      }
+    });
     return total;
-  }, [roomSummaries]);
+  }, [properties, roomSummaries]);
   const stageCounts = useMemo(() => {
     const m: Record<string, number> = {};
     properties?.forEach(p => { m[p.lifecycle_stage] = (m[p.lifecycle_stage] || 0) + 1; });
@@ -261,9 +266,10 @@ export default function PropertiesV2() {
 
 function PropertyCard({ property: p, roomSummary, photoUrl, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; photoUrl?: string; onClick: () => void }) {
   const status = getPropertyComplianceStatus(p.id);
+  const isWholeHouse = p.rent_basis === 'whole_house';
   const occupied = roomSummary?.total_occupied ?? 0;
   const lettable = roomSummary?.total_lettable ?? (p.total_lettable_rooms || 0);
-  const grossRent = roomSummary?.gross_rent_pcm ?? 0;
+  const grossRent = isWholeHouse ? (p.whole_house_rent_pcm ?? 0) : (roomSummary?.gross_rent_pcm ?? 0);
   return (
     <Card
       className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden`}
@@ -288,7 +294,7 @@ function PropertyCard({ property: p, roomSummary, photoUrl, onClick }: { propert
           <Badge variant="secondary" className={`text-xs ${LIFECYCLE_BG[p.lifecycle_stage] || ''}`}>{getLifecycleLabel(p.lifecycle_stage)}</Badge>
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground pt-1">
-          <span>{occupied}/{lettable} rooms</span>
+          <span>{isWholeHouse ? 'Whole house' : `${occupied}/${lettable} rooms`}</span>
           <span>{grossRent > 0 ? formatGBP(grossRent) + ' /mo' : '—'}</span>
         </div>
       </CardContent>

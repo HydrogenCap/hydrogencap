@@ -45,6 +45,8 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
     council_name: '',
     council_area: '',
     listing_grade: 'none',
+    rent_basis: 'room' as 'room' | 'whole_house',
+    whole_house_rent_pcm: '',
     has_gas_supply: true,
     year_built: '',
     total_floors: '',
@@ -71,6 +73,8 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
         council_name: editingProperty.council_name || '',
         council_area: editingProperty.council_area || '',
         listing_grade: editingProperty.listing_grade,
+        rent_basis: editingProperty.rent_basis || 'room',
+        whole_house_rent_pcm: editingProperty.whole_house_rent_pcm?.toString() || '',
         has_gas_supply: editingProperty.has_gas_supply ?? true,
         year_built: editingProperty.year_built?.toString() || '',
         total_floors: editingProperty.total_floors?.toString() || '',
@@ -85,7 +89,7 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
       setForm({
         entity_id: '', address_line_1: '', address_line_2: '', city: '', county: '',
         postcode: '', country: 'England', property_type: 'single_let', lifecycle_stage: 'pipeline',
-        council_name: '', council_area: '', listing_grade: 'none', has_gas_supply: true,
+        council_name: '', council_area: '', listing_grade: 'none', rent_basis: 'room' as 'room' | 'whole_house', whole_house_rent_pcm: '', has_gas_supply: true,
         year_built: '', total_floors: '', total_lettable_rooms: '0', purchase_date: '',
         purchase_price: '', current_valuation: '', valuation_date: '', notes: '',
       });
@@ -111,6 +115,8 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
       council_name: form.council_name || null,
       council_area: form.council_area || null,
       listing_grade: form.listing_grade,
+      rent_basis: form.rent_basis,
+      whole_house_rent_pcm: form.rent_basis === 'whole_house' && form.whole_house_rent_pcm ? parseFloat(form.whole_house_rent_pcm) : null,
       has_gas_supply: form.has_gas_supply,
       year_built: form.year_built ? parseInt(form.year_built) : null,
       total_floors: form.total_floors ? parseInt(form.total_floors) : null,
@@ -208,6 +214,19 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
                 <Switch checked={form.has_gas_supply} onCheckedChange={v => set('has_gas_supply', v)} />
                 <Label>Has Gas Supply</Label>
               </div>
+              <div>
+                <Label>Rent Basis</Label>
+                <Select value={form.rent_basis} onValueChange={v => set('rent_basis', v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="room">Per Room</SelectItem>
+                    <SelectItem value="whole_house">Whole House</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.rent_basis === 'whole_house' && (
+                <div><Label>Whole House Rent (£/month)</Label><Input type="number" step="0.01" value={form.whole_house_rent_pcm} onChange={e => set('whole_house_rent_pcm', e.target.value)} placeholder="e.g. 1500" /></div>
+              )}
               <div><Label>Year Built</Label><Input type="number" value={form.year_built} onChange={e => set('year_built', e.target.value)} /></div>
               <div><Label>Total Floors</Label><Input type="number" value={form.total_floors} onChange={e => set('total_floors', e.target.value)} /></div>
               <div><Label>Total Lettable Rooms</Label><Input type="number" value={form.total_lettable_rooms} onChange={e => set('total_lettable_rooms', e.target.value)} /></div>

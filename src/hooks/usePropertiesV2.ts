@@ -17,6 +17,8 @@ export interface PropertyV2 {
   council_name: string | null;
   council_area: string | null;
   listing_grade: string;
+  rent_basis: 'room' | 'whole_house';
+  whole_house_rent_pcm: number | null;
   has_gas_supply: boolean | null;
   year_built: number | null;
   total_floors: number | null;
