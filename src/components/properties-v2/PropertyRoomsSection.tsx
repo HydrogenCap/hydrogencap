@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Layers } from 'lucide-react';
+import { Plus, Layers, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,13 +11,15 @@ import type { RoomV2 } from '@/hooks/useRoomsV2';
 
 interface Props {
   propertyId: string;
+  rentBasis?: 'room' | 'whole_house';
+  wholeHouseRentPcm?: number | null;
 }
 
 function fmtGBP(v: number) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 }).format(v);
 }
 
-export function PropertyRoomsSection({ propertyId }: Props) {
+export function PropertyRoomsSection({ propertyId, rentBasis = 'room', wholeHouseRentPcm }: Props) {
   const { data: rooms } = usePropertyRooms(propertyId);
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
@@ -34,6 +36,29 @@ export function PropertyRoomsSection({ propertyId }: Props) {
     : occupancyRate >= 80
     ? 'bg-amber-100 text-amber-700'
     : 'bg-red-100 text-red-700';
+
+  if (rentBasis === 'whole_house') {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <CardTitle>Rent</CardTitle>
+            <Badge className="bg-primary/10 text-primary">
+              <Home className="h-3 w-3 mr-1" /> Whole House
+            </Badge>
+            {wholeHouseRentPcm != null && wholeHouseRentPcm > 0 && (
+              <span className="text-sm font-medium text-foreground">{fmtGBP(wholeHouseRentPcm)} /month</span>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-sm">
+            This property is let as a whole house. Rent is tracked at the property level, not per room.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>

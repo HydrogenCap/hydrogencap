@@ -170,7 +170,7 @@ export default function PropertyDetailV2() {
         </Card>
 
         {/* Rooms */}
-        <PropertyRoomsSection propertyId={property.id} />
+        <PropertyRoomsSection propertyId={property.id} rentBasis={property.rent_basis} wholeHouseRentPcm={property.whole_house_rent_pcm} />
 
         {/* Financials */}
         <PropertyFinancialSection propertyId={property.id} currentValuation={property.current_valuation} />

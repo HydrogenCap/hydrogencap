@@ -4495,10 +4495,12 @@ export type Database = {
           property_type: string
           purchase_date: string | null
           purchase_price: number | null
+          rent_basis: string
           total_floors: number | null
           total_lettable_rooms: number | null
           updated_at: string | null
           valuation_date: string | null
+          whole_house_rent_pcm: number | null
           year_built: number | null
         }
         Insert: {
@@ -4524,10 +4526,12 @@ export type Database = {
           property_type: string
           purchase_date?: string | null
           purchase_price?: number | null
+          rent_basis?: string
           total_floors?: number | null
           total_lettable_rooms?: number | null
           updated_at?: string | null
           valuation_date?: string | null
+          whole_house_rent_pcm?: number | null
           year_built?: number | null
         }
         Update: {
@@ -4553,10 +4557,12 @@ export type Database = {
           property_type?: string
           purchase_date?: string | null
           purchase_price?: number | null
+          rent_basis?: string
           total_floors?: number | null
           total_lettable_rooms?: number | null
           updated_at?: string | null
           valuation_date?: string | null
+          whole_house_rent_pcm?: number | null
           year_built?: number | null
         }
         Relationships: [
