@@ -33,10 +33,13 @@ import {
   useDeleteDirector,
   useDeleteShareholder,
 } from '@/hooks/useLegalEntities';
+import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
 import { useToast } from '@/hooks/use-toast';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { DirectorFormModal } from '@/components/entities/DirectorFormModal';
 import { ShareholderFormModal } from '@/components/entities/ShareholderFormModal';
+import { CHVerificationBanner } from '@/components/entities/CHVerificationBanner';
+import { CHDataPanel } from '@/components/entities/CHDataPanel';
 import { useEntityPropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { format } from 'date-fns';
 import { EntityFinancialSection } from '@/components/financials/EntityFinancialSection';
@@ -79,6 +82,8 @@ export default function EntityDetail() {
   const { data: directors } = useEntityDirectors(id);
   const { data: shareholders } = useEntityShareholders(id);
   const { data: entityProperties } = useEntityPropertiesV2(id);
+  const { data: verification } = useEntityVerification(id);
+  const syncEntity = useSyncEntity();
   const deleteEntity = useDeleteLegalEntity();
   const deleteDirector = useDeleteDirector();
   const deleteShareholder = useDeleteShareholder();
@@ -129,6 +134,15 @@ export default function EntityDetail() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* CH Verification Banner */}
+        {entity.entity_type === 'spv' && (
+          <CHVerificationBanner
+            verification={verification ?? null}
+            isSyncing={syncEntity.isPending}
+            onSync={() => entity.company_number && syncEntity.mutate({ entityId: entity.id, companyNumber: entity.company_number })}
+          />
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-2">
@@ -376,6 +390,16 @@ export default function EntityDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Companies House Data */}
+        {entity.entity_type === 'spv' && entity.company_number && (
+          <CHDataPanel
+            entityId={entity.id}
+            companyNumber={entity.company_number}
+            verification={verification ?? null}
+            localDirectors={directors || []}
+          />
+        )}
 
         {/* Financial Summary */}
         <EntityFinancialSection entityId={entity.id} entityProperties={entityProperties} />

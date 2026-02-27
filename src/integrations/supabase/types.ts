@@ -161,6 +161,13 @@ export type Database = {
             foreignKeyName: "bank_accounts_entity_id_fkey"
             columns: ["entity_id"]
             isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
             referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
@@ -507,6 +514,102 @@ export type Database = {
             columns: ["party_id"]
             isOneToOne: false
             referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies_house_cache: {
+        Row: {
+          company_number: string
+          created_at: string | null
+          data_type: string
+          entity_id: string
+          expires_at: string
+          fetched_at: string
+          id: string
+          response_data: Json
+        }
+        Insert: {
+          company_number: string
+          created_at?: string | null
+          data_type: string
+          entity_id: string
+          expires_at?: string
+          fetched_at?: string
+          id?: string
+          response_data: Json
+        }
+        Update: {
+          company_number?: string
+          created_at?: string | null
+          data_type?: string
+          entity_id?: string
+          expires_at?: string
+          fetched_at?: string
+          id?: string
+          response_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_house_cache_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "companies_house_cache_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies_house_sync_log: {
+        Row: {
+          changes_detected: Json | null
+          company_number: string
+          entity_id: string
+          error_message: string | null
+          id: string
+          status: string
+          sync_type: string
+          synced_at: string | null
+        }
+        Insert: {
+          changes_detected?: Json | null
+          company_number: string
+          entity_id: string
+          error_message?: string | null
+          id?: string
+          status: string
+          sync_type: string
+          synced_at?: string | null
+        }
+        Update: {
+          changes_detected?: Json | null
+          company_number?: string
+          entity_id?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          sync_type?: string
+          synced_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_house_sync_log_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "companies_house_sync_log_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -2374,6 +2477,13 @@ export type Database = {
             foreignKeyName: "entity_directors_entity_id_fkey"
             columns: ["entity_id"]
             isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "entity_directors_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
             referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
@@ -2414,6 +2524,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "entity_shareholders_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
           {
             foreignKeyName: "entity_shareholders_entity_id_fkey"
             columns: ["entity_id"]
@@ -2661,6 +2778,13 @@ export type Database = {
           void_loss?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "financial_snapshots_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
           {
             foreignKeyName: "financial_snapshots_entity_id_fkey"
             columns: ["entity_id"]
@@ -3768,6 +3892,13 @@ export type Database = {
           valuation_fee?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "loan_facilities_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
           {
             foreignKeyName: "loan_facilities_entity_id_fkey"
             columns: ["entity_id"]
@@ -5134,6 +5265,13 @@ export type Database = {
           year_built?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "properties_v2_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
           {
             foreignKeyName: "properties_v2_entity_id_fkey"
             columns: ["entity_id"]
@@ -7462,11 +7600,51 @@ export type Database = {
             foreignKeyName: "financial_snapshots_entity_id_fkey"
             columns: ["entity_id"]
             isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "financial_snapshots_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
             referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "financial_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_verification_status: {
+        Row: {
+          accounts_filing_status: string | null
+          ch_accounts_next_due: string | null
+          ch_address_line_1: string | null
+          ch_company_name: string | null
+          ch_company_status: string | null
+          ch_confirmation_next_due: string | null
+          ch_has_charges: string | null
+          ch_incorporation_date: string | null
+          ch_postcode: string | null
+          company_number: string | null
+          confirmation_filing_status: string | null
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          last_synced: string | null
+          local_incorporation_date: string | null
+          local_registered_address: string | null
+          local_status: string | null
+          org_id: string | null
+          verification_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_entities_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
