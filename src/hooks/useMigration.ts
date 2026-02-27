@@ -16,7 +16,29 @@ const MIGRATION_STEPS = [
   { key: 'contractors', title: 'Contractors → Contractors V2', v1Table: 'contractors', v2Table: 'compliance_contractors_v2', functionName: 'migrate_contractors_to_v2' },
 ];
 
+// Tables that don't have org_id and need to be counted via a join or without org filter
+const TABLES_WITHOUT_ORG_ID = ['income', 'loans', 'rooms', 'rooms_v2'];
+
 async function getTableCount(table: string, orgId: string): Promise<number> {
+  if (TABLES_WITHOUT_ORG_ID.includes(table)) {
+    // These tables link via property_id → properties.org_id
+    // For rooms_v2, link via property_id → properties_v2.org_id
+    if (table === 'rooms_v2') {
+      const { count, error } = await supabase
+        .from('rooms_v2' as any)
+        .select('*, properties_v2!inner(org_id)', { count: 'exact', head: true })
+        .eq('properties_v2.org_id', orgId);
+      if (error) return 0;
+      return count || 0;
+    }
+    // For income, loans, rooms — join via properties
+    const { count, error } = await supabase
+      .from(table as any)
+      .select('*, properties!inner(org_id)', { count: 'exact', head: true })
+      .eq('properties.org_id', orgId);
+    if (error) return 0;
+    return count || 0;
+  }
   const { count, error } = await supabase
     .from(table as any)
     .select('*', { count: 'exact', head: true })
