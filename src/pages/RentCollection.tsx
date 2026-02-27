@@ -25,6 +25,7 @@ import { format, startOfMonth } from 'date-fns';
 type Grouping = 'property' | 'tenancy' | 'none';
 
 export default function RentCollection() {
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const navigate = useNavigate();
   const [grouping, setGrouping] = useState<Grouping>('property');
   const [search, setSearch] = useState('');
@@ -185,6 +186,14 @@ export default function RentCollection() {
             <p className="text-muted-foreground">Track rent payments and arrears</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" />
+              Import Statement
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate('/rent/reconciliation')}>
+              <Link2 className="h-4 w-4 mr-1" />
+              Reconciliation
+            </Button>
             {currentMonthSchedule && (
               <Button variant="outline" size="sm" onClick={() => exportRentRollCSV(currentMonthSchedule)}>
                 <Download className="h-4 w-4 mr-1" />
@@ -403,6 +412,12 @@ export default function RentCollection() {
           open={showSendReminder}
           onOpenChange={setShowSendReminder}
           onSuccess={deselectAll}
+        />
+
+        <BankStatementImportDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          onSuccess={() => navigate('/rent/reconciliation')}
         />
       </div>
     </AppLayout>
