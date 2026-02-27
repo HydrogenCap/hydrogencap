@@ -13,6 +13,7 @@ export interface LegalEntity {
   corporation_tax_ref: string | null;
   vat_registered: boolean;
   vat_number: string | null;
+  issued_shares: number | null;
   status: 'active' | 'dormant' | 'dissolved';
   notes: string | null;
   created_at: string;

@@ -61,6 +61,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
     corporation_tax_ref: '',
     vat_registered: false,
     vat_number: '',
+    issued_shares: '',
     status: 'active' as LegalEntity['status'],
     notes: '',
   });
@@ -77,6 +78,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
           corporation_tax_ref: editingEntity.corporation_tax_ref || '',
           vat_registered: editingEntity.vat_registered,
           vat_number: editingEntity.vat_number || '',
+          issued_shares: editingEntity.issued_shares?.toString() || '',
           status: editingEntity.status,
           notes: editingEntity.notes || '',
         });
@@ -90,6 +92,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
           corporation_tax_ref: '',
           vat_registered: false,
           vat_number: '',
+          issued_shares: '',
           status: 'active',
           notes: '',
         });
@@ -107,6 +110,12 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
     }
     if (!org?.id) return;
 
+    const issuedShares = form.issued_shares ? parseInt(form.issued_shares, 10) : null;
+    if (form.issued_shares && (isNaN(issuedShares!) || issuedShares! <= 0)) {
+      toast({ title: 'Error', description: 'Issued shares must be a positive number', variant: 'destructive' });
+      return;
+    }
+
     const payload = {
       org_id: org.id,
       entity_name: form.entity_name.trim(),
@@ -117,6 +126,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
       corporation_tax_ref: isSPV && form.corporation_tax_ref.trim() ? form.corporation_tax_ref.trim() : null,
       vat_registered: form.vat_registered,
       vat_number: form.vat_registered && form.vat_number.trim() ? form.vat_number.trim() : null,
+      issued_shares: issuedShares,
       status: form.status,
       notes: form.notes.trim() || null,
     };
@@ -193,6 +203,12 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
               </div>
             </>
           )}
+
+          <div className="space-y-2">
+            <Label>Issued Shares</Label>
+            <Input type="number" min="1" value={form.issued_shares} onChange={(e) => update('issued_shares', e.target.value)} placeholder="e.g. 100" />
+            <p className="text-xs text-muted-foreground">Total shares issued. Used to validate shareholder allocations.</p>
+          </div>
 
           <div className="space-y-2">
             <Label>Registered Address</Label>

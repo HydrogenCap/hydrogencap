@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -122,6 +122,9 @@ export default function EntityDetail() {
   const TypeIcon = TYPE_ICONS[entity.entity_type] || Building2;
   const totalShares = shareholders?.reduce((s, sh) => s + sh.shares_held, 0) || 0;
   const totalPercent = shareholders?.reduce((s, sh) => s + Number(sh.percentage), 0) || 0;
+  const issuedShares = entity.issued_shares;
+  const sharesExceedIssued = issuedShares != null && totalShares > issuedShares;
+  const percentExceeds100 = totalPercent > 100.01;
 
   return (
     <AppLayout>
@@ -280,7 +283,14 @@ export default function EntityDetail() {
         {/* Shareholders Section */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Shareholders</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle>Shareholders</CardTitle>
+              {issuedShares != null && (
+                <span className="text-sm text-muted-foreground font-normal">
+                  {issuedShares.toLocaleString()} shares issued
+                </span>
+              )}
+            </div>
             <Button size="sm" onClick={() => { setEditingShareholder(null); setShowAddShareholder(true); }}>
               <Plus className="h-4 w-4 mr-1" /> Add Shareholder
             </Button>
@@ -334,11 +344,31 @@ export default function EntityDetail() {
                   <TableRow className="bg-muted/50 font-semibold">
                     <TableCell>Total</TableCell>
                     <TableCell />
-                    <TableCell className="text-right">{totalShares.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">{totalPercent.toFixed(2)}%</TableCell>
+                    <TableCell className="text-right">
+                      <span className={sharesExceedIssued ? 'text-destructive' : ''}>
+                        {totalShares.toLocaleString()}
+                        {issuedShares != null && (
+                          <span className="font-normal text-muted-foreground"> / {issuedShares.toLocaleString()}</span>
+                        )}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={percentExceeds100 ? 'text-destructive' : ''}>
+                        {totalPercent.toFixed(2)}%
+                      </span>
+                    </TableCell>
                     <TableCell />
                     <TableCell />
                   </TableRow>
+                  {(sharesExceedIssued || percentExceeds100) && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-destructive text-sm py-2">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        {sharesExceedIssued && `Total shares held (${totalShares.toLocaleString()}) exceeds issued shares (${issuedShares!.toLocaleString()}). `}
+                        {percentExceeds100 && `Total ownership (${totalPercent.toFixed(2)}%) exceeds 100%.`}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             ) : (
