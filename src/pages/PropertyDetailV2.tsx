@@ -53,13 +53,6 @@ function getLabel(arr: readonly { value: string; label: string }[], v: string) {
   return arr.find(x => x.value === v)?.label || v;
 }
 
-// Placeholder components
-function PropertyComplianceGrid() {
-  return <p className="text-muted-foreground text-center py-6">Compliance tracking will be available once compliance documents are linked.</p>;
-}
-function PropertyFinancialChart() {
-  return <p className="text-muted-foreground text-center py-6">Financial snapshots will be available once the financials module is built.</p>;
-}
 
 export default function PropertyDetailV2() {
   const { id } = useParams<{ id: string }>();
@@ -179,12 +172,6 @@ export default function PropertyDetailV2() {
         {/* Rooms */}
         <PropertyRoomsSection propertyId={property.id} />
 
-        {/* Compliance */}
-        <Card>
-          <CardHeader><CardTitle>Compliance</CardTitle></CardHeader>
-          <CardContent><PropertyComplianceGrid /></CardContent>
-        </Card>
-
         {/* Financials */}
         <PropertyFinancialSection propertyId={property.id} currentValuation={property.current_valuation} />
 
@@ -198,14 +185,6 @@ export default function PropertyDetailV2() {
 
         {/* Compliance */}
         <PropertyComplianceSectionWrapper propertyId={property.id} orgId={property.org_id} />
-
-        {/* Documents */}
-        <Card>
-          <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-6">Document library will be available once document management is built.</p>
-          </CardContent>
-        </Card>
 
         {/* Notes */}
         <Card>

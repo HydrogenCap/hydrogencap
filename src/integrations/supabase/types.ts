@@ -2122,7 +2122,9 @@ export type Database = {
         Row: {
           council_tax: number | null
           created_at: string | null
+          debt_at_snapshot: number | null
           entity_id: string
+          equity_at_snapshot: number | null
           gross_rent_due: number | null
           gross_rent_received: number | null
           id: string
@@ -2131,6 +2133,7 @@ export type Database = {
           licensing_costs: number | null
           locked_at: string | null
           locked_by: string | null
+          ltv_at_snapshot: number | null
           maintenance_costs: number | null
           management_fees: number | null
           mortgage_payments: number | null
@@ -2148,12 +2151,15 @@ export type Database = {
           total_costs: number | null
           updated_at: string | null
           utilities: number | null
+          valuation_at_snapshot: number | null
           void_loss: number | null
         }
         Insert: {
           council_tax?: number | null
           created_at?: string | null
+          debt_at_snapshot?: number | null
           entity_id: string
+          equity_at_snapshot?: number | null
           gross_rent_due?: number | null
           gross_rent_received?: number | null
           id?: string
@@ -2162,6 +2168,7 @@ export type Database = {
           licensing_costs?: number | null
           locked_at?: string | null
           locked_by?: string | null
+          ltv_at_snapshot?: number | null
           maintenance_costs?: number | null
           management_fees?: number | null
           mortgage_payments?: number | null
@@ -2179,12 +2186,15 @@ export type Database = {
           total_costs?: number | null
           updated_at?: string | null
           utilities?: number | null
+          valuation_at_snapshot?: number | null
           void_loss?: number | null
         }
         Update: {
           council_tax?: number | null
           created_at?: string | null
+          debt_at_snapshot?: number | null
           entity_id?: string
+          equity_at_snapshot?: number | null
           gross_rent_due?: number | null
           gross_rent_received?: number | null
           id?: string
@@ -2193,6 +2203,7 @@ export type Database = {
           licensing_costs?: number | null
           locked_at?: string | null
           locked_by?: string | null
+          ltv_at_snapshot?: number | null
           maintenance_costs?: number | null
           management_fees?: number | null
           mortgage_payments?: number | null
@@ -2210,6 +2221,7 @@ export type Database = {
           total_costs?: number | null
           updated_at?: string | null
           utilities?: number | null
+          valuation_at_snapshot?: number | null
           void_loss?: number | null
         }
         Relationships: [
