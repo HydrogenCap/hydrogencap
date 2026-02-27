@@ -9,7 +9,8 @@
 export interface ContractorJob {
   id: string;
   org_id: string;
-  property_id: string;
+  property_id: string | null;
+  property_v2_id: string | null;
   compliance_item_id: string | null;
   contractor_id: string | null;
   job_type: string;
@@ -58,7 +59,13 @@ export interface ContractorJob {
     id: string;
     address_line: string;
     postcode: string;
-  };
+  } | null;
+  property_v2?: {
+    id: string;
+    address_line_1: string;
+    city: string;
+    postcode: string;
+  } | null;
   compliance_item?: {
     id: string;
     compliance_type: string;
@@ -114,6 +121,7 @@ export interface ContractorJob {
           *,
           contractor:contractors(id, name, company_name, email, phone),
           property:properties(id, address_line, postcode),
+          property_v2:properties_v2(id, address_line_1, city, postcode),
           compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)
         `)
        .order('priority', { ascending: false })
@@ -187,6 +195,7 @@ export interface ContractorJob {
           *,
           contractor:contractors(*),
           property:properties(id, address_line, postcode),
+          property_v2:properties_v2(id, address_line_1, city, postcode),
           compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)
         `)
         .eq('id', jobId)
@@ -255,15 +264,16 @@ export interface ContractorJob {
    const { toast } = useToast();
  
    return useMutation({
-     mutationFn: async (job: {
-       propertyId: string;
-       complianceItemId?: string;
-       contractorId?: string;
-       jobType: string;
-       description?: string;
-       requestMessage?: string;
-      priority?: JobPriority;
-     }) => {
+    mutationFn: async (job: {
+      propertyId?: string;
+      propertyV2Id?: string;
+      complianceItemId?: string;
+      contractorId?: string;
+      jobType: string;
+      description?: string;
+      requestMessage?: string;
+     priority?: JobPriority;
+    }) => {
        const { data: membership } = await supabase
          .from('memberships')
          .select('org_id')
@@ -272,22 +282,23 @@ export interface ContractorJob {
  
        const { data: { user } } = await supabase.auth.getUser();
  
-       const { data, error } = await supabase
-         .from('contractor_jobs')
-         .insert({
-           org_id: membership!.org_id,
-           property_id: job.propertyId,
-           compliance_item_id: job.complianceItemId || null,
-           contractor_id: job.contractorId || null,
-           job_type: job.jobType,
-           description: job.description || null,
-           request_message: job.requestMessage || null,
-           status: 'draft',
-          source: 'manual',
-          priority: job.priority || 'normal',
-           created_by: user?.id,
-         })
-         .select()
+      const { data, error } = await supabase
+          .from('contractor_jobs')
+          .insert({
+            org_id: membership!.org_id,
+            property_id: job.propertyId || null,
+            property_v2_id: job.propertyV2Id || null,
+            compliance_item_id: job.complianceItemId || null,
+            contractor_id: job.contractorId || null,
+            job_type: job.jobType,
+            description: job.description || null,
+            request_message: job.requestMessage || null,
+            status: 'draft',
+           source: 'manual',
+           priority: job.priority || 'normal',
+            created_by: user?.id,
+          })
+          .select()
          .single();
  
        if (error) throw error;

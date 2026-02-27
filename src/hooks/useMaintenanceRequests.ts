@@ -11,12 +11,25 @@ import type {
 export type { MaintenanceCategory, MaintenancePriority, MaintenanceStatus };
 export type MaintenanceUrgency = MaintenancePriority; // alias
 
+const MAINTENANCE_SELECT = `
+  *,
+  property:properties(id, address_line, postcode),
+  room:rooms(id, room_name),
+  tenant:tenants(id, first_name, last_name, email, phone),
+  property_v2:properties_v2(id, address_line_1, city, postcode),
+  room_v2:rooms_v2(id, room_name),
+  tenant_v2:tenants_v2(id, first_name, last_name, email, phone)
+`;
+
 export interface MaintenanceRequestWithDetails {
   id: string;
   org_id: string;
   property_id: string;
   room_id: string | null;
   tenant_id: string | null;
+  property_v2_id: string | null;
+  room_v2_id: string | null;
+  tenant_v2_id: string | null;
   reported_by: ReportedBy;
   category: MaintenanceCategory;
   priority: MaintenancePriority;
@@ -32,32 +45,34 @@ export interface MaintenanceRequestWithDetails {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  property: { id: string; address_line: string; postcode: string | null };
+  // V1 joins (fallback)
+  property: { id: string; address_line: string; postcode: string | null } | null;
   room?: { id: string; room_name: string } | null;
   tenant?: { id: string; first_name: string; last_name: string; email: string | null; phone: string | null } | null;
+  // V2 joins (preferred)
+  property_v2?: { id: string; address_line_1: string; city: string; postcode: string } | null;
+  room_v2?: { id: string; room_name: string } | null;
+  tenant_v2?: { id: string; first_name: string; last_name: string; email: string | null; phone: string | null } | null;
 }
 
 export function useMaintenanceRequests(filters?: {
   status?: MaintenanceStatus;
   priority?: MaintenancePriority;
   propertyId?: string;
+  propertyV2Id?: string;
 }) {
   return useQuery({
     queryKey: ['maintenance_requests', filters],
     queryFn: async () => {
       let query = supabase
         .from('maintenance_requests')
-        .select(`
-          *,
-          property:properties(id, address_line, postcode),
-          room:rooms(id, room_name),
-          tenant:tenants(id, first_name, last_name, email, phone)
-        `)
+        .select(MAINTENANCE_SELECT)
         .order('created_at', { ascending: false });
 
       if (filters?.status) query = query.eq('status', filters.status);
       if (filters?.priority) query = query.eq('priority', filters.priority);
       if (filters?.propertyId) query = query.eq('property_id', filters.propertyId);
+      if (filters?.propertyV2Id) query = query.eq('property_v2_id', filters.propertyV2Id);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -85,12 +100,7 @@ export function useOpenMaintenanceRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('maintenance_requests')
-        .select(`
-          *,
-          property:properties(id, address_line, postcode),
-          room:rooms(id, room_name),
-          tenant:tenants(id, first_name, last_name)
-        `)
+        .select(MAINTENANCE_SELECT)
         .not('status', 'in', '("completed","verified","closed","cancelled")')
         .order('created_at', { ascending: true });
 
@@ -106,12 +116,7 @@ export function useMaintenanceRequest(requestId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('maintenance_requests')
-        .select(`
-          *,
-          property:properties(id, address_line, postcode),
-          room:rooms(id, room_name),
-          tenant:tenants(id, first_name, last_name, email, phone)
-        `)
+        .select(MAINTENANCE_SELECT)
         .eq('id', requestId!)
         .single();
       if (error) throw error;
@@ -127,9 +132,12 @@ export function useCreateMaintenanceRequest() {
 
   return useMutation({
     mutationFn: async (request: {
-      property_id: string;
+      property_id?: string | null;
+      property_v2_id?: string | null;
       room_id?: string | null;
+      room_v2_id?: string | null;
       tenant_id?: string | null;
+      tenant_v2_id?: string | null;
       category: string;
       priority: string;
       title: string;
