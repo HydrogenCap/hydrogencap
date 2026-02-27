@@ -4483,6 +4483,8 @@ export type Database = {
           created_at: string | null
           current_valuation: number | null
           entity_id: string
+          epc_expiry_date: string | null
+          epc_rating: string | null
           has_gas_supply: boolean | null
           id: string
           latitude: number | null
@@ -4514,6 +4516,8 @@ export type Database = {
           created_at?: string | null
           current_valuation?: number | null
           entity_id: string
+          epc_expiry_date?: string | null
+          epc_rating?: string | null
           has_gas_supply?: boolean | null
           id?: string
           latitude?: number | null
@@ -4545,6 +4549,8 @@ export type Database = {
           created_at?: string | null
           current_valuation?: number | null
           entity_id?: string
+          epc_expiry_date?: string | null
+          epc_rating?: string | null
           has_gas_supply?: boolean | null
           id?: string
           latitude?: number | null
