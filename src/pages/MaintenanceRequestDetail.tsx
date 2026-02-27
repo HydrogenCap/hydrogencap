@@ -4,6 +4,7 @@ import { useMaintenanceRequest } from '@/hooks/useMaintenanceRequests';
 import { useMaintenanceComments, useAddMaintenanceComment } from '@/hooks/useMaintenanceComments';
 import { useWorksOrdersForRequest, useCreateWorksOrder } from '@/hooks/useWorksOrders';
 import { PRIORITY_CONFIG, STATUS_CONFIG, CATEGORY_COLORS, MAINTENANCE_CATEGORY_NAMES } from '@/lib/maintenanceTypes';
+import { normalizeMaintenanceItem } from '@/lib/maintenanceNormalizer';
 import { WorksOrderDetailForm } from '@/components/maintenance/WorksOrderDetailForm';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { LoadingState } from '@/components/common';
@@ -34,6 +35,7 @@ export default function MaintenanceRequestDetail() {
 
   const priorityCfg = PRIORITY_CONFIG[request.priority];
   const statusCfg = STATUS_CONFIG[request.status];
+  const display = normalizeMaintenanceItem(request);
   const wo = worksOrders?.[0];
 
   const handleAddComment = () => {
@@ -94,8 +96,8 @@ export default function MaintenanceRequestDetail() {
                   <p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {request.location_detail}</p>
                 )}
                 <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
-                  <span className="flex items-center gap-1"><Home className="h-3.5 w-3.5" /> {request.property.address_line}</span>
-                  {request.tenant && <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" /> {request.tenant.first_name} {request.tenant.last_name}</span>}
+                  <span className="flex items-center gap-1"><Home className="h-3.5 w-3.5" /> {display.propertyAddress}</span>
+                  {display.tenantName && <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" /> {display.tenantName}</span>}
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {format(new Date(request.reported_date), 'dd MMM yyyy')}</span>
                 </div>
 

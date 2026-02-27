@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMaintenanceRequests, type MaintenanceRequestWithDetails } from '@/hooks/useMaintenanceRequests';
+import { normalizeMaintenanceItem } from '@/lib/maintenanceNormalizer';
 import { PRIORITY_CONFIG, STATUS_CONFIG, CATEGORY_COLORS, MAINTENANCE_CATEGORY_NAMES, OPEN_STATUSES, type MaintenancePriority, type MaintenanceStatus } from '@/lib/maintenanceTypes';
 import { LoadingState, EmptyState } from '@/components/common';
 
@@ -16,6 +17,7 @@ function RequestCard({ request }: { request: MaintenanceRequestWithDetails }) {
   const priorityCfg = PRIORITY_CONFIG[request.priority];
   const statusCfg = STATUS_CONFIG[request.status];
   const categoryCfg = CATEGORY_COLORS[request.category];
+  const display = normalizeMaintenanceItem(request);
 
   return (
     <Link to={`/maintenance/${request.id}`}>
@@ -40,12 +42,12 @@ function RequestCard({ request }: { request: MaintenanceRequestWithDetails }) {
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Home className="h-3 w-3" />
-                  <span className="truncate max-w-[150px]">{request.property.address_line}</span>
+                  <span className="truncate max-w-[150px]">{display.propertyAddress}</span>
                 </div>
-                {request.tenant && (
+                {display.tenantName && (
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
-                    <span>{request.tenant.first_name} {request.tenant.last_name}</span>
+                    <span>{display.tenantName}</span>
                   </div>
                 )}
               </div>

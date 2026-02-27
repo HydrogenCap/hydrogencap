@@ -1696,7 +1696,8 @@ export type Database = {
           org_id: string
           payment_status: string | null
           priority: string | null
-          property_id: string
+          property_id: string | null
+          property_v2_id: string | null
           quoted_amount_gbp: number | null
           quoted_at: string | null
           request_message: string | null
@@ -1736,7 +1737,8 @@ export type Database = {
           org_id: string
           payment_status?: string | null
           priority?: string | null
-          property_id: string
+          property_id?: string | null
+          property_v2_id?: string | null
           quoted_amount_gbp?: number | null
           quoted_at?: string | null
           request_message?: string | null
@@ -1776,7 +1778,8 @@ export type Database = {
           org_id?: string
           payment_status?: string | null
           priority?: string | null
-          property_id?: string
+          property_id?: string | null
+          property_v2_id?: string | null
           quoted_amount_gbp?: number | null
           quoted_at?: string | null
           request_message?: string | null
@@ -1821,6 +1824,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_property_v2_id_fkey"
+            columns: ["property_v2_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_property_v2_id_fkey"
+            columns: ["property_v2_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
           },
         ]
       }
@@ -4872,12 +4889,15 @@ export type Database = {
           org_id: string
           photo_urls: string[] | null
           priority: string
-          property_id: string
+          property_id: string | null
+          property_v2_id: string | null
           reported_by: string
           reported_date: string
           room_id: string | null
+          room_v2_id: string | null
           status: string
           tenant_id: string | null
+          tenant_v2_id: string | null
           title: string
           updated_at: string
         }
@@ -4894,12 +4914,15 @@ export type Database = {
           org_id: string
           photo_urls?: string[] | null
           priority?: string
-          property_id: string
+          property_id?: string | null
+          property_v2_id?: string | null
           reported_by?: string
           reported_date?: string
           room_id?: string | null
+          room_v2_id?: string | null
           status?: string
           tenant_id?: string | null
+          tenant_v2_id?: string | null
           title: string
           updated_at?: string
         }
@@ -4916,12 +4939,15 @@ export type Database = {
           org_id?: string
           photo_urls?: string[] | null
           priority?: string
-          property_id?: string
+          property_id?: string | null
+          property_v2_id?: string | null
           reported_by?: string
           reported_date?: string
           room_id?: string | null
+          room_v2_id?: string | null
           status?: string
           tenant_id?: string | null
+          tenant_v2_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -4955,6 +4981,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "maintenance_requests_property_v2_id_fkey"
+            columns: ["property_v2_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_v2_id_fkey"
+            columns: ["property_v2_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
             foreignKeyName: "maintenance_requests_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -4962,10 +5002,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "maintenance_requests_room_v2_id_fkey"
+            columns: ["room_v2_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "maintenance_requests_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_tenant_v2_id_fkey"
+            columns: ["tenant_v2_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_v2"
             referencedColumns: ["id"]
           },
         ]
