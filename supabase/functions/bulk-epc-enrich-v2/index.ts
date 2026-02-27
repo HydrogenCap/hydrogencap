@@ -120,6 +120,10 @@ Deno.serve(async (req) => {
 
       const epc = await fetchEPC(p.postcode, p.address_line_1);
       if (epc?.epcRating) {
+        const lodgementDate = epc.expiryDate
+          ? new Date(new Date(epc.expiryDate).getTime() - 10 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0];
+
         const { error: updErr } = await supabase
           .from('properties_v2')
           .update({
@@ -128,10 +132,34 @@ Deno.serve(async (req) => {
           })
           .eq('id', p.id);
 
-        if (updErr) { failed++; } else {
-          updated++;
-          results.push({ id: p.id, address: p.address_line_1, epcRating: epc.epcRating, expiryDate: epc.expiryDate });
-        }
+        if (updErr) { failed++; continue; }
+
+        // Mark any existing EPC docs as superseded
+        await supabase
+          .from('compliance_documents_v2')
+          .update({ is_current: false })
+          .eq('property_id', p.id)
+          .eq('document_type', 'epc')
+          .eq('is_current', true);
+
+        // Insert compliance document for the EPC
+        await supabase
+          .from('compliance_documents_v2')
+          .insert({
+            org_id: membership.org_id,
+            property_id: p.id,
+            document_type: 'epc',
+            issue_date: lodgementDate,
+            expiry_date: epc.expiryDate,
+            status: epc.expiryDate && new Date(epc.expiryDate) < new Date() ? 'expired'
+              : epc.expiryDate && new Date(epc.expiryDate) <= new Date(Date.now() + 90 * 86400000) ? 'expiring_soon'
+              : 'valid',
+            is_current: true,
+            notes: `EPC Rating: ${epc.epcRating}. Auto-enriched from EPC Register.`,
+          });
+
+        updated++;
+        results.push({ id: p.id, address: p.address_line_1, epcRating: epc.epcRating, expiryDate: epc.expiryDate });
       } else { failed++; }
     }
 
