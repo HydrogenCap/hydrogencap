@@ -22,6 +22,7 @@ import {
   useUpdateShareholder,
   type EntityShareholder,
 } from '@/hooks/useLegalEntities';
+import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useShareClassesWithAllocation } from '@/hooks/useShareCapital';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,13 +38,19 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
   const createShareholder = useCreateShareholder();
   const updateShareholder = useUpdateShareholder();
   const { data: shareClassesWithAllocation } = useShareClassesWithAllocation(entityId);
+  const { data: allEntities } = useLegalEntities();
   const isEditing = !!editingShareholder;
+
+  // Filter out the entity being edited (can't own itself)
+  const linkableEntities = (allEntities || []).filter(e => e.id !== entityId);
 
   const [form, setForm] = useState({
     shareholder_name: '',
     share_class_id: '',
     shares_held: '',
     effective_date: '',
+    shareholder_entity_id: '' as string | null,
+    shareholder_type: 'individual' as 'individual' | 'entity',
   });
 
   useEffect(() => {
@@ -54,6 +61,8 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
           share_class_id: (editingShareholder as any).share_class_id || '',
           shares_held: String(editingShareholder.shares_held),
           effective_date: editingShareholder.effective_date,
+          shareholder_entity_id: editingShareholder.shareholder_entity_id || null,
+          shareholder_type: editingShareholder.shareholder_type || 'individual',
         });
       } else {
         const primaryClass = shareClassesWithAllocation?.find(sc => sc.is_primary);
@@ -62,6 +71,8 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
           share_class_id: primaryClass?.id || '',
           shares_held: '',
           effective_date: new Date().toISOString().split('T')[0],
+          shareholder_entity_id: null,
+          shareholder_type: 'individual',
         });
       }
     }
@@ -116,6 +127,8 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
       shares_held: shares,
       percentage: pct,
       effective_date: form.effective_date,
+      shareholder_entity_id: form.shareholder_entity_id || null,
+      shareholder_type: form.shareholder_type,
     };
 
     try {
@@ -144,6 +157,53 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
             <Label>Shareholder Name *</Label>
             <Input value={form.shareholder_name} onChange={(e) => setForm(f => ({ ...f, shareholder_name: e.target.value }))} placeholder="e.g. John Smith or Hydrogen Capital Ltd" />
           </div>
+
+          <div className="space-y-2">
+            <Label>Shareholder Type</Label>
+            <Select
+              value={form.shareholder_type}
+              onValueChange={(v) => {
+                setForm(f => ({
+                  ...f,
+                  shareholder_type: v as 'individual' | 'entity',
+                  shareholder_entity_id: v === 'individual' ? null : f.shareholder_entity_id,
+                }));
+              }}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">Individual Person</SelectItem>
+                <SelectItem value="entity">Company / Entity</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {form.shareholder_type === 'entity' && (
+            <div className="space-y-2">
+              <Label>Link to Entity (for ownership look-through)</Label>
+              <Select
+                value={form.shareholder_entity_id || ''}
+                onValueChange={(v) => {
+                  const entity = linkableEntities.find(e => e.id === v);
+                  setForm(f => ({
+                    ...f,
+                    shareholder_entity_id: v || null,
+                    shareholder_name: entity?.entity_name || f.shareholder_name,
+                  }));
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Select entity..." /></SelectTrigger>
+                <SelectContent>
+                  {linkableEntities.map(e => (
+                    <SelectItem key={e.id} value={e.id}>{e.entity_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Linking enables automatic ownership look-through for portfolio attribution.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Share Class *</Label>

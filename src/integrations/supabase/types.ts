@@ -2740,7 +2740,9 @@ export type Database = {
           percentage: number
           share_class: string | null
           share_class_id: string | null
+          shareholder_entity_id: string | null
           shareholder_name: string
+          shareholder_type: string | null
           shares_held: number
           updated_at: string
         }
@@ -2753,7 +2755,9 @@ export type Database = {
           percentage: number
           share_class?: string | null
           share_class_id?: string | null
+          shareholder_entity_id?: string | null
           shareholder_name: string
+          shareholder_type?: string | null
           shares_held: number
           updated_at?: string
         }
@@ -2766,7 +2770,9 @@ export type Database = {
           percentage?: number
           share_class?: string | null
           share_class_id?: string | null
+          shareholder_entity_id?: string | null
           shareholder_name?: string
+          shareholder_type?: string | null
           shares_held?: number
           updated_at?: string
         }
@@ -2790,6 +2796,20 @@ export type Database = {
             columns: ["share_class_id"]
             isOneToOne: false
             referencedRelation: "share_classes_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_shareholders_shareholder_entity_id_fkey"
+            columns: ["shareholder_entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "entity_shareholders_shareholder_entity_id_fkey"
+            columns: ["shareholder_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -4345,6 +4365,7 @@ export type Database = {
           entity_type: string
           id: string
           incorporation_date: string | null
+          is_group_parent: boolean | null
           issued_shares: number | null
           notes: string | null
           org_id: string
@@ -4371,6 +4392,7 @@ export type Database = {
           entity_type: string
           id?: string
           incorporation_date?: string | null
+          is_group_parent?: boolean | null
           issued_shares?: number | null
           notes?: string | null
           org_id: string
@@ -4397,6 +4419,7 @@ export type Database = {
           entity_type?: string
           id?: string
           incorporation_date?: string | null
+          is_group_parent?: boolean | null
           issued_shares?: number | null
           notes?: string | null
           org_id?: string

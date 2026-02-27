@@ -16,6 +16,7 @@ export interface LegalEntity {
   issued_shares: number | null;
   status: 'active' | 'dormant' | 'dissolved';
   notes: string | null;
+  is_group_parent?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +40,8 @@ export interface EntityShareholder {
   shares_held: number;
   percentage: number;
   effective_date: string;
+  shareholder_entity_id?: string | null;
+  shareholder_type?: 'individual' | 'entity';
   created_at: string;
   updated_at: string;
 }
