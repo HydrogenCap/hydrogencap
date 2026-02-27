@@ -146,23 +146,40 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const { companyId } = await req.json();
+    const body = await req.json();
+    const { entityId, companyId: legacyCompanyId } = body;
 
-    if (!companyId) {
-      return new Response(JSON.stringify({ error: "companyId required" }), {
+    if (!entityId && !legacyCompanyId) {
+      return new Response(JSON.stringify({ error: "entityId or companyId required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: connection, error: connErr } = await supabase
-      .from("freeagent_connections")
-      .select("*")
-      .eq("company_id", companyId)
-      .single();
+    // Look up connection by entity_id or company_id
+    let connection: any;
+    let connErr: any;
+
+    if (entityId) {
+      const result = await supabase
+        .from("freeagent_connections")
+        .select("*")
+        .eq("entity_id", entityId)
+        .single();
+      connection = result.data;
+      connErr = result.error;
+    } else {
+      const result = await supabase
+        .from("freeagent_connections")
+        .select("*")
+        .eq("company_id", legacyCompanyId)
+        .single();
+      connection = result.data;
+      connErr = result.error;
+    }
 
     if (connErr || !connection) {
-      return new Response(JSON.stringify({ error: "No FreeAgent connection for this company" }), {
+      return new Response(JSON.stringify({ error: "No FreeAgent connection found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -175,17 +192,48 @@ serve(async (req) => {
       });
     }
 
+    // Resolve V1 company_id for querying rent data
+    let v1CompanyId = connection.company_id;
+
+    if (!v1CompanyId && connection.entity_id) {
+      const { data: entity } = await supabase
+        .from("legal_entities")
+        .select("company_number")
+        .eq("id", connection.entity_id)
+        .single();
+
+      if (entity?.company_number) {
+        const { data: v1Company } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("company_number", entity.company_number)
+          .eq("org_id", connection.org_id)
+          .maybeSingle();
+
+        if (v1Company) {
+          v1CompanyId = v1Company.id;
+        } else {
+          return new Response(JSON.stringify({
+            error: "No matching V1 company found. Rent payment sync requires V1 data which has not been migrated yet."
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
     const apiBase = connection.use_sandbox
       ? "https://api.sandbox.freeagent.com"
       : "https://api.freeagent.com";
 
     const accessToken = await getValidToken(connection, supabase);
 
-    // Get properties owned by this company
+    // Get properties owned by this company (V1 data)
     const { data: properties } = await supabase
       .from("properties")
       .select("id, address_line, postcode")
-      .eq("company_id", companyId);
+      .eq("company_id", v1CompanyId);
 
     if (!properties || properties.length === 0) {
       return new Response(JSON.stringify({ synced: 0, message: "No properties for company" }), {
@@ -195,7 +243,7 @@ serve(async (req) => {
 
     const propertyIds = properties.map((p: any) => p.id);
 
-    // Get rent payments for these properties
+    // Get rent payments for these properties (V1 data)
     const { data: payments, error: paymentsErr } = await supabase
       .from("rent_payments")
       .select(`

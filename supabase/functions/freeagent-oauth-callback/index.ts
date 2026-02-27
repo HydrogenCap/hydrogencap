@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
   try {
     const stateData = JSON.parse(atob(state));
-    const { companyId, orgId, userId, useSandbox } = stateData;
+    const { entityId, companyId, orgId, userId, useSandbox } = stateData;
 
     const apiBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
     const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
@@ -47,6 +47,8 @@ Deno.serve(async (req) => {
       clientIdPrefix: FREEAGENT_CLIENT_ID.substring(0, 6) + "...",
       secretPrefix: FREEAGENT_CLIENT_SECRET.substring(0, 4) + "...",
       useSandbox,
+      entityId,
+      companyId,
     });
 
     // Exchange authorization code for tokens
@@ -95,28 +97,55 @@ Deno.serve(async (req) => {
     // Store connection
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+    // Bridge: find the V1 company_id via company_number matching
+    let resolvedCompanyId = companyId || null;
+    if (entityId && !resolvedCompanyId) {
+      const { data: entity } = await supabase
+        .from("legal_entities")
+        .select("company_number")
+        .eq("id", entityId)
+        .single();
+
+      if (entity?.company_number) {
+        const { data: v1Company } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("company_number", entity.company_number)
+          .eq("org_id", orgId)
+          .maybeSingle();
+
+        resolvedCompanyId = v1Company?.id || null;
+      }
+    }
+
+    const upsertData: Record<string, any> = {
+      org_id: orgId,
+      company_id: resolvedCompanyId || entityId,
+      entity_id: entityId || null,
+      freeagent_company_name: freeagentCompanyName,
+      freeagent_company_url: freeagentCompanyUrl,
+      access_token_encrypted: accessTokenEnc,
+      refresh_token_encrypted: refreshTokenEnc,
+      token_expires_at: expiresAt,
+      use_sandbox: useSandbox || false,
+      connected_by: userId,
+      connected_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
     const { error: upsertError } = await supabase
       .from("freeagent_connections")
-      .upsert({
-        org_id: orgId,
-        company_id: companyId,
-        freeagent_company_name: freeagentCompanyName,
-        freeagent_company_url: freeagentCompanyUrl,
-        access_token_encrypted: accessTokenEnc,
-        refresh_token_encrypted: refreshTokenEnc,
-        token_expires_at: expiresAt,
-        use_sandbox: useSandbox || false,
-        connected_by: userId,
-        connected_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "org_id,company_id" });
+      .upsert(upsertData, { onConflict: "org_id,company_id" });
 
     if (upsertError) {
       console.error("DB upsert failed:", upsertError);
       return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&msg=db_error`, 302);
     }
 
-    return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=connected&company=${companyId}`, 302);
+    return Response.redirect(
+      `${APP_URL}/settings?tab=integrations&freeagent=connected&entity=${entityId || companyId}`,
+      302
+    );
   } catch (error: any) {
     console.error("FreeAgent OAuth callback error:", error);
     return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&msg=${encodeURIComponent(error.message)}`, 302);

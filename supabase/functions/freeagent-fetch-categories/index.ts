@@ -86,15 +86,32 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const { companyId } = await req.json();
+    const body = await req.json();
+    const { entityId, companyId: legacyCompanyId } = body;
 
-    const { data: connection, error } = await supabase
-      .from("freeagent_connections")
-      .select("*")
-      .eq("company_id", companyId)
-      .single();
+    // Look up connection by entity_id or company_id
+    let connection: any;
+    let connError: any;
 
-    if (error || !connection) {
+    if (entityId) {
+      const result = await supabase
+        .from("freeagent_connections")
+        .select("*")
+        .eq("entity_id", entityId)
+        .single();
+      connection = result.data;
+      connError = result.error;
+    } else if (legacyCompanyId) {
+      const result = await supabase
+        .from("freeagent_connections")
+        .select("*")
+        .eq("company_id", legacyCompanyId)
+        .single();
+      connection = result.data;
+      connError = result.error;
+    }
+
+    if (connError || !connection) {
       return new Response(JSON.stringify({ error: "No FreeAgent connection" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

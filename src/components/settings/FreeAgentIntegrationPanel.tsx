@@ -17,7 +17,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { useCompanies } from '@/hooks/useCompanies';
+import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import {
   useFreeAgentConnections, useFreeAgentCategories, useDisconnectFreeAgent,
@@ -33,7 +33,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 };
 
 function CategoryMapping({ connection }: { connection: FreeAgentConnection }) {
-  const { data: catData, isLoading } = useFreeAgentCategories(connection.company_id);
+  const { data: catData, isLoading } = useFreeAgentCategories(connection.entity_id || connection.company_id);
   const updateSettings = useUpdateFreeAgentSettings();
 
   const incomeCategories = useMemo(
@@ -115,24 +115,24 @@ function CategoryMapping({ connection }: { connection: FreeAgentConnection }) {
 
 export function FreeAgentIntegrationPanel() {
   const [searchParams] = useSearchParams();
-  const { data: companies, isLoading: companiesLoading } = useCompanies();
+  const { data: entities, isLoading: entitiesLoading } = useLegalEntities();
   const { data: orgId } = useUserOrg();
   const { data: connections, isLoading: connectionsLoading } = useFreeAgentConnections();
   const disconnect = useDisconnectFreeAgent();
   const updateSettings = useUpdateFreeAgentSettings();
   const syncToFreeAgent = useSyncToFreeAgent();
 
-  const [connectingCompany, setConnectingCompany] = useState('');
+  const [connectingEntity, setConnectingEntity] = useState('');
   const [useSandbox, setUseSandbox] = useState(false);
   const [disconnecting, setDisconnecting] = useState<FreeAgentConnection | null>(null);
 
   const freeagentResult = searchParams.get('freeagent');
 
   const handleConnect = async () => {
-    if (!connectingCompany || !orgId) return;
+    if (!connectingEntity || !orgId) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const authUrl = buildFreeAgentAuthUrl(connectingCompany, orgId, user.id, useSandbox);
+    const authUrl = buildFreeAgentAuthUrl(connectingEntity, orgId, user.id, useSandbox);
     window.open(authUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -142,8 +142,8 @@ export function FreeAgentIntegrationPanel() {
     setDisconnecting(null);
   };
 
-  const faConnectedIds = new Set((connections || []).map(c => c.company_id));
-  const unconnectedCompanies = (companies || []).filter(c => !faConnectedIds.has(c.id));
+  const faConnectedEntityIds = new Set((connections || []).map(c => c.entity_id).filter(Boolean));
+  const unconnectedEntities = (entities || []).filter(e => !faConnectedEntityIds.has(e.id));
 
   return (
     <div className="space-y-4">
@@ -175,26 +175,26 @@ export function FreeAgentIntegrationPanel() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Connect a new company */}
-          {unconnectedCompanies.length > 0 && (
+          {/* Connect a new entity */}
+          {unconnectedEntities.length > 0 && (
             <Card className="border-dashed">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Connect a Company</CardTitle>
+                <CardTitle className="text-sm">Connect an Entity</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Company</Label>
-                  <Select value={connectingCompany} onValueChange={setConnectingCompany}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select company…" /></SelectTrigger>
+                  <Label className="text-xs text-muted-foreground">Entity</Label>
+                  <Select value={connectingEntity} onValueChange={setConnectingEntity}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select entity…" /></SelectTrigger>
                     <SelectContent>
-                      {unconnectedCompanies.map(c => (
-                        <SelectItem key={c.id} value={c.id} className="text-xs">{c.legal_name}</SelectItem>
+                      {unconnectedEntities.map(e => (
+                        <SelectItem key={e.id} value={e.id} className="text-xs">{e.entity_name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <Button size="sm" onClick={handleConnect} disabled={!connectingCompany} className="gap-1.5">
+                <Button size="sm" onClick={handleConnect} disabled={!connectingEntity} className="gap-1.5">
                   <ExternalLink className="h-3 w-3" />
                   Connect to FreeAgent
                   <ArrowRight className="h-3 w-3" />
@@ -212,7 +212,7 @@ export function FreeAgentIntegrationPanel() {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  You'll be redirected to FreeAgent to authorise access. Each company connects to its own FreeAgent account.
+                  You'll be redirected to FreeAgent to authorise access. Each entity connects to its own FreeAgent account.
                 </p>
               </CardContent>
             </Card>
@@ -227,10 +227,10 @@ export function FreeAgentIntegrationPanel() {
             </Card>
           )}
 
-          {/* Connected companies */}
+          {/* Connected entities */}
           {connections && connections.length > 0 ? (
             connections.map(conn => {
-              const company = companies?.find(c => c.id === conn.company_id);
+              const entity = entities?.find(e => e.id === conn.entity_id);
               return (
                 <Card key={conn.id}>
                   <CardHeader className="pb-3">
@@ -238,7 +238,7 @@ export function FreeAgentIntegrationPanel() {
                       <div className="flex items-center gap-2">
                         <div className="h-6 w-6 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-[10px] font-bold text-emerald-700 dark:text-emerald-400">FA</div>
                         <CardTitle className="text-base">
-                          {company?.legal_name || 'Unknown Company'}
+                          {entity?.entity_name || conn.freeagent_company_name || 'Unknown Entity'}
                         </CardTitle>
                         <span className="text-xs text-muted-foreground">→ {conn.freeagent_company_name || 'FreeAgent Account'}</span>
                         {conn.use_sandbox && (
@@ -255,7 +255,7 @@ export function FreeAgentIntegrationPanel() {
                           size="sm"
                           variant="outline"
                           className="h-7 text-xs gap-1"
-                          onClick={() => syncToFreeAgent.mutate(conn.company_id)}
+                          onClick={() => syncToFreeAgent.mutate(conn.entity_id || conn.company_id)}
                           disabled={syncToFreeAgent.isPending}
                         >
                           {syncToFreeAgent.isPending ? (
@@ -325,7 +325,7 @@ export function FreeAgentIntegrationPanel() {
                 <Zap className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
                 <p className="text-sm text-muted-foreground">No FreeAgent connections</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Connect a company above to start syncing rent payments to FreeAgent.
+                  Connect an entity above to start syncing rent payments to FreeAgent.
                 </p>
               </CardContent>
             </Card>
