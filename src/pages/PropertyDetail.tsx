@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2, Bath, FileText, Image } from 'lucide-react';
+import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2, Bath, FileText, Image, Wrench } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ import { InsurancePanel } from '@/components/insurance';
 import { RoomManagementPanel } from '@/components/rooms/RoomManagementPanel';
 import { LifecycleSwitcher, LifecycleBadge } from '@/components/property/LifecycleSwitcher';
 import { LifecycleType } from '@/contexts/LifecycleFilterContext';
+import { PropertyMaintenancePanel } from '@/components/maintenance/PropertyMaintenancePanel';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertDialog,
@@ -439,6 +440,7 @@ function PropertyDetailPage() {
 
           {/* OPERATIONS TAB - Renamed from Passport */}
           <TabsContent value="operations" className="space-y-6">
+            <PropertyMaintenancePanel propertyId={id!} />
             <RoomManagementPanel propertyId={id!} />
             <CoreIdentityCard propertyId={id!} />
             <PassportForm propertyId={id!} highlightMissing={searchParams.has('highlight')} />
