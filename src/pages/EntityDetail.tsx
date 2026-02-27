@@ -33,7 +33,10 @@ import {
   useDeleteDirector,
   useDeleteShareholder,
   useUpdateLegalEntity,
+  useCreateDirector,
+  useCreateShareholder,
 } from '@/hooks/useLegalEntities';
+import { supabase } from '@/integrations/supabase/client';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
 import { useToast } from '@/hooks/use-toast';
@@ -93,9 +96,64 @@ export default function EntityDetail() {
   const deleteEntity = useDeleteLegalEntity();
   const deleteDirector = useDeleteDirector();
   const deleteShareholder = useDeleteShareholder();
+  const createDirector = useCreateDirector();
+  const createShareholder = useCreateShareholder();
 
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const updateEntity = useUpdateLegalEntity();
+
+  // Import officers & PSCs from CH result, skipping duplicates
+  const importFromCH = useCallback(async (
+    result: any,
+    entityId: string,
+    existingDirectors: typeof directors,
+    existingShareholders: typeof shareholders,
+  ) => {
+    let imported = { directors: 0, shareholders: 0 };
+
+    // Import officers as directors
+    if (result.officers?.length) {
+      const existingNames = new Set((existingDirectors || []).map(d => d.director_name.toLowerCase()));
+      for (const officer of result.officers) {
+        if (existingNames.has(officer.name.toLowerCase())) continue;
+        try {
+          await createDirector.mutateAsync({
+            entity_id: entityId,
+            director_name: officer.name,
+            appointment_date: officer.appointed_on || new Date().toISOString().slice(0, 10),
+            resignation_date: null,
+            is_current: true,
+          });
+          imported.directors++;
+        } catch (e) {
+          console.error('Failed to import director:', officer.name, e);
+        }
+      }
+    }
+
+    // Import PSCs as shareholders
+    if (result.significant_controllers?.length) {
+      const existingNames = new Set((existingShareholders || []).map(s => s.shareholder_name.toLowerCase()));
+      for (const psc of result.significant_controllers) {
+        if (existingNames.has(psc.name.toLowerCase())) continue;
+        try {
+          await createShareholder.mutateAsync({
+            entity_id: entityId,
+            shareholder_name: psc.name,
+            share_class: 'Ordinary',
+            shares_held: 0,
+            percentage: 0,
+            effective_date: psc.notified_on || new Date().toISOString().slice(0, 10),
+          });
+          imported.shareholders++;
+        } catch (e) {
+          console.error('Failed to import shareholder:', psc.name, e);
+        }
+      }
+    }
+
+    return imported;
+  }, [createDirector, createShareholder]);
   const hasAutoSynced = useRef(false);
 
   const [showEditEntity, setShowEditEntity] = useState(false);
@@ -130,13 +188,18 @@ export default function EntityDetail() {
             confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
             confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
           } as any);
-          toast({ title: 'Auto-synced from Companies House' });
+          // Import directors & shareholders
+          const imported = await importFromCH(result, entity.id, directors, shareholders);
+          const parts = [];
+          if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
+          if (imported.shareholders > 0) parts.push(`${imported.shareholders} shareholder(s)`);
+          toast({ title: 'Auto-synced from Companies House', description: parts.length ? `Imported ${parts.join(' and ')}` : undefined });
         }
       } catch (err) {
         console.error('Auto-sync failed:', err);
       }
     }
-  }, [entity, isLookingUp, lookupCompany, updateEntity, toast]);
+  }, [entity, isLookingUp, lookupCompany, updateEntity, toast, importFromCH, directors, shareholders]);
 
   useEffect(() => {
     if (entity && !isLoading) {
@@ -163,7 +226,12 @@ export default function EntityDetail() {
           confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
           confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
         } as any);
-        toast({ title: 'Synced from Companies House', description: 'Company details and compliance dates updated' });
+        // Import directors & shareholders
+        const imported = await importFromCH(result, entity.id, directors, shareholders);
+        const parts = [];
+        if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
+        if (imported.shareholders > 0) parts.push(`${imported.shareholders} shareholder(s)`);
+        toast({ title: 'Synced from Companies House', description: `Company details updated${parts.length ? '. Imported ' + parts.join(' and ') : ''}` });
       }
     } catch {
       toast({ title: 'Error', description: 'Failed to sync from Companies House', variant: 'destructive' });
