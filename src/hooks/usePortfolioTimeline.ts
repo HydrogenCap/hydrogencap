@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PropertyWithFinancials } from './useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { useActivityLog } from './useActivityLog';
 import { usePropertyPassports, type PropertyPassport } from './usePropertyPassport';
 import { usePortfolioAttributableMetrics } from './useBeneficialGroups';

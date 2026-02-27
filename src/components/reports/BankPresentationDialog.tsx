@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useAllPropertyCoverPhotos } from '@/hooks/useAllPropertyCoverPhotos';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { generateBankPresentation, downloadPDF, type EnhancedPresentationOptions } from '@/lib/bankPresentationGenerator';

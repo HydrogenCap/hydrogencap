@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { usePropertyPassports } from '@/hooks/usePropertyPassport';
 import { usePassportPageData } from '@/hooks/usePassportPageData';
 import { PROPERTY_TYPES, LISTED_STATUSES } from '@/hooks/useCoreIdentity';

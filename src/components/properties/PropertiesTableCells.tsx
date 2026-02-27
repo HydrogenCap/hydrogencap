@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { TableHead } from '@/components/ui/table';
 import { ArrowUpDown } from 'lucide-react';
 import { formatDateUK, formatPercent, getLTVStatus, getExpiryStatus, getEPCStatus } from '@/lib/calculations';
-import { type PropertyWithFinancials } from '@/hooks/useProperties';
+import { type PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { type RiskLevel } from '@/lib/propertyMetrics';
 import { type ColumnKey } from '@/lib/propertiesTableConfig';
 

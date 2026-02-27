@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { formatGBP } from '@/lib/calculations';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 
 const CHART_COLORS = [
   'hsl(174, 72%, 45%)',

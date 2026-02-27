@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllCompliance } from '@/hooks/useCompliance';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
 
 export function ComplianceAlertsWidget() {

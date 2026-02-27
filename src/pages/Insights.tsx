@@ -34,7 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { usePropertyPassports } from '@/hooks/usePropertyPassport';
 import { usePortfolioAI, type AIInsights } from '@/hooks/usePortfolioAI';
 import { useLocationAI, type LocationInsights } from '@/hooks/useLocationAI';

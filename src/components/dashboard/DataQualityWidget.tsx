@@ -18,7 +18,7 @@ import {
   RefreshCw,
   Ban
 } from 'lucide-react';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { useCompanies } from '@/hooks/useCompanies';
 
 // Event name for property updates

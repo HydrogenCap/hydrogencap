@@ -20,7 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { AlertTriangle, Bug, ChevronDown, ChevronUp } from 'lucide-react';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { formatGBP } from '@/lib/calculations';
 import { Link } from 'react-router-dom';
 

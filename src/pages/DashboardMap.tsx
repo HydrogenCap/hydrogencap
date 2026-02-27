@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Filter, MapPin, ExternalLink, Route, X, Check } from 'lucide-react';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { PropertyMap } from '@/components/maps/PropertyMap';
 import { useDuplicateDetection, DuplicateCandidate } from '@/hooks/useDuplicateDetection';
 import { useDismissedDuplicates, useDismissDuplicate, isDuplicateDismissed } from '@/hooks/useDismissedDuplicates';

@@ -27,7 +27,7 @@ import { ValidationPreview } from '@/components/import/ValidationPreview';
 import { ImportStepper } from '@/components/import/ImportStepper';
 import { GeocodePrompt } from '@/components/import/GeocodePrompt';
 import { useBatchImport } from '@/hooks/useBatchImport';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';

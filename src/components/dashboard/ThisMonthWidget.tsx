@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Building2, Shield, TrendingUp, ArrowRight, AlertTriangle } from 'lucide-react';
 import { format, startOfMonth, isAfter } from 'date-fns';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { useTenancyComplianceStats } from '@/hooks/useTenancyCompliance';
 import { formatGBP } from '@/lib/calculations';

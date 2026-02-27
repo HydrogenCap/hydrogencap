@@ -31,7 +31,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { usePortfolioAttribution, type OwnerAttribution } from '@/hooks/useOwnershipAttribution';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { formatGBP, formatPercent, getEffectiveCosts } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 

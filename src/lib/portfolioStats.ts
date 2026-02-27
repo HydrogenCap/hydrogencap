@@ -3,7 +3,7 @@
 // Aggregate metrics across all properties
 // ============================================
 
-import { PropertyWithFinancials } from '@/hooks/useProperties';
+import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { getPropertyMetrics, PropertyMetrics } from './propertyMetrics';
 
 export interface PortfolioStats {

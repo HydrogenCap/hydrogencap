@@ -10,7 +10,7 @@ import { useCreateMaintenanceRequest } from '@/hooks/useMaintenanceRequests';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { usePropertyRooms } from '@/hooks/useRoomsV2';
 import { useTenantsV2 } from '@/hooks/useTenantsV2';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { MAINTENANCE_CATEGORY_NAMES, PRIORITY_CONFIG, type MaintenanceCategory, type MaintenancePriority, type ReportedBy } from '@/lib/maintenanceTypes';
 import { AlertTriangle } from 'lucide-react';
 
