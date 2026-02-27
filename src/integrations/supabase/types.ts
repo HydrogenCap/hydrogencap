@@ -6737,14 +6737,18 @@ export type Database = {
           avg_occupancy_rate: number | null
           org_id: string | null
           portfolio_collection_rate: number | null
+          portfolio_ltv: number | null
           property_count: number | null
           snapshot_month: string | null
           total_cash_flow: number | null
           total_costs: number | null
+          total_debt: number | null
+          total_equity: number | null
           total_mortgage_payments: number | null
           total_noi: number | null
           total_rent_due: number | null
           total_rent_received: number | null
+          total_valuation: number | null
           total_void_loss: number | null
         }
         Relationships: [
