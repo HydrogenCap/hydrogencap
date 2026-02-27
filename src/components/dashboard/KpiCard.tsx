@@ -8,6 +8,10 @@ interface KpiCardProps {
   trend?: string;
   trendUp?: boolean;
   subtitle?: string;
+  /** Secondary attributed value shown beneath the primary gross value */
+  secondaryLabel?: string;
+  secondaryValue?: string | number;
+  secondaryValueClassName?: string;
   icon?: LucideIcon;
   iconClassName?: string;
   valueClassName?: string;
@@ -26,6 +30,9 @@ export function KpiCard({
   trend,
   trendUp,
   subtitle,
+  secondaryLabel,
+  secondaryValue,
+  secondaryValueClassName,
   icon: Icon,
   iconClassName,
   valueClassName,
@@ -108,6 +115,20 @@ export function KpiCard({
       {/* Optional subtitle */}
       {subtitle && (
         <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      )}
+
+      {/* Secondary attributed value */}
+      {secondaryValue !== undefined && (
+        <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              {secondaryLabel ?? 'Attributed'}
+            </span>
+            <span className={cn('text-sm font-semibold', secondaryValueClassName)}>
+              {secondaryValue}
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

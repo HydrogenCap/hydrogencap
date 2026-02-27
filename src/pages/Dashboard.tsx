@@ -59,7 +59,7 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
   const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const [kpiView, setKpiView] = useState<'gross' | 'hydrogen'>('gross');
+  // kpiView toggle removed — now showing dual-column (gross + attributed) on each card
   const [attributionDate, setAttributionDate] = useState<string>(''); // '' = current/today
   const { data: properties, isLoading, isError, error } = useDashboardPropertiesV2();
   const { data: passports } = usePropertyPassports();
@@ -307,52 +307,31 @@ function DashboardPage() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6 mt-6">
-            {/* Gross / Hydrogen Toggle */}
-            {hydrogenKPIs.isAvailable && (
-              <div className="flex items-center gap-1 p-1 rounded-lg bg-muted w-fit">
-                <button
-                  className={cn(
-                    'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                    kpiView === 'gross' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                  onClick={() => setKpiView('gross')}
-                >
-                  Gross Portfolio
-                </button>
-                <button
-                  className={cn(
-                    'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                    kpiView === 'hydrogen' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                  onClick={() => setKpiView('hydrogen')}
-                >
-                  {hydrogenKPIs.principalName ?? 'Attributable'}
-                </button>
-              </div>
-            )}
-
-            {/* KPI Cards */}
+            {/* KPI Cards — Gross with attributed secondary */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <KpiCard
-                label={kpiView === 'hydrogen' ? 'Hydrogen Equity' : 'Attributable Equity'}
-                value={formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalEquity : portfolioStats.totalEquity)}
-                subtitle={`Value: ${formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalValue : portfolioStats.totalValue)}`}
+                label="Portfolio Equity"
+                value={formatGBP(portfolioStats.totalEquity)}
+                subtitle={`Value: ${formatGBP(portfolioStats.totalValue)}`}
                 icon={TrendingUp}
                 iconClassName="text-primary"
                 valueClassName="text-primary"
                 onClick={() => handleMetricClick('equity')}
+                {...(hydrogenKPIs.isAvailable ? {
+                  secondaryLabel: hydrogenKPIs.principalName ?? 'Attributed',
+                  secondaryValue: formatGBP(hydrogenKPIs.totalEquity),
+                  secondaryValueClassName: 'text-primary',
+                } : {})}
               />
               <KpiCard
                 label={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
                 value={formatGBP(
-                  kpiView === 'hydrogen'
-                    ? (cashflowPeriod === 'monthly' ? hydrogenKPIs.monthlyCashflow : hydrogenKPIs.totalCashflow)
-                    : (cashflowPeriod === 'monthly' ? portfolioStats.monthlyCashflow : portfolioStats.monthlyCashflow * 12)
+                  cashflowPeriod === 'monthly' ? portfolioStats.monthlyCashflow : portfolioStats.monthlyCashflow * 12
                 )}
-                subtitle={kpiView === 'hydrogen' ? `${hydrogenKPIs.propertyCount} properties` : 'After debt service'}
+                subtitle="After debt service"
                 icon={PoundSterling}
                 iconClassName="text-success"
-                valueClassName={(kpiView === 'hydrogen' ? hydrogenKPIs.monthlyCashflow : portfolioStats.monthlyCashflow) >= 0 ? 'text-success' : 'text-destructive'}
+                valueClassName={portfolioStats.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}
                 onClick={() => handleMetricClick('cashflow')}
                 headerAction={
                   <button
@@ -366,17 +345,31 @@ function DashboardPage() {
                     {cashflowPeriod === 'monthly' ? '/mo' : '/yr'}
                   </button>
                 }
+                {...(hydrogenKPIs.isAvailable ? {
+                  secondaryLabel: hydrogenKPIs.principalName ?? 'Attributed',
+                  secondaryValue: formatGBP(
+                    cashflowPeriod === 'monthly' ? hydrogenKPIs.monthlyCashflow : hydrogenKPIs.totalCashflow
+                  ),
+                  secondaryValueClassName: hydrogenKPIs.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive',
+                } : {})}
               />
               <KpiCard
                 label="Average LTV"
-                value={formatPercent(kpiView === 'hydrogen' ? hydrogenKPIs.averageLTV : portfolioStats.averageLTV)}
-                subtitle={`Debt: ${formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalDebt : portfolioStats.totalMortgage)}`}
+                value={formatPercent(portfolioStats.averageLTV)}
+                subtitle={`Debt: ${formatGBP(portfolioStats.totalMortgage)}`}
                 icon={Percent}
                 valueClassName={
-                  (kpiView === 'hydrogen' ? hydrogenKPIs.averageLTV : portfolioStats.averageLTV) > 85 ? 'text-destructive' :
-                  (kpiView === 'hydrogen' ? hydrogenKPIs.averageLTV : portfolioStats.averageLTV) > 75 ? 'text-warning' : ''
+                  portfolioStats.averageLTV > 85 ? 'text-destructive' :
+                  portfolioStats.averageLTV > 75 ? 'text-warning' : ''
                 }
                 onClick={() => handleMetricClick('ltv')}
+                {...(hydrogenKPIs.isAvailable ? {
+                  secondaryLabel: hydrogenKPIs.principalName ?? 'Attributed',
+                  secondaryValue: formatPercent(hydrogenKPIs.averageLTV),
+                  secondaryValueClassName:
+                    hydrogenKPIs.averageLTV > 85 ? 'text-destructive' :
+                    hydrogenKPIs.averageLTV > 75 ? 'text-warning' : '',
+                } : {})}
               />
               <KpiCard
                 label="Action Required"
