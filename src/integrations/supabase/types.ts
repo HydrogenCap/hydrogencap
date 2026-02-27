@@ -3919,6 +3919,7 @@ export type Database = {
           display_name: string
           email: string | null
           id: string
+          is_principal: boolean
           legal_name: string | null
           org_id: string
           party_type: string
@@ -3930,6 +3931,7 @@ export type Database = {
           display_name: string
           email?: string | null
           id?: string
+          is_principal?: boolean
           legal_name?: string | null
           org_id: string
           party_type: string
@@ -3941,6 +3943,7 @@ export type Database = {
           display_name?: string
           email?: string | null
           id?: string
+          is_principal?: boolean
           legal_name?: string | null
           org_id?: string
           party_type?: string

@@ -326,7 +326,7 @@ function DashboardPage() {
                   )}
                   onClick={() => setKpiView('hydrogen')}
                 >
-                  Hydrogen Attributable
+                  {hydrogenKPIs.principalName ?? 'Attributable'}
                 </button>
               </div>
             )}

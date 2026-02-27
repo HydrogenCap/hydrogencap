@@ -1,13 +1,13 @@
 /**
- * Hook to extract Hydrogen Capital's attributed KPIs from portfolio attribution data.
+ * Hook to extract the principal party's attributed KPIs from portfolio attribution data.
  * 
- * Identifies the HYDROGEN CAPITAL LTD party in the ownership structure and returns
- * its ownership-attributed financial metrics for side-by-side comparison with gross figures.
+ * Uses the `is_principal` flag on the parties table to identify the org's own identity
+ * (e.g. Hydrogen Capital) and returns its ownership-attributed financial metrics.
  */
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import type { OwnerAttribution } from './useOwnershipAttribution';
-
-const HYDROGEN_PARTY_NAME = 'HYDROGEN CAPITAL LTD';
 
 export interface HydrogenKPIs {
   totalValue: number;
@@ -21,34 +21,53 @@ export interface HydrogenKPIs {
   propertyCount: number;
   weightedYield: number | null;
   isAvailable: boolean;
+  principalName: string | null;
+}
+
+/** Fetch the principal party for the current user's org */
+export function usePrincipalParty() {
+  return useQuery({
+    queryKey: ['principal_party'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('parties')
+        .select('id, display_name, party_type')
+        .eq('is_principal', true)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
 }
 
 export function useHydrogenKPIs(attribution: OwnerAttribution[] | undefined): HydrogenKPIs {
+  const { data: principalParty } = usePrincipalParty();
+
   return useMemo(() => {
-    if (!attribution || attribution.length === 0) {
-      return {
-        totalValue: 0, totalEquity: 0, totalDebt: 0,
-        totalRent: 0, totalNOI: 0, totalCashflow: 0, monthlyCashflow: 0,
-        averageLTV: 0, propertyCount: 0, weightedYield: null,
-        isAvailable: false,
-      };
+    const empty: HydrogenKPIs = {
+      totalValue: 0, totalEquity: 0, totalDebt: 0,
+      totalRent: 0, totalNOI: 0, totalCashflow: 0, monthlyCashflow: 0,
+      averageLTV: 0, propertyCount: 0, weightedYield: null,
+      isAvailable: false, principalName: null,
+    };
+
+    if (!attribution || attribution.length === 0 || !principalParty) {
+      return empty;
     }
 
-    // Find Hydrogen Capital in the attribution results
-    const hydrogen = attribution.find(
+    // Match by party ID (is_principal flag), with name fallback for robustness
+    const principal = attribution.find(
+      a => a.ownerId === principalParty.id
+    ) ?? attribution.find(
       a => a.ownerName.toUpperCase().includes('HYDROGEN CAPITAL')
     );
 
-    if (!hydrogen) {
-      return {
-        totalValue: 0, totalEquity: 0, totalDebt: 0,
-        totalRent: 0, totalNOI: 0, totalCashflow: 0, monthlyCashflow: 0,
-        averageLTV: 0, propertyCount: 0, weightedYield: null,
-        isAvailable: false,
-      };
+    if (!principal) {
+      return { ...empty, principalName: principalParty.display_name };
     }
 
-    const t = hydrogen.totals;
+    const t = principal.totals;
     const averageLTV = t.totalAttributableValue > 0
       ? (t.totalAttributableDebt / t.totalAttributableValue) * 100
       : 0;
@@ -65,6 +84,7 @@ export function useHydrogenKPIs(attribution: OwnerAttribution[] | undefined): Hy
       propertyCount: t.propertyCount,
       weightedYield: t.weightedYield,
       isAvailable: true,
+      principalName: principalParty.display_name,
     };
-  }, [attribution]);
+  }, [attribution, principalParty]);
 }
