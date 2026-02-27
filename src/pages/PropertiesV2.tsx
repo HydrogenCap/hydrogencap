@@ -14,6 +14,7 @@ import { usePropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, getP
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
+import { usePropertyPhotosV2 } from '@/hooks/usePropertyPhotosV2';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
 import type { PropertyRoomSummary } from '@/hooks/useRoomsV2';
 
@@ -84,6 +85,7 @@ export default function PropertiesV2() {
   const { data: properties, isLoading } = usePropertiesV2();
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const { data: entities } = useLegalEntities();
+  const { data: photoMap } = usePropertyPhotosV2();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
@@ -246,7 +248,7 @@ export default function PropertiesV2() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(p => (
-              <PropertyCard key={p.id} property={p} roomSummary={roomSummaries?.get(p.id)} onClick={() => navigate(`/properties-v2/${p.id}`)} />
+              <PropertyCard key={p.id} property={p} roomSummary={roomSummaries?.get(p.id)} photoUrl={photoMap?.get(p.id)} onClick={() => navigate(`/properties-v2/${p.id}`)} />
             ))}
           </div>
         )}
@@ -257,16 +259,21 @@ export default function PropertiesV2() {
   );
 }
 
-function PropertyCard({ property: p, roomSummary, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; onClick: () => void }) {
+function PropertyCard({ property: p, roomSummary, photoUrl, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; photoUrl?: string; onClick: () => void }) {
   const status = getPropertyComplianceStatus(p.id);
   const occupied = roomSummary?.total_occupied ?? 0;
   const lettable = roomSummary?.total_lettable ?? (p.total_lettable_rooms || 0);
   const grossRent = roomSummary?.gross_rent_pcm ?? 0;
   return (
     <Card
-      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'}`}
+      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden`}
       onClick={onClick}
     >
+      {photoUrl && (
+        <div className="h-32 w-full overflow-hidden">
+          <img src={photoUrl} alt={p.address_line_1} className="w-full h-full object-cover" />
+        </div>
+      )}
       <CardContent className="pt-4 pb-3 space-y-2">
         <div className="flex items-start justify-between">
           <div className="min-w-0">
