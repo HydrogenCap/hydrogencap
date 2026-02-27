@@ -77,6 +77,7 @@ const operationsItems: NavItem[] = [
   { title: 'Tenants', icon: Users, href: '/tenants-v2' },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
+  { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
 ];
 
 const intelligenceItems: NavItem[] = [
