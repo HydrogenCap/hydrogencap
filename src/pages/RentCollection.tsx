@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PoundSterling, Download, Building2, Users, List, Clock, ChevronRight } from 'lucide-react';
+import { PoundSterling, Download, Building2, Users, List, Clock, ChevronRight, FileSpreadsheet, Link2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import BulkWriteOffDialog from '@/components/rent/BulkWriteOffDialog';
 import BulkAddNoteDialog from '@/components/rent/BulkAddNoteDialog';
 import BulkSendReminderDialog from '@/components/rent/BulkSendReminderDialog';
 import { exportRentRollCSV } from '@/lib/rentCsvExporter';
+import { BankStatementImportDialog } from '@/components/rent/BankStatementImportDialog';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth } from 'date-fns';
 
