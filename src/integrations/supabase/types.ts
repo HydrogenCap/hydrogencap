@@ -4299,7 +4299,16 @@ export type Database = {
       }
       legal_entities: {
         Row: {
+          accounts_due_date: string | null
+          accounts_last_filed_date: string | null
+          accounts_period_end: string | null
+          ch_company_status: string | null
+          ch_company_type: string | null
+          ch_last_synced_at: string | null
           company_number: string | null
+          confirmation_statement_due_date: string | null
+          confirmation_statement_last_filed_date: string | null
+          confirmation_statement_last_made_up_to: string | null
           corporation_tax_ref: string | null
           created_at: string
           entity_name: string
@@ -4316,7 +4325,16 @@ export type Database = {
           vat_registered: boolean | null
         }
         Insert: {
+          accounts_due_date?: string | null
+          accounts_last_filed_date?: string | null
+          accounts_period_end?: string | null
+          ch_company_status?: string | null
+          ch_company_type?: string | null
+          ch_last_synced_at?: string | null
           company_number?: string | null
+          confirmation_statement_due_date?: string | null
+          confirmation_statement_last_filed_date?: string | null
+          confirmation_statement_last_made_up_to?: string | null
           corporation_tax_ref?: string | null
           created_at?: string
           entity_name: string
@@ -4333,7 +4351,16 @@ export type Database = {
           vat_registered?: boolean | null
         }
         Update: {
+          accounts_due_date?: string | null
+          accounts_last_filed_date?: string | null
+          accounts_period_end?: string | null
+          ch_company_status?: string | null
+          ch_company_type?: string | null
+          ch_last_synced_at?: string | null
           company_number?: string | null
+          confirmation_statement_due_date?: string | null
+          confirmation_statement_last_filed_date?: string | null
+          confirmation_statement_last_made_up_to?: string | null
           corporation_tax_ref?: string | null
           created_at?: string
           entity_name?: string
