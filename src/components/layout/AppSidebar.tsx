@@ -71,6 +71,7 @@ const operationsItems: NavItem[] = [
   { title: 'Lending', icon: PoundSterling, href: '/lending' },
   { title: 'Financials', icon: TrendingUp, href: '/financials' },
   { title: 'Investors', icon: Briefcase, href: '/investors' },
+  { title: 'Accounting', icon: PoundSterling, href: '/accounting' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
   { title: 'Tenants', icon: Users, href: '/tenants-v2' },
