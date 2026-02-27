@@ -1,49 +1,37 @@
 import { useMemo } from 'react';
-import { useAllCompliance } from './useCompliance';
-import { useProperties } from './useProperties';
-import {
-  generateComplianceItemsWithMissing,
-  calculateComplianceStats,
-  type PropertyForCompliance,
-} from '@/lib/complianceItemsWithMissing';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Shared hook that provides compliance stats using the SAME calculation
- * as the Compliance Register page (generateComplianceItemsWithMissing + calculateComplianceStats).
- * Used by the dashboard widget and sidebar badge to ensure consistent numbers.
+ * Shared hook that provides compliance stats from the V2 compliance_matrix_v2 view.
+ * Used by the dashboard widget and sidebar badge.
  */
 export function usePortfolioComplianceStats() {
-  const { data: items, isLoading: loadingItems } = useAllCompliance();
-  const { data: properties, isLoading: loadingProperties } = useProperties();
+  const { data: matrixRows, isLoading } = useQuery({
+    queryKey: ['compliance_matrix_v2_stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('compliance_matrix_v2')
+        .select('calculated_status');
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const stats = useMemo(() => {
-    if (!items || !properties) {
-      return { valid: 0, expiring: 0, expired: 0, total: 0, notRequired: 0 };
+    if (!matrixRows) return { valid: 0, expiring: 0, expired: 0, total: 0, notRequired: 0 };
+
+    let valid = 0, expiring = 0, expired = 0, notRequired = 0;
+    for (const row of matrixRows) {
+      switch (row.calculated_status) {
+        case 'valid': valid++; break;
+        case 'expiring_soon': expiring++; break;
+        case 'expired': case 'missing': expired++; break;
+        case 'not_required': notRequired++; break;
+      }
     }
+    return { valid, expiring, expired, total: matrixRows.length, notRequired };
+  }, [matrixRows]);
 
-    const propertiesForCompliance: PropertyForCompliance[] = properties.map(p => ({
-      id: p.id,
-      address_line: p.address_line || '',
-      postcode: p.postcode,
-      has_gas: p.has_gas,
-      has_fire_alarm_system: p.has_fire_alarm_system,
-      fire_alarm_grade: p.fire_alarm_grade,
-      has_emergency_lighting: p.has_emergency_lighting,
-      asset_category: p.asset_category,
-      is_hmo_licensed: p.is_hmo_licensed,
-      selective_licence_required: p.selective_licence_required,
-      lifecycle_type: p.lifecycle_type,
-      is_grade_listed: p.is_grade_listed,
-      listing_grade: p.listing_grade,
-      has_solar: p.has_solar,
-    }));
-
-    const allItemsWithMissing = generateComplianceItemsWithMissing(items, propertiesForCompliance);
-    return calculateComplianceStats(allItemsWithMissing);
-  }, [items, properties]);
-
-  return {
-    stats,
-    isLoading: loadingItems || loadingProperties,
-  };
+  return { stats, isLoading };
 }
