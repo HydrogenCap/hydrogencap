@@ -6917,6 +6917,12 @@ export type Database = {
         Returns: Json
       }
       migrate_compliance_to_v2: { Args: { p_org_id: string }; Returns: Json }
+      migrate_contractors_to_v2: { Args: { p_org_id: string }; Returns: Json }
+      migrate_income_costs_to_snapshots: {
+        Args: { p_org_id: string }
+        Returns: Json
+      }
+      migrate_loans_to_v2: { Args: { p_org_id: string }; Returns: Json }
       migrate_properties_to_v2: { Args: { p_org_id: string }; Returns: Json }
       migrate_rooms_to_v2: { Args: { p_org_id: string }; Returns: Json }
       migrate_tenancies_to_agreements: {

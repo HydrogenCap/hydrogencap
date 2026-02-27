@@ -11,6 +11,9 @@ const MIGRATION_STEPS = [
   { key: 'tenants', title: 'Tenants → Tenants V2', v1Table: 'tenants', v2Table: 'tenants_v2', functionName: 'migrate_tenants_to_v2' },
   { key: 'tenancies', title: 'Tenancies → Tenancy Agreements', v1Table: 'tenancies', v2Table: 'tenancy_agreements', functionName: 'migrate_tenancies_to_agreements' },
   { key: 'compliance', title: 'Compliance → Compliance V2', v1Table: 'compliance_items', v2Table: 'compliance_documents_v2', functionName: 'migrate_compliance_to_v2' },
+  { key: 'loans', title: 'Loans → Loan Facilities', v1Table: 'loans', v2Table: 'loan_facilities', functionName: 'migrate_loans_to_v2' },
+  { key: 'financials', title: 'Income/Costs → Financial Snapshots', v1Table: 'income', v2Table: 'financial_snapshots', functionName: 'migrate_income_costs_to_snapshots' },
+  { key: 'contractors', title: 'Contractors → Contractors V2', v1Table: 'contractors', v2Table: 'compliance_contractors_v2', functionName: 'migrate_contractors_to_v2' },
 ];
 
 async function getTableCount(table: string, orgId: string): Promise<number> {
@@ -60,6 +63,9 @@ export function useRunMigrationStep() {
       qc.invalidateQueries({ queryKey: ['migration_status'] });
       qc.invalidateQueries({ queryKey: ['properties_v2'] });
       qc.invalidateQueries({ queryKey: ['rooms_v2'] });
+      qc.invalidateQueries({ queryKey: ['loan_facilities'] });
+      qc.invalidateQueries({ queryKey: ['financial_snapshots'] });
+      qc.invalidateQueries({ queryKey: ['contractors_v2'] });
     },
   });
 }
@@ -77,6 +83,9 @@ export function useRunFullMigration() {
       qc.invalidateQueries({ queryKey: ['migration_status'] });
       qc.invalidateQueries({ queryKey: ['properties_v2'] });
       qc.invalidateQueries({ queryKey: ['rooms_v2'] });
+      qc.invalidateQueries({ queryKey: ['loan_facilities'] });
+      qc.invalidateQueries({ queryKey: ['financial_snapshots'] });
+      qc.invalidateQueries({ queryKey: ['contractors_v2'] });
     },
   });
 }
