@@ -30,9 +30,8 @@ async function fetchEPC(postcode: string, addressLine: string) {
     const apiKey = Deno.env.get('EPC_API_KEY');
     const headers: Record<string, string> = { 'Accept': 'application/json' };
     if (apiKey) {
-      // EPC API expects Basic auth with the token as-is (already base64 from the site)
-      // or email:key pair base64-encoded
-      headers['Authorization'] = `Basic ${btoa(apiKey)}`;
+      // The EPC API key from the website is already base64-encoded (email:key)
+      headers['Authorization'] = `Basic ${apiKey}`;
     }
     const res = await fetch(url, { headers });
     if (!res.ok) {
