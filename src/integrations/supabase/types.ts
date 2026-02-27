@@ -14,6 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_exports: {
+        Row: {
+          accounting_system: string
+          entity_id: string | null
+          export_type: string
+          file_format: string
+          file_name: string | null
+          file_url: string | null
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          notes: string | null
+          org_id: string | null
+          period_from: string
+          period_to: string
+          row_count: number | null
+          total_expenses: number | null
+          total_income: number | null
+        }
+        Insert: {
+          accounting_system: string
+          entity_id?: string | null
+          export_type: string
+          file_format: string
+          file_name?: string | null
+          file_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string | null
+          period_from: string
+          period_to: string
+          row_count?: number | null
+          total_expenses?: number | null
+          total_income?: number | null
+        }
+        Update: {
+          accounting_system?: string
+          entity_id?: string | null
+          export_type?: string
+          file_format?: string
+          file_name?: string | null
+          file_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string | null
+          period_from?: string
+          period_to?: string
+          row_count?: number | null
+          total_expenses?: number | null
+          total_income?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_exports_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "accounting_exports_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_exports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_mappings: {
+        Row: {
+          account_code: string
+          account_name: string
+          accounting_system: string
+          created_at: string | null
+          description: string | null
+          entity_id: string | null
+          hydrogencap_category: string
+          id: string
+          is_active: boolean | null
+          org_id: string | null
+          tax_rate_code: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_code: string
+          account_name: string
+          accounting_system: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          hydrogencap_category: string
+          id?: string
+          is_active?: boolean | null
+          org_id?: string | null
+          tax_rate_code?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_code?: string
+          account_name?: string
+          accounting_system?: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          hydrogencap_category?: string
+          id?: string
+          is_active?: boolean | null
+          org_id?: string | null
+          tax_rate_code?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_mappings_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "accounting_mappings_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_mappings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_log: {
         Row: {
           body: string | null
@@ -6931,6 +7077,112 @@ export type Database = {
           },
         ]
       }
+      tax_year_summaries: {
+        Row: {
+          basic_rate_tax_reduction: number | null
+          created_at: string | null
+          entity_id: string
+          finance_costs: number | null
+          id: string
+          is_locked: boolean | null
+          net_rental_profit: number | null
+          notes: string | null
+          org_id: string | null
+          tax_year: string
+          tax_year_end: string
+          tax_year_start: string
+          total_allowable_expenses: number | null
+          total_council_tax: number | null
+          total_insurance: number | null
+          total_licensing: number | null
+          total_management_fees: number | null
+          total_mortgage_interest: number | null
+          total_other_expenses: number | null
+          total_other_income: number | null
+          total_professional_fees: number | null
+          total_rental_income: number | null
+          total_repairs_maintenance: number | null
+          total_utilities: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          basic_rate_tax_reduction?: number | null
+          created_at?: string | null
+          entity_id: string
+          finance_costs?: number | null
+          id?: string
+          is_locked?: boolean | null
+          net_rental_profit?: number | null
+          notes?: string | null
+          org_id?: string | null
+          tax_year: string
+          tax_year_end: string
+          tax_year_start: string
+          total_allowable_expenses?: number | null
+          total_council_tax?: number | null
+          total_insurance?: number | null
+          total_licensing?: number | null
+          total_management_fees?: number | null
+          total_mortgage_interest?: number | null
+          total_other_expenses?: number | null
+          total_other_income?: number | null
+          total_professional_fees?: number | null
+          total_rental_income?: number | null
+          total_repairs_maintenance?: number | null
+          total_utilities?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          basic_rate_tax_reduction?: number | null
+          created_at?: string | null
+          entity_id?: string
+          finance_costs?: number | null
+          id?: string
+          is_locked?: boolean | null
+          net_rental_profit?: number | null
+          notes?: string | null
+          org_id?: string | null
+          tax_year?: string
+          tax_year_end?: string
+          tax_year_start?: string
+          total_allowable_expenses?: number | null
+          total_council_tax?: number | null
+          total_insurance?: number | null
+          total_licensing?: number | null
+          total_management_fees?: number | null
+          total_mortgage_interest?: number | null
+          total_other_expenses?: number | null
+          total_other_income?: number | null
+          total_professional_fees?: number | null
+          total_rental_income?: number | null
+          total_repairs_maintenance?: number | null
+          total_utilities?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_year_summaries_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "tax_year_summaries_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_year_summaries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_invites: {
         Row: {
           accepted_at: string | null
@@ -8753,6 +9005,14 @@ export type Database = {
       generate_rent_schedule: {
         Args: { p_months?: number; p_tenancy_id: string }
         Returns: number
+      }
+      generate_tax_year_summary: {
+        Args: {
+          target_entity_id: string
+          target_org_id: string
+          target_tax_year: string
+        }
+        Returns: string
       }
       generate_tenancy_compliance_items: {
         Args: { tenancy_row: Database["public"]["Tables"]["tenancies"]["Row"] }
