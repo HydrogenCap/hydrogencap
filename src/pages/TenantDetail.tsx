@@ -28,6 +28,7 @@ import { EditTenantDialog } from '@/components/tenants/EditTenantDialog';
 import { TenantContactCards } from '@/components/tenants/TenantContactCards';
 import { TenantDocumentsTab } from '@/components/tenants/TenantDocumentsTab';
 import { InviteTenantPortalDialog } from '@/components/tenants/InviteTenantPortalDialog';
+import { TenantMaintenancePanel } from '@/components/maintenance/TenantMaintenancePanel';
  
 const statusConfig: Record<TenantStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
    prospect: { label: 'Prospect', variant: 'outline' },
@@ -504,11 +505,12 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
            {/* Tenancy History */}
            <div className="lg:col-span-2">
              <Tabs defaultValue="tenancies">
-               <TabsList>
-                 <TabsTrigger value="tenancies">Tenancies</TabsTrigger>
-                 <TabsTrigger value="rent">Rent History</TabsTrigger>
-                 <TabsTrigger value="documents">Documents</TabsTrigger>
-               </TabsList>
+              <TabsList>
+                  <TabsTrigger value="tenancies">Tenancies</TabsTrigger>
+                  <TabsTrigger value="rent">Rent History</TabsTrigger>
+                  <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+                  <TabsTrigger value="documents">Documents</TabsTrigger>
+                </TabsList>
  
                 <TabsContent value="tenancies" className="mt-4 space-y-4">
                   <div className="flex justify-between items-center">
@@ -617,6 +619,10 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
                   </Card>
                 </TabsContent>
  
+                  <TabsContent value="maintenance" className="mt-4">
+                    <TenantMaintenancePanel tenantId={tenantId!} />
+                  </TabsContent>
+
                   <TabsContent value="documents" className="mt-4 space-y-4">
                     <TenantDocumentsTab
                       documents={tenantDocuments}

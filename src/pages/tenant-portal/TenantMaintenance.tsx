@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Wrench, Plus } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,22 +15,7 @@ import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
-
-const priorityColors: Record<string, string> = {
-  low: 'bg-muted text-muted-foreground',
-  medium: 'bg-primary/10 text-primary',
-  urgent: 'bg-warning/10 text-warning',
-  emergency: 'bg-destructive/10 text-destructive',
-};
-
-const statusColors: Record<string, string> = {
-  reported: 'bg-accent text-accent-foreground',
-  triaged: 'bg-primary/10 text-primary',
-  in_progress: 'bg-warning/10 text-warning',
-  completed: 'bg-primary/10 text-primary',
-  cancelled: 'bg-muted text-muted-foreground',
-  closed: 'bg-muted text-muted-foreground',
-};
+import { PRIORITY_CONFIG, STATUS_CONFIG, MAINTENANCE_CATEGORY_NAMES } from '@/lib/maintenanceTypes';
 
 export default function TenantMaintenance() {
   const { tenancyId, tenantId, orgId } = useTenantPortalSession();
@@ -38,10 +23,9 @@ export default function TenantMaintenance() {
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('general');
-  const [urgency, setUrgency] = useState('normal');
+  const [category, setCategory] = useState('other');
+  const [priority, setPriority] = useState('medium');
 
-  // Get property_id from tenancy
   const { data: tenancy } = useQuery({
     queryKey: ['tenant-portal-tenancy-for-maintenance', tenancyId],
     queryFn: async () => {
@@ -83,19 +67,17 @@ export default function TenantMaintenance() {
           property_id: tenancy.property_id,
           title,
           description,
-          category: category as any,
-          urgency: urgency as any,
-          status: 'submitted' as any,
-        });
+          category,
+          priority,
+          reported_by: 'tenant',
+          status: 'reported',
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-portal-maintenance'] });
       setShowNewDialog(false);
-      setTitle('');
-      setDescription('');
-      setCategory('general');
-      setUrgency('normal');
+      setTitle(''); setDescription(''); setCategory('other'); setPriority('medium');
       toast.success('Maintenance request submitted');
     },
     onError: (err: any) => {
@@ -112,8 +94,7 @@ export default function TenantMaintenance() {
             <h1 className="text-2xl font-bold">Maintenance Requests</h1>
           </div>
           <Button onClick={() => setShowNewDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Request
+            <Plus className="mr-2 h-4 w-4" /> New Request
           </Button>
         </div>
 
@@ -133,11 +114,11 @@ export default function TenantMaintenance() {
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-4">
-                      <Badge variant="outline" className={priorityColors[req.priority] || ''}>
-                        {req.priority}
+                      <Badge variant="outline" className={PRIORITY_CONFIG[req.priority as keyof typeof PRIORITY_CONFIG]?.color || ''}>
+                        {PRIORITY_CONFIG[req.priority as keyof typeof PRIORITY_CONFIG]?.label || req.priority}
                       </Badge>
-                      <Badge variant="outline" className={statusColors[req.status] || ''}>
-                        {req.status.replace('_', ' ')}
+                      <Badge variant="outline" className={STATUS_CONFIG[req.status as keyof typeof STATUS_CONFIG]?.color || ''}>
+                        {STATUS_CONFIG[req.status as keyof typeof STATUS_CONFIG]?.label || req.status}
                       </Badge>
                     </div>
                   </div>
@@ -150,25 +131,17 @@ export default function TenantMaintenance() {
             <CardContent className="py-12 text-center">
               <Wrench className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
               <h3 className="font-medium mb-1">No maintenance requests</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Need something fixed? Submit a request and your landlord will be notified.
-              </p>
-              <Button onClick={() => setShowNewDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Submit Request
-              </Button>
+              <p className="text-sm text-muted-foreground mb-4">Need something fixed? Submit a request.</p>
+              <Button onClick={() => setShowNewDialog(true)}><Plus className="mr-2 h-4 w-4" /> Submit Request</Button>
             </CardContent>
           </Card>
         )}
 
-        {/* New Request Dialog */}
         <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>New Maintenance Request</DialogTitle>
-              <DialogDescription>
-                Describe the issue and we'll notify your landlord.
-              </DialogDescription>
+              <DialogDescription>Describe the issue and we'll notify your landlord.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
@@ -185,26 +158,20 @@ export default function TenantMaintenance() {
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="general">General</SelectItem>
-                      <SelectItem value="plumbing">Plumbing</SelectItem>
-                      <SelectItem value="electrical">Electrical</SelectItem>
-                      <SelectItem value="heating">Heating</SelectItem>
-                      <SelectItem value="structural">Structural</SelectItem>
-                      <SelectItem value="pest_control">Pest Control</SelectItem>
-                      <SelectItem value="appliance">Appliance</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      {Object.entries(MAINTENANCE_CATEGORY_NAMES).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Urgency</Label>
-                  <Select value={urgency} onValueChange={setUrgency}>
+                  <Label>Priority</Label>
+                  <Select value={priority} onValueChange={setPriority}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="emergency">Emergency</SelectItem>
+                      {Object.entries(PRIORITY_CONFIG).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v.icon} {v.label}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
