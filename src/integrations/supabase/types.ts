@@ -107,6 +107,148 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string | null
+          account_type: string
+          bank_name: string
+          created_at: string | null
+          currency: string | null
+          entity_id: string
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          notes: string | null
+          org_id: string
+          sort_code: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_name: string
+          account_number?: string | null
+          account_type?: string
+          bank_name: string
+          created_at?: string | null
+          currency?: string | null
+          entity_id: string
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          notes?: string | null
+          org_id: string
+          sort_code?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_name?: string
+          account_number?: string | null
+          account_type?: string
+          bank_name?: string
+          created_at?: string | null
+          currency?: string | null
+          entity_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          notes?: string | null
+          org_id?: string
+          sort_code?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          bank_account_id: string
+          category: string | null
+          created_at: string | null
+          description: string
+          id: string
+          import_batch_id: string | null
+          import_source: string | null
+          is_duplicate: boolean | null
+          is_reconciled: boolean | null
+          org_id: string
+          reference: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          bank_account_id: string
+          category?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          import_batch_id?: string | null
+          import_source?: string | null
+          is_duplicate?: boolean | null
+          is_reconciled?: boolean | null
+          org_id: string
+          reference?: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          bank_account_id?: string
+          category?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          import_batch_id?: string | null
+          import_source?: string | null
+          is_duplicate?: boolean | null
+          is_reconciled?: boolean | null
+          org_id?: string
+          reference?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beneficial_groups: {
         Row: {
           created_at: string
@@ -2606,6 +2748,69 @@ export type Database = {
             columns: ["party_id"]
             isOneToOne: false
             referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_batches: {
+        Row: {
+          bank_account_id: string
+          date_range_end: string | null
+          date_range_start: string | null
+          duplicate_count: number | null
+          error_message: string | null
+          file_name: string
+          id: string
+          imported_at: string | null
+          imported_by: string | null
+          imported_count: number
+          org_id: string
+          row_count: number
+          status: string | null
+        }
+        Insert: {
+          bank_account_id: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          duplicate_count?: number | null
+          error_message?: string | null
+          file_name: string
+          id?: string
+          imported_at?: string | null
+          imported_by?: string | null
+          imported_count?: number
+          org_id: string
+          row_count?: number
+          status?: string | null
+        }
+        Update: {
+          bank_account_id?: string
+          date_range_end?: string | null
+          date_range_start?: string | null
+          duplicate_count?: number | null
+          error_message?: string | null
+          file_name?: string
+          id?: string
+          imported_at?: string | null
+          imported_by?: string | null
+          imported_count?: number
+          org_id?: string
+          row_count?: number
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_batches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -5148,13 +5353,16 @@ export type Database = {
       rent_payments: {
         Row: {
           amount: number
+          bank_transaction_id: string | null
           created_at: string
           id: string
           is_reconciled: boolean | null
+          match_confidence: number | null
           notes: string | null
           org_id: string
           payment_date: string
           payment_method: string | null
+          reconciliation_method: string | null
           recorded_by: string | null
           reference: string | null
           rent_schedule_id: string | null
@@ -5162,13 +5370,16 @@ export type Database = {
         }
         Insert: {
           amount: number
+          bank_transaction_id?: string | null
           created_at?: string
           id?: string
           is_reconciled?: boolean | null
+          match_confidence?: number | null
           notes?: string | null
           org_id: string
           payment_date: string
           payment_method?: string | null
+          reconciliation_method?: string | null
           recorded_by?: string | null
           reference?: string | null
           rent_schedule_id?: string | null
@@ -5176,19 +5387,29 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bank_transaction_id?: string | null
           created_at?: string
           id?: string
           is_reconciled?: boolean | null
+          match_confidence?: number | null
           notes?: string | null
           org_id?: string
           payment_date?: string
           payment_method?: string | null
+          reconciliation_method?: string | null
           recorded_by?: string | null
           reference?: string | null
           rent_schedule_id?: string | null
           tenancy_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "rent_payments_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "rent_payments_org_id_fkey"
             columns: ["org_id"]

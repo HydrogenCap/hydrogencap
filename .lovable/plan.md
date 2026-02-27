@@ -1,343 +1,698 @@
-# HydrogenCap V2 Spec Gap Analysis
+# HydrogenCap — NEXT Phase 2.1: Rent Collection & Reconciliation
 
-**Date:** 27 February 2026  
-**Scope:** Cross-reference of V2 Scope Definition spec against live codebase  
-**Repo analysed:** hydrogencap-main (full source audit)
+## Context
 
----
+HydrogenCap now has a solid foundation: legal entities, properties, rooms, tenants, tenancy agreements, loan facilities, compliance documents, financial snapshots, and an audit log. The NEXT phase adds automation — and rent reconciliation is the single highest-impact automation for an HMO operator.
 
-## Summary Scorecard
+At 50 properties with 6 rooms each, that is 300 tenants paying rent monthly. Without reconciliation, the operator is manually checking 300 bank transactions against 300 expected payments every month. That is 5+ hours of mind-numbing work, prone to error, and always behind.
 
-| Spec Section | Score | Key Gap |
-|---|---|---|
-| 2.1 Ownership Engine | 70% | No historical date support |
-| 2.2 Gross vs Attributable | 30% | Attribution engine exists but not shown on main dashboard |
-| 2.3 Aggregation Engine | 60% | Gross works, Hydrogen-specific aggregation missing |
-| 2.4 Share Integrity | 15% | No issued shares field in V2, no validation, three competing systems |
-| 2.5 Snapshot Financial Model | 40% | P&L snapshots work, but no balance sheet snapshots (valuation/debt) |
-| 3.1 Ownership Service | 25% | Hooks exist but not as reusable date-parameterised services |
-| 3.2 KPI Service | 40% | Gross KPIs work, Hydrogen-specific not built |
-| 3.3 Dashboard Contract | 20% | No `{ gross, hydrogen }` data shape implemented |
+We cannot yet integrate Open Banking (that requires a TrueLayer or Plaid backend integration beyond Lovable's scope), but we can build the full reconciliation engine with CSV bank statement import. The matching logic, arrears tracking, and reporting all work the same regardless of whether transactions come from a CSV or a live bank feed. When Open Banking is added later, it simply replaces the import step — everything downstream stays the same.
 
-**Overall verdict:** The ownership plumbing is impressively thorough — recursive look-through, circular loop protection, multi-path aggregation. But the spec's two headline deliverables — **side-by-side Gross vs Hydrogen on the dashboard** and **snapshot-based balance sheet** — aren't wired up. The engine is built but the cockpit gauges aren't connected to it.
+## Database Tables
 
----
+### `bank_accounts`
 
-## 2.1 Deterministic Ownership Engine
+Track which bank accounts are used for rent collection, per entity:
 
-### What the spec requires
+```sql
+create table public.bank_accounts (
+  id uuid primary key default gen_random_uuid(),
+  entity_id uuid not null references public.legal_entities(id) on delete restrict,
+  account_name text not null,
+  bank_name text not null,
+  sort_code text,
+  account_number text,
+  account_type text not null default 'current' check (account_type in ('current', 'savings', 'rent_collection', 'reserve')),
+  currency text default 'GBP',
+  is_primary boolean default false,
+  is_active boolean default true,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
 
-- Ownership % = Shares Held ÷ Issued Shares
-- Must dynamically calculate ownership at snapshot date
-- Must respect effectiveFrom / effectiveTo ranges
-- No hardcoded ownership assumptions
-- Hydrogen is treated as a shareholder, not parent entity
-
-### What's built
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Ownership % = Shares Held ÷ Issued Shares | ✅ Built | `useOwnershipAttribution.ts` line 190: `shareholderPercent = (holding.shares_held / shareClass.issued_shares) * 100` |
-| Dynamically calculate at snapshot date | ⚠️ Partial | Uses `.is('effective_to', null)` (line 142) — filters to current shareholdings only. No function accepts an arbitrary historical date. |
-| Respect effectiveFrom / effectiveTo ranges | ⚠️ Partial | `effective_to IS NULL` is checked, but `effective_from` is never validated. A shareholding with `effective_from = '2025-06-01'` that hasn't started yet would still be included. |
-| No hardcoded ownership assumptions | ✅ Built | No hardcoded percentages. Falls back to SPV shareholders → company as terminal owner — all dynamic. |
-| Hydrogen treated as shareholder, not parent | ✅ Built | `resolveUltimateBeneficiaries()` (line 443) recursively traces holding companies. Hydrogen Capital is just another party in `ownership_links`. |
-
-### Gap
-
-The spec calls for `getOwnership(spvId, partyId, date)` as a reusable service. What exists is a React hook (`usePropertyAttribution`) that only works for the current date. No historical date parameter. This means you cannot generate a report saying "what was our exposure on 31 Dec 2024" — which is exactly what a lender or investor would ask for.
-
----
-
-## 2.2 Gross vs Attributable Portfolio Split
-
-### What the spec requires
-
-Dashboard must clearly display:
-
-| Metric | Gross Portfolio | Hydrogen Attributable |
-|---|---|---|
-| Portfolio Value | 100% | % ownership adjusted |
-| Total Debt | 100% | % adjusted |
-| Equity | 100% | % adjusted |
-| Monthly Cashflow | 100% | % adjusted |
-| Weighted LTV | Weighted | Weighted |
-
-### What's built
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Dashboard shows Gross vs Hydrogen side-by-side | ❌ Not built | Dashboard `portfolioStats` calculates from V1 `properties` fields directly — all 100% gross. No Hydrogen attributable column on the KPI cards. |
-| Attribution data exists | ✅ Built | `usePortfolioAttribution` (line 534) correctly calculates per-owner attributable value, equity, debt, rent, NOI, cashflow. |
-| Attribution is displayed | ⚠️ Separate tab only | Dashboard has a "Shareholders" tab showing `DashboardShareholdersTab`. But the main Overview tab KPIs are gross-only. |
-
-### Gap
-
-The attribution engine exists and works, but the Dashboard doesn't use it for the main KPIs. The spec's dual-column table (Gross | Hydrogen Attributable side by side) is not implemented. The shareholder tab shows per-owner breakdowns but not the spec's dashboard format.
-
----
-
-## 2.3 Portfolio Aggregation Engine
-
-### What the spec requires
-
-- Sum of valuations, debt, equity across ACTIVE SPVs only
-- Weighted LTV = Σ(Debt) ÷ Σ(Value)
-- Hydrogen Weighted LTV must use attributable debt/value only
-
-### What's built
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Sum of valuations | ✅ | `portfolioStats.totalValue` in Dashboard |
-| Sum of debt | ✅ | `portfolioStats.totalMortgage` |
-| Sum of equity | ✅ | `portfolioStats.totalEquity` |
-| Weighted LTV = Σ(Debt) ÷ Σ(Value) | ✅ | `portfolioStats.averageLTV` |
-| Active SPVs only | ⚠️ | Filtered by `lifecycle_type === 'core_rental'` on the property, not by entity status. Dormant/dissolved entities with `core_rental` properties still appear. |
-| Hydrogen Weighted LTV (attributable) | ❌ | Not calculated anywhere. Attribution hook calculates per-owner totals but no `getHydrogenWeightedLTV()` function exists. |
-
-### Gap
-
-Gross aggregation works. Hydrogen-specific aggregation (attributable weighted LTV = Σ Hydrogen debt ÷ Σ Hydrogen value) doesn't exist as a computed metric.
-
----
-
-## 2.4 Share Integrity Enforcement
-
-### What the spec requires
-
-- No negative shares
-- No fractional rounding drift beyond defined precision
-- Sum(Shareholdings) = IssuedShares
-- Prevent saving if share total mismatch
-- Prevent duplicate overlapping share date ranges
-- Transaction-safe updates
-
-### What's built
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| No negative shares | ⚠️ Frontend only | `ShareholderFormModal` line 65: `shares <= 0` check. No DB constraint. |
-| Sum(Shareholdings) = IssuedShares | ❌ Not built | `legal_entities` has no `issued_shares` field. `entity_shareholders` stores `shares_held` and `share_class` (text) but nothing to validate against. |
-| Prevent saving if mismatch | ❌ | No validation — any combination of shareholdings can be saved. |
-| Prevent duplicate overlapping date ranges | ❌ | `ownership_links` has `effective_from`/`effective_to` but no overlap check anywhere. |
-| Transaction-safe updates | ❌ | Client-side Supabase mutations, not DB transactions. |
-
-### Critical structural issue: Three competing ownership systems
-
-The spec's core principle — `Ownership % = Shares Held ÷ Issued Shares` — has three competing implementations, none of which enforces integrity:
-
-1. **V1 system** (`companies` → `share_classes` → `shareholdings`): Has `issued_shares` on share classes and `shares_held` on shareholdings. The arithmetic exists in `useOwnershipAttribution` line 190. But no save-time validation that they sum correctly.
-
-2. **ownership_links** (unified table used by beneficial ownership): Stores `percent` directly with an optional `shares` field. Bypasses the shares÷issued calculation entirely. This is the table used by the newer ownership flowchart and attribution engine.
-
-3. **V2 entity_shareholders**: Simple table with `shares_held` and a text `share_class` field. No `issued_shares` column to divide by. No integrity checks.
-
-### Gap
-
-No system enforces that shareholdings sum to 100% or that shares_held sums to issued_shares. A user can enter 60% + 60% = 120% and the system will happily save it and calculate attribution on that basis.
-
----
-
-## 2.5 Snapshot-Based Financial Model
-
-### What the spec requires
-
-Each snapshot includes: Valuation, Debt, Equity, Cashflow, Snapshot date.
-
-Rules:
-- Only latest snapshot per SPV used in dashboard
-- Historical snapshots preserved
-- No retroactive modification without audit trail
-
-### What's built
-
-The `financial_snapshots` table contains these fields:
-
-```
-snapshot_month, property_id, entity_id, org_id,
-gross_rent_due, gross_rent_received, other_income,
-mortgage_payments, management_fees, maintenance_costs,
-insurance_costs, utilities, council_tax, licensing_costs,
-professional_fees, other_costs, void_loss,
-total_costs (computed), net_operating_income (computed),
-net_cash_flow (computed), rent_collection_rate (computed),
-occupancy_rate, is_locked, locked_at, locked_by, notes
+create index idx_bank_accounts_entity_id on public.bank_accounts(entity_id);
 ```
 
-| Requirement | Status | Evidence |
-|---|---|---|
-| Snapshot includes Valuation | ❌ | No valuation field on `financial_snapshots`. Valuation lives as a single point-in-time field on V1 `properties.current_value_gbp` or V2 `properties_v2.current_valuation`. |
-| Snapshot includes Debt | ❌ | No debt/mortgage balance field. Debt comes from V1 `loans.current_mortgage_balance_gbp` or V2 `loan_facilities.current_balance`. |
-| Snapshot includes Equity | ❌ | Calculated on-the-fly as Value − Debt. Since neither is snapshot-based, equity isn't either. |
-| Snapshot includes Cashflow | ✅ | `financial_snapshots.net_cash_flow` (computed from rent − costs − mortgage payments). |
-| Only latest snapshot per SPV | ✅ | Views like `portfolio_monthly_summary` aggregate by latest month. |
-| Historical snapshots preserved | ✅ | Monthly snapshots upserted per property+month. Never overwritten. |
-| No retroactive modification without audit trail | ✅ | `is_locked`, `locked_at`, `locked_by` fields. `useLockMonth` hook prevents edits to locked months. |
+### `bank_transactions`
 
-### Gap
+Raw imported transactions from bank statements:
 
-The spec says each snapshot should contain a **complete financial position** (valuation + debt + equity + cashflow). What's built is a monthly **P&L snapshot** (income and costs only) — not a balance sheet snapshot.
+```sql
+create table public.bank_transactions (
+  id uuid primary key default gen_random_uuid(),
+  bank_account_id uuid not null references public.bank_accounts(id) on delete restrict,
+  transaction_date date not null,
+  description text not null,
+  reference text,
+  amount numeric(10,2) not null,
+  transaction_type text not null check (transaction_type in ('credit', 'debit')),
+  balance_after numeric(12,2),
+  import_batch_id uuid,
+  import_source text default 'csv',
+  is_duplicate boolean default false,
+  created_at timestamptz default now()
+);
 
-You can answer "what was our net operating income in March?" but NOT:
-- "What was our portfolio valued at in March?"
-- "What was our LTV in March?"
-- "What was our equity position in March?"
-
-To fix this, `financial_snapshots` needs at minimum two new fields: `valuation_at_snapshot` and `debt_at_snapshot`. Equity would then be computed as `valuation_at_snapshot - debt_at_snapshot`.
-
----
-
-## 3.1 Ownership Calculation Layer
-
-### What the spec requires
-
-Reusable service:
-- `getOwnership(spvId, partyId, date)`
-- `getHydrogenOwnership(spvId, date)`
-
-Must handle historical date logic, inactive SPVs, and return deterministic values.
-
-### What's built
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| `getOwnership(spvId, partyId, date)` | ❌ | `usePropertyAttribution` exists but takes no date parameter — always queries current ownership only. |
-| `getHydrogenOwnership(spvId, date)` | ❌ | No concept of a "Hydrogen Capital" identity as a special query. Hydrogen is just another party in `ownership_links`. |
-| Handle historical date logic | ❌ | Only filters `effective_to IS NULL`. Does not filter by `effective_from <= date` or `effective_to >= date`. |
-| Handle inactive SPVs | ⚠️ | Filtered by V1 `lifecycle_type` on the property, not entity status. |
-| Return deterministic value | ✅ | Pure function given fixed ownership data. |
-
-### Gap
-
-The spec envisions these as standalone, date-parameterised utility functions callable from anywhere (reports, dashboards, exports). What exists are React hooks tightly coupled to the component lifecycle with no date parameter.
-
----
-
-## 3.2 Portfolio KPI Service
-
-### What the spec requires
-
-Reusable aggregation service:
-- `getGrossPortfolioMetrics()`
-- `getHydrogenPortfolioMetrics()`
-- `getWeightedLTV()`
-- `getHydrogenWeightedLTV()`
-
-Must avoid duplicate logic, be pure & testable, use snapshot-based data only.
-
-### What's built
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| `getGrossPortfolioMetrics()` | ✅ | Dashboard `portfolioStats` useMemo calculates total value, debt, equity, LTV. |
-| `getHydrogenPortfolioMetrics()` | ❌ | Attribution data exists per-owner but no function filters to Hydrogen's specific totals. |
-| `getWeightedLTV()` | ✅ | `portfolioStats.averageLTV`. |
-| `getHydrogenWeightedLTV()` | ❌ | Not built. |
-| Pure & testable | ⚠️ | Calculations are inline in React useMemo blocks, not extracted as pure utility functions. |
-| Snapshot-based data only | ❌ | KPIs use live V1 property fields (`current_value_gbp`, `mortgage_balance`), not financial snapshots. |
-
-### Gap
-
-Gross KPIs work but are calculated from live V1 property fields, not snapshots. Hydrogen-specific KPIs don't exist. Nothing is extracted as a testable pure function — it's all inline in Dashboard.tsx.
-
----
-
-## 3.3 Dashboard Data Contract
-
-### What the spec requires
-
-Frontend must receive:
-
-```json
-{
-  "gross": {
-    "value": 0,
-    "debt": 0,
-    "equity": 0,
-    "cashflow": 0,
-    "ltv": 0
-  },
-  "hydrogen": {
-    "value": 0,
-    "debt": 0,
-    "equity": 0,
-    "cashflow": 0,
-    "ltv": 0
-  }
-}
+create index idx_bank_transactions_account_id on public.bank_transactions(bank_account_id);
+create index idx_bank_transactions_date on public.bank_transactions(transaction_date);
+create index idx_bank_transactions_batch on public.bank_transactions(import_batch_id);
+create index idx_bank_transactions_amount on public.bank_transactions(amount);
 ```
 
-### What's built
+### `rent_ledger`
 
-- **Gross metrics:** Calculated inline in Dashboard.tsx `portfolioStats` useMemo from V1 `properties` array. Not a service, not a data contract — just local state derivation.
-- **Hydrogen metrics:** Not calculated for main KPI cards. `usePortfolioAttribution` returns per-owner breakdowns but nobody aggregates to a "Hydrogen" summary.
-- **Shareholders tab:** Shows per-owner attributable breakdown — closest to the spec's attributable view, but separate tab, not side-by-side.
+The expected rent schedule — what each tenant owes each month:
 
-### Gap
+```sql
+create table public.rent_ledger (
+  id uuid primary key default gen_random_uuid(),
+  tenancy_agreement_id uuid not null references public.tenancy_agreements(id) on delete restrict,
+  tenant_id uuid not null references public.tenants(id) on delete restrict,
+  property_id uuid not null references public.properties(id) on delete restrict,
+  room_id uuid not null references public.rooms(id) on delete restrict,
+  period_start date not null,
+  period_end date not null,
+  amount_due numeric(8,2) not null,
+  amount_received numeric(8,2) default 0,
+  amount_outstanding numeric(8,2) generated always as (amount_due - amount_received) stored,
+  status text not null default 'due' check (status in ('due', 'paid', 'partial', 'overdue', 'written_off', 'waived', 'credited')),
+  due_date date not null,
+  last_payment_date date,
+  days_overdue integer generated always as (
+    case
+      when status in ('due', 'partial', 'overdue') and current_date > due_date
+      then (current_date - due_date)
+      else 0
+    end
+  ) stored,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique(tenancy_agreement_id, period_start)
+);
 
-No `{ gross, hydrogen }` data shape exists anywhere in the codebase. The Dashboard would need to identify which party is "Hydrogen Capital", aggregate their attribution totals, and display both columns on the main Overview KPI cards.
+create index idx_rent_ledger_tenancy on public.rent_ledger(tenancy_agreement_id);
+create index idx_rent_ledger_tenant on public.rent_ledger(tenant_id);
+create index idx_rent_ledger_property on public.rent_ledger(property_id);
+create index idx_rent_ledger_status on public.rent_ledger(status);
+create index idx_rent_ledger_due_date on public.rent_ledger(due_date);
+create index idx_rent_ledger_period on public.rent_ledger(period_start, period_end);
+```
+
+If generated columns cause issues, use a trigger (same pattern as financial_snapshots):
+
+```sql
+create or replace function public.calculate_rent_ledger_fields()
+returns trigger as $$
+begin
+  NEW.amount_outstanding := NEW.amount_due - NEW.amount_received;
+  NEW.days_overdue := case
+    when NEW.status in ('due', 'partial', 'overdue') and current_date > NEW.due_date
+    then (current_date - NEW.due_date)
+    else 0
+  end;
+  return NEW;
+end;
+$$ language plpgsql;
+
+create trigger trigger_calc_rent_ledger
+before insert or update on public.rent_ledger
+for each row execute function public.calculate_rent_ledger_fields();
+```
+
+### `rent_payments`
+
+Links bank transactions to rent ledger entries. This is the reconciliation junction:
+
+```sql
+create table public.rent_payments (
+  id uuid primary key default gen_random_uuid(),
+  rent_ledger_id uuid not null references public.rent_ledger(id) on delete restrict,
+  bank_transaction_id uuid references public.bank_transactions(id) on delete set null,
+  amount numeric(8,2) not null,
+  payment_date date not null,
+  payment_method text not null default 'bank_transfer' check (payment_method in ('bank_transfer', 'standing_order', 'direct_debit', 'cash', 'cheque', 'housing_benefit', 'universal_credit', 'other')),
+  reconciliation_method text not null default 'manual' check (reconciliation_method in ('auto_matched', 'manual', 'bulk_import')),
+  match_confidence numeric(3,2),
+  notes text,
+  created_at timestamptz default now()
+);
+
+create index idx_rent_payments_ledger on public.rent_payments(rent_ledger_id);
+create index idx_rent_payments_transaction on public.rent_payments(bank_transaction_id);
+create index idx_rent_payments_date on public.rent_payments(payment_date);
+```
+
+### `import_batches`
+
+Track CSV import history:
+
+```sql
+create table public.import_batches (
+  id uuid primary key default gen_random_uuid(),
+  bank_account_id uuid not null references public.bank_accounts(id),
+  file_name text not null,
+  row_count integer not null,
+  imported_count integer not null,
+  duplicate_count integer default 0,
+  date_range_start date,
+  date_range_end date,
+  status text default 'completed' check (status in ('processing', 'completed', 'failed', 'rolled_back')),
+  error_message text,
+  imported_by uuid,
+  imported_at timestamptz default now()
+);
+```
+
+### RLS Policies
+
+```sql
+alter table public.bank_accounts enable row level security;
+alter table public.bank_transactions enable row level security;
+alter table public.rent_ledger enable row level security;
+alter table public.rent_payments enable row level security;
+alter table public.import_batches enable row level security;
+
+create policy "Authenticated access" on public.bank_accounts for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "Authenticated access" on public.bank_transactions for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "Authenticated access" on public.rent_ledger for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "Authenticated access" on public.rent_payments for all using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "Authenticated access" on public.import_batches for all using (auth.uid() is not null) with check (auth.uid() is not null);
+```
+
+### Audit Triggers
+
+```sql
+create trigger audit_bank_accounts after insert or update or delete on public.bank_accounts for each row execute function public.audit_trigger_function();
+create trigger audit_rent_ledger after insert or update or delete on public.rent_ledger for each row execute function public.audit_trigger_function();
+create trigger audit_rent_payments after insert or update or delete on public.rent_payments for each row execute function public.audit_trigger_function();
+```
+
+### Auto-Generate Rent Ledger Entries
+
+Create a function that generates rent ledger entries for a given month based on active tenancy agreements. This should be callable on demand and idempotent (it skips entries that already exist):
+
+```sql
+create or replace function public.generate_rent_ledger(target_month date)
+returns integer as $$
+declare
+  entries_created integer := 0;
+  ta record;
+  month_start date;
+  month_end date;
+begin
+  month_start := date_trunc('month', target_month)::date;
+  month_end := (date_trunc('month', target_month) + interval '1 month' - interval '1 day')::date;
+
+  for ta in
+    select
+      ta.id as tenancy_id,
+      ta.tenant_id,
+      ta.property_id,
+      ta.room_id,
+      ta.rent_amount_pcm,
+      ta.start_date,
+      ta.actual_end_date
+    from public.tenancy_agreements ta
+    where ta.status in ('active', 'notice_period')
+      and ta.start_date <= month_end
+      and (ta.actual_end_date is null or ta.actual_end_date >= month_start)
+  loop
+    -- Skip if entry already exists for this tenancy and period
+    if not exists (
+      select 1 from public.rent_ledger
+      where tenancy_agreement_id = ta.tenancy_id and period_start = month_start
+    ) then
+      insert into public.rent_ledger (
+        tenancy_agreement_id, tenant_id, property_id, room_id,
+        period_start, period_end, amount_due, due_date
+      ) values (
+        ta.tenancy_id, ta.tenant_id, ta.property_id, ta.room_id,
+        month_start, month_end, ta.rent_amount_pcm,
+        month_start + interval '1 day' -- Due on 1st of month; adjust if your tenancies use different due dates
+      );
+      entries_created := entries_created + 1;
+    end if;
+  end loop;
+
+  return entries_created;
+end;
+$$ language plpgsql security definer;
+```
+
+### Auto-Update Rent Ledger Status
+
+Create a function that updates ledger statuses based on payments and dates:
+
+```sql
+create or replace function public.refresh_rent_ledger_statuses()
+returns void as $$
+begin
+  -- Update amount_received from rent_payments
+  update public.rent_ledger rl
+  set amount_received = coalesce(sub.total_paid, 0),
+      last_payment_date = sub.last_date,
+      updated_at = now()
+  from (
+    select rent_ledger_id, sum(amount) as total_paid, max(payment_date) as last_date
+    from public.rent_payments
+    group by rent_ledger_id
+  ) sub
+  where rl.id = sub.rent_ledger_id;
+
+  -- Recalculate statuses
+  update public.rent_ledger
+  set status = case
+    when amount_received >= amount_due then 'paid'
+    when amount_received > 0 and amount_received < amount_due and current_date > due_date then 'overdue'
+    when amount_received > 0 and amount_received < amount_due then 'partial'
+    when amount_received = 0 and current_date > due_date + interval '3 days' then 'overdue'
+    else 'due'
+  end,
+  updated_at = now()
+  where status not in ('written_off', 'waived', 'credited');
+end;
+$$ language plpgsql security definer;
+```
+
+### Rent Collection Summary Views
+
+```sql
+create or replace view public.rent_collection_summary as
+select
+  rl.property_id,
+  p.address_line_1 || ', ' || p.postcode as property_address,
+  le.entity_name,
+  rl.period_start as month,
+  count(*) as total_entries,
+  count(*) filter (where rl.status = 'paid') as paid_count,
+  count(*) filter (where rl.status = 'partial') as partial_count,
+  count(*) filter (where rl.status in ('due', 'overdue')) as unpaid_count,
+  count(*) filter (where rl.status = 'overdue') as overdue_count,
+  sum(rl.amount_due) as total_due,
+  sum(rl.amount_received) as total_received,
+  sum(rl.amount_due - rl.amount_received) as total_outstanding,
+  case
+    when sum(rl.amount_due) > 0
+    then round((sum(rl.amount_received) / sum(rl.amount_due) * 100)::numeric, 1)
+    else 100
+  end as collection_rate_pct
+from public.rent_ledger rl
+join public.properties p on p.id = rl.property_id
+join public.legal_entities le on le.id = p.entity_id
+group by rl.property_id, p.address_line_1, p.postcode, le.entity_name, rl.period_start
+order by rl.period_start desc, property_address;
+```
+
+```sql
+create or replace view public.arrears_summary as
+select
+  rl.id as ledger_id,
+  rl.tenant_id,
+  t.first_name || ' ' || t.last_name as tenant_name,
+  t.tenant_type,
+  rl.property_id,
+  p.address_line_1 || ', ' || p.postcode as property_address,
+  r.room_name,
+  rl.period_start,
+  rl.amount_due,
+  rl.amount_received,
+  rl.amount_due - rl.amount_received as amount_outstanding,
+  rl.due_date,
+  current_date - rl.due_date as days_overdue,
+  rl.status
+from public.rent_ledger rl
+join public.tenants t on t.id = rl.tenant_id
+join public.properties p on p.id = rl.property_id
+join public.rooms r on r.id = rl.room_id
+where rl.status in ('overdue', 'partial')
+  and (rl.amount_due - rl.amount_received) > 0
+order by (rl.amount_due - rl.amount_received) desc;
+```
+
+```sql
+create or replace view public.tenant_payment_history as
+select
+  t.id as tenant_id,
+  t.first_name || ' ' || t.last_name as tenant_name,
+  count(rl.id) as total_periods,
+  count(rl.id) filter (where rl.status = 'paid') as paid_on_time,
+  count(rl.id) filter (where rl.status = 'overdue' or rl.last_payment_date > rl.due_date + interval '3 days') as paid_late,
+  count(rl.id) filter (where rl.status in ('overdue', 'partial') and rl.amount_received < rl.amount_due) as currently_outstanding,
+  sum(rl.amount_due) as total_rent_due,
+  sum(rl.amount_received) as total_rent_paid,
+  case
+    when count(rl.id) > 0
+    then round((count(rl.id) filter (where rl.status = 'paid')::numeric / count(rl.id)::numeric * 100), 1)
+    else 100
+  end as payment_reliability_pct
+from public.tenants t
+left join public.rent_ledger rl on rl.tenant_id = t.id
+where t.status = 'active'
+group by t.id, t.first_name, t.last_name
+order by payment_reliability_pct asc;
+```
 
 ---
 
-## Additional Issues Found During Audit
+## UI — Rent Collection Page
 
-### Dashboard is entirely V1
+Create a **Rent Collection** page accessible from the sidebar (icon: 🏦, label: "Rent Collection"). Position it after Tenants in the nav.
 
-The main landing page imports `useProperties` (V1), `useTenancies` (V1), and `useRooms` (V1). Every KPI comes from V1 `properties` table fields. After V1→V2 migration, if V1 data goes stale, the dashboard shows wrong numbers.
+### Rent Collection Summary Stats Bar
 
-### Actions page + sidebar badges are V1
+5 stat cards:
 
-`usePortfolioRisks` drives the Actions page and sidebar badge count. It pulls from V1 `useProperties`, V1 `useCompliance` (compliance_items), V1 `useTenancies`, V1 `useInsurance`. After migration, compliance alerts go silent.
+1. **Collection Rate** — portfolio-wide for current month. Percentage. Green ≥95%, amber 90-94%, red <90%. This is the headline number.
+2. **Rent Due** — total amount due this month across all tenancies. £XX,XXX.
+3. **Rent Received** — total received this month. £XX,XXX.
+4. **Outstanding** — total due minus received. £XX,XXX in red if > 0.
+5. **Tenants in Arrears** — count of tenants with overdue status. Red if > 0.
 
-### PropertyDetailV2 has duplicate/dead sections
+### Month Selector
 
-- Lines 174-178: Placeholder Compliance card saying "will be available once compliance documents are linked"
-- Lines 191-192: The actual working `PropertyComplianceSectionWrapper` renders right below it
-- Line 59-61: Dead `PropertyFinancialChart` placeholder, even though `PropertyFinancialSection` is already wired up on line 181
-- Line 196-199: Placeholder Documents card that does nothing
+A month picker at the top right. Default: current month. Changing the month refreshes all data below. Show previous/next month arrows for quick navigation.
 
-### Rent Collection is entirely V1
+### Rent Roll Table
 
-`rent_schedule` → FK to V1 `tenancies` → FK to V1 `properties`, `rooms`, `tenants`. The whole chain is V1. Section 2.1 (Rent Reconciliation) builds on top of this.
+The primary view. A table showing every rent ledger entry for the selected month:
 
-### Maintenance + Jobs reference V1
+**Columns:**
+- **Tenant** (name, clickable to tenant detail)
+- **Property** (address, clickable to property detail)
+- **Room** (room name)
+- **Rent Due** (£XXX.XX)
+- **Rent Received** (£XXX.XX)
+- **Outstanding** (£XXX.XX — red if > 0, green "£0.00" if fully paid)
+- **Status** — coloured badge:
+  - paid = "Paid" green
+  - partial = "Partial" amber
+  - due = "Due" blue
+  - overdue = "Overdue" red (with days count: "Overdue 14d")
+  - written_off = "Written Off" grey strikethrough
+  - waived = "Waived" grey
+  - credited = "Credited" purple
+- **Actions** — "Record Payment" button (small), "View" button
 
-`maintenance_requests.property_id` → V1 `properties`, `room_id` → V1 `rooms`, `tenant_id` → V1 `tenants`. `contractor_jobs.property_id` → V1 `properties`, `compliance_item_id` → V1 `compliance_items`.
+**Grouping:**
+Provide a toggle to group by: None (flat list) / Property / Entity. When grouped, show subtotals per group for amount due, received, and outstanding with collection rate percentage.
 
-### Pages still on V1 useProperties
+**Filtering:**
+- Status: All / Paid / Outstanding / Overdue
+- Property: dropdown
+- Entity: dropdown
+- Tenant type: dropdown (useful for tracking DSS/UC payments separately since they arrive on different schedules)
 
-Dashboard, DashboardMap, Insights, Reports, Pipeline, Timeline, Passport, ComplianceCalendar, Actions (via usePortfolioRisks).
+**Default view:** Outstanding items only, sorted by days overdue descending (worst arrears first).
 
-### Three ownership systems in parallel
+### Generate Rent Roll Button
 
-1. V1: `companies` → `share_classes` → `shareholdings`
-2. Unified: `ownership_links` (percent-based, used by attribution engine)
-3. V2: `legal_entities` → `entity_shareholders` (no issued_shares)
+A prominent "Generate Rent Roll" button above the table. When clicked:
+1. Asks for confirmation: "Generate rent entries for [Month Year]? This will create ledger entries for all active tenancies."
+2. Calls the `generate_rent_ledger` function for the selected month.
+3. Shows result: "Created XX rent entries for [Month Year]"
+4. Refreshes the table.
+
+If entries already exist, the function is idempotent — it only creates missing entries and skips existing ones. Show a note: "X entries already existed and were skipped."
 
 ---
 
-## Recommended Priority Order
+## UI — Record Payment Modal
 
-### Before 2.1 upgrades (foundation cleanup)
+Accessed from the "Record Payment" button on a rent roll row, or from the tenant detail page.
 
-1. **Repoint Dashboard to V2** — switch `useProperties` → `usePropertiesV2`, `useTenancies` → `useTenancyAgreements`, `useRooms` → `useRoomsV2`
-2. **Repoint usePortfolioRisks to V2** — fixes Actions page and sidebar badges
-3. **Clean up PropertyDetailV2** — remove three dead placeholder sections
-4. **Add balance sheet fields to financial_snapshots** — `valuation_at_snapshot` and `debt_at_snapshot` columns
+**Fields:**
+- **Tenant** (read-only, pre-filled)
+- **Property / Room** (read-only, pre-filled)
+- **Period** (read-only, pre-filled: "February 2026")
+- **Amount Due** (read-only: £XXX.XX)
+- **Already Received** (read-only: £XX.XX, if partial payments exist)
+- **Payment Amount** (currency £, required — default to outstanding amount)
+- **Payment Date** (date picker, default today)
+- **Payment Method** (dropdown: Bank Transfer, Standing Order, Direct Debit, Cash, Cheque, Housing Benefit, Universal Credit, Other)
+- **Bank Transaction** (optional — searchable dropdown of unreconciled credit transactions from bank_transactions for the relevant bank account. Shows: date, description, amount. This is manual reconciliation — linking a payment to a specific bank transaction.)
+- **Notes** (textarea, optional)
 
-### V2 spec completion (after migration stable)
+**On save:**
+1. Create rent_payment record linking to the rent_ledger entry (and bank_transaction if selected)
+2. Update the rent_ledger amount_received and status
+3. If amount_received >= amount_due, set status = 'paid'
+4. If amount_received > 0 but < amount_due, set status = 'partial'
+5. If a bank_transaction was linked, mark it as reconciled (we will handle this state in the reconciliation UI)
+6. Show success and refresh the table
 
-5. **Add `issued_shares` to `legal_entities`** — enable share integrity validation
-6. **Build share integrity enforcement** — DB constraints + frontend validation that shareholdings sum correctly
-7. **Add date parameter to ownership attribution** — `getOwnership(spvId, partyId, date)` as pure utility function
-8. **Build Hydrogen attributable KPI aggregation** — identify Hydrogen party, compute `{ gross, hydrogen }` data contract
-9. **Wire dual-column dashboard** — Gross | Hydrogen Attributable side by side on main KPI cards
-10. **Consolidate to single ownership system** — retire V1 `share_classes`/`shareholdings`, keep `ownership_links` as source of truth
+**Quick Pay:**
+For the common case where rent is paid in full on time: add a "Mark as Paid" quick action on each rent roll row. One click: creates a payment for the full amount due, dated today, method = 'bank_transfer', no bank transaction link. Confirmation tooltip: "Mark as paid in full for £XXX.XX?"
 
-### Safe to build now (no V1 conflicts)
+---
 
-- Section 2.4: Companies House sync (uses `legal_entities` — already V2)
-- Section 2.5: AI Classification (uses `compliance_documents_v2` — already V2)
-- Section 2.6: Investor Portal (uses `legal_entities` + `financial_snapshots` — already V2)
-- Section 2.7: Accounting Export (uses `financial_snapshots` — already V2)
+## UI — Arrears Dashboard
+
+A sub-tab within the Rent Collection page, or a separate "Arrears" section below the rent roll.
+
+### Arrears Table
+
+Data from `arrears_summary` view. Shows only tenants with outstanding balances:
+
+**Columns:**
+- **Tenant** (name, clickable)
+- **Type** (tenant_type badge — important because DSS/UC payments are often delayed, not truly in arrears)
+- **Property** (address)
+- **Room**
+- **Period** (which month is overdue)
+- **Amount Outstanding** (£XX.XX — bold, red)
+- **Days Overdue** (number, colour-coded: amber 1-7 days, red 8-30 days, dark red 30+ days)
+- **Actions**: Record Payment, Send Reminder (placeholder for now), Write Off
+
+**Arrears Aging Summary:**
+Above the table, show 4 cards breaking down arrears by age:
+1. **1-7 Days** — count of entries and total £ value. Amber.
+2. **8-14 Days** — count and £. Red.
+3. **15-30 Days** — count and £. Dark red.
+4. **30+ Days** — count and £. Dark red with warning icon.
+
+### Tenant Payment Reliability
+
+A separate sub-tab showing the `tenant_payment_history` view. This ranks tenants by payment reliability:
+
+**Columns:**
+- **Tenant** (name, clickable)
+- **Total Periods** (how many months of rent tracked)
+- **Paid on Time** (count + percentage)
+- **Paid Late** (count)
+- **Currently Outstanding** (count of unpaid/partial periods)
+- **Reliability Score** (percentage — green ≥95%, amber 80-94%, red <80%)
+
+Sort by reliability ascending (worst payers first). This view helps operators identify problem tenants early — a tenant who has paid late 3 out of 5 months is a risk, even if they are currently up to date.
+
+---
+
+## UI — Bank Statement Import
+
+### Import Flow
+
+Accessible from a "Import Bank Statement" button on the Rent Collection page.
+
+**Step 1 — Select Bank Account:**
+- Dropdown of bank accounts (from bank_accounts table)
+- "Add Bank Account" option if none exist (opens quick-add modal: account name, bank name, sort code, account number, linked entity)
+
+**Step 2 — Upload CSV:**
+- File upload accepting .csv files
+- Show a format guidance note: "Supports standard CSV exports from most UK banks. Columns should include: date, description/reference, amount (or separate debit/credit columns), and optionally balance."
+- Parse the CSV client-side and show a preview table of the first 10 rows.
+
+**Step 3 — Column Mapping:**
+- Auto-detect common column names (Date, Description, Reference, Amount, Credit, Debit, Balance)
+- If auto-detection fails, show dropdown selectors for each required column:
+  - Date column (required)
+  - Description column (required)
+  - Reference column (optional)
+  - Amount column (required — or separate Credit and Debit columns)
+  - Balance column (optional)
+- Date format selector: DD/MM/YYYY (default for UK), MM/DD/YYYY, YYYY-MM-DD
+- Show preview of parsed data with the mapping applied
+
+**Step 4 — Review & Import:**
+- Show full list of transactions to be imported
+- Highlight potential duplicates (matching date + amount + description against existing transactions in the same bank account) in amber with "Duplicate?" badge
+- Allow user to deselect duplicates before importing
+- Show summary: "XX transactions to import, XX duplicates skipped, date range: DD/MM/YYYY to DD/MM/YYYY"
+- "Import" button
+
+**On import:**
+1. Create import_batch record
+2. Insert all bank_transactions with the import_batch_id
+3. Mark duplicates with is_duplicate = true (imported but flagged)
+4. Show success: "Imported XX transactions from [filename]"
+5. Navigate to the reconciliation view
+
+---
+
+## UI — Reconciliation View
+
+After importing bank transactions, show a reconciliation interface. This is split-screen or two-panel:
+
+### Left Panel — Unreconciled Bank Transactions
+
+List of credit transactions from bank_transactions that have not been linked to any rent_payment. Show:
+- Date
+- Description / Reference
+- Amount (£XX.XX)
+- Bank account name
+
+Filterable by date range and amount range. Sortable by date or amount.
+
+### Right Panel — Outstanding Rent Entries
+
+List of rent_ledger entries with status = 'due', 'partial', or 'overdue'. Show:
+- Tenant name
+- Property + room
+- Period
+- Amount outstanding (£XX.XX)
+
+### Auto-Match
+
+When the reconciliation view loads, run a client-side matching algorithm:
+
+**Match criteria (in order of confidence):**
+1. **Exact amount + tenant name in reference** — confidence 0.95. If a bank transaction amount matches a rent_ledger amount_outstanding exactly AND the transaction description/reference contains the tenant's last name, flag as a match.
+2. **Exact amount + property reference** — confidence 0.85. If amount matches and description contains a recognisable property reference (address fragment, room number).
+3. **Exact amount only** — confidence 0.60. Amount matches but no name/reference match. Suggest but require confirmation.
+4. **Close amount (within £5)** — confidence 0.40. Near-match that could be a rounding difference or bank fee. Suggest with warning.
+
+Display matches as linked pairs with confidence badges:
+- Green "High Match" (≥0.85)
+- Amber "Possible Match" (0.60-0.84)
+- Red "Low Confidence" (< 0.60)
+
+The operator reviews each suggested match and either:
+- **Confirms** — creates the rent_payment record linking the transaction to the ledger entry
+- **Rejects** — dismisses the suggestion
+- **Manually links** — drags or selects a transaction and a ledger entry to link them
+
+### Bulk Confirm
+
+A "Confirm All High-Confidence Matches" button that accepts all matches with confidence ≥ 0.85 in one action. Show count: "Confirm XX matches?"
+
+### Unmatched Transactions Panel
+
+After matching, show remaining unmatched transactions in a separate section. These might be:
+- Non-rent income (interest, refunds)
+- Payments from unknown references
+- Payments that do not match any outstanding rent
+
+Allow the operator to categorise these:
+- Link to a rent entry (manual match)
+- Mark as "Not Rent" with a category tag (mortgage payment, insurance, maintenance, etc.)
+- Mark as "Investigate" for later review
+
+---
+
+## UI — Update Tenant Detail Page
+
+Add a **Payment History** section to the Tenant Detail page:
+
+**Payment Timeline:**
+- Table showing all rent_ledger entries for this tenant, ordered by period_start descending
+- Columns: Period, Amount Due, Amount Received, Outstanding, Status, Payment Date(s), Method
+- Paid rows have green left border, overdue have red, partial have amber
+
+**Payment Reliability Card:**
+- Total periods tracked
+- On-time payment rate (percentage, colour coded)
+- Average days to payment (mean days between due_date and last_payment_date)
+- Current arrears total (sum of outstanding across all periods)
+
+---
+
+## UI — Update Property Detail Page
+
+Add a **Rent Collection** section to the Property Detail page:
+
+**Current Month Summary:**
+- Total rent due (sum across all rooms)
+- Total received
+- Collection rate percentage
+- List of rooms with tenant name and payment status badge
+
+**Collection Rate Trend:**
+- Small line chart showing monthly collection rate for this property over last 12 months
+- Useful for spotting properties where collection is deteriorating
+
+---
+
+## UI — Update Executive Command Centre
+
+Wire up the **Monthly Cash Position** KPI card to use actual data:
+- Rent received this month (from rent_ledger or financial_snapshots)
+- Display collection rate alongside the cash position
+
+Add a new item to the "Items Needing Attention" panel:
+- Overdue rent entries older than 7 days, showing: tenant name, property, amount, days overdue
+
+---
+
+## Bank Account Management
+
+Add a **Bank Accounts** section within Settings:
+
+**Bank Account List:**
+- Table: Account Name, Bank, Sort Code (masked: XX-XX-XX), Account Number (masked: XXXXXX##), Entity, Type, Primary badge
+- "Add Bank Account" button
+
+**Add/Edit Bank Account Modal:**
+- Account Name (text, required)
+- Bank Name (text, required)
+- Sort Code (text, optional — format: XX-XX-XX)
+- Account Number (text, optional — last 4 digits visible in lists, rest masked)
+- Linked Entity (dropdown of legal entities, required)
+- Account Type (dropdown: Current, Savings, Rent Collection, Reserve)
+- Is Primary (toggle)
+- Notes (textarea)
+
+---
+
+## CSV Format Support
+
+The importer should handle common UK bank CSV formats. Include presets for:
+
+**Barclays:**
+- Columns: Number, Date, Account, Amount, Subcategory, Memo
+- Date format: DD/MM/YYYY
+
+**Lloyds / Halifax:**
+- Columns: Transaction Date, Transaction Type, Sort Code, Account Number, Transaction Description, Debit Amount, Credit Amount, Balance
+- Date format: DD/MM/YYYY
+
+**NatWest / RBS:**
+- Columns: Date, Type, Description, Value, Balance, Account Name, Account Number
+- Date format: DD/MM/YYYY
+
+**Monzo:**
+- Columns: Transaction ID, Date, Time, Type, Name, Emoji, Category, Amount, Currency, Local amount, Local currency, Notes and #tags, Address, Receipt, Description, Category split, Money Out, Money In
+- Date format: DD/MM/YYYY
+
+**Starling:**
+- Columns: Date, Counter Party, Reference, Type, Amount (GBP), Balance (GBP), Spending Category
+- Date format: DD/MM/YYYY
+
+**Generic CSV:**
+- Manual column mapping (the fallback for any bank not listed)
+
+When a CSV is uploaded, attempt to auto-detect the bank format from column headers. If detected, apply the preset mapping automatically. If not detected, fall back to manual column mapping.
+
+---
+
+## Design
+
+- The reconciliation split-panel is the most complex UI in this module. It must feel fluid — ideally drag-and-drop to link transactions to rent entries. If drag-and-drop is too complex for Lovable, use a "Select" button on each side that highlights the selected items, then a "Link Selected" button.
+- Arrears displays must feel urgent. Red backgrounds, bold amounts, prominent day counts. Unpaid rent is bleeding cash.
+- The Quick Pay action on the rent roll is critical UX — most rent arrives on time via standing order. Confirming 250 on-time payments should take minutes, not hours.
+- Masked bank details (sort code and account number) are a security consideration — full numbers should only be visible when explicitly revealed.
+- Collection rate percentages must match between the rent collection page, the financial snapshots, and the executive dashboard. Use the rent_ledger as the source of truth.
+
+## TypeScript
+
+Generate types for: bank_accounts, bank_transactions, rent_ledger, rent_payments, import_batches. Type the views: `RentCollectionSummary`, `ArrearsSummary`, `TenantPaymentHistory`. Create types for the CSV import flow: `CSVColumnMapping`, `BankFormatPreset`, `ReconciliationMatch` (with confidence score and match reason).
