@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -60,6 +60,7 @@ function DashboardPage() {
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
   const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
   const [kpiView, setKpiView] = useState<'gross' | 'hydrogen'>('gross');
+  const [attributionDate, setAttributionDate] = useState<string>(''); // '' = current/today
   const { data: properties, isLoading, isError, error } = useDashboardPropertiesV2();
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
@@ -88,7 +89,7 @@ function DashboardPage() {
     return properties.filter(p => (p.lifecycle_type ?? 'development') === 'core_rental');
   }, [properties]);
 
-  const { data: attribution, isLoading: isAttributionLoading } = usePortfolioAttribution(coreRentalProperties);
+  const { data: attribution, isLoading: isAttributionLoading } = usePortfolioAttribution(coreRentalProperties, attributionDate || undefined);
   const hydrogenKPIs = useHydrogenKPIs(attribution);
 
   // Calculate portfolio totals - ONLY from core rental properties for income KPIs
@@ -610,6 +611,24 @@ function DashboardPage() {
 
           {/* Shareholders Tab */}
           <TabsContent value="shareholders">
+            <div className="flex items-center gap-3 mt-6 mb-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>As of:</span>
+              </div>
+              <input
+                type="date"
+                value={attributionDate}
+                max={format(new Date(), 'yyyy-MM-dd')}
+                onChange={(e) => setAttributionDate(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+              {attributionDate && (
+                <Button variant="ghost" size="sm" onClick={() => setAttributionDate('')}>
+                  Reset to today
+                </Button>
+              )}
+            </div>
             <DashboardShareholdersTab
               shareholderData={shareholderData}
               isLoading={isAttributionLoading}

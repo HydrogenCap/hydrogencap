@@ -268,8 +268,8 @@ function calculatePropertyLookthrough(
  * Fetch beneficial ownership data for property attribution
  * Now uses unified ownership_links table instead of legacy property_beneficial_owners
  */
-async function fetchBeneficialOwnership(propertyId: string) {
-  const { data, error } = await supabase
+async function fetchBeneficialOwnership(propertyId: string, asOfDate?: string) {
+  let query = supabase
     .from('ownership_links')
     .select(`
       id,
@@ -280,9 +280,17 @@ async function fetchBeneficialOwnership(propertyId: string) {
     `)
     .eq('subject_type', 'PROPERTY')
     .eq('subject_id', propertyId)
-    .eq('ownership_type', 'BENEFICIAL')
-    .is('effective_to', null);
+    .eq('ownership_type', 'BENEFICIAL');
 
+  if (asOfDate) {
+    // Records active on the given date: effective_from <= date AND (effective_to IS NULL OR effective_to > date)
+    query = query.or(`effective_from.is.null,effective_from.lte.${asOfDate}`)
+      .or(`effective_to.is.null,effective_to.gt.${asOfDate}`);
+  } else {
+    query = query.is('effective_to', null);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -290,8 +298,8 @@ async function fetchBeneficialOwnership(propertyId: string) {
 /**
  * Fetch company shareholders as beneficial owners (for SPV look-through)
  */
-async function fetchCompanyShareholders(companyId: string) {
-  const { data, error } = await supabase
+async function fetchCompanyShareholders(companyId: string, asOfDate?: string) {
+  let query = supabase
     .from('ownership_links')
     .select(`
       id,
@@ -302,9 +310,16 @@ async function fetchCompanyShareholders(companyId: string) {
     `)
     .eq('subject_type', 'COMPANY')
     .eq('subject_id', companyId)
-    .eq('ownership_type', 'SHAREHOLDING')
-    .is('effective_to', null);
+    .eq('ownership_type', 'SHAREHOLDING');
 
+  if (asOfDate) {
+    query = query.or(`effective_from.is.null,effective_from.lte.${asOfDate}`)
+      .or(`effective_to.is.null,effective_to.gt.${asOfDate}`);
+  } else {
+    query = query.is('effective_to', null);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -375,8 +390,8 @@ export function usePropertyAttribution(propertyId: string | undefined, property:
  * Fetch all beneficial ownership data for portfolio attribution
  * Now uses unified ownership_links table instead of legacy property_beneficial_owners
  */
-async function fetchAllBeneficialOwnership() {
-  const { data, error } = await supabase
+async function fetchAllBeneficialOwnership(asOfDate?: string) {
+  let query = supabase
     .from('ownership_links')
     .select(`
       id,
@@ -387,9 +402,16 @@ async function fetchAllBeneficialOwnership() {
       owner_party:parties!owner_party_id(id, display_name, party_type, company_number)
     `)
     .eq('subject_type', 'PROPERTY')
-    .eq('ownership_type', 'BENEFICIAL')
-    .is('effective_to', null);
+    .eq('ownership_type', 'BENEFICIAL');
 
+  if (asOfDate) {
+    query = query.or(`effective_from.is.null,effective_from.lte.${asOfDate}`)
+      .or(`effective_to.is.null,effective_to.gt.${asOfDate}`);
+  } else {
+    query = query.is('effective_to', null);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -397,8 +419,8 @@ async function fetchAllBeneficialOwnership() {
 /**
  * Fetch all company shareholdings for SPV look-through
  */
-async function fetchAllCompanyShareholders() {
-  const { data, error } = await supabase
+async function fetchAllCompanyShareholders(asOfDate?: string) {
+  let query = supabase
     .from('ownership_links')
     .select(`
       id,
@@ -409,9 +431,16 @@ async function fetchAllCompanyShareholders() {
       owner_party:parties!owner_party_id(id, display_name, party_type, company_number)
     `)
     .eq('subject_type', 'COMPANY')
-    .eq('ownership_type', 'SHAREHOLDING')
-    .is('effective_to', null);
+    .eq('ownership_type', 'SHAREHOLDING');
 
+  if (asOfDate) {
+    query = query.or(`effective_from.is.null,effective_from.lte.${asOfDate}`)
+      .or(`effective_to.is.null,effective_to.gt.${asOfDate}`);
+  } else {
+    query = query.is('effective_to', null);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -531,15 +560,15 @@ function resolveUltimateBeneficiaries(
  * Falls back to SPV shareholders when no direct beneficial ownership exists
  * Performs full look-through for holding company structures (e.g., Hydrogen Capital → David O'Neill)
  */
-export function usePortfolioAttribution(properties: PropertyWithFinancials[] | undefined) {
+export function usePortfolioAttribution(properties: PropertyWithFinancials[] | undefined, asOfDate?: string) {
   return useQuery({
-    queryKey: ['portfolio_attribution', properties?.map(p => p.id).join(',')],
+    queryKey: ['portfolio_attribution', properties?.map(p => p.id).join(','), asOfDate],
     queryFn: async () => {
       if (!properties || properties.length === 0) return [];
 
       const [directOwners, companyShareholders, companiesWithParties] = await Promise.all([
-        fetchAllBeneficialOwnership(),
-        fetchAllCompanyShareholders(),
+        fetchAllBeneficialOwnership(asOfDate),
+        fetchAllCompanyShareholders(asOfDate),
         fetchAllCompaniesWithParties(),
       ]);
       
