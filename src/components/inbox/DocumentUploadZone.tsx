@@ -3,7 +3,7 @@ import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateDocument } from '@/hooks/useDocuments';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 
@@ -16,14 +16,14 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const createDocument = useCreateDocument();
-  const { data: properties } = useProperties();
+  const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
 
   const processWithAI = async (documentId: string, fileUrl: string) => {
     try {
       const propertyList = (properties || []).map(p => ({
         id: p.id,
-        address_line: p.address_line,
+        address_line: `${p.address_line_1}, ${p.city}`,
         postcode: p.postcode,
       }));
 
@@ -45,7 +45,6 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   };
 
   const uploadFile = async (file: File) => {
-    // Get user's org_id for secure storage path
     const orgId = await getUserOrgId();
     if (!orgId) {
       throw new Error('No organization found. Please log in again.');
@@ -53,12 +52,10 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    // Use org-scoped path for security: {org_id}/{filename}
     const filePath = `${orgId}/${fileName}`;
 
     setUploadProgress(`Uploading ${file.name}...`);
 
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from('documents')
       .upload(filePath, file);
@@ -67,10 +64,9 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       throw uploadError;
     }
 
-    // Get signed URL (bucket is private)
     const { data: urlData, error: signedUrlError } = await supabase.storage
       .from('documents')
-      .createSignedUrl(filePath, 600); // 10 min expiry
+      .createSignedUrl(filePath, 600);
 
     if (signedUrlError || !urlData?.signedUrl) {
       throw new Error('Failed to generate signed URL for document');
@@ -78,7 +74,6 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
     setUploadProgress(`Creating document record...`);
 
-    // Create document record - store the storage path for later signed URL generation
     const storagePath = filePath;
     const document = await createDocument.mutateAsync({
       file_url: storagePath,
@@ -89,7 +84,6 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
     setUploadProgress(`Processing with AI...`);
 
-    // Trigger AI processing with signed URL
     await processWithAI(document.id, urlData.signedUrl);
 
     return document;

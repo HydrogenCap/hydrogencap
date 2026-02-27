@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -11,15 +11,24 @@ import { ComplianceReviewCard } from '@/components/inbox/ComplianceReviewCard';
 import { AIProcessingDashboard } from '@/components/inbox/AIProcessingDashboard';
 import { AISettingsPanel } from '@/components/inbox/AISettingsPanel';
 import { useInboxDocuments } from '@/hooks/useDocuments';
-import { useAllCompliance } from '@/hooks/useCompliance';
-import { getComplianceItemStatus } from '@/lib/complianceTypes';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export default function Inbox() {
   const { data: documents, isLoading, refetch } = useInboxDocuments();
-  const { data: allCompliance } = useAllCompliance();
+  const { data: complianceMatrixRows } = useQuery({
+    queryKey: ['compliance_matrix_v2_inbox'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('compliance_matrix_v2' as any)
+        .select('calculated_status');
+      if (error) throw error;
+      return (data || []) as unknown as Array<{ calculated_status: string }>;
+    },
+  });
   const acceptAllHighConfidence = useAcceptAllHighConfidence();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
 
@@ -37,12 +46,17 @@ export default function Inbox() {
     (d.ai_property_confidence || 0) >= 0.7
   );
 
-  // Calculate compliance stats
-  const complianceStats = {
-    valid: allCompliance?.filter(c => getComplianceItemStatus(c.expiry_date) === 'valid').length || 0,
-    expiring: allCompliance?.filter(c => getComplianceItemStatus(c.expiry_date) === 'expiring_soon').length || 0,
-    expired: allCompliance?.filter(c => getComplianceItemStatus(c.expiry_date) === 'expired').length || 0,
-  };
+  // Calculate compliance stats from V2 matrix
+  const complianceStats = useMemo(() => {
+    if (!complianceMatrixRows) return { valid: 0, expiring: 0, expired: 0 };
+    return {
+      valid: complianceMatrixRows.filter(r => r.calculated_status === 'valid').length,
+      expiring: complianceMatrixRows.filter(r => r.calculated_status === 'expiring_soon').length,
+      expired: complianceMatrixRows.filter(r =>
+        r.calculated_status === 'expired' || r.calculated_status === 'missing'
+      ).length,
+    };
+  }, [complianceMatrixRows]);
 
   const handleAcceptAll = async () => {
     if (highConfidenceDocs.length === 0) return;
@@ -108,7 +122,7 @@ export default function Inbox() {
               </div>
             </CardContent>
           </Card>
-          <Link to="/compliance?status=expiring_soon">
+          <Link to="/compliance-v2">
             <Card className={cn('cursor-pointer hover:bg-muted/50 transition-colors', complianceStats.expiring > 0 && 'border-amber-500/50')}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Expiring Soon</CardTitle>
@@ -121,7 +135,7 @@ export default function Inbox() {
               </CardContent>
             </Card>
           </Link>
-          <Link to="/compliance?status=expired">
+          <Link to="/compliance-v2">
             <Card className={cn('cursor-pointer hover:bg-muted/50 transition-colors', complianceStats.expired > 0 && 'border-destructive/50')}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Expired</CardTitle>
@@ -197,7 +211,6 @@ export default function Inbox() {
               </div>
             ) : (
               <>
-                {/* Group by confidence */}
                 {highConfidenceDocs.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">

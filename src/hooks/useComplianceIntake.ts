@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
-import { DEFAULT_REMINDER_DAYS } from '@/lib/complianceTypes';
 
 // Map document types to compliance types
 export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
@@ -26,41 +25,33 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
 };
 
 // Standard validity periods in years for UK compliance certificates
-// Used to calculate expiry date when AI doesn't extract one
 const STANDARD_VALIDITY_YEARS: Record<string, number> = {
-  "gas_safety_certificate": 1,       // CP12 - annual
-  "electrical_certificate": 5,       // EICR - 5 years
-  "epc_certificate": 10,             // EPC - 10 years
-  "fire_alarm_certificate": 1,       // Annual
-  "emergency_lighting_certificate": 1, // Annual
-  "fire_suppression_certificate": 1, // Annual inspection
-  "pat_testing": 1,                  // Annual for HMOs
-  "fire_risk_assessment": 1,         // Annual review recommended
-  "hmo_licence": 5,                  // Typically 5 years
-  "legionella_assessment": 2,        // Biennial
+  "gas_safety_certificate": 1,
+  "electrical_certificate": 5,
+  "epc_certificate": 10,
+  "fire_alarm_certificate": 1,
+  "emergency_lighting_certificate": 1,
+  "fire_suppression_certificate": 1,
+  "pat_testing": 1,
+  "fire_risk_assessment": 1,
+  "hmo_licence": 5,
+  "legionella_assessment": 2,
 };
 
-// Calculate expiry date based on standard validity if not provided
 function calculateExpiryDate(
   docType: string,
   issueDate: string | null,
   providedExpiry: string | null
 ): string | null {
-  // Use provided expiry if available
   if (providedExpiry) return providedExpiry;
-  
-  // If no issue date, can't calculate
   if (!issueDate) return null;
-  
-  // Get standard validity period
   const validityYears = STANDARD_VALIDITY_YEARS[docType];
   if (!validityYears) return null;
-  
-  // Calculate expiry date
   const issue = new Date(issueDate);
   issue.setFullYear(issue.getFullYear() + validityYears);
   return issue.toISOString().split('T')[0];
 }
+
 export const COMPLIANCE_DOC_TYPE_LABELS: Record<string, string> = {
   gas_safety_certificate: 'Gas Safety Certificate (CP12)',
   electrical_certificate: 'EICR (Electrical Safety)',
@@ -93,7 +84,6 @@ interface AcceptComplianceDocumentParams {
   fileUrl: string;
   notes?: string;
   epcRating?: string | null;
-  // For audit trail
   wasEdited: boolean;
   originalAiSuggestions?: {
     docType: string | null;
@@ -102,8 +92,6 @@ interface AcceptComplianceDocumentParams {
     expiryDate: string | null;
   };
 }
-
-// getUserOrgId replaced by shared fetchUserOrgId
 
 // Compliance type to short code for filenames
 const COMPLIANCE_TYPE_CODES: Record<string, string> = {
@@ -147,13 +135,13 @@ function generateComplianceFilename(params: {
 }
 
 /**
- * Hook to accept a compliance document:
- * 1. Creates or updates the compliance_items record
- * 2. Uploads document to compliance storage
- * 3. Links document to compliance item
- * 4. Archives any previous documents of same type
- * 5. Updates the original document record
- * 6. Syncs EPC rating if applicable
+ * Hook to accept a compliance document (V2):
+ * 1. Marks existing current compliance_documents_v2 as superseded
+ * 2. Copies file to compliance storage
+ * 3. Creates new compliance_documents_v2 record
+ * 4. Updates original documents record
+ * 5. Enriches with AI-extracted certifier/reference data
+ * 6. Auto-populates insurance if applicable
  */
 export function useAcceptComplianceDocument() {
   const queryClient = useQueryClient();
@@ -182,120 +170,98 @@ export function useAcceptComplianceDocument() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Map doc type to compliance type
       const complianceType = DOC_TYPE_TO_COMPLIANCE_TYPE[docType] || docType;
-      
-      // Calculate expiry date (use provided or calculate from standard validity)
       const calculatedExpiryDate = calculateExpiryDate(docType, issueDate, expiryDate);
-      const { data: existingItems } = await supabase
-        .from('compliance_items')
-        .select('id')
-        .eq('property_id', propertyId)
-        .eq('compliance_type', complianceType)
-        .limit(1);
 
-      let complianceItemId: string;
-
-      if (existingItems && existingItems.length > 0) {
-        // Update existing compliance item
-        complianceItemId = existingItems[0].id;
-        await supabase
-          .from('compliance_items')
-          .update({
-            issue_date: issueDate,
-            expiry_date: calculatedExpiryDate,
-            notes: notes ? `${notes}\n\nUpdated via Compliance Inbox` : 'Updated via Compliance Inbox',
-          })
-          .eq('id', complianceItemId);
-      } else {
-        // Create new compliance item
-        const { data: newItem, error: createError } = await supabase
-          .from('compliance_items')
-          .insert({
-            property_id: propertyId,
-            org_id: orgId,
-            compliance_type: complianceType,
-            issue_date: issueDate,
-            expiry_date: calculatedExpiryDate,
-            responsible_party: 'Owner',
-            reminder_days: DEFAULT_REMINDER_DAYS,
-            notes: notes || 'Created via Compliance Inbox',
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        complianceItemId = newItem.id;
+      // Calculate status for V2
+      let status = 'valid';
+      if (calculatedExpiryDate) {
+        const expiry = new Date(calculatedExpiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diff = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff < 0) status = 'expired';
+        else if (diff <= 30) status = 'critical';
+        else if (diff <= 90) status = 'expiring_soon';
       }
 
-      // 2. Archive previous documents for this compliance item
-      await supabase
-        .from('compliance_documents')
-        .update({ 
-          is_current: false, 
-          archived_at: new Date().toISOString() 
-        })
-        .eq('compliance_item_id', complianceItemId)
-        .eq('is_current', true);
+      // 1. Mark any existing current doc as superseded
+      const { data: existing } = await supabase
+        .from('compliance_documents_v2')
+        .select('id')
+        .eq('property_id', propertyId)
+        .eq('document_type', docType)
+        .eq('is_current', true)
+        .maybeSingle();
 
-      // 3. Get next version number
-      const { data: existingDocs } = await supabase
-        .from('compliance_documents')
-        .select('version_number')
-        .eq('compliance_item_id', complianceItemId)
-        .order('version_number', { ascending: false })
-        .limit(1);
+      if (existing) {
+        await supabase
+          .from('compliance_documents_v2')
+          .update({ is_current: false })
+          .eq('id', existing.id);
+      }
 
-      const nextVersion = existingDocs && existingDocs.length > 0 
-        ? existingDocs[0].version_number + 1 
-        : 1;
-
-      // 4. Generate structured filename
+      // 2. Generate structured filename
       const structuredFilename = generateComplianceFilename({
         complianceType,
         propertyAddress,
         originalFilename,
       });
 
-      // 5. Copy file to compliance bucket with structured name
-      // First download from documents bucket
-      const sourcePath = fileUrl.split('/documents/')[1];
+      // 3. Copy file to compliance storage
+      let newFileUrl: string | null = null;
+      const sourcePath = fileUrl.includes('/documents/')
+        ? fileUrl.split('/documents/')[1]
+        : null;
+
       if (sourcePath) {
         const { data: fileData, error: downloadError } = await supabase.storage
           .from('documents')
           .download(sourcePath);
 
         if (!downloadError && fileData) {
-          // Upload to compliance bucket
-          const compliancePath = `${propertyId}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
+          const compliancePath = `${propertyId}/${docType}/${Date.now()}-${structuredFilename}`;
           await supabase.storage
-            .from('compliance')
+            .from('compliance-documents')
             .upload(compliancePath, fileData);
 
-          // Get new URL
           const { data: urlData } = supabase.storage
-            .from('compliance')
+            .from('compliance-documents')
             .getPublicUrl(compliancePath);
 
-          // 6. Create compliance_documents record
-          await supabase
-            .from('compliance_documents')
-            .insert({
-              compliance_item_id: complianceItemId,
-              file_url: urlData.publicUrl,
-              original_file_name: structuredFilename,
-              file_type: originalFilename.split('.').pop() || 'pdf',
-              uploaded_by: user.id,
-              is_current: true,
-              version_number: nextVersion,
-              notes: wasEdited 
-                ? `AI suggestions edited by user. Original: ${JSON.stringify(originalAiSuggestions)}`
-                : 'Auto-processed via Compliance Inbox',
-            });
+          newFileUrl = urlData.publicUrl;
         }
       }
 
-      // 7. Update the original document record
+      // 4. Create compliance_documents_v2 record
+      const { data: newDoc, error: insertError } = await supabase
+        .from('compliance_documents_v2')
+        .insert({
+          org_id: orgId,
+          property_id: propertyId,
+          document_type: docType,
+          issue_date: issueDate || new Date().toISOString().split('T')[0],
+          expiry_date: calculatedExpiryDate,
+          file_url: newFileUrl,
+          file_name: structuredFilename,
+          certificate_number: null,
+          issuer_name: null,
+          is_current: true,
+          status,
+          ai_extracted: true,
+          ai_confidence_score: null,
+          supersedes_id: existing?.id || null,
+          uploaded_by: user.id,
+          notes: wasEdited
+            ? `AI suggestions edited by user. Original: ${JSON.stringify(originalAiSuggestions)}`
+            : notes || 'Processed via Compliance Inbox',
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // 5. Update the original documents record
       await supabase
         .from('documents')
         .update({
@@ -307,17 +273,31 @@ export function useAcceptComplianceDocument() {
         })
         .eq('id', documentId);
 
-      // 8. Sync EPC rating to properties table if this is an EPC
-      if (docType === 'epc_certificate' && epcRating) {
-        await supabase
-          .from('properties')
-          .update({ epc_rating: epcRating })
-          .eq('id', propertyId);
+      // 6. Enrich with AI-extracted certifier & reference data
+      const { data: docMeta } = await supabase
+        .from('documents')
+        .select('extracted_certifier_name, extracted_certifier_company, extracted_reference_number')
+        .eq('id', documentId)
+        .single();
+
+      if (docMeta && newDoc) {
+        const updates: Record<string, any> = {};
+        if (docMeta.extracted_certifier_company || docMeta.extracted_certifier_name) {
+          updates.issuer_name = docMeta.extracted_certifier_company || docMeta.extracted_certifier_name;
+        }
+        if (docMeta.extracted_reference_number) {
+          updates.certificate_number = docMeta.extracted_reference_number;
+        }
+        if (Object.keys(updates).length > 0) {
+          await supabase
+            .from('compliance_documents_v2')
+            .update(updates)
+            .eq('id', newDoc.id);
+        }
       }
 
-      // 9. Auto-populate insurance_policies when accepting an insurance document
+      // 7. Auto-populate insurance_policies if applicable
       if (docType === 'building_insurance' || docType === 'public_liability_insurance') {
-        // Fetch extracted certifier data from the document
         const { data: docData } = await supabase
           .from('documents')
           .select('extracted_certifier_company, extracted_reference_number, expiry_date, extracted_issue_date')
@@ -331,7 +311,6 @@ export function useAcceptComplianceDocument() {
           const startDate = issueDate || docData.extracted_issue_date || null;
 
           if (renewalDate) {
-            // Check for existing policy for this property
             const { data: existingPolicy } = await supabase
               .from('insurance_policies')
               .select('id')
@@ -339,7 +318,6 @@ export function useAcceptComplianceDocument() {
               .limit(1);
 
             if (existingPolicy && existingPolicy.length > 0) {
-              // Update existing policy
               await supabase
                 .from('insurance_policies')
                 .update({
@@ -353,7 +331,6 @@ export function useAcceptComplianceDocument() {
                 })
                 .eq('id', existingPolicy[0].id);
             } else {
-              // Create new policy
               await supabase
                 .from('insurance_policies')
                 .insert({
@@ -372,22 +349,22 @@ export function useAcceptComplianceDocument() {
         }
       }
 
-      return { 
-        success: true, 
-        complianceItemId,
+      return {
+        success: true,
+        complianceDocId: newDoc.id,
         propertyId,
         complianceType,
       };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
-      queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
-      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance_documents_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_inbox'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
-      queryClient.invalidateQueries({ queryKey: ['insurance-totals'] });
       queryClient.invalidateQueries({ queryKey: ['insurance_policies'] });
-      
+
       toast({
         title: 'Document accepted',
         description: `${data.complianceType} record updated successfully`,
@@ -449,7 +426,7 @@ export function useAcceptAllHighConfidence() {
       original_file_name: string;
       file_url: string;
       extracted_epc_rating: string | null;
-      property?: { id: string; address_line: string } | null;
+      property?: { id: string; address_line_1?: string; city?: string; address_line?: string } | null;
     }>) => {
       const highConfidenceDocs = documents.filter(d => 
         d.ai_suggested_doc_type && 
@@ -465,11 +442,16 @@ export function useAcceptAllHighConfidence() {
 
       let accepted = 0;
       for (const doc of highConfidenceDocs) {
+        const prop = doc.property as any;
+        const propertyAddress = prop?.address_line_1
+          ? `${prop.address_line_1}, ${prop.city || ''}`
+          : prop?.address_line || 'Unknown';
+
         await acceptDocument.mutateAsync({
           documentId: doc.id,
           docType: doc.ai_suggested_doc_type!,
           propertyId: doc.ai_suggested_property_id!,
-          propertyAddress: doc.property!.address_line,
+          propertyAddress,
           issueDate: doc.extracted_issue_date,
           expiryDate: doc.expiry_date,
           originalFilename: doc.original_file_name,
