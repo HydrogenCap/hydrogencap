@@ -38,6 +38,7 @@ import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
 import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { MaintenanceWidget } from '@/components/dashboard/MaintenanceWidget';
+import { CHFilingAlertsWidget } from '@/components/dashboard/CHFilingAlertsWidget';
 import { DashboardShareholdersTab, prepareShareholderData } from '@/components/dashboard/DashboardShareholdersTab';
 import { LenderExposureChart, computeLenderData } from '@/components/dashboard/LenderExposureChart';
 import {
@@ -549,9 +550,14 @@ function DashboardPage() {
                     />
                   </ErrorBoundary>
                 )}
-                <ErrorBoundary>
-                  <MissingComplianceWidget />
-                </ErrorBoundary>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <ErrorBoundary>
+                    <MissingComplianceWidget />
+                  </ErrorBoundary>
+                  <ErrorBoundary>
+                    <CHFilingAlertsWidget />
+                  </ErrorBoundary>
+                </div>
                 <ErrorBoundary>
                   <DashboardCalendarWidget />
                 </ErrorBoundary>
