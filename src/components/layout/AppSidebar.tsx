@@ -65,6 +65,7 @@ const portfolioItems: NavItem[] = [
 const operationsItems: NavItem[] = [
   { title: 'Actions', icon: AlertTriangle, href: '/actions', badgeType: 'actions' },
   { title: 'Compliance', icon: Shield, href: '/compliance-v2', badgeType: 'compliance' },
+  { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks' },
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Lending', icon: PoundSterling, href: '/lending' },
