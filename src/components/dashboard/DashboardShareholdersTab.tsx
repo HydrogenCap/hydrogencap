@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Users, User, Building2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,6 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { StatusBadge } from '@/components/dashboard/MetricValue';
 import { formatGBP, formatPercent } from '@/lib/calculations';
+import { usePortfolioKPIs } from '@/hooks/usePortfolioKPIs';
+import { usePortfolioOwnershipV2 } from '@/hooks/useOwnershipAttributionV2';
+import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 
 const SHAREHOLDER_COLORS = [
   'hsl(174, 72%, 45%)',
@@ -29,52 +32,59 @@ export interface ShareholderEntry {
   color: string;
 }
 
-interface Props {
-  shareholderData: ShareholderEntry[];
-  isLoading: boolean;
-}
-
-export function prepareShareholderData(
-  attribution: Array<{
-    ownerId: string;
-    ownerName: string;
-    ownerType: string;
-    totals: {
-      totalAttributableEquity: number;
-      totalAttributableCashflow: number;
-      propertyCount: number;
-    };
-  }> | undefined
-): ShareholderEntry[] {
-  if (!attribution || attribution.length === 0) return [];
-
-  const totalEquity = attribution.reduce(
-    (sum, owner) => sum + owner.totals.totalAttributableEquity,
-    0
+export function DashboardShareholdersTab() {
+  const { data: kpis } = usePortfolioKPIs();
+  const { data: properties } = usePropertiesV2();
+  const coreProperties = useMemo(() =>
+    (properties || [])
+      .filter(p => ['stabilised', 'letting'].includes(p.lifecycle_stage))
+      .map(p => ({ id: p.id, address_line_1: p.address_line_1, city: p.city, entity_id: p.entity_id })),
+    [properties]
   );
 
-  return attribution
-    .map((owner, index) => {
-      const equityPercent =
-        totalEquity > 0
-          ? (owner.totals.totalAttributableEquity / totalEquity) * 100
-          : 0;
+  const { data: ownershipV2, isLoading } = usePortfolioOwnershipV2(
+    coreProperties.length > 0 ? coreProperties : undefined
+  );
+
+  // Build shareholder entries from V2 ownership data + KPI property rows
+  const shareholderData: ShareholderEntry[] = useMemo(() => {
+    if (!ownershipV2 || !kpis) return [];
+
+    const propertyKPIMap = new Map(kpis.properties.map(p => [p.propertyId, p]));
+
+    const entries = ownershipV2.portfolioOwners.map((owner, idx) => {
+      let totalEquity = 0;
+      let totalCashflow = 0;
+
+      for (const op of owner.properties) {
+        const kpiRow = propertyKPIMap.get(op.propertyId);
+        if (kpiRow) {
+          const factor = op.effectivePercent / 100;
+          totalEquity += kpiRow.equity * factor;
+          totalCashflow += kpiRow.annualCashflow * factor;
+        }
+      }
 
       return {
-        id: owner.ownerId,
+        id: owner.ownerEntityId || owner.ownerName,
         name: owner.ownerName,
         type: owner.ownerType,
-        equityPercent,
-        equity: owner.totals.totalAttributableEquity,
-        cashflow: owner.totals.totalAttributableCashflow,
-        properties: owner.totals.propertyCount,
-        color: SHAREHOLDER_COLORS[index % SHAREHOLDER_COLORS.length],
+        equityPercent: 0, // calculated below
+        equity: totalEquity,
+        cashflow: totalCashflow / 12,
+        properties: owner.totalEffectiveProperties,
+        color: SHAREHOLDER_COLORS[idx % SHAREHOLDER_COLORS.length],
       };
-    })
-    .sort((a, b) => b.equityPercent - a.equityPercent);
-}
+    });
 
-export function DashboardShareholdersTab({ shareholderData, isLoading }: Props) {
+    const totalEquity = entries.reduce((s, e) => s + e.equity, 0);
+    for (const entry of entries) {
+      entry.equityPercent = totalEquity > 0 ? (entry.equity / totalEquity) * 100 : 0;
+    }
+
+    return entries.sort((a, b) => b.equityPercent - a.equityPercent);
+  }, [ownershipV2, kpis]);
+
   return (
     <div className="space-y-6 mt-6">
       <SectionCard
@@ -145,7 +155,7 @@ export function DashboardShareholdersTab({ shareholderData, isLoading }: Props) 
                     style={{ backgroundColor: owner.color }}
                   />
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    {owner.type === 'INDIVIDUAL' || owner.type === 'Person' ? (
+                    {owner.type === 'individual' ? (
                       <User className="h-4 w-4" />
                     ) : (
                       <Building2 className="h-4 w-4" />
@@ -202,9 +212,7 @@ export function DashboardShareholdersTab({ shareholderData, isLoading }: Props) 
                     </TableCell>
                     <TableCell>
                       <StatusBadge status="neutral">
-                        {owner.type === 'INDIVIDUAL' || owner.type === 'Person'
-                          ? 'Individual'
-                          : 'Company'}
+                        {owner.type === 'individual' ? 'Individual' : 'Company'}
                       </StatusBadge>
                     </TableCell>
                     <TableCell className="text-right font-bold text-primary">
