@@ -45,6 +45,7 @@ import { format } from 'date-fns';
 import { EntityFinancialSection } from '@/components/financials/EntityFinancialSection';
 import { EntityInvestorSection } from '@/components/entities/EntityInvestorSection';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
+import { EntityAccountingSection } from '@/components/accounting/EntityAccountingSection';
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   spv: Building2,
@@ -404,6 +405,9 @@ export default function EntityDetail() {
 
         {/* Financial Summary */}
         <EntityFinancialSection entityId={entity.id} entityProperties={entityProperties} />
+
+        {/* Accounting */}
+        <EntityAccountingSection entityId={entity.id} entityName={entity.entity_name} />
 
         {/* Investor Capital */}
         <EntityInvestorSection entityId={entity.id} />

@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   TrendingUp, TrendingDown, DollarSign, Percent, Users as UsersIcon,
-  BarChart3, ChevronDown, ChevronUp, ArrowUpDown, Lock,
+  BarChart3, ChevronDown, ChevronUp, ArrowUpDown, Lock, FileDown,
 } from 'lucide-react';
 import { usePortfolioMonthlySummary, usePropertyAnnualPerformance, useEntityFinancialSummary } from '@/hooks/useFinancialSnapshots';
 import { formatGBPDecimal, formatPercent } from '@/lib/calculations';
@@ -57,9 +57,14 @@ export default function Financials() {
             <h1 className="text-2xl font-bold text-foreground">Financials</h1>
             <p className="text-muted-foreground text-sm">Portfolio financial performance and reporting</p>
           </div>
-          <Button onClick={() => setShowEntry(true)}>
-            <BarChart3 className="h-4 w-4 mr-2" /> Record Monthly Figures
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => navigate('/accounting')}>
+              <FileDown className="h-4 w-4 mr-2" /> Export Data
+            </Button>
+            <Button onClick={() => setShowEntry(true)}>
+              <BarChart3 className="h-4 w-4 mr-2" /> Record Monthly Figures
+            </Button>
+          </div>
         </div>
 
         {/* Stats Bar */}
