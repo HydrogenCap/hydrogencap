@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Building2, User, Handshake, Shield } from 'lucide-react';
+import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, Clock, RefreshCw, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
+import { useEntityVerificationStatus, useSyncEntity, EntityVerification } from '@/hooks/useCompaniesHouseV2';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
+import { useToast } from '@/hooks/use-toast';
 
 const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: React.ComponentType<{ className?: string }> }> = {
   spv: { label: 'SPV', variant: 'default', icon: Building2 },
@@ -39,10 +41,20 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 
 export default function Entities() {
   const { data: entities, isLoading } = useLegalEntities();
+  const { data: verifications } = useEntityVerificationStatus();
+  const syncEntity = useSyncEntity();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'type' | 'status'>('name');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [bulkSyncing, setBulkSyncing] = useState(false);
+
+  const verificationMap = useMemo(() => {
+    const map: Record<string, EntityVerification> = {};
+    verifications?.forEach(v => { map[v.entity_id] = v; });
+    return map;
+  }, [verifications]);
 
   const filtered = useMemo(() => {
     if (!entities) return [];
@@ -58,6 +70,43 @@ export default function Entities() {
     return result;
   }, [entities, search, sortBy]);
 
+  const handleBulkSync = async () => {
+    const spvs = entities?.filter(e => e.entity_type === 'spv' && e.company_number) || [];
+    if (spvs.length === 0) { toast({ title: 'No SPVs with company numbers to sync' }); return; }
+    setBulkSyncing(true);
+    let synced = 0;
+    for (const spv of spvs) {
+      try {
+        await syncEntity.mutateAsync({ entityId: spv.id, companyNumber: spv.company_number! });
+        synced++;
+      } catch { /* continue */ }
+      await new Promise(r => setTimeout(r, 500)); // rate limit respect
+    }
+    setBulkSyncing(false);
+    const issues = verifications?.filter(v => v.verification_status === 'status_mismatch').length || 0;
+    const overdue = verifications?.filter(v => v.accounts_filing_status === 'overdue' || v.confirmation_filing_status === 'overdue').length || 0;
+    toast({ title: `Synced ${synced} SPVs. ${issues} discrepancies. ${overdue} overdue filings.` });
+  };
+
+  const CHStatusCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
+    if (entityType !== 'spv') return <span className="text-muted-foreground text-xs">N/A</span>;
+    const v = verificationMap[entityId];
+    if (!v || v.verification_status === 'not_synced') return <Badge variant="secondary" className="text-xs">Not Synced</Badge>;
+    if (v.verification_status === 'verified') return <span className="text-emerald-600 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Verified</span>;
+    return <span className="text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Mismatch</span>;
+  };
+
+  const FilingsCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
+    if (entityType !== 'spv') return <span className="text-muted-foreground text-xs">N/A</span>;
+    const v = verificationMap[entityId];
+    if (!v || v.verification_status === 'not_synced') return <span className="text-muted-foreground text-xs">—</span>;
+    const hasOverdue = v.accounts_filing_status === 'overdue' || v.confirmation_filing_status === 'overdue';
+    const hasDueSoon = v.accounts_filing_status === 'due_soon' || v.confirmation_filing_status === 'due_soon';
+    if (hasOverdue) return <span className="text-destructive flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Overdue</span>;
+    if (hasDueSoon) return <span className="text-amber-600 flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Due Soon</span>;
+    return <span className="text-emerald-600 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> OK</span>;
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -66,10 +115,16 @@ export default function Entities() {
             <h1 className="text-2xl font-bold text-foreground">Entities</h1>
             <p className="text-muted-foreground">Manage your legal entities, directors, and shareholders</p>
           </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Entity
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleBulkSync} disabled={bulkSyncing}>
+              {bulkSyncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Sync All SPVs
+            </Button>
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Entity
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -111,7 +166,8 @@ export default function Entities() {
                   <TableHead>Type</TableHead>
                   <TableHead>Company Number</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Properties</TableHead>
+                  <TableHead>CH Status</TableHead>
+                  <TableHead>Filings</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -139,7 +195,8 @@ export default function Entities() {
                           {statusConfig.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">0</TableCell>
+                      <TableCell><CHStatusCell entityId={entity.id} entityType={entity.entity_type} /></TableCell>
+                      <TableCell><FilingsCell entityId={entity.id} entityType={entity.entity_type} /></TableCell>
                     </TableRow>
                   );
                 })}
