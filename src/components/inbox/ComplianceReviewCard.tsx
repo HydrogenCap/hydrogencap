@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useAcceptComplianceDocument, useRejectComplianceDocument, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
 import type { Database } from '@/integrations/supabase/types';
@@ -33,7 +33,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
   
   const acceptDocument = useAcceptComplianceDocument();
   const rejectDocument = useRejectComplianceDocument();
-  const { data: properties } = useProperties();
+  const { data: properties } = usePropertiesV2();
 
   const isProcessed = document.extraction_status === 'completed';
   const isPending = document.extraction_status === 'pending' || document.extraction_status === 'processing';
@@ -78,7 +78,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
       documentId: document.id,
       docType: selectedDocType,
       propertyId: selectedPropertyId,
-      propertyAddress: selectedProperty.address_line,
+      propertyAddress: `${selectedProperty.address_line_1}, ${selectedProperty.city}`,
       issueDate: issueDate || null,
       expiryDate: expiryDate || null,
       originalFilename: document.original_file_name,
@@ -154,7 +154,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                     <>
                       <span className="text-muted-foreground flex items-center gap-1">
                         <Building2 className="h-3 w-3" />
-                        {selectedProperty?.address_line.split(',')[0]}
+                        {selectedProperty?.address_line_1}
                       </span>
                       {getConfidenceBadge(propertyConfidence)}
                     </>
@@ -252,14 +252,14 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                   <SelectContent>
                     {properties?.map((property) => (
                       <SelectItem key={property.id} value={property.id}>
-                        {property.address_line}
+                        {property.address_line_1}, {property.city} {property.postcode}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {document.ai_suggested_property_id && suggestedProperty && (
                   <p className="text-xs text-muted-foreground">
-                    AI matched: {suggestedProperty.address_line.split(',')[0]}
+                    AI matched: {suggestedProperty.address_line_1}
                     ({Math.round(propertyConfidence * 100)}%)
                   </p>
                 )}
