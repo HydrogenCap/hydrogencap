@@ -30,6 +30,8 @@ export interface PropertyV2 {
   latitude: number | null;
   longitude: number | null;
   notes: string | null;
+  epc_rating: string | null;
+  epc_expiry_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -98,7 +100,7 @@ export function useEntityPropertiesV2(entityId: string | undefined) {
   });
 }
 
-type PropertyInsert = Omit<PropertyV2, 'id' | 'created_at' | 'updated_at' | 'org_id'>;
+type PropertyInsert = Omit<PropertyV2, 'id' | 'created_at' | 'updated_at' | 'org_id' | 'epc_rating' | 'epc_expiry_date'>;
 
 export function useCreatePropertyV2() {
   const qc = useQueryClient();

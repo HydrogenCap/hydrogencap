@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Home } from 'lucide-react';
+import { Plus, Search, Home, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
 import { usePropertyPhotosV2 } from '@/hooks/usePropertyPhotosV2';
+import { useBulkEpcEnrichV2 } from '@/hooks/useBulkEpcEnrichV2';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
 import type { PropertyRoomSummary } from '@/hooks/useRoomsV2';
 
@@ -86,6 +87,7 @@ export default function PropertiesV2() {
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const { data: entities } = useLegalEntities();
   const { data: photoMap } = usePropertyPhotosV2();
+  const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
@@ -156,7 +158,12 @@ export default function PropertiesV2() {
             <h1 className="text-2xl font-bold text-foreground">Properties</h1>
             <p className="text-sm text-muted-foreground">Manage your portfolio properties</p>
           </div>
-          <Button onClick={() => setShowModal(true)}><Plus className="h-4 w-4 mr-2" /> Add Property</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => enrichEpc('missing-only')} disabled={isEnrichingEpc}>
+              <Zap className="h-4 w-4 mr-2" /> {isEnrichingEpc ? 'Enriching…' : 'Enrich EPC'}
+            </Button>
+            <Button onClick={() => setShowModal(true)}><Plus className="h-4 w-4 mr-2" /> Add Property</Button>
+          </div>
         </div>
 
         {/* Stats */}
