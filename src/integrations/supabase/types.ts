@@ -4485,6 +4485,7 @@ export type Database = {
           entity_id: string
           epc_expiry_date: string | null
           epc_rating: string | null
+          has_fire_alarm_system: boolean | null
           has_gas_supply: boolean | null
           id: string
           latitude: number | null
@@ -4518,6 +4519,7 @@ export type Database = {
           entity_id: string
           epc_expiry_date?: string | null
           epc_rating?: string | null
+          has_fire_alarm_system?: boolean | null
           has_gas_supply?: boolean | null
           id?: string
           latitude?: number | null
@@ -4551,6 +4553,7 @@ export type Database = {
           entity_id?: string
           epc_expiry_date?: string | null
           epc_rating?: string | null
+          has_fire_alarm_system?: boolean | null
           has_gas_supply?: boolean | null
           id?: string
           latitude?: number | null
