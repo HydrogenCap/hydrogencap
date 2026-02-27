@@ -62,6 +62,77 @@ export type Database = {
           },
         ]
       }
+      ai_extraction_templates: {
+        Row: {
+          classification_keywords: string[]
+          created_at: string | null
+          default_validity_months: number | null
+          display_name: string
+          document_type: string
+          extraction_fields: Json
+          has_expiry: boolean | null
+          id: string
+          typical_issuers: string[] | null
+        }
+        Insert: {
+          classification_keywords?: string[]
+          created_at?: string | null
+          default_validity_months?: number | null
+          display_name: string
+          document_type: string
+          extraction_fields: Json
+          has_expiry?: boolean | null
+          id?: string
+          typical_issuers?: string[] | null
+        }
+        Update: {
+          classification_keywords?: string[]
+          created_at?: string | null
+          default_validity_months?: number | null
+          display_name?: string
+          document_type?: string
+          extraction_fields?: Json
+          has_expiry?: boolean | null
+          id?: string
+          typical_issuers?: string[] | null
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          description: string | null
+          id: string
+          org_id: string
+          setting_key: string
+          setting_value: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          org_id: string
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          org_id?: string
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -2194,9 +2265,13 @@ export type Database = {
       documents: {
         Row: {
           ai_doc_type_confidence: number | null
+          ai_model: string | null
           ai_property_confidence: number | null
           ai_suggested_doc_type: string | null
           ai_suggested_property_id: string | null
+          ai_tokens_used: number | null
+          auto_file_confidence: number | null
+          auto_filed: boolean | null
           category: string | null
           company_id: string | null
           compliance_item_id: string | null
@@ -2212,6 +2287,7 @@ export type Database = {
           extracted_address_text: string | null
           extracted_certifier_company: string | null
           extracted_certifier_name: string | null
+          extracted_data: Json | null
           extracted_epc_rating: string | null
           extracted_issue_date: string | null
           extracted_reference_number: string | null
@@ -2227,6 +2303,7 @@ export type Database = {
           org_id: string
           original_file_name: string
           previous_version_id: string | null
+          processing_time_ms: number | null
           property_id: string | null
           renamed_at: string | null
           review_status: string | null
@@ -2235,15 +2312,21 @@ export type Database = {
           tenant_id: string | null
           updated_at: string
           uploaded_by: string | null
+          validation_errors: string[] | null
+          validation_warnings: string[] | null
           version: number | null
           visible_to_shareholders: boolean | null
           visible_to_tenants: boolean | null
         }
         Insert: {
           ai_doc_type_confidence?: number | null
+          ai_model?: string | null
           ai_property_confidence?: number | null
           ai_suggested_doc_type?: string | null
           ai_suggested_property_id?: string | null
+          ai_tokens_used?: number | null
+          auto_file_confidence?: number | null
+          auto_filed?: boolean | null
           category?: string | null
           company_id?: string | null
           compliance_item_id?: string | null
@@ -2259,6 +2342,7 @@ export type Database = {
           extracted_address_text?: string | null
           extracted_certifier_company?: string | null
           extracted_certifier_name?: string | null
+          extracted_data?: Json | null
           extracted_epc_rating?: string | null
           extracted_issue_date?: string | null
           extracted_reference_number?: string | null
@@ -2274,6 +2358,7 @@ export type Database = {
           org_id: string
           original_file_name: string
           previous_version_id?: string | null
+          processing_time_ms?: number | null
           property_id?: string | null
           renamed_at?: string | null
           review_status?: string | null
@@ -2282,15 +2367,21 @@ export type Database = {
           tenant_id?: string | null
           updated_at?: string
           uploaded_by?: string | null
+          validation_errors?: string[] | null
+          validation_warnings?: string[] | null
           version?: number | null
           visible_to_shareholders?: boolean | null
           visible_to_tenants?: boolean | null
         }
         Update: {
           ai_doc_type_confidence?: number | null
+          ai_model?: string | null
           ai_property_confidence?: number | null
           ai_suggested_doc_type?: string | null
           ai_suggested_property_id?: string | null
+          ai_tokens_used?: number | null
+          auto_file_confidence?: number | null
+          auto_filed?: boolean | null
           category?: string | null
           company_id?: string | null
           compliance_item_id?: string | null
@@ -2306,6 +2397,7 @@ export type Database = {
           extracted_address_text?: string | null
           extracted_certifier_company?: string | null
           extracted_certifier_name?: string | null
+          extracted_data?: Json | null
           extracted_epc_rating?: string | null
           extracted_issue_date?: string | null
           extracted_reference_number?: string | null
@@ -2321,6 +2413,7 @@ export type Database = {
           org_id?: string
           original_file_name?: string
           previous_version_id?: string | null
+          processing_time_ms?: number | null
           property_id?: string | null
           renamed_at?: string | null
           review_status?: string | null
@@ -2329,6 +2422,8 @@ export type Database = {
           tenant_id?: string | null
           updated_at?: string
           uploaded_by?: string | null
+          validation_errors?: string[] | null
+          validation_warnings?: string[] | null
           version?: number | null
           visible_to_shareholders?: boolean | null
           visible_to_tenants?: boolean | null
