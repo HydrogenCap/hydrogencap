@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -36,6 +36,11 @@ import {
   useCreateDirector,
   useCreateShareholder,
 } from '@/hooks/useLegalEntities';
+import {
+  useShareClassesWithAllocation,
+  useDeleteShareClass,
+  validateShareIntegrity,
+} from '@/hooks/useShareCapital';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
@@ -43,6 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { DirectorFormModal } from '@/components/entities/DirectorFormModal';
 import { ShareholderFormModal } from '@/components/entities/ShareholderFormModal';
+import { ShareClassFormModal } from '@/components/entities/ShareClassFormModal';
 import { CHVerificationBanner } from '@/components/entities/CHVerificationBanner';
 import { CHDataPanel } from '@/components/entities/CHDataPanel';
 import { ComplianceFilingsCard } from '@/components/companies/ComplianceFilingsCard';
@@ -92,6 +98,8 @@ export default function EntityDetail() {
   const { data: shareholders } = useEntityShareholders(id);
   const { data: entityProperties } = useEntityPropertiesV2(id);
   const { data: verification } = useEntityVerification(id);
+  const { data: shareClassesWithAllocation } = useShareClassesWithAllocation(id);
+  const deleteShareClassMutation = useDeleteShareClass();
   const syncEntity = useSyncEntity();
   const deleteEntity = useDeleteLegalEntity();
   const deleteDirector = useDeleteDirector();
@@ -102,6 +110,11 @@ export default function EntityDetail() {
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const updateEntity = useUpdateLegalEntity();
 
+  // Share capital integrity
+  const integrityErrors = shareClassesWithAllocation
+    ? validateShareIntegrity(shareClassesWithAllocation)
+    : [];
+
   // Import officers & PSCs from CH result, skipping duplicates
   const importFromCH = useCallback(async (
     result: any,
@@ -111,7 +124,6 @@ export default function EntityDetail() {
   ) => {
     let imported = { directors: 0, shareholders: 0 };
 
-    // Import officers as directors
     if (result.officers?.length) {
       const existingNames = new Set((existingDirectors || []).map(d => d.director_name.toLowerCase()));
       for (const officer of result.officers) {
@@ -131,7 +143,6 @@ export default function EntityDetail() {
       }
     }
 
-    // Import PSCs as shareholders
     if (result.significant_controllers?.length) {
       const existingNames = new Set((existingShareholders || []).map(s => s.shareholder_name.toLowerCase()));
       for (const psc of result.significant_controllers) {
@@ -161,6 +172,8 @@ export default function EntityDetail() {
   const [editingDirector, setEditingDirector] = useState<any>(null);
   const [showAddShareholder, setShowAddShareholder] = useState(false);
   const [editingShareholder, setEditingShareholder] = useState<any>(null);
+  const [showAddShareClass, setShowAddShareClass] = useState(false);
+  const [editingShareClass, setEditingShareClass] = useState<any>(null);
 
   // Auto-sync from CH if stale (>24hrs)
   const performAutoSync = useCallback(async () => {
@@ -188,7 +201,6 @@ export default function EntityDetail() {
             confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
             confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
           } as any);
-          // Import directors & shareholders
           const imported = await importFromCH(result, entity.id, directors, shareholders);
           const parts = [];
           if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
@@ -226,7 +238,6 @@ export default function EntityDetail() {
           confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
           confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
         } as any);
-        // Import directors & shareholders
         const imported = await importFromCH(result, entity.id, directors, shareholders);
         const parts = [];
         if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
@@ -271,9 +282,8 @@ export default function EntityDetail() {
   const TypeIcon = TYPE_ICONS[entity.entity_type] || Building2;
   const totalShares = shareholders?.reduce((s, sh) => s + sh.shares_held, 0) || 0;
   const totalPercent = shareholders?.reduce((s, sh) => s + Number(sh.percentage), 0) || 0;
-  const issuedShares = entity.issued_shares;
-  const sharesExceedIssued = issuedShares != null && totalShares > issuedShares;
-  const percentExceeds100 = totalPercent > 100.01;
+
+  const showShareCapital = entity.entity_type === 'spv';
 
   return (
     <AppLayout>
@@ -493,18 +503,119 @@ export default function EntityDetail() {
           </CardContent>
         </Card>
 
+        {/* Share Capital — only for SPV entity types */}
+        {showShareCapital && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Share Capital</CardTitle>
+                <CardDescription>
+                  Total issued shares: {shareClassesWithAllocation?.reduce((s, sc) => s + sc.issued_shares, 0).toLocaleString() || 0}
+                  {' '}across {shareClassesWithAllocation?.length || 0} class{(shareClassesWithAllocation?.length || 0) !== 1 ? 'es' : ''}
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={() => { setEditingShareClass(null); setShowAddShareClass(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> Add Share Class
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {integrityErrors.length > 0 && (
+                <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-destructive mb-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Share Integrity Error
+                  </div>
+                  {integrityErrors.map(err => (
+                    <p key={err.classId} className="text-xs text-destructive">{err.error}</p>
+                  ))}
+                </div>
+              )}
+
+              {shareClassesWithAllocation && shareClassesWithAllocation.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Class</TableHead>
+                      <TableHead className="text-right">Issued</TableHead>
+                      <TableHead className="text-right">Allocated</TableHead>
+                      <TableHead className="text-right">Unallocated</TableHead>
+                      <TableHead>Nominal</TableHead>
+                      <TableHead className="w-20" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {shareClassesWithAllocation.map(sc => (
+                      <TableRow key={sc.id}>
+                        <TableCell className="font-medium">
+                          {sc.class_name}
+                          {sc.is_primary && <Badge variant="secondary" className="ml-2 text-[10px]">Primary</Badge>}
+                        </TableCell>
+                        <TableCell className="text-right">{sc.issued_shares.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={sc.allocated_shares > sc.issued_shares ? 'text-destructive font-semibold' : ''}>
+                            {sc.allocated_shares.toLocaleString()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {sc.unallocated_shares >= 0 ? (
+                            <span className="text-muted-foreground">{sc.unallocated_shares.toLocaleString()}</span>
+                          ) : (
+                            <span className="text-destructive">{sc.unallocated_shares.toLocaleString()}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {sc.nominal_value ? `£${sc.nominal_value}` : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7"
+                              onClick={() => { setEditingShareClass(sc); setShowAddShareClass(true); }}>
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                              onClick={async () => {
+                                if (sc.allocated_shares > 0) {
+                                  toast({ title: 'Cannot delete', description: 'Remove all shareholders from this class first', variant: 'destructive' });
+                                  return;
+                                }
+                                try {
+                                  await deleteShareClassMutation.mutateAsync({ id: sc.id, entityId: entity.id });
+                                  toast({ title: 'Share class deleted' });
+                                } catch (err: any) {
+                                  toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                                }
+                              }}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-muted-foreground text-center py-6">No share classes defined yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Shareholders Section */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div>
               <CardTitle>Shareholders</CardTitle>
-              {issuedShares != null && (
-                <span className="text-sm text-muted-foreground font-normal">
-                  {issuedShares.toLocaleString()} shares issued
-                </span>
+              {showShareCapital && shareClassesWithAllocation && shareClassesWithAllocation.length === 0 && (
+                <CardDescription className="text-warning">
+                  Add a share class above before adding shareholders
+                </CardDescription>
               )}
             </div>
-            <Button size="sm" onClick={() => { setEditingShareholder(null); setShowAddShareholder(true); }}>
+            <Button
+              size="sm"
+              onClick={() => { setEditingShareholder(null); setShowAddShareholder(true); }}
+              disabled={showShareCapital && (!shareClassesWithAllocation || shareClassesWithAllocation.length === 0)}
+            >
               <Plus className="h-4 w-4 mr-1" /> Add Shareholder
             </Button>
           </CardHeader>
@@ -553,35 +664,18 @@ export default function EntityDetail() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {/* Totals row */}
                   <TableRow className="bg-muted/50 font-semibold">
                     <TableCell>Total</TableCell>
                     <TableCell />
+                    <TableCell className="text-right">{totalShares.toLocaleString()}</TableCell>
                     <TableCell className="text-right">
-                      <span className={sharesExceedIssued ? 'text-destructive' : ''}>
-                        {totalShares.toLocaleString()}
-                        {issuedShares != null && (
-                          <span className="font-normal text-muted-foreground"> / {issuedShares.toLocaleString()}</span>
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className={percentExceeds100 ? 'text-destructive' : ''}>
+                      <span className={totalPercent > 100.01 ? 'text-destructive' : totalPercent >= 99.99 ? 'text-primary' : ''}>
                         {totalPercent.toFixed(2)}%
                       </span>
                     </TableCell>
                     <TableCell />
                     <TableCell />
                   </TableRow>
-                  {(sharesExceedIssued || percentExceeds100) && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-destructive text-sm py-2">
-                        <AlertCircle className="h-4 w-4 inline mr-1" />
-                        {sharesExceedIssued && `Total shares held (${totalShares.toLocaleString()}) exceeds issued shares (${issuedShares!.toLocaleString()}). `}
-                        {percentExceeds100 && `Total ownership (${totalPercent.toFixed(2)}%) exceeds 100%.`}
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             ) : (
@@ -658,6 +752,7 @@ export default function EntityDetail() {
       <EntityFormModal open={showEditEntity} onOpenChange={setShowEditEntity} editingEntity={entity} />
       <DirectorFormModal open={showAddDirector} onOpenChange={setShowAddDirector} entityId={entity.id} editingDirector={editingDirector} />
       <ShareholderFormModal open={showAddShareholder} onOpenChange={setShowAddShareholder} entityId={entity.id} editingShareholder={editingShareholder} />
+      <ShareClassFormModal open={showAddShareClass} onOpenChange={setShowAddShareClass} entityId={entity.id} editingShareClass={editingShareClass} />
     </AppLayout>
   );
 }
