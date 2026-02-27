@@ -18,6 +18,7 @@ import {
 import {
   useRentScheduleItem, useUpdateRentScheduleStatus,
   usePaymentReminders, useDeleteRentSchedule, useDuplicateRentSchedule,
+  normalizeRentItem,
 } from '@/hooks/useRentCollection';
 import { LoadingState } from '@/components/common';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
@@ -46,6 +47,7 @@ export default function PaymentDetail() {
   if (isLoading) return <LoadingState text="Loading payment details..." />;
   if (!item) return <div className="container py-6"><p>Payment not found.</p></div>;
 
+  const display = normalizeRentItem(item);
   const status = statusConfig[item.status] || statusConfig.upcoming;
   const StatusIcon = status.icon;
   const today = new Date();
@@ -54,10 +56,7 @@ export default function PaymentDetail() {
   const weeksOverdue = differenceInWeeks(today, dueDate);
   const isOverdue = daysOverdue > 0 && item.status !== 'paid' && item.status !== 'bad_debt';
 
-  const tenantName = `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`;
-  const tenantEmail = (item.tenancy as any).tenant?.email || null;
-  const tenantPhone = (item.tenancy as any).tenant?.phone || null;
-  const propertyAddress = `${item.tenancy.property.address_line}${item.tenancy.property.postcode ? `, ${item.tenancy.property.postcode}` : ''}`;
+  const propertyAddress = `${display.propertyAddress}${display.propertyPostcode ? `, ${display.propertyPostcode}` : ''}`;
 
   const handleMarkOverdue = () => {
     updateStatus.mutate({ id: item.id, status: 'overdue' });
@@ -129,7 +128,7 @@ export default function PaymentDetail() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Tenant</p>
-              <p className="font-medium">{tenantName}</p>
+              <p className="font-medium">{display.tenantName}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Property</p>
@@ -137,22 +136,22 @@ export default function PaymentDetail() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            {tenantEmail && (
+            {display.tenantEmail && (
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <a href={`mailto:${tenantEmail}`} className="text-sm text-primary hover:underline">{tenantEmail}</a>
+                <a href={`mailto:${display.tenantEmail}`} className="text-sm text-primary hover:underline">{display.tenantEmail}</a>
               </div>
             )}
-            {tenantPhone && (
+            {display.tenantPhone && (
               <div>
                 <p className="text-sm text-muted-foreground">Phone</p>
-                <a href={`tel:${tenantPhone}`} className="text-sm text-primary hover:underline">{tenantPhone}</a>
+                <a href={`tel:${display.tenantPhone}`} className="text-sm text-primary hover:underline">{display.tenantPhone}</a>
               </div>
             )}
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Room</p>
-            <p className="font-medium">{item.tenancy.room.room_name}</p>
+            <p className="font-medium">{display.roomName}</p>
           </div>
         </CardContent>
       </Card>
@@ -252,7 +251,7 @@ export default function PaymentDetail() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Mark payment as overdue?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will mark the payment of £{item.amount_outstanding.toLocaleString()} from {tenantName} as overdue.
+                        This will mark the payment of £{item.amount_outstanding.toLocaleString()} from {display.tenantName} as overdue.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -279,7 +278,7 @@ export default function PaymentDetail() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Mark as bad debt?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will write off £{item.amount_outstanding.toLocaleString()} from {tenantName} as bad debt. This action can be reversed.
+                      This will write off £{item.amount_outstanding.toLocaleString()} from {display.tenantName} as bad debt. This action can be reversed.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

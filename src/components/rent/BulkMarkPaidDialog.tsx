@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { formatPropertyAddress } from '@/utils/formatAddress';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { useBulkMarkPaid, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
+import { useBulkMarkPaid, normalizeRentItem, type RentScheduleWithDetails } from '@/hooks/useRentCollection';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
@@ -110,19 +109,20 @@ export default function BulkMarkPaidDialog({ items, open, onOpenChange, mode, on
               {items.length} items to be marked as paid:
             </Label>
             <div className="max-h-48 overflow-y-auto border rounded-md divide-y">
-              {items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center px-3 py-2 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {item.tenancy.tenant.first_name} {item.tenancy.tenant.last_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.tenancy.room.room_name} • {formatPropertyAddress(item.tenancy.property.address_line, item.tenancy.property.town_city)}
-                    </p>
+              {items.map((item) => {
+                const d = normalizeRentItem(item);
+                return (
+                  <div key={item.id} className="flex justify-between items-center px-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{d.tenantName}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {d.roomName} • {d.propertyAddress}
+                      </p>
+                    </div>
+                    <span className="font-medium shrink-0 ml-3">{fmt(item.amount_outstanding)}</span>
                   </div>
-                  <span className="font-medium shrink-0 ml-3">{fmt(item.amount_outstanding)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

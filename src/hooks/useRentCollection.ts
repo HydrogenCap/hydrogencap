@@ -10,6 +10,7 @@
    id: string;
    org_id: string;
    tenancy_id: string;
+   agreement_id: string | null;
    due_date: string;
    period_start: string;
    period_end: string;
@@ -26,31 +27,136 @@
  }
  
  export interface RentScheduleWithDetails extends RentScheduleItem {
+   // V2 agreement join (preferred when agreement_id is set)
+   agreement: {
+     id: string;
+     rent_amount_pcm: number;
+     status: string;
+     start_date: string;
+     tenant: {
+       id: string;
+       first_name: string;
+       last_name: string;
+       tenant_type: string;
+       email: string | null;
+       phone: string | null;
+     };
+     room: {
+       id: string;
+       room_name: string;
+     };
+     property: {
+       id: string;
+       address_line_1: string;
+       city: string;
+       postcode: string;
+     };
+   } | null;
+   // V1 tenancy join (fallback when agreement_id is null)
    tenancy: {
      id: string;
-    tenant: {
-        id: string;
-        first_name: string;
-        last_name: string;
-        tenant_type?: string;
-        company_name?: string | null;
-      };
+     tenant: {
+       id: string;
+       first_name: string;
+       last_name: string;
+       tenant_type?: string;
+       company_name?: string | null;
+       email?: string | null;
+       phone?: string | null;
+     };
      room: {
        room_name: string;
      };
-      property: {
-        id: string;
-        address_line: string;
-        town_city: string | null;
-        postcode: string | null;
-      };
-   };
+     property: {
+       id: string;
+       address_line: string;
+       town_city: string | null;
+       postcode: string | null;
+     };
+   } | null;
  }
+
+/**
+ * Normalize V1 tenancy join OR V2 agreement join into a common display shape.
+ * All UI components use this — they never access .tenancy or .agreement directly.
+ */
+export interface RentItemDisplay {
+  tenantName: string;
+  tenantEmail: string | null;
+  tenantPhone: string | null;
+  tenantId: string;
+  roomName: string;
+  roomId: string | null;
+  propertyId: string;
+  propertyAddress: string;
+  propertyPostcode: string | null;
+  tenancyId: string;
+  agreementId: string | null;
+}
+
+export function normalizeRentItem(item: RentScheduleWithDetails): RentItemDisplay {
+  // Prefer V2 agreement data when available
+  if (item.agreement) {
+    const a = item.agreement;
+    return {
+      tenantName: `${a.tenant.first_name} ${a.tenant.last_name}`,
+      tenantEmail: a.tenant.email,
+      tenantPhone: a.tenant.phone,
+      tenantId: a.tenant.id,
+      roomName: a.room.room_name,
+      roomId: a.room.id,
+      propertyId: a.property.id,
+      propertyAddress: `${a.property.address_line_1}, ${a.property.city}`,
+      propertyPostcode: a.property.postcode,
+      tenancyId: item.tenancy_id,
+      agreementId: item.agreement_id,
+    };
+  }
+
+  // Fallback to V1 tenancy data
+  if (item.tenancy) {
+    const t = item.tenancy;
+    const tenantName = t.tenant.tenant_type === 'company'
+      ? (t.tenant.company_name || `${t.tenant.first_name} ${t.tenant.last_name}`)
+      : `${t.tenant.first_name} ${t.tenant.last_name}`;
+    return {
+      tenantName,
+      tenantEmail: t.tenant.email || null,
+      tenantPhone: t.tenant.phone || null,
+      tenantId: t.tenant.id,
+      roomName: t.room.room_name,
+      roomId: null,
+      propertyId: t.property.id,
+      propertyAddress: t.property.address_line
+        ? `${t.property.address_line}${t.property.town_city ? `, ${t.property.town_city}` : ''}`
+        : 'Unknown',
+      propertyPostcode: t.property.postcode,
+      tenancyId: item.tenancy_id,
+      agreementId: item.agreement_id,
+    };
+  }
+
+  // Neither available (shouldn't happen)
+  return {
+    tenantName: 'Unknown',
+    tenantEmail: null,
+    tenantPhone: null,
+    tenantId: '',
+    roomName: 'Unknown',
+    roomId: null,
+    propertyId: '',
+    propertyAddress: 'Unknown',
+    propertyPostcode: null,
+    tenancyId: item.tenancy_id,
+    agreementId: item.agreement_id,
+  };
+}
  
  export interface RentPayment {
    id: string;
    org_id: string;
    tenancy_id: string;
+   agreement_id?: string | null;
    rent_schedule_id: string | null;
    amount: number;
    payment_date: string;
@@ -62,27 +168,38 @@
    created_at: string;
  }
  
-// getUserOrgId replaced by shared import
- 
+// Shared select fragment for dual V1/V2 joins
+const RENT_SCHEDULE_SELECT = `
+  *,
+  agreement:tenancy_agreements(
+    id,
+    rent_amount_pcm,
+    status,
+    start_date,
+    tenant:tenants_v2(id, first_name, last_name, tenant_type, email, phone),
+    room:rooms_v2(id, room_name),
+    property:properties_v2(id, address_line_1, city, postcode)
+  ),
+  tenancy:tenancies(
+    id,
+    tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
+    room:rooms(room_name),
+    property:properties(id, address_line, town_city, postcode)
+  )
+`;
+
  export function useRentSchedule(filters?: { 
-   month?: string; // YYYY-MM format
+   month?: string;
    status?: RentStatus;
    tenancyId?: string;
+   agreementId?: string;
  }) {
    return useQuery({
      queryKey: ['rent_schedule', filters],
      queryFn: async () => {
        let query = supabase
          .from('rent_schedule')
-         .select(`
-           *,
-           tenancy:tenancies(
-             id,
-             tenant:tenants(id, first_name, last_name, tenant_type, company_name),
-             room:rooms(room_name),
-              property:properties(id, address_line, town_city, postcode)
-           )
-         `)
+         .select(RENT_SCHEDULE_SELECT)
          .order('due_date', { ascending: true });
  
        if (filters?.month) {
@@ -92,14 +209,9 @@
            .gte('due_date', startDate)
            .lte('due_date', endDate.toISOString().split('T')[0]);
        }
- 
-       if (filters?.status) {
-         query = query.eq('status', filters.status);
-       }
- 
-       if (filters?.tenancyId) {
-         query = query.eq('tenancy_id', filters.tenancyId);
-       }
+       if (filters?.status) query = query.eq('status', filters.status);
+       if (filters?.tenancyId) query = query.eq('tenancy_id', filters.tenancyId);
+       if (filters?.agreementId) query = query.eq('agreement_id', filters.agreementId);
  
        const { data, error } = await query;
        if (error) throw error;
@@ -114,21 +226,12 @@
      queryFn: async () => {
        const { data, error } = await supabase
          .from('rent_schedule')
-         .select(`
-           *,
-           tenancy:tenancies(
-             id,
-              tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
-             room:rooms(room_name),
-              property:properties(id, address_line, town_city, postcode)
-           )
-         `)
+         .select(RENT_SCHEDULE_SELECT)
          .in('status', ['overdue', 'partial'])
          .order('due_date', { ascending: true });
  
        if (error) throw error;
        
-       // Calculate days overdue
        const today = new Date();
        return (data as RentScheduleWithDetails[]).map(item => ({
          ...item,
@@ -174,7 +277,8 @@
          .insert({ 
            ...payment, 
            org_id: orgId,
-           recorded_by: user?.id || null 
+           recorded_by: user?.id || null,
+           agreement_id: payment.agreement_id || null,
          })
          .select()
          .single();
@@ -199,15 +303,7 @@ export function useRentScheduleItem(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rent_schedule')
-        .select(`
-          *,
-          tenancy:tenancies(
-            id,
-             tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
-            room:rooms(room_name),
-            property:properties(id, address_line, town_city, postcode)
-          )
-        `)
+        .select(RENT_SCHEDULE_SELECT)
         .eq('id', id)
         .single();
       if (error) throw error;
@@ -313,7 +409,6 @@ export function useDuplicateRentSchedule() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      // Generate new payment reference
       const prefix = 'HYD';
       const letters = Array.from({ length: 3 }, () =>
         String.fromCharCode(65 + Math.floor(Math.random() * 26))
@@ -333,6 +428,7 @@ export function useDuplicateRentSchedule() {
         p_status: 'upcoming',
         p_payment_reference: `${prefix}-${letters}${numbers}`,
         p_notes: item.notes ? `Copy of: ${item.notes}` : null,
+        p_agreement_id: item.agreement_id || undefined,
       });
 
       if (error) throw error;
@@ -432,15 +528,7 @@ export function useArrearsAging() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rent_schedule')
-        .select(`
-          *,
-          tenancy:tenancies(
-            id,
-            tenant:tenants(id, first_name, last_name, tenant_type, company_name, email, phone),
-            room:rooms(room_name),
-            property:properties(id, address_line, town_city, postcode)
-          )
-        `)
+        .select(RENT_SCHEDULE_SELECT)
         .in('status', ['overdue', 'partial', 'due'])
         .lte('due_date', new Date().toISOString().split('T')[0])
         .order('due_date', { ascending: true });
@@ -452,7 +540,8 @@ export function useArrearsAging() {
       const propertyMap = new Map<string, ArrearsAgingRow>();
       
       for (const item of items) {
-        const propId = item.tenancy.property.id;
+        const display = normalizeRentItem(item);
+        const propId = display.propertyId;
         const daysOverdue = Math.floor(
           (today.getTime() - new Date(item.due_date).getTime()) / (1000 * 60 * 60 * 24)
         );
@@ -467,8 +556,8 @@ export function useArrearsAging() {
         if (!propertyMap.has(propId)) {
           propertyMap.set(propId, {
             property_id: propId,
-            property_address: formatPropertyAddress(item.tenancy.property.address_line, item.tenancy.property.town_city),
-            property_postcode: item.tenancy.property.postcode,
+            property_address: display.propertyAddress,
+            property_postcode: display.propertyPostcode,
             bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
             tenancies: [],
           });
@@ -478,14 +567,12 @@ export function useArrearsAging() {
         row[bucket] += amount;
         row.total += amount;
         
-        let tenancy = row.tenancies.find(t => t.tenancy_id === item.tenancy.id);
+        let tenancy = row.tenancies.find(t => t.tenancy_id === item.tenancy_id);
         if (!tenancy) {
           tenancy = {
-            tenancy_id: item.tenancy.id,
-            tenant_name: item.tenancy.tenant.tenant_type === 'company'
-              ? (item.tenancy.tenant.company_name || `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`)
-              : `${item.tenancy.tenant.first_name} ${item.tenancy.tenant.last_name}`,
-            room_name: item.tenancy.room.room_name,
+            tenancy_id: item.tenancy_id,
+            tenant_name: display.tenantName,
+            room_name: display.roomName,
             bucket_30: 0, bucket_60: 0, bucket_90: 0, bucket_more: 0, total: 0,
             schedule_items: [],
           };
@@ -523,26 +610,10 @@ export function useMonthSummary() {
       const nextMonthEnd = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0);
       
       const [overdueRes, dueTodayRes, thisMonthRes, nextMonthRes] = await Promise.all([
-        supabase
-          .from('rent_schedule')
-          .select('amount_outstanding')
-          .in('status', ['overdue', 'partial'])
-          .lt('due_date', todayStr),
-        supabase
-          .from('rent_schedule')
-          .select('amount_outstanding')
-          .eq('due_date', todayStr)
-          .neq('status', 'paid'),
-        supabase
-          .from('rent_schedule')
-          .select('rent_amount, additional_charges, amount_paid')
-          .gte('due_date', thisMonthStart)
-          .lt('due_date', nextMonthStart),
-        supabase
-          .from('rent_schedule')
-          .select('rent_amount, additional_charges')
-          .gte('due_date', nextMonthStart)
-          .lte('due_date', nextMonthEnd.toISOString().split('T')[0]),
+        supabase.from('rent_schedule').select('amount_outstanding').in('status', ['overdue', 'partial']).lt('due_date', todayStr),
+        supabase.from('rent_schedule').select('amount_outstanding').eq('due_date', todayStr).neq('status', 'paid'),
+        supabase.from('rent_schedule').select('rent_amount, additional_charges, amount_paid').gte('due_date', thisMonthStart).lt('due_date', nextMonthStart),
+        supabase.from('rent_schedule').select('rent_amount, additional_charges').gte('due_date', nextMonthStart).lte('due_date', nextMonthEnd.toISOString().split('T')[0]),
       ]);
 
       return {
@@ -571,22 +642,40 @@ export interface LedgerEntry {
   is_future: boolean;
 }
 
-export function useTenancyLedger(tenancyId: string | undefined) {
+export function useTenancyLedger(params: string | { tenancyId?: string; agreementId?: string } | undefined) {
+  // Support both old string signature and new object signature
+  const tenancyId = typeof params === 'string' ? params : params?.tenancyId;
+  const agreementId = typeof params === 'string' ? undefined : params?.agreementId;
+  const enabled = !!(tenancyId || agreementId);
+
   return useQuery({
-    queryKey: ['tenancy_ledger', tenancyId],
+    queryKey: ['tenancy_ledger', tenancyId, agreementId],
     queryFn: async () => {
-      const [schedRes, payRes] = await Promise.all([
-        supabase
-          .from('rent_schedule')
-          .select('*')
-          .eq('tenancy_id', tenancyId!)
-          .order('due_date', { ascending: true }),
-        supabase
-          .from('rent_payments')
-          .select('*')
-          .eq('tenancy_id', tenancyId!)
-          .order('payment_date', { ascending: true }),
-      ]);
+      // Build schedule query
+      let schedQuery = supabase
+        .from('rent_schedule')
+        .select('*')
+        .order('due_date', { ascending: true });
+
+      if (agreementId) {
+        schedQuery = schedQuery.eq('agreement_id', agreementId);
+      } else if (tenancyId) {
+        schedQuery = schedQuery.eq('tenancy_id', tenancyId);
+      }
+
+      // Build payments query
+      let payQuery = supabase
+        .from('rent_payments')
+        .select('*')
+        .order('payment_date', { ascending: true });
+
+      if (agreementId) {
+        payQuery = payQuery.eq('agreement_id', agreementId);
+      } else if (tenancyId) {
+        payQuery = payQuery.eq('tenancy_id', tenancyId);
+      }
+
+      const [schedRes, payRes] = await Promise.all([schedQuery, payQuery]);
 
       if (schedRes.error) throw schedRes.error;
       if (payRes.error) throw payRes.error;
@@ -626,7 +715,6 @@ export function useTenancyLedger(tenancyId: string | undefined) {
         });
       }
       
-      // Sort ascending: charges before payments on same date
       entries.sort((a, b) => {
         const dateCompare = a.date.localeCompare(b.date);
         if (dateCompare !== 0) return dateCompare;
@@ -635,7 +723,6 @@ export function useTenancyLedger(tenancyId: string | undefined) {
         return 0;
       });
       
-      // Calculate running balance (only for non-future items)
       let balance = 0;
       for (const entry of entries) {
         if (!entry.is_future) {
@@ -644,10 +731,9 @@ export function useTenancyLedger(tenancyId: string | undefined) {
         }
       }
       
-      // Return in reverse chronological order for display
       return entries.reverse();
     },
-    enabled: !!tenancyId,
+    enabled,
   });
 }
 
@@ -681,6 +767,7 @@ export function useBulkMarkPaid() {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
+        const display = normalizeRentItem(item);
         try {
           const actualPaymentDate = paymentDate === 'due_date'
             ? item.due_date
@@ -698,6 +785,7 @@ export function useBulkMarkPaid() {
               reference: null,
               notes,
               recorded_by: user?.id || null,
+              agreement_id: item.agreement_id || null,
             });
 
           if (payError) throw payError;
@@ -713,9 +801,7 @@ export function useBulkMarkPaid() {
           results.success++;
         } catch (err: any) {
           results.failed++;
-          results.errors.push(
-            `${item.tenancy.property.address_line}: ${err.message}`
-          );
+          results.errors.push(`${display.propertyAddress}: ${err.message}`);
         }
         onProgress?.(i + 1);
       }
@@ -839,8 +925,8 @@ export function useBulkSendReminder() {
       const results = { sent: 0, skipped: 0, failed: 0 };
 
       for (const item of items) {
-        const tenant = item.tenancy?.tenant as any;
-        const email = tenant?.email;
+        const display = normalizeRentItem(item);
+        const email = display.tenantEmail;
         if (!email) {
           results.skipped++;
           continue;
@@ -886,35 +972,32 @@ export function useBulkSendReminder() {
   });
 }
 
-export function usePaidOnTimeStats(tenancyId: string | undefined) {
+export function usePaidOnTimeStats(params: string | { tenancyId?: string; agreementId?: string } | undefined) {
+  // Support both old string signature and new object signature
+  const tenancyId = typeof params === 'string' ? params : params?.tenancyId;
+  const agreementId = typeof params === 'string' ? undefined : params?.agreementId;
+  const enabled = !!(tenancyId || agreementId);
+
   return useQuery({
-    queryKey: ['paid_on_time', tenancyId],
+    queryKey: ['paid_on_time', tenancyId, agreementId],
     queryFn: async () => {
       const todayStr = new Date().toISOString().split('T')[0];
       
+      const filterCol = agreementId ? 'agreement_id' : 'tenancy_id';
+      const filterVal = agreementId || tenancyId!;
+
       const [paidRes, allPastRes, paymentsRes] = await Promise.all([
-        supabase
-          .from('rent_schedule')
-          .select('id, due_date')
-          .eq('tenancy_id', tenancyId!)
-          .lte('due_date', todayStr)
-          .eq('status', 'paid'),
-        supabase
-          .from('rent_schedule')
-          .select('id')
-          .eq('tenancy_id', tenancyId!)
-          .lte('due_date', todayStr)
-          .neq('status', 'upcoming'),
-        supabase
-          .from('rent_payments')
-          .select('rent_schedule_id, payment_date')
-          .eq('tenancy_id', tenancyId!),
+        supabase.from('rent_schedule').select('id, due_date')
+          .eq(filterCol, filterVal).lte('due_date', todayStr).eq('status', 'paid'),
+        supabase.from('rent_schedule').select('id')
+          .eq(filterCol, filterVal).lte('due_date', todayStr).neq('status', 'upcoming'),
+        supabase.from('rent_payments').select('rent_schedule_id, payment_date')
+          .eq(filterCol, filterVal),
       ]);
 
       const paidItems = paidRes.data || [];
       const totalPast = allPastRes.data?.length || 0;
       
-      // Calculate average days late
       const paymentMap = new Map<string, string>();
       for (const p of paymentsRes.data || []) {
         if (p.rent_schedule_id && !paymentMap.has(p.rent_schedule_id)) {
@@ -941,6 +1024,108 @@ export function usePaidOnTimeStats(tenancyId: string | undefined) {
         totalPast,
       };
     },
-    enabled: !!tenancyId,
+    enabled,
+  });
+}
+
+// ─── Generate Schedule from V2 Agreement ───
+
+export function useGenerateScheduleFromAgreement() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({
+      agreementId,
+      months = 12,
+    }: {
+      agreementId: string;
+      months?: number;
+    }) => {
+      const { data: agreement, error: agError } = await supabase
+        .from('tenancy_agreements')
+        .select('id, org_id, rent_amount_pcm, start_date, initial_end_date, rent_frequency, status')
+        .eq('id', agreementId)
+        .single();
+
+      if (agError || !agreement) throw agError || new Error('Agreement not found');
+
+      // Look up V1 tenancy_id for backward compat
+      const { data: existingSchedule } = await supabase
+        .from('rent_schedule')
+        .select('tenancy_id')
+        .eq('agreement_id', agreementId)
+        .limit(1);
+
+      const tenancyId = existingSchedule?.[0]?.tenancy_id;
+
+      if (tenancyId) {
+        const { data: count, error } = await supabase.rpc('generate_rent_schedule', {
+          p_tenancy_id: tenancyId,
+          p_months: months,
+          p_agreement_id: agreementId,
+        });
+        if (error) throw error;
+        return { count: count || 0 };
+      }
+
+      // No V1 tenancy — generate manually
+      const orgId = agreement.org_id;
+      const startDate = new Date(agreement.start_date);
+      const rentPCM = agreement.rent_amount_pcm;
+      let count = 0;
+
+      const { data: lastEntry } = await supabase
+        .from('rent_schedule')
+        .select('period_end')
+        .eq('agreement_id', agreementId)
+        .order('period_end', { ascending: false })
+        .limit(1);
+
+      let nextStart = lastEntry?.[0]
+        ? new Date(new Date(lastEntry[0].period_end).getTime() + 86400000)
+        : startDate;
+
+      for (let i = 0; i < months; i++) {
+        const periodStart = new Date(nextStart);
+        const periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0);
+        const dueDate = new Date(periodStart.getFullYear(), periodStart.getMonth(), 1);
+
+        if (agreement.initial_end_date && dueDate > new Date(agreement.initial_end_date)) break;
+
+        const prefix = 'HYD';
+        const letters = Array.from({ length: 3 }, () =>
+          String.fromCharCode(65 + Math.floor(Math.random() * 26))
+        ).join('');
+        const numbers = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+
+        const { error } = await supabase.from('rent_schedule').insert({
+          org_id: orgId,
+          tenancy_id: tenancyId || '00000000-0000-0000-0000-000000000000',
+          agreement_id: agreementId,
+          due_date: dueDate.toISOString().split('T')[0],
+          period_start: periodStart.toISOString().split('T')[0],
+          period_end: periodEnd.toISOString().split('T')[0],
+          rent_amount: rentPCM,
+          additional_charges: 0,
+          amount_paid: 0,
+          amount_outstanding: rentPCM,
+          status: 'upcoming' as any,
+          payment_reference: `${prefix}-${letters}${numbers}`,
+        });
+
+        if (!error) count++;
+        nextStart = new Date(periodEnd.getTime() + 86400000);
+      }
+
+      return { count };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+      toast({ title: `${result.count} schedule entries generated` });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to generate schedule', description: error.message, variant: 'destructive' });
+    },
   });
 }
