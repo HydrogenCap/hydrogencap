@@ -1002,6 +1002,93 @@ export type Database = {
           },
         ]
       }
+      compliance_notifications: {
+        Row: {
+          channel: string
+          compliance_task_id: string | null
+          document_type: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          notification_type: string
+          org_id: string
+          property_id: string | null
+          read_at: string | null
+          recipient: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          channel?: string
+          compliance_task_id?: string | null
+          document_type?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          org_id: string
+          property_id?: string | null
+          read_at?: string | null
+          recipient?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          channel?: string
+          compliance_task_id?: string | null
+          document_type?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          org_id?: string
+          property_id?: string | null
+          read_at?: string | null
+          recipient?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_notifications_compliance_task_id_fkey"
+            columns: ["compliance_task_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_task_overview"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_compliance_task_id_fkey"
+            columns: ["compliance_task_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       compliance_requirements_v2: {
         Row: {
           created_at: string | null
@@ -1062,6 +1149,156 @@ export type Database = {
           },
           {
             foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
+      compliance_tasks: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          compliance_document_id: string | null
+          compliance_requirement_id: string | null
+          contractor_booked_date: string | null
+          contractor_id: string | null
+          created_at: string | null
+          description: string | null
+          document_type: string
+          due_date: string | null
+          escalation_level: number | null
+          id: string
+          inspection_date: string | null
+          last_escalated_at: string | null
+          notes: string | null
+          org_id: string
+          priority: string
+          property_id: string
+          quoted_cost: number | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          source: string | null
+          status: string
+          task_type: string
+          title: string
+          trigger_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          compliance_document_id?: string | null
+          compliance_requirement_id?: string | null
+          contractor_booked_date?: string | null
+          contractor_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_type: string
+          due_date?: string | null
+          escalation_level?: number | null
+          id?: string
+          inspection_date?: string | null
+          last_escalated_at?: string | null
+          notes?: string | null
+          org_id: string
+          priority?: string
+          property_id: string
+          quoted_cost?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string | null
+          status?: string
+          task_type: string
+          title: string
+          trigger_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          assigned_to?: string | null
+          compliance_document_id?: string | null
+          compliance_requirement_id?: string | null
+          contractor_booked_date?: string | null
+          contractor_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          document_type?: string
+          due_date?: string | null
+          escalation_level?: number | null
+          id?: string
+          inspection_date?: string | null
+          last_escalated_at?: string | null
+          notes?: string | null
+          org_id?: string
+          priority?: string
+          property_id?: string
+          quoted_cost?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          source?: string | null
+          status?: string
+          task_type?: string
+          title?: string
+          trigger_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_tasks_compliance_document_id_fkey"
+            columns: ["compliance_document_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_documents_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_compliance_document_id_fkey"
+            columns: ["compliance_document_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_matrix_v2"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_compliance_requirement_id_fkey"
+            columns: ["compliance_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_matrix_v2"
+            referencedColumns: ["requirement_id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_compliance_requirement_id_fkey"
+            columns: ["compliance_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_requirements_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_contractors_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
@@ -2226,6 +2463,56 @@ export type Database = {
             columns: ["shareholder_entity_id"]
             isOneToOne: false
             referencedRelation: "ownership_entities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      escalation_rules: {
+        Row: {
+          action_config: Json | null
+          action_type: string
+          created_at: string | null
+          document_type: string | null
+          escalation_level: number | null
+          id: string
+          is_active: boolean | null
+          org_id: string | null
+          rule_name: string
+          trigger_condition: string
+          trigger_value: number
+        }
+        Insert: {
+          action_config?: Json | null
+          action_type: string
+          created_at?: string | null
+          document_type?: string | null
+          escalation_level?: number | null
+          id?: string
+          is_active?: boolean | null
+          org_id?: string | null
+          rule_name: string
+          trigger_condition: string
+          trigger_value: number
+        }
+        Update: {
+          action_config?: Json | null
+          action_type?: string
+          created_at?: string | null
+          document_type?: string | null
+          escalation_level?: number | null
+          id?: string
+          is_active?: boolean | null
+          org_id?: string | null
+          rule_name?: string
+          trigger_condition?: string
+          trigger_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escalation_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -6839,6 +7126,67 @@ export type Database = {
           },
         ]
       }
+      compliance_task_overview: {
+        Row: {
+          actual_cost: number | null
+          assigned_to: string | null
+          contractor_id: string | null
+          contractor_name: string | null
+          created_at: string | null
+          days_until_due: number | null
+          document_type: string | null
+          due_date: string | null
+          entity_name: string | null
+          escalation_level: number | null
+          inspection_date: string | null
+          is_overdue: boolean | null
+          last_escalated_at: string | null
+          notes: string | null
+          org_id: string | null
+          priority: string | null
+          property_address: string | null
+          property_id: string | null
+          quoted_cost: number | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          source: string | null
+          status: string | null
+          task_id: string | null
+          task_type: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_tasks_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_contractors_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       entity_financial_summary: {
         Row: {
           entity_id: string | null
@@ -7096,6 +7444,64 @@ export type Database = {
           },
         ]
       }
+      unread_notifications_v2: {
+        Row: {
+          channel: string | null
+          compliance_task_id: string | null
+          document_type: string | null
+          id: string | null
+          message: string | null
+          metadata: Json | null
+          notification_type: string | null
+          org_id: string | null
+          property_address: string | null
+          property_id: string | null
+          read_at: string | null
+          recipient: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string | null
+          task_priority: string | null
+          task_title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_notifications_compliance_task_id_fkey"
+            columns: ["compliance_task_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_task_overview"
+            referencedColumns: ["task_id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_compliance_task_id_fkey"
+            columns: ["compliance_task_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_team_invite: { Args: { p_token: string }; Returns: Json }
@@ -7190,6 +7596,7 @@ export type Database = {
       migrate_tenants_to_v2: { Args: { p_org_id: string }; Returns: Json }
       refresh_compliance_statuses_v2: { Args: never; Returns: undefined }
       restore_document: { Args: { p_document_id: string }; Returns: boolean }
+      run_compliance_scan: { Args: { p_org_id: string }; Returns: Json }
       run_v1_to_v2_migration: { Args: { p_org_id: string }; Returns: Json }
       schedule_compliance_reminders: {
         Args: {
