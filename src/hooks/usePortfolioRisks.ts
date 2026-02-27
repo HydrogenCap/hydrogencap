@@ -30,6 +30,32 @@ export interface RiskItem {
   message: string;
   /** The URL to navigate to for resolving this issue */
   targetUrl: string;
+  /** Priority score (higher = more urgent). Auto-calculated if not set. */
+  priority: number;
+  /** Days until the deadline, if applicable */
+  daysUntilDeadline?: number;
+}
+
+/** Calculate a priority score for a risk item based on severity and type */
+function calcPriority(item: Omit<RiskItem, 'priority'>): number {
+  let score = item.severity === 'critical' ? 100 : 50;
+  // Time-sensitive types get a boost
+  if (item.type === 'rate_expiry' || item.type === 'lease_expiry' || item.type === 'insurance') score += 20;
+  if (item.type === 'hmo_licence' || item.type === 'tenancy_compliance') score += 15;
+  if (item.type === 'ltv') score += 10;
+  // If we know days until deadline, closer = higher priority
+  if (item.daysUntilDeadline !== undefined) {
+    if (item.daysUntilDeadline <= 0) score += 50;
+    else if (item.daysUntilDeadline <= 14) score += 30;
+    else if (item.daysUntilDeadline <= 30) score += 20;
+    else if (item.daysUntilDeadline <= 60) score += 10;
+  }
+  return score;
+}
+
+/** Helper to push a risk item with auto-calculated priority */
+function pushRisk(arr: RiskItem[], item: Omit<RiskItem, 'priority'> & { priority?: number }) {
+  arr.push({ ...item, priority: item.priority ?? calcPriority(item) } as RiskItem);
 }
 
 export const riskTypeLabels: Record<RiskType, string> = {
@@ -109,7 +135,7 @@ export function calculatePortfolioRisks(
     // LTV risks
     const ltvStatus = getLTVStatus(ltv);
     if (ltvStatus === 'danger') {
-      riskItems.push({
+      pushRisk(riskItems, {
         id: `ltv-${property.id}`,
         propertyId: property.id,
         address: property.address_line,
@@ -119,7 +145,7 @@ export function calculatePortfolioRisks(
         targetUrl: propertyUrl,
       });
     } else if (ltvStatus === 'warning') {
-      riskItems.push({
+      pushRisk(riskItems, {
         id: `ltv-${property.id}`,
         propertyId: property.id,
         address: property.address_line,
@@ -134,7 +160,7 @@ export function calculatePortfolioRisks(
     const epcRequired = property.epc_required !== false;
     const epcStatus = getEPCStatus(property.epc_rating, epcRequired);
     if (epcStatus === 'warning') {
-      riskItems.push({
+      pushRisk(riskItems, {
         id: `epc-${property.id}`,
         propertyId: property.id,
         address: property.address_line,
@@ -151,7 +177,7 @@ export function calculatePortfolioRisks(
       const status = getExpiryStatus(loan.fixed_rate_expires);
 
       if (status === 'expired') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `rate-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -159,9 +185,10 @@ export function calculatePortfolioRisks(
           severity: 'critical',
           message: 'Fixed rate has expired',
           targetUrl: propertyUrl,
+          daysUntilDeadline: days,
         });
       } else if (status === 'critical') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `rate-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -169,9 +196,10 @@ export function calculatePortfolioRisks(
           severity: 'critical',
           message: `Fixed rate expires in ${days} days`,
           targetUrl: propertyUrl,
+          daysUntilDeadline: days,
         });
       } else if (status === 'warning') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `rate-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -179,13 +207,14 @@ export function calculatePortfolioRisks(
           severity: 'warning',
           message: `Fixed rate expires in ${days} days`,
           targetUrl: propertyUrl,
+          daysUntilDeadline: days,
         });
       }
     }
 
     // Negative cashflow (after debt)
     if (annualCashflowAfterDebt !== null && annualCashflowAfterDebt < 0) {
-      riskItems.push({
+      pushRisk(riskItems, {
         id: `cashflow-${property.id}`,
         propertyId: property.id,
         address: property.address_line,
@@ -204,7 +233,7 @@ export function calculatePortfolioRisks(
       const hmoRow = propertyCompliance.find(r => r.document_type === 'hmo_licence' && r.is_required);
 
       if (!hmoRow || hmoRow.calculated_status === 'missing') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `hmo-missing-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -214,7 +243,7 @@ export function calculatePortfolioRisks(
           targetUrl: propertyUrl,
         });
       } else if (hmoRow.calculated_status === 'expired') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `hmo-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -222,9 +251,10 @@ export function calculatePortfolioRisks(
           severity: 'critical',
           message: 'HMO licence has expired',
           targetUrl: propertyUrl,
+          daysUntilDeadline: 0,
         });
       } else if ((hmoRow.calculated_status === 'expiring_soon' || hmoRow.calculated_status === 'critical') && hmoRow.days_remaining !== null) {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `hmo-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -232,16 +262,16 @@ export function calculatePortfolioRisks(
           severity: 'warning',
           message: `HMO licence expires in ${hmoRow.days_remaining} days`,
           targetUrl: propertyUrl,
+          daysUntilDeadline: hmoRow.days_remaining,
         });
       }
     }
 
     // ========== INSURANCE GAP ANALYSIS ==========
-    // Check V2 compliance matrix for buildings insurance
     const insuranceRow = propertyCompliance.find(r => r.document_type === 'buildings_insurance' && r.is_required);
     if (insuranceRow) {
       if (insuranceRow.calculated_status === 'missing') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `insurance-missing-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -251,7 +281,7 @@ export function calculatePortfolioRisks(
           targetUrl: propertyUrl,
         });
       } else if (insuranceRow.calculated_status === 'expired') {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `insurance-expired-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -259,9 +289,10 @@ export function calculatePortfolioRisks(
           severity: 'critical',
           message: 'Buildings insurance has expired',
           targetUrl: propertyUrl,
+          daysUntilDeadline: 0,
         });
       } else if (insuranceRow.calculated_status === 'critical' && insuranceRow.days_remaining !== null) {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `insurance-expiring-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -269,6 +300,7 @@ export function calculatePortfolioRisks(
           severity: 'warning',
           message: `Buildings insurance renews in ${insuranceRow.days_remaining} days`,
           targetUrl: propertyUrl,
+          daysUntilDeadline: insuranceRow.days_remaining,
         });
       }
     }
@@ -281,7 +313,7 @@ export function calculatePortfolioRisks(
         const moreCount = completeness.criticalMissing.length > 2
           ? ` +${completeness.criticalMissing.length - 2} more`
           : '';
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `ops-${property.id}`,
           propertyId: property.id,
           address: property.address_line,
@@ -305,7 +337,7 @@ export function calculatePortfolioRisks(
       ? `${item.label} overdue for ${tenantName}`
       : `${item.label} overdue for ${tenantName} — Section 21 invalid`;
 
-    riskItems.push({
+    pushRisk(riskItems, {
       id: `tenancy-compliance-${item.id}`,
       propertyId: item.tenancy?.property_id || '',
       address: item.tenancy?.property?.address_line || 'Unknown',
@@ -333,9 +365,10 @@ export function calculatePortfolioRisks(
       const roomName = tenancy.room?.room_name || '';
       const address = tenancy.property?.address_line || 'Unknown';
       const propertyId = tenancy.property_id || tenancy.property?.id || '';
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / 86400000);
 
       if (endDate < now) {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `lease-expired-${tenancy.id}`,
           propertyId,
           address,
@@ -343,30 +376,36 @@ export function calculatePortfolioRisks(
           severity: 'critical',
           message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expired on ${endDate.toLocaleDateString('en-GB')}. Needs renewal or end of tenancy.`,
           targetUrl: `/tenants/${tenancy.tenant?.id || tenancy.tenant_id}`,
+          daysUntilDeadline: daysLeft,
         });
       } else if (endDate <= thirtyDays) {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `lease-critical-${tenancy.id}`,
           propertyId,
           address,
           type: 'lease_expiry',
           severity: 'critical',
-          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires in ${Math.ceil((endDate.getTime() - now.getTime()) / 86400000)} days (${endDate.toLocaleDateString('en-GB')}).`,
+          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires in ${daysLeft} days (${endDate.toLocaleDateString('en-GB')}).`,
           targetUrl: `/tenants/${tenancy.tenant?.id || tenancy.tenant_id}`,
+          daysUntilDeadline: daysLeft,
         });
       } else if (endDate <= ninetyDays) {
-        riskItems.push({
+        pushRisk(riskItems, {
           id: `lease-warning-${tenancy.id}`,
           propertyId,
           address,
           type: 'lease_expiry',
           severity: 'warning',
-          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires on ${endDate.toLocaleDateString('en-GB')} (${Math.ceil((endDate.getTime() - now.getTime()) / 86400000)} days).`,
+          message: `Tenancy for ${tenantName}${roomName ? ` (${roomName})` : ''} expires on ${endDate.toLocaleDateString('en-GB')} (${daysLeft} days).`,
           targetUrl: `/tenants/${tenancy.tenant?.id || tenancy.tenant_id}`,
+          daysUntilDeadline: daysLeft,
         });
       }
     }
   }
+
+  // Sort by priority (highest first)
+  riskItems.sort((a, b) => b.priority - a.priority);
 
   return riskItems;
 }
