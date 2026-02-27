@@ -406,6 +406,7 @@ function TenancyGapFill() {
     { value: 'DPS', label: 'DPS' },
     { value: 'MyDeposits', label: 'MyDeposits' },
     { value: 'TDS', label: 'TDS' },
+    { value: 'N/A', label: 'N/A' },
   ];
 
   const setField = (id: string, field: string, value: any) => {
