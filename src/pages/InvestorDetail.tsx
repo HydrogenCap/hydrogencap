@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Plus, Mail, Phone, ShieldCheck, Award } from 'lucide-react';
+import { ArrowLeft, Edit, Plus, Mail, Phone, ShieldCheck, Award, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,11 @@ import {
 } from '@/components/ui/table';
 import { useInvestors, Investor } from '@/hooks/useInvestors';
 import { useInvestorCommitments, useInvestorDistributions, useInvestorReturnMetrics } from '@/hooks/useInvestorDetail';
+import { useInvestorReports } from '@/hooks/useInvestorReports';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { CommitmentFormModal } from '@/components/investors/CommitmentFormModal';
 import { DistributionFormModal } from '@/components/investors/DistributionFormModal';
+import { InvestorReportModal } from '@/components/investors/InvestorReportModal';
 
 const TYPE_BADGE: Record<string, { label: string; className: string }> = {
   individual: { label: 'Individual', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
@@ -61,10 +63,12 @@ export default function InvestorDetail() {
   const { data: commitments, isLoading: commitmentsLoading } = useInvestorCommitments(id);
   const { data: distributions } = useInvestorDistributions(id);
   const { data: returnMetrics } = useInvestorReturnMetrics(id);
+  const { data: reports } = useInvestorReports(id);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommitmentModal, setShowCommitmentModal] = useState(false);
   const [showDistributionModal, setShowDistributionModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const investor = useMemo(() => investors?.find(i => i.id === id), [investors, id]);
 
@@ -154,9 +158,14 @@ export default function InvestorDetail() {
               {investor.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{investor.phone}</span>}
             </div>
           </div>
-          <Button variant="outline" onClick={() => setShowEditModal(true)}>
-            <Edit className="h-4 w-4 mr-2" />Edit
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowReportModal(true)}>
+              <FileText className="h-4 w-4 mr-2" />Statement
+            </Button>
+            <Button variant="outline" onClick={() => setShowEditModal(true)}>
+              <Edit className="h-4 w-4 mr-2" />Edit
+            </Button>
+          </div>
         </div>
 
         {/* KPI Cards */}
@@ -346,6 +355,60 @@ export default function InvestorDetail() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Report History */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Report History</CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setShowReportModal(true)}>
+              <FileText className="h-4 w-4 mr-1" />Generate Statement
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Generated</TableHead>
+                  <TableHead>Sent</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(!reports || reports.length === 0) ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No reports generated yet</TableCell>
+                  </TableRow>
+                ) : reports.map(r => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.title}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {format(new Date(r.report_period_from), 'MMM yyyy')} – {format(new Date(r.report_period_to), 'MMM yyyy')}
+                    </TableCell>
+                    <TableCell className="text-sm">{r.generated_at ? format(new Date(r.generated_at), 'dd MMM yyyy') : '—'}</TableCell>
+                    <TableCell>
+                      {r.sent_to_investor ? (
+                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Sent</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">Not sent</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {r.file_url && (
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={r.file_url} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Modals */}
@@ -365,6 +428,16 @@ export default function InvestorDetail() {
         investorId={id!}
         commitments={commitmentOptions}
       />
+      {investor && (
+        <InvestorReportModal
+          open={showReportModal}
+          onOpenChange={setShowReportModal}
+          investor={investor}
+          commitments={commitments || []}
+          distributions={distributions || []}
+          returnMetrics={returnMetrics || []}
+        />
+      )}
     </AppLayout>
   );
 }
