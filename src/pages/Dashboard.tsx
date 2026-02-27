@@ -10,12 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
-import { useProperties } from '@/hooks/useProperties';
+import { useDashboardPropertiesV2, useDashboardTenanciesV2, useDashboardRoomsV2 } from '@/hooks/useDashboardDataV2';
 import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
 import { useLifecycleFilter } from '@/contexts/LifecycleFilterContext';
-import { useTenancies } from '@/hooks/useTenancies';
 import { useRentSchedule } from '@/hooks/useRentCollection';
-import { useRooms } from '@/hooks/useRooms';
 import { Progress } from '@/components/ui/progress';
 
 import { PortfolioHealthWidget } from '@/components/dashboard/PortfolioHealthWidget';
@@ -59,7 +57,7 @@ function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
   const [cashflowPeriod, setCashflowPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const { data: properties, isLoading, isError, error } = useProperties();
+  const { data: properties, isLoading, isError, error } = useDashboardPropertiesV2();
   const { data: passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
   const { lifecycleFilter, filterProperties } = useLifecycleFilter();
@@ -69,9 +67,9 @@ function DashboardPage() {
   const { data: portfolioMonthlySummary } = usePortfolioMonthlySummary(12);
   const { data: annualPerformance } = usePropertyAnnualPerformance();
 
-  // Tenancy and rental data for dashboard stats
-  const { data: allTenancies } = useTenancies();
-  const { data: allRooms } = useRooms();
+  // V2 tenancy and room data for dashboard stats
+  const { data: allTenancies } = useDashboardTenanciesV2();
+  const { data: allRooms } = useDashboardRoomsV2();
   const currentDashMonth = format(new Date(), 'yyyy-MM');
   const { data: rentSchedule } = useRentSchedule({ month: currentDashMonth });
 
