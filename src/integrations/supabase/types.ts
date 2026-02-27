@@ -3570,6 +3570,395 @@ export type Database = {
           },
         ]
       }
+      investor_commitments: {
+        Row: {
+          commitment_date: string
+          commitment_type: string
+          committed_amount: number
+          coupon_rate: number | null
+          created_at: string
+          documentation_url: string | null
+          drawn_amount: number | null
+          entity_id: string
+          equity_percentage: number | null
+          id: string
+          investor_id: string
+          maturity_date: string | null
+          notes: string | null
+          org_id: string
+          payment_frequency: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commitment_date: string
+          commitment_type: string
+          committed_amount: number
+          coupon_rate?: number | null
+          created_at?: string
+          documentation_url?: string | null
+          drawn_amount?: number | null
+          entity_id: string
+          equity_percentage?: number | null
+          id?: string
+          investor_id: string
+          maturity_date?: string | null
+          notes?: string | null
+          org_id: string
+          payment_frequency?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commitment_date?: string
+          commitment_type?: string
+          committed_amount?: number
+          coupon_rate?: number | null
+          created_at?: string
+          documentation_url?: string | null
+          drawn_amount?: number | null
+          entity_id?: string
+          equity_percentage?: number | null
+          id?: string
+          investor_id?: string
+          maturity_date?: string | null
+          notes?: string | null
+          org_id?: string
+          payment_frequency?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_commitments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investor_portfolio_summary"
+            referencedColumns: ["investor_id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_distributions: {
+        Row: {
+          amount: number
+          commitment_id: string
+          created_at: string
+          distribution_date: string
+          distribution_type: string
+          entity_id: string
+          id: string
+          investor_id: string
+          net_amount: number | null
+          notes: string | null
+          org_id: string
+          payment_method: string | null
+          payment_reference: string | null
+          period_from: string | null
+          period_to: string | null
+          status: string
+          tax_deducted: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          commitment_id: string
+          created_at?: string
+          distribution_date: string
+          distribution_type: string
+          entity_id: string
+          id?: string
+          investor_id: string
+          net_amount?: number | null
+          notes?: string | null
+          org_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          status?: string
+          tax_deducted?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          commitment_id?: string
+          created_at?: string
+          distribution_date?: string
+          distribution_type?: string
+          entity_id?: string
+          id?: string
+          investor_id?: string
+          net_amount?: number | null
+          notes?: string | null
+          org_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          period_from?: string | null
+          period_to?: string | null
+          status?: string
+          tax_deducted?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_distributions_commitment_id_fkey"
+            columns: ["commitment_id"]
+            isOneToOne: false
+            referencedRelation: "investor_commitment_detail"
+            referencedColumns: ["commitment_id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_commitment_id_fkey"
+            columns: ["commitment_id"]
+            isOneToOne: false
+            referencedRelation: "investor_commitments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_commitment_id_fkey"
+            columns: ["commitment_id"]
+            isOneToOne: false
+            referencedRelation: "investor_return_metrics"
+            referencedColumns: ["commitment_id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investor_portfolio_summary"
+            referencedColumns: ["investor_id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_distributions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_reports: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          file_name: string | null
+          file_url: string | null
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          investor_id: string | null
+          notes: string | null
+          org_id: string
+          report_period_from: string
+          report_period_to: string
+          report_type: string
+          sent_at: string | null
+          sent_to_investor: boolean | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          investor_id?: string | null
+          notes?: string | null
+          org_id: string
+          report_period_from: string
+          report_period_to: string
+          report_type: string
+          sent_at?: string | null
+          sent_to_investor?: boolean | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          investor_id?: string | null
+          notes?: string | null
+          org_id?: string
+          report_period_from?: string
+          report_period_to?: string
+          report_type?: string
+          sent_at?: string | null
+          sent_to_investor?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_reports_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "investor_reports_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_reports_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investor_portfolio_summary"
+            referencedColumns: ["investor_id"]
+          },
+          {
+            foreignKeyName: "investor_reports_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_reports_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investors: {
+        Row: {
+          accredited_investor: boolean | null
+          address: string | null
+          communication_preference: string | null
+          company_name: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          investor_name: string
+          investor_type: string
+          kyc_completed: boolean | null
+          kyc_completed_date: string | null
+          notes: string | null
+          org_id: string
+          phone: string | null
+          portal_access_enabled: boolean | null
+          portal_user_id: string | null
+          preferred_currency: string | null
+          risk_profile: string | null
+          tax_residency: string | null
+          updated_at: string
+        }
+        Insert: {
+          accredited_investor?: boolean | null
+          address?: string | null
+          communication_preference?: string | null
+          company_name?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          investor_name: string
+          investor_type: string
+          kyc_completed?: boolean | null
+          kyc_completed_date?: string | null
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          portal_access_enabled?: boolean | null
+          portal_user_id?: string | null
+          preferred_currency?: string | null
+          risk_profile?: string | null
+          tax_residency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accredited_investor?: boolean | null
+          address?: string | null
+          communication_preference?: string | null
+          company_name?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          investor_name?: string
+          investor_type?: string
+          kyc_completed?: boolean | null
+          kyc_completed_date?: string | null
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          portal_access_enabled?: boolean | null
+          portal_user_id?: string | null
+          preferred_currency?: string | null
+          risk_profile?: string | null
+          tax_residency?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investors_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_follow_ups: {
         Row: {
           created_at: string
@@ -7740,6 +8129,152 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "legal_entities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_commitment_detail: {
+        Row: {
+          commitment_date: string | null
+          commitment_id: string | null
+          commitment_type: string | null
+          committed_amount: number | null
+          coupon_rate: number | null
+          documentation_url: string | null
+          drawn_amount: number | null
+          entity_id: string | null
+          entity_name: string | null
+          entity_total_valuation: number | null
+          entity_type: string | null
+          equity_percentage: number | null
+          investor_id: string | null
+          investor_name: string | null
+          investors_share_valuation: number | null
+          maturity_date: string | null
+          notes: string | null
+          org_id: string | null
+          payment_frequency: string | null
+          property_count: number | null
+          status: string | null
+          total_distributions_received: number | null
+          undrawn_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_commitments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investor_portfolio_summary"
+            referencedColumns: ["investor_id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_portfolio_summary: {
+        Row: {
+          distribution_multiple: number | null
+          email: string | null
+          entities_invested: number | null
+          investor_id: string | null
+          investor_name: string | null
+          investor_type: string | null
+          org_id: string | null
+          portal_access_enabled: boolean | null
+          total_capital_returned: number | null
+          total_commitments: number | null
+          total_committed: number | null
+          total_distributed: number | null
+          total_dividends: number | null
+          total_drawn: number | null
+          total_interest: number | null
+          total_undrawn: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investors_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_return_metrics: {
+        Row: {
+          capital_invested: number | null
+          cash_on_cash_pct: number | null
+          commitment_id: string | null
+          current_equity_value: number | null
+          entity_id: string | null
+          entity_name: string | null
+          equity_multiple: number | null
+          investor_id: string | null
+          investor_name: string | null
+          org_id: string | null
+          total_distributions: number | null
+          unrealised_gain_loss: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_commitments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investor_portfolio_summary"
+            referencedColumns: ["investor_id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_commitments_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
