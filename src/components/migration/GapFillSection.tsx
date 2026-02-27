@@ -282,7 +282,8 @@ function RoomsGapFill() {
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b bg-muted/50">
-              <th className="text-left p-2 font-medium sticky left-0 bg-muted/50 min-w-[200px]">Property / Room</th>
+              <th className="text-left p-2 font-medium sticky left-0 bg-muted/50 min-w-[120px]">Property</th>
+              <th className="text-left p-2 font-medium min-w-[120px]">Room Name</th>
               <th className="text-left p-2 font-medium min-w-[100px]">Type</th>
               <th className="text-left p-2 font-medium min-w-[100px]">Rent PCM (£)</th>
               <th className="text-left p-2 font-medium min-w-[100px]">Target PCM (£)</th>
@@ -296,8 +297,8 @@ function RoomsGapFill() {
               <tr key={r.id} className="border-b hover:bg-muted/30">
                 <td className="p-2 font-medium sticky left-0 bg-background">
                   <div className="text-[10px] text-muted-foreground">{r.property_address}</div>
-                  <div>{r.room_name}</div>
                 </td>
+                <td><CellInput value={getVal(r, 'room_name')} onChange={v => setField(r.id, 'room_name', v)} placeholder="Room name" /></td>
                 <td><CellSelect value={getVal(r, 'room_type')} onChange={v => setField(r.id, 'room_type', v)} options={[...ROOM_TYPES]} /></td>
                 <td><CellInput value={getVal(r, 'current_rent_pcm')} onChange={v => setField(r.id, 'current_rent_pcm', v)} type="number" isNull={r.current_rent_pcm === null} /></td>
                 <td><CellInput value={getVal(r, 'target_rent_pcm')} onChange={v => setField(r.id, 'target_rent_pcm', v)} type="number" isNull={r.target_rent_pcm === null} /></td>
