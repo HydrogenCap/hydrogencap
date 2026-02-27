@@ -58,6 +58,7 @@ const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
 const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
+const MaintenanceRequestDetail = lazy(() => import("./pages/MaintenanceRequestDetail"));
 const Documents = lazy(() => import("./pages/Documents"));
 const PropertiesV2 = lazy(() => import("./pages/PropertiesV2"));
 const PropertyDetailV2 = lazy(() => import("./pages/PropertyDetailV2"));
@@ -465,6 +466,7 @@ const App = () => (
             <Route path="/rent/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><PaymentDetail /></ProtectedRoute>} />
             <Route path="/maintenance" element={<ProtectedRoute><MaintenanceRequests /></ProtectedRoute>} />
+            <Route path="/maintenance/:requestId" element={<ProtectedRoute><MaintenanceRequestDetail /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />

@@ -16,19 +16,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 
-const urgencyColors: Record<string, string> = {
+const priorityColors: Record<string, string> = {
   low: 'bg-muted text-muted-foreground',
-  normal: 'bg-primary/10 text-primary',
-  high: 'bg-warning/10 text-warning',
+  medium: 'bg-primary/10 text-primary',
+  urgent: 'bg-warning/10 text-warning',
   emergency: 'bg-destructive/10 text-destructive',
 };
 
 const statusColors: Record<string, string> = {
-  submitted: 'bg-accent text-accent-foreground',
-  acknowledged: 'bg-primary/10 text-primary',
+  reported: 'bg-accent text-accent-foreground',
+  triaged: 'bg-primary/10 text-primary',
   in_progress: 'bg-warning/10 text-warning',
   completed: 'bg-primary/10 text-primary',
   cancelled: 'bg-muted text-muted-foreground',
+  closed: 'bg-muted text-muted-foreground',
 };
 
 export default function TenantMaintenance() {
@@ -132,8 +133,8 @@ export default function TenantMaintenance() {
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0 ml-4">
-                      <Badge variant="outline" className={urgencyColors[req.urgency] || ''}>
-                        {req.urgency}
+                      <Badge variant="outline" className={priorityColors[req.priority] || ''}>
+                        {req.priority}
                       </Badge>
                       <Badge variant="outline" className={statusColors[req.status] || ''}>
                         {req.status.replace('_', ' ')}

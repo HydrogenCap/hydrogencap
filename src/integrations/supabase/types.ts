@@ -1284,6 +1284,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "compliance_tasks_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_maintenance_performance"
+            referencedColumns: ["contractor_id"]
+          },
+          {
             foreignKeyName: "compliance_tasks_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -3920,79 +3927,144 @@ export type Database = {
           },
         ]
       }
-      maintenance_requests: {
+      maintenance_comments: {
         Row: {
-          category: Database["public"]["Enums"]["maintenance_category"]
-          completed_at: string | null
-          contractor_job_id: string | null
+          author_name: string
+          author_type: string
+          comment: string
           created_at: string
-          description: string
           id: string
-          internal_notes: string | null
-          location_in_property: string | null
+          is_internal: boolean | null
+          maintenance_request_id: string
           org_id: string
-          photos: string[] | null
-          property_id: string
-          room_id: string | null
-          scheduled_date: string | null
-          status: Database["public"]["Enums"]["maintenance_status"]
-          tenant_feedback: string | null
-          tenant_id: string | null
-          tenant_rating: number | null
-          title: string
-          updated_at: string
-          urgency: Database["public"]["Enums"]["maintenance_urgency"]
+          photo_urls: string[] | null
         }
         Insert: {
-          category?: Database["public"]["Enums"]["maintenance_category"]
-          completed_at?: string | null
-          contractor_job_id?: string | null
+          author_name: string
+          author_type?: string
+          comment: string
           created_at?: string
-          description: string
           id?: string
-          internal_notes?: string | null
-          location_in_property?: string | null
+          is_internal?: boolean | null
+          maintenance_request_id: string
           org_id: string
-          photos?: string[] | null
-          property_id: string
-          room_id?: string | null
-          scheduled_date?: string | null
-          status?: Database["public"]["Enums"]["maintenance_status"]
-          tenant_feedback?: string | null
-          tenant_id?: string | null
-          tenant_rating?: number | null
-          title: string
-          updated_at?: string
-          urgency?: Database["public"]["Enums"]["maintenance_urgency"]
+          photo_urls?: string[] | null
         }
         Update: {
-          category?: Database["public"]["Enums"]["maintenance_category"]
-          completed_at?: string | null
-          contractor_job_id?: string | null
+          author_name?: string
+          author_type?: string
+          comment?: string
           created_at?: string
-          description?: string
           id?: string
-          internal_notes?: string | null
-          location_in_property?: string | null
+          is_internal?: boolean | null
+          maintenance_request_id?: string
           org_id?: string
-          photos?: string[] | null
-          property_id?: string
-          room_id?: string | null
-          scheduled_date?: string | null
-          status?: Database["public"]["Enums"]["maintenance_status"]
-          tenant_feedback?: string | null
-          tenant_id?: string | null
-          tenant_rating?: number | null
-          title?: string
-          updated_at?: string
-          urgency?: Database["public"]["Enums"]["maintenance_urgency"]
+          photo_urls?: string[] | null
         }
         Relationships: [
           {
-            foreignKeyName: "maintenance_requests_contractor_job_id_fkey"
-            columns: ["contractor_job_id"]
+            foreignKeyName: "maintenance_comments_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
             isOneToOne: false
-            referencedRelation: "contractor_jobs"
+            referencedRelation: "maintenance_overview"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "maintenance_comments_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_comments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_emergency: boolean | null
+          is_recurring: boolean | null
+          linked_request_id: string | null
+          location_detail: string | null
+          notes: string | null
+          org_id: string
+          photo_urls: string[] | null
+          priority: string
+          property_id: string
+          reported_by: string
+          reported_date: string
+          room_id: string | null
+          status: string
+          tenant_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          is_recurring?: boolean | null
+          linked_request_id?: string | null
+          location_detail?: string | null
+          notes?: string | null
+          org_id: string
+          photo_urls?: string[] | null
+          priority?: string
+          property_id: string
+          reported_by?: string
+          reported_date?: string
+          room_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          is_recurring?: boolean | null
+          linked_request_id?: string | null
+          location_detail?: string | null
+          notes?: string | null
+          org_id?: string
+          photo_urls?: string[] | null
+          priority?: string
+          property_id?: string
+          reported_by?: string
+          reported_date?: string
+          room_id?: string | null
+          status?: string
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_linked_request_id_fkey"
+            columns: ["linked_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_overview"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_linked_request_id_fkey"
+            columns: ["linked_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
             referencedColumns: ["id"]
           },
           {
@@ -4032,7 +4104,6 @@ export type Database = {
           created_by_type: Database["public"]["Enums"]["update_creator_type"]
           id: string
           message: string
-          new_status: Database["public"]["Enums"]["maintenance_status"] | null
           photos: string[] | null
           request_id: string
           update_type: string
@@ -4044,7 +4115,6 @@ export type Database = {
           created_by_type?: Database["public"]["Enums"]["update_creator_type"]
           id?: string
           message: string
-          new_status?: Database["public"]["Enums"]["maintenance_status"] | null
           photos?: string[] | null
           request_id: string
           update_type: string
@@ -4056,21 +4126,12 @@ export type Database = {
           created_by_type?: Database["public"]["Enums"]["update_creator_type"]
           id?: string
           message?: string
-          new_status?: Database["public"]["Enums"]["maintenance_status"] | null
           photos?: string[] | null
           request_id?: string
           update_type?: string
           visible_to_tenant?: boolean
         }
-        Relationships: [
-          {
-            foreignKeyName: "maintenance_updates_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_requests"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       management_companies: {
         Row: {
@@ -7039,6 +7100,169 @@ export type Database = {
           },
         ]
       }
+      works_orders: {
+        Row: {
+          after_photo_urls: string[] | null
+          approval_date: string | null
+          approved_amount: number | null
+          before_photo_urls: string[] | null
+          completion_date: string | null
+          completion_notes: string | null
+          completion_photo_urls: string[] | null
+          contractor_email_override: string | null
+          contractor_id: string | null
+          contractor_name_override: string | null
+          contractor_phone_override: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_amount: number | null
+          invoice_date: string | null
+          invoice_reference: string | null
+          maintenance_request_id: string
+          notes: string | null
+          order_number: string | null
+          org_id: string
+          paid_amount: number | null
+          paid_date: string | null
+          payment_method: string | null
+          property_id: string
+          quote_date: string | null
+          quoted_amount: number | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          scheduled_time_slot: string | null
+          status: string
+          tenant_access_required: boolean | null
+          tenant_notification_date: string | null
+          tenant_notified: boolean | null
+          updated_at: string
+          warranty_expiry: string | null
+          warranty_months: number | null
+        }
+        Insert: {
+          after_photo_urls?: string[] | null
+          approval_date?: string | null
+          approved_amount?: number | null
+          before_photo_urls?: string[] | null
+          completion_date?: string | null
+          completion_notes?: string | null
+          completion_photo_urls?: string[] | null
+          contractor_email_override?: string | null
+          contractor_id?: string | null
+          contractor_name_override?: string | null
+          contractor_phone_override?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          invoice_amount?: number | null
+          invoice_date?: string | null
+          invoice_reference?: string | null
+          maintenance_request_id: string
+          notes?: string | null
+          order_number?: string | null
+          org_id: string
+          paid_amount?: number | null
+          paid_date?: string | null
+          payment_method?: string | null
+          property_id: string
+          quote_date?: string | null
+          quoted_amount?: number | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          scheduled_time_slot?: string | null
+          status?: string
+          tenant_access_required?: boolean | null
+          tenant_notification_date?: string | null
+          tenant_notified?: boolean | null
+          updated_at?: string
+          warranty_expiry?: string | null
+          warranty_months?: number | null
+        }
+        Update: {
+          after_photo_urls?: string[] | null
+          approval_date?: string | null
+          approved_amount?: number | null
+          before_photo_urls?: string[] | null
+          completion_date?: string | null
+          completion_notes?: string | null
+          completion_photo_urls?: string[] | null
+          contractor_email_override?: string | null
+          contractor_id?: string | null
+          contractor_name_override?: string | null
+          contractor_phone_override?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_amount?: number | null
+          invoice_date?: string | null
+          invoice_reference?: string | null
+          maintenance_request_id?: string
+          notes?: string | null
+          order_number?: string | null
+          org_id?: string
+          paid_amount?: number | null
+          paid_date?: string | null
+          payment_method?: string | null
+          property_id?: string
+          quote_date?: string | null
+          quoted_amount?: number | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          scheduled_time_slot?: string | null
+          status?: string
+          tenant_access_required?: boolean | null
+          tenant_notification_date?: string | null
+          tenant_notified?: boolean | null
+          updated_at?: string
+          warranty_expiry?: string | null
+          warranty_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "works_orders_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_contractors_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "works_orders_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_maintenance_performance"
+            referencedColumns: ["contractor_id"]
+          },
+          {
+            foreignKeyName: "works_orders_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_overview"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "works_orders_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "works_orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "works_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       company_secrets_masked: {
@@ -7165,6 +7389,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "compliance_tasks_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_maintenance_performance"
+            referencedColumns: ["contractor_id"]
+          },
+          {
             foreignKeyName: "compliance_tasks_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -7184,6 +7415,31 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
+          },
+        ]
+      }
+      contractor_maintenance_performance: {
+        Row: {
+          avg_days_over_schedule: number | null
+          avg_job_cost: number | null
+          avg_report_to_completion_days: number | null
+          company_name: string | null
+          completed_jobs: number | null
+          contractor_id: string | null
+          disputed_jobs: number | null
+          org_id: string | null
+          rating: number | null
+          service_types: string[] | null
+          total_jobs: number | null
+          total_paid: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_contractors_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -7265,6 +7521,131 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
+          },
+        ]
+      }
+      maintenance_overview: {
+        Row: {
+          approved_amount: number | null
+          category: string | null
+          comment_count: number | null
+          completion_date: string | null
+          contractor_id: string | null
+          contractor_name: string | null
+          days_open: number | null
+          description: string | null
+          invoice_amount: number | null
+          is_emergency: boolean | null
+          is_recurring: boolean | null
+          order_number: string | null
+          org_id: string | null
+          priority: string | null
+          property_address: string | null
+          property_id: string | null
+          quoted_amount: number | null
+          reported_by: string | null
+          reported_date: string | null
+          request_id: string | null
+          room_id: string | null
+          room_name: string | null
+          scheduled_date: string | null
+          status: string | null
+          tenant_id: string | null
+          tenant_name: string | null
+          title: string | null
+          works_order_id: string | null
+          works_order_status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "works_orders_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_contractors_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "works_orders_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_maintenance_performance"
+            referencedColumns: ["contractor_id"]
+          },
+        ]
+      }
+      maintenance_spend_by_category: {
+        Row: {
+          avg_cost: number | null
+          avg_resolution_days: number | null
+          category: string | null
+          job_count: number | null
+          org_id: string | null
+          total_spend: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_spend_by_property: {
+        Row: {
+          avg_days_to_complete: number | null
+          avg_job_cost: number | null
+          completed_jobs: number | null
+          org_id: string | null
+          property_address: string | null
+          property_id: string | null
+          total_invoiced: number | null
+          total_jobs: number | null
+          total_paid: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "works_orders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "works_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -7387,6 +7768,34 @@ export type Database = {
           total_occupied: number | null
         }
         Relationships: []
+      }
+      recurring_issue_detection: {
+        Row: {
+          category: string | null
+          first_reported: string | null
+          last_reported: string | null
+          org_id: string | null
+          property_address: string | null
+          property_id: string | null
+          request_count: number | null
+          total_spend: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenancy_compliance_check_v2: {
         Row: {
@@ -7541,6 +7950,7 @@ export type Database = {
         Args: { tenancy_row: Database["public"]["Tables"]["tenancies"]["Row"] }
         Returns: undefined
       }
+      generate_works_order_number: { Args: never; Returns: string }
       get_tenant_org_id: { Args: never; Returns: string }
       get_user_org_id: { Args: never; Returns: string }
       get_user_role: {
@@ -7652,25 +8062,6 @@ export type Database = {
         | "photo"
         | "default"
       autofill_suggestion_status: "pending" | "accepted" | "rejected"
-      maintenance_category:
-        | "plumbing"
-        | "electrical"
-        | "heating"
-        | "appliance"
-        | "damp_mould"
-        | "structural"
-        | "security"
-        | "cleaning"
-        | "garden"
-        | "other"
-      maintenance_status:
-        | "new"
-        | "acknowledged"
-        | "scheduled"
-        | "in_progress"
-        | "completed"
-        | "closed"
-      maintenance_urgency: "emergency" | "urgent" | "normal" | "low"
       passport_change_reason: "ai_accept" | "manual_edit"
       payment_method:
         | "bank_transfer"
@@ -7828,27 +8219,6 @@ export const Constants = {
         "default",
       ],
       autofill_suggestion_status: ["pending", "accepted", "rejected"],
-      maintenance_category: [
-        "plumbing",
-        "electrical",
-        "heating",
-        "appliance",
-        "damp_mould",
-        "structural",
-        "security",
-        "cleaning",
-        "garden",
-        "other",
-      ],
-      maintenance_status: [
-        "new",
-        "acknowledged",
-        "scheduled",
-        "in_progress",
-        "completed",
-        "closed",
-      ],
-      maintenance_urgency: ["emergency", "urgent", "normal", "low"],
       passport_change_reason: ["ai_accept", "manual_edit"],
       payment_method: [
         "bank_transfer",
