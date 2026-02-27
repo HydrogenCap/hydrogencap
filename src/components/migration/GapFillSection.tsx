@@ -169,6 +169,7 @@ function PropertiesGapFill() {
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="text-left p-2 font-medium sticky left-0 bg-muted/50 min-w-[180px]">Address</th>
+              <th className="text-left p-2 font-medium min-w-[120px]">Property Type</th>
               <th className="text-left p-2 font-medium min-w-[80px]">Gas?</th>
               <th className="text-left p-2 font-medium min-w-[80px]">Year Built</th>
               <th className="text-left p-2 font-medium min-w-[80px]">Rooms</th>
@@ -183,6 +184,7 @@ function PropertiesGapFill() {
             {properties?.map(p => (
               <tr key={p.id} className="border-b hover:bg-muted/30">
                 <td className="p-2 font-medium sticky left-0 bg-background">{p.address_line_1}, {p.postcode}</td>
+                <td><CellSelect value={getVal(p, 'property_type')} onChange={v => setField(p.id, 'property_type', v)} options={[...PROPERTY_TYPES]} /></td>
                 <td><CellToggle value={getVal(p, 'has_gas_supply')} onChange={v => setField(p.id, 'has_gas_supply', v)} isNull={p.has_gas_supply === null} /></td>
                 <td><CellInput value={getVal(p, 'year_built')} onChange={v => setField(p.id, 'year_built', v)} type="number" placeholder="e.g. 1920" isNull={p.year_built === null} /></td>
                 <td><CellInput value={getVal(p, 'total_lettable_rooms')} onChange={v => setField(p.id, 'total_lettable_rooms', v)} type="number" isNull={p.total_lettable_rooms === null} /></td>
