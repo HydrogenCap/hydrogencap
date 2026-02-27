@@ -10,10 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AlertTriangle } from 'lucide-react';
+import {
   useCreateShareholder,
   useUpdateShareholder,
   type EntityShareholder,
 } from '@/hooks/useLegalEntities';
+import { useShareClassesWithAllocation } from '@/hooks/useShareCapital';
 import { useToast } from '@/hooks/use-toast';
 
 interface ShareholderFormModalProps {
@@ -27,13 +36,13 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
   const { toast } = useToast();
   const createShareholder = useCreateShareholder();
   const updateShareholder = useUpdateShareholder();
+  const { data: shareClassesWithAllocation } = useShareClassesWithAllocation(entityId);
   const isEditing = !!editingShareholder;
 
   const [form, setForm] = useState({
     shareholder_name: '',
-    share_class: 'Ordinary',
+    share_class_id: '',
     shares_held: '',
-    percentage: '',
     effective_date: '',
   });
 
@@ -42,43 +51,68 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
       if (editingShareholder) {
         setForm({
           shareholder_name: editingShareholder.shareholder_name,
-          share_class: editingShareholder.share_class,
+          share_class_id: (editingShareholder as any).share_class_id || '',
           shares_held: String(editingShareholder.shares_held),
-          percentage: String(editingShareholder.percentage),
           effective_date: editingShareholder.effective_date,
         });
       } else {
-        setForm({ shareholder_name: '', share_class: 'Ordinary', shares_held: '', percentage: '', effective_date: '' });
+        const primaryClass = shareClassesWithAllocation?.find(sc => sc.is_primary);
+        setForm({
+          shareholder_name: '',
+          share_class_id: primaryClass?.id || '',
+          shares_held: '',
+          effective_date: new Date().toISOString().split('T')[0],
+        });
       }
     }
-  }, [open, editingShareholder]);
+  }, [open, editingShareholder, shareClassesWithAllocation]);
 
   const isPending = createShareholder.isPending || updateShareholder.isPending;
+
+  // Over-allocation calculation
+  const selectedShareClass = shareClassesWithAllocation?.find(sc => sc.id === form.share_class_id);
+  const sharesEntered = parseInt(form.shares_held, 10) || 0;
+  const currentlyAllocated = selectedShareClass?.allocated_shares || 0;
+  const editingShares = ((editingShareholder as any)?.share_class_id === form.share_class_id)
+    ? editingShareholder!.shares_held : 0;
+  const wouldBeAllocated = currentlyAllocated - editingShares + sharesEntered;
+  const isOverAllocated = selectedShareClass && sharesEntered > 0 && wouldBeAllocated > selectedShareClass.issued_shares;
+
+  // Auto-calculated percentage
+  const calculatedPercent = selectedShareClass && sharesEntered > 0
+    ? (sharesEntered / selectedShareClass.issued_shares) * 100
+    : 0;
 
   const handleSubmit = async () => {
     if (!form.shareholder_name.trim()) {
       toast({ title: 'Error', description: 'Shareholder name is required', variant: 'destructive' });
       return;
     }
-    const shares = parseInt(form.shares_held, 10);
-    const pct = parseFloat(form.percentage);
-    if (isNaN(shares) || shares <= 0) {
-      toast({ title: 'Error', description: 'Shares held must be a positive number', variant: 'destructive' });
+    if (!form.share_class_id) {
+      toast({ title: 'Error', description: 'Share class is required', variant: 'destructive' });
       return;
     }
-    if (isNaN(pct) || pct <= 0 || pct > 100) {
-      toast({ title: 'Error', description: 'Percentage must be between 0 and 100', variant: 'destructive' });
+    const shares = parseInt(form.shares_held, 10);
+    if (isNaN(shares) || shares <= 0) {
+      toast({ title: 'Error', description: 'Shares held must be a positive number', variant: 'destructive' });
       return;
     }
     if (!form.effective_date) {
       toast({ title: 'Error', description: 'Effective date is required', variant: 'destructive' });
       return;
     }
+    if (isOverAllocated) {
+      toast({ title: 'Error', description: 'Cannot exceed issued shares for this class', variant: 'destructive' });
+      return;
+    }
+
+    const pct = Math.round(calculatedPercent * 100) / 100;
 
     const payload = {
       entity_id: entityId,
       shareholder_name: form.shareholder_name.trim(),
-      share_class: form.share_class.trim() || 'Ordinary',
+      share_class: selectedShareClass?.class_name || 'Ordinary',
+      share_class_id: form.share_class_id,
       shares_held: shares,
       percentage: pct,
       effective_date: form.effective_date,
@@ -110,26 +144,52 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
             <Label>Shareholder Name *</Label>
             <Input value={form.shareholder_name} onChange={(e) => setForm(f => ({ ...f, shareholder_name: e.target.value }))} placeholder="e.g. John Smith or Hydrogen Capital Ltd" />
           </div>
+
+          <div className="space-y-2">
+            <Label>Share Class *</Label>
+            <Select
+              value={form.share_class_id}
+              onValueChange={(v) => setForm(f => ({ ...f, share_class_id: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select share class..." />
+              </SelectTrigger>
+              <SelectContent>
+                {(shareClassesWithAllocation || []).map(sc => (
+                  <SelectItem key={sc.id} value={sc.id}>
+                    {sc.class_name} ({sc.unallocated_shares.toLocaleString()} of {sc.issued_shares.toLocaleString()} available)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Share Class</Label>
-              <Input value={form.share_class} onChange={(e) => setForm(f => ({ ...f, share_class: e.target.value }))} placeholder="Ordinary" />
-            </div>
             <div className="space-y-2">
               <Label>Shares Held *</Label>
               <Input type="number" min="1" value={form.shares_held} onChange={(e) => setForm(f => ({ ...f, shares_held: e.target.value }))} placeholder="100" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Percentage *</Label>
-              <Input type="number" min="0" max="100" step="0.01" value={form.percentage} onChange={(e) => setForm(f => ({ ...f, percentage: e.target.value }))} placeholder="50.00" />
+              {selectedShareClass && sharesEntered > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  = {calculatedPercent.toFixed(2)}% ownership
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Effective Date *</Label>
               <Input type="date" value={form.effective_date} onChange={(e) => setForm(f => ({ ...f, effective_date: e.target.value }))} />
             </div>
           </div>
+
+          {isOverAllocated && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>
+                This would allocate {wouldBeAllocated.toLocaleString()} shares against
+                {' '}{selectedShareClass!.issued_shares.toLocaleString()} issued — exceeds total by
+                {' '}{(wouldBeAllocated - selectedShareClass!.issued_shares).toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

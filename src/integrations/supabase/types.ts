@@ -2734,10 +2734,12 @@ export type Database = {
         Row: {
           created_at: string
           effective_date: string
+          effective_to: string | null
           entity_id: string
           id: string
           percentage: number
           share_class: string | null
+          share_class_id: string | null
           shareholder_name: string
           shares_held: number
           updated_at: string
@@ -2745,10 +2747,12 @@ export type Database = {
         Insert: {
           created_at?: string
           effective_date: string
+          effective_to?: string | null
           entity_id: string
           id?: string
           percentage: number
           share_class?: string | null
+          share_class_id?: string | null
           shareholder_name: string
           shares_held: number
           updated_at?: string
@@ -2756,10 +2760,12 @@ export type Database = {
         Update: {
           created_at?: string
           effective_date?: string
+          effective_to?: string | null
           entity_id?: string
           id?: string
           percentage?: number
           share_class?: string | null
+          share_class_id?: string | null
           shareholder_name?: string
           shares_held?: number
           updated_at?: string
@@ -2777,6 +2783,13 @@ export type Database = {
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_shareholders_share_class_id_fkey"
+            columns: ["share_class_id"]
+            isOneToOne: false
+            referencedRelation: "share_classes_v2"
             referencedColumns: ["id"]
           },
         ]
@@ -6946,6 +6959,63 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_classes_v2: {
+        Row: {
+          class_name: string
+          created_at: string | null
+          currency: string | null
+          entity_id: string
+          id: string
+          is_primary: boolean | null
+          issued_shares: number
+          nominal_value: number | null
+          notes: string | null
+          updated_at: string | null
+          voting_rights: boolean | null
+        }
+        Insert: {
+          class_name?: string
+          created_at?: string | null
+          currency?: string | null
+          entity_id: string
+          id?: string
+          is_primary?: boolean | null
+          issued_shares?: number
+          nominal_value?: number | null
+          notes?: string | null
+          updated_at?: string | null
+          voting_rights?: boolean | null
+        }
+        Update: {
+          class_name?: string
+          created_at?: string | null
+          currency?: string | null
+          entity_id?: string
+          id?: string
+          is_primary?: boolean | null
+          issued_shares?: number
+          nominal_value?: number | null
+          notes?: string | null
+          updated_at?: string | null
+          voting_rights?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_classes_v2_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "share_classes_v2_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
