@@ -77,7 +77,12 @@ const Accounting = lazy(() => import("./pages/Accounting"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 
-// Portal pages (shareholder + investor)
+// Wizard pages
+const Wizards = lazy(() => import("./pages/Wizards"));
+const AddPropertyWizard = lazy(() => import("./pages/AddPropertyWizard"));
+const AddEntityWizard = lazy(() => import("./pages/AddEntityWizard"));
+const AddComplianceWizard = lazy(() => import("./pages/AddComplianceWizard"));
+
 const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
 const PortalProperties = lazy(() => import("./pages/portal/PortalProperties"));
@@ -481,7 +486,12 @@ const App = () => (
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
 
-            {/* V1 redirects */}
+            {/* Wizard routes */}
+            <Route path="/wizards" element={<ProtectedRoute><Wizards /></ProtectedRoute>} />
+            <Route path="/wizards/add-property" element={<ProtectedRoute><AddPropertyWizard /></ProtectedRoute>} />
+            <Route path="/wizards/add-entity" element={<ProtectedRoute><AddEntityWizard /></ProtectedRoute>} />
+            <Route path="/wizards/add-compliance" element={<ProtectedRoute><AddComplianceWizard /></ProtectedRoute>} />
+
             <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
             <Route path="/properties/:id" element={<PropertyV1Redirect />} />
 
