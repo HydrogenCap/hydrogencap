@@ -290,6 +290,7 @@ export type Database = {
           ip_address: string | null
           new_values: Json | null
           old_values: Json | null
+          org_id: string | null
           record_id: string
           session_id: string | null
           table_name: string
@@ -304,6 +305,7 @@ export type Database = {
           ip_address?: string | null
           new_values?: Json | null
           old_values?: Json | null
+          org_id?: string | null
           record_id: string
           session_id?: string | null
           table_name: string
@@ -318,11 +320,20 @@ export type Database = {
           ip_address?: string | null
           new_values?: Json | null
           old_values?: Json | null
+          org_id?: string | null
           record_id?: string
           session_id?: string | null
           table_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bank_accounts: {
         Row: {
