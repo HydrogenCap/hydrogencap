@@ -37,18 +37,20 @@ export type FeatureFlag =
   | 'team_roles'
   | 'unlimited_properties';
 
+// Stripe product/price IDs are publishable identifiers (not secrets)
+// They are safe to include in client-side code
 const TIERS = {
   solo: {
-    product_id: import.meta.env.VITE_STRIPE_SOLO_PRODUCT_ID || 'prod_TxJdFT8No80v9S',
-    price_id: import.meta.env.VITE_STRIPE_SOLO_PRICE_ID || 'price_1SzP0MAZFDMuITvQvU1ICh4p',
+    product_id: 'prod_TxJdFT8No80v9S',
+    price_id: 'price_1SzP0MAZFDMuITvQvU1ICh4p',
   },
   portfolio: {
-    product_id: import.meta.env.VITE_STRIPE_PORTFOLIO_PRODUCT_ID || 'prod_TxJeOM05Pg5FWE',
-    price_id: import.meta.env.VITE_STRIPE_PORTFOLIO_PRICE_ID || 'price_1SzP1KAZFDMuITvQ4pZv6t5R',
+    product_id: 'prod_TxJeOM05Pg5FWE',
+    price_id: 'price_1SzP1KAZFDMuITvQ4pZv6t5R',
   },
   pro: {
-    product_id: import.meta.env.VITE_STRIPE_PRO_PRODUCT_ID || 'prod_TxJeGRcMMMPHwP',
-    price_id: import.meta.env.VITE_STRIPE_PRO_PRICE_ID || 'price_1SzP1aAZFDMuITvQsijsXgos',
+    product_id: 'prod_TxJeGRcMMMPHwP',
+    price_id: 'price_1SzP1aAZFDMuITvQsijsXgos',
   },
 };
 
