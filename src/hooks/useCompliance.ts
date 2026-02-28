@@ -317,9 +317,11 @@ export function useUploadComplianceDocument() {
         originalFilename: file.name,
       });
 
-      // Upload file with structured name
+      // Upload file with structured name (org_id prefix for RLS)
+      const orgId = await getUserOrgId();
+      if (!orgId) throw new Error('No organization found');
       const fileExt = file.name.split('.').pop();
-      const storagePath = `${propertyId}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
+      const storagePath = `${orgId}/${propertyId}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
       
       const { error: uploadError } = await supabase.storage
         .from('compliance')

@@ -220,7 +220,7 @@ export function useAcceptComplianceDocument() {
           .download(sourcePath);
 
         if (!downloadError && fileData) {
-          const compliancePath = `${propertyId}/${docType}/${Date.now()}-${structuredFilename}`;
+          const compliancePath = `${orgId}/${propertyId}/${docType}/${Date.now()}-${structuredFilename}`;
           await supabase.storage
             .from('compliance-documents')
             .upload(compliancePath, fileData);
