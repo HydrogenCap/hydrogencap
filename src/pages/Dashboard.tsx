@@ -40,6 +40,7 @@ import { ComplianceTasksWidget } from '@/components/dashboard/ComplianceTasksWid
 import { RentCollectionWidget } from '@/components/dashboard/RentCollectionWidget';
 import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
 import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
+import { VoidCostWidget } from '@/components/dashboard/VoidCostWidget';
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { MaintenanceWidget } from '@/components/dashboard/MaintenanceWidget';
 import { WorkOrdersWidget } from '@/components/dashboard/WorkOrdersWidget';
@@ -559,9 +560,10 @@ function DashboardPage() {
                   <ErrorBoundary><DashboardCalendarWidget /></ErrorBoundary>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
+                <div className="grid gap-6 lg:grid-cols-4">
                   <ErrorBoundary><RentCollectionWidget /></ErrorBoundary>
                   <ErrorBoundary><OccupancyWidget /></ErrorBoundary>
+                  <ErrorBoundary><VoidCostWidget /></ErrorBoundary>
                   <ErrorBoundary><TenancyPipelineWidget /></ErrorBoundary>
                 </div>
 

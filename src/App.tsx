@@ -53,6 +53,7 @@ const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
 
 
+const Voids = lazy(() => import("./pages/Voids"));
 const RentCollection = lazy(() => import("./pages/RentCollection"));
 const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
@@ -477,6 +478,7 @@ const App = () => (
             />
 
 
+            <Route path="/voids" element={<ProtectedRoute><Voids /></ProtectedRoute>} />
             <Route path="/rent" element={<ProtectedRoute><RentCollection /></ProtectedRoute>} />
             <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><TenancyLedger /></ProtectedRoute>} />
             <Route path="/rent/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />

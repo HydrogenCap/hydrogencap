@@ -8723,6 +8723,7 @@ export type Database = {
           property_id: string
           reason: string | null
           reason_notes: string | null
+          room_id: string | null
           start_date: string
           updated_at: string
         }
@@ -8735,6 +8736,7 @@ export type Database = {
           property_id: string
           reason?: string | null
           reason_notes?: string | null
+          room_id?: string | null
           start_date: string
           updated_at?: string
         }
@@ -8747,6 +8749,7 @@ export type Database = {
           property_id?: string
           reason?: string | null
           reason_notes?: string | null
+          room_id?: string | null
           start_date?: string
           updated_at?: string
         }
@@ -8763,6 +8766,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "void_periods_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
             referencedColumns: ["id"]
           },
         ]
