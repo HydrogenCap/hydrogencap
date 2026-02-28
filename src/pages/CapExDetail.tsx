@@ -112,8 +112,8 @@ export default function CapExDetail() {
             {project.name}
           </h1>
           <p className="text-muted-foreground">
-            {project.properties_v2?.address_line_1}
-            {project.properties_v2?.city ? `, ${project.properties_v2.city}` : ''}
+            {project.properties?.address_line_1}
+            {project.properties?.city ? `, ${project.properties.city}` : ''}
           </p>
         </div>
         <div className="flex items-center gap-2">

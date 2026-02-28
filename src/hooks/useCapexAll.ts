@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { CapexProject, CapexLineItem } from './useCapex';
 
 export interface CapexProjectWithProperty extends CapexProject {
-  properties_v2?: { id: string; address_line_1: string; city: string | null; postcode: string | null };
+  properties?: { id: string; address_line_1: string; city: string | null; postcode: string | null };
 }
 
 export function useAllCapexProjects() {
@@ -18,7 +18,7 @@ export function useAllCapexProjects() {
       const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('capex_projects')
-        .select('*, capex_line_items(*), properties_v2(id, address_line_1, city, postcode)')
+        .select('*, capex_line_items(*), properties(id, address_line_1, city, postcode)')
         .eq('org_id', orgId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -33,7 +33,7 @@ export function useCapexProject(projectId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('capex_projects')
-        .select('*, capex_line_items(*), properties_v2(id, address_line_1, city, postcode)')
+        .select('*, capex_line_items(*), properties(id, address_line_1, city, postcode)')
         .eq('id', projectId)
         .single();
       if (error) throw error;
