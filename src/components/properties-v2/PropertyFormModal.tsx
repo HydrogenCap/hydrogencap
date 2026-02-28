@@ -10,9 +10,12 @@ import { Switch } from '@/components/ui/switch';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { useCreatePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
 
 interface Props {
@@ -31,6 +34,56 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
   const update = useUpdatePropertyV2();
   const { data: entities } = useLegalEntities();
   const { toast } = useToast();
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [autoFilledFields, setAutoFilledFields] = useState<Record<string, string>>({});
+
+  const handleAutoFill = async () => {
+    if (!form.postcode || form.postcode.length < 5) {
+      toast({ title: 'Enter a postcode first', variant: 'destructive' });
+      return;
+    }
+    setIsAutoFilling(true);
+    setAutoFilledFields({});
+    try {
+      const { data, error } = await supabase.functions.invoke('property-autofill', {
+        body: { postcode: form.postcode, address_line_1: form.address_line_1 },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const fields = data.fields || {};
+      const sources = data.sources || {};
+
+      // Merge into form, only overwriting empty/default fields
+      setForm(prev => {
+        const updated = { ...prev };
+        const fieldsToSet: Record<string, string> = {};
+
+        for (const [key, value] of Object.entries(fields) as [string, any][]) {
+          const currentVal = (prev as any)[key];
+          const isEmpty = currentVal === '' || currentVal === null || currentVal === undefined
+            || currentVal === 'none' || currentVal === 'pipeline' || currentVal === '0';
+          if (isEmpty && value) {
+            (updated as any)[key] = value;
+            fieldsToSet[key] = sources[key] || 'AI';
+          }
+        }
+        setAutoFilledFields(fieldsToSet);
+        return updated;
+      });
+
+      const count = Object.keys(fields).length;
+      toast({
+        title: count > 0 ? `Auto-filled ${count} fields` : 'No additional data found',
+        description: count > 0 ? Object.entries(data.sources || {}).map(([k, v]) => `${k}: ${v}`).join(', ') : 'Try adding more address details.',
+      });
+    } catch (err: any) {
+      console.error('Auto-fill error:', err);
+      toast({ title: 'Auto-fill failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
 
   const [form, setForm] = useState({
     entity_id: '',
@@ -149,7 +202,38 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingProperty ? 'Edit Property' : 'Add Property'}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>{editingProperty ? 'Edit Property' : 'Add Property'}</DialogTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAutoFill}
+              disabled={isAutoFilling || !form.postcode || form.postcode.length < 5}
+              className="gap-2"
+            >
+              {isAutoFilling ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Auto-filling...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  AI Auto-fill
+                </>
+              )}
+            </Button>
+          </div>
+          {Object.keys(autoFilledFields).length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {Object.entries(autoFilledFields).map(([field, source]) => (
+                <Badge key={field} variant="secondary" className="text-xs">
+                  {field.replace(/_/g, ' ')} • {source}
+                </Badge>
+              ))}
+            </div>
+          )}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Address */}
