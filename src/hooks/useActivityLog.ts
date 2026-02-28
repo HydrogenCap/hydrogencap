@@ -27,7 +27,7 @@ export function useActivityLog(propertyId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('activity_log')
-        .select('*')
+        .select('id, org_id, property_id, entry_type, title, body, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -48,7 +48,7 @@ export function useRecentActivity(limit = 10) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('activity_log')
-        .select('*')
+        .select('id, org_id, property_id, entry_type, title, body, metadata, created_at')
         .order('created_at', { ascending: false })
         .limit(limit);
 

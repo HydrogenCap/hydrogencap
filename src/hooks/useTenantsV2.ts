@@ -71,7 +71,7 @@ export function useTenantsV2(status?: TenantStatusV2) {
     queryFn: async () => {
       let query = supabase
         .from('tenants_v2')
-        .select('*')
+        .select('id, org_id, first_name, last_name, email, phone, date_of_birth, national_insurance, referral_source, tenant_type, status, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at')
         .order('last_name', { ascending: true });
       if (status) query = query.eq('status', status);
       const { data, error } = await query;
@@ -87,7 +87,7 @@ export function useTenantsV2WithTenancy() {
     queryFn: async () => {
       const { data: tenants, error: te } = await supabase
         .from('tenants_v2')
-        .select('*')
+        .select('id, org_id, first_name, last_name, email, phone, date_of_birth, national_insurance, referral_source, tenant_type, status, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at')
         .order('last_name');
       if (te) throw te;
 

@@ -15,7 +15,7 @@ export function usePortfolioMonthlySummary(months = 12) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('portfolio_monthly_summary' as any)
-        .select('*')
+        .select('snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate')
         .order('snapshot_month', { ascending: false })
         .limit(months);
       if (error) throw error;
@@ -29,7 +29,7 @@ export function useEntityFinancialSummary(month?: string) {
   return useQuery({
     queryKey: ['entity_financial_summary', month],
     queryFn: async () => {
-      let query = supabase.from('entity_financial_summary' as any).select('*');
+      let query = supabase.from('entity_financial_summary' as any).select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate');
       if (month) query = query.eq('snapshot_month', month);
       query = query.order('snapshot_month', { ascending: false });
       const { data, error } = await query;
@@ -47,7 +47,7 @@ export function useEntityMonthlySnapshots(entityId: string | undefined, months =
       if (!entityId) return [];
       const { data, error } = await supabase
         .from('entity_financial_summary' as any)
-        .select('*')
+        .select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate')
         .eq('entity_id', entityId)
         .order('snapshot_month', { ascending: false })
         .limit(months);
@@ -83,7 +83,7 @@ export function usePropertyAnnualPerformance() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('property_annual_performance' as any)
-        .select('*');
+        .select('property_id, property_address, entity_id, entity_name, total_gross_rent, total_costs, total_noi, total_cash_flow, avg_collection_rate, months_active');
       if (error) throw error;
       return (data || []) as unknown as PropertyAnnualPerformance[];
     },
@@ -98,7 +98,7 @@ export function usePropertySnapshots(propertyId: string | undefined, months = 12
       if (!propertyId) return [];
       const { data, error } = await supabase
         .from('financial_snapshots')
-        .select('*')
+        .select('id, org_id, property_id, entity_id, snapshot_month, gross_rent_due, gross_rent_received, other_income, management_fees, maintenance_costs, insurance_costs, utilities, council_tax, licensing_costs, professional_fees, other_costs, mortgage_payments, total_costs, net_operating_income, net_cash_flow, rent_collection_rate, is_locked, locked_at, locked_by, created_at, updated_at')
         .eq('property_id', propertyId)
         .order('snapshot_month', { ascending: false })
         .limit(months);
@@ -117,7 +117,7 @@ export function useMonthSnapshots(month: string | undefined) {
       if (!month) return [];
       const { data, error } = await supabase
         .from('financial_snapshots')
-        .select('*')
+        .select('id, org_id, property_id, entity_id, snapshot_month, gross_rent_due, gross_rent_received, other_income, management_fees, maintenance_costs, insurance_costs, utilities, council_tax, licensing_costs, professional_fees, other_costs, mortgage_payments, total_costs, net_operating_income, net_cash_flow, rent_collection_rate, is_locked, locked_at, locked_by, created_at, updated_at')
         .eq('snapshot_month', month);
       if (error) throw error;
       return (data || []) as FinancialSnapshot[];
