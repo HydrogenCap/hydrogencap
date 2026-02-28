@@ -33,6 +33,7 @@ const FIELD_MAPPING: Record<string, string> = {
 };
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
