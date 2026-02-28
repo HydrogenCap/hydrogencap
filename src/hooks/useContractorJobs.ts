@@ -104,17 +104,22 @@ export interface ContractorJob {
    match_score: number;
  }
  
- export function useContractorJobs(filters?: {
+export function useContractorJobs(filters?: {
   status?: JobStatus[];
   priority?: JobPriority[];
   source?: JobSource[];
-   propertyId?: string;
-   contractorId?: string;
+  propertyId?: string;
+  contractorId?: string;
   hasContractor?: boolean;
- }) {
-   return useQuery({
-     queryKey: ['contractor-jobs', filters],
-     queryFn: async () => {
+  page?: number;
+  pageSize?: number;
+}) {
+  const page = filters?.page;
+  const pageSize = filters?.pageSize ?? 25;
+
+  return useQuery({
+    queryKey: ['contractor-jobs', filters],
+    queryFn: async () => {
       let query = supabase
         .from('contractor_jobs')
         .select(`
@@ -123,38 +128,51 @@ export interface ContractorJob {
           property:properties(id, address_line, postcode),
           property_v2:properties_v2(id, address_line_1, city, postcode),
           compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)
-        `)
-       .order('priority', { ascending: false })
-       .order('created_at', { ascending: false });
- 
-       if (filters?.status?.length) {
-         query = query.in('status', filters.status);
-       }
+        `, { count: 'exact' })
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (filters?.status?.length) {
+        query = query.in('status', filters.status);
+      }
       if (filters?.priority?.length) {
         query = query.in('priority', filters.priority);
       }
       if (filters?.source?.length) {
         query = query.in('source', filters.source);
       }
-       if (filters?.propertyId) {
-         query = query.eq('property_id', filters.propertyId);
-       }
-       if (filters?.contractorId) {
-         query = query.eq('contractor_id', filters.contractorId);
-       }
+      if (filters?.propertyId) {
+        query = query.eq('property_id', filters.propertyId);
+      }
+      if (filters?.contractorId) {
+        query = query.eq('contractor_id', filters.contractorId);
+      }
       if (filters?.hasContractor === true) {
         query = query.not('contractor_id', 'is', null);
       }
       if (filters?.hasContractor === false) {
         query = query.is('contractor_id', null);
       }
- 
-       const { data, error } = await query;
-       if (error) throw error;
-       return data as ContractorJob[];
-     },
-   });
- }
+
+      if (page) {
+        const from = (page - 1) * pageSize;
+        query = query.range(from, from + pageSize - 1);
+      }
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      const items = (data ?? []) as ContractorJob[];
+      const total = count ?? items.length;
+      return {
+        items,
+        total,
+        page: page ?? 1,
+        pageSize: page ? pageSize : total || 1,
+        totalPages: page ? Math.ceil(total / pageSize) : 1,
+      };
+    },
+  });
+}
  
  // Get job counts by status for dashboard widgets
  export function useJobCounts() {

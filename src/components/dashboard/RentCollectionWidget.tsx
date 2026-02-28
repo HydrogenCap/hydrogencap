@@ -10,7 +10,8 @@ import { formatGBP } from '@/lib/calculations';
 
 export function RentCollectionWidget() {
   const currentMonth = format(new Date(), 'yyyy-MM');
-  const { data: schedule } = useRentSchedule({ month: currentMonth });
+  const { data: scheduleData } = useRentSchedule({ month: currentMonth });
+  const schedule = scheduleData?.items;
 
   const stats = useMemo(() => {
     if (!schedule) return { totalDue: 0, collected: 0, outstanding: 0, overdue: 0, rate: 0, paidCount: 0, totalCount: 0 };

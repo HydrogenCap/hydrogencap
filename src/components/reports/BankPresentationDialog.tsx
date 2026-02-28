@@ -42,7 +42,8 @@ export function BankPresentationDialog({ trigger }: BankPresentationDialogProps)
 
   const { data: properties, isLoading: loadingProperties } = useProperties();
   const { data: coverPhotos, isLoading: loadingPhotos } = useAllPropertyCoverPhotos();
-  const { data: allCompliance, isLoading: loadingCompliance } = useAllCompliance();
+  const { data: allComplianceData, isLoading: loadingCompliance } = useAllCompliance();
+  const allCompliance = allComplianceData?.items;
 
   // Build photo map for PDF
   const coverPhotoMap = useMemo(() => {

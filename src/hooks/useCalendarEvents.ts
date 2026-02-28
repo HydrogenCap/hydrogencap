@@ -26,9 +26,11 @@
  };
  
  export function useCalendarEvents(startDate?: string, endDate?: string) {
-   const { data: complianceItems, isLoading: complianceLoading } = useAllCompliance();
-   const { data: jobs, isLoading: jobsLoading } = useContractorJobs();
+   const { data: complianceData, isLoading: complianceLoading } = useAllCompliance();
+   const { data: jobsData, isLoading: jobsLoading } = useContractorJobs();
    const { data: properties, isLoading: propertiesLoading } = useProperties();
+   const complianceItems = complianceData?.items;
+   const jobs = jobsData?.items;
  
    const isLoading = complianceLoading || jobsLoading || propertiesLoading;
  

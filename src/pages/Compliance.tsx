@@ -37,7 +37,8 @@ import { cn } from '@/lib/utils';
 type FilterStatus = ComplianceStatus | 'all';
 
 export default function Compliance() {
-  const { data: items, isLoading, isError, error } = useAllCompliance();
+  const { data: complianceResult, isLoading, isError, error } = useAllCompliance();
+  const items = complianceResult?.items;
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const createComplianceItem = useCreateComplianceItem();
   const [searchParams] = useSearchParams();

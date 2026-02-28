@@ -26,7 +26,8 @@ export default function CreateMaintenanceRequestDialog({ open, onOpenChange, onC
   const createRequest = useCreateMaintenanceRequest();
   const { data: propertiesV2 } = usePropertiesV2();
   const { data: v1Properties } = useProperties();
-  const { data: tenants } = useTenantsV2();
+  const { data: tenantsData } = useTenantsV2();
+  const tenants = tenantsData?.items;
 
   const [propertyV2Id, setPropertyV2Id] = useState('');
   const [roomV2Id, setRoomV2Id] = useState('');

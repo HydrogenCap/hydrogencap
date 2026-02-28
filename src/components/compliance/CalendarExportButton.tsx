@@ -68,7 +68,8 @@
  }
  
  export function CalendarExportButton() {
-   const { data: complianceItems } = useAllCompliance();
+   const { data: complianceData } = useAllCompliance();
+   const complianceItems = complianceData?.items;
    const { data: properties } = useProperties();
    const { toast } = useToast();
  

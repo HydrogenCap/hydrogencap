@@ -65,18 +65,35 @@ export const REFERRAL_SOURCES = [
   { value: 'online_ad', label: 'Online Ad' },
 ] as const;
 
-export function useTenantsV2(status?: TenantStatusV2) {
+export function useTenantsV2(status?: TenantStatusV2, options?: { page?: number; pageSize?: number }) {
+  const page = options?.page;
+  const pageSize = options?.pageSize ?? 50;
+
   return useQuery({
-    queryKey: ['tenants_v2', status],
+    queryKey: ['tenants_v2', status, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from('tenants_v2')
-        .select('id, org_id, first_name, last_name, email, phone, date_of_birth, national_insurance, referral_source, tenant_type, status, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at')
+        .select('id, org_id, first_name, last_name, email, phone, date_of_birth, national_insurance, referral_source, tenant_type, status, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at', { count: 'exact' })
         .order('last_name', { ascending: true });
       if (status) query = query.eq('status', status);
-      const { data, error } = await query;
+
+      if (page) {
+        const from = (page - 1) * pageSize;
+        query = query.range(from, from + pageSize - 1);
+      }
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as TenantV2[];
+      const items = (data ?? []) as TenantV2[];
+      const total = count ?? items.length;
+      return {
+        items,
+        total,
+        page: page ?? 1,
+        pageSize: page ? pageSize : total || 1,
+        totalPages: page ? Math.ceil(total / pageSize) : 1,
+      };
     },
   });
 }

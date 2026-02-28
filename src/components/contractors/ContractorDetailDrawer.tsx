@@ -26,7 +26,8 @@ import { useContractorReviews } from '@/hooks/useContractors';
    const [showReviewDialog, setShowReviewDialog] = useState(false);
    
    const { data: contractor, isLoading } = useContractor(contractorId || undefined);
-   const { data: jobs } = useContractorJobs({ contractorId: contractorId || undefined });
+   const { data: jobsData } = useContractorJobs({ contractorId: contractorId || undefined });
+   const jobs = jobsData?.items;
    const { data: reviews } = useContractorReviews(contractorId || undefined);
    const updateContractor = useUpdateContractor();
    const deleteContractor = useDeleteContractor();

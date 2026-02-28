@@ -65,9 +65,9 @@ function ActivityItem({ entry }: { entry: ActivityLog }) {
 }
 
 export function ActivityTimeline({ propertyId, limit = 20, showHeader = true, showAddNote = false }: ActivityTimelineProps) {
-  const { data: activities, isLoading } = useActivityLog(propertyId);
+  const { data: activityData, isLoading } = useActivityLog(propertyId);
 
-  const displayedActivities = activities?.slice(0, limit) || [];
+  const displayedActivities = activityData?.items?.slice(0, limit) || [];
   const canAddNote = showAddNote && propertyId;
 
   if (isLoading) {

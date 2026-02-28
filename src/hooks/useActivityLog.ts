@@ -21,23 +21,40 @@ export type ActivityEntryType =
   | 'manual'
   | 'go_live';
 
-export function useActivityLog(propertyId?: string) {
+export function useActivityLog(propertyId?: string, options?: { page?: number; pageSize?: number }) {
+  const page = options?.page;
+  const pageSize = options?.pageSize ?? 25;
+
   return useQuery({
-    queryKey: ['activity_log', propertyId],
+    queryKey: ['activity_log', propertyId, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from('activity_log')
-        .select('id, org_id, property_id, entry_type, title, body, metadata, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .select('id, org_id, property_id, entry_type, title, body, metadata, created_at', { count: 'exact' })
+        .order('created_at', { ascending: false });
 
       if (propertyId) {
         query = query.eq('property_id', propertyId);
       }
 
-      const { data, error } = await query;
+      if (page) {
+        const from = (page - 1) * pageSize;
+        query = query.range(from, from + pageSize - 1);
+      } else {
+        query = query.limit(50);
+      }
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as ActivityLog[];
+      const items = (data ?? []) as ActivityLog[];
+      const total = count ?? items.length;
+      return {
+        items,
+        total,
+        page: page ?? 1,
+        pageSize: page ? pageSize : total || 1,
+        totalPages: page ? Math.ceil(total / pageSize) : 1,
+      };
     },
   });
 }

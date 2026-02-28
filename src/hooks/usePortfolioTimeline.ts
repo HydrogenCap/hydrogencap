@@ -150,7 +150,8 @@ function calculateSnapshotAtDate(
  * Generate timeline events from property and activity data
  */
 export function usePortfolioTimeline({ properties, filters }: UsePortfolioTimelineOptions) {
-  const { data: activityLogs } = useActivityLog();
+  const { data: activityData } = useActivityLog();
+  const activityLogs = activityData?.items;
   const { data: passports } = usePropertyPassports();
 
   const events = useMemo(() => {

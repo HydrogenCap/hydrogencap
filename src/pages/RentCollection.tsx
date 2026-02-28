@@ -62,7 +62,8 @@ export default function RentCollection() {
 
   // For exports — fetch current month schedule
   const monthStr = format(startOfMonth(new Date()), 'yyyy-MM');
-  const { data: currentMonthSchedule } = useRentSchedule({ month: monthStr });
+  const { data: currentMonthData } = useRentSchedule({ month: monthStr });
+  const currentMonthSchedule = currentMonthData?.items;
 
   const isLoading = summaryLoading || arrearsLoading;
 

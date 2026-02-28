@@ -22,9 +22,10 @@
  };
  
  export function JobTrackerWidget() {
-   const { data: jobs, isLoading } = useContractorJobs({
+   const { data: jobsData, isLoading } = useContractorJobs({
      status: ['requested', 'quoted', 'accepted', 'booked', 'in_progress'],
    });
+   const jobs = jobsData?.items;
  
    if (isLoading) {
      return (

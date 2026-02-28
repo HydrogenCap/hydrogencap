@@ -50,7 +50,8 @@ interface Props {
 export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTenantId, preselectedPropertyId, preselectedRoomId, onSuccess }: Props) {
   const createAgreement = useCreateTenancyAgreement();
   const updateTenant = useUpdateTenantV2();
-  const { data: tenants } = useTenantsV2();
+  const { data: tenantsData } = useTenantsV2();
+  const tenants = tenantsData?.items;
   const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
   const [depositOpen, setDepositOpen] = useState(true);
