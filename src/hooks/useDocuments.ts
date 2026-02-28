@@ -8,22 +8,38 @@ type Document = Database['public']['Tables']['documents']['Row'];
 type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
 type DocumentUpdate = Database['public']['Tables']['documents']['Update'];
 
-export function useDocuments(propertyId?: string) {
+export function useDocuments(propertyId?: string, options?: { page?: number; pageSize?: number }) {
+  const page = options?.page;
+  const pageSize = options?.pageSize ?? 25;
+
   return useQuery({
-    queryKey: ['documents', propertyId],
+    queryKey: ['documents', propertyId, page, pageSize],
     queryFn: async () => {
       let query = supabase
         .from('documents')
-        .select('id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id, file_url, original_file_name, display_name, final_file_name, doc_type, category, tags, file_type, file_size_bytes, mime_type, description, document_date, expiry_date, review_status, is_confidential, visible_to_shareholders, visible_to_tenants, version, is_current_version, uploaded_by, created_at, updated_at, deleted_at')
+        .select('id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id, file_url, original_file_name, display_name, final_file_name, doc_type, category, tags, file_type, file_size_bytes, mime_type, description, document_date, expiry_date, review_status, is_confidential, visible_to_shareholders, visible_to_tenants, version, is_current_version, uploaded_by, created_at, updated_at, deleted_at', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (propertyId) {
         query = query.eq('property_id', propertyId);
       }
 
-      const { data, error } = await query;
+      if (page) {
+        const from = (page - 1) * pageSize;
+        query = query.range(from, from + pageSize - 1);
+      }
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as Document[];
+      const items = (data ?? []) as Document[];
+      const total = count ?? items.length;
+      return {
+        items,
+        total,
+        page: page ?? 1,
+        pageSize: page ? pageSize : total || 1,
+        totalPages: page ? Math.ceil(total / pageSize) : 1,
+      };
     },
   });
 }

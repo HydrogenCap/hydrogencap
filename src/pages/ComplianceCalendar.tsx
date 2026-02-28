@@ -62,7 +62,8 @@ const COMPLIANCE_LABELS: Record<string, string> = {
 };
 
 export default function ComplianceCalendar() {
-  const { data: complianceItems, isLoading: complianceLoading } = useAllCompliance();
+  const { data: complianceData, isLoading: complianceLoading } = useAllCompliance();
+  const complianceItems = complianceData?.items;
   const { data: properties, isLoading: propertiesLoading } = useProperties();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedStatus, setSelectedStatus] = useState<StatusType | null>(null);

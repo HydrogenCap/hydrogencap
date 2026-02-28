@@ -83,7 +83,8 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
 // Fetch all data needed for reports
 export function useReportData() {
   const { data: properties, isLoading: propertiesLoading } = useProperties();
-  const { data: complianceItems, isLoading: complianceLoading } = useAllCompliance();
+  const { data: complianceData, isLoading: complianceLoading } = useAllCompliance();
+  const complianceItems = complianceData?.items;
   const { data: passports, isLoading: passportsLoading } = usePropertyPassports();
   const { data: companies, isLoading: companiesLoading } = useCompanies();
 

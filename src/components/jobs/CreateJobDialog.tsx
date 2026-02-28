@@ -46,11 +46,11 @@ import { useAllCompliance } from '@/hooks/useCompliance';
    });
  
    const { data: properties } = useProperties();
-  const { data: allCompliance } = useAllCompliance();
+  const { data: allComplianceData } = useAllCompliance();
    const createJob = useCreateJob();
  
    // Filter compliance items for the selected property
-   const complianceItems = allCompliance?.filter(c => c.property_id === formData.propertyId);
+   const complianceItems = allComplianceData?.items?.filter(c => c.property_id === formData.propertyId);
  
    // Update form data when preselected values change
    useEffect(() => {

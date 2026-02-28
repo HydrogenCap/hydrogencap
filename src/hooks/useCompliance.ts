@@ -31,11 +31,14 @@ export function usePropertyCompliance(propertyId: string | undefined) {
 }
 
 // Fetch all compliance items across portfolio
-export function useAllCompliance() {
+export function useAllCompliance(options?: { page?: number; pageSize?: number }) {
+  const page = options?.page;
+  const pageSize = options?.pageSize ?? 50;
+
   return useQuery({
-    queryKey: ['compliance', 'all'],
+    queryKey: ['compliance', 'all', page, pageSize],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('compliance_items')
         .select(`
           id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
@@ -44,11 +47,25 @@ export function useAllCompliance() {
           auto_job_created, auto_job_id, reminder_days, reminder_count, last_reminder_sent_at,
           created_at, updated_at,
           documents:compliance_documents(id, compliance_item_id, file_url, original_file_name, file_type, uploaded_at, uploaded_by, is_current, version_number, notes, archived_at)
-        `)
+        `, { count: 'exact' })
         .order('expiry_date', { ascending: true, nullsFirst: false });
 
+      if (page) {
+        const from = (page - 1) * pageSize;
+        query = query.range(from, from + pageSize - 1);
+      }
+
+      const { data, error, count } = await query;
       if (error) throw error;
-      return data as (ComplianceItem & { documents: ComplianceDocument[] })[];
+      const items = (data ?? []) as (ComplianceItem & { documents: ComplianceDocument[] })[];
+      const total = count ?? items.length;
+      return {
+        items,
+        total,
+        page: page ?? 1,
+        pageSize: page ? pageSize : total || 1,
+        totalPages: page ? Math.ceil(total / pageSize) : 1,
+      };
     },
   });
 }

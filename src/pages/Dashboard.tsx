@@ -82,7 +82,8 @@ function DashboardPage() {
   const { data: allTenancies } = useDashboardTenanciesV2();
   const { data: allRooms } = useDashboardRoomsV2();
   const currentDashMonth = format(new Date(), 'yyyy-MM');
-  const { data: rentSchedule } = useRentSchedule({ month: currentDashMonth });
+  const { data: rentScheduleData } = useRentSchedule({ month: currentDashMonth });
+  const rentSchedule = rentScheduleData?.items;
 
   // Filter properties using V2 data
   const filteredProperties = useMemo(() => {

@@ -41,7 +41,7 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
 
   const scheduleMap = useMemo(() => {
     const map = new Map<string, RentScheduleWithDetails>();
-    scheduleItems?.forEach(s => map.set(s.id, s));
+    scheduleItems?.items?.forEach(s => map.set(s.id, s));
     return map;
   }, [scheduleItems]);
 

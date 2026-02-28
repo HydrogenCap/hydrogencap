@@ -11,7 +11,8 @@ import { formatGBP } from '@/lib/calculations';
 
 export function ThisMonthWidget() {
   const { data: properties } = useProperties();
-  const { data: complianceItems } = useAllCompliance();
+  const { data: complianceData } = useAllCompliance();
+  const complianceItems = complianceData?.items;
   const { data: tenancyComplianceStats } = useTenancyComplianceStats();
 
   const stats = useMemo(() => {

@@ -67,7 +67,8 @@ function getInsuranceStatus(policy: any): ItemStatus {
 }
 
 export function DocumentChecklist({ propertyId, isHmo = false, hasGas = true, tenure }: DocumentChecklistProps) {
-  const { data: complianceItems } = useAllCompliance();
+  const { data: complianceData } = useAllCompliance();
+  const complianceItems = complianceData?.items;
   const { data: insurancePolicy } = useQuery({
     queryKey: ['insurance-policy', propertyId],
     queryFn: async () => {

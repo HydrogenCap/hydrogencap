@@ -10,7 +10,8 @@ import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompa
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
 
 export function ComplianceAlertsWidget() {
-  const { data: complianceItems, isLoading: loadingCompliance } = useAllCompliance();
+  const { data: complianceData, isLoading: loadingCompliance } = useAllCompliance();
+  const complianceItems = complianceData?.items;
   const { data: properties, isLoading: loadingProperties } = useProperties();
 
   const alerts = useMemo(() => {

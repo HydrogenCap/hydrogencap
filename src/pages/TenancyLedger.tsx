@@ -30,7 +30,8 @@ export default function TenancyLedger() {
   const navigate = useNavigate();
   const { data: ledger, isLoading } = useTenancyLedger(tenancyId);
   const { data: onTimeStats } = usePaidOnTimeStats(tenancyId);
-  const { data: scheduleItems } = useRentSchedule({ tenancyId });
+  const { data: scheduleData } = useRentSchedule({ tenancyId });
+  const scheduleItems = scheduleData?.items;
   const [showFuture, setShowFuture] = useState(false);
   const [showPayments, setShowPayments] = useState(true);
   const [showRent, setShowRent] = useState(true);

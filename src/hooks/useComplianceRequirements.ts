@@ -99,7 +99,8 @@ export function usePropertyComplianceRequirements(propertyId: string | undefined
 // Hook for portfolio-wide compliance requirements
 export function usePortfolioComplianceRequirements() {
   const { data: properties, isLoading: loadingProperties } = useAllPropertiesWithFeatures();
-  const { data: allComplianceItems, isLoading: loadingCompliance } = useAllCompliance();
+  const { data: allComplianceData, isLoading: loadingCompliance } = useAllCompliance();
+  const allComplianceItems = allComplianceData?.items;
   
   const summaries = useMemo(() => {
     if (!properties || !allComplianceItems) return [];

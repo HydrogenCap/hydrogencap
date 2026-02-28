@@ -190,37 +190,55 @@ const RENT_SCHEDULE_SELECT = `
   )
 `;
 
- export function useRentSchedule(filters?: { 
-   month?: string;
-   status?: RentStatus;
-   tenancyId?: string;
-   agreementId?: string;
- }) {
-   return useQuery({
-     queryKey: ['rent_schedule', filters],
-     queryFn: async () => {
-       let query = supabase
-         .from('rent_schedule')
-         .select(RENT_SCHEDULE_SELECT)
-         .order('due_date', { ascending: true });
- 
-       if (filters?.month) {
-         const startDate = `${filters.month}-01`;
-         const endDate = new Date(parseInt(filters.month.split('-')[0]), parseInt(filters.month.split('-')[1]), 0);
-         query = query
-           .gte('due_date', startDate)
-           .lte('due_date', endDate.toISOString().split('T')[0]);
-       }
-       if (filters?.status) query = query.eq('status', filters.status);
-       if (filters?.tenancyId) query = query.eq('tenancy_id', filters.tenancyId);
-       if (filters?.agreementId) query = query.eq('agreement_id', filters.agreementId);
- 
-       const { data, error } = await query;
-       if (error) throw error;
-       return data as RentScheduleWithDetails[];
-     },
-   });
- }
+export function useRentSchedule(filters?: { 
+  month?: string;
+  status?: RentStatus;
+  tenancyId?: string;
+  agreementId?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const page = filters?.page;
+  const pageSize = filters?.pageSize ?? 50;
+
+  return useQuery({
+    queryKey: ['rent_schedule', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('rent_schedule')
+        .select(RENT_SCHEDULE_SELECT, { count: 'exact' })
+        .order('due_date', { ascending: true });
+
+      if (filters?.month) {
+        const startDate = `${filters.month}-01`;
+        const endDate = new Date(parseInt(filters.month.split('-')[0]), parseInt(filters.month.split('-')[1]), 0);
+        query = query
+          .gte('due_date', startDate)
+          .lte('due_date', endDate.toISOString().split('T')[0]);
+      }
+      if (filters?.status) query = query.eq('status', filters.status);
+      if (filters?.tenancyId) query = query.eq('tenancy_id', filters.tenancyId);
+      if (filters?.agreementId) query = query.eq('agreement_id', filters.agreementId);
+
+      if (page) {
+        const from = (page - 1) * pageSize;
+        query = query.range(from, from + pageSize - 1);
+      }
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+      const items = (data ?? []) as RentScheduleWithDetails[];
+      const total = count ?? items.length;
+      return {
+        items,
+        total,
+        page: page ?? 1,
+        pageSize: page ? pageSize : total || 1,
+        totalPages: page ? Math.ceil(total / pageSize) : 1,
+      };
+    },
+  });
+}
  
  export function useArrears() {
    return useQuery({
@@ -477,7 +495,8 @@ export function useUpdateRentScheduleNotes() {
 }
 
 export function useRentSummary(month?: string) {
-  const { data: schedule } = useRentSchedule({ month });
+  const { data } = useRentSchedule({ month });
+  const schedule = data?.items;
 
   if (!schedule) return null;
 
