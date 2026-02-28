@@ -439,7 +439,7 @@ export async function generateBankPresentation(
       formatGBP(stats.totalEquity),
     ];
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 35;
+    const finalY = doc.lastAutoTable?.finalY || 35;
     
     doc.setFillColor(248, 250, 252);
     doc.rect(margin - 2, finalY + 2, pageWidth - 2 * margin + 4, 12, 'F');

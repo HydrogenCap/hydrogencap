@@ -282,7 +282,7 @@ export class LenderGradeMortgageBrokerPack {
         1: { cellWidth: 80 },
       },
     });
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    this.currentY = this.doc.lastAutoTable.finalY + 15;
 
     // Key Strengths section
     this.addSectionTitle('Key Strengths');
@@ -358,7 +358,7 @@ export class LenderGradeMortgageBrokerPack {
         1: { cellWidth: 100 },
       },
     });
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    this.currentY = this.doc.lastAutoTable.finalY + 15;
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -389,7 +389,7 @@ export class LenderGradeMortgageBrokerPack {
         1: { cellWidth: 80 },
       },
     });
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
 
     // Mortgage details
     if (loan) {
@@ -419,7 +419,7 @@ export class LenderGradeMortgageBrokerPack {
           1: { cellWidth: 80 },
         },
       });
-      this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+      this.currentY = this.doc.lastAutoTable.finalY + 10;
     } else {
       this.doc.setFontSize(10);
       this.doc.setTextColor(BRAND_SECONDARY[0], BRAND_SECONDARY[1], BRAND_SECONDARY[2]);
@@ -499,7 +499,7 @@ export class LenderGradeMortgageBrokerPack {
         });
       }
 
-      this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+      this.currentY = this.doc.lastAutoTable.finalY + 10;
 
       // Bills statement
       this.doc.setFontSize(9);
@@ -546,7 +546,7 @@ export class LenderGradeMortgageBrokerPack {
         1: { cellWidth: 80 },
       },
     });
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -577,7 +577,7 @@ export class LenderGradeMortgageBrokerPack {
           1: { cellWidth: 100 },
         },
       });
-      this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+      this.currentY = this.doc.lastAutoTable.finalY + 10;
 
       // Shareholders
       if (company.shareholders && company.shareholders.length > 0) {
@@ -597,7 +597,7 @@ export class LenderGradeMortgageBrokerPack {
           headStyles: { fillColor: BRAND_PRIMARY, fontSize: 9 },
           bodyStyles: { fontSize: 9 },
         });
-        this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+        this.currentY = this.doc.lastAutoTable.finalY + 10;
       }
 
       // Directors
@@ -656,7 +656,7 @@ export class LenderGradeMortgageBrokerPack {
         1: { cellWidth: 80 },
       },
     });
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -693,7 +693,7 @@ export class LenderGradeMortgageBrokerPack {
       this.doc.setTextColor(BRAND_WARNING[0], BRAND_WARNING[1], BRAND_WARNING[2]);
       this.doc.text('No insurance policy details currently recorded in system.', this.margin, this.currentY);
     }
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    this.currentY = this.doc.lastAutoTable.finalY + 15;
   }
 
   // ══════════════════════════════════════════════════════════════════════════════
@@ -796,7 +796,7 @@ export class LenderGradeMortgageBrokerPack {
         }
       },
     });
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
   }
 
   // ══════════════════════════════════════════════════════════════════════════════

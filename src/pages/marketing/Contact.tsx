@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Calendar, CheckCircle, Send } from 'lucide-react';
@@ -63,6 +64,10 @@ export default function MarketingContact() {
 
   return (
     <MarketingLayout>
+      <SEO
+        title="Contact Us — HydrogenCap"
+        description="Get in touch with the HydrogenCap team. Book a demo, ask a question, or tell us about your portfolio management needs."
+      />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">

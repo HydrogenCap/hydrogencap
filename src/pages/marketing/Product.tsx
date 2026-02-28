@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -123,6 +124,10 @@ const faqs = [
 export default function MarketingProduct() {
   return (
     <MarketingLayout>
+      <SEO
+        title="Product Features — HydrogenCap"
+        description="Compliance tracking, rent collection, mortgage monitoring, AI document processing, and portfolio analytics. Everything UK landlords need in one platform."
+      />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">

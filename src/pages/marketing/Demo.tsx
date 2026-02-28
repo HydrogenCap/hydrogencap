@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -79,6 +80,10 @@ export default function MarketingDemo() {
 
   return (
     <MarketingLayout>
+      <SEO
+        title="Book a Demo — HydrogenCap"
+        description="See HydrogenCap in action. Book a free 15-minute demo to see how we can simplify your property portfolio management."
+      />
       {/* Demo Header */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-8 border-b">
         <div className="container mx-auto px-4 lg:px-8">
