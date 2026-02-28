@@ -4940,10 +4940,15 @@ export type Database = {
       }
       maintenance_requests: {
         Row: {
+          actual_cost: number | null
           category: string
+          cost_approved_at: string | null
+          cost_approved_by: string | null
           created_at: string
           description: string | null
+          estimated_cost: number | null
           id: string
+          invoice_reference: string | null
           is_emergency: boolean | null
           is_recurring: boolean | null
           linked_request_id: string | null
@@ -4965,10 +4970,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          actual_cost?: number | null
           category?: string
+          cost_approved_at?: string | null
+          cost_approved_by?: string | null
           created_at?: string
           description?: string | null
+          estimated_cost?: number | null
           id?: string
+          invoice_reference?: string | null
           is_emergency?: boolean | null
           is_recurring?: boolean | null
           linked_request_id?: string | null
@@ -4990,10 +5000,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          actual_cost?: number | null
           category?: string
+          cost_approved_at?: string | null
+          cost_approved_by?: string | null
           created_at?: string
           description?: string | null
+          estimated_cost?: number | null
           id?: string
+          invoice_reference?: string | null
           is_emergency?: boolean | null
           is_recurring?: boolean | null
           linked_request_id?: string | null
