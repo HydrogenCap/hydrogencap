@@ -1676,6 +1676,48 @@ export type Database = {
           },
         ]
       }
+      compliance_templates: {
+        Row: {
+          applies_when: Json
+          category: string
+          default_frequency_months: number | null
+          default_lead_time_days: number | null
+          description: string | null
+          display_name: string
+          document_type: string
+          id: string
+          is_active: boolean | null
+          legislation_reference: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          applies_when?: Json
+          category: string
+          default_frequency_months?: number | null
+          default_lead_time_days?: number | null
+          description?: string | null
+          display_name: string
+          document_type: string
+          id?: string
+          is_active?: boolean | null
+          legislation_reference?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          applies_when?: Json
+          category?: string
+          default_frequency_months?: number | null
+          default_lead_time_days?: number | null
+          description?: string | null
+          display_name?: string
+          document_type?: string
+          id?: string
+          is_active?: boolean | null
+          legislation_reference?: string | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       contractor_jobs: {
         Row: {
           accepted_at: string | null
@@ -7431,6 +7473,129 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          completed_at: string | null
+          compliance_requirement_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          dismissed_reason: string | null
+          due_date: string | null
+          entity_id: string | null
+          id: string
+          org_id: string
+          priority: string
+          property_id: string | null
+          source: string
+          source_wizard_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          completed_at?: string | null
+          compliance_requirement_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          dismissed_reason?: string | null
+          due_date?: string | null
+          entity_id?: string | null
+          id?: string
+          org_id: string
+          priority?: string
+          property_id?: string | null
+          source?: string
+          source_wizard_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          completed_at?: string | null
+          compliance_requirement_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dismissed_reason?: string | null
+          due_date?: string | null
+          entity_id?: string | null
+          id?: string
+          org_id?: string
+          priority?: string
+          property_id?: string | null
+          source?: string
+          source_wizard_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_compliance_requirement_id_fkey"
+            columns: ["compliance_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_matrix_v2"
+            referencedColumns: ["requirement_id"]
+          },
+          {
+            foreignKeyName: "tasks_compliance_requirement_id_fkey"
+            columns: ["compliance_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_requirements_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "tasks_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "tasks_source_wizard_id_fkey"
+            columns: ["source_wizard_id"]
+            isOneToOne: false
+            referencedRelation: "wizard_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_year_summaries: {
         Row: {
           basic_rate_tax_reduction: number | null
@@ -8325,6 +8490,84 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "properties"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      wizard_drafts: {
+        Row: {
+          created_at: string
+          current_step: number
+          entity_id: string | null
+          id: string
+          org_id: string
+          payload: Json
+          property_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          wizard_type: string
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          entity_id?: string | null
+          id?: string
+          org_id: string
+          payload?: Json
+          property_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          wizard_type: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          entity_id?: string | null
+          id?: string
+          org_id?: string
+          payload?: Json
+          property_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          wizard_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wizard_drafts_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "wizard_drafts_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wizard_drafts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wizard_drafts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wizard_drafts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
           },
         ]
       }
