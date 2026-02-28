@@ -56,7 +56,7 @@ export function OnboardingWizard() {
         // Create a default entity for the org
         const { data: newEntity, error: entErr } = await supabase
           .from('legal_entities')
-          .insert({ org_id: orgId, entity_name: 'My Company', entity_type: 'individual' })
+          .insert({ org_id: orgId, entity_name: 'My Company', entity_type: 'personal' })
           .select('id')
           .single();
         if (entErr) throw entErr;
