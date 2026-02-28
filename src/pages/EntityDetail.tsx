@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Plus, Building2, User, Handshake, Shield, Home, AlertCircle, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
+import { useFreeAgentConnectionForEntity } from '@/hooks/useFreeAgentIntegration';
 import { useToast } from '@/hooks/use-toast';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { DirectorFormModal } from '@/components/entities/DirectorFormModal';
@@ -113,6 +114,7 @@ export default function EntityDetail() {
 
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const updateEntity = useUpdateLegalEntity();
+  const { data: freeAgentConnection } = useFreeAgentConnectionForEntity(id || '');
 
   // Share capital integrity
   const integrityErrors = shareClassesWithAllocation
@@ -323,6 +325,18 @@ export default function EntityDetail() {
                 <Badge variant="outline" className="text-xs">
                   CH: {(entity as any).ch_company_status}
                 </Badge>
+              )}
+              {(['ltd', 'llp'] as string[]).includes(entity.entity_type) && (
+                freeAgentConnection ? (
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                    FreeAgent Connected
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    FreeAgent: Not connected
+                  </Badge>
+                )
               )}
               {entity.entity_type !== 'personal' && (
                 <div className="flex items-center gap-2 ml-2">

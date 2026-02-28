@@ -192,56 +192,63 @@ serve(async (req) => {
       });
     }
 
-    // Resolve V1 company_id for querying rent data
-    let v1CompanyId = connection.company_id;
+    // V2-first property lookup with V1 fallback
+    let propertyIds: string[] = [];
+    const propertyMap = new Map<string, string>(); // id -> address
 
-    if (!v1CompanyId && connection.entity_id) {
-      const { data: entity } = await supabase
-        .from("legal_entities")
-        .select("company_number")
-        .eq("id", connection.entity_id)
-        .single();
+    if (connection.entity_id) {
+      const { data: v2Props } = await supabase
+        .from("properties_v2")
+        .select("id, address_line_1, city, postcode, entity_id")
+        .eq("entity_id", connection.entity_id);
 
-      if (entity?.company_number) {
-        const { data: v1Company } = await supabase
-          .from("companies")
-          .select("id")
-          .eq("company_number", entity.company_number)
-          .eq("org_id", connection.org_id)
-          .maybeSingle();
+      if (v2Props?.length) {
+        propertyIds = v2Props.map((p: any) => p.id);
+        v2Props.forEach((p: any) => propertyMap.set(p.id, `${p.address_line_1}${p.city ? ', ' + p.city : ''}`));
+      }
+    }
 
-        if (v1Company) {
-          v1CompanyId = v1Company.id;
-        } else {
-          return new Response(JSON.stringify({
-            error: "No matching V1 company found. Rent payment sync requires V1 data which has not been migrated yet."
-          }), {
-            status: 400,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+    // V1 fallback if no V2 properties found
+    if (propertyIds.length === 0) {
+      let v1CompanyId = connection.company_id;
+
+      if (!v1CompanyId && connection.entity_id) {
+        const { data: entity } = await supabase
+          .from("legal_entities")
+          .select("company_number")
+          .eq("id", connection.entity_id)
+          .single();
+
+        if (entity?.company_number) {
+          const { data: v1Company } = await supabase
+            .from("companies")
+            .select("id")
+            .eq("company_number", entity.company_number)
+            .eq("org_id", connection.org_id)
+            .maybeSingle();
+
+          v1CompanyId = v1Company?.id || null;
+        }
+      }
+
+      if (v1CompanyId) {
+        const { data: v1Props } = await supabase
+          .from("properties")
+          .select("id, address_line, postcode")
+          .eq("company_id", v1CompanyId);
+
+        if (v1Props?.length) {
+          propertyIds = v1Props.map((p: any) => p.id);
+          v1Props.forEach((p: any) => propertyMap.set(p.id, p.address_line || ''));
         }
       }
     }
 
-    const apiBase = connection.use_sandbox
-      ? "https://api.sandbox.freeagent.com"
-      : "https://api.freeagent.com";
-
-    const accessToken = await getValidToken(connection, supabase);
-
-    // Get properties owned by this company (V1 data)
-    const { data: properties } = await supabase
-      .from("properties")
-      .select("id, address_line, postcode")
-      .eq("company_id", v1CompanyId);
-
-    if (!properties || properties.length === 0) {
-      return new Response(JSON.stringify({ synced: 0, message: "No properties for company" }), {
+    if (propertyIds.length === 0) {
+      return new Response(JSON.stringify({ synced: 0, message: "No properties found for this entity" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const propertyIds = properties.map((p: any) => p.id);
 
     // Get rent payments for these properties (V1 data)
     const { data: payments, error: paymentsErr } = await supabase
