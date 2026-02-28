@@ -46,6 +46,12 @@ export interface MaintenanceRequestWithDetails {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // Cost tracking
+  estimated_cost: number | null;
+  actual_cost: number | null;
+  cost_approved_by: string | null;
+  cost_approved_at: string | null;
+  invoice_reference: string | null;
   // V1 joins (fallback)
   property: { id: string; address_line: string; postcode: string | null } | null;
   room?: { id: string; room_name: string } | null;
@@ -229,10 +235,28 @@ export function useUpdateMaintenanceRequest() {
 export function useMaintenanceStats() {
   const { data: requests } = useMaintenanceRequests();
   if (!requests) return null;
+
+  const openRequests = requests.filter(r => !['completed', 'verified', 'closed', 'cancelled'].includes(r.status));
+  const completedRequests = requests.filter(r => ['completed', 'verified', 'closed'].includes(r.status));
+
+  // Calculate average resolution days for completed requests
+  const resolutionDays = completedRequests
+    .map(r => {
+      const created = new Date(r.created_at).getTime();
+      const updated = new Date(r.updated_at).getTime();
+      return (updated - created) / (1000 * 60 * 60 * 24);
+    })
+    .filter(d => d > 0);
+
   return {
     total: requests.length,
-    open: requests.filter(r => !['completed', 'verified', 'closed', 'cancelled'].includes(r.status)).length,
-    emergency: requests.filter(r => r.is_emergency && !['completed', 'verified', 'closed', 'cancelled'].includes(r.status)).length,
-    completed: requests.filter(r => ['completed', 'verified', 'closed'].includes(r.status)).length,
+    open: openRequests.length,
+    emergency: openRequests.filter(r => r.is_emergency).length,
+    completed: completedRequests.length,
+    totalEstimatedCost: openRequests.reduce((sum, r) => sum + ((r as any).estimated_cost || 0), 0),
+    totalActualCost: completedRequests.reduce((sum, r) => sum + ((r as any).actual_cost || 0), 0),
+    avgResolutionDays: resolutionDays.length > 0
+      ? Math.round(resolutionDays.reduce((a, b) => a + b, 0) / resolutionDays.length)
+      : null,
   };
 }

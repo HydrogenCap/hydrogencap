@@ -7,6 +7,8 @@ import { PRIORITY_CONFIG, STATUS_CONFIG, CATEGORY_COLORS, MAINTENANCE_CATEGORY_N
 import { normalizeMaintenanceItem } from '@/lib/maintenanceNormalizer';
 import { WorksOrderDetailForm } from '@/components/maintenance/WorksOrderDetailForm';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
+import { CostTrackingSection } from '@/components/maintenance/CostTrackingSection';
+import { PhotoGallery } from '@/components/maintenance/PhotoGallery';
 import { LoadingState } from '@/components/common';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,14 +103,10 @@ export default function MaintenanceRequestDetail() {
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {format(new Date(request.reported_date), 'dd MMM yyyy')}</span>
                 </div>
 
-                {/* Photo thumbnails */}
+                {/* Photo gallery */}
                 {request.photo_urls && request.photo_urls.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {request.photo_urls.map((url, i) => (
-                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="w-20 h-20 rounded-md overflow-hidden border hover:opacity-80 transition-opacity">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                      </a>
-                    ))}
+                  <div className="pt-2">
+                    <PhotoGallery photos={request.photo_urls} />
                   </div>
                 )}
 
@@ -155,6 +153,16 @@ export default function MaintenanceRequestDetail() {
 
           {/* Right: Works Order */}
           <div className="space-y-6">
+            {/* Cost Tracking */}
+            <CostTrackingSection
+              requestId={request.id}
+              estimatedCost={(request as any).estimated_cost ?? null}
+              actualCost={(request as any).actual_cost ?? null}
+              invoiceReference={(request as any).invoice_reference ?? null}
+              costApprovedBy={(request as any).cost_approved_by ?? null}
+              costApprovedAt={(request as any).cost_approved_at ?? null}
+            />
+
             {!wo ? (
               <Card>
                 <CardContent className="py-8 text-center">

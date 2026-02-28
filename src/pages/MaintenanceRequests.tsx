@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import CreateMaintenanceRequestDialog from '@/components/maintenance/CreateMaintenanceRequestDialog';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Home, User, Siren } from 'lucide-react';
+import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Home, User, Siren, PoundSterling } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMaintenanceRequests, type MaintenanceRequestWithDetails } from '@/hooks/useMaintenanceRequests';
+import { useMaintenanceRequests, useMaintenanceStats, type MaintenanceRequestWithDetails } from '@/hooks/useMaintenanceRequests';
 import { normalizeMaintenanceItem } from '@/lib/maintenanceNormalizer';
 import { PRIORITY_CONFIG, STATUS_CONFIG, CATEGORY_COLORS, MAINTENANCE_CATEGORY_NAMES, OPEN_STATUSES, type MaintenancePriority, type MaintenanceStatus } from '@/lib/maintenanceTypes';
 import { LoadingState, EmptyState } from '@/components/common';
@@ -69,16 +69,10 @@ export default function MaintenanceRequests() {
   const navigate = useNavigate();
 
   const { data: requests, isLoading } = useMaintenanceRequests();
+  const stats = useMaintenanceStats();
 
   const openRequests = requests?.filter(r => OPEN_STATUSES.includes(r.status)) || [];
   const completedRequests = requests?.filter(r => ['completed', 'verified', 'closed'].includes(r.status)) || [];
-
-  const stats = {
-    total: requests?.length || 0,
-    open: openRequests.length,
-    emergency: openRequests.filter(r => r.is_emergency).length,
-    urgent: openRequests.filter(r => r.priority === 'urgent').length,
-  };
 
   if (isLoading) return <AppLayout><LoadingState text="Loading maintenance requests..." /></AppLayout>;
 
@@ -100,7 +94,7 @@ export default function MaintenanceRequests() {
         </div>
 
         {/* Emergency banner */}
-        {stats.emergency > 0 && (
+        {stats && stats.emergency > 0 && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3">
             <Siren className="h-6 w-6 text-destructive animate-pulse" />
             <div>
@@ -117,26 +111,26 @@ export default function MaintenanceRequests() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Open Requests</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className={`text-2xl font-bold ${stats.open > 20 ? 'text-destructive' : stats.open > 10 ? 'text-amber-600' : ''}`}>{stats.open}</p>
+              <p className={`text-2xl font-bold ${openRequests.length > 20 ? 'text-destructive' : openRequests.length > 10 ? 'text-amber-600' : ''}`}>{openRequests.length}</p>
             </CardContent>
           </Card>
-          {stats.emergency > 0 && (
-            <Card className="border-red-200">
+          {stats && stats.emergency > 0 && (
+            <Card className="border-destructive/30">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-red-600">Emergency</CardTitle>
+                <CardTitle className="text-sm font-medium text-destructive">Emergency</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-red-600">{stats.emergency}</p>
+                <p className="text-2xl font-bold text-destructive">{stats.emergency}</p>
               </CardContent>
             </Card>
           )}
-          {stats.urgent > 0 && (
-            <Card className="border-orange-200">
+          {stats && stats.avgResolutionDays !== null && (
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-orange-600">Urgent</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Avg Resolution</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-orange-600">{stats.urgent}</p>
+                <p className="text-2xl font-bold">{stats.avgResolutionDays}d</p>
               </CardContent>
             </Card>
           )}
