@@ -93,18 +93,23 @@ async function inferWithAI(postcodeData: any, epcData: any, addressLine: string)
 
   const context = JSON.stringify({ postcode: postcodeData, epc: epcData, address: addressLine }, null, 2);
 
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash-lite",
-      messages: [
-        {
-          role: "system",
-          content: `You are a UK property data expert. Given public register data about a property, infer the most likely values for form fields.
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: `You are a UK property data expert. Given public register data about a property, infer the most likely values for form fields.
 Return a JSON object with ONLY the fields you can confidently infer. Do not guess wildly.
 
 Available property_type values: single_let, hmo_licensed, hmo_unlicensed, multi_let, commercial, mixed_use
@@ -120,62 +125,72 @@ Rules:
 - Listed buildings are rare; default to "none" unless address suggests heritage area.
 - lifecycle_stage: if property has current EPC, likely "stabilised".
 - Only include fields where you have reasonable confidence (>70%).`,
-        },
-        {
-          role: "user",
-          content: `Property data:\n${context}\n\nReturn ONLY a valid JSON object with inferred fields.`,
-        },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "set_property_fields",
-            description: "Set inferred property form fields",
-            parameters: {
-              type: "object",
-              properties: {
-                property_type: { type: "string", enum: ["single_let", "hmo_licensed", "hmo_unlicensed", "multi_let", "commercial", "mixed_use"] },
-                lifecycle_stage: { type: "string", enum: ["pipeline", "refurb", "stabilised", "exit"] },
-                listing_grade: { type: "string", enum: ["none", "grade_i", "grade_ii_star", "grade_ii"] },
-                has_gas_supply: { type: "boolean" },
-                total_floors: { type: "integer" },
-                total_lettable_rooms: { type: "integer" },
-                year_built: { type: "integer" },
+          },
+          {
+            role: "user",
+            content: `Property data:\n${context}\n\nReturn ONLY a valid JSON object with inferred fields.`,
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "set_property_fields",
+              description: "Set inferred property form fields",
+              parameters: {
+                type: "object",
+                properties: {
+                  property_type: { type: "string", enum: ["single_let", "hmo_licensed", "hmo_unlicensed", "multi_let", "commercial", "mixed_use"] },
+                  lifecycle_stage: { type: "string", enum: ["pipeline", "refurb", "stabilised", "exit"] },
+                  listing_grade: { type: "string", enum: ["none", "grade_i", "grade_ii_star", "grade_ii"] },
+                  has_gas_supply: { type: "boolean" },
+                  total_floors: { type: "integer" },
+                  total_lettable_rooms: { type: "integer" },
+                  year_built: { type: "integer" },
+                },
+                additionalProperties: false,
               },
-              additionalProperties: false,
             },
           },
-        },
-      ],
-      tool_choice: { type: "function", function: { name: "set_property_fields" } },
-    }),
-  });
+        ],
+        tool_choice: { type: "function", function: { name: "set_property_fields" } },
+      }),
+    });
 
-  if (!resp.ok) {
-    if (resp.status === 429) {
-      console.warn("AI rate limited");
+    clearTimeout(timeout);
+
+    if (!resp.ok) {
+      if (resp.status === 429) {
+        console.warn("AI rate limited");
+        return null;
+      }
+      if (resp.status === 402) {
+        console.warn("AI credits exhausted");
+        return null;
+      }
+      console.error("AI gateway error:", resp.status, await resp.text());
       return null;
     }
-    if (resp.status === 402) {
-      console.warn("AI credits exhausted");
-      return null;
+
+    const result = await resp.json();
+    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      try {
+        return JSON.parse(toolCall.function.arguments);
+      } catch {
+        console.error("Failed to parse AI tool call arguments");
+        return null;
+      }
     }
-    console.error("AI gateway error:", resp.status, await resp.text());
+    return null;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") {
+      console.warn("AI inference timed out after 15s");
+    } else {
+      console.error("AI inference error:", e);
+    }
     return null;
   }
-
-  const result = await resp.json();
-  const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
-  if (toolCall?.function?.arguments) {
-    try {
-      return JSON.parse(toolCall.function.arguments);
-    } catch {
-      console.error("Failed to parse AI tool call arguments");
-      return null;
-    }
-  }
-  return null;
 }
 
 // ---------- Main handler ----------
