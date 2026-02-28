@@ -563,6 +563,11 @@ export default function EntityDetail() {
                 <CardDescription>
                   Total issued shares: {shareClassesWithAllocation?.reduce((s, sc) => s + sc.issued_shares, 0).toLocaleString() || 0}
                   {' '}across {shareClassesWithAllocation?.length || 0} class{(shareClassesWithAllocation?.length || 0) !== 1 ? 'es' : ''}
+                  {shareClassesWithAllocation && shareClassesWithAllocation.length > 0 && (
+                    <span className="ml-2">
+                      · Total capital: £{shareClassesWithAllocation.reduce((s, sc) => s + sc.issued_shares * (sc.nominal_value || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  )}
                 </CardDescription>
               </div>
               <Button size="sm" onClick={() => { setEditingShareClass(null); setShowAddShareClass(true); }}>

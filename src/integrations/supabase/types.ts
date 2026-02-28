@@ -7121,12 +7121,15 @@ export type Database = {
           class_name: string
           created_at: string | null
           currency: string | null
+          dividend_rights: boolean
           entity_id: string
           id: string
           is_primary: boolean | null
           issued_shares: number
           nominal_value: number | null
           notes: string | null
+          org_id: string | null
+          total_authorised: number | null
           updated_at: string | null
           voting_rights: boolean | null
         }
@@ -7134,12 +7137,15 @@ export type Database = {
           class_name?: string
           created_at?: string | null
           currency?: string | null
+          dividend_rights?: boolean
           entity_id: string
           id?: string
           is_primary?: boolean | null
           issued_shares?: number
           nominal_value?: number | null
           notes?: string | null
+          org_id?: string | null
+          total_authorised?: number | null
           updated_at?: string | null
           voting_rights?: boolean | null
         }
@@ -7147,12 +7153,15 @@ export type Database = {
           class_name?: string
           created_at?: string | null
           currency?: string | null
+          dividend_rights?: boolean
           entity_id?: string
           id?: string
           is_primary?: boolean | null
           issued_shares?: number
           nominal_value?: number | null
           notes?: string | null
+          org_id?: string | null
+          total_authorised?: number | null
           updated_at?: string | null
           voting_rights?: boolean | null
         }
@@ -7169,6 +7178,13 @@ export type Database = {
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "share_classes_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
