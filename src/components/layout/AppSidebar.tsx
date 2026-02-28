@@ -81,6 +81,7 @@ const operationsItems: NavItem[] = [
   { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' as any },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Voids', icon: DoorOpen, href: '/voids' },
+  { title: 'Lettings', icon: ArrowRight, href: '/lettings' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
   { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
   { title: 'CapEx', icon: HardHat, href: '/capex' },
