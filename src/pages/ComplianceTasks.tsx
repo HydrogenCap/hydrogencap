@@ -9,16 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useComplianceTasks, useComplianceTaskStats, useUpdateTaskStatus, useRunComplianceScan, useCreateTask } from '@/hooks/useComplianceTasks';
+import { useComplianceTasks, useComplianceTaskStats, useUpdateTaskStatus, useRunComplianceScan, useCreateTask, useUpdateTask } from '@/hooks/useComplianceTasks';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import {
-  BOARD_COLUMNS, TASK_STATUS_NAMES, PRIORITY_NAMES, TASK_TYPE_NAMES,
+  BOARD_COLUMNS, PIPELINE_COLUMNS, TASK_STATUS_NAMES, PRIORITY_NAMES, TASK_TYPE_NAMES,
   type ComplianceTaskOverview, type TaskStatus, type TaskPriority,
 } from '@/lib/complianceTaskTypes';
 import {
   ClipboardList, LayoutGrid, List, Play, Plus, AlertTriangle, Clock, CheckCircle2, XCircle,
+  GitBranch, Upload, CalendarPlus, Ban, Send, Loader2,
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, addDays } from 'date-fns';
+import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 
 function PriorityBadge({ priority }: { priority: TaskPriority }) {
   const colors: Record<TaskPriority, string> = {
@@ -69,22 +71,10 @@ function TaskCard({ task, onStatusChange, onClick }: {
           )}
           <EscalationDots level={task.escalation_level} />
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{task.assigned_to || 'Unassigned'}</span>
-          <Badge variant="outline" className="text-[10px]">{task.source === 'auto' ? 'Auto' : 'Manual'}</Badge>
-        </div>
         {task.contractor_name && (
           <p className="text-xs text-primary">🔧 {task.contractor_name}</p>
         )}
-        <Select value={task.status} onValueChange={(v) => { onStatusChange(task.task_id, v as TaskStatus); }}>
-          <SelectTrigger className="h-7 text-xs" onClick={(e) => e.stopPropagation()}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {BOARD_COLUMNS.map(s => <SelectItem key={s} value={s}>{TASK_STATUS_NAMES[s]}</SelectItem>)}
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+        <Badge variant="outline" className="text-[10px]">{task.source === 'auto_pipeline' ? 'Pipeline' : task.source === 'auto' ? 'Auto' : 'Manual'}</Badge>
       </CardContent>
     </Card>
   );
@@ -95,14 +85,17 @@ export default function ComplianceTasks() {
   const { data: tasks, isLoading } = useComplianceTasks();
   const stats = useComplianceTaskStats();
   const updateStatus = useUpdateTaskStatus();
+  const updateTask = useUpdateTask();
   const runScan = useRunComplianceScan();
   const createTask = useCreateTask();
 
-  const [view, setView] = useState<'board' | 'list'>('board');
+  const [view, setView] = useState<'pipeline' | 'board' | 'list'>('pipeline');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [showCompleted, setShowCompleted] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ComplianceTaskOverview | null>(null);
+  const [runningPipeline, setRunningPipeline] = useState(false);
+  const [dismissReason, setDismissReason] = useState('');
 
   const filtered = (tasks || []).filter(t => {
     if (!showCompleted && ['completed', 'cancelled'].includes(t.status)) return false;
@@ -110,10 +103,39 @@ export default function ComplianceTasks() {
     return true;
   });
 
+  // Map legacy statuses to pipeline columns for display
+  const getColumnForTask = (t: ComplianceTaskOverview): TaskStatus => {
+    if (['completed', 'cancelled'].includes(t.status)) return 'completed';
+    if (['contractor_assigned', 'contractor_requested', 'awaiting_upload', 'pending'].includes(t.status)) return t.status as TaskStatus;
+    if (t.status === 'waiting') return 'awaiting_upload';
+    if (t.status === 'in_progress') return 'contractor_assigned';
+    return 'pending'; // 'open' maps to 'pending'
+  };
+
   const handleStatusChange = (id: string, status: TaskStatus) => {
     updateStatus.mutate({ id, status }, {
       onSuccess: () => toast({ title: 'Status updated' }),
     });
+  };
+
+  const handleRunPipeline = async () => {
+    setRunningPipeline(true);
+    try {
+      const result = await invokeEdgeFunction<{
+        tasks_created: number;
+        contractors_assigned: number;
+        notifications_sent: number;
+        priorities_updated: number;
+      }>('auto-compliance-pipeline', {});
+      toast({
+        title: 'Pipeline complete',
+        description: `${result.tasks_created} tasks created, ${result.contractors_assigned} contractors assigned, ${result.priorities_updated} priorities updated.`,
+      });
+    } catch (err) {
+      toast({ title: 'Pipeline failed', description: String(err), variant: 'destructive' });
+    } finally {
+      setRunningPipeline(false);
+    }
   };
 
   const handleRunScan = () => {
@@ -128,15 +150,126 @@ export default function ComplianceTasks() {
     });
   };
 
+  const handleSnooze = (taskId: string, days: number) => {
+    const newDate = addDays(new Date(), days).toISOString().slice(0, 10);
+    updateTask.mutate({ id: taskId, updates: { due_date: newDate } }, {
+      onSuccess: () => {
+        toast({ title: `Snoozed ${days} days` });
+        setSelectedTask(null);
+      },
+    });
+  };
+
+  const handleDismiss = (taskId: string) => {
+    if (!dismissReason.trim()) {
+      toast({ title: 'Reason required', variant: 'destructive' });
+      return;
+    }
+    updateStatus.mutate({ id: taskId, status: 'cancelled', notes: dismissReason }, {
+      onSuccess: () => {
+        toast({ title: 'Task dismissed' });
+        setSelectedTask(null);
+        setDismissReason('');
+      },
+    });
+  };
+
+  const renderPipelineView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {PIPELINE_COLUMNS.map(col => {
+        const colTasks = filtered.filter(t => getColumnForTask(t) === col);
+        return (
+          <div key={col} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold">{TASK_STATUS_NAMES[col]}</h3>
+              <Badge variant="outline" className="text-xs">{colTasks.length}</Badge>
+            </div>
+            <div className="space-y-2 min-h-[100px]">
+              {colTasks.map(t => (
+                <TaskCard key={t.task_id} task={t} onStatusChange={handleStatusChange} onClick={setSelectedTask} />
+              ))}
+              {colTasks.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-8">No tasks</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderBoardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {BOARD_COLUMNS.map(col => {
+        const colTasks = filtered.filter(t => t.status === col);
+        return (
+          <div key={col} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold">{TASK_STATUS_NAMES[col]}</h3>
+              <Badge variant="outline" className="text-xs">{colTasks.length}</Badge>
+            </div>
+            <div className="space-y-2 min-h-[100px]">
+              {colTasks.map(t => (
+                <TaskCard key={t.task_id} task={t} onStatusChange={handleStatusChange} onClick={setSelectedTask} />
+              ))}
+              {colTasks.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-8">No tasks</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderListView = () => (
+    <div className="border rounded-lg overflow-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50">
+          <tr>
+            <th className="text-left p-3">Priority</th>
+            <th className="text-left p-3">Title</th>
+            <th className="text-left p-3">Property</th>
+            <th className="text-left p-3">Due Date</th>
+            <th className="text-left p-3">Status</th>
+            <th className="text-left p-3">Contractor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map(t => (
+            <tr key={t.task_id} className="border-t cursor-pointer hover:bg-muted/30" onClick={() => setSelectedTask(t)}>
+              <td className="p-3"><PriorityBadge priority={t.priority} /></td>
+              <td className="p-3">{t.title}</td>
+              <td className="p-3 text-muted-foreground">{t.property_address}</td>
+              <td className="p-3">
+                {t.due_date && (
+                  <span className={t.is_overdue ? 'text-destructive font-medium' : ''}>
+                    {format(new Date(t.due_date), 'dd MMM yyyy')}
+                  </span>
+                )}
+              </td>
+              <td className="p-3">{TASK_STATUS_NAMES[t.status] || t.status}</td>
+              <td className="p-3 text-muted-foreground">{t.contractor_name || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Compliance Tasks</h1>
-            <p className="text-muted-foreground">Manage compliance renewals, inspections, and follow-ups</p>
+            <p className="text-muted-foreground">Automated renewal pipeline and task management</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleRunPipeline} disabled={runningPipeline}>
+              {runningPipeline ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <GitBranch className="h-4 w-4 mr-1" />}
+              {runningPipeline ? 'Running...' : 'Run Pipeline'}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleRunScan} disabled={runScan.isPending}>
               <Play className="h-4 w-4 mr-1" />
               {runScan.isPending ? 'Scanning...' : 'Run Scan'}
@@ -191,10 +324,13 @@ export default function ComplianceTasks() {
             {showCompleted ? 'Hide' : 'Show'} Completed
           </Button>
           <div className="ml-auto flex gap-1">
-            <Button variant={view === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('board')}>
+            <Button variant={view === 'pipeline' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('pipeline')} title="Pipeline View">
+              <GitBranch className="h-4 w-4" />
+            </Button>
+            <Button variant={view === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('board')} title="Board View">
               <LayoutGrid className="h-4 w-4" />
             </Button>
-            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')}>
+            <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} title="List View">
               <List className="h-4 w-4" />
             </Button>
           </div>
@@ -202,66 +338,17 @@ export default function ComplianceTasks() {
 
         {isLoading ? (
           <p className="text-muted-foreground text-center py-12">Loading tasks...</p>
+        ) : view === 'pipeline' ? (
+          renderPipelineView()
         ) : view === 'board' ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {BOARD_COLUMNS.map(col => {
-              const colTasks = filtered.filter(t => t.status === col);
-              return (
-                <div key={col} className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold">{TASK_STATUS_NAMES[col]}</h3>
-                    <Badge variant="outline" className="text-xs">{colTasks.length}</Badge>
-                  </div>
-                  <div className="space-y-2 min-h-[100px]">
-                    {colTasks.map(t => (
-                      <TaskCard key={t.task_id} task={t} onStatusChange={handleStatusChange} onClick={setSelectedTask} />
-                    ))}
-                    {colTasks.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-8">No tasks</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          renderBoardView()
         ) : (
-          <div className="border rounded-lg overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-3">Priority</th>
-                  <th className="text-left p-3">Title</th>
-                  <th className="text-left p-3">Property</th>
-                  <th className="text-left p-3">Due Date</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Esc.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(t => (
-                  <tr key={t.task_id} className="border-t cursor-pointer hover:bg-muted/30" onClick={() => setSelectedTask(t)}>
-                    <td className="p-3"><PriorityBadge priority={t.priority} /></td>
-                    <td className="p-3">{t.title}</td>
-                    <td className="p-3 text-muted-foreground">{t.property_address}</td>
-                    <td className="p-3">
-                      {t.due_date && (
-                        <span className={t.is_overdue ? 'text-destructive font-medium' : ''}>
-                          {format(new Date(t.due_date), 'dd MMM yyyy')}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3">{TASK_STATUS_NAMES[t.status]}</td>
-                    <td className="p-3"><EscalationDots level={t.escalation_level} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          renderListView()
         )}
 
-        {/* Task Detail Dialog */}
-        <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
-          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        {/* Task Detail Drawer */}
+        <Dialog open={!!selectedTask} onOpenChange={() => { setSelectedTask(null); setDismissReason(''); }}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             {selectedTask && (
               <>
                 <DialogHeader>
@@ -274,34 +361,93 @@ export default function ComplianceTasks() {
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-muted-foreground">Property</Label><p>{selectedTask.property_address}</p></div>
                     <div><Label className="text-muted-foreground">Document</Label><p>{DOC_TYPE_DISPLAY_NAMES[selectedTask.document_type as keyof typeof DOC_TYPE_DISPLAY_NAMES] || selectedTask.document_type}</p></div>
-                    <div><Label className="text-muted-foreground">Status</Label><p>{TASK_STATUS_NAMES[selectedTask.status]}</p></div>
+                    <div><Label className="text-muted-foreground">Status</Label><p>{TASK_STATUS_NAMES[selectedTask.status] || selectedTask.status}</p></div>
                     <div><Label className="text-muted-foreground">Due Date</Label><p>{selectedTask.due_date ? format(new Date(selectedTask.due_date), 'dd MMM yyyy') : '—'}</p></div>
-                    <div><Label className="text-muted-foreground">Assigned To</Label><p>{selectedTask.assigned_to || 'Unassigned'}</p></div>
-                    <div><Label className="text-muted-foreground">Source</Label><p>{selectedTask.source === 'auto' ? 'Auto-generated' : 'Manual'}</p></div>
-                    <div><Label className="text-muted-foreground">Escalation Level</Label><div className="flex items-center gap-2"><span>{selectedTask.escalation_level}</span><EscalationDots level={selectedTask.escalation_level} /></div></div>
-                    {selectedTask.contractor_name && <div><Label className="text-muted-foreground">Contractor</Label><p>{selectedTask.contractor_name}</p></div>}
-                    {selectedTask.inspection_date && <div><Label className="text-muted-foreground">Inspection</Label><p>{format(new Date(selectedTask.inspection_date), 'dd MMM yyyy')}</p></div>}
+                    <div><Label className="text-muted-foreground">Source</Label><p>{selectedTask.source === 'auto_pipeline' ? 'Auto Pipeline' : selectedTask.source === 'auto' ? 'Auto-generated' : 'Manual'}</p></div>
+                    <div><Label className="text-muted-foreground">Escalation</Label><div className="flex items-center gap-2"><span>{selectedTask.escalation_level}</span><EscalationDots level={selectedTask.escalation_level} /></div></div>
+                    {selectedTask.contractor_name && <div><Label className="text-muted-foreground">Contractor</Label><p className="text-primary">{selectedTask.contractor_name}</p></div>}
                     {selectedTask.quoted_cost != null && <div><Label className="text-muted-foreground">Quoted</Label><p>£{selectedTask.quoted_cost}</p></div>}
                     {selectedTask.actual_cost != null && <div><Label className="text-muted-foreground">Actual</Label><p>£{selectedTask.actual_cost}</p></div>}
                   </div>
                   {selectedTask.notes && <div><Label className="text-muted-foreground">Notes</Label><p className="whitespace-pre-wrap">{selectedTask.notes}</p></div>}
                   {selectedTask.resolution_notes && <div><Label className="text-muted-foreground">Resolution</Label><p className="whitespace-pre-wrap">{selectedTask.resolution_notes}</p></div>}
                   <p className="text-xs text-muted-foreground">Created {formatDistanceToNow(new Date(selectedTask.created_at))} ago</p>
+
+                  {/* Pipeline Actions */}
+                  {!['completed', 'cancelled'].includes(selectedTask.status) && (
+                    <div className="space-y-3 pt-2 border-t">
+                      <h4 className="text-sm font-semibold">Actions</h4>
+
+                      {/* Change Status */}
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs w-20">Status</Label>
+                        <Select value={selectedTask.status} onValueChange={(v) => {
+                          handleStatusChange(selectedTask.task_id, v as TaskStatus);
+                          setSelectedTask(null);
+                        }}>
+                          <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {[...PIPELINE_COLUMNS, 'cancelled' as TaskStatus].map(s => (
+                              <SelectItem key={s} value={s}>{TASK_STATUS_NAMES[s] || s}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Mark Complete */}
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          handleStatusChange(selectedTask.task_id, 'completed');
+                          setSelectedTask(null);
+                        }}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Mark Complete
+                      </Button>
+
+                      {/* Snooze */}
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSnooze(selectedTask.task_id, 7)}>
+                          <CalendarPlus className="h-3 w-3 mr-1" />+7d
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSnooze(selectedTask.task_id, 14)}>
+                          +14d
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSnooze(selectedTask.task_id, 30)}>
+                          +30d
+                        </Button>
+                      </div>
+
+                      {/* Dismiss */}
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Dismiss reason (required)..."
+                          value={dismissReason}
+                          onChange={(e) => setDismissReason(e.target.value)}
+                          className="text-xs"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => handleDismiss(selectedTask.task_id)}
+                          disabled={!dismissReason.trim()}
+                        >
+                          <Ban className="h-4 w-4 mr-1" />
+                          Dismiss Task
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <DialogFooter className="flex gap-2">
-                  <Select value={selectedTask.status} onValueChange={(v) => { handleStatusChange(selectedTask.task_id, v as TaskStatus); setSelectedTask(null); }}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[...BOARD_COLUMNS, 'cancelled' as const].map(s => <SelectItem key={s} value={s}>{TASK_STATUS_NAMES[s]}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </DialogFooter>
               </>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Create Task Dialog - simplified */}
+        {/* Create Task Dialog */}
         <Dialog open={showCreate} onOpenChange={setShowCreate}>
           <DialogContent>
             <DialogHeader><DialogTitle>Create Compliance Task</DialogTitle></DialogHeader>
@@ -333,7 +479,7 @@ export default function ComplianceTasks() {
                   <Select name="task_type" defaultValue="renewal_due">
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {Object.entries(TASK_TYPE_NAMES).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      {Object.entries(TASK_TYPE_NAMES).map(([k, v]) => <SelectItem key={k} value={k}>{v as string}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -342,7 +488,7 @@ export default function ComplianceTasks() {
                   <Select name="priority" defaultValue="medium">
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {Object.entries(PRIORITY_NAMES).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      {Object.entries(PRIORITY_NAMES).map(([k, v]) => <SelectItem key={k} value={k}>{v as string}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

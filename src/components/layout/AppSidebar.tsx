@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   LayoutDashboard,
@@ -44,13 +45,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
+import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import logoImage from '@/assets/logo.png';
 
 interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox';
+  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks';
 }
 
 const portfolioItems: NavItem[] = [
@@ -65,7 +67,7 @@ const portfolioItems: NavItem[] = [
 const operationsItems: NavItem[] = [
   { title: 'Actions', icon: AlertTriangle, href: '/actions', badgeType: 'actions' },
   { title: 'Compliance', icon: Shield, href: '/compliance-v2', badgeType: 'compliance' },
-  { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks' },
+  { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks', badgeType: 'tasks' },
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Lending', icon: PoundSterling, href: '/lending' },
@@ -103,6 +105,7 @@ export function AppSidebar() {
   const { stats: complianceStats } = usePortfolioComplianceStats();
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
   const { data: jobCounts } = useJobCounts();
+  const taskStats = useComplianceTaskStats();
 
   const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
 
@@ -155,6 +158,16 @@ export function AppSidebar() {
           className="h-5 min-w-5 px-1.5 text-xs"
         >
           {urgentJobsCount}
+        </Badge>
+      );
+    }
+    if (item.badgeType === 'tasks' && taskStats.overdueCount > 0) {
+      return (
+        <Badge
+          variant="destructive"
+          className="h-5 min-w-5 px-1.5 text-xs"
+        >
+          {taskStats.overdueCount}
         </Badge>
       );
     }

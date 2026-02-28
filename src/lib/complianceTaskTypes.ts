@@ -2,14 +2,19 @@
 // Compliance Tasks & Notifications — Types & Constants
 // ============================================================
 
-export type TaskStatus = 'open' | 'in_progress' | 'waiting' | 'completed' | 'cancelled' | 'overdue';
+export type TaskStatus =
+  | 'open' | 'in_progress' | 'waiting' | 'completed' | 'cancelled' | 'overdue'
+  // Pipeline statuses
+  | 'pending' | 'contractor_assigned' | 'contractor_requested' | 'awaiting_upload';
+
 export type TaskPriority = 'critical' | 'high' | 'medium' | 'low';
 export type TaskType = 'renewal_due' | 'expired' | 'missing_document' | 'new_requirement' | 'follow_up' | 'inspection_scheduled' | 'certificate_received' | 'upload_pending';
-export type TaskSource = 'auto' | 'manual';
+export type TaskSource = 'auto' | 'manual' | 'auto_pipeline';
 
 export type NotificationType =
   | 'expiry_90_day' | 'expiry_60_day' | 'expiry_30_day' | 'expiry_14_day' | 'expiry_7_day'
-  | 'expired' | 'escalation_1' | 'escalation_2' | 'escalation_3'
+  | 'expired' | 'expiring_soon'
+  | 'escalation_1' | 'escalation_2' | 'escalation_3'
   | 'task_assigned' | 'task_overdue' | 'inspection_reminder'
   | 'resolution_confirmed' | 'missing_document' | 'custom';
 
@@ -20,6 +25,7 @@ export const NOTIFICATION_TYPE_NAMES: Record<NotificationType, string> = {
   expiry_14_day: '14-Day Expiry Warning',
   expiry_7_day: '7-Day Final Warning',
   expired: 'Document Expired',
+  expiring_soon: 'Expiring Soon',
   escalation_1: 'Escalation Level 1',
   escalation_2: 'Escalation Level 2',
   escalation_3: 'Escalation Level 3',
@@ -42,15 +48,6 @@ export const TASK_TYPE_NAMES: Record<TaskType, string> = {
   upload_pending: 'Upload Pending',
 };
 
-export const TASK_STATUS_NAMES: Record<TaskStatus, string> = {
-  open: 'Open',
-  in_progress: 'In Progress',
-  waiting: 'Waiting',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  overdue: 'Overdue',
-};
-
 export const PRIORITY_NAMES: Record<TaskPriority, string> = {
   critical: 'Critical',
   high: 'High',
@@ -58,7 +55,37 @@ export const PRIORITY_NAMES: Record<TaskPriority, string> = {
   low: 'Low',
 };
 
+export const TASK_STATUS_NAMES: Record<TaskStatus, string> = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  waiting: 'Waiting',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  overdue: 'Overdue',
+  // Pipeline statuses
+  pending: 'Pending',
+  contractor_assigned: 'Contractor Assigned',
+  contractor_requested: 'Contractor Requested',
+  awaiting_upload: 'Awaiting Upload',
+};
+
+/** Legacy board columns */
 export const BOARD_COLUMNS: TaskStatus[] = ['open', 'in_progress', 'waiting', 'completed'];
+
+/** Pipeline-style columns for the renewal workflow */
+export const PIPELINE_COLUMNS: TaskStatus[] = [
+  'pending',
+  'contractor_assigned',
+  'contractor_requested',
+  'awaiting_upload',
+  'completed',
+];
+
+/** All active (non-terminal) pipeline statuses */
+export const ACTIVE_PIPELINE_STATUSES: TaskStatus[] = [
+  'open', 'in_progress', 'waiting',
+  'pending', 'contractor_assigned', 'contractor_requested', 'awaiting_upload',
+];
 
 export interface ComplianceTaskOverview {
   task_id: string;
