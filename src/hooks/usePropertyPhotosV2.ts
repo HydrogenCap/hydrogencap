@@ -16,7 +16,7 @@ export function usePropertyPhotosV2() {
         .select('id, address_line_1, postcode');
       if (v2Err) throw v2Err;
 
-      // 2. Get all V1 properties (id + address for matching)
+      // 2. Get all V1 properties (id + address for matching — still needed for photo lookup)
       const { data: v1Props, error: v1Err } = await supabase
         .from('properties')
         .select('id, address_line, postcode');

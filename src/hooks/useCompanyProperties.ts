@@ -29,7 +29,7 @@ export interface PropertyWithBeneficialOwners {
 
 /**
  * Fetch all properties where this company is either:
- * - A legal owner (via properties.legal_owner_company_id)
+ * - A legal owner (via properties_v2.legal_owner_company_id)
  * - A beneficial owner (via property_beneficial_owners.company_id)
  */
 export function useCompanyProperties(companyId: string | undefined) {
@@ -38,10 +38,10 @@ export function useCompanyProperties(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return [];
 
-      // 1. Get properties where company is legal owner (using the new FK)
+      // 1. Get properties where company is legal owner
       const { data: legalProperties, error: legalError } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode, area_name, current_value_gbp')
+        .from('properties_v2')
+        .select('id, address_line_1, postcode, county, current_valuation')
         .eq('legal_owner_company_id', companyId);
 
       if (legalError) throw legalError;
@@ -52,7 +52,7 @@ export function useCompanyProperties(companyId: string | undefined) {
         .select(`
           property_id,
           beneficial_percent,
-          properties:property_id(id, address_line, postcode, area_name, current_value_gbp)
+          properties:property_id(id, address_line_1, postcode, county, current_valuation)
         `)
         .eq('company_id', companyId)
         .is('end_date', null);
@@ -66,19 +66,19 @@ export function useCompanyProperties(companyId: string | undefined) {
       for (const prop of legalProperties || []) {
         propertiesMap.set(prop.id, {
           id: prop.id,
-          address_line: prop.address_line,
+          address_line: prop.address_line_1,
           postcode: prop.postcode,
-          area_name: prop.area_name,
-          current_value_gbp: prop.current_value_gbp ? Number(prop.current_value_gbp) : null,
+          area_name: prop.county,
+          current_value_gbp: prop.current_valuation ? Number(prop.current_valuation) : null,
           isLegalOwner: true,
-          legalOwnerPercent: 100, // When you're the legal owner, it's 100%
+          legalOwnerPercent: 100,
           beneficialPercent: null,
         });
       }
 
       // Process beneficial ownership
       for (const bo of beneficialOwnership || []) {
-        const prop = bo.properties as unknown as { id: string; address_line: string; postcode: string | null; area_name: string | null; current_value_gbp: number | null };
+        const prop = bo.properties as unknown as { id: string; address_line_1: string; postcode: string | null; county: string | null; current_valuation: number | null };
         if (!prop) continue;
 
         const existing = propertiesMap.get(prop.id);
@@ -87,10 +87,10 @@ export function useCompanyProperties(companyId: string | undefined) {
         } else {
           propertiesMap.set(prop.id, {
             id: prop.id,
-            address_line: prop.address_line,
+            address_line: prop.address_line_1,
             postcode: prop.postcode,
-            area_name: prop.area_name,
-            current_value_gbp: prop.current_value_gbp,
+            area_name: prop.county,
+            current_value_gbp: prop.current_valuation,
             isLegalOwner: false,
             legalOwnerPercent: null,
             beneficialPercent: Number(bo.beneficial_percent),
@@ -115,8 +115,8 @@ export function useCompanyPropertiesWithBeneficialOwners(companyId: string | und
 
       // Get properties where company is legal owner
       const { data: properties, error: propError } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode, area_name')
+        .from('properties_v2')
+        .select('id, address_line_1, postcode, county')
         .eq('legal_owner_company_id', companyId);
 
       if (propError) throw propError;
@@ -143,9 +143,9 @@ export function useCompanyPropertiesWithBeneficialOwners(companyId: string | und
       // Group beneficial owners by property
       const result: PropertyWithBeneficialOwners[] = properties.map(prop => ({
         id: prop.id,
-        address_line: prop.address_line,
+        address_line: prop.address_line_1,
         postcode: prop.postcode,
-        area_name: prop.area_name,
+        area_name: prop.county,
         beneficialOwners: (beneficialOwners || [])
           .filter(bo => bo.property_id === prop.id)
           .map(bo => ({
@@ -171,13 +171,11 @@ export function calculateCompanyPropertyStats(properties: CompanyProperty[]) {
   const legallyOwnedCount = properties.filter(p => p.isLegalOwner).length;
   const beneficiallyOwnedCount = properties.filter(p => p.beneficialPercent !== null).length;
   
-  // Sum of beneficial percentages across all properties
   const totalBeneficialPercent = properties.reduce(
     (sum, p) => sum + (p.beneficialPercent ?? 0),
     0
   );
   
-  // Weighted value exposure = sum(property_value * beneficial_percent / 100)
   const totalValueExposure = properties.reduce((sum, p) => {
     const value = p.current_value_gbp ?? 0;
     const percent = p.beneficialPercent ?? (p.isLegalOwner ? 100 : 0);

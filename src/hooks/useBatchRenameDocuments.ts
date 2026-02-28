@@ -88,10 +88,10 @@ export function useBatchRenameDocuments() {
     const propertyMap = new Map<string, string>();
     if (propertyIds.length > 0) {
       const { data: props } = await supabase
-        .from('properties')
-        .select('id, address_line')
+        .from('properties_v2')
+        .select('id, address_line_1')
         .in('id', propertyIds);
-      props?.forEach(p => { if (p.address_line) propertyMap.set(p.id, p.address_line); });
+      props?.forEach(p => { if (p.address_line_1) propertyMap.set(p.id, p.address_line_1); });
     }
 
     const companyIds = [...new Set(documents.map(d => d.company_id).filter(Boolean))] as string[];
