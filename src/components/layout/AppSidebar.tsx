@@ -46,6 +46,7 @@ import { useInboxDocuments } from '@/hooks/useDocuments';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
+import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
 import logoImage from '@/assets/logo.png';
 
 interface NavItem {
@@ -76,7 +77,7 @@ const operationsItems: NavItem[] = [
   { title: 'Accounting', icon: PoundSterling, href: '/accounting' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
-  { title: 'Tenants', icon: Users, href: '/tenants-v2' },
+  { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' as any },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
   { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
@@ -106,6 +107,7 @@ export function AppSidebar() {
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
   const { data: jobCounts } = useJobCounts();
   const taskStats = useComplianceTaskStats();
+  const { urgentCount: tenancyUrgentCount } = useTenancyEventCounts();
 
   const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
 
@@ -168,6 +170,16 @@ export function AppSidebar() {
           className="h-5 min-w-5 px-1.5 text-xs"
         >
           {taskStats.overdueCount}
+        </Badge>
+      );
+    }
+    if ((item.badgeType as string) === 'tenancy_events' && tenancyUrgentCount > 0) {
+      return (
+        <Badge
+          variant="destructive"
+          className="h-5 min-w-5 px-1.5 text-xs"
+        >
+          {tenancyUrgentCount}
         </Badge>
       );
     }

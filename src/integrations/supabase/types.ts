@@ -7969,6 +7969,7 @@ export type Database = {
       tenancy_agreements: {
         Row: {
           actual_end_date: string | null
+          break_clause_date: string | null
           created_at: string | null
           deposit_amount: number | null
           deposit_protected_date: string | null
@@ -7978,6 +7979,8 @@ export type Database = {
           id: string
           initial_end_date: string | null
           is_periodic: boolean | null
+          last_rent_review_amount: number | null
+          last_rent_review_date: string | null
           notes: string | null
           notice_served_date: string | null
           notice_type: string | null
@@ -7995,6 +7998,7 @@ export type Database = {
         }
         Insert: {
           actual_end_date?: string | null
+          break_clause_date?: string | null
           created_at?: string | null
           deposit_amount?: number | null
           deposit_protected_date?: string | null
@@ -8004,6 +8008,8 @@ export type Database = {
           id?: string
           initial_end_date?: string | null
           is_periodic?: boolean | null
+          last_rent_review_amount?: number | null
+          last_rent_review_date?: string | null
           notes?: string | null
           notice_served_date?: string | null
           notice_type?: string | null
@@ -8021,6 +8027,7 @@ export type Database = {
         }
         Update: {
           actual_end_date?: string | null
+          break_clause_date?: string | null
           created_at?: string | null
           deposit_amount?: number | null
           deposit_protected_date?: string | null
@@ -8030,6 +8037,8 @@ export type Database = {
           id?: string
           initial_end_date?: string | null
           is_periodic?: boolean | null
+          last_rent_review_amount?: number | null
+          last_rent_review_date?: string | null
           notes?: string | null
           notice_served_date?: string | null
           notice_type?: string | null
