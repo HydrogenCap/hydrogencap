@@ -222,7 +222,7 @@ export function DocumentViewer({
                 {document.property && (
                   <div>
                     <label className="text-xs text-muted-foreground">Property</label>
-                    <p className="text-sm">{document.property.address_line}</p>
+                    <p className="text-sm">{document.property.address_line_1}</p>
                   </div>
                 )}
                 {document.company && (

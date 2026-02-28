@@ -15,8 +15,11 @@ interface Property {
   id: string;
   property_name: string | null;
   address_line: string;
-  address_line2: string | null;
-  town_city: string | null;
+  address_line_1?: string;
+  address_line_2?: string | null;
+  address_line2?: string | null;
+  town_city?: string | null;
+  city?: string | null;
   county: string | null;
   postcode: string | null;
   uprn: string | null;

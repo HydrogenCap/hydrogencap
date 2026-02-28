@@ -9,9 +9,9 @@ import { formatDateUK } from '@/lib/calculations';
 
 interface PropertyWithPassport {
   id: string;
-  address_line: string;
+  address_line_1: string;
   postcode: string | null;
-  area_name: string | null;
+  county: string | null;
   passport: PropertyPassport | null;
 }
 
@@ -198,7 +198,7 @@ export function StockConditionSection() {
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{prop.address_line}</p>
+                          <p className="text-sm font-medium truncate">{prop.address_line_1}</p>
                           <p className="text-xs text-muted-foreground truncate">
                             Missing: {completeness.criticalMissing.slice(0, 3).join(', ')}
                             {completeness.criticalMissing.length > 3 && ` +${completeness.criticalMissing.length - 3} more`}
@@ -248,7 +248,7 @@ export function StockConditionSection() {
                             {isOverdue ? '🔴' : '🟡'}
                           </Badge>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{prop.address_line}</p>
+                            <p className="text-sm font-medium truncate">{prop.address_line_1}</p>
                             <p className="text-xs text-muted-foreground">
                               {isOverdue ? 'Expired' : 'Expiring'}: {formatDateUK(prop.passport?.hmo_licence_expiry)}
                             </p>

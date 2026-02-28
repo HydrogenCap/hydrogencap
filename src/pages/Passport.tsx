@@ -53,8 +53,9 @@ export default function Passport() {
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch = !searchQuery || 
       p.address_line?.toLowerCase().includes(searchLower) ||
+      p.address_line_1?.toLowerCase().includes(searchLower) ||
       p.postcode?.toLowerCase().includes(searchLower) ||
-      p.area_name?.toLowerCase().includes(searchLower) ||
+      p.county?.toLowerCase().includes(searchLower) ||
       p.uprn?.toLowerCase().includes(searchLower);
 
     // Filters
@@ -328,7 +329,7 @@ export default function Passport() {
                           <p className="font-medium text-foreground">{property.address_line}</p>
                           <p className="text-sm text-muted-foreground">
                             {property.postcode}
-                            {property.town_city && ` • ${property.town_city}`}
+                            {property.city && ` • ${property.city}`}
                           </p>
                         </div>
 

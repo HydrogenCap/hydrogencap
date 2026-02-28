@@ -36,7 +36,7 @@ export interface ManagedDocument {
   updated_at: string;
   deleted_at: string | null;
   // Joined data
-  property?: { address_line: string } | null;
+  property?: { address_line_1: string } | null;
   company?: { legal_name: string } | null;
 }
  
@@ -96,7 +96,7 @@ export interface ManagedDocument {
             file_type, file_size_bytes, mime_type, description, document_date, expiry_date,
             review_status, is_confidential, visible_to_shareholders, visible_to_tenants,
             version, is_current_version, uploaded_by, created_at, updated_at, deleted_at,
-            property:properties!documents_property_id_fkey(address_line),
+            property:properties_v2(address_line_1),
             company:companies(legal_name)
          `)
          .is('deleted_at', null)
@@ -128,7 +128,7 @@ export interface ManagedDocument {
        if (error) throw error;
  
        // Client-side search filter
-       let results = data as ManagedDocument[];
+       let results = data as unknown as ManagedDocument[];
        if (filters?.search) {
          const searchLower = filters.search.toLowerCase();
          results = results.filter(doc =>
@@ -240,11 +240,11 @@ export interface ManagedDocument {
 
         if (propertyId) {
           const { data: prop } = await supabase
-            .from('properties')
-            .select('address_line')
+            .from('properties_v2')
+            .select('address_line_1')
             .eq('id', propertyId)
             .single();
-          propertyAddress = prop?.address_line || null;
+          propertyAddress = prop?.address_line_1 || null;
         }
 
         if (!propertyAddress && companyId) {

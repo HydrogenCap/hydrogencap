@@ -50,8 +50,8 @@ export function usePassportsWithProperties() {
     queryFn: async () => {
       // Get all properties
       const { data: properties, error: propError } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode, area_name');
+        .from('properties_v2')
+        .select('id, address_line_1, postcode, county');
       
       if (propError) throw propError;
 

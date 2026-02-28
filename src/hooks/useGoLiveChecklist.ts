@@ -463,9 +463,9 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
 
       // Update property lifecycle
       const { error: propertyError } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .update({
-          lifecycle_type: 'core_rental',
+          lifecycle_stage: 'operational',
           lifecycle_status_date: new Date().toISOString(),
           operational_date: new Date().toISOString().split('T')[0],
         })
@@ -481,7 +481,7 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['go_live_checklist', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
     },
   });

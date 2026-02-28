@@ -119,7 +119,7 @@ export function useUpdateCoreIdentity() {
       const { data: user } = await supabase.auth.getUser();
       
       const { data: result, error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .update({
           ...data,
           identity_updated_at: new Date().toISOString(),
