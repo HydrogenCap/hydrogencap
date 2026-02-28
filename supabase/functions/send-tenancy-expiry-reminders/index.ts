@@ -53,7 +53,6 @@ serve(async (req) => {
       });
     }
 
-  try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const resend = new Resend(RESEND_API_KEY);
 
