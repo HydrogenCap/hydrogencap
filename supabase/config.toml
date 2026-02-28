@@ -100,3 +100,6 @@ verify_jwt = false
 
 [functions.ai-gap-fill]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
