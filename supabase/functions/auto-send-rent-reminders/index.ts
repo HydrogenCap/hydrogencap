@@ -2,17 +2,55 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const ALLOWED_ORIGINS = [
+  "https://hydrogencap.com",
+  "https://www.hydrogencap.com",
+  "https://hydrogencapital.lovable.app",
+  Deno.env.get("ALLOWED_ORIGIN"),
+].filter(Boolean) as string[];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Verify cron/admin authorization
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const authHeader = req.headers.get("Authorization");
+
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      // Authorized as cron job
+    } else if (authHeader?.startsWith("Bearer ")) {
+      const supabaseAuth = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!
+      );
+      const token = authHeader.replace("Bearer ", "");
+      const { error: authError } = await supabaseAuth.auth.getUser(token);
+      if (authError) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -22,7 +60,7 @@ serve(async (req: Request) => {
     if (!resendKey) {
       return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
     const resend = new Resend(resendKey);
@@ -161,7 +199,6 @@ serve(async (req: Request) => {
       .gt("amount_outstanding", 0);
 
     for (const item of overdueItems || []) {
-      // Skip if warned within last 7 days
       if (item.warning_sent_at && item.warning_sent_at > sevenDaysAgoStr) continue;
 
       const tenant = (item as any).tenancy?.tenant;
@@ -209,13 +246,13 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({ success: true, sent, message: `Sent ${sent} reminders` }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (error: any) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });
