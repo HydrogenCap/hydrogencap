@@ -4607,6 +4607,140 @@ export type Database = {
           },
         ]
       }
+      lettings_pipeline: {
+        Row: {
+          actual_move_in: string | null
+          advertised_rent: number | null
+          created_at: string
+          id: string
+          listing_date: string | null
+          listing_urls: string[] | null
+          marketing_channels: string[] | null
+          notes: string | null
+          offer_date: string | null
+          offered_rent: number | null
+          offered_to_email: string | null
+          offered_to_name: string | null
+          offered_to_phone: string | null
+          org_id: string
+          property_id: string
+          reference_provider: string | null
+          reference_status: string | null
+          room_id: string | null
+          stage: string
+          target_move_in: string | null
+          tenancy_id: string | null
+          total_enquiries: number | null
+          total_viewings: number | null
+          updated_at: string
+          void_period_id: string | null
+        }
+        Insert: {
+          actual_move_in?: string | null
+          advertised_rent?: number | null
+          created_at?: string
+          id?: string
+          listing_date?: string | null
+          listing_urls?: string[] | null
+          marketing_channels?: string[] | null
+          notes?: string | null
+          offer_date?: string | null
+          offered_rent?: number | null
+          offered_to_email?: string | null
+          offered_to_name?: string | null
+          offered_to_phone?: string | null
+          org_id: string
+          property_id: string
+          reference_provider?: string | null
+          reference_status?: string | null
+          room_id?: string | null
+          stage?: string
+          target_move_in?: string | null
+          tenancy_id?: string | null
+          total_enquiries?: number | null
+          total_viewings?: number | null
+          updated_at?: string
+          void_period_id?: string | null
+        }
+        Update: {
+          actual_move_in?: string | null
+          advertised_rent?: number | null
+          created_at?: string
+          id?: string
+          listing_date?: string | null
+          listing_urls?: string[] | null
+          marketing_channels?: string[] | null
+          notes?: string | null
+          offer_date?: string | null
+          offered_rent?: number | null
+          offered_to_email?: string | null
+          offered_to_name?: string | null
+          offered_to_phone?: string | null
+          org_id?: string
+          property_id?: string
+          reference_provider?: string | null
+          reference_status?: string | null
+          room_id?: string | null
+          stage?: string
+          target_move_in?: string | null
+          tenancy_id?: string | null
+          total_enquiries?: number | null
+          total_viewings?: number | null
+          updated_at?: string
+          void_period_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lettings_pipeline_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lettings_pipeline_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lettings_pipeline_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "lettings_pipeline_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lettings_pipeline_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lettings_pipeline_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
+          },
+          {
+            foreignKeyName: "lettings_pipeline_void_period_id_fkey"
+            columns: ["void_period_id"]
+            isOneToOne: false
+            referencedRelation: "void_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_facilities: {
         Row: {
           account_reference: string | null
