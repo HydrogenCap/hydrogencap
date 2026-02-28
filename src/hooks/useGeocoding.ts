@@ -76,13 +76,13 @@ export function useGeocoding() {
     const status: GeocodeStatus = geocodeData.geocode_confidence === 'exact' ? 'SUCCESS' : 'PARTIAL';
     
     const { error } = await supabase
-      .from('properties')
+      .from('properties_v2')
       .update({
         place_id: geocodeData.place_id,
         formatted_address: geocodeData.formatted_address,
         latitude: geocodeData.latitude,
         longitude: geocodeData.longitude,
-        town_city: geocodeData.town_city,
+        city: geocodeData.town_city,
         county: geocodeData.county,
         country: geocodeData.country,
         geocode_status: status,
@@ -94,8 +94,8 @@ export function useGeocoding() {
 
     if (error) throw error;
     
-    queryClient.invalidateQueries({ queryKey: ['properties'] });
-    queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+    queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
+    queryClient.invalidateQueries({ queryKey: ['property_v2', propertyId] });
   }, [queryClient]);
 
   // Mark a property geocode as failed
@@ -104,7 +104,7 @@ export function useGeocoding() {
     errorMessage: string
   ) => {
     const { error } = await supabase
-      .from('properties')
+      .from('properties_v2')
       .update({
         geocode_status: 'FAILED' as GeocodeStatus,
         geocode_error: errorMessage,
@@ -118,17 +118,17 @@ export function useGeocoding() {
   // Geocode a property by building address from its fields
   const geocodeProperty = useCallback(async (property: {
     id: string;
-    address_line: string;
-    address_line2?: string | null;
-    town_city?: string | null;
+    address_line_1: string;
+    address_line_2?: string | null;
+    city?: string | null;
     postcode?: string | null;
     country?: string | null;
   }): Promise<boolean> => {
     // Build full address string
     const addressParts = [
-      property.address_line,
-      property.address_line2,
-      property.town_city,
+      property.address_line_1,
+      property.address_line_2,
+      property.city,
       property.postcode,
       property.country || 'United Kingdom',
     ].filter(Boolean);
@@ -173,8 +173,8 @@ export function useBackfillGeocoding() {
     try {
       // Fetch all properties needing geocoding
       const { data: properties, error } = await supabase
-        .from('properties')
-        .select('id, address_line, address_line2, town_city, postcode, country')
+        .from('properties_v2')
+        .select('id, address_line_1, address_line_2, city, postcode, country')
         .or('geocode_status.eq.NOT_STARTED,geocode_status.eq.FAILED,latitude.is.null');
 
       if (error) throw error;
@@ -214,7 +214,7 @@ export function useBackfillGeocoding() {
                 ...p.failures,
                 {
                   propertyId: property.id,
-                  address: property.address_line,
+                  address: property.address_line_1,
                   error: 'Geocoding failed',
                 },
               ],
@@ -228,7 +228,7 @@ export function useBackfillGeocoding() {
       }
 
       // Refresh property list after backfill
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
 
       // Get final progress for toast
       const finalProgress = await new Promise<BackfillProgress | null>(resolve => {

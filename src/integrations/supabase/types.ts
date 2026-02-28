@@ -6024,7 +6024,12 @@ export type Database = {
         Row: {
           address_line_1: string
           address_line_2: string | null
+          asset_category: string | null
+          beneficial_override_notes: string | null
+          beneficial_override_percent: number | null
           city: string
+          co_alarm_required: boolean | null
+          conservation_area: boolean | null
           council_area: string | null
           council_name: string | null
           country: string | null
@@ -6034,23 +6039,49 @@ export type Database = {
           entity_id: string
           epc_expiry_date: string | null
           epc_rating: string | null
+          epc_required: boolean | null
+          fire_alarm_grade: string | null
+          formatted_address: string | null
+          geocode_confidence: string | null
+          geocode_error: string | null
+          geocode_source: string | null
+          geocode_status: string | null
+          geocoded_at: string | null
+          has_emergency_lighting: boolean | null
           has_fire_alarm_system: boolean | null
           has_gas_supply: boolean | null
+          has_solar: boolean | null
           id: string
+          identity_updated_at: string | null
+          identity_updated_by: string | null
+          is_hmo_licensed: boolean | null
           latitude: number | null
+          legal_owner_company_id: string | null
+          legal_owner_party_id: string | null
           lifecycle_stage: string
+          lifecycle_status_date: string | null
+          listed_status: string | null
           listing_grade: string
           longitude: number | null
           notes: string | null
+          occupancy_status: string | null
+          operational_date: string | null
           org_id: string
+          place_id: string | null
+          planning_authority: string | null
           postcode: string
+          property_name: string | null
           property_type: string
           purchase_date: string | null
           purchase_price: number | null
           rent_basis: string
+          selective_licence_required: boolean | null
+          tenure: string | null
+          title_number: string | null
           total_floors: number | null
           total_lettable_rooms: number | null
           updated_at: string | null
+          uprn: string | null
           valuation_date: string | null
           whole_house_rent_pcm: number | null
           year_built: number | null
@@ -6058,7 +6089,12 @@ export type Database = {
         Insert: {
           address_line_1: string
           address_line_2?: string | null
+          asset_category?: string | null
+          beneficial_override_notes?: string | null
+          beneficial_override_percent?: number | null
           city: string
+          co_alarm_required?: boolean | null
+          conservation_area?: boolean | null
           council_area?: string | null
           council_name?: string | null
           country?: string | null
@@ -6068,23 +6104,49 @@ export type Database = {
           entity_id: string
           epc_expiry_date?: string | null
           epc_rating?: string | null
+          epc_required?: boolean | null
+          fire_alarm_grade?: string | null
+          formatted_address?: string | null
+          geocode_confidence?: string | null
+          geocode_error?: string | null
+          geocode_source?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
+          has_emergency_lighting?: boolean | null
           has_fire_alarm_system?: boolean | null
           has_gas_supply?: boolean | null
+          has_solar?: boolean | null
           id?: string
+          identity_updated_at?: string | null
+          identity_updated_by?: string | null
+          is_hmo_licensed?: boolean | null
           latitude?: number | null
+          legal_owner_company_id?: string | null
+          legal_owner_party_id?: string | null
           lifecycle_stage?: string
+          lifecycle_status_date?: string | null
+          listed_status?: string | null
           listing_grade?: string
           longitude?: number | null
           notes?: string | null
+          occupancy_status?: string | null
+          operational_date?: string | null
           org_id: string
+          place_id?: string | null
+          planning_authority?: string | null
           postcode: string
+          property_name?: string | null
           property_type: string
           purchase_date?: string | null
           purchase_price?: number | null
           rent_basis?: string
+          selective_licence_required?: boolean | null
+          tenure?: string | null
+          title_number?: string | null
           total_floors?: number | null
           total_lettable_rooms?: number | null
           updated_at?: string | null
+          uprn?: string | null
           valuation_date?: string | null
           whole_house_rent_pcm?: number | null
           year_built?: number | null
@@ -6092,7 +6154,12 @@ export type Database = {
         Update: {
           address_line_1?: string
           address_line_2?: string | null
+          asset_category?: string | null
+          beneficial_override_notes?: string | null
+          beneficial_override_percent?: number | null
           city?: string
+          co_alarm_required?: boolean | null
+          conservation_area?: boolean | null
           council_area?: string | null
           council_name?: string | null
           country?: string | null
@@ -6102,23 +6169,49 @@ export type Database = {
           entity_id?: string
           epc_expiry_date?: string | null
           epc_rating?: string | null
+          epc_required?: boolean | null
+          fire_alarm_grade?: string | null
+          formatted_address?: string | null
+          geocode_confidence?: string | null
+          geocode_error?: string | null
+          geocode_source?: string | null
+          geocode_status?: string | null
+          geocoded_at?: string | null
+          has_emergency_lighting?: boolean | null
           has_fire_alarm_system?: boolean | null
           has_gas_supply?: boolean | null
+          has_solar?: boolean | null
           id?: string
+          identity_updated_at?: string | null
+          identity_updated_by?: string | null
+          is_hmo_licensed?: boolean | null
           latitude?: number | null
+          legal_owner_company_id?: string | null
+          legal_owner_party_id?: string | null
           lifecycle_stage?: string
+          lifecycle_status_date?: string | null
+          listed_status?: string | null
           listing_grade?: string
           longitude?: number | null
           notes?: string | null
+          occupancy_status?: string | null
+          operational_date?: string | null
           org_id?: string
+          place_id?: string | null
+          planning_authority?: string | null
           postcode?: string
+          property_name?: string | null
           property_type?: string
           purchase_date?: string | null
           purchase_price?: number | null
           rent_basis?: string
+          selective_licence_required?: boolean | null
+          tenure?: string | null
+          title_number?: string | null
           total_floors?: number | null
           total_lettable_rooms?: number | null
           updated_at?: string | null
+          uprn?: string | null
           valuation_date?: string | null
           whole_house_rent_pcm?: number | null
           year_built?: number | null
@@ -6136,6 +6229,20 @@ export type Database = {
             columns: ["entity_id"]
             isOneToOne: false
             referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_v2_legal_owner_company_id_fkey"
+            columns: ["legal_owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_v2_legal_owner_party_id_fkey"
+            columns: ["legal_owner_party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
             referencedColumns: ["id"]
           },
           {

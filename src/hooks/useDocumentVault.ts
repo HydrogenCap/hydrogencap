@@ -92,7 +92,7 @@ export function useVaultDocuments(filters: VaultFilters) {
       if (filters.companyId) {
         // Get properties where this company is the legal owner
         const { data: ownedProperties } = await supabase
-          .from('properties')
+          .from('properties_v2')
           .select('id')
           .eq('legal_owner_company_id', filters.companyId);
 

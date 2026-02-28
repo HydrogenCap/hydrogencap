@@ -11,8 +11,8 @@ interface BulkLoanUpdateParams {
 
 interface BulkPropertyUpdateParams {
   propertyIds: string[];
-  lifecycleType?: 'development' | 'core_rental';
-  legalOwnerCompanyId?: string | null;
+  lifecycleStage?: string;
+  entityId?: string | null;
 }
 
 export function useBulkLoanUpdate() {
@@ -46,7 +46,7 @@ export function useBulkLoanUpdate() {
       return { updatedCount: count || propertyIds.length };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
       toast.success(`Updated loans for ${data.updatedCount} properties`);
     },
     onError: (error) => {
@@ -61,21 +61,21 @@ export function useBulkPropertyUpdate() {
   return useMutation({
     mutationFn: async ({ 
       propertyIds, 
-      lifecycleType, 
-      legalOwnerCompanyId 
+      lifecycleStage, 
+      entityId 
     }: BulkPropertyUpdateParams) => {
       const updates: Record<string, any> = {};
       
-      if (lifecycleType) {
-        updates.lifecycle_type = lifecycleType;
-        // Set operational date when transitioning to core_rental
-        if (lifecycleType === 'core_rental') {
+      if (lifecycleStage) {
+        updates.lifecycle_stage = lifecycleStage;
+        // Set operational date when transitioning to operational
+        if (lifecycleStage === 'operational') {
           updates.operational_date = new Date().toISOString().split('T')[0];
         }
       }
       
-      if (legalOwnerCompanyId !== undefined) {
-        updates.legal_owner_company_id = legalOwnerCompanyId;
+      if (entityId !== undefined) {
+        updates.entity_id = entityId;
       }
 
       if (Object.keys(updates).length === 0) {
@@ -83,7 +83,7 @@ export function useBulkPropertyUpdate() {
       }
 
       const { error, count } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .update(updates)
         .in('id', propertyIds);
 
@@ -92,7 +92,7 @@ export function useBulkPropertyUpdate() {
       return { updatedCount: count || propertyIds.length };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
       toast.success(`Updated ${data.updatedCount} properties`);
     },
     onError: (error) => {
