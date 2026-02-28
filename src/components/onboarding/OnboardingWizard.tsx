@@ -38,6 +38,7 @@ export function OnboardingWizard() {
       if (error) throw error;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
