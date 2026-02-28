@@ -156,6 +156,7 @@ function AuthPage() {
                         <FormControl>
                           <Input
                             placeholder="John Smith"
+                            autoComplete="name"
                             {...field}
                             className="bg-input border-border"
                           />
@@ -176,6 +177,7 @@ function AuthPage() {
                         <Input
                           type="email"
                           placeholder="you@example.com"
+                          autoComplete="email"
                           {...field}
                           className="bg-input border-border"
                         />
@@ -205,6 +207,7 @@ function AuthPage() {
                         <Input
                           type="password"
                           placeholder="••••••••"
+                          autoComplete={isLogin ? "current-password" : "new-password"}
                           {...field}
                           className="bg-input border-border"
                         />

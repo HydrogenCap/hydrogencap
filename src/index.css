@@ -238,3 +238,9 @@
 .leaflet-popup-close-button:hover {
   color: #f9fafb !important;
 }
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
