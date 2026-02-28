@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useAllPropertyCoverPhotos } from '@/hooks/useAllPropertyCoverPhotos';
 import { useAllCompliance } from '@/hooks/useCompliance';
-import { generateBankPresentation, downloadPDF, type EnhancedPresentationOptions } from '@/lib/bankPresentationGenerator';
+import type { EnhancedPresentationOptions } from '@/lib/bankPresentationGenerator';
 import { calculatePortfolioStats } from '@/lib/portfolioStats';
 import { getPropertyMetrics } from '@/lib/propertyMetrics';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
@@ -126,6 +126,7 @@ export function BankPresentationDialog({ trigger }: BankPresentationDialogProps)
         complianceSummary: options.includeCompliance ? complianceSummary : undefined,
       };
 
+      const { generateBankPresentation, downloadPDF } = await import('@/lib/bankPresentationGenerator');
       const blob = await generateBankPresentation(
         coreProperties, 
         portfolioStats, 

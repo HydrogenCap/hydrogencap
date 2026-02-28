@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,6 @@ import {
   type ReportType,
   type MortgageBrokerPackData,
 } from '@/hooks/useReportGeneration';
-import { validateMortgageBrokerPack } from '@/lib/mortgageBrokerPackGenerator';
 import { useReportHistory, getReportTypeName, deleteReport } from '@/hooks/useReportHistory';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
 
@@ -97,9 +96,16 @@ export default function Reports() {
   }, [propertyForBrokerPack, companies, portfolioSummary, loanPurpose, targetLoanAmount, targetLTV, brokerNotes, preparedFor]);
 
   // Validate broker pack
-  const brokerPackValidation = useMemo(() => {
-    if (!brokerPackData) return { canGenerate: false, warnings: [], errors: ['No properties available'] };
-    return validateMortgageBrokerPack(brokerPackData);
+  const [brokerPackValidation, setBrokerPackValidation] = useState<{ canGenerate: boolean; warnings: string[]; errors: string[] }>({ canGenerate: false, warnings: [], errors: ['No properties available'] });
+  
+  useEffect(() => {
+    if (!brokerPackData) {
+      setBrokerPackValidation({ canGenerate: false, warnings: [], errors: ['No properties available'] });
+      return;
+    }
+    import('@/lib/mortgageBrokerPackGenerator').then(({ validateMortgageBrokerPack }) => {
+      setBrokerPackValidation(validateMortgageBrokerPack(brokerPackData));
+    });
   }, [brokerPackData]);
 
   const handleGenerateReport = async (reportType: ReportType) => {
