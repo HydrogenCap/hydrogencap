@@ -107,13 +107,13 @@ export function LocationRegistryCard({
     setIsSaving(true);
     try {
       const { error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .update({ latitude: lat, longitude: lng })
         .eq('id', propertyId);
 
       if (error) throw error;
       
-      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['property_v2', propertyId] });
       setCoordDialogOpen(false);
       toast({
         title: 'Coordinates saved',

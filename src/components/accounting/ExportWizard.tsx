@@ -132,11 +132,11 @@ export function ExportWizard() {
       // Get property addresses
       const propertyIds = [...new Set((snapshots || []).map((s: any) => s.property_id))];
       const { data: properties } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode')
+        .from('properties_v2')
+        .select('id, address_line_1, postcode')
         .in('id', propertyIds);
 
-      const propMap = new Map((properties || []).map((p: any) => [p.id, `${p.address_line || ''} ${p.postcode || ''}`.trim()]));
+      const propMap = new Map((properties || []).map((p: any) => [p.id, `${p.address_line_1 || ''} ${p.postcode || ''}`.trim()]));
       const entityMap = new Map((entities || []).map(e => [e.id, e]));
 
       const allLines: TransactionLine[] = [];

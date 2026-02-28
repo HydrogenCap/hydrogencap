@@ -66,9 +66,9 @@ export function PropertyFeaturesEditor({
     setSaving(true);
     try {
       const { error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .update({
-          has_gas: features.has_gas,
+          has_gas_supply: features.has_gas,
           has_fire_alarm_system: features.has_fire_alarm_system,
           fire_alarm_grade: features.fire_alarm_grade,
           has_emergency_lighting: features.has_emergency_lighting,
@@ -77,7 +77,7 @@ export function PropertyFeaturesEditor({
           is_hmo_licensed: features.is_hmo_licensed,
           selective_licence_required: features.selective_licence_required,
           co_alarm_required: features.co_alarm_required,
-          is_grade_listed: features.is_grade_listed,
+          listed_status: features.is_grade_listed ? 'listed' : 'not_listed',
           listing_grade: features.listing_grade,
           has_solar: features.has_solar,
         })

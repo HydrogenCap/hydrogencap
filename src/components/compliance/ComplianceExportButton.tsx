@@ -45,15 +45,15 @@ export function ComplianceExportButton() {
   const { data: properties } = useQuery({
     queryKey: ['properties-list-light'],
     queryFn: async () => {
-      const allData: { id: string; address_line: string }[] = [];
+      const allData: { id: string; address_line_1: string }[] = [];
       let offset = 0;
       const batchSize = 1000;
       let hasMore = true;
       while (hasMore) {
         const { data, error } = await supabase
-          .from('properties')
-          .select('id, address_line')
-          .order('address_line')
+          .from('properties_v2')
+          .select('id, address_line_1')
+          .order('address_line_1')
           .range(offset, offset + batchSize - 1);
         if (error) throw error;
         if (data && data.length > 0) {
@@ -108,7 +108,7 @@ export function ComplianceExportButton() {
               {sortedProperties.map((p) => (
                 <DropdownMenuItem key={p.id} onClick={() => handleExport(p.id)}>
                   <Home className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{p.address_line}</span>
+                  <span className="truncate">{p.address_line_1}</span>
                 </DropdownMenuItem>
               ))}
             </>
