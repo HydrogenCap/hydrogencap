@@ -48,13 +48,15 @@ export default function Jobs() {
     }
   };
  
-   const { data: jobs, isLoading } = useContractorJobs({
+   const { data, isLoading } = useContractorJobs({
      status: getStatusArray(),
      priority: priorityFilter !== 'all' ? [priorityFilter as JobPriority] : undefined,
    });
+
+   const jobs = data?.items;
  
-   // Filter by search term
-   const filteredJobs = jobs?.filter(job => {
+    // Filter by search term
+    const filteredJobs = jobs?.filter(job => {
      if (!searchTerm) return true;
      const search = searchTerm.toLowerCase();
      return (
