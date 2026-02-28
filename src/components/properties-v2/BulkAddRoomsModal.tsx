@@ -17,9 +17,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   propertyId: string;
   existingRoomCount: number;
+  unitId?: string;
 }
 
-export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoomCount }: Props) {
+export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoomCount, unitId }: Props) {
   const bulkCreate = useBulkCreateRooms();
   const { toast } = useToast();
   const [count, setCount] = useState('3');
@@ -35,9 +36,9 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
       return;
     }
     const start = parseInt(startNum) || (existingRoomCount + 1);
-    const rooms: Omit<RoomV2, 'id' | 'created_at' | 'updated_at'>[] = [];
+    const rooms: any[] = [];
     for (let i = 0; i < n; i++) {
-      rooms.push({
+      const room: any = {
         property_id: propertyId,
         room_name: `Room ${start + i}`,
         room_type: roomType as RoomV2['room_type'],
@@ -48,7 +49,9 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
         target_rent_pcm: rent ? parseFloat(rent) : null,
         occupancy_status: roomType === 'communal' ? 'unavailable' : 'vacant',
         notes: null,
-      });
+      };
+      if (unitId) room.unit_id = unitId;
+      rooms.push(room);
     }
     try {
       await bulkCreate.mutateAsync(rooms);
