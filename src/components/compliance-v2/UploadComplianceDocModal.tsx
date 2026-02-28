@@ -58,7 +58,7 @@ export function UploadComplianceDocModal({
       let fileName: string | null = null;
 
       if (file) {
-        const path = `${propertyId}/${docType}/${Date.now()}-${file.name}`;
+        const path = `${orgId}/${propertyId}/${docType}/${Date.now()}-${file.name}`;
         const { error: uploadErr } = await supabase.storage
           .from('compliance-documents')
           .upload(path, file);
