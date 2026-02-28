@@ -9672,6 +9672,10 @@ export type Database = {
         Returns: undefined
       }
       update_rent_schedule_statuses: { Args: never; Returns: undefined }
+      user_can_access_investor_report: {
+        Args: { file_name: string }
+        Returns: boolean
+      }
       user_has_org_access: { Args: { check_org_id: string }; Returns: boolean }
       user_has_shareholder_access: {
         Args: { check_org_id: string }
@@ -9686,6 +9690,14 @@ export type Database = {
         Returns: boolean
       }
       user_is_tenant_portal_user: { Args: never; Returns: boolean }
+      user_owns_maintenance_folder: {
+        Args: { folder_name: string }
+        Returns: boolean
+      }
+      user_owns_property_folder: {
+        Args: { folder_name: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "viewer"

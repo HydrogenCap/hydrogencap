@@ -1,0 +1,70 @@
+name: Security Audit
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  push:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        id: audit
+        continue-on-error: true
+        run: |
+          npm audit --production --audit-level=high 2>&1 | tee audit-output.txt
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+
+      - name: Check for critical vulnerabilities
+        if: steps.audit.outputs.exit_code != '0'
+        run: |
+          echo "::warning::npm audit found vulnerabilities. Review audit-output.txt"
+          echo "## npm Audit Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat audit-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Create issue for critical vulns
+        if: steps.audit.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('audit-output.txt', 'utf8');
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,automated',
+            });
+
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🔒 npm audit: Vulnerabilities detected',
+                body: `## npm Audit Report\n\nAutomated scan found vulnerabilities:\n\n\`\`\`\n${output.slice(0, 3000)}\n\`\`\`\n\nRun \`npm audit fix\` locally to resolve.`,
+                labels: ['security', 'automated'],
+              });
+            }

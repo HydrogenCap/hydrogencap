@@ -159,10 +159,13 @@
        if (error) throw error;
        return data;
      },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['contractors'] });
-       toast({ title: 'Contractor added' });
-     },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['contractors'] });
+        toast({ title: 'Contractor added' });
+      },
+      onError: (error: Error) => {
+        toast({ title: 'Failed to add contractor', description: error.message, variant: 'destructive' });
+      },
    });
  }
  
@@ -182,11 +185,14 @@
        if (error) throw error;
        return data;
      },
-     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: ['contractors'] });
-       queryClient.invalidateQueries({ queryKey: ['contractor', data.id] });
-       toast({ title: 'Contractor updated' });
-     },
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ['contractors'] });
+        queryClient.invalidateQueries({ queryKey: ['contractor', data.id] });
+        toast({ title: 'Contractor updated' });
+      },
+      onError: (error: Error) => {
+        toast({ title: 'Failed to update contractor', description: error.message, variant: 'destructive' });
+      },
    });
  }
  
@@ -233,11 +239,14 @@
        if (error) throw error;
        return data;
      },
-     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: ['contractors'] });
-       queryClient.invalidateQueries({ queryKey: ['contractor-reviews', data.contractor_id] });
-       toast({ title: 'Review added' });
-     },
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: ['contractors'] });
+        queryClient.invalidateQueries({ queryKey: ['contractor-reviews', data.contractor_id] });
+        toast({ title: 'Review added' });
+      },
+      onError: (error: Error) => {
+        toast({ title: 'Failed to add review', description: error.message, variant: 'destructive' });
+      },
    });
  }
  
@@ -254,9 +263,12 @@
  
        if (error) throw error;
      },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['contractors'] });
-       toast({ title: 'Contractor removed' });
-     },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['contractors'] });
+        toast({ title: 'Contractor removed' });
+      },
+      onError: (error: Error) => {
+        toast({ title: 'Failed to remove contractor', description: error.message, variant: 'destructive' });
+      },
    });
  }

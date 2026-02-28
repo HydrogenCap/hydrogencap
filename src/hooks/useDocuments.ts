@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { ActivityLoggers } from './useActivityLog';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
@@ -80,12 +81,15 @@ export function useCreateDocument() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
-      // Log activity
       ActivityLoggers.documentUploaded(
         data.property_id,
         data.original_file_name,
         data.doc_type || undefined
       );
+      showMutationSuccess('Document created');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to create document');
     },
   });
 }
@@ -118,6 +122,10 @@ export function useUpdateDocument() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      showMutationSuccess('Document updated');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update document');
     },
   });
 }
@@ -136,6 +144,10 @@ export function useDeleteDocument() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
+      showMutationSuccess('Document deleted');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to delete document');
     },
   });
 }
@@ -157,6 +169,10 @@ export function useBulkAcceptDocuments() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      showMutationSuccess('Documents accepted');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to accept documents');
     },
   });
 }

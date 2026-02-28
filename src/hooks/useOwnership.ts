@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 
 type OwnershipEntity = Database['public']['Tables']['ownership_entities']['Row'];
 type OwnershipEntityInsert = Database['public']['Tables']['ownership_entities']['Insert'];
@@ -72,6 +73,10 @@ export function useCreateOwnershipEntity() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ownership_entities'] });
+      showMutationSuccess('Entity created');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to create entity');
     },
   });
 }
@@ -95,6 +100,10 @@ export function useUpdateOwnershipEntity() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ownership_entities'] });
       queryClient.invalidateQueries({ queryKey: ['property_ownership'] });
+      showMutationSuccess('Entity updated');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update entity');
     },
   });
 }
@@ -115,6 +124,10 @@ export function useDeleteOwnershipEntity() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ownership_entities'] });
       queryClient.invalidateQueries({ queryKey: ['property_ownership'] });
+      showMutationSuccess('Entity deleted');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to delete entity');
     },
   });
 }
@@ -139,6 +152,10 @@ export function useAddPropertyOwnership() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property_ownership', data.property_id] });
+      showMutationSuccess('Ownership added');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to add ownership');
     },
   });
 }
@@ -164,6 +181,10 @@ export function useUpdatePropertyOwnership() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property_ownership', data.property_id] });
+      showMutationSuccess('Ownership updated');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update ownership');
     },
   });
 }
@@ -184,6 +205,10 @@ export function useDeletePropertyOwnership() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property_ownership', data.propertyId] });
+      showMutationSuccess('Ownership removed');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to remove ownership');
     },
   });
 }
