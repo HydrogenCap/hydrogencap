@@ -10,6 +10,7 @@ import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
+import { TenantPortalProtectedRoute } from "@/components/tenant-portal/TenantPortalProtectedRoute";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { LoadingState, ErrorBoundary, RouteBoundary } from "@/components/common";
 import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
@@ -540,10 +541,10 @@ const App = () => (
             
             {/* Tenant portal routes */}
             <Route path="/tenant-portal/accept/:token" element={<TenantAcceptInvite />} />
-            <Route path="/tenant-portal" element={<TenantPortalHome />} />
-            <Route path="/tenant-portal/rent" element={<TenantRentHistory />} />
-            <Route path="/tenant-portal/maintenance" element={<TenantMaintenance />} />
-            <Route path="/tenant-portal/documents" element={<TenantDocuments />} />
+            <Route path="/tenant-portal" element={<TenantPortalProtectedRoute><TenantPortalHome /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/rent" element={<TenantPortalProtectedRoute><TenantRentHistory /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/maintenance" element={<TenantPortalProtectedRoute><TenantMaintenance /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/documents" element={<TenantPortalProtectedRoute><TenantDocuments /></TenantPortalProtectedRoute>} />
             
             {/* Team invite acceptance */}
             <Route path="/team/accept/:token" element={<AcceptTeamInvite />} />
