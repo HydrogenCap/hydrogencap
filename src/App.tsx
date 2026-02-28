@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
@@ -103,6 +103,17 @@ const MarketingContact = lazy(() => import("./pages/marketing/Contact"));
 const MarketingDemo = lazy(() => import("./pages/marketing/Demo"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+
+// V1 → V2 redirect helpers
+function PropertyV1Redirect() {
+  const { id } = useParams();
+  return <Navigate to={`/properties-v2/${id}`} replace />;
+}
+
+function TenantV1Redirect() {
+  const { tenantId } = useParams();
+  return <Navigate to={`/tenants-v2/${tenantId}`} replace />;
+}
 
 function isAuthError(error: unknown): boolean {
   if (error && typeof error === 'object') {
@@ -472,13 +483,12 @@ const App = () => (
 
             {/* V1 redirects */}
             <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/:id" element={<Navigate to="/properties-v2" replace />} />
-
+            <Route path="/properties/:id" element={<PropertyV1Redirect />} />
 
             <Route path="/companies" element={<Navigate to="/entities" replace />} />
             <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
             <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
-            <Route path="/tenants/:tenantId" element={<Navigate to="/tenants-v2" replace />} />
+            <Route path="/tenants/:tenantId" element={<TenantV1Redirect />} />
             <Route path="/compliance" element={<Navigate to="/compliance-v2" replace />} />
 
             {/* Marketing pages (public) */}

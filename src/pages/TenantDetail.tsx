@@ -1,3 +1,4 @@
+// DEPRECATED: Redirected to V2 (TenantDetailV2). Safe to delete after confirming V2 is stable.
 import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 

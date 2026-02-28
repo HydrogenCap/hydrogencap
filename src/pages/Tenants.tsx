@@ -1,3 +1,4 @@
+ // DEPRECATED: Redirected to V2 (TenantsV2). Safe to delete after confirming V2 is stable.
  import { useState, useDeferredValue } from 'react';
  import { Link } from 'react-router-dom';
  import { Users, Plus, Search, Filter, Mail, Phone, Home, UserCheck, UserX, Clock, Building2 } from 'lucide-react';
