@@ -81,6 +81,7 @@ const operationsItems: NavItem[] = [
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
   { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
+  { title: 'CapEx', icon: HardHat, href: '/capex' },
 ];
 
 const intelligenceItems: NavItem[] = [
