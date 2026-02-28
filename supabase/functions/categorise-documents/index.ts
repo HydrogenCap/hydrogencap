@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -248,6 +249,12 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Rate limit check
+    const rateLimit = await checkRateLimit(user.id, 'categorise-documents', 50, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
     const { dryRun = false } = await req.json().catch(() => ({}));
@@ -763,7 +770,7 @@ Return ONLY a JSON array: [{"index": 1, "name": "NewName.pdf"}]`;
         unchanged: unchanged.length,
         dryRun,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) } }
     );
   } catch (err) {
     console.error("categorise-documents error:", err);

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -48,6 +49,12 @@ serve(async (req) => {
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Rate limit check
+    const rateLimit = await checkRateLimit(userData.user.id, 'portfolio-insights', 10, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
     const { portfolioData } = await req.json();
@@ -169,7 +176,7 @@ Generate JSON response with overview, top 5 priorities, risks, and opportunities
 
     return new Response(
       JSON.stringify({ insights }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) } }
     );
   } catch (error) {
     console.error("Portfolio insights error:", error);

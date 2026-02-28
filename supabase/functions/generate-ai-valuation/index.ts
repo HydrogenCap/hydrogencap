@@ -1,5 +1,6 @@
  import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+ import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
  
  const ALLOWED_ORIGINS = [
    "https://hydrogencap.com",
@@ -190,10 +191,16 @@
        });
      }
 
-     // Use service-role client for DB operations
-     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+      // Use service-role client for DB operations
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-     const { propertyId } = await req.json();
+      // Rate limit check
+      const rateLimit = await checkRateLimit(userData.user.id, 'generate-ai-valuation', 10, 60);
+      if (!rateLimit.allowed) {
+        return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
+      }
+
+      const { propertyId } = await req.json();
       
      if (!propertyId) {
        return new Response(JSON.stringify({ error: "propertyId required" }), { 
@@ -329,18 +336,18 @@
        }
      }
  
-     return new Response(JSON.stringify({
-       success: true,
-       valuation: {
-         estimated_value: valuation.estimated_value,
-         confidence: valuation.confidence,
-         change_percent: Math.round(changePercent * 100) / 100,
-         comparables_used: comparables?.length || 0,
-         reasoning: valuation.reasoning,
-       },
-     }), {
-       headers: { ...corsHeaders, "Content-Type": "application/json" },
-     });
+      return new Response(JSON.stringify({
+        success: true,
+        valuation: {
+          estimated_value: valuation.estimated_value,
+          confidence: valuation.confidence,
+          change_percent: Math.round(changePercent * 100) / 100,
+          comparables_used: comparables?.length || 0,
+          reasoning: valuation.reasoning,
+        },
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) },
+      });
  
    } catch (error: any) {
      console.error("Error:", error);
