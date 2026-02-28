@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type SubscriptionTier = 'free' | 'solo' | 'portfolio' | 'pro';
 
@@ -38,7 +39,6 @@ export type FeatureFlag =
   | 'unlimited_properties';
 
 // Stripe product/price IDs are publishable identifiers (not secrets)
-// They are safe to include in client-side code
 const TIERS = {
   solo: {
     product_id: 'prod_TxJdFT8No80v9S',
@@ -122,54 +122,83 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [state, setState] = useState<SubscriptionState>({
-    subscribed: false,
-    tier: 'free',
-    productId: null,
-    subscriptionEnd: null,
-    loading: true,
+  const queryClient = useQueryClient();
+
+  // Primary: read from subscriptions table (set by webhook)
+  const { data: subscription, isLoading } = useQuery({
+    queryKey: ['subscription', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const checkSubscription = useCallback(async () => {
-    if (!user) {
-      setState({ subscribed: false, tier: 'free', productId: null, subscriptionEnd: null, loading: false });
-      return;
-    }
+  // Listen for realtime updates from webhook writes
+  useEffect(() => {
+    if (!user) return;
 
+    const channel = supabase
+      .channel('subscription-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'subscriptions',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
+
+  // Manual fallback: call check-subscription edge function (used after checkout redirect)
+  const checkSubscription = useCallback(async () => {
+    if (!user) return;
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription');
       if (error) throw error;
 
-      const tier = productIdToTier(data?.product_id);
-      setState({
-        subscribed: data?.subscribed ?? false,
-        tier,
-        productId: data?.product_id ?? null,
-        subscriptionEnd: data?.subscription_end ?? null,
-        loading: false,
-      });
+      // If the edge function returns data, also write to cache so UI updates immediately
+      if (data) {
+        const tier = productIdToTier(data?.product_id);
+        queryClient.setQueryData(['subscription', user.id], {
+          user_id: user.id,
+          status: data?.subscribed ? 'active' : 'inactive',
+          product_id: data?.product_id ?? null,
+          price_id: null,
+          current_period_end: data?.subscription_end ?? null,
+        });
+      }
     } catch (err) {
       console.error('Failed to check subscription:', err);
-      setState(prev => ({ ...prev, loading: false }));
     }
-  }, [user]);
+  }, [user, queryClient]);
 
-  useEffect(() => {
-    checkSubscription();
-  }, [checkSubscription]);
+  const tier = productIdToTier(subscription?.product_id ?? null);
+  const subscribed = subscription?.status === 'active' || subscription?.status === 'trialing';
 
-  useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(checkSubscription, 60_000);
-    return () => clearInterval(interval);
-  }, [user, checkSubscription]);
+  const state: SubscriptionState = {
+    subscribed,
+    tier,
+    productId: subscription?.product_id ?? null,
+    subscriptionEnd: subscription?.current_period_end ?? null,
+    loading: isLoading,
+  };
 
   const hasFeature = useCallback((feature: FeatureFlag): boolean => {
-    return TIER_FEATURES[state.tier].includes(feature);
-  }, [state.tier]);
+    return TIER_FEATURES[tier].includes(feature);
+  }, [tier]);
 
-  const propertyLimit = TIER_PROPERTY_LIMITS[state.tier];
-  const documentLimit = TIER_DOCUMENT_LIMITS[state.tier];
+  const propertyLimit = TIER_PROPERTY_LIMITS[tier];
+  const documentLimit = TIER_DOCUMENT_LIMITS[tier];
 
   return (
     <SubscriptionContext.Provider value={{ ...state, checkSubscription, hasFeature, propertyLimit, documentLimit }}>
