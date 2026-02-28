@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/hooks/useOrganization';
 
 export interface FlowchartPerson {
-  id: string; // party_id
+  id: string;
   name: string;
   companyCount: number;
 }
 
 export interface FlowchartCompany {
-  id: string; // party_id (used as key in ownership_links)
-  companyId: string; // companies table id
+  id: string;
+  companyId: string;
   name: string;
   companyNumber: string | null;
   companyType: string;
@@ -43,174 +44,146 @@ export interface FlowchartData {
 }
 
 export function useOwnershipFlowchartData() {
+  const { data: org } = useOrganization();
+
   return useQuery({
-    queryKey: ['ownership-flowchart'],
+    queryKey: ['ownership-flowchart', org?.id],
     queryFn: async (): Promise<FlowchartData> => {
-      // Fetch all active ownership links
-      const { data: links, error: linksErr } = await supabase
-        .from('ownership_links')
-        .select(`
-          subject_type, subject_id, owner_party_id, percent,
-          owner_party:parties!ownership_links_owner_party_id_fkey(id, display_name, party_type)
-        `)
-        .is('effective_to', null);
-      if (linksErr) throw linksErr;
+      if (!org?.id) throw new Error('No org');
 
-      // Fetch companies (need party_id to map)
-      const { data: companies, error: compErr } = await supabase
-        .from('companies')
-        .select('id, legal_name, company_number, company_type, party_id');
-      if (compErr) throw compErr;
+      // Fetch V2 data
+      const [
+        { data: entities },
+        { data: properties },
+      ] = await Promise.all([
+        supabase
+          .from('legal_entities')
+          .select('id, entity_name, entity_type, company_number, org_id')
+          .eq('org_id', org.id)
+          .order('entity_name'),
+        supabase
+          .from('properties_v2')
+          .select('id, address_line_1, postcode, property_type, current_valuation, total_lettable_rooms, entity_id')
+          .eq('org_id', org.id)
+          .order('address_line_1'),
+      ]);
 
-      // Fetch properties
-      const { data: properties, error: propErr } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode, property_type, current_value_gbp, beds');
-      if (propErr) throw propErr;
+      if (!entities || !properties) throw new Error('Failed to load ownership data');
 
-      // Build party_id → company lookup
-      const partyToCompany = new Map<string, typeof companies[0]>();
-      const companyIdToPartyId = new Map<string, string>();
-      companies?.forEach(c => {
-        partyToCompany.set(c.party_id, c);
-        companyIdToPartyId.set(c.id, c.party_id);
-      });
+      const entityIds = entities.map(e => e.id);
 
-      // Build property lookup
-      const propertyMap = new Map<string, typeof properties[0]>();
-      properties?.forEach(p => propertyMap.set(p.id, p));
+      const [
+        { data: shareholders },
+        { data: entityLinks },
+      ] = await Promise.all([
+        entityIds.length > 0
+          ? supabase
+              .from('entity_shareholders')
+              .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type')
+              .in('entity_id', entityIds)
+              .is('effective_to', null)
+          : Promise.resolve({ data: [] as any[], error: null }),
+        entityIds.length > 0
+          ? supabase
+              .from('entity_shareholdings')
+              .select('parent_entity_id, shareholder_entity_id, shareholder_percent')
+              .in('parent_entity_id', entityIds)
+          : Promise.resolve({ data: [] as any[], error: null }),
+      ]);
 
-      // Classify links
+      const entityIdSet = new Set(entityIds);
+
+      // Build edges
       const personToCompanyEdges: FlowchartEdge[] = [];
       const companyToCompanyEdges: FlowchartEdge[] = [];
       const companyToPropertyEdges: FlowchartEdge[] = [];
-      const individualPartyIds = new Set<string>();
-      const companyPartyIds = new Set<string>(); // companies that appear as subjects
-      const propertyIds = new Set<string>();
+      const individualIds = new Set<string>();
 
-      for (const link of links || []) {
-        const ownerParty = link.owner_party as any;
-        if (!ownerParty) continue;
-
-        if (link.subject_type === 'COMPANY') {
-          // Find the company's party_id from its company table id
-          const targetCompany = companies?.find(c => c.id === link.subject_id);
-          if (!targetCompany) continue;
-
-          companyPartyIds.add(targetCompany.party_id);
-
-          if (ownerParty.party_type === 'INDIVIDUAL') {
-            individualPartyIds.add(ownerParty.id);
-            personToCompanyEdges.push({
-              from: ownerParty.id,
-              to: targetCompany.party_id,
-              percent: Number(link.percent),
-            });
-          } else if (ownerParty.party_type === 'COMPANY') {
-            companyPartyIds.add(ownerParty.id);
-            companyToCompanyEdges.push({
-              from: ownerParty.id,
-              to: targetCompany.party_id,
-              percent: Number(link.percent),
-              label: 'Holding → SPV',
-            });
-          }
-        } else if (link.subject_type === 'PROPERTY') {
-          propertyIds.add(link.subject_id);
-          if (ownerParty.party_type === 'COMPANY') {
-            companyPartyIds.add(ownerParty.id);
-            companyToPropertyEdges.push({
-              from: ownerParty.id,
-              to: link.subject_id,
-              percent: Number(link.percent),
-            });
-          }
-        }
+      // Person→Entity edges from entity_shareholders (individuals only)
+      for (const sh of shareholders || []) {
+        if (sh.shareholder_entity_id && entityIdSet.has(sh.shareholder_entity_id)) continue;
+        const individualId = `individual:${sh.entity_id}:${sh.shareholder_name}`;
+        individualIds.add(individualId);
+        personToCompanyEdges.push({
+          from: individualId,
+          to: sh.entity_id,
+          percent: Number(sh.percentage),
+        });
       }
 
-      // If no direct company→property links, infer from legal ownership on properties table
-      if (companyToPropertyEdges.length === 0) {
-        // Infer: each company owns properties where the property's legal owner (from ownership_links LEGAL) or
-        // we check if the company's party_id matches any beneficial owner
-        // For now, let's try to link via the property_passport or existing data
-        // Actually let's check properties table for owner references
-        const { data: propLinks } = await supabase
-          .from('ownership_links')
-          .select('subject_id, owner_party_id, percent')
-          .eq('subject_type', 'PROPERTY')
-          .is('effective_to', null);
-        
-        propLinks?.forEach(pl => {
-          propertyIds.add(pl.subject_id);
-          companyPartyIds.add(pl.owner_party_id);
+      // Entity→Entity edges from entity_shareholdings
+      for (const link of entityLinks || []) {
+        companyToCompanyEdges.push({
+          from: link.shareholder_entity_id,
+          to: link.parent_entity_id,
+          percent: Number(link.shareholder_percent),
+          label: 'Holding → SPV',
+        });
+      }
+
+      // Entity→Property edges from properties_v2.entity_id
+      for (const prop of properties) {
+        if (prop.entity_id) {
           companyToPropertyEdges.push({
-            from: pl.owner_party_id,
-            to: pl.subject_id,
-            percent: Number(pl.percent),
+            from: prop.entity_id,
+            to: prop.id,
+            percent: 100,
           });
-        });
+        }
       }
 
-      // Build people list - count direct + indirect companies
-      const peopleList: FlowchartPerson[] = [];
-      for (const partyId of individualPartyIds) {
-        const link = (links || []).find(l => {
-          const op = l.owner_party as any;
-          return op?.id === partyId;
-        });
-        const name = (link?.owner_party as any)?.display_name || 'Unknown';
-        // Count all reachable companies (direct + via holding companies)
-        const reachable = new Set<string>();
-        const queue = personToCompanyEdges.filter(e => e.from === partyId).map(e => e.to);
-        while (queue.length > 0) {
-          const cur = queue.pop()!;
-          if (reachable.has(cur)) continue;
-          reachable.add(cur);
-          companyToCompanyEdges.filter(e => e.from === cur).forEach(e => queue.push(e.to));
+      // Build people list
+      const peopleMap = new Map<string, FlowchartPerson>();
+      for (const sh of shareholders || []) {
+        if (sh.shareholder_entity_id && entityIdSet.has(sh.shareholder_entity_id)) continue;
+        const individualId = `individual:${sh.entity_id}:${sh.shareholder_name}`;
+        if (!peopleMap.has(individualId)) {
+          // Count reachable companies
+          const reachable = new Set<string>();
+          const queue = personToCompanyEdges.filter(e => e.from === individualId).map(e => e.to);
+          while (queue.length > 0) {
+            const cur = queue.pop()!;
+            if (reachable.has(cur)) continue;
+            reachable.add(cur);
+            companyToCompanyEdges.filter(e => e.from === cur).forEach(e => queue.push(e.to));
+          }
+          peopleMap.set(individualId, {
+            id: individualId,
+            name: sh.shareholder_name,
+            companyCount: reachable.size,
+          });
         }
-        peopleList.push({ id: partyId, name, companyCount: reachable.size });
       }
 
       // Build companies list
-      const companiesList: FlowchartCompany[] = [];
-      for (const partyId of companyPartyIds) {
-        const comp = partyToCompany.get(partyId);
-        if (!comp) continue;
-        const propCount = companyToPropertyEdges.filter(e => e.from === partyId).length;
-        const totalVal = companyToPropertyEdges
-          .filter(e => e.from === partyId)
-          .reduce((sum, e) => {
-            const prop = propertyMap.get(e.to);
-            return sum + (prop?.current_value_gbp || 0);
-          }, 0);
-        companiesList.push({
-          id: partyId,
-          companyId: comp.id,
-          name: comp.legal_name,
-          companyNumber: comp.company_number,
-          companyType: comp.company_type || 'SPV',
+      const companiesList: FlowchartCompany[] = entities.map(e => {
+        const propCount = companyToPropertyEdges.filter(edge => edge.from === e.id).length;
+        const totalVal = properties
+          .filter(p => p.entity_id === e.id)
+          .reduce((sum, p) => sum + (p.current_valuation || 0), 0);
+        return {
+          id: e.id,
+          companyId: e.id,
+          name: e.entity_name,
+          companyNumber: e.company_number,
+          companyType: e.entity_type === 'spv' ? 'SPV' : e.entity_type?.toUpperCase() || 'OTHER',
           propertyCount: propCount,
           totalValue: totalVal,
-        });
-      }
+        };
+      });
 
       // Build properties list
-      const propertiesList: FlowchartProperty[] = [];
-      for (const propId of propertyIds) {
-        const prop = propertyMap.get(propId);
-        if (!prop) continue;
-        propertiesList.push({
-          id: propId,
-          address: prop.address_line || 'Unknown',
-          postcode: prop.postcode,
-          type: prop.property_type,
-          value: prop.current_value_gbp,
-          beds: prop.beds,
-        });
-      }
+      const propertiesList: FlowchartProperty[] = properties.map(p => ({
+        id: p.id,
+        address: p.address_line_1 || 'Unknown',
+        postcode: p.postcode,
+        type: p.property_type,
+        value: p.current_valuation,
+        beds: p.total_lettable_rooms,
+      }));
 
       return {
-        people: peopleList.sort((a, b) => a.name.localeCompare(b.name)),
+        people: Array.from(peopleMap.values()).sort((a, b) => a.name.localeCompare(b.name)),
         companies: companiesList.sort((a, b) => a.name.localeCompare(b.name)),
         properties: propertiesList.sort((a, b) => a.address.localeCompare(b.address)),
         personToCompany: personToCompanyEdges,
@@ -218,5 +191,6 @@ export function useOwnershipFlowchartData() {
         companyToProperty: companyToPropertyEdges,
       };
     },
+    enabled: !!org?.id,
   });
 }

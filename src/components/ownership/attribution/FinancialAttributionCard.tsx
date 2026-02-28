@@ -26,7 +26,7 @@ interface FinancialAttributionCardProps {
 export function FinancialAttributionCard({ propertyId }: FinancialAttributionCardProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('attributed');
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
-  const { data: attribution, isLoading: attributionLoading } = usePropertyAttribution(propertyId, property);
+  const { data: attribution, isLoading: attributionLoading } = usePropertyAttribution(propertyId);
 
   const isLoading = propertyLoading || attributionLoading;
 
