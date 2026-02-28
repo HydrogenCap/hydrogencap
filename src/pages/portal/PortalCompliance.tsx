@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { format, isPast, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -10,58 +10,41 @@ import { useShareholderPortfolioData } from '@/hooks/useShareholderPortfolioData
 import { LoadingState } from '@/components/common/LoadingState';
 import { Navigate } from 'react-router-dom';
 import { formatPercent } from '@/lib/calculations';
-
-const COMPLIANCE_TYPES = [
-  'gas_safety',
-  'eicr',
-  'epc',
-  'fire_alarm',
-  'emergency_lighting',
-  'legionella',
-  'hmo_licence',
-];
-
-const COMPLIANCE_LABELS: Record<string, string> = {
-  gas_safety: 'Gas Safety',
-  eicr: 'EICR',
-  epc: 'EPC',
-  fire_alarm: 'Fire Alarm',
-  emergency_lighting: 'Emergency Lighting',
-  legionella: 'Legionella',
-  hmo_licence: 'HMO Licence',
-};
-
-function getComplianceStatus(expiryDate: string | null, isExcluded: boolean) {
-  if (isExcluded) return 'excluded';
-  if (!expiryDate) return 'missing';
-  const expiry = new Date(expiryDate);
-  if (isPast(expiry)) return 'expired';
-  if (isPast(addDays(expiry, -30))) return 'expiring';
-  return 'valid';
-}
+import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 
 export default function PortalCompliance() {
   const { canViewCompliance } = useShareholderSession();
-  const { properties, complianceItems, isLoading } = useShareholderPortfolioData();
+  const { properties, complianceRows, isLoading } = useShareholderPortfolioData();
+
+  // Derive which doc types exist in the matrix
+  const activeDocTypes = useMemo(() => {
+    if (!complianceRows?.length) return [];
+    const types = new Set<string>();
+    complianceRows.forEach(r => {
+      if (r.document_type && r.is_required) types.add(r.document_type);
+    });
+    return Array.from(types).sort();
+  }, [complianceRows]);
 
   const stats = useMemo(() => {
-    if (!complianceItems?.length) return { valid: 0, expiring: 0, expired: 0, missing: 0, total: 0 };
+    if (!complianceRows?.length) return { valid: 0, expiring: 0, expired: 0, missing: 0, notRequired: 0, total: 0 };
 
+    const required = complianceRows.filter(r => r.is_required);
     let valid = 0, expiring = 0, expired = 0, missing = 0;
 
-    complianceItems.forEach((item) => {
-      const status = getComplianceStatus(item.expiry_date, item.is_manually_excluded || false);
+    required.forEach((row) => {
+      const status = row.calculated_status;
       if (status === 'valid') valid++;
-      else if (status === 'expiring') expiring++;
+      else if (status === 'expiring_soon') expiring++;
       else if (status === 'expired') expired++;
       else if (status === 'missing') missing++;
     });
 
-    return { valid, expiring, expired, missing, total: complianceItems.length };
-  }, [complianceItems]);
+    return { valid, expiring, expired, missing, notRequired: complianceRows.length - required.length, total: required.length };
+  }, [complianceRows]);
 
-  const complianceRate = stats.total > 0 
-    ? ((stats.valid + stats.expiring) / stats.total) * 100 
+  const complianceRate = stats.total > 0
+    ? ((stats.valid + stats.expiring) / stats.total) * 100
     : 0;
 
   if (!canViewCompliance) {
@@ -116,11 +99,11 @@ export default function PortalCompliance() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-destructive" />
-                Expired
+                Expired / Missing
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.expired}</div>
+              <div className="text-2xl font-bold text-destructive">{stats.expired + stats.missing}</div>
             </CardContent>
           </Card>
 
@@ -147,38 +130,29 @@ export default function PortalCompliance() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-2 font-medium">Property</th>
-                    {COMPLIANCE_TYPES.map((type) => (
-                      <th key={type} className="text-center py-3 px-2 font-medium">
-                        {COMPLIANCE_LABELS[type]}
+                    {activeDocTypes.map((type) => (
+                      <th key={type} className="text-center py-3 px-2 font-medium text-xs">
+                        {(DOC_TYPE_DISPLAY_NAMES as Record<string, string>)[type] || type}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {properties?.map((property) => {
-                    const propertyCompliance = complianceItems?.filter(
-                      (c) => c.property_id === property.id
-                    );
+                    const propertyRows = complianceRows?.filter(r => r.property_id === property.id && r.is_required) || [];
 
                     return (
                       <tr key={property.id} className="border-b last:border-0">
                         <td className="py-3 px-2">
-                          <div className="font-medium">{property.address_line}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {property.postcode}
-                          </div>
+                          <div className="font-medium">{property.address_line_1}</div>
+                          <div className="text-xs text-muted-foreground">{property.postcode}</div>
                         </td>
-                        {COMPLIANCE_TYPES.map((type) => {
-                          const item = propertyCompliance?.find(
-                            (c) => c.compliance_type === type
-                          );
-                          const status = item
-                            ? getComplianceStatus(item.expiry_date, item.is_manually_excluded || false)
-                            : 'missing';
-
+                        {activeDocTypes.map((docType) => {
+                          const row = propertyRows.find(r => r.document_type === docType);
+                          const status = row?.calculated_status || 'missing';
                           return (
-                            <td key={type} className="py-3 px-2 text-center">
-                              <StatusBadge status={status} expiryDate={item?.expiry_date} />
+                            <td key={docType} className="py-3 px-2 text-center">
+                              <StatusBadge status={status} expiryDate={row?.expiry_date} />
                             </td>
                           );
                         })}
@@ -203,7 +177,7 @@ function StatusBadge({ status, expiryDate }: { status: string; expiryDate?: stri
           {expiryDate && format(new Date(expiryDate), 'MMM yy')}
         </Badge>
       );
-    case 'expiring':
+    case 'expiring_soon':
       return (
         <Badge variant="default" className="bg-warning hover:bg-warning/90">
           {expiryDate && format(new Date(expiryDate), 'MMM yy')}
@@ -211,8 +185,9 @@ function StatusBadge({ status, expiryDate }: { status: string; expiryDate?: stri
       );
     case 'expired':
       return <Badge variant="destructive">Expired</Badge>;
-    case 'excluded':
+    case 'not_required':
       return <Badge variant="outline">N/A</Badge>;
+    case 'missing':
     default:
       return <Badge variant="secondary">Missing</Badge>;
   }

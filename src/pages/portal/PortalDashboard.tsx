@@ -1,65 +1,17 @@
-import { useMemo, useState } from 'react';
-import { Building2, TrendingUp, Percent, PoundSterling, Banknote, Wallet, Users } from 'lucide-react';
+import { useMemo } from 'react';
+import { Building2, TrendingUp, Percent, PoundSterling, Banknote, Wallet } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { PortalLayout } from '@/components/portal/PortalLayout';
 import { useShareholderSession } from '@/hooks/useShareholderSession';
 import { useShareholderPortfolioData } from '@/hooks/useShareholderPortfolioData';
-import { usePortfolioAttribution } from '@/hooks/useOwnershipAttribution';
-import { useHydrogenKPIs } from '@/hooks/useHydrogenKPIs';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP, formatPercent } from '@/lib/calculations';
-import { cn } from '@/lib/utils';
-
-// Helper to calculate property financials
-interface PortalProperty {
-  current_value_gbp?: number | null;
-  loans?: Array<{ current_mortgage_balance_gbp?: number | null; mortgage_payment_gbp?: number | null }>;
-  income?: Array<{ year: number; annual_rent_gbp?: number | null }>;
-  costs?: Array<{ year: number; management_gbp_manual?: number | null; bills_gbp_manual?: number | null; repairs_gbp_manual?: number | null; insurance_gbp_manual?: number | null; other_gbp_manual?: number | null }>;
-  is_hmo_licensed?: boolean | null;
-  beds?: number | null;
-}
-
-function getPropertyFinancials(property: PortalProperty) {
-  const loan = property.loans?.[0];
-  const currentYear = new Date().getFullYear();
-  const incomeRecord = property.income?.find((i) => i.year === currentYear) || property.income?.[0];
-  const costRecord = property.costs?.find((c) => c.year === currentYear) || property.costs?.[0];
-
-  const annualRent = incomeRecord?.annual_rent_gbp || 0;
-  const annualCosts = costRecord
-    ? (costRecord.management_gbp_manual || 0) +
-      (costRecord.bills_gbp_manual || 0) +
-      (costRecord.repairs_gbp_manual || 0) +
-      (costRecord.insurance_gbp_manual || 0) +
-      (costRecord.other_gbp_manual || 0)
-    : 0;
-  const annualMortgage = (loan?.mortgage_payment_gbp || 0) * 12;
-  const netAnnualCashflow = annualRent - annualCosts - annualMortgage;
-  const monthlyCashflow = netAnnualCashflow / 12;
-
-  return {
-    annualRent,
-    annualCosts,
-    annualMortgage,
-    netAnnualCashflow,
-    monthlyCashflow,
-    value: property.current_value_gbp || 0,
-    debt: loan?.current_mortgage_balance_gbp || 0,
-    equity: (property.current_value_gbp || 0) - (loan?.current_mortgage_balance_gbp || 0),
-  };
-}
 
 export default function PortalDashboard() {
   const { canViewFinancials } = useShareholderSession();
-  const { properties, isLoading } = useShareholderPortfolioData();
-  const [kpiView, setKpiView] = useState<'gross' | 'hydrogen'>('gross');
-
-  // Cast portal properties to work with portfolio attribution hook
-  const { data: attribution } = usePortfolioAttribution(properties as any);
-  const hydrogenKPIs = useHydrogenKPIs(attribution);
+  const { properties, loansByProperty, performanceByProperty, isLoading } = useShareholderPortfolioData();
 
   const stats = useMemo(() => {
     if (!properties?.length) return null;
@@ -70,11 +22,17 @@ export default function PortalDashboard() {
     let totalCashflow = 0;
 
     properties.forEach((p) => {
-      const financials = getPropertyFinancials(p);
-      totalValue += financials.value;
-      totalDebt += financials.debt;
-      totalRent += financials.annualRent;
-      totalCashflow += financials.monthlyCashflow;
+      totalValue += p.current_valuation || 0;
+
+      const propertyLoans = loansByProperty.get(p.id) || [];
+      const propertyDebt = propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
+      totalDebt += propertyDebt;
+
+      const perf = performanceByProperty.get(p.id);
+      if (perf) {
+        totalRent += perf.annual_rent_received || 0;
+        totalCashflow += (perf.annual_cash_flow || 0) / 12;
+      }
     });
 
     const totalEquity = totalValue - totalDebt;
@@ -89,36 +47,43 @@ export default function PortalDashboard() {
       totalAnnualRent: totalRent,
       totalMonthlyCashflow: totalCashflow,
     };
-  }, [properties]);
+  }, [properties, loansByProperty, performanceByProperty]);
 
-  // Group properties by owning company
-  const propertiesByCompany = useMemo(() => {
+  // Group properties by entity
+  const propertiesByEntity = useMemo(() => {
     if (!properties?.length) return [];
 
-    const byCompany = new Map<string, { companyName: string; companyId: string | null; properties: typeof properties }>();
+    const byEntity = new Map<string, {
+      entityName: string;
+      entityId: string;
+      properties: typeof properties;
+    }>();
 
     properties.forEach((p) => {
-      const key = p.legal_owner_company_id || 'direct';
-      const companyName = p.legal_owner_company?.legal_name || 'Directly Owned';
+      const key = p.entity_id;
+      const entityName = p.entity?.entity_name || 'Unknown Entity';
 
-      if (!byCompany.has(key)) {
-        byCompany.set(key, { companyName, companyId: p.legal_owner_company_id, properties: [] });
+      if (!byEntity.has(key)) {
+        byEntity.set(key, { entityName, entityId: p.entity_id, properties: [] });
       }
-      byCompany.get(key)!.properties.push(p);
+      byEntity.get(key)!.properties.push(p);
     });
 
-    return Array.from(byCompany.values()).map((group) => {
+    return Array.from(byEntity.values()).map((group) => {
       let totalValue = 0;
       let totalDebt = 0;
       let totalRent = 0;
       let totalCashflow = 0;
 
       group.properties.forEach((p) => {
-        const financials = getPropertyFinancials(p);
-        totalValue += financials.value;
-        totalDebt += financials.debt;
-        totalRent += financials.annualRent;
-        totalCashflow += financials.monthlyCashflow;
+        totalValue += p.current_valuation || 0;
+        const propertyLoans = loansByProperty.get(p.id) || [];
+        totalDebt += propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
+        const perf = performanceByProperty.get(p.id);
+        if (perf) {
+          totalRent += perf.annual_rent_received || 0;
+          totalCashflow += (perf.annual_cash_flow || 0) / 12;
+        }
       });
 
       return {
@@ -130,7 +95,7 @@ export default function PortalDashboard() {
         totalCashflow,
       };
     });
-  }, [properties]);
+  }, [properties, loansByProperty, performanceByProperty]);
 
   if (isLoading) {
     return (
@@ -150,32 +115,6 @@ export default function PortalDashboard() {
           </p>
         </div>
 
-        {/* KPI View Toggle */}
-        {canViewFinancials && hydrogenKPIs.isAvailable && (
-          <div className="inline-flex items-center rounded-lg bg-muted/50 p-1 border border-border/50">
-            <button
-              className={cn(
-                'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                kpiView === 'gross' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-              onClick={() => setKpiView('gross')}
-            >
-              <Building2 className="h-3.5 w-3.5 inline mr-1.5" />
-              Gross Portfolio
-            </button>
-            <button
-              className={cn(
-                'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                kpiView === 'hydrogen' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              )}
-              onClick={() => setKpiView('hydrogen')}
-            >
-              <Users className="h-3.5 w-3.5 inline mr-1.5" />
-              Hydrogen Attributable
-            </button>
-          </div>
-        )}
-
         {/* Key Metrics */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -184,9 +123,7 @@ export default function PortalDashboard() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {kpiView === 'hydrogen' ? hydrogenKPIs.propertyCount : (stats?.propertyCount || 0)}
-              </div>
+              <div className="text-2xl font-bold">{stats?.propertyCount || 0}</div>
               <p className="text-xs text-muted-foreground">Total assets</p>
             </CardContent>
           </Card>
@@ -195,38 +132,22 @@ export default function PortalDashboard() {
             <>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {kpiView === 'hydrogen' ? 'Hydrogen Equity' : 'Portfolio Value'}
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Portfolio Value</CardTitle>
                   <PoundSterling className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {kpiView === 'hydrogen'
-                      ? formatGBP(hydrogenKPIs.totalEquity)
-                      : formatGBP(stats?.totalValue || 0)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {kpiView === 'hydrogen'
-                      ? `Value: ${formatGBP(hydrogenKPIs.totalValue)}`
-                      : 'Current valuation'}
-                  </p>
+                  <div className="text-2xl font-bold">{formatGBP(stats?.totalValue || 0)}</div>
+                  <p className="text-xs text-muted-foreground">Current valuation</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {kpiView === 'hydrogen' ? 'Attributed Equity' : 'Total Equity'}
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Equity</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">
-                    {kpiView === 'hydrogen'
-                      ? formatGBP(hydrogenKPIs.totalEquity)
-                      : formatGBP(stats?.totalEquity || 0)}
-                  </div>
+                  <div className="text-2xl font-bold text-primary">{formatGBP(stats?.totalEquity || 0)}</div>
                   <p className="text-xs text-muted-foreground">Value minus debt</p>
                 </CardContent>
               </Card>
@@ -237,121 +158,109 @@ export default function PortalDashboard() {
                   <Percent className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {formatPercent(kpiView === 'hydrogen' ? hydrogenKPIs.averageLTV : (stats?.avgLtv || 0))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Debt: {formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalDebt : (stats?.totalDebt || 0))}
-                  </p>
+                  <div className="text-2xl font-bold">{formatPercent(stats?.avgLtv || 0)}</div>
+                  <p className="text-xs text-muted-foreground">Loan to value</p>
                 </CardContent>
               </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Annual Rent</CardTitle>
-                <Banknote className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-success">
-                  {formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.totalRent : (stats?.totalAnnualRent || 0))}
-                </div>
-                <p className="text-xs text-muted-foreground">Gross rental income</p>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Annual Rent</CardTitle>
+                  <Banknote className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-success">{formatGBP(stats?.totalAnnualRent || 0)}</div>
+                  <p className="text-xs text-muted-foreground">Gross rental income</p>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Cashflow</CardTitle>
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${
-                  (kpiView === 'hydrogen' ? hydrogenKPIs.monthlyCashflow : (stats?.totalMonthlyCashflow || 0)) >= 0
-                    ? 'text-success' : 'text-destructive'
-                }`}>
-                  {formatGBP(kpiView === 'hydrogen' ? hydrogenKPIs.monthlyCashflow : (stats?.totalMonthlyCashflow || 0))}
-                </div>
-                <p className="text-xs text-muted-foreground">Net after debt service</p>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Monthly Cashflow</CardTitle>
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${(stats?.totalMonthlyCashflow || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatGBP(stats?.totalMonthlyCashflow || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Net after debt service</p>
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
 
-      {/* Properties by Company */}
-      {canViewFinancials && propertiesByCompany.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Portfolio by Company</CardTitle>
-            <CardDescription>Financial breakdown grouped by legal owner</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="multiple" className="w-full">
-              {propertiesByCompany.map((group) => (
-                <AccordionItem key={group.companyId || 'direct'} value={group.companyId || 'direct'}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <div className="flex items-center gap-3">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{group.companyName}</span>
-                        <Badge variant="secondary">{group.properties.length} properties</Badge>
-                      </div>
-                      <div className="flex items-center gap-6 text-sm">
-                        <span className="text-muted-foreground">
-                          Equity: <span className="font-medium text-foreground">{formatGBP(group.totalEquity)}</span>
-                        </span>
-                        <span className="text-muted-foreground">
-                        Cashflow: <span className={`font-medium ${group.totalCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
-                            {formatGBP(group.totalCashflow)}/mo
+        {/* Properties by Entity */}
+        {canViewFinancials && propertiesByEntity.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio by Entity</CardTitle>
+              <CardDescription>Financial breakdown grouped by legal owner</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="multiple" className="w-full">
+                {propertiesByEntity.map((group) => (
+                  <AccordionItem key={group.entityId} value={group.entityId}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-3">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{group.entityName}</span>
+                          <Badge variant="secondary">{group.properties.length} properties</Badge>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm">
+                          <span className="text-muted-foreground">
+                            Equity: <span className="font-medium text-foreground">{formatGBP(group.totalEquity)}</span>
                           </span>
-                        </span>
+                          <span className="text-muted-foreground">
+                            Cashflow: <span className={`font-medium ${group.totalCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
+                              {formatGBP(group.totalCashflow)}/mo
+                            </span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="pt-2 space-y-2">
-                      {group.properties.map((property) => {
-                        const financials = getPropertyFinancials(property);
-                        return (
-                          <div
-                            key={property.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                          >
-                            <div>
-                              <p className="font-medium text-sm">{property.address_line}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {property.town_city}, {property.postcode}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-6 text-sm">
-                              <div className="text-right">
-                                <p className="text-muted-foreground text-xs">Value</p>
-                                <p className="font-medium">{formatGBP(financials.value)}</p>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="pt-2 space-y-2">
+                        {group.properties.map((property) => {
+                          const propertyLoans = loansByProperty.get(property.id) || [];
+                          const debt = propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
+                          const perf = performanceByProperty.get(property.id);
+                          return (
+                            <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                              <div>
+                                <p className="font-medium text-sm">{property.address_line_1}</p>
+                                <p className="text-xs text-muted-foreground">{property.city}, {property.postcode}</p>
                               </div>
-                              <div className="text-right">
-                                <p className="text-muted-foreground text-xs">Rent</p>
-                                <p className="font-medium text-success">{formatGBP(financials.annualRent)}/yr</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-muted-foreground text-xs">Cashflow</p>
-                                <p className={`font-medium ${financials.monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                  {formatGBP(financials.monthlyCashflow)}/mo
-                                </p>
+                              <div className="flex items-center gap-6 text-sm">
+                                <div className="text-right">
+                                  <p className="text-muted-foreground text-xs">Value</p>
+                                  <p className="font-medium">{formatGBP(property.current_valuation || 0)}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-muted-foreground text-xs">Rent</p>
+                                  <p className="font-medium text-success">{formatGBP(perf?.annual_rent_received || 0)}/yr</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-muted-foreground text-xs">Cashflow</p>
+                                  <p className={`font-medium ${(perf?.annual_cash_flow || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                    {formatGBP((perf?.annual_cash_flow || 0) / 12)}/mo
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-      )}
+                          );
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Property Summary Table (Basic view) */}
+        {/* Property Summary Table */}
         <Card>
           <CardHeader>
             <CardTitle>Property Summary</CardTitle>
@@ -367,7 +276,7 @@ export default function PortalDashboard() {
                     {canViewFinancials && (
                       <>
                         <th className="text-right py-3 px-2 font-medium">Value</th>
-                    <th className="text-right py-3 px-2 font-medium">Rent</th>
+                        <th className="text-right py-3 px-2 font-medium">Rent</th>
                         <th className="text-right py-3 px-2 font-medium">LTV</th>
                       </>
                     )}
@@ -375,33 +284,27 @@ export default function PortalDashboard() {
                 </thead>
                 <tbody>
                   {properties?.map((property) => {
-                const financials = getPropertyFinancials(property);
-                const ltv = financials.value > 0 && financials.debt
-                  ? (financials.debt / financials.value) * 100
+                    const propertyLoans = loansByProperty.get(property.id) || [];
+                    const debt = propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
+                    const perf = performanceByProperty.get(property.id);
+                    const ltv = property.current_valuation && debt
+                      ? (debt / property.current_valuation) * 100
                       : 0;
 
                     return (
                       <tr key={property.id} className="border-b last:border-0">
                         <td className="py-3 px-2">
-                          <div className="font-medium">{property.address_line}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {property.town_city}, {property.postcode}
-                          </div>
+                          <div className="font-medium">{property.address_line_1}</div>
+                          <div className="text-xs text-muted-foreground">{property.city}, {property.postcode}</div>
                         </td>
                         <td className="py-3 px-2 capitalize">
                           {property.property_type?.replace('_', ' ') || '—'}
                         </td>
                         {canViewFinancials && (
                           <>
-                            <td className="py-3 px-2 text-right">
-                        {formatGBP(financials.value)}
-                      </td>
-                      <td className="py-3 px-2 text-right text-success">
-                        {formatGBP(financials.annualRent)}/yr
-                            </td>
-                            <td className="py-3 px-2 text-right">
-                              {formatPercent(ltv)}
-                            </td>
+                            <td className="py-3 px-2 text-right">{formatGBP(property.current_valuation || 0)}</td>
+                            <td className="py-3 px-2 text-right text-success">{formatGBP(perf?.annual_rent_received || 0)}/yr</td>
+                            <td className="py-3 px-2 text-right">{formatPercent(ltv)}</td>
                           </>
                         )}
                       </tr>
