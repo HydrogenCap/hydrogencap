@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+import { createNotification } from '@/lib/createNotification';
 import type {
   MaintenanceCategory, MaintenancePriority, MaintenanceStatus,
   MaintenanceOverviewRow, ReportedBy,
@@ -173,10 +174,25 @@ export function useCreateMaintenanceRequest() {
 
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
       toast({ title: 'Maintenance request created' });
+
+      // Fire-and-forget notification
+      if (data?.org_id) {
+        createNotification({
+          orgId: data.org_id,
+          userId: 'all_org_members',
+          category: 'maintenance',
+          severity: variables.priority === 'emergency' ? 'critical' : 'info',
+          title: 'New maintenance request',
+          message: `${variables.title}`,
+          linkTo: `/maintenance/${data.id}`,
+          entityType: 'maintenance_request',
+          entityId: data.id,
+        }).catch(() => {});
+      }
     },
     onError: (error) => {
       toast({ title: 'Failed to create request', description: error.message, variant: 'destructive' });
