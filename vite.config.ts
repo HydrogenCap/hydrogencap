@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -39,6 +40,9 @@ export default defineConfig(({ mode }) => ({
         ],
       },
     }),
+    ...(process.env.VITE_ANALYZE === 'true'
+      ? [visualizer({ open: true, filename: 'dist/bundle-report.html', gzipSize: true, brotliSize: true })]
+      : []),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -50,18 +54,24 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          charts: ['recharts'],
-          maps: ['leaflet', 'react-leaflet'],
-          pdf: ['jspdf', 'jspdf-autotable'],
-          ui: [
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': [
+            'class-variance-authority',
+            'clsx',
+            'tailwind-merge',
             '@radix-ui/react-dialog',
             '@radix-ui/react-popover',
             '@radix-ui/react-select',
             '@radix-ui/react-tabs',
             '@radix-ui/react-tooltip',
           ],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-charts': ['recharts'],
+          'vendor-maps': ['leaflet', 'react-leaflet'],
+          'vendor-pdf': ['jspdf', 'jspdf-autotable', 'pdf-lib'],
+          'vendor-markdown': ['react-markdown'],
+          'vendor-date': ['date-fns'],
         },
       },
     },

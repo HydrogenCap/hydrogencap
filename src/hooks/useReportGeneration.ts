@@ -5,19 +5,14 @@ import { useAllCompliance } from './useCompliance';
 import { usePropertyPassports } from './usePropertyPassport';
 import { useCompanies, useCompany, type CompanyWithDetails } from './useCompanies';
 import { logActivity } from './useActivityLog';
-import {
+import type {
   ReportFilters,
   PropertyReportData,
-  PortfolioComplianceReport,
-  PropertyCompliancePack,
-  InsuranceBrokerPack,
 } from '@/lib/reportPdfGenerator';
-import { 
-  LenderGradeMortgageBrokerPack, 
-  type MortgageBrokerPackData,
-  type PortfolioSummary,
-  type CompanyData,
-  validateMortgageBrokerPack,
+import type { 
+  MortgageBrokerPackData,
+  PortfolioSummary,
+  CompanyData,
 } from '@/lib/mortgageBrokerPackGenerator';
 import { format } from 'date-fns';
 
@@ -321,27 +316,29 @@ export function useGenerateReport() {
       const timestamp = format(new Date(), 'HHmmss');
 
       switch (reportType) {
-        case 'portfolio_compliance':
+        case 'portfolio_compliance': {
+          const { PortfolioComplianceReport } = await import('@/lib/reportPdfGenerator');
           report = new PortfolioComplianceReport(filteredProps, filters);
           filename = `Portfolio_Compliance_Report_${dateStr}_${timestamp}.pdf`;
           break;
-          
-        case 'property_compliance_pack':
+        }
+        case 'property_compliance_pack': {
           if (filteredProps.length !== 1) {
             throw new Error('Property Compliance Pack requires exactly one property');
           }
+          const { PropertyCompliancePack } = await import('@/lib/reportPdfGenerator');
           report = new PropertyCompliancePack(filteredProps[0], filters);
           filename = `Compliance_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
-          
-        case 'mortgage_broker_pack':
+        }
+        case 'mortgage_broker_pack': {
           if (filteredProps.length !== 1) {
             throw new Error('Mortgage Broker Pack requires exactly one property');
           }
           if (!brokerPackData) {
             throw new Error('Mortgage Broker Pack requires additional configuration');
           }
-          // Validate before generating
+          const { LenderGradeMortgageBrokerPack, validateMortgageBrokerPack } = await import('@/lib/mortgageBrokerPackGenerator');
           const validation = validateMortgageBrokerPack(brokerPackData);
           if (!validation.canGenerate) {
             throw new Error(validation.errors[0] || 'Missing required information');
@@ -349,15 +346,16 @@ export function useGenerateReport() {
           report = new LenderGradeMortgageBrokerPack(brokerPackData);
           filename = `Mortgage_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
-          
-        case 'insurance_broker_pack':
+        }
+        case 'insurance_broker_pack': {
           if (filteredProps.length !== 1) {
             throw new Error('Insurance Broker Pack requires exactly one property');
           }
+          const { InsuranceBrokerPack } = await import('@/lib/reportPdfGenerator');
           report = new InsuranceBrokerPack(filteredProps[0]);
           filename = `Insurance_Pack_${filteredProps[0].address_line.replace(/[^a-zA-Z0-9]/g, '_')}_${dateStr}_${timestamp}.pdf`;
           break;
-          
+        }
         default:
           throw new Error('Unknown report type');
       }
@@ -422,4 +420,9 @@ export function useGenerateReport() {
 
 // Re-export types for use in Reports page
 export type { MortgageBrokerPackData, PortfolioSummary, CompanyData } from '@/lib/mortgageBrokerPackGenerator';
-export { validateMortgageBrokerPack } from '@/lib/mortgageBrokerPackGenerator';
+
+// Dynamic re-export for validation (only used on user action)
+export async function validateMortgageBrokerPackAsync(data: MortgageBrokerPackData) {
+  const { validateMortgageBrokerPack } = await import('@/lib/mortgageBrokerPackGenerator');
+  return validateMortgageBrokerPack(data);
+}

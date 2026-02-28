@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
-import { Download, Search, ChevronDown, ChevronRight, Plus, Pencil, Trash2, Filter } from 'lucide-react';
+import { Download, Search, ChevronDown, ChevronRight, Plus, Pencil, Trash2, Filter, History } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/common/EmptyState';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import {
   type AuditLogEntry, type AuditLogFilters,
@@ -145,11 +146,11 @@ function AuditLogPage() {
             {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-12" />)}
           </div>
         ) : entries.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              No audit log entries found for the selected filters.
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={History}
+            title="No audit entries yet"
+            description="Activity will appear here as you use the platform."
+          />
         ) : (
           <div className="border border-border rounded-lg overflow-hidden">
             <table className="w-full text-sm">
