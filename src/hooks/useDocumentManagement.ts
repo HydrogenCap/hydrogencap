@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+import { showMutationError } from '@/lib/errorToast';
 import { generateStructuredFilename } from '@/lib/documentNaming';
  
 export interface ManagedDocument {
@@ -436,11 +437,14 @@ export interface ManagedDocument {
  
        return data;
      },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
-       toast({ title: 'Document updated' });
-     },
-   });
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+        toast({ title: 'Document updated' });
+      },
+      onError: (error) => {
+        showMutationError(error, 'Failed to update document');
+      },
+    });
  }
  
  // Soft delete document
@@ -457,12 +461,15 @@ export interface ManagedDocument {
        if (error) throw error;
        return data;
      },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
-       toast({ title: 'Document deleted' });
-     },
-   });
- }
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+        toast({ title: 'Document deleted' });
+      },
+      onError: (error) => {
+        showMutationError(error, 'Failed to delete document');
+      },
+    });
+  }
  
  // Download document (logs the download)
  export function useDownloadDocument() {
@@ -483,10 +490,13 @@ export interface ManagedDocument {
        window.URL.revokeObjectURL(url);
        a.remove();
  
-       return true;
-     },
-   });
- }
+        return true;
+      },
+      onError: (error) => {
+        showMutationError(error, 'Failed to download document');
+      },
+    });
+  }
  
  // Get document activity
  export function useDocumentActivity(documentId: string | undefined) {

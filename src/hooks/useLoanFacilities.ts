@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
+import { showMutationError } from '@/lib/errorToast';
 
 export interface LoanFacility {
   id: string;
@@ -222,6 +223,9 @@ export function useCreateLoanFacility() {
       qc.invalidateQueries({ queryKey: ['loan_alerts'] });
       qc.invalidateQueries({ queryKey: ['portfolio_debt_summary'] });
     },
+    onError: (error) => {
+      showMutationError(error, 'Failed to create loan facility');
+    },
   });
 }
 
@@ -243,6 +247,9 @@ export function useUpdateLoanFacility() {
       qc.invalidateQueries({ queryKey: ['loan_alerts'] });
       qc.invalidateQueries({ queryKey: ['portfolio_debt_summary'] });
     },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update loan facility');
+    },
   });
 }
 
@@ -257,6 +264,9 @@ export function useDeleteLoanFacility() {
       qc.invalidateQueries({ queryKey: ['loan_facilities'] });
       qc.invalidateQueries({ queryKey: ['loan_alerts'] });
       qc.invalidateQueries({ queryKey: ['portfolio_debt_summary'] });
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to delete loan facility');
     },
   });
 }

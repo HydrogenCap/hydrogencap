@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ValidatedRow } from '@/lib/csvParser';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { showMutationError } from '@/lib/errorToast';
 
 interface ImportResult {
   success: number;
@@ -145,6 +146,9 @@ export function useBatchImport() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+    },
+    onError: (error) => {
+      showMutationError(error, 'Import failed');
     },
   });
 }
