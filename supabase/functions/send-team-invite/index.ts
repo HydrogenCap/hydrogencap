@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { Resend } from 'https://esm.sh/resend@4.0.0';
+import { z } from "https://esm.sh/zod@3.23.8";
+import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -44,8 +46,13 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error('Unauthorized');
 
-    const { inviteId } = await req.json();
-    if (!inviteId) throw new Error('inviteId is required');
+    const InviteSchema = z.object({
+      inviteId: z.string().uuid("Invalid inviteId"),
+    });
+
+    const parsed = await validateBody(req, InviteSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const { inviteId } = parsed.data;
 
     const { data: invite, error: inviteError } = await supabase
       .from('team_invites')

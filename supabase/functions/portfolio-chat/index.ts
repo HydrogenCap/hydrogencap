@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -62,49 +64,16 @@ serve(async (req) => {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const ChatSchema = z.object({
+      messages: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().min(1).max(10000),
+      })).min(1).max(50),
+    });
 
-    const { messages } = rawBody as { messages?: unknown };
-
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: "Messages required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (messages.length > 50) {
-      return new Response(JSON.stringify({ error: "Too many messages (max 50)" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate each message structure and enforce size limits
-    const validRoles = new Set(["user", "assistant"]);
-    const MAX_CONTENT_LENGTH = 10000;
-    const validatedMessages: ChatMessage[] = [];
-    for (const msg of messages) {
-      if (
-        typeof msg !== "object" || msg === null ||
-        typeof msg.role !== "string" || !validRoles.has(msg.role) ||
-        typeof msg.content !== "string" || msg.content.length === 0 || msg.content.length > MAX_CONTENT_LENGTH
-      ) {
-        return new Response(JSON.stringify({ error: "Invalid message format. Each message must have role (user/assistant) and content (max 10,000 chars)." }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      validatedMessages.push({ role: msg.role as "user" | "assistant", content: msg.content });
-    }
+    const parsed = await validateBody(req, ChatSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const validatedMessages = parsed.data.messages;
 
     // Fetch portfolio data for context
     const [
