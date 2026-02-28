@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { showMutationError } from '@/lib/errorToast';
 
 export interface OwnershipGroup {
   id: string;
@@ -98,6 +99,9 @@ export function useCreateOwnershipGroup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ownership_groups'] });
     },
+    onError: (error) => {
+      showMutationError(error, 'Failed to create ownership group');
+    },
   });
 }
 
@@ -119,6 +123,9 @@ export function useUpdateOwnershipGroup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ownership_groups'] });
     },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update ownership group');
+    },
   });
 }
 
@@ -136,6 +143,9 @@ export function useDeleteOwnershipGroup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ownership_groups'] });
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to delete ownership group');
     },
   });
 }
@@ -170,6 +180,9 @@ export function useAddGroupMember() {
       queryClient.invalidateQueries({ queryKey: ['ownership_groups', data.group_id] });
       queryClient.invalidateQueries({ queryKey: ['ownership_groups'] });
     },
+    onError: (error) => {
+      showMutationError(error, 'Failed to add group member');
+    },
   });
 }
 
@@ -189,6 +202,9 @@ export function useRemoveGroupMember() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['ownership_groups', data.groupId] });
       queryClient.invalidateQueries({ queryKey: ['ownership_groups'] });
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to remove group member');
     },
   });
 }

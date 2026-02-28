@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -338,6 +339,7 @@ async function autoFileDocument(
 }
 
 Deno.serve(async (req) => {
+  const log = createLogger('process-document', req);
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -660,7 +662,7 @@ Respond with valid JSON only (no markdown):
           validation_errors: [error instanceof Error ? error.message : "Unknown processing error"],
         }).eq("id", parsedDocumentId);
       } catch (resetErr) {
-        console.error("Failed to reset document status:", resetErr);
+        log.error("Failed to reset document status", { resetErr: resetErr instanceof Error ? resetErr.message : String(resetErr) });
       }
     }
     

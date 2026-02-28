@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -94,6 +95,7 @@ const COMPLIANCE_DEFINITIONS = {
 };
 
 serve(async (req) => {
+  const log = createLogger('ai-compliance-checker', req);
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -130,7 +132,9 @@ serve(async (req) => {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
+    log.withUser(userData.user.id);
     const { propertyId, propertyData, complianceItems, mode = 'analyze' } = await req.json();
+    log.info('Compliance check requested', { propertyId, mode });
     
     if (!propertyData) {
       return new Response(
@@ -221,7 +225,7 @@ ${mode === 'audit' ? 'Provide detailed audit-ready analysis with cost estimates 
 
 Determine which compliance items are required based on the property features, identify gaps, and provide actionable recommendations.`;
 
-    console.log(`AI Compliance Check for property: ${propertyId || 'unknown'}, mode: ${mode}`);
+    log.info('Sending to AI gateway', { propertyId });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -254,7 +258,7 @@ Determine which compliance items are required based on the property features, id
         );
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      log.error('AI gateway error', { status: response.status, body: errorText.slice(0, 200) });
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
@@ -292,11 +296,11 @@ Determine which compliance items are required based on the property features, id
       
       result = JSON.parse(jsonStr.trim());
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      log.error('Failed to parse AI response', { content: content?.slice(0, 300) });
       throw new Error("Failed to parse AI compliance analysis");
     }
 
-    console.log(`AI Compliance Check completed. Score: ${result.analysis?.complianceScore}, Urgent: ${result.analysis?.urgentActions}`);
+    log.info('Compliance check completed', { score: result.analysis?.complianceScore, urgentActions: result.analysis?.urgentActions });
 
     return new Response(
       JSON.stringify({ 
@@ -308,7 +312,7 @@ Determine which compliance items are required based on the property features, id
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) } }
     );
   } catch (error) {
-    console.error("AI Compliance Checker error:", error);
+    log.error('AI Compliance Checker error', { error: error instanceof Error ? error.message : String(error) });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
