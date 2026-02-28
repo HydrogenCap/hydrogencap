@@ -9,6 +9,8 @@ import { WorksOrderDetailForm } from '@/components/maintenance/WorksOrderDetailF
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { CostTrackingSection } from '@/components/maintenance/CostTrackingSection';
 import { PhotoGallery } from '@/components/maintenance/PhotoGallery';
+import { QuoteComparisonSection } from '@/components/maintenance/QuoteComparisonSection';
+import { SuggestedContractors } from '@/components/maintenance/SuggestedContractors';
 import { LoadingState } from '@/components/common';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -114,7 +116,8 @@ export default function MaintenanceRequestDetail() {
               </CardContent>
             </Card>
 
-            {/* Activity Timeline */}
+            {/* Quotes Comparison */}
+            <QuoteComparisonSection requestId={request.id} />
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Activity ({comments?.length || 0})</CardTitle></CardHeader>
               <CardContent className="space-y-4">
@@ -153,6 +156,9 @@ export default function MaintenanceRequestDetail() {
 
           {/* Right: Works Order */}
           <div className="space-y-6">
+            {/* Suggested Contractors */}
+            <SuggestedContractors requestId={request.id} category={request.category} />
+
             {/* Cost Tracking */}
             <CostTrackingSection
               requestId={request.id}

@@ -4938,6 +4938,93 @@ export type Database = {
           },
         ]
       }
+      maintenance_quotes: {
+        Row: {
+          amount: number
+          contractor_id: string | null
+          contractor_name: string | null
+          created_at: string | null
+          description: string | null
+          estimated_days: number | null
+          id: string
+          maintenance_request_id: string
+          notes: string | null
+          org_id: string
+          quote_document_path: string | null
+          status: string
+          updated_at: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          amount: number
+          contractor_id?: string | null
+          contractor_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          estimated_days?: number | null
+          id?: string
+          maintenance_request_id: string
+          notes?: string | null
+          org_id: string
+          quote_document_path?: string | null
+          status?: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          amount?: number
+          contractor_id?: string | null
+          contractor_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          estimated_days?: number | null
+          id?: string
+          maintenance_request_id?: string
+          notes?: string | null
+          org_id?: string
+          quote_document_path?: string | null
+          status?: string
+          updated_at?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_quotes_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_contractors_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "contractor_maintenance_performance"
+            referencedColumns: ["contractor_id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_overview"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_maintenance_request_id_fkey"
+            columns: ["maintenance_request_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_requests: {
         Row: {
           actual_cost: number | null
