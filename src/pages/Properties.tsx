@@ -1,3 +1,4 @@
+// DEPRECATED: Redirected to V2 (PropertiesV2). Safe to delete after confirming V2 is stable.
 import React, { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { addMonths, isBefore, parseISO } from 'date-fns';

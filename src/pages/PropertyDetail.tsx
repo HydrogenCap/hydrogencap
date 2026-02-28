@@ -1,3 +1,4 @@
+// DEPRECATED: Redirected to V2 (PropertyDetailV2). Safe to delete after confirming V2 is stable.
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit2, MapPin, Bed, Home, Building, Trash2, Bath, FileText, Image, Wrench } from 'lucide-react';
