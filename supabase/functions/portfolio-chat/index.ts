@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -52,6 +53,13 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Rate limit check
+    const userId = claimsData.claims.sub as string;
+    const rateLimit = await checkRateLimit(userId, 'portfolio-chat', 30, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
     let rawBody: unknown;
@@ -265,7 +273,7 @@ GUIDELINES:
 
     // Stream the response
     return new Response(aiResponse.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-RateLimit-Remaining": String(rateLimit.remaining) },
     });
   } catch (error) {
     console.error("Portfolio chat error:", error);

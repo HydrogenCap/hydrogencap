@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -45,6 +46,12 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Rate limit check
+    const rateLimit = await checkRateLimit(user.id, 'estimate-construction-year', 20, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
     const { propertyId } = await req.json();
@@ -229,7 +236,7 @@ Provide your response using the suggest_construction_date function.`;
         reasoning: suggestion.reasoning,
       },
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-RateLimit-Remaining': String(rateLimit.remaining) },
     });
 
   } catch (error) {

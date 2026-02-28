@@ -6584,6 +6584,27 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          created_at: string
+          function_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          function_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          function_name?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       refinancing_opportunities: {
         Row: {
           completed_at: string | null
@@ -9496,6 +9517,7 @@ export type Database = {
         Returns: undefined
       }
       cancel_renewed_compliance_jobs: { Args: never; Returns: number }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
       create_jobs_for_expiring_compliance: { Args: never; Returns: number }
       find_matching_contractors: {
         Args: {

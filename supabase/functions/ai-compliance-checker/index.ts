@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -121,6 +122,12 @@ serve(async (req) => {
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Rate limit check
+    const rateLimit = await checkRateLimit(userData.user.id, 'ai-compliance-checker', 20, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
     const { propertyId, propertyData, complianceItems, mode = 'analyze' } = await req.json();
@@ -298,7 +305,7 @@ Determine which compliance items are required based on the property features, id
         ...result,
         generatedAt: new Date().toISOString()
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) } }
     );
   } catch (error) {
     console.error("AI Compliance Checker error:", error);

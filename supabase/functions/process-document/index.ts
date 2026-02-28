@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -369,6 +370,12 @@ Deno.serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    // Rate limit check
+    const rateLimit = await checkRateLimit(claimsData.user.id, 'process-document', 30, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
+    }
+
     let rawBody: unknown;
     try { rawBody = await req.json(); } catch {
       return new Response(JSON.stringify({ error: 'Invalid JSON body' }),
@@ -636,7 +643,7 @@ Respond with valid JSON only (no markdown):
         processing_time_ms: processingTimeMs, tokens_used: tokensUsed,
         validation_errors: validationErrors, validation_warnings: validationWarnings,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) } }
     );
   } catch (error) {
     console.error("Process document error:", error);
