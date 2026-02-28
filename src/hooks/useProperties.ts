@@ -1,3 +1,7 @@
+/**
+ * @deprecated — V1 hook. All consumers should use usePropertiesV2 instead.
+ * Kept temporarily for reference. Will be removed in a future cleanup.
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';

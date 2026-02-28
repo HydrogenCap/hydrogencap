@@ -43,13 +43,35 @@ export function OnboardingWizard() {
   const createProperty = useMutation({
     mutationFn: async () => {
       const orgId = await fetchUserOrgId();
+      // OnboardingWizard needs an entity_id for V2 — find or create a default entity
+      const { data: entities } = await supabase
+        .from('legal_entities')
+        .select('id')
+        .eq('org_id', orgId)
+        .limit(1);
+      const entityId = entities?.[0]?.id;
+      if (!entityId) {
+        // Create a default entity for the org
+        const { data: newEntity, error: entErr } = await supabase
+          .from('legal_entities')
+          .insert({ org_id: orgId, entity_name: 'My Company', entity_type: 'individual' })
+          .select('id')
+          .single();
+        if (entErr) throw entErr;
+        var resolvedEntityId = newEntity.id;
+      } else {
+        var resolvedEntityId = entityId;
+      }
       const { error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .insert({
           org_id: orgId,
-          address_line: address.trim(),
+          entity_id: resolvedEntityId,
+          address_line_1: address.trim(),
+          city: '',
           postcode: postcode.trim().toUpperCase(),
-          lifecycle_status: 'active',
+          property_type: 'single_let',
+          lifecycle_stage: 'stabilised',
         });
       if (error) throw error;
     },
@@ -62,7 +84,7 @@ export function OnboardingWizard() {
     if (step === 2 && address.trim()) {
       try {
         await createProperty.mutateAsync();
-        queryClient.invalidateQueries({ queryKey: ['properties'] });
+        queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
       } catch {
         toast({ title: 'Failed to add property', variant: 'destructive' });
         return;
