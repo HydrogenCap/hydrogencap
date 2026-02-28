@@ -97,6 +97,7 @@ export default function ForgotPassword() {
                           <Input
                             type="email"
                             placeholder="you@example.com"
+                            autoComplete="email"
                             {...field}
                             className="bg-input border-border"
                           />
