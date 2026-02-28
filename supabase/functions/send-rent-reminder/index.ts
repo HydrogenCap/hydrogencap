@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { z } from "https://esm.sh/zod@3.23.8";
+import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -38,37 +40,18 @@ serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Unauthorized");
 
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    const ReminderSchema = z.object({
+      rentScheduleId: z.string().uuid("Invalid rentScheduleId"),
+      tenancyId: z.string().uuid("Invalid tenancyId"),
+      reminderType: z.enum(["pre_due", "due_date", "overdue"], {
+        errorMap: () => ({ message: "Must be: pre_due, due_date, or overdue" }),
+      }),
+      customMessage: z.string().max(5000).optional(),
+    });
 
-    const body = rawBody as Record<string, unknown>;
-    const rentScheduleId = typeof body.rentScheduleId === "string" ? body.rentScheduleId : null;
-    const tenancyId = typeof body.tenancyId === "string" ? body.tenancyId : null;
-    const reminderType = typeof body.reminderType === "string" ? body.reminderType : null;
-    const customMessage = typeof body.customMessage === "string" ? body.customMessage.slice(0, 5000) : undefined;
-
-    const validReminderTypes = ["pre_due", "due_date", "overdue"];
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    if (!rentScheduleId || !uuidRegex.test(rentScheduleId)) {
-      return new Response(JSON.stringify({ error: "Invalid or missing rentScheduleId" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
-    }
-    if (!tenancyId || !uuidRegex.test(tenancyId)) {
-      return new Response(JSON.stringify({ error: "Invalid or missing tenancyId" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
-    }
-    if (!reminderType || !validReminderTypes.includes(reminderType)) {
-      return new Response(JSON.stringify({ error: "Invalid reminderType. Must be: pre_due, due_date, or overdue" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
-    }
+    const parsed = await validateBody(req, ReminderSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const { rentScheduleId, tenancyId, reminderType, customMessage } = parsed.data;
 
     // Get schedule item with tenant info
     const { data: scheduleItem, error: scheduleError } = await supabase

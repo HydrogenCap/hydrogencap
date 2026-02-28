@@ -1,6 +1,8 @@
  import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+ import { z } from "https://esm.sh/zod@3.23.8";
  import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+ import { validateBody } from "../_shared/validate.ts";
  
  const ALLOWED_ORIGINS = [
    "https://hydrogencap.com",
@@ -200,14 +202,13 @@
         return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
       }
 
-      const { propertyId } = await req.json();
-      
-     if (!propertyId) {
-       return new Response(JSON.stringify({ error: "propertyId required" }), { 
-         status: 400,
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       const ValuationSchema = z.object({
+         propertyId: z.string().uuid("Valid property ID required"),
        });
-     }
+
+       const parsed = await validateBody(req, ValuationSchema, corsHeaders);
+       if ("error" in parsed) return parsed.error;
+       const { propertyId } = parsed.data;
  
      // Get property
      const { data: property, error: propError } = await supabase

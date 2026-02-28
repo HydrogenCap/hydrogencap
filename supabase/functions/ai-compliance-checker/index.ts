@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -132,16 +134,26 @@ serve(async (req) => {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
-    log.withUser(userData.user.id);
-    const { propertyId, propertyData, complianceItems, mode = 'analyze' } = await req.json();
+    const RequestSchema = z.object({
+      propertyId: z.string().uuid().optional(),
+      propertyData: z.object({
+        address_line: z.string().min(1),
+        has_gas_supply: z.boolean().nullable().optional(),
+        is_listed_building: z.boolean().nullable().optional(),
+        is_hmo: z.boolean().nullable().optional(),
+      }).passthrough(),
+      complianceItems: z.array(z.object({
+        compliance_type: z.string(),
+        expiry_date: z.string().nullable().optional(),
+        status: z.string().optional(),
+      }).passthrough()).optional().default([]),
+      mode: z.enum(["analyze", "quick", "audit"]).optional().default("analyze"),
+    });
+
+    const parsed = await validateBody(req, RequestSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const { propertyId, propertyData, complianceItems, mode } = parsed.data;
     log.info('Compliance check requested', { propertyId, mode });
-    
-    if (!propertyData) {
-      return new Response(
-        JSON.stringify({ error: "Property data is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {

@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -378,44 +380,21 @@ Deno.serve(async (req) => {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
-    let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const DocumentSchema = z.object({
+      documentId: z.string().uuid("Invalid documentId"),
+      fileUrl: z.string().url().max(2048, "fileUrl too long"),
+      properties: z.array(z.object({
+        id: z.string().uuid(),
+        address_line: z.string().min(1).max(500),
+        postcode: z.string().max(20).nullable().optional(),
+        title_number: z.string().max(50).nullable().optional(),
+      })).min(1).max(500),
+    });
 
-    const body = rawBody as Record<string, unknown>;
-    const documentId = typeof body.documentId === 'string' ? body.documentId : null;
-    const fileUrl = typeof body.fileUrl === 'string' ? body.fileUrl : null;
-    const properties = Array.isArray(body.properties) ? body.properties : null;
-
-    if (!documentId || !isValidUUID(documentId)) {
-      return new Response(JSON.stringify({ error: 'Invalid or missing documentId' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const parsed = await validateBody(req, DocumentSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const { documentId, fileUrl, properties: validatedProperties } = parsed.data;
     parsedDocumentId = documentId;
-    if (!fileUrl || fileUrl.length > 2048) {
-      return new Response(JSON.stringify({ error: 'Invalid or missing fileUrl' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    if (!properties || properties.length > 500) {
-      return new Response(JSON.stringify({ error: 'Invalid or missing properties array' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Validate properties
-    const validatedProperties: Array<{ id: string; address_line: string; postcode: string | null; title_number?: string | null }> = [];
-    for (const p of properties) {
-      if (typeof p !== 'object' || p === null || !isValidUUID(p.id) || typeof p.address_line !== 'string') {
-        return new Response(JSON.stringify({ error: 'Invalid property entry' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      validatedProperties.push({
-        id: p.id, address_line: p.address_line.slice(0, 500),
-        postcode: typeof p.postcode === 'string' ? p.postcode.slice(0, 20) : null,
-        title_number: typeof p.title_number === 'string' ? p.title_number.slice(0, 50) : null,
-      });
-    }
 
     // Verify document access
     const { data: docAccess, error: accessError } = await userSupabase

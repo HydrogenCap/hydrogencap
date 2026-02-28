@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
+import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
   "https://hydrogencap.com",
@@ -37,8 +39,13 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    const { priceId } = await req.json();
-    if (!priceId) throw new Error("priceId is required");
+    const CheckoutSchema = z.object({
+      priceId: z.string().min(1, "priceId is required").startsWith("price_", "priceId must start with price_"),
+    });
+
+    const parsed = await validateBody(req, CheckoutSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const { priceId } = parsed.data;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
