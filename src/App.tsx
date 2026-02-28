@@ -78,6 +78,7 @@ const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
 const CapExDetail = lazy(() => import("./pages/CapExDetail"));
+const NotificationsPage = lazy(() => import("./pages/Notifications"));
 
 // Wizard pages
 const Wizards = lazy(() => import("./pages/Wizards"));
@@ -489,6 +490,7 @@ const App = () => (
             <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
             <Route path="/capex" element={<ProtectedRoute><CapExPage /></ProtectedRoute>} />
             <Route path="/capex/:id" element={<ProtectedRoute><CapExDetail /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
             {/* Wizard routes */}
             <Route path="/wizards" element={<ProtectedRoute><Wizards /></ProtectedRoute>} />
