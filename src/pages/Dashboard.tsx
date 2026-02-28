@@ -36,6 +36,7 @@ import { KpiCard } from '@/components/dashboard/KpiCard';
 import { DualKpiCard } from '@/components/dashboard/DualKpiCard';
 import { SectionCard } from '@/components/dashboard/SectionCard';
 import { ActionsRequiredWidget } from '@/components/dashboard/ActionsRequiredWidget';
+import { ComplianceTasksWidget } from '@/components/dashboard/ComplianceTasksWidget';
 import { RentCollectionWidget } from '@/components/dashboard/RentCollectionWidget';
 import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
 import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
@@ -564,6 +565,7 @@ function DashboardPage() {
                 </div>
 
                 <ErrorBoundary><MaintenanceWidget /></ErrorBoundary>
+                <ErrorBoundary><ComplianceTasksWidget /></ErrorBoundary>
                 <ErrorBoundary><WorkOrdersWidget /></ErrorBoundary>
                 <ErrorBoundary><RecentActivityWidget /></ErrorBoundary>
               </TabsContent>

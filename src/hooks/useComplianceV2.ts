@@ -118,12 +118,37 @@ export function useCreateComplianceDocV2() {
         .single();
 
       if (error) throw error;
+
+      // Auto-close any matching open compliance task
+      try {
+        const { data: openTask } = await supabase
+          .from('compliance_tasks')
+          .select('id')
+          .eq('property_id', input.property_id)
+          .eq('document_type', input.document_type)
+          .in('status', ['open', 'in_progress', 'waiting', 'pending', 'contractor_assigned', 'contractor_requested', 'awaiting_upload'])
+          .maybeSingle();
+
+        if (openTask) {
+          const userId = (await supabase.auth.getUser()).data.user?.id;
+          await supabase.from('compliance_tasks').update({
+            status: 'completed',
+            resolved_at: new Date().toISOString(),
+            resolved_by: userId,
+            resolution_notes: `Auto-closed: new ${input.document_type} document uploaded`,
+          } as any).eq('id', openTask.id);
+        }
+      } catch (e) {
+        console.warn('Failed to auto-close compliance task:', e);
+      }
+
       return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
       qc.invalidateQueries({ queryKey: ['portfolio-compliance-score-v2'] });
       qc.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
+      qc.invalidateQueries({ queryKey: ['compliance-tasks'] });
     },
   });
 }
