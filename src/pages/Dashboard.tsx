@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
@@ -28,7 +28,7 @@ import { MissingComplianceWidget } from '@/components/dashboard/MissingComplianc
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
 import { ThisMonthWidget } from '@/components/dashboard/ThisMonthWidget';
-import { PropertyMap } from '@/components/maps/PropertyMap';
+const PropertyMap = lazy(() => import('@/components/maps/PropertyMap').then(m => ({ default: m.PropertyMap })));
 import { UpcomingExpirationsWidget } from '@/components/dashboard/UpcomingExpirationsWidget';
 import { DashboardCalendarWidget } from '@/components/dashboard/DashboardCalendarWidget';
 import { StockConditionSection } from '@/components/dashboard/StockConditionSection';
@@ -534,10 +534,12 @@ function DashboardPage() {
                 >
                   {hasPropertiesWithCoords ? (
                     <div className="p-4">
-                      <PropertyMap
-                        properties={mapProperties}
-                        className="h-[350px] rounded-lg"
-                      />
+                      <Suspense fallback={<Skeleton className="h-[350px] rounded-lg" />}>
+                        <PropertyMap
+                          properties={mapProperties}
+                          className="h-[350px] rounded-lg"
+                        />
+                      </Suspense>
                     </div>
                   ) : (
                     <div className="h-[200px] flex items-center justify-center text-muted-foreground">
@@ -601,10 +603,12 @@ function DashboardPage() {
                 >
                   {hasPropertiesWithCoords ? (
                     <div className="p-4">
-                      <PropertyMap
-                        properties={mapProperties}
-                        className="h-[400px] rounded-lg pointer-events-none"
-                      />
+                      <Suspense fallback={<Skeleton className="h-[400px] rounded-lg" />}>
+                        <PropertyMap
+                          properties={mapProperties}
+                          className="h-[400px] rounded-lg pointer-events-none"
+                        />
+                      </Suspense>
                     </div>
                   ) : (
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
