@@ -12,7 +12,7 @@ export function useComplianceMatrix() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('compliance_matrix_v2')
-        .select('*')
+        .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url, contractor_id')
         .order('urgency_score', { ascending: true });
       if (error) throw error;
       return data as unknown as ComplianceMatrixRow[];
@@ -30,7 +30,7 @@ export function usePortfolioComplianceScoreV2() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('portfolio_compliance_score_v2')
-        .select('*')
+        .select('total_requirements, compliant_count, non_compliant_count, compliance_percentage, expired_count, expiring_soon_count, missing_count')
         .single();
       if (error) throw error;
       return data as unknown as PortfolioComplianceScore;
@@ -46,7 +46,7 @@ export function useComplianceDocumentsV2(propertyId?: string, documentType?: str
   return useQuery({
     queryKey: ['compliance-documents-v2', propertyId, documentType],
     queryFn: async () => {
-      let query = supabase.from('compliance_documents_v2').select('*');
+      let query = supabase.from('compliance_documents_v2').select('id, org_id, property_id, document_type, issue_date, expiry_date, status, issuer_name, certificate_number, file_url, file_name, cost, notes, is_current, supersedes_id, ai_extracted, ai_confidence_score, contractor_id, next_review_date, uploaded_by, uploaded_at, created_at, updated_at');
       if (propertyId) query = query.eq('property_id', propertyId);
       if (documentType) query = query.eq('document_type', documentType);
       query = query.order('issue_date', { ascending: false });
@@ -184,7 +184,7 @@ export function usePropertyComplianceV2(propertyId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('compliance_matrix_v2')
-        .select('*')
+        .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url, contractor_id')
         .eq('property_id', propertyId!)
         .order('urgency_score', { ascending: true });
       if (error) throw error;

@@ -170,7 +170,9 @@ export function normalizeRentItem(item: RentScheduleWithDetails): RentItemDispla
  
 // Shared select fragment for dual V1/V2 joins
 const RENT_SCHEDULE_SELECT = `
-  *,
+  id, org_id, tenancy_id, agreement_id, due_date, period_start, period_end,
+  rent_amount, additional_charges, amount_paid, amount_outstanding, status,
+  reminder_sent_at, warning_sent_at, notes, created_at, updated_at, payment_reference, tags,
   agreement:tenancy_agreements(
     id,
     rent_amount_pcm,
@@ -245,9 +247,9 @@ const RENT_SCHEDULE_SELECT = `
    return useQuery({
      queryKey: ['rent_payments', tenancyId],
      queryFn: async () => {
-       let query = supabase
-         .from('rent_payments')
-         .select('*')
+        let query = supabase
+          .from('rent_payments')
+          .select('id, org_id, tenancy_id, agreement_id, rent_schedule_id, amount, payment_date, payment_method, reference, is_reconciled, notes, recorded_by, created_at')
          .order('payment_date', { ascending: false });
  
        if (tenancyId) {
@@ -342,7 +344,7 @@ export function usePaymentReminders(rentScheduleId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('payment_reminders')
-        .select('*')
+        .select('id, rent_schedule_id, reminder_type, sent_at, sent_via, status, recipient_email, recipient_name, error_message, resend_id, tenancy_id, org_id, created_at')
         .eq('rent_schedule_id', rentScheduleId)
         .order('sent_at', { ascending: false });
       if (error) throw error;

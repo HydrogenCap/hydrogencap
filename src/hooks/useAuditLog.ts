@@ -8,7 +8,7 @@ export function useAuditLog(filters: AuditLogFilters) {
     queryFn: async () => {
       let query = supabase
         .from('audit_log' as any)
-        .select('*', { count: 'exact' });
+        .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at, context, session_id, ip_address', { count: 'exact' });
 
       if (filters.tableName && filters.tableName !== 'all') {
         query = query.eq('table_name', filters.tableName);
@@ -45,7 +45,7 @@ export function useRecordAuditHistory(tableName: string, recordId: string | unde
       if (!recordId) return [];
       const { data, error } = await supabase
         .from('audit_log' as any)
-        .select('*')
+        .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at, old_values, new_values')
         .eq('table_name', tableName)
         .eq('record_id', recordId)
         .order('changed_at', { ascending: false })
@@ -65,7 +65,7 @@ export function useRelatedAuditHistory(recordId: string | undefined, relatedTabl
       // Get audit entries where the record_id matches OR any value contains the recordId
       let query = supabase
         .from('audit_log' as any)
-        .select('*')
+        .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at, old_values, new_values')
         .eq('record_id', recordId)
         .order('changed_at', { ascending: false })
         .limit(100);
@@ -84,7 +84,7 @@ export function useRecentActivity(limit = 10) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('audit_log' as any)
-        .select('*')
+        .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at')
         .order('changed_at', { ascending: false })
         .limit(limit);
       if (error) throw error;

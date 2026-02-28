@@ -13,8 +13,12 @@ export function usePropertyCompliance(propertyId: string | undefined) {
       const { data, error } = await supabase
         .from('compliance_items')
         .select(`
-          *,
-          documents:compliance_documents(*)
+          id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
+          is_manually_excluded, exclusion_reason, is_coho_required, notes, responsible_party,
+          renewal_status, renewal_contractor_id, renewal_booked_date, renewal_notes,
+          auto_job_created, auto_job_id, reminder_days, reminder_count, last_reminder_sent_at,
+          created_at, updated_at,
+          documents:compliance_documents(id, compliance_item_id, file_url, original_file_name, file_type, uploaded_at, uploaded_by, is_current, version_number, notes, archived_at)
         `)
         .eq('property_id', propertyId)
         .order('expiry_date', { ascending: true, nullsFirst: false });
@@ -34,8 +38,12 @@ export function useAllCompliance() {
       const { data, error } = await supabase
         .from('compliance_items')
         .select(`
-          *,
-          documents:compliance_documents(*)
+          id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
+          is_manually_excluded, exclusion_reason, is_coho_required, notes, responsible_party,
+          renewal_status, renewal_contractor_id, renewal_booked_date, renewal_notes,
+          auto_job_created, auto_job_id, reminder_days, reminder_count, last_reminder_sent_at,
+          created_at, updated_at,
+          documents:compliance_documents(id, compliance_item_id, file_url, original_file_name, file_type, uploaded_at, uploaded_by, is_current, version_number, notes, archived_at)
         `)
         .order('expiry_date', { ascending: true, nullsFirst: false });
 
@@ -53,8 +61,12 @@ export function useAllComplianceWithProperties() {
       const { data, error } = await supabase
         .from('compliance_items')
         .select(`
-          *,
-          documents:compliance_documents(*),
+          id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
+          is_manually_excluded, exclusion_reason, is_coho_required, notes, responsible_party,
+          renewal_status, renewal_contractor_id, renewal_booked_date, renewal_notes,
+          auto_job_created, auto_job_id, reminder_days, reminder_count, last_reminder_sent_at,
+          created_at, updated_at,
+          documents:compliance_documents(id, compliance_item_id, file_url, original_file_name, file_type, uploaded_at, uploaded_by, is_current, version_number, notes, archived_at),
           property:properties!inner(
             id,
             address_line,
