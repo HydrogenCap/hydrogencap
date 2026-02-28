@@ -76,6 +76,8 @@ const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
 const Accounting = lazy(() => import("./pages/Accounting"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
+const CapExPage = lazy(() => import("./pages/CapEx"));
+const CapExDetail = lazy(() => import("./pages/CapExDetail"));
 
 // Wizard pages
 const Wizards = lazy(() => import("./pages/Wizards"));
@@ -485,6 +487,8 @@ const App = () => (
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
+            <Route path="/capex" element={<ProtectedRoute><CapExPage /></ProtectedRoute>} />
+            <Route path="/capex/:id" element={<ProtectedRoute><CapExDetail /></ProtectedRoute>} />
 
             {/* Wizard routes */}
             <Route path="/wizards" element={<ProtectedRoute><Wizards /></ProtectedRoute>} />
