@@ -11,6 +11,8 @@ import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization'
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { AddressAutocomplete, type AddressData } from '@/components/maps/AddressAutocomplete';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const STEPS = ['Welcome', 'Organization', 'First Property', 'Complete'];
 
@@ -26,6 +28,7 @@ export function OnboardingWizard() {
   const [orgName, setOrgName] = useState('');
   const [address, setAddress] = useState('');
   const [postcode, setPostcode] = useState('');
+  const [city, setCity] = useState('');
 
   const completeOnboarding = useMutation({
     mutationFn: async () => {
@@ -68,7 +71,7 @@ export function OnboardingWizard() {
           org_id: orgId,
           entity_id: resolvedEntityId,
           address_line_1: address.trim(),
-          city: '',
+          city: city || '',
           postcode: postcode.trim().toUpperCase(),
           property_type: 'single_let',
           lifecycle_stage: 'stabilised',
@@ -169,14 +172,19 @@ export function OnboardingWizard() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. 10 Downing Street"
-                  className="bg-input border-border"
-                  autoFocus
-                />
+                <GoogleMapsProvider>
+                  <AddressAutocomplete
+                    value={address}
+                    onChange={(val) => setAddress(val)}
+                    onAddressSelect={(data: AddressData) => {
+                      setAddress(data.address_line);
+                      if (data.postcode) setPostcode(data.postcode);
+                      if (data.town_city) setCity(data.town_city);
+                    }}
+                    placeholder="Start typing an address..."
+                    className="bg-input border-border"
+                  />
+                </GoogleMapsProvider>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="postcode">Postcode</Label>
