@@ -12,7 +12,7 @@ export function useComplianceMatrix() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('compliance_matrix_v2')
-        .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url, contractor_id')
+        .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url')
         .order('urgency_score', { ascending: true });
       if (error) throw error;
       return data as unknown as ComplianceMatrixRow[];
@@ -30,7 +30,7 @@ export function usePortfolioComplianceScoreV2() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('portfolio_compliance_score_v2')
-        .select('total_requirements, compliant_count, non_compliant_count, compliance_percentage, expired_count, expiring_soon_count, missing_count')
+        .select('total_required, total_valid, total_expired, total_expiring_soon, total_missing, total_critical, compliance_score_pct')
         .single();
       if (error) throw error;
       return data as unknown as PortfolioComplianceScore;
@@ -209,7 +209,7 @@ export function usePropertyComplianceV2(propertyId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('compliance_matrix_v2')
-        .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url, contractor_id')
+        .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url')
         .eq('property_id', propertyId!)
         .order('urgency_score', { ascending: true });
       if (error) throw error;

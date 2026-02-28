@@ -99,7 +99,7 @@ export default function CapExPage() {
                     const statusInfo = STATUS_LABELS[p.status] || STATUS_LABELS.planned;
                     return (
                       <tr key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/capex/${p.id}`)}>
-                        <td className="px-3 py-2">{p.properties_v2?.address_line_1 || '—'}</td>
+                        <td className="px-3 py-2">{p.properties?.address_line_1 || '—'}</td>
                         <td className="px-3 py-2 font-medium">{p.name}</td>
                         <td className="px-3 py-2 text-right">{fmt(budget)}</td>
                         <td className={`px-3 py-2 text-right ${spent > budget ? 'text-destructive font-semibold' : ''}`}>{fmt(spent)}</td>
@@ -145,7 +145,7 @@ export default function CapExPage() {
                         const variance = budget - spent;
                         return (
                           <tr key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/capex/${p.id}`)}>
-                            <td className="px-3 py-2">{p.properties_v2?.address_line_1 || '—'}</td>
+                            <td className="px-3 py-2">{p.properties?.address_line_1 || '—'}</td>
                             <td className="px-3 py-2 font-medium">{p.name}</td>
                             <td className="px-3 py-2 text-right">{fmt(budget)}</td>
                             <td className="px-3 py-2 text-right">{fmt(spent)}</td>
