@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { 
   FileText, MapPin, Calendar, Check, X, ChevronDown, 
-  AlertCircle, Loader2, Shield, Building2, User, Edit2 
+  AlertCircle, Loader2, Shield, Building2, User, Edit2, RefreshCw 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,52 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
 
   const isProcessed = document.extraction_status === 'completed';
   const isPending = document.extraction_status === 'pending' || document.extraction_status === 'processing';
+  const isFailed = document.extraction_status === 'failed';
   const isProcessing = acceptDocument.isPending || rejectDocument.isPending;
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = useCallback(async () => {
+    setIsRetrying(true);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: properties } = await import('@/hooks/usePropertiesV2').then(m => {
+        // We already have properties from the hook above, use those
+        return { data: null };
+      });
+      
+      // Reset status to pending
+      await supabase.from('documents').update({ 
+        extraction_status: 'pending',
+        validation_errors: null,
+      }).eq('id', document.id);
+
+      // Get signed URL and re-invoke process-document
+      const storagePath = document.file_url;
+      const { data: urlData } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(storagePath, 600);
+
+      if (urlData?.signedUrl) {
+        // Fetch properties for the AI
+        const { data: props } = await supabase.from('properties_v2')
+          .select('id, address_line_1, city, postcode');
+        
+        const propertyList = (props || []).map(p => ({
+          id: p.id,
+          address_line: `${p.address_line_1}, ${p.city}`,
+          postcode: p.postcode,
+        }));
+
+        await supabase.functions.invoke('process-document', {
+          body: { documentId: document.id, fileUrl: urlData.signedUrl, properties: propertyList },
+        });
+      }
+    } catch (err) {
+      console.error('Retry failed:', err);
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [document.id, document.file_url]);
 
   const docTypeConfidence = document.ai_doc_type_confidence || 0;
   const propertyConfidence = document.ai_property_confidence || 0;
@@ -141,6 +186,12 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                     Analysing
                   </Badge>
                 )}
+                {isFailed && (
+                  <Badge variant="destructive" className="shrink-0">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Failed
+                  </Badge>
+                )}
               </div>
 
               {isProcessed && (
@@ -188,30 +239,47 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                 </Button>
               </CollapsibleTrigger>
               
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="text-destructive hover:text-destructive"
-                onClick={handleReject}
-                disabled={isProcessing}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                onClick={handleAccept}
-                disabled={isProcessing || !isProcessed || !selectedDocType}
-                className={isReadyForConfirm ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
-              >
-                {isProcessing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Check className="h-4 w-4 mr-1" />
-                    {isReadyForConfirm ? 'Confirm' : 'Review'}
-                  </>
-                )}
-              </Button>
+              {isFailed ? (
+                <Button 
+                  variant="outline"
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                >
+                  {isRetrying ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                  )}
+                  Retry
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                    disabled={isProcessing}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleAccept}
+                    disabled={isProcessing || !isProcessed || !selectedDocType}
+                    className={isReadyForConfirm ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        {isReadyForConfirm ? 'Confirm' : 'Review'}
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 

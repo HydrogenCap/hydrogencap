@@ -36,6 +36,9 @@ export default function Inbox() {
   const processingDocs = documents?.filter(d => 
     d.extraction_status === 'pending' || d.extraction_status === 'processing'
   ) || [];
+  const failedDocs = documents?.filter(d => 
+    d.extraction_status === 'failed' && d.review_status === 'pending'
+  ) || [];
   const readyDocs = pendingDocs.filter(d => d.extraction_status === 'completed');
 
   // High confidence = both doc type and property match >= 70%
@@ -180,9 +183,9 @@ export default function Inbox() {
             </TabsTrigger>
             <TabsTrigger value="processing" className="gap-2">
               Analysing
-              {processingDocs.length > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5">
-                  {processingDocs.length}
+              {(processingDocs.length + failedDocs.length) > 0 && (
+                <Badge variant={failedDocs.length > 0 ? "destructive" : "secondary"} className="h-5 min-w-5 px-1.5">
+                  {processingDocs.length + failedDocs.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -239,16 +242,29 @@ export default function Inbox() {
           </TabsContent>
 
           <TabsContent value="processing" className="space-y-3">
-            {processingDocs.length === 0 ? (
+            {processingDocs.length === 0 && failedDocs.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">No documents analysing</p>
                 <p className="text-sm">Upload documents to start AI analysis</p>
               </div>
             ) : (
-              processingDocs.map(doc => (
-                <ComplianceReviewCard key={doc.id} document={doc} />
-              ))
+              <>
+                {failedDocs.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-destructive flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Failed ({failedDocs.length}) — click Retry to reprocess
+                    </p>
+                    {failedDocs.map(doc => (
+                      <ComplianceReviewCard key={doc.id} document={doc} />
+                    ))}
+                  </div>
+                )}
+                {processingDocs.map(doc => (
+                  <ComplianceReviewCard key={doc.id} document={doc} />
+                ))}
+              </>
             )}
           </TabsContent>
           <TabsContent value="dashboard">

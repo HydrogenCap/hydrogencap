@@ -330,6 +330,7 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
+  let parsedDocumentId: string | null = null;
 
   try {
     const authHeader = req.headers.get('Authorization');
@@ -370,6 +371,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid or missing documentId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    parsedDocumentId = documentId;
     if (!fileUrl || fileUrl.length > 2048) {
       return new Response(JSON.stringify({ error: 'Invalid or missing fileUrl' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -625,6 +627,23 @@ Respond with valid JSON only (no markdown):
     );
   } catch (error) {
     console.error("Process document error:", error);
+    
+    // Reset document status to 'failed' so it doesn't stay stuck at 'processing'
+    if (parsedDocumentId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+        
+        await adminClient.from("documents").update({ 
+          extraction_status: "failed",
+          validation_errors: [error instanceof Error ? error.message : "Unknown processing error"],
+        }).eq("id", parsedDocumentId);
+      } catch (resetErr) {
+        console.error("Failed to reset document status:", resetErr);
+      }
+    }
+    
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
