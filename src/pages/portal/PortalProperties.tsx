@@ -9,7 +9,7 @@ import { formatGBP } from '@/lib/calculations';
 
 export default function PortalProperties() {
   const { canViewFinancials } = useShareholderSession();
-  const { properties, coverPhotoMap, isLoading } = useShareholderPortfolioData();
+  const { properties, loansByProperty, coverPhotoMap, isLoading } = useShareholderPortfolioData();
 
   if (isLoading) {
     return (
@@ -31,21 +31,21 @@ export default function PortalProperties() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {properties?.map((property) => {
-            const loan = property.loans?.[0];
-            const ltv = property.current_value_gbp && loan?.current_mortgage_balance_gbp
-              ? (loan.current_mortgage_balance_gbp / property.current_value_gbp) * 100
+            const propertyLoans = loansByProperty.get(property.id) || [];
+            const debt = propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
+            const ltv = property.current_valuation && debt
+              ? (debt / property.current_valuation) * 100
               : 0;
 
             const coverPhotoUrl = coverPhotoMap.get(property.id);
 
             return (
               <Card key={property.id} className="overflow-hidden">
-                {/* Property Image Placeholder */}
                 {coverPhotoUrl ? (
                   <div className="aspect-video bg-muted overflow-hidden">
                     <img
                       src={coverPhotoUrl}
-                      alt={property.address_line}
+                      alt={property.address_line_1}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -58,10 +58,10 @@ export default function PortalProperties() {
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">{property.address_line}</CardTitle>
+                      <CardTitle className="text-lg">{property.address_line_1}</CardTitle>
                       <CardDescription className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {property.town_city}, {property.postcode}
+                        {property.city}, {property.postcode}
                       </CardDescription>
                     </div>
                     <Badge variant="secondary" className="capitalize">
@@ -73,16 +73,10 @@ export default function PortalProperties() {
                 <CardContent className="space-y-3">
                   {/* Property Details */}
                   <div className="flex gap-4 text-sm text-muted-foreground">
-                    {property.beds && (
+                    {property.total_lettable_rooms && (
                       <div className="flex items-center gap-1">
                         <Bed className="h-4 w-4" />
-                        {property.beds} beds
-                      </div>
-                    )}
-                    {property.tenure && (
-                      <div className="flex items-center gap-1">
-                        <Home className="h-4 w-4" />
-                        {property.tenure}
+                        {property.total_lettable_rooms} rooms
                       </div>
                     )}
                   </div>
@@ -93,10 +87,10 @@ export default function PortalProperties() {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Value</span>
                         <span className="font-medium">
-                          {formatGBP(property.current_value_gbp || 0)}
+                          {formatGBP(property.current_valuation || 0)}
                         </span>
                       </div>
-                      {loan?.current_mortgage_balance_gbp && (
+                      {debt > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">LTV</span>
                           <span className="font-medium">{ltv.toFixed(1)}%</span>
@@ -106,9 +100,9 @@ export default function PortalProperties() {
                   )}
 
                   {/* Lifecycle */}
-                  {property.lifecycle_type && (
+                  {property.lifecycle_stage && (
                     <Badge variant="outline" className="capitalize">
-                      {property.lifecycle_type.replace('_', ' ')}
+                      {property.lifecycle_stage.replace('_', ' ')}
                     </Badge>
                   )}
                 </CardContent>
