@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hydrogen Capital | Portfolio Dashboard</title>
-    <meta name="description" content="Property portfolio management dashboard for Hydrogen Capital" />
+    <title>HydrogenCap | Property Portfolio Management</title>
+    <meta name="description" content="Track compliance, rent collection, and financial performance across your entire UK property portfolio." />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="author" content="Hydrogen Capital" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
@@ -13,8 +14,8 @@
     <link rel="preconnect" href="https://cdn.gpteng.co" crossorigin />
     <link rel="dns-prefetch" href="https://cdn.gpteng.co" />
 
-    <meta property="og:title" content="Hydrogen Capital | Portfolio Dashboard" />
-    <meta property="og:description" content="Property portfolio management dashboard for Hydrogen Capital" />
+    <meta property="og:title" content="HydrogenCap | Property Portfolio Management" />
+    <meta property="og:description" content="Track compliance, rent collection, and financial performance across your entire UK property portfolio." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/favicon.png" />
 
@@ -26,5 +27,12 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

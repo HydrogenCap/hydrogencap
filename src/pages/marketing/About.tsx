@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Target, Eye, Zap, Shield, Users, CheckCircle } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
@@ -48,6 +49,10 @@ const team = [
 export default function MarketingAbout() {
   return (
     <MarketingLayout>
+      <SEO
+        title="About Us — HydrogenCap"
+        description="HydrogenCap was built by UK property investors who were frustrated with spreadsheets. We're on a mission to make portfolio management effortless."
+      />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">

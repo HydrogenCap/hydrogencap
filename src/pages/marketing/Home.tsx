@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import {
   BarChart3,
@@ -81,6 +82,10 @@ const socialProof = [
 export default function MarketingHome() {
   return (
     <MarketingLayout>
+      <SEO
+        title="HydrogenCap — Property Portfolio Management for UK Landlords"
+        description="Track compliance, rent collection, and financial performance across your entire property portfolio. Built for UK landlords and investors managing 5-200 properties."
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4 lg:px-8 py-20 lg:py-32">

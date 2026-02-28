@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, Calendar, TrendingUp, CheckCircle } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
@@ -74,6 +75,10 @@ const caseStudies = [
 export default function MarketingCaseStudies() {
   return (
     <MarketingLayout>
+      <SEO
+        title="Case Studies — HydrogenCap"
+        description="See how UK landlords use HydrogenCap to manage compliance, track rent, and grow their property portfolios."
+      />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">

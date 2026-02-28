@@ -1,3 +1,4 @@
+import { SEO } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -57,6 +58,10 @@ export default function MarketingPortfolio() {
 
   return (
     <MarketingLayout>
+      <SEO
+        title="Portfolio Dashboard — HydrogenCap"
+        description="See how HydrogenCap gives you a real-time overview of your property portfolio with KPIs, compliance status, and financial metrics."
+      />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-16 lg:py-20">
         <div className="container mx-auto px-4 lg:px-8">

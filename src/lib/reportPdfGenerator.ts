@@ -404,7 +404,7 @@ export class PortfolioComplianceReport extends ReportPdfBase {
       },
     });
     
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
     
     // Add note about detailed sections
     this.doc.setFontSize(9);
@@ -493,7 +493,7 @@ export class PortfolioComplianceReport extends ReportPdfBase {
           },
         });
         
-        this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+        this.currentY = this.doc.lastAutoTable.finalY + 10;
       } else {
         this.doc.setFontSize(9);
         this.doc.setTextColor(107, 114, 128);
@@ -652,7 +652,7 @@ export class PropertyCompliancePack extends ReportPdfBase {
       },
     });
     
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    this.currentY = this.doc.lastAutoTable.finalY + 15;
   }
 
   private addComplianceNarrative() {
@@ -711,7 +711,7 @@ export class PropertyCompliancePack extends ReportPdfBase {
       },
     });
     
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+    this.currentY = this.doc.lastAutoTable.finalY + 15;
     
     // Note about digital access
     this.doc.setFillColor(240, 249, 255);
@@ -857,7 +857,7 @@ export class MortgageBrokerPack extends ReportPdfBase {
       },
     });
     
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
   }
 
   private addBrokerNotes() {
@@ -954,7 +954,7 @@ export class InsuranceBrokerPack extends ReportPdfBase {
       },
     });
     
-    this.currentY = (this.doc as any).lastAutoTable.finalY + 10;
+    this.currentY = this.doc.lastAutoTable.finalY + 10;
   }
 
   private addPolicyDetails() {

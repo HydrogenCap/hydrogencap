@@ -22,3 +22,7 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Report Core Web Vitals
+import { reportWebVitals } from '@/lib/webVitals';
+reportWebVitals();
