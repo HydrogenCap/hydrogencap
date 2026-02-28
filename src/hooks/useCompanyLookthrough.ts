@@ -35,8 +35,8 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
 
       // 1. Get the property with its legal ownership links
       const { data: property, error: propError } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode')
+        .from('properties_v2')
+        .select('id, address_line_1, postcode')
         .eq('id', propertyId)
         .single();
 
@@ -184,7 +184,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
 
       return {
         propertyId: property.id,
-        propertyAddress: `${property.address_line}${property.postcode ? `, ${property.postcode}` : ''}`,
+        propertyAddress: `${property.address_line_1}${property.postcode ? `, ${property.postcode}` : ''}`,
         legalOwners,
         effectiveOwnership: effectiveArray,
         totalLegalPercent: legalOwners.reduce((sum, lo) => sum + lo.ownerPercent, 0),

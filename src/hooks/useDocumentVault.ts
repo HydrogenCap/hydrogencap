@@ -136,8 +136,8 @@ export function useVaultDocuments(filters: VaultFilters) {
       const { data, error } = await query;
       if (error) throw error;
 
-      let results = data as (ManagedDocument & {
-        property?: { id: string; address_line: string; postcode: string | null } | null;
+      let results = data as unknown as (ManagedDocument & {
+        property?: { id: string; address_line_1: string; postcode: string | null } | null;
         company?: { id: string; legal_name: string } | null;
       })[];
 
@@ -147,7 +147,7 @@ export function useVaultDocuments(filters: VaultFilters) {
           doc.display_name?.toLowerCase().includes(s) ||
           doc.original_file_name.toLowerCase().includes(s) ||
           doc.description?.toLowerCase().includes(s) ||
-          doc.property?.address_line?.toLowerCase().includes(s) ||
+          doc.property?.address_line_1?.toLowerCase().includes(s) ||
           doc.company?.legal_name?.toLowerCase().includes(s)
         );
       }

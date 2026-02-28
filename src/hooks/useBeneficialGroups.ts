@@ -193,7 +193,7 @@ export function useUpdatePropertyBeneficialOverride() {
       notes: string | null;
     }) => {
       const { error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .update({
           beneficial_override_percent: overridePercent,
           beneficial_override_notes: notes,
@@ -203,7 +203,7 @@ export function useUpdatePropertyBeneficialOverride() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
       queryClient.invalidateQueries({ queryKey: ['attributable_ownership'] });
     },
   });
@@ -224,7 +224,7 @@ export function usePropertyAttributableOwnership(propertyId: string | undefined)
 
       // 1. Fetch property with override
       const { data: property, error: propError } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .select('id, beneficial_override_percent, beneficial_override_notes')
         .eq('id', propertyId)
         .single();

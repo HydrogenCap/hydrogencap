@@ -19,11 +19,11 @@ export function usePropertyWithFeatures(propertyId: string | undefined) {
       if (!propertyId) return null;
       
       const { data, error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .select(`
           id,
-          address_line,
-          has_gas,
+          address_line_1,
+          has_gas_supply,
           has_fire_alarm_system,
           fire_alarm_grade,
           has_emergency_lighting,
@@ -40,7 +40,13 @@ export function usePropertyWithFeatures(propertyId: string | undefined) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as PropertyComplianceFeatures | null;
+      // Map V2 field names to expected interface
+      if (!data) return null;
+      return {
+        ...data,
+        address_line: data.address_line_1,
+        has_gas: data.has_gas_supply,
+      } as unknown as PropertyComplianceFeatures | null;
     },
     enabled: !!propertyId,
   });
@@ -52,11 +58,11 @@ export function useAllPropertiesWithFeatures() {
     queryKey: ['all_property_features'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('properties')
+        .from('properties_v2')
         .select(`
           id,
-          address_line,
-          has_gas,
+          address_line_1,
+          has_gas_supply,
           has_fire_alarm_system,
           fire_alarm_grade,
           has_emergency_lighting,
@@ -68,13 +74,19 @@ export function useAllPropertiesWithFeatures() {
           epc_required,
           listed_status,
           has_solar,
-          lifecycle_type
+          lifecycle_stage
         `)
-        // Only include core_rental properties for compliance tracking
-        .eq('lifecycle_type', 'core_rental');
+        // Only include operational properties for compliance tracking
+        .eq('lifecycle_stage', 'operational');
 
       if (error) throw error;
-      return data as (PropertyComplianceFeatures & { lifecycle_type?: string })[];
+      // Map V2 field names to expected interface
+      return (data || []).map(d => ({
+        ...d,
+        address_line: d.address_line_1,
+        has_gas: d.has_gas_supply,
+        lifecycle_type: d.lifecycle_stage,
+      })) as unknown as (PropertyComplianceFeatures & { lifecycle_type?: string })[];
     },
   });
 }

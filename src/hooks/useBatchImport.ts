@@ -30,21 +30,19 @@ export function useBatchImport() {
           const propertyId = row.data.id as string | null;
           const isUpdate = !!propertyId;
           
-          // Extract property data
+          // Extract property data mapped to V2 column names
           const propertyData = {
-            address_line: String(row.data.address_line || ''),
-            address_line2: row.data.address_line2 as string | null,
-            area_name: row.data.area_name as string | null,
+            address_line_1: String(row.data.address_line || row.data.address_line_1 || ''),
+            address_line_2: (row.data.address_line2 || row.data.address_line_2) as string | null,
+            county: row.data.area_name as string | null,
             postcode: row.data.postcode as string | null,
-            property_type: row.data.property_type as string | null,
-            beds: row.data.beds as number | null,
-            bathrooms: row.data.bathrooms as number | null,
-            current_value_gbp: row.data.current_value_gbp as number | null,
-            purchase_price_gbp: row.data.purchase_price_gbp as number | null,
-            ownership_entity: row.data.ownership_entity as string | null,
-            ownership_percent: row.data.ownership_percent as number | null,
+            property_type: (row.data.property_type as string) || 'HMO',
+            total_lettable_rooms: row.data.beds as number | null,
+            current_valuation: row.data.current_value_gbp as number | null,
+            purchase_price: row.data.purchase_price_gbp as number | null,
             epc_rating: row.data.epc_rating as string | null,
             notes: row.data.notes as string | null,
+            city: (row.data.town_city || row.data.city || '') as string,
           };
 
           let property;
@@ -52,7 +50,7 @@ export function useBatchImport() {
           if (isUpdate) {
             // Update existing property
             const { data: updatedProperty, error: updateError } = await supabase
-              .from('properties')
+              .from('properties_v2')
               .update(propertyData)
               .eq('id', propertyId)
               .select()
@@ -62,10 +60,15 @@ export function useBatchImport() {
             property = updatedProperty;
             result.updated++;
           } else {
-            // Insert new property
+            // Insert new property - entity_id is required for V2
+            const entityId = row.data.entity_id as string | null;
+            if (!entityId) {
+              throw new Error('entity_id is required for new properties in V2');
+            }
+
             const { data: newProperty, error: propError } = await supabase
-              .from('properties')
-              .insert({ ...propertyData, org_id: orgId })
+              .from('properties_v2')
+              .insert({ ...propertyData, org_id: orgId, entity_id: entityId })
               .select()
               .single();
 
@@ -96,7 +99,6 @@ export function useBatchImport() {
             };
 
             if (existingLoans && existingLoans.length > 0) {
-              // Update existing loan
               const { error: loanError } = await supabase
                 .from('loans')
                 .update(loanData)
@@ -106,7 +108,6 @@ export function useBatchImport() {
                 console.warn('Failed to update loan:', loanError);
               }
             } else if (mortgageBalance !== null && mortgageBalance > 0) {
-              // Insert new loan only if there's a balance
               const { error: loanError } = await supabase
                 .from('loans')
                 .insert(loanData);
@@ -145,7 +146,7 @@ export function useBatchImport() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
     },
     onError: (error) => {
       showMutationError(error, 'Import failed');

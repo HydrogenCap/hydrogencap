@@ -202,8 +202,8 @@ export default function Documents() {
     switch (sortBy) {
       case 'property':
         return docs.sort((a, b) => {
-          const propA = a.property?.address_line || 'zzz';
-          const propB = b.property?.address_line || 'zzz';
+          const propA = a.property?.address_line_1 || 'zzz';
+          const propB = b.property?.address_line_1 || 'zzz';
           return propA.localeCompare(propB);
         });
       case 'name':
@@ -267,7 +267,7 @@ export default function Documents() {
     if (sortBy !== 'property' || !currentDocuments.length) return null;
     const groups = new Map<string, typeof currentDocuments>();
     for (const doc of currentDocuments) {
-      const key = doc.property?.address_line || 'Unassigned';
+      const key = doc.property?.address_line_1 || 'Unassigned';
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(doc);
     }
@@ -293,7 +293,7 @@ export default function Documents() {
               )}
               {doc.property && (
                 <span className="flex items-center gap-1">
-                  <Home className="h-3 w-3" />{doc.property.address_line}
+                  <Home className="h-3 w-3" />{doc.property.address_line_1}
                 </span>
               )}
               {doc.company && (

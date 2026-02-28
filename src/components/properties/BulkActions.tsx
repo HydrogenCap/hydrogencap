@@ -84,8 +84,8 @@ export function BulkActions({ selectedIds, onClearSelection }: BulkActionsProps)
     
     await bulkPropertyUpdate.mutateAsync({
       propertyIds,
-      lifecycleType: lifecycleType as 'development' | 'core_rental' || undefined,
-      legalOwnerCompanyId: legalOwnerCompanyId || undefined,
+      lifecycleStage: lifecycleType || undefined,
+      entityId: legalOwnerCompanyId || undefined,
     });
 
     setShowDialog(false);

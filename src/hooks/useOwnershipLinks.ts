@@ -32,9 +32,9 @@ export interface OwnershipLink {
   // For property subjects
   property?: {
     id: string;
-    address_line: string;
+    address_line_1: string;
     postcode: string | null;
-    area_name: string | null;
+    county: string | null;
   } | null;
   // For company subjects
   company?: {
@@ -240,8 +240,8 @@ export function useOwnershipGrid(filters?: OwnershipGridFilters) {
             return { ...link, company };
           } else if (link.subject_type === 'PROPERTY') {
             const { data: property } = await supabase
-              .from('properties')
-              .select('id, address_line, postcode, area_name')
+              .from('properties_v2')
+              .select('id, address_line_1, postcode, county')
               .eq('id', link.subject_id)
               .single();
             return { ...link, property };
