@@ -11,7 +11,6 @@ export const COMPLIANCE_DOC_TYPES = [
   'hmo_licence',
   'selective_licence',
   'buildings_insurance',
-  'landlord_liability_insurance',
   'rent_guarantee_insurance',
   'legionella_risk_assessment',
   'asbestos_survey',
@@ -46,7 +45,7 @@ export const DOC_TYPE_DISPLAY_NAMES: Record<ComplianceDocType, string> = {
   hmo_licence: 'HMO Licence',
   selective_licence: 'Selective Licence',
   buildings_insurance: 'Buildings Insurance',
-  landlord_liability_insurance: 'Landlord Liability Insurance',
+  
   rent_guarantee_insurance: 'Rent Guarantee Insurance',
   legionella_risk_assessment: 'Legionella Risk Assessment',
   asbestos_survey: 'Asbestos Survey',
@@ -70,7 +69,7 @@ export const MATRIX_COLUMN_ORDER: ComplianceDocType[] = [
   'hmo_licence',
   'selective_licence',
   'buildings_insurance',
-  'landlord_liability_insurance',
+  
   'emergency_lighting_cert',
   'fire_alarm_cert',
   'smoke_co_alarm_cert',
@@ -90,7 +89,7 @@ export const DOC_TYPE_SHORT_LABELS: Record<ComplianceDocType, string> = {
   hmo_licence: 'HMO',
   selective_licence: 'Sel. Lic',
   buildings_insurance: 'Bldg Ins',
-  landlord_liability_insurance: 'LL Ins',
+  
   rent_guarantee_insurance: 'RG Ins',
   legionella_risk_assessment: 'Legionella',
   asbestos_survey: 'Asbestos',
