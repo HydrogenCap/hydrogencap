@@ -31,14 +31,31 @@ let cachedApiKey: string | null = null;
 
 async function fetchApiKey(): Promise<string | null> {
   if (cachedApiKey) return cachedApiKey;
-  
+
+  // First check client-side env var
+  const envKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (envKey) {
+    cachedApiKey = envKey;
+    return envKey;
+  }
+
+  // Fallback: fetch from edge function
   try {
-    // We'll load from environment variable injected at build time
-    // For now, return a placeholder - the actual key loading happens via Places API script
-    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (key) {
-      cachedApiKey = key;
-      return key;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabaseKey) return null;
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/get-maps-key`, {
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.key) {
+      cachedApiKey = data.key;
+      return data.key;
     }
     return null;
   } catch {

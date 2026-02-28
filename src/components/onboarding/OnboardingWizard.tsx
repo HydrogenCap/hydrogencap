@@ -11,7 +11,7 @@ import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization'
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
-import { PostcodeLookup } from '@/components/maps/PostcodeLookup';
+import { AddressAutocomplete, type AddressData } from '@/components/maps/AddressAutocomplete';
 
 const STEPS = ['Welcome', 'Organization', 'First Property', 'Complete'];
 
@@ -170,21 +170,29 @@ export function OnboardingWizard() {
           {step === 2 && (
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label>Find your address</Label>
-                <PostcodeLookup
-                  onSelect={(data) => {
-                    setAddress(data.line1);
-                    setPostcode(data.postcode);
-                    setCity(data.city);
+                <Label htmlFor="address">Address</Label>
+                <AddressAutocomplete
+                  value={address}
+                  onChange={(val) => setAddress(val)}
+                  onAddressSelect={(data: AddressData) => {
+                    setAddress(data.address_line);
+                    if (data.postcode) setPostcode(data.postcode);
+                    if (data.town_city) setCity(data.town_city);
                   }}
+                  placeholder="Start typing an address..."
+                  className="bg-input border-border"
                 />
               </div>
-              {address && (
-                <div className="rounded-md border border-border bg-muted/30 p-3 text-sm space-y-1">
-                  <p className="font-medium">{address}</p>
-                  <p className="text-muted-foreground">{[city, postcode].filter(Boolean).join(', ')}</p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="postcode">Postcode</Label>
+                <Input
+                  id="postcode"
+                  value={postcode}
+                  onChange={(e) => setPostcode(e.target.value)}
+                  placeholder="e.g. SW1A 2AA"
+                  className="bg-input border-border"
+                />
+              </div>
             </div>
           )}
 
