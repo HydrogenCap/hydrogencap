@@ -13,6 +13,7 @@ import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSe
 import { PropertyLoansSection } from '@/components/lending/PropertyLoansSection';
 import { PropertyComplianceSection } from '@/components/compliance-v2/PropertyComplianceSection';
 import { PropertyFinancialSection } from '@/components/financials/PropertyFinancialSection';
+import { PropertyPnLCard } from '@/components/financials/PropertyPnLCard';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useToast } from '@/hooks/use-toast';
@@ -172,7 +173,10 @@ export default function PropertyDetailV2() {
         {/* Rooms */}
         <PropertyRoomsSection propertyId={property.id} rentBasis={property.rent_basis} wholeHouseRentPcm={property.whole_house_rent_pcm} />
 
-        {/* Financials */}
+        {/* Live P&L */}
+        <PropertyPnLCard propertyId={property.id} />
+
+        {/* Manual Financial Snapshots */}
         <PropertyFinancialSection propertyId={property.id} currentValuation={property.current_valuation} />
 
         {/* Loans */}
