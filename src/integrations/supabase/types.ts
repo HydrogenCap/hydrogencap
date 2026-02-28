@@ -6959,6 +6959,60 @@ export type Database = {
           },
         ]
       }
+      property_units: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_lettable: boolean
+          notes: string | null
+          property_id: string
+          rent_basis: string
+          sort_order: number
+          unit_name: string
+          updated_at: string | null
+          whole_house_rent_pcm: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_lettable?: boolean
+          notes?: string | null
+          property_id: string
+          rent_basis?: string
+          sort_order?: number
+          unit_name?: string
+          updated_at?: string | null
+          whole_house_rent_pcm?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_lettable?: boolean
+          notes?: string | null
+          property_id?: string
+          rent_basis?: string
+          sort_order?: number
+          unit_name?: string
+          updated_at?: string | null
+          whole_house_rent_pcm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       property_valuations: {
         Row: {
           adjustment_factors: Json | null
@@ -7393,6 +7447,7 @@ export type Database = {
           room_name: string
           room_type: string
           target_rent_pcm: number | null
+          unit_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -7408,6 +7463,7 @@ export type Database = {
           room_name: string
           room_type: string
           target_rent_pcm?: number | null
+          unit_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -7423,6 +7479,7 @@ export type Database = {
           room_name?: string
           room_type?: string
           target_rent_pcm?: number | null
+          unit_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -7439,6 +7496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "rooms_v2_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "property_units"
+            referencedColumns: ["id"]
           },
         ]
       }

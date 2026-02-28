@@ -19,9 +19,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   propertyId: string;
   editingRoom?: RoomV2 | null;
+  unitId?: string | null;
 }
 
-export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom }: Props) {
+export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, unitId }: Props) {
   const create = useCreateRoom();
   const update = useUpdateRoom();
   const { toast } = useToast();
@@ -60,7 +61,6 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom }: P
     }
   }, [editingRoom, open]);
 
-  // Auto-logic for communal and ensuite
   useEffect(() => {
     if (form.room_type === 'communal') {
       setForm(f => ({ ...f, is_lettable: false, occupancy_status: 'unavailable' }));
@@ -82,7 +82,7 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom }: P
       toast({ title: 'Room name is required', variant: 'destructive' });
       return;
     }
-    const payload = {
+    const payload: any = {
       property_id: propertyId,
       room_name: form.room_name,
       room_type: form.room_type as RoomV2['room_type'],
@@ -94,6 +94,7 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom }: P
       occupancy_status: form.occupancy_status as RoomV2['occupancy_status'],
       notes: form.notes || null,
     };
+    if (unitId) payload.unit_id = unitId;
     try {
       if (editingRoom) {
         await update.mutateAsync({ id: editingRoom.id, ...payload });
