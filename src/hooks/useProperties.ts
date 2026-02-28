@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { ActivityLoggers } from './useActivityLog';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
@@ -84,8 +85,11 @@ export function useCreateProperty() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      // Log activity
       ActivityLoggers.propertyCreated(data.id, data.address_line);
+      showMutationSuccess('Property created');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to create property');
     },
   });
 }
@@ -133,6 +137,7 @@ export function useUpdateProperty() {
       if (context?.previousProperty) {
         queryClient.setQueryData(['property', newData.id], context.previousProperty);
       }
+      showMutationError(_err, 'Failed to update property');
     },
     onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: ['property', variables.id] });
@@ -156,6 +161,10 @@ export function useDeleteProperty() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['unit-usage-count'] });
+      showMutationSuccess('Property deleted');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to delete property');
     },
   });
 }
@@ -178,6 +187,10 @@ export function useCreateLoan() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      showMutationSuccess('Loan created');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to create loan');
     },
   });
 }
@@ -224,6 +237,10 @@ export function useUpdateLoan() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      showMutationSuccess('Loan updated');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update loan');
     },
   });
 }
@@ -246,12 +263,15 @@ export function useUpsertIncome() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      // Log activity
       ActivityLoggers.incomeUpdated(
         data.property_id, 
         data.year, 
         Number(data.annual_rent_gbp)
       );
+      showMutationSuccess('Income updated');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update income');
     },
   });
 }
@@ -274,7 +294,6 @@ export function useUpsertCosts() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      // Calculate total from manual fields
       const total = [
         data.management_gbp_manual,
         data.bills_gbp_manual,
@@ -285,6 +304,10 @@ export function useUpsertCosts() {
       ].reduce((sum, val) => sum + (val ? Number(val) : 0), 0);
       
       ActivityLoggers.costsUpdated(data.property_id, data.year, total);
+      showMutationSuccess('Costs updated');
+    },
+    onError: (error) => {
+      showMutationError(error, 'Failed to update costs');
     },
   });
 }
