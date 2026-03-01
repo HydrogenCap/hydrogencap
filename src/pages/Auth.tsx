@@ -100,7 +100,7 @@ function AuthPage() {
         }
         toast({
           title: 'Account created!',
-          description: 'Welcome to Portfolio Dashboard.',
+          description: 'Welcome to Tenure IQ.',
         });
         navigate('/dashboard');
       }
@@ -128,8 +128,8 @@ function AuthPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-primary-foreground mb-4 glow-primary">
             <Building2 className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Portfolio Dashboard</h1>
-          <p className="text-muted-foreground mt-2">UK Property Portfolio Management</p>
+          <h1 className="text-2xl font-bold text-foreground">Tenure IQ</h1>
+          <p className="text-muted-foreground mt-2">Property Intelligence Platform</p>
         </div>
 
         <Card className="border-border/50 bg-card/50 backdrop-blur">

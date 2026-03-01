@@ -83,7 +83,7 @@ export function useFindOrCreateManagementCompany() {
   });
 }
 
-// Seed default management company (Oxygen Management Ltd) if none exist
+// Seed default management company (Tenure IQ) if none exist
 export function useSeedDefaultManagementCompany() {
   const queryClient = useQueryClient();
 
@@ -103,7 +103,7 @@ export function useSeedDefaultManagementCompany() {
       // Insert default
       const { data, error } = await supabase
         .from('management_companies')
-        .insert({ name: 'Oxygen Management Ltd', org_id: orgId })
+        .insert({ name: 'Tenure IQ', org_id: orgId })
         .select()
         .single();
 
