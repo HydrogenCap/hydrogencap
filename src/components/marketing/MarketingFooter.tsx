@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
+import tenureIqLogo from '@/assets/tenure-iq-logo.png';
 
 export const MarketingFooter = forwardRef<HTMLElement>(
   (_, ref) => {
@@ -10,12 +11,10 @@ export const MarketingFooter = forwardRef<HTMLElement>(
             {/* Brand */}
             <div className="space-y-4">
               <Link to="/" className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">T</span>
-                </div>
+                <img src={tenureIqLogo} alt="Tenure IQ" className="h-8 w-auto" />
                 <div className="flex flex-col">
                   <span className="font-semibold text-sm leading-tight">Tenure IQ</span>
-                  <span className="text-[10px] text-muted-foreground leading-tight">Portfolio Dashboard</span>
+                  <span className="text-[10px] text-muted-foreground leading-tight">Property Intelligence Platform</span>
                 </div>
               </Link>
               <p className="text-sm text-muted-foreground">

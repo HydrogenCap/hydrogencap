@@ -584,7 +584,7 @@ export class PropertyCompliancePack extends ReportPdfBase {
     this.doc.setFont('helvetica', 'normal');
     this.doc.text('Tenure IQ', this.margin, this.currentY);
     this.currentY += 5;
-    this.doc.text('Managed by Oxygen Management Ltd', this.margin, this.currentY);
+    this.doc.text('Managed by Tenure IQ', this.margin, this.currentY);
   }
 
   private addPropertyOverview() {
@@ -674,7 +674,7 @@ export class PropertyCompliancePack extends ReportPdfBase {
     this.doc.setTextColor(107, 114, 128);
     this.doc.text('For queries regarding this property or compliance documentation, please contact:', this.margin, this.currentY);
     this.currentY += 6;
-    this.doc.text('Oxygen Management Ltd | office@oxygen.rocks', this.margin, this.currentY);
+    this.doc.text('Tenure IQ | office@tenureiq.com', this.margin, this.currentY);
   }
 
   private addAttachmentsAppendix() {

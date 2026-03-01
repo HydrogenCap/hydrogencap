@@ -193,7 +193,7 @@ export default function MarketingContact() {
                 <h3 className="text-xl font-semibold mb-6">Other ways to reach us</h3>
                 <div className="space-y-4">
                   <a
-                    href="mailto:office@oxygen.rocks"
+                    href="mailto:office@tenureiq.com"
                     className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
                   >
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -201,7 +201,7 @@ export default function MarketingContact() {
                     </div>
                     <div>
                       <p className="font-medium">Email</p>
-                      <p className="text-sm text-muted-foreground">office@oxygen.rocks</p>
+                      <p className="text-sm text-muted-foreground">office@tenureiq.com</p>
                     </div>
                   </a>
                   <div className="flex items-center gap-4 p-4 rounded-lg border">

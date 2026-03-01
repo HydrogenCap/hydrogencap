@@ -90,7 +90,7 @@ export default function MarketingDemo() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <Badge variant="secondary" className="mb-2">Demo Mode</Badge>
-              <h1 className="text-2xl font-bold">Portfolio Dashboard</h1>
+              <h1 className="text-2xl font-bold">Tenure IQ Dashboard</h1>
               <p className="text-muted-foreground">Exploring with sample data • 8 properties</p>
             </div>
             <div className="flex gap-3">
