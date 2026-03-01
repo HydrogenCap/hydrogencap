@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Plus, Search, AlertTriangle, Check } from 'lucide-react';
+import { Users, Plus, Search, AlertTriangle, Check, Clock, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
+import { useTenancyEvents } from '@/hooks/useTenancyEvents';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -43,6 +45,11 @@ export default function TenantsV2() {
   const navigate = useNavigate();
   const { data: tenants, isLoading } = useTenantsV2WithTenancy();
   const { data: compliance } = useTenancyComplianceChecks();
+  const { data: tenancyEvents } = useTenancyEvents({ daysAhead: 30 });
+  const urgentEvents = useMemo(() =>
+    (tenancyEvents || []).filter(e => e.status === 'overdue' || e.status === 'action_required'),
+    [tenancyEvents]
+  );
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -112,6 +119,37 @@ export default function TenantsV2() {
           <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Average Rent</p><p className="text-xl md:text-2xl font-bold">{fmtRent(avgRent)}</p></CardContent></Card>
           <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Deposit Issues</p><p className={`text-xl md:text-2xl font-bold ${depositIssues > 0 ? 'text-destructive' : ''}`}>{depositIssues}</p></CardContent></Card>
         </div>
+
+        {/* Urgent Events Banner */}
+        {urgentEvents.length > 0 && (
+          <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+            <CalendarClock className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-1.5">
+                <p className="font-semibold text-sm">
+                  {urgentEvents.length} tenancy event{urgentEvents.length !== 1 ? 's' : ''} requiring attention
+                </p>
+                {urgentEvents.map(ev => (
+                  <div
+                    key={`${ev.tenancyId}-${ev.type}`}
+                    className="flex items-start gap-2 text-sm cursor-pointer hover:underline"
+                    onClick={() => navigate(`/tenants-v2/${ev.tenancyId}`)}
+                  >
+                    <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      <strong>{ev.title}</strong> — {ev.propertyAddress}
+                      {ev.tenantName !== 'Unknown' && ` (${ev.tenantName})`}
+                      {' · '}
+                      <span className={ev.status === 'overdue' ? 'text-destructive font-medium' : ''}>
+                        {ev.description}
+                      </span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 md:gap-3">
