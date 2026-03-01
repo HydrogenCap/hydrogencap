@@ -244,3 +244,23 @@
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
+
+/* Mobile table horizontal scroll */
+@media (max-width: 767px) {
+  [data-slot="table-container"],
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure all tables in cards can scroll */
+  [role="table"],
+  table {
+    min-width: 600px;
+  }
+
+  /* Auto-wrap card content containing tables */
+  .card-content-table-wrapper {
+    overflow-x: auto;
+    -mx-4: 0;
+  }
+}
