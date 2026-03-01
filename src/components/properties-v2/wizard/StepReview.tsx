@@ -46,7 +46,7 @@ export function StepReview({ data, goToStep }: Props) {
               <div className="mt-2 space-y-1 text-sm">
                 <p>Entity: <span className="font-medium">{entity?.entity_name || '—'}</span> {entity && <span className="text-muted-foreground">({entity.entity_type})</span>}</p>
                 <p>Type: <span className="font-medium">{typeLabel}</span> • Stage: <span className="font-medium">{stageLabel}</span></p>
-                <p>Gas Supply: {data.has_gas_supply ? 'Yes' : 'No'} {data.year_built && `• Year Built: ${data.year_built}`} {data.total_floors && `• ${data.total_floors} Floors`}</p>
+                <p>Gas Supply: {data.has_gas_supply ? 'Yes' : 'No'} {data.hmo_licence_number && `• HMO Licence: ${data.hmo_licence_number}`} {data.year_built && `• Year Built: ${data.year_built}`} {data.total_floors && `• ${data.total_floors} Floors`}</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={() => goToStep(0)}><Pencil className="h-3.5 w-3.5 mr-1" /> Edit</Button>

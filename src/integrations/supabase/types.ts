@@ -6585,6 +6585,7 @@ export type Database = {
           has_fire_alarm_system: boolean | null
           has_gas_supply: boolean | null
           has_solar: boolean | null
+          hmo_licence_number: string | null
           id: string
           identity_updated_at: string | null
           identity_updated_by: string | null
@@ -6651,6 +6652,7 @@ export type Database = {
           has_fire_alarm_system?: boolean | null
           has_gas_supply?: boolean | null
           has_solar?: boolean | null
+          hmo_licence_number?: string | null
           id?: string
           identity_updated_at?: string | null
           identity_updated_by?: string | null
@@ -6717,6 +6719,7 @@ export type Database = {
           has_fire_alarm_system?: boolean | null
           has_gas_supply?: boolean | null
           has_solar?: boolean | null
+          hmo_licence_number?: string | null
           id?: string
           identity_updated_at?: string | null
           identity_updated_by?: string | null

@@ -31,6 +31,7 @@ export interface WizardData {
   property_type: string;
   lifecycle_stage: string;
   has_gas_supply: boolean;
+  hmo_licence_number: string;
   year_built: string;
   total_floors: string;
   // Step 3: Rooms
@@ -70,6 +71,7 @@ export const INITIAL_WIZARD_DATA: WizardData = {
   property_type: 'single_let',
   lifecycle_stage: 'pipeline',
   has_gas_supply: true,
+  hmo_licence_number: '',
   year_built: '',
   total_floors: '',
   rooms: [],
