@@ -54,7 +54,7 @@ import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
-import logoImage from '@/assets/tenure-iq-logo.png';
+import { LogoWordmark } from '@/components/LogoWordmark';
 
 interface NavItem {
   title: string;
@@ -220,9 +220,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-        <Link to="/dashboard" className="flex items-center justify-center">
-          <img src={logoImage} alt="Tenure IQ" className="w-full max-w-[180px] h-auto object-contain" />
-        </Link>
+        <LogoWordmark to="/dashboard" size="lg" />
       </SidebarHeader>
 
       <SidebarContent>

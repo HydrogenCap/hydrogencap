@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import tenureIqLogo from '@/assets/tenure-iq-logo.png';
+import { LogoWordmark } from '@/components/LogoWordmark';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -21,13 +21,7 @@ export function MarketingNav() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-8">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <img src={tenureIqLogo} alt="Tenure IQ" className="h-8 w-auto" />
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm leading-tight">Tenure IQ</span>
-            <span className="text-[10px] text-muted-foreground leading-tight">Property Intelligence Platform</span>
-          </div>
-        </Link>
+        <LogoWordmark to="/" size="md" />
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">

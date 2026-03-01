@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import tenureIqLogo from '@/assets/tenure-iq-logo.png';
+import { LogoWordmark } from '@/components/LogoWordmark';
 
 import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
 
@@ -125,9 +125,9 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 animate-fade-up">
          {/* Logo */}
-        <div className="text-center">
-          <img src={tenureIqLogo} alt="Tenure IQ" className="mx-auto h-16 w-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Property Intelligence Platform</p>
+        <div className="text-center flex flex-col items-center">
+          <LogoWordmark to="/" size="lg" showSubtitle={false} />
+          <p className="text-sm text-muted-foreground mt-1">Property Intelligence Platform</p>
         </div>
 
         <Card className="border-border/50 bg-card/50 backdrop-blur">
