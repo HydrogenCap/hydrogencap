@@ -5,3 +5,6 @@ export { default as MarketingCaseStudies } from './CaseStudies';
 export { default as MarketingAbout } from './About';
 export { default as MarketingContact } from './Contact';
 export { default as MarketingDemo } from './Demo';
+export { default as MarketingBookDemo } from './BookDemo';
+export { default as MarketingSecurity } from './Security';
+export { default as MarketingPricing } from './Pricing';

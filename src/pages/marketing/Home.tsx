@@ -100,7 +100,7 @@ export default function MarketingHome() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
-                <Link to="/contact">
+                <Link to="/book-a-demo">
                   Book a Demo
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -273,7 +273,7 @@ export default function MarketingHome() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" variant="secondary" asChild>
-                  <Link to="/contact">
+                  <Link to="/book-a-demo">
                     Book a Demo
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>

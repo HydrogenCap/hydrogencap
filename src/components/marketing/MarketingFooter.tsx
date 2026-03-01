@@ -28,6 +28,8 @@ export const MarketingFooter = forwardRef<HTMLElement>(
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/product" className="hover:text-foreground transition-colors">How It Works</Link></li>
                 <li><Link to="/case-studies" className="hover:text-foreground transition-colors">Case Studies</Link></li>
+                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+                <li><Link to="/security" className="hover:text-foreground transition-colors">Security</Link></li>
                 <li><Link to="/demo" className="hover:text-foreground transition-colors">Demo Dashboard</Link></li>
               </ul>
             </div>
@@ -38,9 +40,15 @@ export const MarketingFooter = forwardRef<HTMLElement>(
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+                <li><Link to="/book-a-demo" className="hover:text-foreground transition-colors">Book a Demo</Link></li>
                 <li>
                   <a href="mailto:office@tenureiq.com" className="hover:text-foreground transition-colors">
                     office@tenureiq.com
+                  </a>
+                </li>
+                <li>
+                  <a href="https://www.linkedin.com/company/tenureiq" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                    LinkedIn
                   </a>
                 </li>
               </ul>
