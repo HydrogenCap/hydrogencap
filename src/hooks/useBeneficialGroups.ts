@@ -594,7 +594,7 @@ export function useSeedDefaultBeneficialGroup() {
       // Create the default group
       const { data: group, error } = await supabase
         .from('beneficial_groups')
-        .insert({ name: 'David / Hydrogen', org_id: orgId })
+        .insert({ name: 'Default Group', org_id: orgId })
         .select()
         .single();
 

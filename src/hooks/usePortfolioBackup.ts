@@ -64,7 +64,7 @@ function generateSummaryMarkdown(
   warnings: string[],
 ): string {
   const lines: string[] = [
-    '# HydrogenCap Portfolio Backup',
+    '# Tenure IQ Portfolio Backup',
     '',
     `**Generated:** ${manifest.createdAt}`,
     `**Format version:** ${manifest.version}`,
@@ -97,7 +97,7 @@ function generateSummaryMarkdown(
     '',
     '## Restore Instructions',
     '',
-    'To restore this backup into a fresh HydrogenCap instance:',
+    'To restore this backup into a fresh Tenure IQ instance:',
     '',
     '1. Create a new organisation in the target instance.',
     '2. Import the JSON files from `data/` **in numerical order** (00, 01, 02 …).',
@@ -147,7 +147,7 @@ export function usePortfolioBackup() {
       const warnings: string[] = [];
       const zip = new JSZip();
       const dateStr = format(new Date(), 'yyyy-MM-dd-HHmm');
-      const root = `hydrogencap-backup-${dateStr}`;
+      const root = `tenureiq-backup-${dateStr}`;
 
       const tables = options.essentialOnly
         ? BACKUP_TABLES.filter(t => t.essential)
@@ -306,9 +306,9 @@ export function usePortfolioBackup() {
 
       const manifest = {
         version: '1.0.0',
-        format: 'hydrogencap-backup',
+        format: 'tenureiq-backup',
         createdAt: new Date().toISOString(),
-        app: 'HydrogenCap',
+        app: 'Tenure IQ',
         tables: tableSummary,
         totalRecords,
         totalFiles,
@@ -330,7 +330,7 @@ export function usePortfolioBackup() {
         );
 
         // Use direct blob URL download instead of file-saver for better large-file support
-        const fileName = `hydrogencap-backup-${dateStr}.zip`;
+        const fileName = `tenureiq-backup-${dateStr}.zip`;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

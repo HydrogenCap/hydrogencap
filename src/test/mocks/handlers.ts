@@ -77,7 +77,7 @@ export const handlers = [
   http.get(`${SUPABASE_URL}/auth/v1/user`, () => {
     return HttpResponse.json({
       id: 'user-1',
-      email: 'test@hydrogencap.com',
+      email: 'test@tenureiq.com',
       email_confirmed_at: '2025-01-01T00:00:00Z',
     });
   }),
