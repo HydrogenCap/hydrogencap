@@ -34,7 +34,7 @@ export function useActivationChecklist() {
 
       const sq = supabase as any;
       const propertiesRes = await sq.from('properties_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
-      const roomsRes = await sq.from('rooms_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const roomsRes = await sq.from('rooms_v2').select('id, properties_v2!inner(id)', { count: 'exact', head: true }).eq('properties_v2.org_id', org.id);
       const complianceRes = await sq.from('compliance_documents_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
       const tenantsRes = await sq.from('tenants_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
       const loansRes = await sq.from('loan_facilities').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
