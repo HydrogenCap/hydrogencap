@@ -3551,6 +3551,88 @@ export type Database = {
           },
         ]
       }
+      generated_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          generated_data: Json | null
+          id: string
+          org_id: string
+          property_id: string | null
+          storage_path: string | null
+          template_id: string
+          tenancy_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          generated_data?: Json | null
+          id?: string
+          org_id: string
+          property_id?: string | null
+          storage_path?: string | null
+          template_id: string
+          tenancy_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          generated_data?: Json | null
+          id?: string
+          org_id?: string
+          property_id?: string | null
+          storage_path?: string | null
+          template_id?: string
+          tenancy_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "generated_documents_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
+          },
+          {
+            foreignKeyName: "generated_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       go_live_checklists: {
         Row: {
           build_fire_alarm_installed: boolean

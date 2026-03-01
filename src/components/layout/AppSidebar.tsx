@@ -26,6 +26,7 @@ import {
   Wrench,
   Upload,
   ScrollText,
+  FileSignature,
   ShieldCheck,
   Receipt,
   Banknote,
@@ -90,6 +91,7 @@ const operationsItems: NavItem[] = [
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
   { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
   { title: 'CapEx', icon: HardHat, href: '/capex' },
+  { title: 'Templates', icon: FileSignature, href: '/templates' },
 ];
 
 const intelligenceItems: NavItem[] = [
