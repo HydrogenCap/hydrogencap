@@ -118,6 +118,7 @@ const MarketingContact = lazy(() => import("./pages/marketing/Contact"));
 const MarketingDemo = lazy(() => import("./pages/marketing/Demo"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 
 // V1 → V2 redirect helpers
 function PropertyV1Redirect() {
@@ -538,6 +539,7 @@ const App = () => (
             <Route path="/demo" element={<MarketingDemo />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/cookies" element={<CookiePolicy />} />
             <Route path="/install" element={<Install />} />
             
             {/* Shared document viewer (public) */}

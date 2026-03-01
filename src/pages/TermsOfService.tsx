@@ -1,8 +1,13 @@
 import { MarketingLayout } from '@/components/marketing';
+import { SEO } from '@/components/SEO';
 
 export default function TermsOfService() {
   return (
     <MarketingLayout>
+      <SEO
+        title="Terms of Service | Tenure IQ"
+        description="Terms and conditions for using the Tenure IQ property portfolio management platform."
+      />
       <div className="container max-w-3xl py-16 space-y-8">
         <h1 className="text-3xl font-bold text-foreground">Terms of Service</h1>
         <p className="text-sm text-muted-foreground">Last updated: 12 February 2026</p>

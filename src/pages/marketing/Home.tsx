@@ -83,19 +83,20 @@ export default function MarketingHome() {
   return (
     <MarketingLayout>
       <SEO
-        title="Tenure IQ — Property Portfolio Management for UK Landlords"
-        description="Track compliance, rent collection, and financial performance across your entire property portfolio. Built for UK landlords and investors managing 5-200 properties."
+        title="Tenure IQ — Property Portfolio Management for UK HMO & BTL Investors"
+        description="Know your yield. Track your compliance. Grow your portfolio. Built for UK landlords managing HMO and buy-to-let investments."
+        ogImage="https://tenureiq.com/og-image.jpg"
       />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4 lg:px-8 py-20 lg:py-32">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              See every asset, risk, and renewal{' '}
-              <span className="text-primary">in one dashboard.</span>
+              The property management platform built for{' '}
+              <span className="text-primary">UK HMO and BTL investors.</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Portfolio tracking, compliance visibility, refinance modelling, and reporting — built for UK HMOs and multi-entity ownership.
+              Know your yield. Track your compliance. Grow your portfolio — without spreadsheets, without guesswork.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
