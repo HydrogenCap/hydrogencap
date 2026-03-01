@@ -14,6 +14,7 @@ import { usePropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, getP
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
+import { PropertyWizard } from '@/components/properties-v2/wizard/PropertyWizard';
 import { usePropertyPhotosV2 } from '@/hooks/usePropertyPhotosV2';
 import { useBulkEpcEnrichV2 } from '@/hooks/useBulkEpcEnrichV2';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
@@ -89,7 +90,7 @@ export default function PropertiesV2() {
   const { data: photoMap } = usePropertyPhotosV2();
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [search, setSearch] = useState('');
   const [filterEntity, setFilterEntity] = useState('all');
   const [filterType, setFilterType] = useState('all');
@@ -162,7 +163,7 @@ export default function PropertiesV2() {
             <Button variant="outline" onClick={() => enrichEpc('missing-only')} disabled={isEnrichingEpc}>
               <Zap className="h-4 w-4 mr-2" /> {isEnrichingEpc ? 'Enriching…' : 'Enrich EPC'}
             </Button>
-            <Button onClick={() => setShowModal(true)}><Plus className="h-4 w-4 mr-2" /> Add Property</Button>
+            <Button onClick={() => setShowWizard(true)}><Plus className="h-4 w-4 mr-2" /> Add Property</Button>
           </div>
         </div>
 
@@ -266,7 +267,7 @@ export default function PropertiesV2() {
         )}
       </div>
 
-      <PropertyFormModal open={showModal} onOpenChange={setShowModal} />
+      <PropertyWizard open={showWizard} onOpenChange={setShowWizard} />
     </AppLayout>
   );
 }
