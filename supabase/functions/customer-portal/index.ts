@@ -30,11 +30,20 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) throw new Error("No Stripe customer found for this user");
+    let customerId: string;
+    if (customers.data.length === 0) {
+      const newCustomer = await stripe.customers.create({
+        email: user.email,
+        metadata: { supabase_uid: user.id },
+      });
+      customerId = newCustomer.id;
+    } else {
+      customerId = customers.data[0].id;
+    }
 
     const origin = req.headers.get("origin") || "https://hydrogencapital.lovable.app";
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customers.data[0].id,
+      customer: customerId,
       return_url: `${origin}/settings?tab=billing`,
     });
 
