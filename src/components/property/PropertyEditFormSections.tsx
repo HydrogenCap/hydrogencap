@@ -53,7 +53,7 @@ export function PropertyDetailsSection({
           onDataReceived={onAutoPopulate}
         />
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
+      <CardContent className="grid gap-4 grid-cols-1 md:grid-cols-2">
         <FormField
           control={form.control}
           name="address_line"
