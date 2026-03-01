@@ -1,12 +1,12 @@
-# HydrogenCap – Project Context for Claude
+# TenureIQ – Project Context for Claude
 
-> **Generated**: 2026-02-28  
+> **Generated**: 2026-03-01  
 > **Stack**: React 18 + Vite 5 + TypeScript + Tailwind CSS 3 + Supabase (Lovable Cloud)  
-> **Package name**: `hydrogencap`
+> **Package name**: `tenureiq`
 
 ---
 
-## 1. What is HydrogenCap?
+## 1. What is TenureIQ?
 
 A **UK property portfolio management SaaS** for HMO landlords and property companies. It covers:
 
@@ -25,240 +25,84 @@ A **UK property portfolio management SaaS** for HMO landlords and property compa
 
 ---
 
-## 2. Tech Stack
+## 2. Key Differentiators
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, Vite 5, TypeScript |
-| Styling | Tailwind CSS 3, shadcn/ui (Radix primitives), CVA |
-| State | TanStack React Query v5, React Context |
-| Routing | react-router-dom v6 (lazy-loaded pages) |
-| Forms | react-hook-form + zod |
-| Charts | Recharts |
-| Maps | Leaflet + react-leaflet, Google Maps |
-| Backend | Supabase (Postgres + Auth + Storage + Edge Functions + Realtime) |
-| Payments | Stripe (checkout sessions, webhooks, customer portal) |
-| PDF | jspdf + jspdf-autotable, pdf-lib |
-| Testing | Vitest (unit), Playwright (e2e) |
-| Error tracking | Sentry |
+- **Compliance focus**: Deep coverage of UK property compliance (HMO, gas, electric, fire)
+- **Entity model**: Flexible ownership structures via legal entities & ownership links
+- **Investor portal**: White-label portal for investor reporting
+- **AI features**: Integrated AI for insights, valuations, document processing
 
----
+## 3. Data Model Highlights
 
-## 3. Project Structure
+- **Properties V2**: New property schema with flexible room configurations
+- **Compliance V2**: New compliance system with documents, requirements, tasks
+- **Tenants V2**: New tenant & tenancy schema
+- **Legal Entities**: Companies, trusts, SPVs, individuals
+- **Ownership Links**: Connect properties to legal entities
+- **Rent Schedule**: Recurring rent schedule for tenancies
+- **Rent Payments**: Records of rent payments received
+- **Bank Transactions**: Imported bank transactions for reconciliation
+- **Loan Facilities**: Loan facilities from lenders
+- **Loans**: Individual loans against facilities
 
-```
-src/
-├── App.tsx              # Route definitions, providers
-├── main.tsx             # Entry point
-├── index.css            # Tailwind + design tokens
-├── contexts/
-│   ├── AuthContext.tsx          # Supabase auth (email/password)
-│   ├── SubscriptionContext.tsx  # Stripe subscription state
-│   ├── LifecycleFilterContext.tsx
-│   └── ThemeContext.tsx
-├── hooks/               # ~120 custom hooks (data fetching, mutations)
-├── pages/               # ~70 page components (lazy-loaded)
-│   ├── marketing/       # Public marketing pages
-│   ├── portal/          # Investor/shareholder portal
-│   └── tenant-portal/   # Tenant self-service portal
-├── components/          # ~50 component directories
-│   ├── ui/              # shadcn/ui primitives
-│   ├── layout/          # Shell, sidebar, nav
-│   ├── properties-v2/   # V2 property components
-│   ├── compliance-v2/   # V2 compliance components
-│   ├── tenants-v2/      # V2 tenant components
-│   └── ...
-├── lib/                 # Business logic, calculations, types, CSV/PDF utils
-├── integrations/supabase/
-│   ├── client.ts        # Auto-generated Supabase client
-│   └── types.ts         # Auto-generated DB types (10,175 lines)
-├── types/               # Shared TypeScript types
-└── utils/               # Utility functions
+## 4. Authentication
 
-supabase/
-├── config.toml          # Auto-managed config
-├── migrations/          # SQL migrations (read-only)
-└── functions/           # 41 Edge Functions
-    ├── _shared/         # logger.ts, rateLimit.ts, validate.ts
-    ├── stripe-webhook/
-    ├── create-checkout/
-    ├── customer-portal/
-    ├── check-subscription/
-    ├── ai-compliance-checker/
-    ├── companies-house/
-    ├── companies-house-lookup/
-    ├── geocode-address/
-    ├── process-document/
-    ├── send-compliance-reminders/
-    ├── portfolio-chat/
-    ├── portfolio-insights/
-    └── ... (41 total)
-```
+- **Supabase Auth**: Standard Supabase auth for users
+- **Row Level Security (RLS)**: Enforces multi-tenancy & access control
+- **Shareholder Access**: Separate auth for investor portal
+- **Tenant Portal Sessions**: Separate auth for tenant portal
 
----
+## 5. Compliance System (V2)
 
-## 4. Database Schema (Key Tables)
+- **Compliance**: Main compliance table with status, due dates
+- **Compliance Documents**: Uploaded documents for compliance items
+- **Compliance Requirements**: Requirements for compliance items
+- **Compliance Tasks**: Tasks to complete requirements
+- **Compliance Templates**: Templates for common compliance types
+- **Contractors**: List of contractors for compliance work
 
-### Core V2 Tables (current system)
-- `properties_v2` – Property records with entity ownership
-- `rooms_v2` – Room-level data per property
-- `tenants_v2` – Tenant records
-- `tenancies_v2` – Tenancy agreements linking tenants to rooms
-- `legal_entities` – Companies, trusts, individuals that own properties
-- `ownership_links` – Graph of ownership relationships
+## 6. AI Features
 
-### Legacy V1 Tables (still in use by 17 hooks)
-- `properties` – Original property table (still referenced by compliance, ownership, geocoding, import, passport, etc.)
-- `loans`, `income`, `costs`, `tenancies` – V1 financial data
+- **Compliance Checking**: AI checks compliance documents for issues
+- **Valuations**: AI estimates property values
+- **Portfolio Insights**: AI provides insights on portfolio performance
+- **Document Processing**: AI extracts data from documents
 
-### Compliance V2
-- `compliance_documents_v2` – Certificates with AI extraction
-- `compliance_requirements_v2` – Per-property requirements
-- `compliance_tasks` – Action items (renewals, inspections)
-- `compliance_templates` – Master list of document types
-- `compliance_contractors_v2` – Contractor database
-- `compliance_notifications` – Alert system
+## 7. Marketing Site
 
-### Financial
-- `loan_facilities` – Lending facilities
-- `rent_schedule` – Expected rent rows
-- `rent_payments` – Actual payments received
-- `bank_accounts` / `bank_transactions` – Banking data
-- `subscriptions` – Stripe subscription state (webhook-managed)
+- **Pages**: `/`, `/product`, `/portfolio`, `/case-studies`, `/about`, `/contact`, `/demo`
+- **Components**: MarketingNav, MarketingFooter, SEO
+- **Layout**: MarketingLayout
 
-### Other
-- `organizations` / `memberships` – Multi-tenant org model
-- `parties` / `companies` – Party registry
-- `documents` – General document vault
-- `activity_log` / `audit_log` – Activity tracking
-- `app_settings` – Per-org settings
-- `capex_projects` / `capex_line_items` – Capital expenditure
+## 8. Key Components
 
----
+- **Dashboard**: Main dashboard with portfolio overview
+- **PropertyList**: List of properties with filters & actions
+- **PropertyDetails**: Details page for a single property
+- **ComplianceList**: List of compliance items with filters & actions
+- **ComplianceDetails**: Details page for a single compliance item
+- **TenantList**: List of tenants with filters & actions
+- **TenantDetails**: Details page for a single tenant
+- **LegalEntityList**: List of legal entities with filters & actions
+- **LegalEntityDetails**: Details page for a single legal entity
 
-## 5. Auth & Multi-tenancy
+## 9. Supabase Functions
 
-- **Auth**: Supabase Auth with email/password (no auto-confirm)
-- **Org model**: Users → `memberships` → `organizations`. Most tables have `org_id` column.
-- **RLS**: Row Level Security on all tables. Policies check `auth.uid()` via `memberships` to scope data to org.
-- **Subscription**: Stripe checkout → webhook writes to `subscriptions` table → realtime subscription in `SubscriptionContext`
-- **Portals**: Investor portal (magic-link via `shareholder_access`), Tenant portal (via `tenant_portal_sessions`)
+- **stripe_webhook**: Handles Stripe webhook events for subscriptions
+- **generate_tenant_portal_session**: Generates tenant portal session for auth
 
----
+## 10. Storage Buckets
 
-## 6. Key Patterns
+- **compliance**: Stores compliance documents
+- **compliance-documents**: Stores original uploaded compliance documents
 
-### Data Fetching
-```typescript
-// All data fetching uses TanStack React Query
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+## 11. Environment Variables
 
-// Org ID helper (used in mutations)
-import { fetchUserOrgId } from '@/hooks/useUserOrg';
-```
-
-### Mutation Pattern
-```typescript
-export function useCreateSomething() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input) => {
-      const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.from('table').insert({...input, org_id: orgId}).select().single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['table'] });
-    },
-  });
-}
-```
-
-### Error Handling
-```typescript
-import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
-```
-
-### Design System
-- All colors via HSL CSS variables in `index.css`
-- Tailwind semantic tokens: `--background`, `--foreground`, `--primary`, `--muted`, `--accent`, etc.
-- shadcn/ui components with CVA variants
-- Dark mode support via ThemeContext
-
----
-
-## 7. Edge Functions (41 total)
-
-| Function | Purpose |
-|----------|---------|
-| `stripe-webhook` | Handles Stripe events → writes `subscriptions` |
-| `create-checkout` | Creates Stripe checkout session |
-| `customer-portal` | Creates Stripe billing portal session |
-| `check-subscription` | Manual subscription check fallback |
-| `ai-compliance-checker` | AI document analysis |
-| `process-document` | AI document extraction |
-| `generate-ai-valuation` | AI property valuation |
-| `portfolio-chat` | AI portfolio Q&A |
-| `portfolio-insights` | AI portfolio analysis |
-| `companies-house` / `companies-house-lookup` | Companies House API |
-| `geocode-address` | Address geocoding |
-| `send-compliance-reminders` | Email reminders |
-| `send-job-request` / `send-job-reminders` | Contractor communications |
-| `send-rent-reminder` | Rent reminder emails |
-| `send-team-invite` | Team invitation emails |
-| `portfolio-api` | External API access |
-| `freeagent-*` | FreeAgent accounting integration |
-| `bulk-epc-enrich` / `bulk-epc-enrich-v2` | EPC data enrichment |
-| `bulk-price-paid-enrich` | Land Registry price paid data |
-| `fetch-land-registry-comparables` | Comparable sales |
-
----
-
-## 8. V1 → V2 Migration Status
-
-The app has both V1 and V2 systems running in parallel:
-
-**V2 (current/active)**:
-- `properties_v2`, `rooms_v2`, `tenants_v2`, `tenancies_v2`
-- `compliance_documents_v2`, `compliance_requirements_v2`, `compliance_tasks`
-- Pages: `/properties-v2`, `/tenants-v2`, `/compliance-v2`
-
-**V1 (legacy, still referenced)**:
-- `properties` table still used by **17 hook files**: useProperties, useBeneficialGroups, useBulkPropertyUpdate, useCompanyLookthrough, useDocumentVault, useBatchImport, useGoLiveChecklist, useComplianceRequirements, useGeocoding, useBatchRenameDocuments, useOwnershipLinks, usePropertyPhotosV2, useCoreIdentity, usePassportPageData, useCompanyProperties, useMissingInfo, useOwnershipData
-- V1 routes redirect to V2: `/properties/:id` → `/properties-v2/:id`
-
----
-
-## 9. Subscription Tiers
-
-| Tier | Properties | Key Features |
-|------|-----------|-------------|
-| Free | 2 | Basic access |
-| Solo (£) | 10 | Compliance, tenants, contractors, basic reports |
-| Portfolio (££) | 50 | + AI features, bank reports, ownership, analytics, shareable links |
-| Pro (£££) | ∞ | + Shareholder portal, company secrets, passport autofill, API access, team roles |
-
----
-
-## 10. File Counts
-
-- **Pages**: ~70 `.tsx` files
-- **Hooks**: ~120 `.ts` files  
-- **Components**: ~50 directories with multiple files each
-- **Edge Functions**: 41
-- **DB Types**: 10,175 lines (auto-generated)
-- **Lib utilities**: ~50 files
-
----
-
-## 11. Key URLs
-
-- Preview: `https://id-preview--921c381d-68a8-422e-836f-0fa87b53335d.lovable.app`
-- Published: `https://hydrogencapital.lovable.app`
-
----
+- `VITE_SUPABASE_URL`: Supabase URL
+- `VITE_SUPABASE_ANON_KEY`: Supabase anon key
+- `VITE_STRIPE_PUBLISHABLE_KEY`: Stripe publishable key
+- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (server-side)
+- `STRIPE_SECRET_KEY`: Stripe secret key (server-side)
 
 ## 12. Important Conventions
 

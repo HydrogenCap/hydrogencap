@@ -147,7 +147,7 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
             <TableHeader>
               <TableRow>
                 <TableHead>Field</TableHead>
-                <TableHead>HydrogenCap</TableHead>
+                <TableHead>Tenure IQ</TableHead>
                 <TableHead>Companies House</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-28" />

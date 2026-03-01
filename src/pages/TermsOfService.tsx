@@ -10,7 +10,7 @@ export default function TermsOfService() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-foreground">1. Acceptance of Terms</h2>
           <p className="text-muted-foreground">
-            By accessing or using Hydrogen Capital, you agree to be bound by these Terms of Service.
+            By accessing or using Tenure IQ, you agree to be bound by these Terms of Service.
             If you do not agree, you may not use the platform.
           </p>
         </section>
@@ -18,7 +18,7 @@ export default function TermsOfService() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-foreground">2. Description of Service</h2>
           <p className="text-muted-foreground">
-            Hydrogen Capital provides a property portfolio management platform including compliance
+            Tenure IQ provides a property portfolio management platform including compliance
             tracking, financial analysis, document management, and reporting tools.
           </p>
         </section>
@@ -53,7 +53,7 @@ export default function TermsOfService() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-foreground">6. Intellectual Property</h2>
           <p className="text-muted-foreground">
-            The platform, including its design, code, and content, is owned by Hydrogen Capital.
+            The platform, including its design, code, and content, is owned by Tenure IQ.
             You retain ownership of any data you upload. We do not claim rights to your content.
           </p>
         </section>

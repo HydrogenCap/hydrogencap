@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-foreground">1. Introduction</h2>
           <p className="text-muted-foreground">
-            Hydrogen Capital ("we", "us", "our") is committed to protecting your personal data.
+            Tenure IQ ("we", "us", "our") is committed to protecting your personal data.
             This policy explains how we collect, use, and safeguard information when you use our
             property management platform.
           </p>
@@ -57,7 +57,7 @@ export default function PrivacyPolicy() {
           <h2 className="text-xl font-semibold text-foreground">6. Your Rights</h2>
           <p className="text-muted-foreground">
             Under GDPR, you have the right to access, rectify, erase, restrict processing,
-            data portability, and object to processing. Contact us at privacy@hydrogencap.app
+            data portability, and object to processing. Contact us at privacy@tenureiq.com
             to exercise these rights.
           </p>
         </section>
@@ -73,7 +73,7 @@ export default function PrivacyPolicy() {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold text-foreground">8. Contact</h2>
           <p className="text-muted-foreground">
-            For privacy inquiries, contact our Data Protection Officer at privacy@hydrogencap.app.
+            For privacy inquiries, contact our Data Protection Officer at privacy@tenureiq.com.
           </p>
         </section>
       </div>

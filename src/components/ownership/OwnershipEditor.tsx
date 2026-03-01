@@ -160,7 +160,7 @@ export function OwnershipEditor({
                 <Label htmlFor="entityName">Name</Label>
                 <Input
                   id="entityName"
-                  placeholder="e.g. Hydrogen Capital Ltd"
+                  placeholder="e.g. Tenure IQ Ltd"
                   value={newEntityName}
                   onChange={e => setNewEntityName(e.target.value)}
                 />

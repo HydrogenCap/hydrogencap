@@ -217,7 +217,7 @@ export function OnboardingWizard() {
           {step === 0 && (
             <>
               <Rocket className="mx-auto h-12 w-12 text-primary mb-2" />
-              <CardTitle className="text-2xl">Welcome to Hydrogen Capital</CardTitle>
+              <CardTitle className="text-2xl">Welcome to Tenure IQ</CardTitle>
               <CardDescription>
                 Set up your portfolio in under 2 minutes. Track compliance, manage tenants, monitor cashflow — all in one place.
               </CardDescription>

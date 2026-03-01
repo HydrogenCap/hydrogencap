@@ -76,8 +76,8 @@ export default function MarketingCaseStudies() {
   return (
     <MarketingLayout>
       <SEO
-        title="Case Studies — HydrogenCap"
-        description="See how UK landlords use HydrogenCap to manage compliance, track rent, and grow their property portfolios."
+        title="Case Studies — Tenure IQ"
+        description="See how UK landlords use Tenure IQ to manage compliance, track rent, and grow their property portfolios."
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">

@@ -5,8 +5,8 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
-  "https://hydrogencap.com",
-  "https://www.hydrogencap.com",
+  "https://tenureiq.com",
+  "https://www.tenureiq.com",
   "https://hydrogencapital.lovable.app",
   Deno.env.get("ALLOWED_ORIGIN"),
 ].filter(Boolean) as string[];
@@ -131,11 +131,11 @@ serve(async (req: Request) => {
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         ${body}
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="color: #888; font-size: 12px;">This email was sent automatically by HydrogenCap property management.</p>
+        <p style="color: #888; font-size: 12px;">This email was sent automatically by Tenure IQ property management.</p>
       </div>`;
 
     const emailResult = await resend.emails.send({
-      from: "HydrogenCap <onboarding@resend.dev>",
+      from: "Tenure IQ <onboarding@resend.dev>",
       to: [tenant.email],
       subject,
       html: emailHtml,

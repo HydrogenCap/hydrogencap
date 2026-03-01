@@ -5,7 +5,7 @@ import { waitFor } from '@testing-library/react';
 // Mock useAuth to return a fake user
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'user-1', email: 'test@hydrogencap.com', email_confirmed_at: '2025-01-01' },
+    user: { id: 'user-1', email: 'test@tenureiq.com', email_confirmed_at: '2025-01-01' },
     session: { access_token: 'fake-token' },
     loading: false,
   }),

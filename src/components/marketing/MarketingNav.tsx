@@ -22,10 +22,10 @@ export function MarketingNav() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">O</span>
+            <span className="text-primary-foreground font-bold text-sm">T</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-sm leading-tight">Oxygen</span>
+            <span className="font-semibold text-sm leading-tight">Tenure IQ</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Portfolio Dashboard</span>
           </div>
         </Link>

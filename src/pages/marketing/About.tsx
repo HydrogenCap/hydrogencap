@@ -50,8 +50,8 @@ export default function MarketingAbout() {
   return (
     <MarketingLayout>
       <SEO
-        title="About Us — HydrogenCap"
-        description="HydrogenCap was built by UK property investors who were frustrated with spreadsheets. We're on a mission to make portfolio management effortless."
+        title="About Us — Tenure IQ"
+        description="Tenure IQ was built by UK property investors who were frustrated with spreadsheets. We're on a mission to make portfolio management effortless."
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">

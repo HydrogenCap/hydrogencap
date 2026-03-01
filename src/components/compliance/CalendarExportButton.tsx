@@ -27,14 +27,14 @@
  
    let ics = `BEGIN:VCALENDAR
  VERSION:2.0
- PRODID:-//HydrogenCap//Compliance Calendar//EN
+ PRODID:-//TenureIQ//Compliance Calendar//EN
  CALSCALE:GREGORIAN
  METHOD:PUBLISH
- X-WR-CALNAME:HydrogenCap Compliance
+ X-WR-CALNAME:TenureIQ Compliance
  `;
  
    events.forEach((event, index) => {
-     const uid = `compliance-${index}-${Date.now()}@hydrogencap.com`;
+     const uid = `compliance-${index}-${Date.now()}@tenureiq.com`;
      const dtstamp = formatDate(new Date());
      
      // All-day event (date only, no time)
@@ -100,7 +100,7 @@
      const url = URL.createObjectURL(blob);
      const link = document.createElement('a');
      link.href = url;
-     link.download = `hydrogencap-compliance-${new Date().toISOString().split('T')[0]}.ics`;
+     link.download = `tenureiq-compliance-${new Date().toISOString().split('T')[0]}.ics`;
      document.body.appendChild(link);
      link.click();
      document.body.removeChild(link);

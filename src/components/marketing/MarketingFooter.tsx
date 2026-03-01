@@ -11,10 +11,10 @@ export const MarketingFooter = forwardRef<HTMLElement>(
             <div className="space-y-4">
               <Link to="/" className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">O</span>
+                  <span className="text-primary-foreground font-bold text-sm">T</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-semibold text-sm leading-tight">Oxygen</span>
+                  <span className="font-semibold text-sm leading-tight">Tenure IQ</span>
                   <span className="text-[10px] text-muted-foreground leading-tight">Portfolio Dashboard</span>
                 </div>
               </Link>
@@ -48,8 +48,8 @@ export const MarketingFooter = forwardRef<HTMLElement>(
               <h4 className="font-semibold text-sm">Get in Touch</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="mailto:office@oxygen.rocks" className="hover:text-foreground transition-colors">
-                    office@oxygen.rocks
+                  <a href="mailto:office@tenureiq.com" className="hover:text-foreground transition-colors">
+                    office@tenureiq.com
                   </a>
                 </li>
                 <li>United Kingdom</li>
@@ -59,7 +59,7 @@ export const MarketingFooter = forwardRef<HTMLElement>(
 
           <div className="mt-12 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Oxygen / Hydrogen Capital. All rights reserved.
+              © {new Date().getFullYear()} Tenure IQ. All rights reserved.
             </p>
             <div className="flex gap-6 text-xs text-muted-foreground">
               <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>

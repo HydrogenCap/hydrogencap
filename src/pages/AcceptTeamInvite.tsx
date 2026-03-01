@@ -105,7 +105,7 @@ function CenteredCard({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">HydrogenCap</CardTitle>
+          <CardTitle className="text-2xl">Tenure IQ</CardTitle>
           <CardDescription>Team Invite</CardDescription>
         </CardHeader>
         <CardContent>{children}</CardContent>

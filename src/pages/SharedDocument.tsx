@@ -293,7 +293,7 @@ export default function SharedDocument() {
       {/* Footer */}
       <footer className="border-t border-border mt-auto py-4">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          Powered by Hydrogen Capital
+          Powered by Tenure IQ
         </div>
       </footer>
     </div>

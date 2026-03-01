@@ -5,8 +5,8 @@ import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { validateBody } from "../_shared/validate.ts";
 
 const ALLOWED_ORIGINS = [
-  "https://hydrogencap.com",
-  "https://www.hydrogencap.com",
+  "https://tenureiq.com",
+  "https://www.tenureiq.com",
   "https://hydrogencapital.lovable.app",
   Deno.env.get("ALLOWED_ORIGIN"),
 ].filter(Boolean) as string[];
@@ -178,7 +178,7 @@ ${i + 1}. ${c.name} (${c.companyNumber || 'No number'})
 `).join('')}
 `;
 
-    const systemPrompt = `You are a helpful AI assistant for a UK property portfolio management system called Hydrogen Capital. You have access to the user's complete portfolio data and can answer questions about their properties, companies, finances, and compliance status.
+    const systemPrompt = `You are a helpful AI assistant for a UK property portfolio management system called Tenure IQ. You have access to the user's complete portfolio data and can answer questions about their properties, companies, finances, and compliance status.
 
 ${portfolioContext}
 

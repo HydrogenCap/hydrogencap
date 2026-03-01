@@ -65,8 +65,8 @@ export default function MarketingContact() {
   return (
     <MarketingLayout>
       <SEO
-        title="Contact Us — HydrogenCap"
-        description="Get in touch with the HydrogenCap team. Book a demo, ask a question, or tell us about your portfolio management needs."
+        title="Contact Us — Tenure IQ"
+        description="Get in touch with the Tenure IQ team. Book a demo, ask a question, or tell us about your portfolio management needs."
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">
