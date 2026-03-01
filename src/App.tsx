@@ -77,6 +77,7 @@ const Investors = lazy(() => import("./pages/Investors"));
 const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
 const Accounting = lazy(() => import("./pages/Accounting"));
 const Tax = lazy(() => import("./pages/Tax"));
+const Distributions = lazy(() => import("./pages/Distributions"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
@@ -463,6 +464,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/distributions" element={<ProtectedRoute><Distributions /></ProtectedRoute>} />
             <Route
               path="/contractors"
               element={

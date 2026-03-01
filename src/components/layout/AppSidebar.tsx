@@ -28,6 +28,7 @@ import {
   ScrollText,
   ShieldCheck,
   Receipt,
+  Banknote,
 } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
@@ -78,6 +79,7 @@ const operationsItems: NavItem[] = [
   { title: 'Lending', icon: PoundSterling, href: '/lending' },
   { title: 'Financials', icon: TrendingUp, href: '/financials' },
   { title: 'Investors', icon: Briefcase, href: '/investors' },
+  { title: 'Distributions', icon: Banknote, href: '/distributions' },
   { title: 'Accounting', icon: PoundSterling, href: '/accounting' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },

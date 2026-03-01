@@ -2251,6 +2251,139 @@ export type Database = {
           },
         ]
       }
+      distribution_allocations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          distribution_id: string
+          id: string
+          ownership_percent: number
+          paid_at: string | null
+          payment_reference: string | null
+          shareholder_id: string
+          shareholder_name: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          distribution_id: string
+          id?: string
+          ownership_percent: number
+          paid_at?: string | null
+          payment_reference?: string | null
+          shareholder_id: string
+          shareholder_name: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          distribution_id?: string
+          id?: string
+          ownership_percent?: number
+          paid_at?: string | null
+          payment_reference?: string | null
+          shareholder_id?: string
+          shareholder_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_allocations_distribution_id_fkey"
+            columns: ["distribution_id"]
+            isOneToOne: false
+            referencedRelation: "distributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distribution_allocations_shareholder_id_fkey"
+            columns: ["shareholder_id"]
+            isOneToOne: false
+            referencedRelation: "entity_shareholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distributions: {
+        Row: {
+          approved_at: string | null
+          created_at: string | null
+          entity_id: string
+          id: string
+          net_distributable: number
+          notes: string | null
+          org_id: string
+          period_end: string
+          period_label: string
+          period_start: string
+          retained_earnings: number
+          status: string
+          total_distributed: number
+          total_expenses: number
+          total_mortgage_costs: number
+          total_rental_income: number
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string | null
+          entity_id: string
+          id?: string
+          net_distributable?: number
+          notes?: string | null
+          org_id: string
+          period_end: string
+          period_label: string
+          period_start: string
+          retained_earnings?: number
+          status?: string
+          total_distributed?: number
+          total_expenses?: number
+          total_mortgage_costs?: number
+          total_rental_income?: number
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string | null
+          entity_id?: string
+          id?: string
+          net_distributable?: number
+          notes?: string | null
+          org_id?: string
+          period_end?: string
+          period_label?: string
+          period_start?: string
+          retained_earnings?: number
+          status?: string
+          total_distributed?: number
+          total_expenses?: number
+          total_mortgage_costs?: number
+          total_rental_income?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distributions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "distributions_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "distributions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_activity: {
         Row: {
           action: string

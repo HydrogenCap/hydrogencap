@@ -1,17 +1,103 @@
 import { useMemo } from 'react';
-import { Building2, TrendingUp, Percent, PoundSterling, Banknote, Wallet } from 'lucide-react';
+import { Building2, TrendingUp, Percent, PoundSterling, Banknote, Wallet, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { PortalLayout } from '@/components/portal/PortalLayout';
 import { useShareholderSession } from '@/hooks/useShareholderSession';
 import { useShareholderPortfolioData } from '@/hooks/useShareholderPortfolioData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
-import { formatGBP, formatPercent } from '@/lib/calculations';
+import { formatGBP, formatGBPDecimal, formatPercent } from '@/lib/calculations';
+import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function PortalDashboard() {
-  const { canViewFinancials } = useShareholderSession();
+  const { canViewFinancials, orgId, isShareholderUser } = useShareholderSession();
   const { properties, loansByProperty, performanceByProperty, isLoading } = useShareholderPortfolioData();
+
+  // Fetch recent distributions for portal
+  const { data: portalDistributions } = useQuery({
+    queryKey: ['portal-distributions', orgId],
+    queryFn: async () => {
+      if (!orgId) return [];
+      const { data, error } = await supabase
+        .from('distributions')
+        .select(`
+          *,
+          entity:legal_entities!distributions_entity_id_fkey ( id, entity_name )
+        `)
+        .eq('org_id', orgId)
+        .in('status', ['approved', 'distributed'])
+        .order('period_start', { ascending: false })
+        .limit(8);
+      if (error) throw error;
+
+      // Fetch allocations for each
+      const distIds = (data || []).map(d => d.id);
+      if (distIds.length === 0) return [];
+
+      const { data: allocs } = await supabase
+        .from('distribution_allocations')
+        .select('*')
+        .in('distribution_id', distIds);
+
+      return (data || []).map(d => ({
+        ...d,
+        allocations: (allocs || []).filter(a => a.distribution_id === d.id),
+      }));
+    },
+    enabled: !!orgId && isShareholderUser && canViewFinancials,
+  });
+
+  const generatePortalPdf = (dist: any) => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Distribution Statement', 14, 20);
+    doc.setFontSize(11);
+    doc.text(`Entity: ${dist.entity?.entity_name || 'Unknown'}`, 14, 32);
+    doc.text(`Period: ${dist.period_label}`, 14, 39);
+    doc.text(`Date: ${format(new Date(), 'dd MMM yyyy')}`, 14, 46);
+
+    autoTable(doc, {
+      startY: 56,
+      head: [['Item', 'Amount']],
+      body: [
+        ['Rental Income', formatGBPDecimal(dist.total_rental_income)],
+        ['Expenses', `(${formatGBPDecimal(dist.total_expenses)})`],
+        ['Mortgage Costs', `(${formatGBPDecimal(dist.total_mortgage_costs)})`],
+        ['Net Distributable', formatGBPDecimal(dist.net_distributable)],
+        ['Total Distributed', formatGBPDecimal(dist.total_distributed)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [30, 30, 30] },
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY || 110;
+    if (dist.allocations?.length) {
+      autoTable(doc, {
+        startY: finalY + 10,
+        head: [['Shareholder', '%', 'Amount', 'Paid']],
+        body: dist.allocations.map((a: any) => [
+          a.shareholder_name,
+          `${a.ownership_percent.toFixed(1)}%`,
+          formatGBPDecimal(a.amount),
+          a.paid_at ? format(new Date(a.paid_at), 'dd/MM/yyyy') : 'Pending',
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [30, 30, 30] },
+      });
+    }
+
+    doc.save(`distribution-${dist.period_label.replace(/\s/g, '-')}.pdf`);
+  };
+
+  const totalDistributed = useMemo(() => {
+    return (portalDistributions || []).reduce((sum, d) => sum + (d.total_distributed || 0), 0);
+  }, [portalDistributions]);
 
   const stats = useMemo(() => {
     if (!properties?.length) return null;
@@ -315,6 +401,57 @@ export default function PortalDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Distributions Section */}
+        {canViewFinancials && portalDistributions && portalDistributions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Banknote className="h-5 w-5" />
+                Distributions
+              </CardTitle>
+              <CardDescription>
+                Recent quarterly distributions — Total received: <span className="font-medium text-foreground">{formatGBP(totalDistributed)}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-2 font-medium">Period</th>
+                      <th className="text-left py-2 px-2 font-medium">Entity</th>
+                      <th className="text-right py-2 px-2 font-medium">Net</th>
+                      <th className="text-right py-2 px-2 font-medium">Distributed</th>
+                      <th className="text-center py-2 px-2 font-medium">Status</th>
+                      <th className="text-right py-2 px-2 font-medium"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {portalDistributions.map((dist) => (
+                      <tr key={dist.id} className="border-b last:border-0">
+                        <td className="py-2 px-2 font-medium">{dist.period_label}</td>
+                        <td className="py-2 px-2 text-muted-foreground">{dist.entity?.entity_name}</td>
+                        <td className="py-2 px-2 text-right">{formatGBP(dist.net_distributable)}</td>
+                        <td className="py-2 px-2 text-right text-success font-medium">{formatGBP(dist.total_distributed)}</td>
+                        <td className="py-2 px-2 text-center">
+                          <Badge variant={dist.status === 'distributed' ? 'default' : 'secondary'}>
+                            {dist.status}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-2 text-right">
+                          <Button size="sm" variant="ghost" onClick={() => generatePortalPdf(dist)}>
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {!canViewFinancials && (
           <Card className="border-dashed">
