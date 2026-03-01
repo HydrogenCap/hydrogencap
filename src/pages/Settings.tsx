@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
- import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark, Database } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark, Database, ToggleRight } from 'lucide-react';
 import { FreeAgentIntegrationPanel } from '@/components/settings/FreeAgentIntegrationPanel';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
@@ -23,6 +23,7 @@ import { TeamManagement } from '@/components/settings/TeamManagement';
 import { BankAccountSettings } from '@/components/settings/BankAccountSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { DemoDataSection } from '@/components/settings/DemoDataSection';
+import { SectionVisibilitySettings } from '@/components/settings/SectionVisibilitySettings';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
 import { ImportStepper } from '@/components/import/ImportStepper';
@@ -363,6 +364,10 @@ export default function Settings() {
                <TabsTrigger value="demo-data" className="gap-2">
                  <Database className="h-4 w-4" />
                  Demo Data
+               </TabsTrigger>
+               <TabsTrigger value="sections" className="gap-2">
+                 <ToggleRight className="h-4 w-4" />
+                 Sections
                </TabsTrigger>
             </TabsList>
 
@@ -795,9 +800,14 @@ export default function Settings() {
             </TabsContent>
 
             {/* Demo Data Tab */}
-            <TabsContent value="demo-data" className="space-y-6 max-w-2xl">
-              <DemoDataSection />
-            </TabsContent>
+             <TabsContent value="demo-data" className="space-y-6 max-w-2xl">
+               <DemoDataSection />
+             </TabsContent>
+
+             {/* Sections Tab */}
+             <TabsContent value="sections" className="space-y-6 max-w-2xl">
+               <SectionVisibilitySettings />
+             </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
