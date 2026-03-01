@@ -328,7 +328,7 @@ function DashboardPage() {
 
         {/* Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="w-full max-w-md grid grid-cols-2 overflow-x-auto flex-nowrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="shareholders">
               <Users className="h-4 w-4 mr-2" />
@@ -341,7 +341,7 @@ function DashboardPage() {
             {/* KPI Cards — Gross vs Attributable */}
             {portfolioKPIs && (
               <>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
                   <DualKpiCard
                     label="Portfolio Value"
                     grossValue={formatGBP(portfolioKPIs.gross.totalValue)}
@@ -396,7 +396,7 @@ function DashboardPage() {
                   />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
                   <DualKpiCard
                     label="Weighted LTV"
                     grossValue={formatPercent(portfolioKPIs.gross.weightedLTV)}
@@ -445,7 +445,7 @@ function DashboardPage() {
             )}
 
             {/* Rental KPI Cards — Track C, unchanged */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
               <KpiCard
                 label="Monthly Rent Roll"
                 value={formatGBP(rentalStats.totalMonthlyRent)}
@@ -526,7 +526,7 @@ function DashboardPage() {
 
             {/* Sub-tabs: Today / Health / Portfolio */}
             <Tabs defaultValue="today" className="w-full">
-              <TabsList className="grid w-full max-w-lg grid-cols-3">
+              <TabsList className="w-full max-w-lg grid grid-cols-3 overflow-x-auto flex-nowrap">
                 <TabsTrigger value="today">Today</TabsTrigger>
                 <TabsTrigger value="health">Health</TabsTrigger>
                 <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
@@ -545,10 +545,10 @@ function DashboardPage() {
                 >
                   {hasPropertiesWithCoords ? (
                     <div className="p-4">
-                      <Suspense fallback={<Skeleton className="h-[350px] rounded-lg" />}>
+                      <Suspense fallback={<Skeleton className="h-[250px] md:h-[350px] rounded-lg" />}>
                         <PropertyMap
                           properties={mapProperties}
-                          className="h-[350px] rounded-lg"
+                          className="h-[250px] md:h-[350px] rounded-lg"
                         />
                       </Suspense>
                     </div>
@@ -562,13 +562,13 @@ function DashboardPage() {
                   )}
                 </SectionCard>
 
-                <div className="grid gap-6 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
                   <ErrorBoundary><ThisMonthWidget /></ErrorBoundary>
                   <ErrorBoundary><ActionsRequiredWidget /></ErrorBoundary>
                   <ErrorBoundary><DashboardCalendarWidget /></ErrorBoundary>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-6 lg:grid-cols-4">
                   <ErrorBoundary><RentCollectionWidget /></ErrorBoundary>
                   <ErrorBoundary><OccupancyWidget /></ErrorBoundary>
                   <ErrorBoundary><VoidCostWidget /></ErrorBoundary>

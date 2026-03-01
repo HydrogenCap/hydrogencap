@@ -3,6 +3,7 @@ import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { MobileBottomNav } from './MobileBottomNav';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -19,16 +20,17 @@ export function AppLayout({ children }: AppLayoutProps) {
       </a>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-3 md:px-4">
           <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" aria-label="Toggle sidebar" />
           <NotificationBell />
         </header>
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto p-6">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">
           <ErrorBoundary>
             {children}
           </ErrorBoundary>
         </main>
       </SidebarInset>
+      <MobileBottomNav />
     </SidebarProvider>
   );
 }

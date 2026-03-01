@@ -80,7 +80,7 @@ export function DualKpiCard({
           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             Gross
           </span>
-          <div className={cn('text-xl font-bold tracking-tight', grossClassName)}>
+          <div className={cn('text-lg md:text-xl font-bold tracking-tight', grossClassName)}>
             {grossValue}
           </div>
         </div>
@@ -90,7 +90,7 @@ export function DualKpiCard({
           <span className="text-[10px] font-medium text-primary/70 uppercase tracking-wider truncate block">
             {groupParentName}
           </span>
-          <div className={cn('text-xl font-bold tracking-tight', attrClassName)}>
+          <div className={cn('text-lg md:text-xl font-bold tracking-tight', attrClassName)}>
             {attrValue}
           </div>
         </div>
