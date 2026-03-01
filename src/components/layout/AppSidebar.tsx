@@ -26,6 +26,7 @@ import {
   Wrench,
   Upload,
   ScrollText,
+  ShieldCheck,
 } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
@@ -48,6 +49,7 @@ import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
+import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import logoImage from '@/assets/logo.png';
 
 interface NavItem {
@@ -106,6 +108,7 @@ const adminItems: NavItem[] = [
 export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const isAdmin = useIsAdmin();
   const { data: inboxDocuments } = useInboxDocuments();
   const { stats: complianceStats } = usePortfolioComplianceStats();
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
@@ -262,6 +265,27 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* PLATFORM ADMIN (conditional) */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-muted-foreground/70 text-xs uppercase tracking-wider">
+              Platform
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive('/admin')}>
+                    <Link to="/admin" className="flex items-center gap-3">
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>Admin Panel</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
