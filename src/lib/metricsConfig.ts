@@ -23,6 +23,7 @@ export type MetricKey =
   | 'mortgage'
   | 'cashflow'
   | 'ltv'
+  | 'dscr'
   | 'health'
   | 'risks'
   | 'actions'
@@ -333,7 +334,62 @@ export const METRICS_CONFIG: Record<MetricKey, MetricConfig> = {
       };
     },
   },
-  
+
+  dscr: {
+    key: 'dscr',
+    title: 'Debt Service Coverage Ratio',
+    description: 'NOI divided by annual debt service payments',
+    icon: 'Percent',
+    getBreakdown: (properties) => {
+      let totalNOI = 0;
+      let totalDebtService = 0;
+
+      const rows: PropertyBreakdownRow[] = properties.map(property => {
+        const { rent, effectiveCosts, mortgagePaymentResult } = getCurrentYearData(property);
+        const noi = (rent || 0) - effectiveCosts.total;
+        const monthlyPayment = mortgagePaymentResult.effective || 0;
+        const annualDebtService = monthlyPayment * 12;
+        totalNOI += noi;
+        totalDebtService += annualDebtService;
+        const dscr = annualDebtService > 0 ? noi / annualDebtService : null;
+        return {
+          propertyId: property.id,
+          address: property.address_line,
+          values: {
+            noi: formatGBP(noi),
+            debtService: formatGBP(annualDebtService),
+            dscr: dscr !== null ? `${dscr.toFixed(2)}x` : 'N/A',
+          },
+        };
+      });
+
+      const portfolioDSCR = totalDebtService > 0 ? totalNOI / totalDebtService : null;
+
+      return {
+        title: 'Debt Service Coverage Ratio',
+        summaryValue: portfolioDSCR !== null ? `${portfolioDSCR.toFixed(2)}x` : 'N/A',
+        calculationText: `${rows.length} properties with debt`,
+        formula: 'DSCR = Annual NOI ÷ Annual Debt Service',
+        columns: [
+          { key: 'address', label: 'Property', align: 'left' as const },
+          { key: 'noi', label: 'Annual NOI', align: 'right' as const },
+          { key: 'debtService', label: 'Annual Debt Service', align: 'right' as const },
+          { key: 'dscr', label: 'DSCR', align: 'right' as const },
+        ],
+        rows: rows.sort((a, b) => {
+          const aVal = parseFloat(String(a.values.dscr)) || 0;
+          const bVal = parseFloat(String(b.values.dscr)) || 0;
+          return aVal - bVal;
+        }),
+        totals: {
+          noi: formatGBP(totalNOI),
+          debtService: formatGBP(totalDebtService),
+          dscr: portfolioDSCR !== null ? `${portfolioDSCR.toFixed(2)}x` : 'N/A',
+        },
+      };
+    },
+  },
+
   health: {
     key: 'health',
     title: 'Portfolio Health',

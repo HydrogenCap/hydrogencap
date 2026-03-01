@@ -23,6 +23,7 @@ export interface PortfolioMetrics {
   annualCashflow: number;
   monthlyCashflow: number;
   netYieldPct: number | null;
+  dscr: number | null;
   propertyCount: number;
 }
 
@@ -172,7 +173,7 @@ export function usePortfolioKPIs(): {
       totalValue: 0, totalDebt: 0, totalEquity: 0, weightedLTV: 0,
       annualRent: 0, annualCosts: 0, annualMortgagePayments: 0,
       annualNOI: 0, annualCashflow: 0, monthlyCashflow: 0,
-      netYieldPct: null, propertyCount: propertyRows.length,
+      netYieldPct: null, dscr: null, propertyCount: propertyRows.length,
     };
 
     const attributable: PortfolioMetrics = { ...gross };
@@ -204,12 +205,15 @@ export function usePortfolioKPIs(): {
     gross.monthlyCashflow = gross.annualCashflow / 12;
     gross.weightedLTV = gross.totalValue > 0 ? (gross.totalDebt / gross.totalValue) * 100 : 0;
     gross.netYieldPct = gross.totalValue > 0 ? (gross.annualNOI / gross.totalValue) * 100 : null;
+    gross.dscr = gross.annualMortgagePayments > 0 ? gross.annualNOI / gross.annualMortgagePayments : null;
 
     attributable.monthlyCashflow = attributable.annualCashflow / 12;
     attributable.weightedLTV = attributable.totalValue > 0
       ? (attributable.totalDebt / attributable.totalValue) * 100 : 0;
     attributable.netYieldPct = attributable.totalValue > 0
       ? (attributable.annualNOI / attributable.totalValue) * 100 : null;
+    attributable.dscr = attributable.annualMortgagePayments > 0
+      ? attributable.annualNOI / attributable.annualMortgagePayments : null;
     attributable.propertyCount = propertyRows.filter(r => r.groupOwnershipPct > 0).length;
 
     return {
