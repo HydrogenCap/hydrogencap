@@ -109,7 +109,6 @@ const intelligenceItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   { title: 'Audit Log', icon: ScrollText, href: '/audit-log' },
-  { title: 'Migration', icon: ArrowRight, href: '/migrate' },
   { title: 'Import', icon: Upload, href: '/import' },
   { title: 'Passport', icon: ClipboardList, href: '/passport' },
   { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
@@ -291,6 +290,14 @@ export function AppSidebar() {
                     <Link to="/admin" className="flex items-center gap-3">
                       <ShieldCheck className="h-4 w-4" />
                       <span>Admin Panel</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive('/migrate')}>
+                    <Link to="/migrate" className="flex items-center gap-3">
+                      <ArrowRight className="h-4 w-4" />
+                      <span>Migration</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

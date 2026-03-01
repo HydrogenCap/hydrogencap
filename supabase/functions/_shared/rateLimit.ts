@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 /**
  * Simple per-user rate limiter using the rate_limits table.
- * Fails open — if the check itself errors, the request is allowed.
+ * Fails closed — if the check itself errors, the request is denied (503).
  */
 export async function checkRateLimit(
   userId: string,
@@ -27,7 +27,7 @@ export async function checkRateLimit(
 
     if (error) {
       console.error("Rate limit check failed:", error);
-      return { allowed: true, remaining: maxRequests, resetAt: "" };
+      return { allowed: false, remaining: 0, resetAt: new Date(Date.now() + 60_000).toISOString() };
     }
 
     const used = count ?? 0;
@@ -46,8 +46,8 @@ export async function checkRateLimit(
     return { allowed: true, remaining: remaining - 1, resetAt: "" };
   } catch (err) {
     console.error("Rate limit error:", err);
-    // Fail open
-    return { allowed: true, remaining: maxRequests, resetAt: "" };
+    // Fail closed — deny request if rate limit check fails
+    return { allowed: false, remaining: 0, resetAt: new Date(Date.now() + 60_000).toISOString() };
   }
 }
 
