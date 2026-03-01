@@ -8,8 +8,9 @@ import { cn } from '@/lib/utils';
 const navLinks = [
   { label: 'How It Works', href: '/product' },
   { label: 'Case Studies', href: '/case-studies' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Security', href: '/security' },
   { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
 ];
 
 export function MarketingNav() {
@@ -52,7 +53,7 @@ export function MarketingNav() {
             <Link to="/demo">View Demo</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/contact">Book a Demo</Link>
+            <Link to="/book-a-demo">Book a Demo</Link>
           </Button>
         </div>
 
@@ -90,7 +91,7 @@ export function MarketingNav() {
                 <Link to="/demo" onClick={() => setMobileOpen(false)}>View Demo</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link to="/contact" onClick={() => setMobileOpen(false)}>Book a Demo</Link>
+                <Link to="/book-a-demo" onClick={() => setMobileOpen(false)}>Book a Demo</Link>
               </Button>
             </div>
           </div>
