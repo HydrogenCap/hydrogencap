@@ -36,8 +36,8 @@ export const MarketingFooter = forwardRef<HTMLElement>(
                 <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
                 <li><Link to="/book-a-demo" className="hover:text-foreground transition-colors">Book a Demo</Link></li>
                 <li>
-                  <a href="mailto:office@tenureiq.com" className="hover:text-foreground transition-colors">
-                    office@tenureiq.com
+                  <a href="mailto:office@oxygen.rocks" className="hover:text-foreground transition-colors">
+                    office@oxygen.rocks
                   </a>
                 </li>
                 <li>
