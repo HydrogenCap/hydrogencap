@@ -33,6 +33,7 @@ const STAGE_ICONS: Record<string, string> = {
 export function StepClassification({ data, onChange }: Props) {
   const { data: entities } = useLegalEntities();
   const activeEntities = entities?.filter(e => e.status === 'active') || [];
+  const isHmo = ['hmo_licensed', 'hmo_mandatory'].includes(data.property_type);
 
   return (
     <div className="space-y-5">
@@ -91,6 +92,19 @@ export function StepClassification({ data, onChange }: Props) {
         </div>
         <Switch checked={data.has_gas_supply} onCheckedChange={v => onChange({ has_gas_supply: v })} />
       </div>
+
+      {isHmo && (
+        <div>
+          <Label className="text-sm font-medium">HMO Licence Number</Label>
+          <Input
+            value={data.hmo_licence_number}
+            onChange={e => onChange({ hmo_licence_number: e.target.value })}
+            placeholder="e.g. HMO/2024/12345"
+            className="mt-1.5"
+          />
+          <p className="text-xs text-muted-foreground mt-1">Issued by your local authority</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>

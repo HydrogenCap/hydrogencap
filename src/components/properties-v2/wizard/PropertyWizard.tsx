@@ -125,6 +125,14 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
         notes: null,
       });
 
+      // Update HMO licence number if provided (column added via migration)
+      if (data.hmo_licence_number) {
+        await supabase
+          .from('properties_v2')
+          .update({ hmo_licence_number: data.hmo_licence_number } as any)
+          .eq('id', property.id);
+      }
+
       // 2. Create rooms
       if (data.rooms.length > 0) {
         try {
