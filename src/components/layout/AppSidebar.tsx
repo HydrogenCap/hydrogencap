@@ -27,6 +27,7 @@ import {
   Upload,
   ScrollText,
   ShieldCheck,
+  Receipt,
 } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
@@ -92,6 +93,7 @@ const operationsItems: NavItem[] = [
 const intelligenceItems: NavItem[] = [
   { title: 'Insights', icon: TrendingUp, href: '/insights' },
   { title: 'Reports', icon: FileText, href: '/reports' },
+  { title: 'Tax', icon: Receipt, href: '/tax' },
   { title: 'Timeline', icon: History, href: '/timeline' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
 ];

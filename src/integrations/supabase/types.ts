@@ -6020,41 +6020,50 @@ export type Database = {
       profiles: {
         Row: {
           checklist_dismissed: boolean | null
+          corporation_tax_rate: number | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          marginal_tax_rate: number | null
           onboarding_completed: boolean
           onboarding_goals: Json | null
           platform_role: string
           role: string | null
           updated_at: string
+          use_property_allowance: boolean | null
           user_id: string
         }
         Insert: {
           checklist_dismissed?: boolean | null
+          corporation_tax_rate?: number | null
           created_at?: string
           email: string
           full_name?: string | null
           id?: string
+          marginal_tax_rate?: number | null
           onboarding_completed?: boolean
           onboarding_goals?: Json | null
           platform_role?: string
           role?: string | null
           updated_at?: string
+          use_property_allowance?: boolean | null
           user_id: string
         }
         Update: {
           checklist_dismissed?: boolean | null
+          corporation_tax_rate?: number | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          marginal_tax_rate?: number | null
           onboarding_completed?: boolean
           onboarding_goals?: Json | null
           platform_role?: string
           role?: string | null
           updated_at?: string
+          use_property_allowance?: boolean | null
           user_id?: string
         }
         Relationships: []
@@ -8074,6 +8083,64 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "wizard_drafts"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          org_id: string
+          property_id: string
+          tax_year: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          org_id: string
+          property_id: string
+          tax_year: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          org_id?: string
+          property_id?: string
+          tax_year?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_expenses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
           },
         ]
       }
