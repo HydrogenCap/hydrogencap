@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Receipt, Download, Plus, Trash2, AlertTriangle, Building2, User2, Info } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -81,6 +82,7 @@ export default function Tax() {
   ];
 
   return (
+    <AppLayout>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -412,6 +414,7 @@ export default function Tax() {
         </>
       )}
     </div>
+    </AppLayout>
   );
 }
 
