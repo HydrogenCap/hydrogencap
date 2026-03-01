@@ -10,6 +10,7 @@ interface ChecklistData {
   tenantsCount: number;
   loansCount: number;
   membersCount: number;
+  invitesCount: number;
   dismissed: boolean;
 }
 
@@ -38,6 +39,7 @@ export function useActivationChecklist() {
       const tenantsRes = await sq.from('tenants_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
       const loansRes = await sq.from('loan_facilities').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
       const membersRes = await sq.from('memberships').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const invitesRes = await sq.from('team_invites').select('id', { count: 'exact', head: true }).eq('org_id', org.id).is('revoked_at', null);
       const profileRes = await supabase.from('profiles').select('checklist_dismissed').eq('user_id', user!.id).single();
 
       return {
@@ -47,6 +49,7 @@ export function useActivationChecklist() {
         tenantsCount: tenantsRes.count ?? 0,
         loansCount: loansRes.count ?? 0,
         membersCount: membersRes.count ?? 0,
+        invitesCount: invitesRes.count ?? 0,
         dismissed: (profileRes.data as any)?.checklist_dismissed ?? false,
       };
     },
@@ -94,7 +97,7 @@ export function useActivationChecklist() {
       id: 'invite_team',
       label: 'Invite a team member',
       description: 'Collaborate with your business partner or accountant',
-      completed: (data?.membersCount ?? 0) > 1,
+      completed: (data?.membersCount ?? 0) > 1 || (data?.invitesCount ?? 0) > 0,
       route: '/settings?tab=team',
       optional: true,
     },
