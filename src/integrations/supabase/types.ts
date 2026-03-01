@@ -5600,18 +5600,21 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          estimated_portfolio_size: string | null
           id: string
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          estimated_portfolio_size?: string | null
           id?: string
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          estimated_portfolio_size?: string | null
           id?: string
           name?: string
           updated_at?: string
@@ -6016,32 +6019,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          checklist_dismissed: boolean | null
           created_at: string
           email: string
           full_name: string | null
           id: string
           onboarding_completed: boolean
+          onboarding_goals: Json | null
           platform_role: string
+          role: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          checklist_dismissed?: boolean | null
           created_at?: string
           email: string
           full_name?: string | null
           id?: string
           onboarding_completed?: boolean
+          onboarding_goals?: Json | null
           platform_role?: string
+          role?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          checklist_dismissed?: boolean | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
           onboarding_completed?: boolean
+          onboarding_goals?: Json | null
           platform_role?: string
+          role?: string | null
           updated_at?: string
           user_id?: string
         }
