@@ -6,9 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { useCreatePropertyUnit, useUpdatePropertyUnit, type PropertyUnit } from '@/hooks/usePropertyUnits';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,8 +24,6 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
 
   const [form, setForm] = useState({
     unit_name: '',
-    rent_basis: 'room' as 'room' | 'whole_house',
-    whole_house_rent_pcm: '',
     notes: '',
   });
 
@@ -36,12 +31,10 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
     if (editingUnit) {
       setForm({
         unit_name: editingUnit.unit_name,
-        rent_basis: editingUnit.rent_basis,
-        whole_house_rent_pcm: editingUnit.whole_house_rent_pcm?.toString() || '',
         notes: editingUnit.notes || '',
       });
     } else {
-      setForm({ unit_name: '', rent_basis: 'room', whole_house_rent_pcm: '', notes: '' });
+      setForm({ unit_name: '', notes: '' });
     }
   }, [editingUnit, open]);
 
@@ -54,9 +47,8 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
     const payload = {
       property_id: propertyId,
       unit_name: form.unit_name,
-      rent_basis: form.rent_basis,
-      whole_house_rent_pcm: form.rent_basis === 'whole_house' && form.whole_house_rent_pcm
-        ? parseFloat(form.whole_house_rent_pcm) : null,
+      rent_basis: editingUnit ? editingUnit.rent_basis : 'room' as const,
+      whole_house_rent_pcm: editingUnit ? editingUnit.whole_house_rent_pcm : null,
       is_lettable: true,
       sort_order: editingUnit ? editingUnit.sort_order : existingCount,
       notes: form.notes || null,
@@ -89,23 +81,6 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
             <Input value={form.unit_name} onChange={e => set('unit_name', e.target.value)}
               placeholder="e.g. Main House, Annex, Flat 1" required />
           </div>
-          <div>
-            <Label>Rent Basis</Label>
-            <Select value={form.rent_basis} onValueChange={v => set('rent_basis', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="room">Per Room</SelectItem>
-                <SelectItem value="whole_house">Whole Unit</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {form.rent_basis === 'whole_house' && (
-            <div>
-              <Label>Whole Unit Rent (£/month)</Label>
-              <Input type="number" step="0.01" value={form.whole_house_rent_pcm}
-                onChange={e => set('whole_house_rent_pcm', e.target.value)} placeholder="e.g. 1500" />
-            </div>
-          )}
           <div>
             <Label>Notes</Label>
             <Textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} />
