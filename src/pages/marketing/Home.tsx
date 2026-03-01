@@ -225,6 +225,54 @@ export default function MarketingHome() {
         </div>
       </section>
 
+      {/* Video Walkthrough */}
+      <section className="py-20 lg:py-28 bg-muted/30">
+        <div className="container mx-auto px-4 lg:px-8">
+          <SectionHeading
+            badge="See It In Action"
+            title="Watch a 3-minute walkthrough"
+            description="See how Tenure IQ helps you track compliance, monitor cashflow, and manage your entire portfolio from one dashboard."
+          />
+          <div className="mt-12 max-w-4xl mx-auto">
+            <Card className="overflow-hidden border-2">
+              <CardContent className="p-0">
+                <div className="relative aspect-video bg-primary/5 flex items-center justify-center group cursor-pointer">
+                  {/* Replace the div below with your Loom/YouTube embed:
+                      <iframe 
+                        src="https://www.loom.com/embed/YOUR_VIDEO_ID" 
+                        frameBorder="0" 
+                        allowFullScreen 
+                        className="absolute inset-0 w-full h-full"
+                      /> 
+                  */}
+                  <div className="text-center space-y-4">
+                    <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-colors">
+                      <svg
+                        className="h-8 w-8 text-primary ml-1"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-lg">Product Walkthrough</p>
+                      <p className="text-sm text-muted-foreground">3 min · See compliance tracking, portfolio analytics & reporting in action</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Prefer a live demo?{' '}
+              <Link to="/book-a-demo" className="text-primary font-medium hover:underline">
+                Book a 20-minute call →
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section className="py-20 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">
