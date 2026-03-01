@@ -51,6 +51,7 @@ const Install = lazy(() => import("./pages/Install"));
 const Contractors = lazy(() => import("./pages/Contractors"));
 const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
+const JobsAndWorks = lazy(() => import("./pages/JobsAndWorks"));
 
 
 const Voids = lazy(() => import("./pages/Voids"));
@@ -481,14 +482,13 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/jobs"
-              element={
-                <ProtectedRoute>
-                  <Jobs />
-                </ProtectedRoute>
-              }
-            />
+            {/* Unified Jobs & Works page */}
+            <Route path="/jobs-and-works" element={<ProtectedRoute><JobsAndWorks /></ProtectedRoute>} />
+            {/* Legacy routes redirect to unified page */}
+            <Route path="/jobs" element={<Navigate to="/jobs-and-works" replace />} />
+            <Route path="/maintenance" element={<Navigate to="/jobs-and-works" replace />} />
+            <Route path="/work-orders" element={<Navigate to="/jobs-and-works" replace />} />
+            {/* Detail routes still work */}
             <Route
               path="/jobs/:jobId"
               element={
@@ -497,7 +497,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-
+            <Route path="/maintenance/:requestId" element={<ProtectedRoute><MaintenanceRequestDetail /></ProtectedRoute>} />
+            <Route path="/work-orders/:id" element={<ProtectedRoute><WorkOrderDetail /></ProtectedRoute>} />
 
             <Route path="/voids" element={<ProtectedRoute><Voids /></ProtectedRoute>} />
             <Route path="/lettings" element={<ProtectedRoute><LettingsPipeline /></ProtectedRoute>} />
@@ -505,10 +506,6 @@ const App = () => (
             <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><TenancyLedger /></ProtectedRoute>} />
             <Route path="/rent/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><PaymentDetail /></ProtectedRoute>} />
-            <Route path="/maintenance" element={<ProtectedRoute><MaintenanceRequests /></ProtectedRoute>} />
-            <Route path="/maintenance/:requestId" element={<ProtectedRoute><MaintenanceRequestDetail /></ProtectedRoute>} />
-            <Route path="/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
-            <Route path="/work-orders/:id" element={<ProtectedRoute><WorkOrderDetail /></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
