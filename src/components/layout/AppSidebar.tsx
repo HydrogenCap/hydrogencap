@@ -219,9 +219,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
         <Link to="/dashboard" className="flex items-center justify-center">
-          <img src={logoImage} alt="Tenure IQ" className="h-32 w-32 rounded-lg object-cover" />
+          <img src={logoImage} alt="Tenure IQ" className="w-full max-w-[180px] h-auto object-contain" />
         </Link>
       </SidebarHeader>
 
