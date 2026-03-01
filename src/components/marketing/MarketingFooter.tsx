@@ -18,7 +18,7 @@ export const MarketingFooter = forwardRef<HTMLElement>(
                 </div>
               </Link>
               <p className="text-sm text-muted-foreground">
-                Professional portfolio tracking, compliance management, and investor-grade reporting for UK property portfolios.
+                Portfolio tracking, compliance management, and investor-grade reporting for UK property portfolios.
               </p>
             </div>
 
@@ -26,9 +26,9 @@ export const MarketingFooter = forwardRef<HTMLElement>(
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/product" className="hover:text-foreground transition-colors">Features</Link></li>
+                <li><Link to="/product" className="hover:text-foreground transition-colors">How It Works</Link></li>
+                <li><Link to="/case-studies" className="hover:text-foreground transition-colors">Case Studies</Link></li>
                 <li><Link to="/demo" className="hover:text-foreground transition-colors">Demo Dashboard</Link></li>
-                <li><Link to="/portfolio" className="hover:text-foreground transition-colors">Portfolio Showcase</Link></li>
               </ul>
             </div>
 
@@ -37,32 +37,41 @@ export const MarketingFooter = forwardRef<HTMLElement>(
               <h4 className="font-semibold text-sm">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
-                <li><Link to="/case-studies" className="hover:text-foreground transition-colors">Case Studies</Link></li>
                 <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm">Get in Touch</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   <a href="mailto:office@tenureiq.com" className="hover:text-foreground transition-colors">
                     office@tenureiq.com
                   </a>
                 </li>
-                <li>United Kingdom</li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Tenure IQ. All rights reserved.
-            </p>
-            <div className="flex gap-6 text-xs text-muted-foreground">
-              <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+          <div className="mt-12 pt-8 border-t space-y-4">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} Tenure IQ Ltd. All rights reserved.
+              </p>
+              <div className="flex gap-6 text-xs text-muted-foreground">
+                <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+                <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+                <Link to="/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+              </div>
+            </div>
+            <div className="text-center md:text-left">
+              <p className="text-xs text-muted-foreground">
+                Registered in England &amp; Wales. Company No. [XXXXXXXX]. ICO Registration No. [ZB/XXXXXXX].
+              </p>
             </div>
           </div>
         </div>

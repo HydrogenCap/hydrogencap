@@ -1,8 +1,13 @@
 import { MarketingLayout } from '@/components/marketing';
+import { SEO } from '@/components/SEO';
 
 export default function PrivacyPolicy() {
   return (
     <MarketingLayout>
+      <SEO
+        title="Privacy Policy | Tenure IQ"
+        description="How Tenure IQ collects, uses, and protects your personal data. GDPR-compliant data processing for UK property investors."
+      />
       <div className="container max-w-3xl py-16 space-y-8">
         <h1 className="text-3xl font-bold text-foreground">Privacy Policy</h1>
         <p className="text-sm text-muted-foreground">Last updated: 12 February 2026</p>
