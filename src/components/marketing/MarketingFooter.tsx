@@ -60,7 +60,7 @@ export const MarketingFooter = forwardRef<HTMLElement>(
           <div className="mt-12 pt-8 border-t space-y-4">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-muted-foreground">
-                © {new Date().getFullYear()} Tenure IQ Ltd. All rights reserved.
+                © {new Date().getFullYear()} Oxygen Management Ltd. All rights reserved.
               </p>
               <div className="flex gap-6 text-xs text-muted-foreground">
                 <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
@@ -70,7 +70,7 @@ export const MarketingFooter = forwardRef<HTMLElement>(
             </div>
             <div className="text-center md:text-left">
             <p className="text-xs text-muted-foreground">
-                Registered in England &amp; Wales. Company No. 10733342. ICO Registration No. ZB490980.
+                Tenure IQ is a trading name of Oxygen Management Ltd. Registered in England &amp; Wales. Company No. 10733342. ICO Registration No. ZB490980.
               </p>
             </div>
           </div>
