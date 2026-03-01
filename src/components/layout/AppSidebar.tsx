@@ -25,6 +25,7 @@ import {
   PoundSterling,
   Wrench,
   Upload,
+  FolderUp,
   ScrollText,
   FileSignature,
   ShieldCheck,
@@ -92,6 +93,7 @@ const operationsItems: NavItem[] = [
   { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
   { title: 'CapEx', icon: HardHat, href: '/capex' },
   { title: 'Templates', icon: FileSignature, href: '/templates' },
+  { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
 ];
 
 const intelligenceItems: NavItem[] = [

@@ -79,6 +79,7 @@ const Accounting = lazy(() => import("./pages/Accounting"));
 const Tax = lazy(() => import("./pages/Tax"));
 const Distributions = lazy(() => import("./pages/Distributions"));
 const DocumentTemplates = lazy(() => import("./pages/DocumentTemplates"));
+const BulkUpload = lazy(() => import("./pages/BulkUpload"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
@@ -467,6 +468,7 @@ const App = () => (
             />
             <Route path="/distributions" element={<ProtectedRoute><Distributions /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><DocumentTemplates /></ProtectedRoute>} />
+            <Route path="/bulk-upload" element={<ProtectedRoute><BulkUpload /></ProtectedRoute>} />
             <Route
               path="/contractors"
               element={
