@@ -54,7 +54,7 @@ import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
-import logoImage from '@/assets/logo.png';
+import logoImage from '@/assets/tenure-iq-logo.png';
 
 interface NavItem {
   title: string;
