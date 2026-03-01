@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -277,6 +277,37 @@ function DashboardPage() {
             // highlight: p.ltv > 80,
           })),
         );
+      case 'dscr':
+        return buildBreakdown(
+          'Debt Service Coverage Ratio',
+          `Gross: ${gross.dscr !== null ? `${gross.dscr.toFixed(2)}x` : '—'} | ${groupParentName}: ${attributable.dscr !== null ? `${attributable.dscr.toFixed(2)}x` : '—'}`,
+          'NOI ÷ Annual Debt Service',
+          'DSCR = Annual NOI ÷ Annual Mortgage Payments',
+          [
+            { key: 'address', label: 'Property', align: 'left' },
+            { key: 'noi', label: 'Annual NOI', align: 'right' },
+            { key: 'debtService', label: 'Annual Debt Service', align: 'right' },
+            { key: 'dscr', label: 'DSCR', align: 'right' },
+          ],
+          [...propRows].filter(p => p.debt > 0).sort((a, b) => {
+            const perfA = portfolioKPIs!.gross.annualMortgagePayments;
+            const aDscr = a.annualRent > 0 && a.debt > 0 ? a.annualRent / (a.debt * 0.05) : 0;
+            const bDscr = b.annualRent > 0 && b.debt > 0 ? b.annualRent / (b.debt * 0.05) : 0;
+            return aDscr - bDscr;
+          }).map(p => {
+            const annualDebtService = p.debt * 0.05; // Approximate
+            const dscr = annualDebtService > 0 ? p.annualRent / annualDebtService : null;
+            return {
+              propertyId: p.propertyId,
+              address: `${p.address}, ${p.city}`,
+              values: {
+                noi: formatGBP(p.annualRent), // Simplified — uses rent as proxy
+                debtService: formatGBP(annualDebtService),
+                dscr: dscr !== null ? `${dscr.toFixed(2)}x` : '—',
+              },
+            };
+          }),
+        );
       default:
         return null;
     }
@@ -396,7 +427,7 @@ function DashboardPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5">
                   <DualKpiCard
                     label="Weighted LTV"
                     grossValue={formatPercent(portfolioKPIs.gross.weightedLTV)}
@@ -412,6 +443,23 @@ function DashboardPage() {
                       portfolioKPIs.attributable.weightedLTV > 75 ? 'text-warning' : ''
                     }
                     onClick={() => handleMetricClick('ltv')}
+                  />
+                  <DualKpiCard
+                    label="DSCR"
+                    grossValue={portfolioKPIs.gross.dscr !== null ? `${portfolioKPIs.gross.dscr.toFixed(2)}x` : '—'}
+                    attrValue={portfolioKPIs.attributable.dscr !== null ? `${portfolioKPIs.attributable.dscr.toFixed(2)}x` : '—'}
+                    groupParentName={portfolioKPIs.groupParentName}
+                    subtitle="NOI ÷ Debt Service"
+                    icon={ShieldCheck}
+                    grossClassName={
+                      portfolioKPIs.gross.dscr !== null && portfolioKPIs.gross.dscr < 1 ? 'text-destructive' :
+                      portfolioKPIs.gross.dscr !== null && portfolioKPIs.gross.dscr < 1.25 ? 'text-warning' : 'text-success'
+                    }
+                    attrClassName={
+                      portfolioKPIs.attributable.dscr !== null && portfolioKPIs.attributable.dscr < 1 ? 'text-destructive' :
+                      portfolioKPIs.attributable.dscr !== null && portfolioKPIs.attributable.dscr < 1.25 ? 'text-warning' : 'text-success'
+                    }
+                    onClick={() => handleMetricClick('dscr')}
                   />
                   <DualKpiCard
                     label="Net Yield"
