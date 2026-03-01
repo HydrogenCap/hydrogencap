@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
+import { ActivationChecklist } from '@/components/dashboard/ActivationChecklist';
 
 // V2 data sources
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
@@ -296,6 +297,9 @@ function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Activation Checklist */}
+        <ActivationChecklist />
+
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
