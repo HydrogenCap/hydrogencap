@@ -109,7 +109,7 @@ export default function MarketingPricing() {
             <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
               Pricing
             </span>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-display tracking-tight">
               Simple, transparent pricing
             </h1>
             <p className="text-xl text-muted-foreground">

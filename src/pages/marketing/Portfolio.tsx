@@ -174,9 +174,9 @@ export default function MarketingPortfolio() {
                         </td>
                         <td className="p-4">
                           <Badge variant="outline" className={
-                            property.epc === 'A' || property.epc === 'B' ? 'border-emerald-500 text-emerald-600' :
-                            property.epc === 'C' || property.epc === 'D' ? 'border-amber-500 text-amber-600' :
-                            'border-destructive text-destructive'
+                             property.epc === 'A' || property.epc === 'B' ? 'border-success text-success' :
+                             property.epc === 'C' || property.epc === 'D' ? 'border-warning text-warning' :
+                             'border-destructive text-destructive'
                           }>
                             {property.epc}
                           </Badge>
