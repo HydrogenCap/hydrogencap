@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar, ShieldCheck } from 'lucide-react';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar, ShieldCheck, Clock, CircleDot } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +43,7 @@ import { RentCollectionWidget } from '@/components/dashboard/RentCollectionWidge
 import { OccupancyWidget } from '@/components/dashboard/OccupancyWidget';
 import { TenancyPipelineWidget } from '@/components/dashboard/TenancyPipelineWidget';
 import { VoidCostWidget } from '@/components/dashboard/VoidCostWidget';
+import { useVoidRate } from '@/hooks/useVoidPeriods';
 import { RecentActivityWidget } from '@/components/dashboard/RecentActivityWidget';
 import { MaintenanceWidget } from '@/components/dashboard/MaintenanceWidget';
 import { WorkOrdersWidget } from '@/components/dashboard/WorkOrdersWidget';
@@ -89,6 +90,7 @@ function DashboardPage() {
   const currentDashMonth = format(new Date(), 'yyyy-MM');
   const { data: rentScheduleData } = useRentSchedule({ month: currentDashMonth });
   const rentSchedule = rentScheduleData?.items;
+  const { data: voidRateData } = useVoidRate();
 
   // Filter properties using V2 data
   const filteredProperties = useMemo(() => {
@@ -148,6 +150,21 @@ function DashboardPage() {
     const totalCollected = schedule.reduce((sum, r) => sum + (r.amount_paid || 0), 0);
     const totalOverdue = schedule.filter(r => r.status === 'overdue').reduce((sum, r) => sum + (r.amount_outstanding || 0), 0);
 
+    // WAULT: Weighted Average Unexpired Lease Term (in months)
+    const now = new Date();
+    let waultNumerator = 0;
+    let waultDenominator = 0;
+    for (const t of activeTenancies) {
+      const endDate = t.end_date ? new Date(t.end_date) : null;
+      const rent = t.rent_amount_pcm || 0;
+      if (endDate && endDate > now && rent > 0) {
+        const remainingMonths = Math.max(0, (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+        waultNumerator += remainingMonths * rent;
+        waultDenominator += rent;
+      }
+    }
+    const waultMonths = waultDenominator > 0 ? waultNumerator / waultDenominator : null;
+
     return {
       activeTenancies: activeTenancies.length,
       noticeTenancies: noticeTenancies.length,
@@ -159,6 +176,7 @@ function DashboardPage() {
       totalDue,
       totalCollected,
       totalOverdue,
+      waultMonths,
     };
   }, [allTenancies, allRooms, rentSchedule, coreRentalProperties]);
 
@@ -493,7 +511,7 @@ function DashboardPage() {
             )}
 
             {/* Rental KPI Cards — Track C, unchanged */}
-            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-6">
               <KpiCard
                 label="Monthly Rent Roll"
                 value={formatGBP(rentalStats.totalMonthlyRent)}
@@ -509,6 +527,38 @@ function DashboardPage() {
                 icon={DoorOpen}
                 iconClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
                 valueClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
+              />
+              <KpiCard
+                label="WAULT"
+                value={rentalStats.waultMonths !== null ? `${rentalStats.waultMonths.toFixed(1)} mo` : '—'}
+                subtitle={rentalStats.waultMonths !== null
+                  ? rentalStats.waultMonths >= 12 ? 'Healthy lease length' : rentalStats.waultMonths >= 6 ? 'Moderate — renewals due' : 'Short — action needed'
+                  : 'No lease end dates'
+                }
+                icon={Clock}
+                iconClassName={
+                  rentalStats.waultMonths === null ? '' :
+                  rentalStats.waultMonths >= 12 ? 'text-success' : rentalStats.waultMonths >= 6 ? 'text-warning' : 'text-destructive'
+                }
+                valueClassName={
+                  rentalStats.waultMonths === null ? '' :
+                  rentalStats.waultMonths >= 12 ? 'text-success' : rentalStats.waultMonths >= 6 ? 'text-warning' : 'text-destructive'
+                }
+              />
+              <KpiCard
+                label="Void Rate"
+                value={voidRateData ? `${voidRateData.voidRate}%` : '—'}
+                subtitle={voidRateData ? `${voidRateData.voidRooms} of ${voidRateData.totalRooms} rooms void` : 'Loading...'}
+                icon={CircleDot}
+                iconClassName={
+                  !voidRateData ? '' :
+                  voidRateData.voidRate <= 5 ? 'text-success' : voidRateData.voidRate <= 15 ? 'text-warning' : 'text-destructive'
+                }
+                valueClassName={
+                  !voidRateData ? '' :
+                  voidRateData.voidRate <= 5 ? 'text-success' : voidRateData.voidRate <= 15 ? 'text-warning' : 'text-destructive'
+                }
+                onClick={() => navigate('/voids')}
               />
               <KpiCard
                 label="Portfolio Net Yield"
