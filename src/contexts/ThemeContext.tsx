@@ -28,7 +28,7 @@ function getSystemTheme(): 'light' | 'dark' {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('hydrogencap-theme') as Theme | null;
+      const saved = localStorage.getItem('tenureiq-theme') as Theme | null;
       return saved || 'system';
     }
     return 'system';
@@ -59,7 +59,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(actualTheme);
     
     // Save to localStorage
-    localStorage.setItem('hydrogencap-theme', theme);
+    localStorage.setItem('tenureiq-theme', theme);
   }, [theme]);
 
   // Listen for system theme changes

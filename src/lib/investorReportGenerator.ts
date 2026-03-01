@@ -125,7 +125,7 @@ export class InvestorStatementReport {
     this.doc.setTextColor(255, 255, 255);
     this.doc.setFontSize(24);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('HYDROGEN CAPITAL', this.margin, 30);
+    this.doc.text('TENURE IQ', this.margin, 30);
     this.doc.setFontSize(11);
     this.doc.setFont('helvetica', 'normal');
     this.doc.text('Investor Statement', this.margin, 42);
@@ -483,6 +483,6 @@ export class InvestorStatementReport {
     this.doc.setTextColor(...BRAND_SECONDARY);
     this.doc.text(`Page ${pageNum}`, this.pageWidth / 2, ph - 10, { align: 'center' });
     this.doc.text('CONFIDENTIAL', this.pageWidth - this.margin, ph - 10, { align: 'right' });
-    this.doc.text('Hydrogen Capital', this.margin, ph - 10);
+    this.doc.text('Tenure IQ', this.margin, ph - 10);
   }
 }

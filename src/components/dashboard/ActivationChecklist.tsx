@@ -56,7 +56,7 @@ export function ActivationChecklist() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Rocket className="h-5 w-5 text-primary" />
-            Get Started with Hydrogen Capital
+            Get Started with Tenure IQ
           </CardTitle>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{completedCount}/{totalItems} complete</span>
