@@ -55,12 +55,15 @@ import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { LogoWordmark } from '@/components/LogoWordmark';
+import { useSectionVisibility } from '@/hooks/useSectionVisibility';
+import type { SectionKey } from '@/lib/sectionVisibility';
 
 interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
   badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks';
+  sectionKey?: SectionKey;
 }
 
 const portfolioItems: NavItem[] = [
@@ -78,20 +81,20 @@ const operationsItems: NavItem[] = [
   { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks', badgeType: 'tasks' },
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
-  { title: 'Lending', icon: PoundSterling, href: '/lending' },
+  { title: 'Lending', icon: PoundSterling, href: '/lending', sectionKey: 'lending' },
   { title: 'Financials', icon: TrendingUp, href: '/financials' },
-  { title: 'Investors', icon: Briefcase, href: '/investors' },
-  { title: 'Distributions', icon: Banknote, href: '/distributions' },
+  { title: 'Investors', icon: Briefcase, href: '/investors', sectionKey: 'investors' },
+  { title: 'Distributions', icon: Banknote, href: '/distributions', sectionKey: 'distributions' },
   { title: 'Accounting', icon: PoundSterling, href: '/accounting' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
-  { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs' },
+  { title: 'Jobs', icon: ClipboardList, href: '/jobs', badgeType: 'jobs', sectionKey: 'jobs' },
   { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' as any },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
-  { title: 'Voids', icon: DoorOpen, href: '/voids' },
+  { title: 'Voids', icon: DoorOpen, href: '/voids', sectionKey: 'voids' },
   { title: 'Lettings', icon: ArrowRight, href: '/lettings' },
   { title: 'Maintenance', icon: Wrench, href: '/maintenance' },
   { title: 'Works Orders', icon: ClipboardList, href: '/work-orders' },
-  { title: 'CapEx', icon: HardHat, href: '/capex' },
+  { title: 'CapEx', icon: HardHat, href: '/capex', sectionKey: 'capex' },
   { title: 'Templates', icon: FileSignature, href: '/templates' },
   { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
 ];
@@ -117,6 +120,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const isAdmin = useIsAdmin();
+  const { isVisible } = useSectionVisibility();
   const { data: inboxDocuments } = useInboxDocuments();
   const { stats: complianceStats } = usePortfolioComplianceStats();
   const { totalCount: actionsCount, criticalCount: actionsCriticalCount } = usePortfolioRisks();
@@ -203,7 +207,9 @@ export function AppSidebar() {
 
   const renderNavItems = (items: NavItem[]) => (
     <>
-      {items.map((item) => (
+      {items
+        .filter((item) => !item.sectionKey || isVisible(item.sectionKey))
+        .map((item) => (
         <SidebarMenuItem key={item.title}>
           <SidebarMenuButton asChild isActive={isActive(item.href)}>
             <Link to={item.href} className="flex items-center gap-3">

@@ -6245,6 +6245,7 @@ export type Database = {
           onboarding_goals: Json | null
           platform_role: string
           role: string | null
+          section_visibility: Json
           updated_at: string
           use_property_allowance: boolean | null
           user_id: string
@@ -6261,6 +6262,7 @@ export type Database = {
           onboarding_goals?: Json | null
           platform_role?: string
           role?: string | null
+          section_visibility?: Json
           updated_at?: string
           use_property_allowance?: boolean | null
           user_id: string
@@ -6277,6 +6279,7 @@ export type Database = {
           onboarding_goals?: Json | null
           platform_role?: string
           role?: string | null
+          section_visibility?: Json
           updated_at?: string
           use_property_allowance?: boolean | null
           user_id?: string

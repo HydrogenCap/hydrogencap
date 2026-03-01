@@ -1,10 +1,12 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, MailCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { useSectionVisibility } from '@/hooks/useSectionVisibility';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,8 +15,11 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, signOut } = useAuth();
   const { data: onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
+  const { isRouteHidden, isLoading: visibilityLoading } = useSectionVisibility();
+  const location = useLocation();
+  const { toast } = useToast();
 
-  if (loading || (user && onboardingLoading)) {
+  if (loading || (user && (onboardingLoading || visibilityLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -55,6 +60,15 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Show onboarding wizard for new users
   if (onboardingCompleted === false) {
     return <OnboardingWizard />;
+  }
+
+  // Redirect if section is hidden
+  if (isRouteHidden(location.pathname)) {
+    toast({
+      title: 'Section hidden',
+      description: 'This section is currently hidden. You can enable it in Settings → Sections.',
+    });
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
