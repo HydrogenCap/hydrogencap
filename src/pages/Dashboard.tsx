@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
 import { ActivationChecklist } from '@/components/dashboard/ActivationChecklist';
+import { DemoBanner } from '@/components/dashboard/DemoBanner';
 
 // V2 data sources
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
@@ -297,6 +298,9 @@ function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Demo Data Banner */}
+        <DemoBanner />
+
         {/* Activation Checklist */}
         <ActivationChecklist />
 

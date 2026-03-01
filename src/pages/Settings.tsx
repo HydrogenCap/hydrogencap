@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
- import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark } from 'lucide-react';
+ import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark, Database } from 'lucide-react';
 import { FreeAgentIntegrationPanel } from '@/components/settings/FreeAgentIntegrationPanel';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
@@ -22,6 +22,7 @@ import { DocumentRenamingSection } from '@/components/settings/DocumentRenamingS
 import { TeamManagement } from '@/components/settings/TeamManagement';
 import { BankAccountSettings } from '@/components/settings/BankAccountSettings';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
+import { DemoDataSection } from '@/components/settings/DemoDataSection';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
 import { ImportStepper } from '@/components/import/ImportStepper';
@@ -355,11 +356,15 @@ export default function Settings() {
                 <HardDrive className="h-4 w-4" />
                 Backup
               </TabsTrigger>
-              <TabsTrigger value="bank-accounts" className="gap-2">
-                <Landmark className="h-4 w-4" />
-                Bank Accounts
-              </TabsTrigger>
-           </TabsList>
+               <TabsTrigger value="bank-accounts" className="gap-2">
+                 <Landmark className="h-4 w-4" />
+                 Bank Accounts
+               </TabsTrigger>
+               <TabsTrigger value="demo-data" className="gap-2">
+                 <Database className="h-4 w-4" />
+                 Demo Data
+               </TabsTrigger>
+            </TabsList>
 
           <TabsContent value="profile" className="space-y-6 max-w-2xl">
             {/* Profile Settings */}
@@ -787,7 +792,12 @@ export default function Settings() {
            {/* Bank Accounts Tab */}
            <TabsContent value="bank-accounts" className="space-y-6">
              <BankAccountSettings />
-           </TabsContent>
+            </TabsContent>
+
+            {/* Demo Data Tab */}
+            <TabsContent value="demo-data" className="space-y-6 max-w-2xl">
+              <DemoDataSection />
+            </TabsContent>
         </Tabs>
       </div>
     </AppLayout>

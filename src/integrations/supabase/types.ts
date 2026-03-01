@@ -6361,6 +6361,7 @@ export type Database = {
           id: string
           identity_updated_at: string | null
           identity_updated_by: string | null
+          is_demo: boolean | null
           is_hmo_licensed: boolean | null
           latitude: number | null
           legal_owner_company_id: string | null
@@ -6426,6 +6427,7 @@ export type Database = {
           id?: string
           identity_updated_at?: string | null
           identity_updated_by?: string | null
+          is_demo?: boolean | null
           is_hmo_licensed?: boolean | null
           latitude?: number | null
           legal_owner_company_id?: string | null
@@ -6491,6 +6493,7 @@ export type Database = {
           id?: string
           identity_updated_at?: string | null
           identity_updated_by?: string | null
+          is_demo?: boolean | null
           is_hmo_licensed?: boolean | null
           latitude?: number | null
           legal_owner_company_id?: string | null
