@@ -18,7 +18,7 @@ export function KPIStat({ label, value, trend, trendUp, className }: KPIStatProp
           <span
             className={cn(
               'text-xs font-medium',
-              trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+              trendUp ? 'text-success' : 'text-destructive'
             )}
           >
             {trend}

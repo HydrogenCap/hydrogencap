@@ -56,8 +56,8 @@ const riskItems = [
 ];
 
 const complianceStats = [
-  { label: 'Compliant', count: 45, color: 'bg-emerald-500' },
-  { label: 'Expiring Soon', count: 5, color: 'bg-amber-500' },
+  { label: 'Compliant', count: 45, color: 'bg-success' },
+  { label: 'Expiring Soon', count: 5, color: 'bg-warning' },
   { label: 'Expired', count: 2, color: 'bg-destructive' },
   { label: 'Not Required', count: 8, color: 'bg-muted' },
 ];
@@ -70,7 +70,7 @@ export default function MarketingDemo() {
       case 'expired':
         return <Badge variant="destructive">Expired</Badge>;
       case 'urgent':
-        return <Badge className="bg-amber-500 hover:bg-amber-600">Due in 7-30 days</Badge>;
+        return <Badge className="bg-warning text-warning-foreground hover:bg-warning/90">Due in 7-30 days</Badge>;
       case 'warning':
         return <Badge variant="secondary">Due in 30-60 days</Badge>;
       default:
@@ -139,7 +139,7 @@ export default function MarketingDemo() {
                 <div className="flex items-baseline gap-2">
                   <span className="text-xl font-bold">{kpi.value}</span>
                   {kpi.trend && (
-                    <span className={`text-xs flex items-center ${kpi.trendUp ? 'text-emerald-600' : 'text-destructive'}`}>
+                    <span className={`text-xs flex items-center ${kpi.trendUp ? 'text-success' : 'text-destructive'}`}>
                       {kpi.trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                       {kpi.trend}
                     </span>
@@ -210,11 +210,11 @@ export default function MarketingDemo() {
                             <td className="p-3 text-sm text-muted-foreground">{property.type}</td>
                             <td className="p-3 text-sm text-right">£{property.value.toLocaleString()}</td>
                             <td className="p-3 text-sm text-right">
-                              <span className={property.ltv > 65 ? 'text-amber-600' : ''}>
+                              <span className={property.ltv > 65 ? 'text-warning' : ''}>
                                 {property.ltv}%
                               </span>
                             </td>
-                            <td className="p-3 text-sm text-right text-emerald-600">
+                            <td className="p-3 text-sm text-right text-success">
                               £{property.cashflow.toLocaleString()}
                             </td>
                             <td className="p-3">
@@ -257,8 +257,8 @@ export default function MarketingDemo() {
                     ))}
                   </div>
                   <div className="flex h-2 rounded-full overflow-hidden mt-4">
-                    <div className="bg-emerald-500" style={{ width: '75%' }} />
-                    <div className="bg-amber-500" style={{ width: '8%' }} />
+                    <div className="bg-success" style={{ width: '75%' }} />
+                    <div className="bg-warning" style={{ width: '8%' }} />
                     <div className="bg-destructive" style={{ width: '3%' }} />
                     <div className="bg-muted" style={{ width: '14%' }} />
                   </div>
@@ -313,7 +313,7 @@ export default function MarketingDemo() {
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full ${entity.ltv > 60 ? 'bg-amber-500' : 'bg-primary'}`}
+                            className={`h-full rounded-full ${entity.ltv > 60 ? 'bg-warning' : 'bg-primary'}`}
                             style={{ width: `${entity.ltv}%` }}
                           />
                         </div>

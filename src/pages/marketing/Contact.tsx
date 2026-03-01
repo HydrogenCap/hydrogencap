@@ -100,8 +100,8 @@ export default function MarketingContact() {
               <CardContent>
                 {isSubmitted ? (
                   <div className="py-12 text-center">
-                    <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                     <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+                       <CheckCircle className="h-8 w-8 text-success" />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">Thank you!</h3>
                     <p className="text-muted-foreground mb-6">

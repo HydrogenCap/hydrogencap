@@ -82,7 +82,7 @@ export default function MarketingSecurity() {
             <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
               Security
             </span>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-display tracking-tight">
               How we protect your portfolio data
             </h1>
             <p className="text-xl text-muted-foreground">

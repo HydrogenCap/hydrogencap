@@ -86,7 +86,7 @@ export default function MarketingCaseStudies() {
             <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
               Case Studies
             </span>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-display tracking-tight">
               Real projects. Real results.
             </h1>
             <p className="text-xl text-muted-foreground">
@@ -176,7 +176,7 @@ export default function MarketingCaseStudies() {
                 <ul className="space-y-2">
                   {caseStudies[0].outcomes.map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 text-emerald-500 mt-1 flex-shrink-0" />
+                      <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
                       {item}
                     </li>
                   ))}

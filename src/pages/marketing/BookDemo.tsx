@@ -98,7 +98,7 @@ export default function MarketingBookDemo() {
             <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
               Book a Demo
             </span>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-display tracking-tight">
               See your portfolio in Tenure IQ
             </h1>
             <p className="text-xl text-muted-foreground">

@@ -9,10 +9,56 @@
     <meta name="author" content="Tenure IQ" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
-    <meta name="theme-color" content="#0e7490" />
+    <meta name="theme-color" content="#1e3a5f" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://js.stripe.com https://maps.googleapis.com https://cdn.gpteng.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://maps.googleapis.com https://maps.gstatic.com https://*.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://maps.googleapis.com https://api.companieshouse.gov.uk https://epc.opendatacommunities.org https://landregistry.data.gov.uk https://api.freeagent.com https://api.sandbox.freeagent.com https://cdn.gpteng.co; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;">
     <link rel="preconnect" href="https://cdn.gpteng.co" crossorigin />
     <link rel="dns-prefetch" href="https://cdn.gpteng.co" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Tenure IQ",
+      "legalName": "Oxygen Management Ltd",
+      "url": "https://tenureiq.com",
+      "logo": "https://tenureiq.com/og-image.jpg",
+      "description": "Property intelligence platform for UK landlords and investors managing HMO and buy-to-let portfolios.",
+      "foundingDate": "2017",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "GB"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "office@tenureiq.com",
+        "contactType": "sales"
+      },
+      "sameAs": [
+        "https://www.linkedin.com/company/tenureiq"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Tenure IQ",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "url": "https://tenureiq.com",
+      "description": "Portfolio tracking, compliance management, and investor-grade reporting for UK property portfolios.",
+      "offers": {
+        "@type": "Offer",
+        "price": "49",
+        "priceCurrency": "GBP",
+        "priceValidUntil": "2027-01-01"
+      }
+    }
+    </script>
 
     <meta property="og:title" content="Tenure IQ | Property Intelligence Platform" />
     <meta property="og:description" content="Property intelligence platform for UK landlords and investors. Track compliance, rent collection, and portfolio performance." />

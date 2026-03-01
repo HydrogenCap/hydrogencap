@@ -91,7 +91,7 @@ export default function MarketingHome() {
       <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4 lg:px-8 py-20 lg:py-32">
           <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display tracking-tight">
               The property management platform built for{' '}
               <span className="text-primary">UK HMO and BTL investors.</span>
             </h1>
@@ -212,7 +212,7 @@ export default function MarketingHome() {
                         <span className="text-muted-foreground">{row.type}</span>
                         <span>{row.value}</span>
                         <span>{row.ltv}</span>
-                        <span className={row.status === 'Compliant' ? 'text-emerald-600' : 'text-amber-600'}>
+                        <span className={row.status === 'Compliant' ? 'text-success' : 'text-warning'}>
                           {row.status}
                         </span>
                       </div>
