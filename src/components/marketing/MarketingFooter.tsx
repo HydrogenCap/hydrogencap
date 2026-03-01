@@ -69,8 +69,8 @@ export const MarketingFooter = forwardRef<HTMLElement>(
               </div>
             </div>
             <div className="text-center md:text-left">
-              <p className="text-xs text-muted-foreground">
-                Registered in England &amp; Wales. Company No. [XXXXXXXX]. ICO Registration No. [ZB/XXXXXXX].
+            <p className="text-xs text-muted-foreground">
+                Registered in England &amp; Wales. Company No. 10733342. ICO Registration No. ZB490980.
               </p>
             </div>
           </div>
