@@ -154,38 +154,38 @@ export default function PropertiesV2() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Properties</h1>
             <p className="text-sm text-muted-foreground">Manage your portfolio properties</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => enrichEpc('missing-only')} disabled={isEnrichingEpc}>
+            <Button variant="outline" size="sm" onClick={() => enrichEpc('missing-only')} disabled={isEnrichingEpc}>
               <Zap className="h-4 w-4 mr-2" /> {isEnrichingEpc ? 'Enriching…' : 'Enrich EPC'}
             </Button>
-            <Button onClick={() => setShowWizard(true)}><Plus className="h-4 w-4 mr-2" /> Add Property</Button>
+            <Button size="sm" onClick={() => setShowWizard(true)}><Plus className="h-4 w-4 mr-2" /> Add Property</Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
           <Card><CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Properties</p>
-            <p className="text-2xl font-bold text-foreground">{totalCount}</p>
+            <p className="text-xl md:text-2xl font-bold text-foreground">{totalCount}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Valuation</p>
-            <p className="text-2xl font-bold text-foreground">{totalValuation > 0 ? formatGBPShort(totalValuation) : '—'}</p>
+            <p className="text-xl md:text-2xl font-bold text-foreground">{totalValuation > 0 ? formatGBPShort(totalValuation) : '—'}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Monthly Rent</p>
-            <p className="text-2xl font-bold text-foreground">{totalMonthlyRent > 0 ? formatGBP(totalMonthlyRent) : '—'}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Monthly Rent</p>
+            <p className="text-xl md:text-2xl font-bold text-foreground">{totalMonthlyRent > 0 ? formatGBP(totalMonthlyRent) : '—'}</p>
           </CardContent></Card>
           <Card><CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg Lettable Rooms</p>
-            <p className="text-2xl font-bold text-foreground">{avgRooms}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg Rooms</p>
+            <p className="text-xl md:text-2xl font-bold text-foreground">{avgRooms}</p>
           </CardContent></Card>
-          <Card><CardContent className="pt-4 pb-3">
+          <Card className="hidden md:block"><CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Stage Breakdown</p>
             <div className="flex flex-wrap gap-1 mt-1">
               {LIFECYCLE_STAGES.map(s => {
@@ -203,8 +203,8 @@ export default function PropertiesV2() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="flex flex-wrap gap-2 md:gap-3 items-center">
+          <div className="relative w-full md:flex-1 md:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search address or postcode..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>

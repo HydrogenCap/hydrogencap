@@ -219,13 +219,13 @@ function PropertyDetailPage() {
         <PropertyStatusBar propertyId={id!} lifecycleType={property.lifecycle_type || undefined} />
 
         {/* KPI Summary Row */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
           <Card className="bg-card border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Equity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{formatGBP(equity)}</div>
+              <div className="text-xl md:text-2xl font-bold text-primary">{formatGBP(equity)}</div>
               <p className="text-xs text-muted-foreground">Value: {formatGBP(currentValue)}</p>
             </CardContent>
           </Card>
@@ -235,7 +235,7 @@ function PropertyDetailPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">LTV</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${
+              <div className={`text-xl md:text-2xl font-bold ${
                 ltvStatus === 'danger' ? 'text-destructive' :
                 ltvStatus === 'warning' ? 'text-warning' : ''
               }`}>
@@ -250,7 +250,7 @@ function PropertyDetailPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Cashflow</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${monthlyCashflow && monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
+              <div className={`text-xl md:text-2xl font-bold ${monthlyCashflow && monthlyCashflow >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {formatGBP(monthlyCashflow)}
               </div>
               <p className="text-xs text-muted-foreground">After debt service</p>
@@ -262,7 +262,7 @@ function PropertyDetailPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Net Yield</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${yieldPercent && yieldPercent >= 0 ? 'text-success' : ''}`}>
+              <div className={`text-xl md:text-2xl font-bold ${yieldPercent && yieldPercent >= 0 ? 'text-success' : ''}`}>
                 {formatPercent(yieldPercent)}
               </div>
               <div className="space-y-0.5 mt-1">
@@ -275,7 +275,7 @@ function PropertyDetailPage() {
 
         {/* Tabs - Simplified to 5 */}
         <Tabs defaultValue={defaultTab} className="space-y-4">
-          <TabsList className="bg-muted">
+          <TabsList className="bg-muted w-full overflow-x-auto flex-nowrap whitespace-nowrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="finance">Finance</TabsTrigger>
             <TabsTrigger value="operations">Operations</TabsTrigger>

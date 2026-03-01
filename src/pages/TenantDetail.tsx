@@ -506,7 +506,7 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
            {/* Tenancy History */}
            <div className="lg:col-span-2">
              <Tabs defaultValue="tenancies">
-              <TabsList>
+              <TabsList className="w-full overflow-x-auto flex-nowrap whitespace-nowrap">
                   <TabsTrigger value="tenancies">Tenancies</TabsTrigger>
                   <TabsTrigger value="rent">Rent History</TabsTrigger>
                   <TabsTrigger value="maintenance">Maintenance</TabsTrigger>

@@ -34,7 +34,7 @@ function KpiCard({ label, value, subtitle, icon: Icon, className }: {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-muted-foreground">{label}</p>
-            <p className={cn('text-2xl font-bold', className)}>{value}</p>
+            <p className={cn('text-xl md:text-2xl font-bold', className)}>{value}</p>
             {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
           </div>
           <Icon className={cn('h-5 w-5 text-muted-foreground', className)} />

@@ -93,29 +93,29 @@ export default function TenantsV2() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Users className="h-6 w-6" /> Tenants
             </h1>
             <p className="text-muted-foreground text-sm">Manage tenants and tenancy agreements</p>
           </div>
-          <Button onClick={() => setShowAdd(true)}>
+          <Button size="sm" onClick={() => setShowAdd(true)}>
             <Plus className="h-4 w-4 mr-2" /> Add Tenant
           </Button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Active Tenants</p><p className="text-2xl font-bold">{activeCount}</p></CardContent></Card>
-          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">In Notice</p><p className={`text-2xl font-bold ${noticeCount > 0 ? 'text-amber-600' : ''}`}>{noticeCount}</p></CardContent></Card>
-          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Average Rent</p><p className="text-2xl font-bold">{fmtRent(avgRent)}</p></CardContent></Card>
-          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Deposit Issues</p><p className={`text-2xl font-bold ${depositIssues > 0 ? 'text-destructive' : ''}`}>{depositIssues}</p></CardContent></Card>
+          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Active Tenants</p><p className="text-xl md:text-2xl font-bold">{activeCount}</p></CardContent></Card>
+          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">In Notice</p><p className={`text-xl md:text-2xl font-bold ${noticeCount > 0 ? 'text-amber-600' : ''}`}>{noticeCount}</p></CardContent></Card>
+          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Average Rent</p><p className="text-xl md:text-2xl font-bold">{fmtRent(avgRent)}</p></CardContent></Card>
+          <Card><CardContent className="pt-4 pb-3"><p className="text-sm text-muted-foreground">Deposit Issues</p><p className={`text-xl md:text-2xl font-bold ${depositIssues > 0 ? 'text-destructive' : ''}`}>{depositIssues}</p></CardContent></Card>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          <div className="relative w-full md:flex-1 md:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search by name, email, phone..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
@@ -149,7 +149,7 @@ export default function TenantsV2() {
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
         ) : (
-          <div className="border rounded-lg overflow-x-auto">
+          <div className="border rounded-lg overflow-x-auto -mx-4 md:mx-0">
             <Table>
               <TableHeader>
                 <TableRow>
