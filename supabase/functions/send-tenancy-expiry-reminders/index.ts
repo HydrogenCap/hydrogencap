@@ -8,8 +8,8 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "noreply@hydrogencap.co.uk";
 
 const ALLOWED_ORIGINS = [
-  "https://hydrogencap.com",
-  "https://www.hydrogencap.com",
+  "https://tenureiq.com",
+  "https://www.tenureiq.com",
   "https://hydrogencapital.lovable.app",
   Deno.env.get("ALLOWED_ORIGIN"),
 ].filter(Boolean) as string[];
@@ -133,7 +133,7 @@ serve(async (req) => {
           <p style="color:#64748b;font-size:14px">
             Review these tenancies and decide whether to renew, renegotiate, or end each one.
           </p>
-          <p style="margin-top:24px;color:#94a3b8;font-size:12px">— HydrogenCap</p>
+          <p style="margin-top:24px;color:#94a3b8;font-size:12px">— Tenure IQ</p>
         </div>
       `;
 

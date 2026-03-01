@@ -198,7 +198,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Entity Name *</Label>
-            <Input value={form.entity_name} onChange={(e) => update('entity_name', e.target.value)} placeholder="e.g. Hydrogen Capital Ltd" />
+            <Input value={form.entity_name} onChange={(e) => update('entity_name', e.target.value)} placeholder="e.g. Tenure IQ Ltd" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -125,7 +125,7 @@ export default function MarketingProduct() {
   return (
     <MarketingLayout>
       <SEO
-        title="Product Features — HydrogenCap"
+        title="Product Features — Tenure IQ"
         description="Compliance tracking, rent collection, mortgage monitoring, AI document processing, and portfolio analytics. Everything UK landlords need in one platform."
       />
       {/* Hero */}

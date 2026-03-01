@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hydrogencap-v1';
+const CACHE_NAME = 'tenureiq-v1';
 const OFFLINE_URL = '/offline.html';
 
 // Install: cache the offline page

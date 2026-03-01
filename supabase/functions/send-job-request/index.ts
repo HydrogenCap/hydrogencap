@@ -3,8 +3,8 @@
  import { Resend } from 'https://esm.sh/resend@4.0.0';
  
  const ALLOWED_ORIGINS = [
-   "https://hydrogencap.com",
-   "https://www.hydrogencap.com",
+   "https://tenureiq.com",
+   "https://www.tenureiq.com",
    "https://hydrogencapital.lovable.app",
    Deno.env.get("ALLOWED_ORIGIN"),
  ].filter(Boolean) as string[];
@@ -123,7 +123,7 @@
    </div>
    
    <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-     <p>Sent via HydrogenCap Property Management</p>
+     <p>Sent via Tenure IQ Property Management</p>
    </div>
  </body>
  </html>
@@ -241,7 +241,7 @@
  
      // Send email via Resend
      const emailResponse = await resend.emails.send({
-       from: 'HydrogenCap <noreply@hydrogencapital.lovable.app>',
+       from: 'Tenure IQ <noreply@hydrogencapital.lovable.app>',
        to: [job.contractor.email],
        subject,
        html,

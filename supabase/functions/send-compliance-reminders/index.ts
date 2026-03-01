@@ -3,8 +3,8 @@
  import { Resend } from "https://esm.sh/resend@4.0.0";
  
  const ALLOWED_ORIGINS = [
-   "https://hydrogencap.com",
-   "https://www.hydrogencap.com",
+   "https://tenureiq.com",
+   "https://www.tenureiq.com",
    "https://hydrogencapital.lovable.app",
    Deno.env.get("ALLOWED_ORIGIN"),
  ].filter(Boolean) as string[];
@@ -91,19 +91,19 @@ function getPropertyAddress(item: ComplianceItem): string {
      
      <p>Please arrange renewal of this certificate before it expires to remain compliant.</p>
      
-     <a href="https://hydrogencap.lovable.app/properties/${item.property_id}?tab=compliance" 
+     <a href="https://tenureiq.com/properties/${item.property_id}?tab=compliance" 
         style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 10px 0;">
        View Property Compliance
      </a>
      
      <p style="margin-top: 20px; font-size: 14px; color: #6b7280;">
        You can manage your notification preferences in 
-       <a href="https://hydrogencap.lovable.app/settings?tab=notifications" style="color: #2563eb;">Settings</a>.
+       <a href="https://tenureiq.com/settings?tab=notifications" style="color: #2563eb;">Settings</a>.
      </p>
    </div>
    
    <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-     <p>HydrogenCap Property Portfolio Management</p>
+     <p>Tenure IQ Property Portfolio Management</p>
    </div>
  </body>
  </html>
@@ -229,7 +229,7 @@ function getPropertyAddress(item: ComplianceItem): string {
           );
 
           const emailResult = await resend.emails.send({
-            from: "HydrogenCap <onboarding@resend.dev>",
+            from: "Tenure IQ <onboarding@resend.dev>",
             to: [profile.email],
             subject,
             html,

@@ -1,7 +1,7 @@
 {
   "schema_version": "v1",
-  "name_for_human": "Hydrogen Capital Portfolio",
-  "name_for_model": "hydrogen_portfolio",
+  "name_for_human": "Tenure IQ Portfolio",
+  "name_for_model": "tenureiq_portfolio",
   "description_for_human": "Access and analyze your UK property portfolio data including properties, companies, compliance, and financial metrics.",
   "description_for_model": "This plugin allows you to access a UK property portfolio management system. You can retrieve portfolio summaries, property details, company information, compliance status, loan data, and action items. Use this to answer questions about the user's property investments, compliance deadlines, financial metrics like LTV and equity, and required actions.",
   "auth": {
@@ -13,6 +13,6 @@
     "url": "https://hydrogencap.lovable.app/.well-known/openapi.json"
   },
   "logo_url": "https://hydrogencap.lovable.app/favicon.png",
-  "contact_email": "support@hydrogencap.com",
+  "contact_email": "support@tenureiq.com",
   "legal_info_url": "https://hydrogencap.lovable.app"
 }

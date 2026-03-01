@@ -81,8 +81,8 @@ export default function MarketingDemo() {
   return (
     <MarketingLayout>
       <SEO
-        title="Book a Demo — HydrogenCap"
-        description="See HydrogenCap in action. Book a free 15-minute demo to see how we can simplify your property portfolio management."
+        title="Book a Demo — Tenure IQ"
+        description="See Tenure IQ in action. Book a free 15-minute demo to see how we can simplify your property portfolio management."
       />
       {/* Demo Header */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-8 border-b">

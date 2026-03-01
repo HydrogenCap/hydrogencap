@@ -83,7 +83,7 @@ export default function MarketingHome() {
   return (
     <MarketingLayout>
       <SEO
-        title="HydrogenCap — Property Portfolio Management for UK Landlords"
+        title="Tenure IQ — Property Portfolio Management for UK Landlords"
         description="Track compliance, rent collection, and financial performance across your entire property portfolio. Built for UK landlords and investors managing 5-200 properties."
       />
       {/* Hero Section */}

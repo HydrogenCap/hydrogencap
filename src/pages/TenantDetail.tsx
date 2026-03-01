@@ -359,7 +359,7 @@ function TenancyRow({ tenancy, tenantType, tenantId, isCompany, tenant }: Tenanc
           );
 
           // Footer
-          coverPage.drawText(`Generated ${sentDateFormatted} — Hydrogen Capital`, {
+          coverPage.drawText(`Generated ${sentDateFormatted} — Tenure IQ`, {
             x: pw / 2 - 80, y: 30, size: 8, font: helvetica, color: rgb(0.6, 0.6, 0.6),
           });
 

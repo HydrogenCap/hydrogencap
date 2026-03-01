@@ -180,12 +180,12 @@ export class LenderGradeMortgageBrokerPack {
     this.doc.setTextColor(26, 58, 118);
     this.doc.setFontSize(12);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('H', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
+    this.doc.text('T', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
 
-    // Hydrogen Capital text
+    // Tenure IQ text
     this.doc.setTextColor(255, 255, 255);
     this.doc.setFontSize(11);
-    this.doc.text('HYDROGEN CAPITAL', logoX + logoSize + 8, logoY + logoSize / 2 + 2);
+    this.doc.text('TENURE IQ', logoX + logoSize + 8, logoY + logoSize / 2 + 2);
 
     // Title
     this.doc.setFontSize(28);
@@ -219,7 +219,7 @@ export class LenderGradeMortgageBrokerPack {
     this.doc.setFontSize(9);
     this.doc.setTextColor(107, 114, 128);
     this.doc.text('CONFIDENTIAL — For Addressee Only', this.margin, this.pageHeight - 20);
-    this.doc.text('Hydrogen Capital', this.pageWidth - this.margin, this.pageHeight - 20, { align: 'right' });
+    this.doc.text('Tenure IQ', this.pageWidth - this.margin, this.pageHeight - 20, { align: 'right' });
   }
 
   private addCoverDetailRow(label: string, value: string) {
@@ -823,7 +823,7 @@ export class LenderGradeMortgageBrokerPack {
     this.doc.setTextColor(255, 255, 255);
     this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Hydrogen Capital', this.margin, 10);
+    this.doc.text('Tenure IQ', this.margin, 10);
 
     this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
@@ -902,7 +902,7 @@ export class LenderGradeMortgageBrokerPack {
       // Footer text
       this.doc.setTextColor(107, 114, 128);
       this.doc.setFontSize(8);
-      this.doc.text('Hydrogen Capital | Confidential', this.margin, this.pageHeight - 8);
+      this.doc.text('Tenure IQ | Confidential', this.margin, this.pageHeight - 8);
       this.doc.text(`Page ${i} of ${pageCount}`, this.pageWidth - this.margin, this.pageHeight - 8, { align: 'right' });
     }
   }

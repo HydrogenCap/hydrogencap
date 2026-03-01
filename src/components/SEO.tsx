@@ -10,8 +10,8 @@ interface SEOProps {
 
 export function SEO({ title, description, canonical, ogImage }: SEOProps) {
   const location = useLocation();
-  const fullTitle = title.includes('HydrogenCap') ? title : `${title} | HydrogenCap`;
-  const url = canonical || `https://hydrogencap.com${location.pathname}`;
+  const fullTitle = title.includes('Tenure IQ') ? title : `${title} | Tenure IQ`;
+  const url = canonical || `https://tenureiq.com${location.pathname}`;
 
   useEffect(() => {
     document.title = fullTitle;
@@ -41,7 +41,7 @@ export function SEO({ title, description, canonical, ogImage }: SEOProps) {
     setMetaProperty('twitter:description', description);
 
     return () => {
-      document.title = 'HydrogenCap | Property Portfolio Management';
+      document.title = 'Tenure IQ | Property Portfolio Management';
     };
   }, [fullTitle, description, url, ogImage]);
 

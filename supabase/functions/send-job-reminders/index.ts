@@ -3,8 +3,8 @@
  import { Resend } from 'https://esm.sh/resend@4.0.0';
  
  const ALLOWED_ORIGINS = [
-   "https://hydrogencap.com",
-   "https://www.hydrogencap.com",
+   "https://tenureiq.com",
+   "https://www.tenureiq.com",
    "https://hydrogencapital.lovable.app",
    Deno.env.get("ALLOWED_ORIGIN"),
  ].filter(Boolean) as string[];

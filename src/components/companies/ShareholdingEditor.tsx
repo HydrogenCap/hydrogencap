@@ -212,7 +212,7 @@ export function ShareholdingEditor({
                 <Input
                   value={newPartyName}
                   onChange={(e) => setNewPartyName(e.target.value)}
-                  placeholder="e.g., John Smith or Hydrogen Capital Ltd"
+                  placeholder="e.g., John Smith or Tenure IQ Ltd"
                 />
               </div>
               <div className="space-y-2">

@@ -3,8 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const ALLOWED_ORIGINS = [
-  "https://hydrogencap.com",
-  "https://www.hydrogencap.com",
+  "https://tenureiq.com",
+  "https://www.tenureiq.com",
   "https://hydrogencapital.lovable.app",
   Deno.env.get("ALLOWED_ORIGIN"),
 ].filter(Boolean) as string[];
@@ -97,7 +97,7 @@ serve(async (req: Request) => {
 
       try {
         await resend.emails.send({
-          from: "HydrogenCap <onboarding@resend.dev>",
+          from: "Tenure IQ <onboarding@resend.dev>",
           to: [tenant.email],
           subject: `Upcoming Rent Payment — ${address}`,
           html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
@@ -106,7 +106,7 @@ serve(async (req: Request) => {
             <p>Please ensure payment is made on time.</p>
             <p>Thank you</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-            <p style="color:#888;font-size:12px">Sent automatically by HydrogenCap.</p>
+            <p style="color:#888;font-size:12px">Sent automatically by Tenure IQ.</p>
           </div>`,
         });
 
@@ -152,7 +152,7 @@ serve(async (req: Request) => {
 
       try {
         await resend.emails.send({
-          from: "HydrogenCap <onboarding@resend.dev>",
+          from: "Tenure IQ <onboarding@resend.dev>",
           to: [tenant.email],
           subject: `Rent Payment Due Today — ${address}`,
           html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
@@ -161,7 +161,7 @@ serve(async (req: Request) => {
             <p>Please make payment as soon as possible.</p>
             <p>Thank you</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-            <p style="color:#888;font-size:12px">Sent automatically by HydrogenCap.</p>
+            <p style="color:#888;font-size:12px">Sent automatically by Tenure IQ.</p>
           </div>`,
         });
 
@@ -212,7 +212,7 @@ serve(async (req: Request) => {
 
       try {
         await resend.emails.send({
-          from: "HydrogenCap <onboarding@resend.dev>",
+          from: "Tenure IQ <onboarding@resend.dev>",
           to: [tenant.email],
           subject: `URGENT: Overdue Rent Payment — ${address}`,
           html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
@@ -223,7 +223,7 @@ serve(async (req: Request) => {
             <strong>Original Due Date:</strong> ${item.due_date}</p>
             <p>Thank you</p>
             <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
-            <p style="color:#888;font-size:12px">Sent automatically by HydrogenCap.</p>
+            <p style="color:#888;font-size:12px">Sent automatically by Tenure IQ.</p>
           </div>`,
         });
 

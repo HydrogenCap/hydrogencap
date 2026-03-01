@@ -48,13 +48,13 @@ export default function Install() {
         </div>
 
         <h1 className="text-2xl font-bold text-foreground">
-          {installed ? "App Installed!" : "Install Hydrogen Capital"}
+          {installed ? "App Installed!" : "Install Tenure IQ"}
         </h1>
 
         <p className="text-muted-foreground">
           {installed
-            ? "You can now launch Hydrogen Capital from your home screen."
-            : "Add Hydrogen Capital to your home screen for quick access, offline support, and a native app experience."}
+            ? "You can now launch Tenure IQ from your home screen."
+            : "Add Tenure IQ to your home screen for quick access, offline support, and a native app experience."}
         </p>
 
         {!installed && deferredPrompt && (

@@ -600,11 +600,11 @@ export function useSeedDefaultBeneficialGroup() {
 
       if (error) throw error;
 
-      // Find "David O'Neill" and "Hydrogen Capital Ltd" entities
+      // Find "David O'Neill" and "Tenure IQ Ltd" entities
       const { data: entities } = await supabase
         .from('ownership_entities')
         .select('id, name')
-        .in('name', ['David O\'Neill', 'Hydrogen Capital Ltd']);
+        .in('name', ['David O\'Neill', 'Tenure IQ Ltd']);
 
       // Map them to the group
       if (entities && entities.length > 0) {

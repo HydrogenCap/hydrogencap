@@ -1,6 +1,6 @@
 {
-  "name": "HydrogenCap",
-  "short_name": "HydrogenCap",
+  "name": "TenureIQ",
+  "short_name": "TenureIQ",
   "description": "Property portfolio management for UK landlords and investors",
   "start_url": "/dashboard",
   "display": "standalone",

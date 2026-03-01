@@ -111,7 +111,7 @@ export class ReportPdfBase {
     this.doc.setTextColor(255, 255, 255);
     this.doc.setFontSize(16);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Hydrogen Capital', this.margin, 12);
+    this.doc.text('Tenure IQ', this.margin, 12);
     
     this.doc.setFontSize(10);
     this.doc.setFont('helvetica', 'normal');
@@ -136,7 +136,7 @@ export class ReportPdfBase {
       // Footer text
       this.doc.setTextColor(128, 128, 128);
       this.doc.setFontSize(8);
-      this.doc.text(`Hydrogen Capital | Confidential`, this.margin, this.pageHeight - 8);
+      this.doc.text(`Tenure IQ | Confidential`, this.margin, this.pageHeight - 8);
       this.doc.text(`Page ${i} of ${pageCount}`, this.pageWidth - this.margin, this.pageHeight - 8, { align: 'right' });
     }
   }
@@ -248,12 +248,12 @@ export class PortfolioComplianceReport extends ReportPdfBase {
     this.doc.setTextColor(26, 58, 118);
     this.doc.setFontSize(14);
     this.doc.setFont('helvetica', 'bold');
-    this.doc.text('H', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
+    this.doc.text('T', logoX + logoSize / 2, logoY + logoSize / 2 + 2, { align: 'center' });
     
     // Company name next to logo
     this.doc.setTextColor(255, 255, 255);
     this.doc.setFontSize(12);
-    this.doc.text('Hydrogen Capital', logoX + logoSize + 8, logoY + logoSize / 2 + 2);
+    this.doc.text('Tenure IQ', logoX + logoSize + 8, logoY + logoSize / 2 + 2);
     
     // Title
     this.doc.setFontSize(32);
@@ -336,7 +336,7 @@ export class PortfolioComplianceReport extends ReportPdfBase {
     
     // Narrative
     this.addParagraph(
-      `This report provides a comprehensive overview of compliance status across the Hydrogen Capital property portfolio. ` +
+      `This report provides a comprehensive overview of compliance status across the Tenure IQ property portfolio. ` +
       `As of ${format(this.filters.asOfDate, 'dd MMMM yyyy')}, ${compliant} of ${this.properties.length} properties are fully compliant ` +
       `with all required certifications current and valid.`
     );
@@ -582,7 +582,7 @@ export class PropertyCompliancePack extends ReportPdfBase {
     this.doc.text('Prepared by:', this.margin, this.currentY);
     this.currentY += 6;
     this.doc.setFont('helvetica', 'normal');
-    this.doc.text('Hydrogen Capital', this.margin, this.currentY);
+    this.doc.text('Tenure IQ', this.margin, this.currentY);
     this.currentY += 5;
     this.doc.text('Managed by Oxygen Management Ltd', this.margin, this.currentY);
   }
@@ -720,7 +720,7 @@ export class PropertyCompliancePack extends ReportPdfBase {
     this.doc.setFontSize(9);
     this.doc.setTextColor(26, 58, 118);
     const note = 'Note: For security and data protection, original certificate files are stored securely and can be ' +
-      'accessed via the Hydrogen Capital property portal or provided as separate attachments upon verification.';
+      'accessed via the Tenure IQ property portal or provided as separate attachments upon verification.';
     const lines = this.doc.splitTextToSize(note, this.pageWidth - (this.margin * 2) - 10);
     this.doc.text(lines, this.margin + 5, this.currentY + 7);
   }

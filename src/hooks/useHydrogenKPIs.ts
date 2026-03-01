@@ -2,7 +2,7 @@
  * Hook to extract the principal party's attributed KPIs from portfolio attribution data.
  * 
  * Uses the `is_principal` flag on the parties table to identify the org's own identity
- * (e.g. Hydrogen Capital) and returns its ownership-attributed financial metrics.
+ * (e.g. Tenure IQ) and returns its ownership-attributed financial metrics.
  */
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +60,7 @@ export function useHydrogenKPIs(attribution: OwnerAttribution[] | undefined): Hy
     const principal = attribution.find(
       a => a.ownerId === principalParty.id
     ) ?? attribution.find(
-      a => a.ownerName.toUpperCase().includes('HYDROGEN CAPITAL')
+      a => a.ownerName.toUpperCase().includes('TENURE IQ')
     );
 
     if (!principal) {
