@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building2, Home, Rocket, ArrowRight, ArrowLeft, CheckCircle2, User, Target } from 'lucide-react';
+import { Building2, Home, Rocket, ArrowRight, ArrowLeft, CheckCircle2, User, Target, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { AddressAutocomplete, type AddressData } from '@/components/maps/AddressAutocomplete';
+import { seedDemoData } from '@/lib/seedDemoData';
 
 const STEPS = ['Welcome', 'About You', 'Organization', 'First Property', 'Your Goals', 'Complete'];
 
@@ -73,6 +74,7 @@ export function OnboardingWizard() {
   const [rooms, setRooms] = useState('');
   // Goals
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [seedingDemo, setSeedingDemo] = useState(false);
 
   const isHmo = propertyType.includes('hmo');
 
@@ -425,23 +427,52 @@ export function OnboardingWizard() {
           )}
 
           {/* Navigation buttons */}
-          <div className="flex justify-between pt-2">
-            {step > 0 && step < STEPS.length - 1 ? (
-              <Button variant="ghost" onClick={() => setStep(s => s - 1)}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex justify-between">
+              {step > 0 && step < STEPS.length - 1 ? (
+                <Button variant="ghost" onClick={() => setStep(s => s - 1)}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                </Button>
+              ) : (
+                <div />
+              )}
+              <Button onClick={handleNext} disabled={!canProceed()}>
+                {step === 0 && 'Get Started'}
+                {step === 1 && 'Continue'}
+                {step === 2 && 'Continue'}
+                {step === 3 && (address.trim() ? 'Add & Continue' : 'Skip')}
+                {step === 4 && (selectedGoals.length > 0 ? 'Continue' : 'Skip')}
+                {step === 5 && 'Go to Dashboard'}
+                {step < 5 && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
-            ) : (
-              <div />
+            </div>
+            {step === 5 && (
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={seedingDemo}
+                onClick={async () => {
+                  setSeedingDemo(true);
+                  try {
+                    const orgId = await fetchUserOrgId();
+                    const result = await seedDemoData(orgId, user!.id);
+                    if (result.success) {
+                      toast({ title: 'Demo portfolio loaded', description: '3 properties with sample data' });
+                    } else {
+                      toast({ title: 'Failed to load demo data', description: result.error, variant: 'destructive' });
+                    }
+                    await completeOnboarding.mutateAsync();
+                    navigate('/dashboard');
+                  } catch {
+                    toast({ title: 'Something went wrong', variant: 'destructive' });
+                    setSeedingDemo(false);
+                  }
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {seedingDemo ? 'Loading demo data…' : 'Explore with demo data first'}
+              </Button>
             )}
-            <Button onClick={handleNext} disabled={!canProceed()}>
-              {step === 0 && 'Get Started'}
-              {step === 1 && 'Continue'}
-              {step === 2 && 'Continue'}
-              {step === 3 && (address.trim() ? 'Add & Continue' : 'Skip')}
-              {step === 4 && (selectedGoals.length > 0 ? 'Continue' : 'Skip')}
-              {step === 5 && 'Go to Dashboard'}
-              {step < 5 && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
           </div>
         </CardContent>
       </Card>
