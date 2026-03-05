@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, FileWarning, Check, X, AlertTriangle, Plus, Bell, DoorOpen } from 'lucide-react';
+import { ArrowLeft, Edit, FileWarning, Check, X, AlertTriangle, Plus, Bell, DoorOpen, RefreshCw } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { CreateTenancyAgreementModal } from '@/components/tenants-v2/CreateTenan
 import { ServeNoticeModal } from '@/components/tenants-v2/ServeNoticeModal';
 import { EndTenancyModal } from '@/components/tenants-v2/EndTenancyModal';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const STATUS_BG: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700', prospective: 'bg-blue-100 text-blue-700',
@@ -72,6 +73,33 @@ export default function TenantDetailV2() {
 
   const age = tenant.date_of_birth ? differenceInYears(new Date(), new Date(tenant.date_of_birth)) : null;
   const hasComplianceIssues = compliance && !compliance.section_21_ready;
+
+  const [charges, setCharges] = useState<any[]>([]);
+  const [showAddCharge, setShowAddCharge] = useState(false);
+  const [newCharge, setNewCharge] = useState({ description: '', amount: '', frequency: 'monthly' });
+
+  useEffect(() => {
+    if (!id) return;
+    (supabase as any).from('recurring_charges').select('*')
+      .eq('tenant_id', id).order('created_at', { ascending: false })
+      .then(({ data }: any) => setCharges(data || []));
+  }, [id]);
+
+  const addCharge = async () => {
+    if (!newCharge.description || !newCharge.amount) return;
+    const orgId = (tenant as any)?.org_id;
+    if (!orgId) return;
+    const { data } = await (supabase as any)
+      .from('recurring_charges')
+      .insert({ org_id: orgId, tenant_id: id, description: newCharge.description, amount: parseFloat(newCharge.amount), frequency: newCharge.frequency })
+      .select().single();
+    if (data) { setCharges((p: any[]) => [data, ...p]); setNewCharge({ description: '', amount: '', frequency: 'monthly' }); setShowAddCharge(false); }
+  };
+
+  const removeCharge = async (chargeId: string) => {
+    await (supabase as any).from('recurring_charges').delete().eq('id', chargeId);
+    setCharges((p: any[]) => p.filter((c: any) => c.id !== chargeId));
+  };
 
   return (
     <AppLayout>
@@ -218,6 +246,73 @@ export default function TenantDetailV2() {
             <CardContent><p className="text-sm whitespace-pre-wrap">{tenant.notes}</p></CardContent>
           </Card>
         )}
+
+        {/* Recurring Charges */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="h-5 w-5" />
+                Recurring Charges
+              </CardTitle>
+              <Button size="sm" variant="outline" onClick={() => setShowAddCharge(!showAddCharge)}>
+                <Plus className="h-4 w-4 mr-1" /> Add
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {showAddCharge && (
+              <div className="flex gap-2 items-end p-3 bg-muted rounded-lg">
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">Description</label>
+                  <input className="w-full border rounded px-2 py-1 text-sm" placeholder="e.g. Parking, Cleaning, Internet"
+                    value={newCharge.description} onChange={e => setNewCharge(p => ({ ...p, description: e.target.value }))} />
+                </div>
+                <div className="w-24">
+                  <label className="text-xs text-muted-foreground mb-1 block">Amount (£)</label>
+                  <input className="w-full border rounded px-2 py-1 text-sm" placeholder="0.00" type="number"
+                    value={newCharge.amount} onChange={e => setNewCharge(p => ({ ...p, amount: e.target.value }))} />
+                </div>
+                <div className="w-28">
+                  <label className="text-xs text-muted-foreground mb-1 block">Frequency</label>
+                  <select className="w-full border rounded px-2 py-1 text-sm bg-background"
+                    value={newCharge.frequency} onChange={e => setNewCharge(p => ({ ...p, frequency: e.target.value }))}>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annually">Annually</option>
+                  </select>
+                </div>
+                <Button size="sm" onClick={addCharge}>Save</Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowAddCharge(false)}>Cancel</Button>
+              </div>
+            )}
+            {charges.length === 0 && !showAddCharge ? (
+              <p className="text-sm text-muted-foreground">No recurring charges set up.</p>
+            ) : charges.length > 0 ? (
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Description</TableHead><TableHead>Amount</TableHead>
+                  <TableHead>Frequency</TableHead><TableHead></TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {charges.map((c: any) => (
+                    <TableRow key={c.id}>
+                      <TableCell>{c.description}</TableCell>
+                      <TableCell>£{Number(c.amount).toFixed(2)}</TableCell>
+                      <TableCell className="capitalize">{c.frequency}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" className="text-destructive h-7 w-7 p-0" onClick={() => removeCharge(c.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : null}
+          </CardContent>
+        </Card>
       </div>
 
       <AddTenantModal open={showEdit} onOpenChange={setShowEdit} />
