@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { PoundSterling, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { useRentSchedule } from '@/hooks/useRentCollection';
+import { PoundSterling, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { useRentSchedule, normalizeRentItem } from '@/hooks/useRentCollection';
 import { formatGBP } from '@/lib/calculations';
 
 export function RentCollectionWidget() {
@@ -31,6 +31,14 @@ export function RentCollectionWidget() {
       paidCount,
       totalCount: schedule.length,
     };
+  }, [schedule]);
+  const overdueItems = useMemo(() => {
+    if (!schedule) return [];
+    return schedule
+      .filter(item => item.status === 'overdue' || (item.amount_outstanding > 0 && new Date(item.due_date) < new Date()))
+      .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+      .slice(0, 5)
+      .map(item => ({ ...normalizeRentItem(item), amount_outstanding: item.amount_outstanding, due_date: item.due_date }));
   }, [schedule]);
 
   const monthLabel = format(new Date(), 'MMMM');
@@ -72,6 +80,26 @@ export function RentCollectionWidget() {
             </p>
           </div>
         </div>
+        {overdueItems.length > 0 && (
+          <div className="space-y-1.5 border-t pt-3">
+            <p className="text-xs font-medium text-destructive flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Overdue tenants
+            </p>
+            {overdueItems.map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs py-1 border-b last:border-0">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{item.tenantName}</p>
+                  <p className="text-muted-foreground truncate">{item.roomName}</p>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <p className="font-bold text-destructive">{formatGBP(item.amount_outstanding)}</p>
+                  <p className="text-muted-foreground">{differenceInDays(new Date(), new Date(item.due_date))}d overdue</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <Link to="/rent" className="flex items-center gap-1 text-sm text-primary hover:underline">
           View rent ledger
