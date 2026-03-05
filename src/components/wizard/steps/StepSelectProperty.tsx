@@ -25,10 +25,12 @@ interface Room {
 export function StepSelectProperty({ payload, updatePayload }: StepProps) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       const orgId = await fetchUserOrgId();
+      setOrgId(orgId);
       const { data } = await supabase
         .from('properties_v2')
         .select('id, address_line_1, postcode')
@@ -42,7 +44,7 @@ export function StepSelectProperty({ payload, updatePayload }: StepProps) {
   // Load rooms when property changes
   useEffect(() => {
     const propertyId = payload.property_id as string;
-    if (!propertyId) {
+    if (!propertyId || !orgId) {
       setRooms([]);
       return;
     }
@@ -51,11 +53,12 @@ export function StepSelectProperty({ payload, updatePayload }: StepProps) {
         .from('rooms_v2')
         .select('id, room_name, room_type')
         .eq('property_id', propertyId)
+        .eq('org_id', orgId)
         .order('room_name');
       setRooms(data || []);
     }
     loadRooms();
-  }, [payload.property_id]);
+  }, [payload.property_id, orgId]);
 
   return (
     <div className="space-y-4">
