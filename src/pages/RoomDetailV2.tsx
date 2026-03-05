@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -14,6 +14,7 @@ import { RoomFormModal } from '@/components/properties-v2/RoomFormModal';
 import { CreateTenancyAgreementModal } from '@/components/tenants-v2/CreateTenancyAgreementModal';
 import { useToast } from '@/hooks/use-toast';
 import { format, differenceInDays } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 const ROOM_TYPE_BG: Record<string, string> = {
   single: 'bg-slate-100 text-slate-700', double: 'bg-blue-100 text-blue-700',
@@ -47,6 +48,17 @@ export default function RoomDetailV2() {
   const [showCreateAgreement, setShowCreateAgreement] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+  const [compliance, setCompliance] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from('compliance_documents_v2')
+      .select('*')
+      .eq('room_id', id)
+      .order('expiry_date', { ascending: true })
+      .then(({ data }) => setCompliance(data || []));
+  }, [id]);
 
   const activeAgreement = useMemo(() => roomAgreements?.find(a => a.status === 'active' || a.status === 'notice_period'), [roomAgreements]);
 
@@ -288,6 +300,38 @@ export default function RoomDetailV2() {
               </div>
             ) : (
               <p className={room.notes ? 'text-foreground' : 'text-muted-foreground'}>{room.notes || 'No notes'}</p>
+            )}
+          </CardContent>
+        </Card>
+        {/* Room Compliance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Room Compliance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {compliance.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No compliance documents for this room.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Issue Date</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {compliance.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium">{doc.document_type}</TableCell>
+                      <TableCell>{doc.issue_date ? format(new Date(doc.issue_date), 'dd MMM yyyy') : '—'}</TableCell>
+                      <TableCell>{doc.expiry_date ? format(new Date(doc.expiry_date), 'dd MMM yyyy') : '—'}</TableCell>
+                      <TableCell><Badge variant={doc.status === 'valid' ? 'default' : 'destructive'}>{doc.status}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
