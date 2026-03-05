@@ -1,4 +1,4 @@
-import { Home, Shield, FileUp, CheckSquare } from 'lucide-react';
+import { Home, DoorOpen, Shield, FileUp, CheckSquare } from 'lucide-react';
 import type { WizardStepConfig, WizardPayload, ValidationResult } from './types';
 
 function ok(): ValidationResult {
@@ -16,6 +16,14 @@ export const COMPLIANCE_STEPS: WizardStepConfig[] = [
       if (!d.property_id) errors.push({ field: 'property_id', message: 'Property is required', priority: 'P0' as const });
       return { valid: errors.length === 0, errors };
     },
+  },
+  {
+    id: 'select_room',
+    title: 'Select Room',
+    subtitle: 'Optionally assign to a specific room',
+    icon: DoorOpen,
+    isOptional: true,
+    validate: (): ValidationResult => ok(),
   },
   {
     id: 'compliance_type',

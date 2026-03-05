@@ -6,11 +6,12 @@ import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import type { WizardPayload } from '@/lib/wizard/types';
 
 import { StepSelectProperty } from '@/components/wizard/steps/StepSelectProperty';
+import { StepSelectRoom } from '@/components/wizard/steps/StepSelectRoom';
 import { StepComplianceType } from '@/components/wizard/steps/StepComplianceType';
 import { StepUploadCertificate } from '@/components/wizard/steps/StepUploadCertificate';
 import { StepComplianceReview } from '@/components/wizard/steps/StepComplianceReview';
 
-const STEP_COMPONENTS = [StepSelectProperty, StepComplianceType, StepUploadCertificate, StepComplianceReview];
+const STEP_COMPONENTS = [StepSelectProperty, StepSelectRoom, StepComplianceType, StepUploadCertificate, StepComplianceReview];
 
 export default function AddComplianceWizard() {
   const navigate = useNavigate();
