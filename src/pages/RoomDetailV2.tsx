@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Plus } from 'lucide-react';
+import { ArrowLeft, Edit, Plus, TrendingUp } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -117,6 +117,32 @@ export default function RoomDetailV2() {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
+
+  const [maintenanceCosts, setMaintenanceCosts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from('maintenance_requests')
+      .select('actual_cost')
+      .eq('room_v2_id', id)
+      .not('actual_cost', 'is', null)
+      .then(({ data }) => setMaintenanceCosts(data || []));
+  }, [id]);
+
+  const maintenanceCostTotal = useMemo(() =>
+    maintenanceCosts.reduce((sum: number, r: any) => sum + (r.actual_cost || 0), 0),
+  [maintenanceCosts]);
+
+  const annualRent = useMemo(() => {
+    const active = (roomAgreements as any[])?.find(a => a.status === 'active');
+    if (active) return active.rent_amount_pcm * 12;
+    if ((roomAgreements as any[])?.length > 0) return (roomAgreements as any[])[0].rent_amount_pcm * 12;
+    return 0;
+  }, [roomAgreements]);
+
+  const netProfit = annualRent - maintenanceCostTotal;
+  const profitMargin = annualRent > 0 ? Math.max(0, Math.min(100, (netProfit / annualRent) * 100)) : 0;
 
   return (
     <AppLayout>
@@ -333,6 +359,42 @@ export default function RoomDetailV2() {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Profitability */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Profitability
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="space-y-1 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg">
+                <p className="text-xs text-muted-foreground">Annual Rent</p>
+                <p className="text-xl font-bold text-emerald-600">{fmtRent(annualRent)}</p>
+              </div>
+              <div className="space-y-1 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                <p className="text-xs text-muted-foreground">Maintenance Costs</p>
+                <p className="text-xl font-bold text-destructive">-{fmtRent(maintenanceCostTotal)}</p>
+                <p className="text-xs text-muted-foreground">{maintenanceCosts.length} job{maintenanceCosts.length !== 1 ? 's' : ''}</p>
+              </div>
+              <div className="space-y-1 p-3 rounded-lg" style={{ background: netProfit >= 0 ? 'rgb(240 253 244)' : 'rgb(254 242 242)' }}>
+                <p className="text-xs text-muted-foreground">Net Annual Profit</p>
+                <p className={`text-xl font-bold ${netProfit >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>{fmtRent(netProfit)}</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Profit margin after maintenance</span>
+                <span>{Math.round(profitMargin)}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: profitMargin + '%' }} />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
