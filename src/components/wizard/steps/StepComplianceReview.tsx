@@ -11,6 +11,7 @@ export function StepComplianceReview({ payload }: StepProps) {
     <div className="space-y-4">
       <h3 className="font-semibold">Compliance Record Summary</h3>
       <Row label="Property" value={payload._property_address as string} required />
+      {payload._room_name && <Row label="Room" value={payload._room_name as string} />}
       <Row label="Document type" value={payload._document_display_name as string} required />
       <Row label="Issue date" value={payload.issue_date as string} required />
       <Row label="Expiry date" value={payload.expiry_date as string} />

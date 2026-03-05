@@ -23,6 +23,7 @@ export default function AddComplianceWizard() {
       .insert({
         org_id: orgId,
         property_id: payload.property_id as string,
+        room_id: (payload.room_id as string) || null,
         document_type: payload.document_type as string,
         issue_date: payload.issue_date as string,
         expiry_date: (payload.expiry_date as string) || null,
