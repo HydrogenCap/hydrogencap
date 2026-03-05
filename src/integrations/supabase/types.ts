@@ -1155,6 +1155,7 @@ export type Database = {
           notes: string | null
           org_id: string
           property_id: string
+          room_id: string | null
           status: string
           supersedes_id: string | null
           updated_at: string | null
@@ -1181,6 +1182,7 @@ export type Database = {
           notes?: string | null
           org_id: string
           property_id: string
+          room_id?: string | null
           status?: string
           supersedes_id?: string | null
           updated_at?: string | null
@@ -1207,6 +1209,7 @@ export type Database = {
           notes?: string | null
           org_id?: string
           property_id?: string
+          room_id?: string | null
           status?: string
           supersedes_id?: string | null
           updated_at?: string | null
@@ -1241,6 +1244,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_v2_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "compliance_documents_v2_supersedes_id_fkey"
@@ -1465,6 +1475,7 @@ export type Database = {
           property_id: string
           requirement_reason: string | null
           review_frequency_months: number | null
+          room_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1479,6 +1490,7 @@ export type Database = {
           property_id: string
           requirement_reason?: string | null
           review_frequency_months?: number | null
+          room_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1493,6 +1505,7 @@ export type Database = {
           property_id?: string
           requirement_reason?: string | null
           review_frequency_months?: number | null
+          room_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1516,6 +1529,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_v2_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms_v2"
+            referencedColumns: ["id"]
           },
         ]
       }
