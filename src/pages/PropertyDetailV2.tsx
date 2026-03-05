@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Flame, Landmark } from 'lucide-react';
+import { ArrowLeft, Edit, Flame, Landmark, QrCode, Copy } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -212,6 +212,31 @@ export default function PropertyDetailV2() {
             ) : (
               <p className={property.notes ? 'text-foreground' : 'text-muted-foreground'}>{property.notes || 'No notes'}</p>
             )}
+          </CardContent>
+        </Card>
+        {/* Maintenance QR Code */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Maintenance QR Code
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-6">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/tenant-portal/maintenance')}`}
+              alt="Maintenance QR code"
+              className="rounded border"
+              width={180}
+              height={180}
+            />
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Tenants scan this to report a maintenance issue directly from their phone.</p>
+              <p className="text-xs font-mono bg-muted px-2 py-1 rounded">{window.location.origin}/tenant-portal/maintenance</p>
+              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast({ title: 'Link copied!' }); }}>
+                <Copy className="h-3 w-3 mr-1" /> Copy link
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
