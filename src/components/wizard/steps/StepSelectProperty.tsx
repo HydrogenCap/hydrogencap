@@ -16,21 +16,12 @@ interface Property {
   postcode: string;
 }
 
-interface Room {
-  id: string;
-  room_name: string;
-  room_type: string;
-}
-
 export function StepSelectProperty({ payload, updatePayload }: StepProps) {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       const orgId = await fetchUserOrgId();
-      setOrgId(orgId);
       const { data } = await supabase
         .from('properties_v2')
         .select('id, address_line_1, postcode')
@@ -40,25 +31,6 @@ export function StepSelectProperty({ payload, updatePayload }: StepProps) {
     }
     load();
   }, []);
-
-  // Load rooms when property changes
-  useEffect(() => {
-    const propertyId = payload.property_id as string;
-    if (!propertyId || !orgId) {
-      setRooms([]);
-      return;
-    }
-    async function loadRooms() {
-      const { data } = await supabase
-        .from('rooms_v2')
-        .select('id, room_name, room_type')
-        .eq('property_id', propertyId)
-        .eq('org_id', orgId)
-        .order('room_name');
-      setRooms(data || []);
-    }
-    loadRooms();
-  }, [payload.property_id, orgId]);
 
   return (
     <div className="space-y-4">
@@ -71,7 +43,7 @@ export function StepSelectProperty({ payload, updatePayload }: StepProps) {
             updatePayload({
               property_id: v,
               _property_address: prop ? `${prop.address_line_1}, ${prop.postcode}` : '',
-              room_id: undefined,
+              room_id: null,
               _room_name: undefined,
             });
           }}
@@ -86,36 +58,6 @@ export function StepSelectProperty({ payload, updatePayload }: StepProps) {
           </SelectContent>
         </Select>
       </div>
-
-      {rooms.length > 0 && (
-        <div>
-          <Label>Room (optional)</Label>
-          <Select
-            value={(payload.room_id as string) || '__none__'}
-            onValueChange={(v) => {
-              const roomId = v === '__none__' ? undefined : v;
-              const room = rooms.find((r) => r.id === v);
-              updatePayload({
-                room_id: roomId,
-                _room_name: room ? room.room_name : undefined,
-              });
-            }}
-          >
-            <SelectTrigger><SelectValue placeholder="Whole property" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Whole property</SelectItem>
-              {rooms.map((r) => (
-                <SelectItem key={r.id} value={r.id}>
-                  {r.room_name} ({r.room_type})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground mt-1">
-            Assign to a specific room for HMO room-level compliance
-          </p>
-        </div>
-      )}
     </div>
   );
 }
