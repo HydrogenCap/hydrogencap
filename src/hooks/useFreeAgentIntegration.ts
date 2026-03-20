@@ -179,7 +179,7 @@ export function buildFreeAgentAuthUrl(
   userId: string,
   useSandbox: boolean = false
 ): string {
-  const FREEAGENT_CLIENT_ID = import.meta.env.VITE_FREEAGENT_CLIENT_ID || '';
+  const FREEAGENT_CLIENT_ID = 'ctJauXO4z3j4tDVb8JMCXw';
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
   const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
 
