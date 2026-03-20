@@ -1,77 +1,52 @@
-# Welcome to your Lovable project
+# TenureIQ — Property Intelligence Platform
 
-## Project info
+Property intelligence platform for UK HMO landlords and investors. Track compliance, rent collection, lending, and portfolio performance in one place.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🌐 **[tenureiq.com](https://tenureiq.com)**
 
-## How can I edit this code?
+## Tech Stack
 
-There are several ways of editing your application.
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui
+- **Backend**: Supabase (Postgres, Auth, Edge Functions, Storage)
+- **Payments**: Stripe
+- **Maps**: Google Maps, Leaflet / OpenStreetMap
+- **AI**: Lovable AI Gateway (Gemini, GPT)
+- **Monitoring**: Sentry
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Local Development
 
 ```sh
-# Step 1: Clone the repository
+# 1. Clone the repo
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install dependencies
-npm i
+# 2. Install dependencies
+npm install
 
-# Step 4: Set up environment variables
+# 3. Set up environment variables
 cp .env.example .env
-# Edit .env with your Supabase project credentials
+# Fill in your Supabase URL, anon key, and project ID
 
-# Step 5: Start the development server
+# 4. Start dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Edge Functions
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Edge functions live in `supabase/functions/`. They are deployed automatically via Lovable Cloud. Shared utilities are in `supabase/functions/_shared/`.
 
-**Use GitHub Codespaces**
+## Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+src/
+├── components/     # UI components (Shadcn + custom)
+├── contexts/       # React contexts (Auth, Theme, Subscription)
+├── hooks/          # Data-fetching hooks (React Query + Supabase)
+├── lib/            # Utilities, schemas, wizard configs
+├── pages/          # Route-level page components
+└── integrations/   # Auto-generated Supabase client & types
+```
 
-## What technologies are used for this project?
+## License
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Proprietary — © Oxygen Management Ltd
