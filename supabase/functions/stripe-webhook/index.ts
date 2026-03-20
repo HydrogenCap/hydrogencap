@@ -116,10 +116,9 @@ async function syncSubscriptionByEmail(
   if (profiles?.length) {
     userId = profiles[0].user_id;
   } else {
-    // Fallback to auth admin API
-    const { data: authData } = await supabase.auth.admin.listUsers();
-    const authUser = authData?.users?.find((u: any) => u.email === email);
-    if (!authUser) {
+    // Fallback to auth admin API — use targeted lookup instead of listing all users
+    const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserByEmail(email);
+    if (authError || !authUser) {
       console.error(`[STRIPE-WEBHOOK] No user found for email: ${email}`);
       return;
     }
