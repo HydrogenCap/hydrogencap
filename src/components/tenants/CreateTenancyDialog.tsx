@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { captureError } from '@/lib/sentry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
