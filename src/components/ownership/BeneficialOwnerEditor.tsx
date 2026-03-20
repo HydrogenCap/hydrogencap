@@ -148,6 +148,7 @@ export function BeneficialOwnerEditor({
       toast({ title: `Created "${newParty.display_name}"` });
     } catch (err) {
       console.error('Error creating party:', err);
+      captureError(err, 'BeneficialOwnerEditor.createParty');
       toast({
         title: 'Error',
         description: 'Failed to create person',

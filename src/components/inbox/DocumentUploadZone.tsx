@@ -43,6 +43,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       }
     } catch (err) {
       console.error('AI processing error:', err);
+      captureError(err, 'DocumentUploadZone.aiProcess');
     }
   };
 

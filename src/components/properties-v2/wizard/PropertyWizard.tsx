@@ -253,6 +253,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       navigate(`/properties-v2/${property.id}`);
     } catch (err: any) {
       console.error('Property creation failed:', err);
+      captureError(err, 'PropertyWizard.create');
       toast({ title: 'Failed to create property', description: err.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);

@@ -126,6 +126,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       });
     } catch (err) {
       console.error('Passport save error:', err);
+      captureError(err, 'PassportForm.save');
       toast({
         title: 'Error',
         description: 'Failed to save passport.',

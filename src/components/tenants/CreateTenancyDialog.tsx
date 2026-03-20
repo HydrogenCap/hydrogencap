@@ -332,6 +332,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       onOpenChange(false);
     } catch (err) {
       console.error('Failed to create tenancy:', err);
+      captureError(err, 'CreateTenancyDialog.create');
     }
   };
 

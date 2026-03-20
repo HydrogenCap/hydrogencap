@@ -240,6 +240,7 @@ export function ComplianceUploadDialog({
       resetDialog();
     } catch (error) {
       console.error('Save error:', error);
+      captureError(error, 'ComplianceUploadDialog.save');
       toast({
         title: 'Error saving document',
         description: 'Please try again.',
