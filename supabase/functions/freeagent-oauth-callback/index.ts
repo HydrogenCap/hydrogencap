@@ -31,25 +31,34 @@ Deno.serve(async (req) => {
   const state = url.searchParams.get("state");
 
   if (!code || !state) {
-    return new Response("Missing code or state", { status: 400 });
+    return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=missing_params`, 302);
   }
 
   try {
     const stateData = JSON.parse(atob(state));
     const { entityId, companyId, orgId, userId, useSandbox } = stateData;
 
+    // Validate required state fields to prevent forged states
+    if (!orgId || !userId) {
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_state`, 302);
+    }
+
+    // Verify the userId from state matches a real user in the org
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("org_id", orgId)
+      .maybeSingle();
+
+    if (!membership) {
+      console.error("OAuth CSRF check failed: userId not a member of orgId");
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=unauthorized`, 302);
+    }
+
     const apiBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
     const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
-
-    console.log("OAuth debug:", {
-      apiBase,
-      redirectUri,
-      clientIdPrefix: FREEAGENT_CLIENT_ID.substring(0, 6) + "...",
-      secretPrefix: FREEAGENT_CLIENT_SECRET.substring(0, 4) + "...",
-      useSandbox,
-      entityId,
-      companyId,
-    });
 
     // Exchange authorization code for tokens
     const tokenResponse = await fetch(`${apiBase}/v2/token_endpoint`, {
@@ -66,9 +75,8 @@ Deno.serve(async (req) => {
     });
 
     if (!tokenResponse.ok) {
-      const err = await tokenResponse.text();
-      console.error("FreeAgent token exchange failed:", err);
-      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&msg=token_exchange_failed`, 302);
+      console.error("FreeAgent token exchange failed:", tokenResponse.status);
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=token_exchange`, 302);
     }
 
     const tokens = await tokenResponse.json();
@@ -93,9 +101,6 @@ Deno.serve(async (req) => {
     const accessTokenEnc = await encrypt(tokens.access_token);
     const refreshTokenEnc = await encrypt(tokens.refresh_token);
     const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
-
-    // Store connection
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     // Bridge: find the V1 company_id via company_number matching
     let resolvedCompanyId = companyId || null;
@@ -138,8 +143,8 @@ Deno.serve(async (req) => {
       .upsert(upsertData, { onConflict: "org_id,company_id" });
 
     if (upsertError) {
-      console.error("DB upsert failed:", upsertError);
-      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&msg=db_error`, 302);
+      console.error("DB upsert failed:", upsertError.message);
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=db_error`, 302);
     }
 
     return Response.redirect(
@@ -147,7 +152,7 @@ Deno.serve(async (req) => {
       302
     );
   } catch (error: any) {
-    console.error("FreeAgent OAuth callback error:", error);
-    return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&msg=${encodeURIComponent(error.message)}`, 302);
+    console.error("FreeAgent OAuth callback error:", error.message);
+    return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=unexpected`, 302);
   }
 });
