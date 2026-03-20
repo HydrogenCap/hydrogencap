@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { captureError } from '@/lib/sentry';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
