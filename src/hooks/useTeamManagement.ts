@@ -286,6 +286,8 @@ export function useChangeTeamRole() {
 
   return useMutation({
     mutationFn: async ({ membershipId, newRole }: { membershipId: string; newRole: AppRole }) => {
+      // RLS enforces that only admin/owner can update membership roles.
+      // Non-admin callers will receive a permission error from the DB.
       const { error } = await supabase
         .from('memberships')
         .update({ role: newRole })
