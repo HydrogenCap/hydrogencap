@@ -46,9 +46,9 @@ export function usePropertyPnL(propertyId: string | undefined) {
           .eq('property_id', propertyId)
           .eq('status', 'active'),
 
-        // 5. Maintenance costs from works_orders
+        // 5. Maintenance costs from work_orders
         supabase
-          .from('works_orders' as any)
+          .from('work_orders')
           .select('paid_amount, paid_date')
           .eq('property_id', propertyId)
           .not('paid_amount', 'is', null)
