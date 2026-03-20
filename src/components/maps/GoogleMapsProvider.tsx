@@ -39,16 +39,20 @@ async function fetchApiKey(): Promise<string | null> {
     return envKey;
   }
 
-  // Fallback: fetch from edge function
+  // Fallback: fetch from edge function using the user's session token
   try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return null;
+
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    if (!supabaseUrl || !supabaseKey) return null;
+    if (!supabaseUrl) return null;
 
     const res = await fetch(`${supabaseUrl}/functions/v1/get-maps-key`, {
       headers: {
-        'Authorization': `Bearer ${supabaseKey}`,
+        'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
     });
     if (!res.ok) return null;
