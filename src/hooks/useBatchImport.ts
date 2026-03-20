@@ -17,6 +17,10 @@ export function useBatchImport() {
 
   return useMutation({
     mutationFn: async (validatedRows: ValidatedRow[]): Promise<ImportResult> => {
+      if (validatedRows.length > 500) {
+        throw new Error('Import limited to 500 rows at once. Split your file and import in batches.');
+      }
+
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 

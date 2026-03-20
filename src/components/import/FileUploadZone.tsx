@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react';
 import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 interface FileUploadZoneProps {
   onFileSelect: (file: File) => void;
@@ -10,6 +14,7 @@ interface FileUploadZoneProps {
 
 export function FileUploadZone({ onFileSelect, selectedFile, onClear }: FileUploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const { toast } = useToast();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -27,16 +32,24 @@ export function FileUploadZone({ onFileSelect, selectedFile, onClear }: FileUplo
     
     const file = e.dataTransfer.files[0];
     if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast({ title: 'File too large', description: `Maximum file size is ${MAX_FILE_SIZE_MB}MB. Please split your file.`, variant: 'destructive' });
+        return;
+      }
       onFileSelect(file);
     }
-  }, [onFileSelect]);
+  }, [onFileSelect, toast]);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast({ title: 'File too large', description: `Maximum file size is ${MAX_FILE_SIZE_MB}MB. Please split your file.`, variant: 'destructive' });
+        return;
+      }
       onFileSelect(file);
     }
-  }, [onFileSelect]);
+  }, [onFileSelect, toast]);
 
   if (selectedFile) {
     return (

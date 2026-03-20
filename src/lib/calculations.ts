@@ -612,6 +612,15 @@ export function calculateHealthScore(inputs: PropertyHealthInputs): HealthScoreB
     }
   }
   // If EPC not required (listed building), no penalty
+
+  // Gas safety penalty (legally required annually)
+  if (inputs.hasGasSafety === false) {
+    complianceScore -= 15;
+  }
+  // EICR penalty (legally required every 5 years)
+  if (inputs.hasEICR === false) {
+    complianceScore -= 10;
+  }
   
   complianceScore = Math.max(0, complianceScore);
 

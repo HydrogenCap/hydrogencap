@@ -141,19 +141,21 @@ export function useShareholderPortfolioData() {
     enabled: !!orgId && isShareholderUser,
   });
 
-  // Cover photos (unchanged)
+  // Cover photos — scoped to shareholder's property IDs only
+  const propertyIds = (properties || []).map((p: any) => p.id);
   const { data: coverPhotos, isLoading: photosLoading } = useQuery({
-    queryKey: ['shareholder-cover-photos', orgId],
+    queryKey: ['shareholder-cover-photos', orgId, propertyIds],
     queryFn: async () => {
-      if (!orgId) return [];
+      if (!orgId || propertyIds.length === 0) return [];
       const { data, error } = await supabase
         .from('photos')
         .select('id, property_id, file_url, is_cover')
-        .eq('is_cover', true);
+        .eq('is_cover', true)
+        .in('property_id', propertyIds);
       if (error) throw error;
       return data;
     },
-    enabled: !!orgId && isShareholderUser,
+    enabled: !!orgId && isShareholderUser && !!properties && properties.length > 0,
   });
 
   const coverPhotoMap = new Map<string, string>();

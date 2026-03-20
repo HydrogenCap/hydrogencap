@@ -118,8 +118,14 @@ export function scoreMatch(
     }
   }
 
-  // Minimum confidence threshold
-  if (score < 30) return null;
+  // Minimum confidence threshold (raised from 30 to 40)
+  if (score < 40) return null;
+
+  // Below 60: require at least one non-amount signal to avoid false positives in HMO portfolios
+  const nonAmountReasons = ['reference_match', 'partial_reference', 'full_name_in_desc', 'surname_in_desc'];
+  if (score < 60 && !reasons.some(r => nonAmountReasons.includes(r))) {
+    return null;
+  }
 
   return {
     transactionId: txn.id,
