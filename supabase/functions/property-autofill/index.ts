@@ -222,6 +222,12 @@ serve(async (req) => {
       });
     }
 
+    // Rate limit check
+    const rateLimit = await checkRateLimit(u.user.id, 'property-autofill', 20, 60);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
+    }
+
     const { postcode, address_line_1 } = await req.json();
     if (!postcode) {
       return new Response(JSON.stringify({ error: "postcode is required" }), {
