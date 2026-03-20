@@ -117,7 +117,7 @@ export function useCreateWorksOrder() {
       const { data: orderNumber } = await supabase.rpc('generate_works_order_number');
 
       const { data, error } = await supabase
-        .from('works_orders')
+        .from('works_orders' as any)
         .insert({
           ...order,
           org_id: orgId,
