@@ -98,6 +98,25 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate the calling user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userSupabase = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await userSupabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const body = await req.json();
     const { entityId, companyId: legacyCompanyId } = body;
@@ -127,6 +146,20 @@ Deno.serve(async (req) => {
     if (connError || !connection) {
       return new Response(JSON.stringify({ error: "No FreeAgent connection" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify the user is a member of the org that owns this connection
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("org_id", connection.org_id)
+      .single();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

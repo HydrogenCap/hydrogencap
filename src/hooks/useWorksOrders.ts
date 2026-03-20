@@ -61,7 +61,7 @@ export function useWorksOrdersForRequest(requestId: string | undefined) {
     queryKey: ['works_orders', 'request', requestId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('works_orders' as any)
+        .from('work_orders')
         .select(`
           *,
           contractor:compliance_contractors_v2(id, company_name, contact_name, email, phone, rating, service_types)
@@ -80,7 +80,7 @@ export function useWorksOrder(orderId: string | undefined) {
     queryKey: ['works_orders', orderId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('works_orders' as any)
+        .from('work_orders')
         .select(`
           *,
           contractor:compliance_contractors_v2(id, company_name, contact_name, email, phone, rating, service_types)
@@ -117,7 +117,7 @@ export function useCreateWorksOrder() {
       const { data: orderNumber } = await supabase.rpc('generate_works_order_number');
 
       const { data, error } = await supabase
-        .from('works_orders' as any)
+        .from('work_orders')
         .insert({
           ...order,
           org_id: orgId,
@@ -166,7 +166,7 @@ export function useUpdateWorksOrder() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
       const { data, error } = await supabase
-        .from('works_orders' as any)
+        .from('work_orders')
         .update(updates)
         .eq('id', id)
         .select()
