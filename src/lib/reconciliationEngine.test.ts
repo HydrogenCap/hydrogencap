@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { scoreMatch, findMatches, confidenceLabel } from './reconciliationEngine';
 import type { BankTxn } from './reconciliationEngine';
+import type { RentScheduleItem } from '@/hooks/useRentCollection';
 
 const baseTxn: BankTxn = {
   id: 'txn-1',
@@ -11,15 +12,21 @@ const baseTxn: BankTxn = {
   status: 'unmatched',
 };
 
-const baseSchedule = {
+const baseSchedule: RentScheduleItem & { tenant_name?: string; payment_reference?: string | null } = {
   id: 'sched-1',
+  org_id: 'org-1',
   tenancy_id: 't-1',
+  agreement_id: null,
   due_date: '2026-03-01',
+  period_start: '2026-03-01',
+  period_end: '2026-03-31',
   rent_amount: 750,
   additional_charges: 0,
   amount_paid: 0,
   amount_outstanding: 750,
-  status: 'due' as const,
+  status: 'due',
+  reminder_sent_at: null,
+  warning_sent_at: null,
   notes: null,
   created_at: '2026-01-01',
   updated_at: '2026-01-01',
@@ -50,7 +57,6 @@ describe('scoreMatch', () => {
   });
 
   it('rejects low-score matches with only amount signal (HMO guard)', () => {
-    // Amount-only match with poor date — should be rejected by the non-amount signal check
     const result = scoreMatch(
       { ...baseTxn, reference: null, description: 'PAYMENT', transaction_date: '2026-04-15' },
       { ...baseSchedule, tenant_name: undefined, payment_reference: null }
@@ -79,7 +85,6 @@ describe('findMatches', () => {
       { ...baseSchedule, id: 'sched-2', rent_amount: 600, amount_outstanding: 600, payment_reference: null, tenant_name: undefined },
     ];
     const matches = findMatches(txns, schedules);
-    // txn-1 should match sched-1 with high confidence
     expect(matches.length).toBeGreaterThanOrEqual(1);
     expect(matches[0].transactionId).toBe('txn-1');
     expect(matches[0].scheduleId).toBe('sched-1');
@@ -88,7 +93,7 @@ describe('findMatches', () => {
   it('skips non-open schedule items', () => {
     const matches = findMatches(
       [baseTxn],
-      [{ ...baseSchedule, status: 'paid' as any }]
+      [{ ...baseSchedule, status: 'paid' }]
     );
     expect(matches).toHaveLength(0);
   });
