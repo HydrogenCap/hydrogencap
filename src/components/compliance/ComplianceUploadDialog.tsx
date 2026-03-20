@@ -164,6 +164,7 @@ export function ComplianceUploadDialog({
     } catch (error) {
       clearInterval(progressInterval);
       console.error('AI analysis error:', error);
+      captureError(error, 'ComplianceUploadDialog.aiAnalysis');
       
       // Fall back to manual entry with placeholder data
       setAnalysisResult({
