@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { captureError } from '@/lib/sentry';
 import { Upload, Loader2, CheckCircle2, AlertTriangle, RotateCcw, FileText, Bot, AlertCircle } from 'lucide-react';
 import {
   Dialog,
