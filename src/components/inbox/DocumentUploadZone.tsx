@@ -34,6 +34,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
       if (response.error) {
         console.error('AI processing error:', response.error);
+        captureError(response.error, 'DocumentUploadZone.aiProcess');
         toast({
           title: 'AI processing failed',
           description: 'Document uploaded but AI analysis failed. You can manually classify it.',
