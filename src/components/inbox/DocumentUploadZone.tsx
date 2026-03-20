@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { captureError } from '@/lib/sentry';
 import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +34,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
       if (response.error) {
         console.error('AI processing error:', response.error);
+        captureError(response.error, 'DocumentUploadZone.aiProcess');
         toast({
           title: 'AI processing failed',
           description: 'Document uploaded but AI analysis failed. You can manually classify it.',
@@ -41,6 +43,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       }
     } catch (err) {
       console.error('AI processing error:', err);
+      captureError(err, 'DocumentUploadZone.aiProcess');
     }
   };
 

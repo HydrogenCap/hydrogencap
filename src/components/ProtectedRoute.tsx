@@ -7,6 +7,8 @@ import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useSectionVisibility } from '@/hooks/useSectionVisibility';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +20,25 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isRouteHidden, isLoading: visibilityLoading } = useSectionVisibility();
   const location = useLocation();
   const { toast } = useToast();
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendVerification = useCallback(async () => {
+    if (!user?.email || resendCooldown > 0) return;
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: user.email });
+      if (error) throw error;
+      setResendCooldown(60);
+      toast({ title: 'Verification email sent', description: 'Please check your inbox.' });
+    } catch (err: any) {
+      toast({ title: 'Failed to resend', description: err.message || 'Please try again later.', variant: 'destructive' });
+    }
+  }, [user?.email, resendCooldown, toast]);
 
   if (loading || (user && (onboardingLoading || visibilityLoading))) {
     return (
@@ -46,11 +67,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           </CardHeader>
           <CardContent className="text-center space-y-3">
             <p className="text-sm text-muted-foreground">
-              Didn't receive the email? Check your spam folder or sign out and try again.
+              Didn't receive the email? Check your spam folder or click below to resend.
             </p>
-            <Button variant="outline" onClick={signOut}>
-              Sign Out
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={handleResendVerification}
+                disabled={resendCooldown > 0}
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email'}
+              </Button>
+              <Button variant="outline" onClick={signOut}>
+                Sign Out
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { captureError } from '@/lib/sentry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -267,6 +268,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       }, 500);
     } catch (err) {
       console.error('Upload/AI error:', err);
+      captureError(err, 'CreateTenancyDialog.uploadAI');
       setIsProcessing(false);
       toast({
         title: 'Processing failed',
@@ -330,6 +332,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       onOpenChange(false);
     } catch (err) {
       console.error('Failed to create tenancy:', err);
+      captureError(err, 'CreateTenancyDialog.create');
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { captureError } from '@/lib/sentry';
 import { Upload, Loader2, CheckCircle2, AlertTriangle, RotateCcw, FileText, Bot, AlertCircle } from 'lucide-react';
 import {
   Dialog,
@@ -163,6 +164,7 @@ export function ComplianceUploadDialog({
     } catch (error) {
       clearInterval(progressInterval);
       console.error('AI analysis error:', error);
+      captureError(error, 'ComplianceUploadDialog.aiAnalysis');
       
       // Fall back to manual entry with placeholder data
       setAnalysisResult({
@@ -238,6 +240,7 @@ export function ComplianceUploadDialog({
       resetDialog();
     } catch (error) {
       console.error('Save error:', error);
+      captureError(error, 'ComplianceUploadDialog.save');
       toast({
         title: 'Error saving document',
         description: 'Please try again.',

@@ -1120,9 +1120,11 @@ export function useGenerateScheduleFromAgreement() {
         ).join('');
         const numbers = Math.floor(Math.random() * 100).toString().padStart(2, '0');
 
+        if (!tenancyId) throw new Error('Cannot generate rent schedule: tenancy ID is required');
+
         const { error } = await supabase.from('rent_schedule').insert({
           org_id: orgId,
-          tenancy_id: tenancyId || '00000000-0000-0000-0000-000000000000',
+          tenancy_id: tenancyId,
           agreement_id: agreementId,
           due_date: dueDate.toISOString().split('T')[0],
           period_start: periodStart.toISOString().split('T')[0],

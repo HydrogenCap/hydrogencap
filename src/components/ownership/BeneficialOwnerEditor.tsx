@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { captureError } from '@/lib/sentry';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -147,6 +148,7 @@ export function BeneficialOwnerEditor({
       toast({ title: `Created "${newParty.display_name}"` });
     } catch (err) {
       console.error('Error creating party:', err);
+      captureError(err, 'BeneficialOwnerEditor.createParty');
       toast({
         title: 'Error',
         description: 'Failed to create person',
