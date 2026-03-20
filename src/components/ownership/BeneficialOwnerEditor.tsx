@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { captureError } from '@/lib/sentry';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
