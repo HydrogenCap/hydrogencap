@@ -80,7 +80,7 @@ export function useWorksOrder(orderId: string | undefined) {
     queryKey: ['works_orders', orderId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('works_orders')
+        .from('works_orders' as any)
         .select(`
           *,
           contractor:compliance_contractors_v2(id, company_name, contact_name, email, phone, rating, service_types)
