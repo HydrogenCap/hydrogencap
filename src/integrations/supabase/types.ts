@@ -1667,13 +1667,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "compliance_tasks_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "contractor_maintenance_performance"
-            referencedColumns: ["contractor_id"]
-          },
-          {
             foreignKeyName: "compliance_tasks_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -5288,13 +5281,6 @@ export type Database = {
             foreignKeyName: "maintenance_comments_maintenance_request_id_fkey"
             columns: ["maintenance_request_id"]
             isOneToOne: false
-            referencedRelation: "maintenance_overview"
-            referencedColumns: ["request_id"]
-          },
-          {
-            foreignKeyName: "maintenance_comments_maintenance_request_id_fkey"
-            columns: ["maintenance_request_id"]
-            isOneToOne: false
             referencedRelation: "maintenance_requests"
             referencedColumns: ["id"]
           },
@@ -5363,20 +5349,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "compliance_contractors_v2"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_quotes_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "contractor_maintenance_performance"
-            referencedColumns: ["contractor_id"]
-          },
-          {
-            foreignKeyName: "maintenance_quotes_maintenance_request_id_fkey"
-            columns: ["maintenance_request_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_overview"
-            referencedColumns: ["request_id"]
           },
           {
             foreignKeyName: "maintenance_quotes_maintenance_request_id_fkey"
@@ -5486,13 +5458,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "maintenance_requests_linked_request_id_fkey"
-            columns: ["linked_request_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_overview"
-            referencedColumns: ["request_id"]
-          },
           {
             foreignKeyName: "maintenance_requests_linked_request_id_fkey"
             columns: ["linked_request_id"]
@@ -9562,13 +9527,6 @@ export type Database = {
             foreignKeyName: "work_orders_maintenance_request_id_fkey"
             columns: ["maintenance_request_id"]
             isOneToOne: false
-            referencedRelation: "maintenance_overview"
-            referencedColumns: ["request_id"]
-          },
-          {
-            foreignKeyName: "work_orders_maintenance_request_id_fkey"
-            columns: ["maintenance_request_id"]
-            isOneToOne: false
             referencedRelation: "maintenance_requests"
             referencedColumns: ["id"]
           },
@@ -9598,169 +9556,6 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms_v2"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      works_orders: {
-        Row: {
-          after_photo_urls: string[] | null
-          approval_date: string | null
-          approved_amount: number | null
-          before_photo_urls: string[] | null
-          completion_date: string | null
-          completion_notes: string | null
-          completion_photo_urls: string[] | null
-          contractor_email_override: string | null
-          contractor_id: string | null
-          contractor_name_override: string | null
-          contractor_phone_override: string | null
-          created_at: string
-          description: string
-          id: string
-          invoice_amount: number | null
-          invoice_date: string | null
-          invoice_reference: string | null
-          maintenance_request_id: string
-          notes: string | null
-          order_number: string | null
-          org_id: string
-          paid_amount: number | null
-          paid_date: string | null
-          payment_method: string | null
-          property_id: string
-          quote_date: string | null
-          quoted_amount: number | null
-          scheduled_date: string | null
-          scheduled_time: string | null
-          scheduled_time_slot: string | null
-          status: string
-          tenant_access_required: boolean | null
-          tenant_notification_date: string | null
-          tenant_notified: boolean | null
-          updated_at: string
-          warranty_expiry: string | null
-          warranty_months: number | null
-        }
-        Insert: {
-          after_photo_urls?: string[] | null
-          approval_date?: string | null
-          approved_amount?: number | null
-          before_photo_urls?: string[] | null
-          completion_date?: string | null
-          completion_notes?: string | null
-          completion_photo_urls?: string[] | null
-          contractor_email_override?: string | null
-          contractor_id?: string | null
-          contractor_name_override?: string | null
-          contractor_phone_override?: string | null
-          created_at?: string
-          description: string
-          id?: string
-          invoice_amount?: number | null
-          invoice_date?: string | null
-          invoice_reference?: string | null
-          maintenance_request_id: string
-          notes?: string | null
-          order_number?: string | null
-          org_id: string
-          paid_amount?: number | null
-          paid_date?: string | null
-          payment_method?: string | null
-          property_id: string
-          quote_date?: string | null
-          quoted_amount?: number | null
-          scheduled_date?: string | null
-          scheduled_time?: string | null
-          scheduled_time_slot?: string | null
-          status?: string
-          tenant_access_required?: boolean | null
-          tenant_notification_date?: string | null
-          tenant_notified?: boolean | null
-          updated_at?: string
-          warranty_expiry?: string | null
-          warranty_months?: number | null
-        }
-        Update: {
-          after_photo_urls?: string[] | null
-          approval_date?: string | null
-          approved_amount?: number | null
-          before_photo_urls?: string[] | null
-          completion_date?: string | null
-          completion_notes?: string | null
-          completion_photo_urls?: string[] | null
-          contractor_email_override?: string | null
-          contractor_id?: string | null
-          contractor_name_override?: string | null
-          contractor_phone_override?: string | null
-          created_at?: string
-          description?: string
-          id?: string
-          invoice_amount?: number | null
-          invoice_date?: string | null
-          invoice_reference?: string | null
-          maintenance_request_id?: string
-          notes?: string | null
-          order_number?: string | null
-          org_id?: string
-          paid_amount?: number | null
-          paid_date?: string | null
-          payment_method?: string | null
-          property_id?: string
-          quote_date?: string | null
-          quoted_amount?: number | null
-          scheduled_date?: string | null
-          scheduled_time?: string | null
-          scheduled_time_slot?: string | null
-          status?: string
-          tenant_access_required?: boolean | null
-          tenant_notification_date?: string | null
-          tenant_notified?: boolean | null
-          updated_at?: string
-          warranty_expiry?: string | null
-          warranty_months?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "works_orders_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "compliance_contractors_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "works_orders_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "contractor_maintenance_performance"
-            referencedColumns: ["contractor_id"]
-          },
-          {
-            foreignKeyName: "works_orders_maintenance_request_id_fkey"
-            columns: ["maintenance_request_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_overview"
-            referencedColumns: ["request_id"]
-          },
-          {
-            foreignKeyName: "works_orders_maintenance_request_id_fkey"
-            columns: ["maintenance_request_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "works_orders_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "works_orders_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -9891,13 +9686,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "compliance_tasks_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "contractor_maintenance_performance"
-            referencedColumns: ["contractor_id"]
-          },
-          {
             foreignKeyName: "compliance_tasks_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
@@ -9917,31 +9705,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
-          },
-        ]
-      }
-      contractor_maintenance_performance: {
-        Row: {
-          avg_days_over_schedule: number | null
-          avg_job_cost: number | null
-          avg_report_to_completion_days: number | null
-          company_name: string | null
-          completed_jobs: number | null
-          contractor_id: string | null
-          disputed_jobs: number | null
-          org_id: string | null
-          rating: number | null
-          service_types: string[] | null
-          total_jobs: number | null
-          total_paid: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "compliance_contractors_v2_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -10212,131 +9975,6 @@ export type Database = {
           },
         ]
       }
-      maintenance_overview: {
-        Row: {
-          approved_amount: number | null
-          category: string | null
-          comment_count: number | null
-          completion_date: string | null
-          contractor_id: string | null
-          contractor_name: string | null
-          days_open: number | null
-          description: string | null
-          invoice_amount: number | null
-          is_emergency: boolean | null
-          is_recurring: boolean | null
-          order_number: string | null
-          org_id: string | null
-          priority: string | null
-          property_address: string | null
-          property_id: string | null
-          quoted_amount: number | null
-          reported_by: string | null
-          reported_date: string | null
-          request_id: string | null
-          room_id: string | null
-          room_name: string | null
-          scheduled_date: string | null
-          status: string | null
-          tenant_id: string | null
-          tenant_name: string | null
-          title: string | null
-          works_order_id: string | null
-          works_order_status: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "maintenance_requests_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_requests_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_requests_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_requests_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "works_orders_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "compliance_contractors_v2"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "works_orders_contractor_id_fkey"
-            columns: ["contractor_id"]
-            isOneToOne: false
-            referencedRelation: "contractor_maintenance_performance"
-            referencedColumns: ["contractor_id"]
-          },
-        ]
-      }
-      maintenance_spend_by_category: {
-        Row: {
-          avg_cost: number | null
-          avg_resolution_days: number | null
-          category: string | null
-          job_count: number | null
-          org_id: string | null
-          total_spend: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "maintenance_requests_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      maintenance_spend_by_property: {
-        Row: {
-          avg_days_to_complete: number | null
-          avg_job_cost: number | null
-          completed_jobs: number | null
-          org_id: string | null
-          property_address: string | null
-          property_id: string | null
-          total_invoiced: number | null
-          total_jobs: number | null
-          total_paid: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "works_orders_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "works_orders_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       portfolio_compliance_score_v2: {
         Row: {
           compliance_score_pct: number | null
@@ -10456,34 +10094,6 @@ export type Database = {
           total_occupied: number | null
         }
         Relationships: []
-      }
-      recurring_issue_detection: {
-        Row: {
-          category: string | null
-          first_reported: string | null
-          last_reported: string | null
-          org_id: string | null
-          property_address: string | null
-          property_id: string | null
-          request_count: number | null
-          total_spend: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "maintenance_requests_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_requests_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       tenancy_compliance_check_v2: {
         Row: {
