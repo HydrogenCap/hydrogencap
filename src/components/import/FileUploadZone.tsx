@@ -14,6 +14,7 @@ interface FileUploadZoneProps {
 
 export function FileUploadZone({ onFileSelect, selectedFile, onClear }: FileUploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const { toast } = useToast();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
