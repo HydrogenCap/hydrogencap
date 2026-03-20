@@ -63,7 +63,7 @@ export function usePortfolioFinancials() {
         supabase.from('rooms_v2').select('property_id, current_rent_pcm, is_lettable').in('property_id', propertyIds),
         supabase.from('tenancy_agreements').select('id, property_id').in('property_id', propertyIds),
         supabase.from('loan_facilities').select('property_id, current_balance, interest_rate, monthly_payment').in('property_id', propertyIds).eq('status', 'active'),
-        supabase.from('works_orders').select('property_id, paid_amount, paid_date').in('property_id', propertyIds).not('paid_amount', 'is', null).gte('paid_date', twelveMonthsAgo),
+        supabase.from('works_orders' as any).select('property_id, paid_amount, paid_date').in('property_id', propertyIds).not('paid_amount', 'is', null).gte('paid_date', twelveMonthsAgo),
         supabase.from('capex_projects').select('property_id, capex_line_items(actual_gbp, paid_date, created_at)').in('property_id', propertyIds),
       ]);
 

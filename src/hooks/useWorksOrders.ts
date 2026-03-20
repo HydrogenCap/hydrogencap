@@ -166,7 +166,7 @@ export function useUpdateWorksOrder() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
       const { data, error } = await supabase
-        .from('works_orders')
+        .from('works_orders' as any)
         .update(updates)
         .eq('id', id)
         .select()
