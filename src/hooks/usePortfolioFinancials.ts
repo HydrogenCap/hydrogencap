@@ -113,8 +113,8 @@ export function usePortfolioFinancials() {
         loansByProperty.set(l.property_id, existing);
       }
 
-      const maintenanceByProperty = new Map<string, typeof maintenanceRes.data>();
-      for (const m of (maintenanceRes.data || [])) {
+      const maintenanceByProperty = new Map<string, any[]>();
+      for (const m of ((maintenanceRes.data || []) as any[])) {
         const existing = maintenanceByProperty.get(m.property_id) || [];
         existing.push(m);
         maintenanceByProperty.set(m.property_id, existing);
