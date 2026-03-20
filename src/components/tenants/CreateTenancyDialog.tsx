@@ -268,6 +268,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
       }, 500);
     } catch (err) {
       console.error('Upload/AI error:', err);
+      captureError(err, 'CreateTenancyDialog.uploadAI');
       setIsProcessing(false);
       toast({
         title: 'Processing failed',
