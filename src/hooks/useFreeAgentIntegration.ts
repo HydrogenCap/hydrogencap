@@ -182,7 +182,12 @@ export function buildFreeAgentAuthUrl(
   const FREEAGENT_CLIENT_ID = 'ctJauXO4z3j4tDVb8JMCXw';
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
   const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
-  const state = btoa(JSON.stringify({ entityId, orgId, userId, useSandbox }));
+
+  // CSRF protection: generate a random nonce and store it in sessionStorage
+  const nonce = crypto.randomUUID();
+  sessionStorage.setItem('freeagent_oauth_nonce', nonce);
+
+  const state = btoa(JSON.stringify({ entityId, orgId, userId, useSandbox, nonce }));
 
   const authBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
 
