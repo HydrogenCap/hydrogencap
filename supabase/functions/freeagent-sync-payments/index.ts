@@ -216,6 +216,21 @@ serve(async (req) => {
       });
     }
 
+    // Verify the user is a member of the org that owns this connection
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("org_id", connection.org_id)
+      .single();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+      });
+    }
+
     if (!connection.sync_rent_payments) {
       return new Response(JSON.stringify({ error: "Rent payment sync disabled" }), {
         status: 400,
