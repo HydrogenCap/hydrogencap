@@ -35,23 +35,33 @@ export function useImportStatement() {
       let imported = 0;
       let skipped = 0;
 
-      for (const txn of result.transactions) {
-        const hash = await computeTransactionHash(txn.date, txn.amount, txn.description);
+      // 1. Compute all hashes upfront
+      const txnsWithHash = await Promise.all(
+        result.transactions.map(async (txn) => ({
+          ...txn,
+          hash: await computeTransactionHash(txn.date, txn.amount, txn.description),
+        }))
+      );
 
-        // Check for existing (dedup)
+      // 2. Batch check for existing hashes in a single query
+      const allHashes = txnsWithHash.map(t => t.hash);
+      const existingHashes = new Set<string>();
+
+      // Query in chunks of 200 to avoid URL length limits
+      for (let i = 0; i < allHashes.length; i += 200) {
+        const chunk = allHashes.slice(i, i + 200);
         const { data: existing } = await supabase
           .from('bank_transactions')
-          .select('id')
-          .eq('import_hash', hash)
+          .select('import_hash')
           .eq('bank_account_id', bankAccountId)
-          .limit(1);
+          .in('import_hash', chunk);
+        if (existing) existing.forEach(e => existingHashes.add((e as any).import_hash));
+      }
 
-        if (existing && existing.length > 0) {
-          skipped++;
-          continue;
-        }
-
-        const { error } = await supabase.from('bank_transactions').insert({
+      // 3. Build new records and bulk upsert
+      const newRecords = txnsWithHash
+        .filter(txn => !existingHashes.has(txn.hash))
+        .map(txn => ({
           org_id: orgId,
           bank_account_id: bankAccountId,
           transaction_date: txn.date,
@@ -61,11 +71,22 @@ export function useImportStatement() {
           reference: txn.reference,
           transaction_type: txn.type || 'unknown',
           import_batch_id: batchId,
-          import_hash: hash,
+          import_hash: txn.hash,
           status: 'unmatched',
-        } as any);
+        }));
 
-        if (!error) imported++;
+      skipped = txnsWithHash.length - newRecords.length;
+
+      if (newRecords.length > 0) {
+        // Upsert in chunks of 200
+        for (let i = 0; i < newRecords.length; i += 200) {
+          const chunk = newRecords.slice(i, i + 200);
+          const { data, error } = await supabase
+            .from('bank_transactions')
+            .upsert(chunk as any[], { onConflict: 'import_hash,bank_account_id', ignoreDuplicates: true })
+            .select('id');
+          if (!error && data) imported += data.length;
+        }
       }
 
       return {
