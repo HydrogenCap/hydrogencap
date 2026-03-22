@@ -99,7 +99,12 @@ export function RentReviewModal({ open, onOpenChange, tenancyId }: RentReviewMod
       toast({ title: 'Rent updated', description: `New rent: ${fmt(selectedRent)}/month from ${format(new Date(effectiveDate), 'dd MMM yyyy')}` });
       onOpenChange(false);
     },
-    onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (error: unknown) =>
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update rent.',
+        variant: 'destructive',
+      }),
   });
 
   const generatePDF = () => {

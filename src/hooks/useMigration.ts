@@ -4,6 +4,73 @@ import { fetchUserOrgId } from './useUserOrg';
 import type { MigrationStep, MigrationResult, FullMigrationResult } from '@/lib/migrationTypes';
 import { getMigrationStatus } from '@/lib/migrationTypes';
 
+export interface PropertyGap {
+  id: string;
+  address_line_1: string;
+  postcode: string | null;
+  city: string | null;
+  entity_id: string | null;
+  has_gas_supply: boolean | null;
+  current_valuation: number | null;
+  purchase_price: number | null;
+  property_type: string | null;
+  year_built: number | null;
+  total_lettable_rooms: number | null;
+  total_floors: number | null;
+  council_name: string | null;
+  council_area: string | null;
+}
+
+interface RoomGapRow {
+  id: string;
+  room_name: string;
+  property_id: string;
+  room_type: string | null;
+  current_rent_pcm: number | null;
+  target_rent_pcm: number | null;
+  has_ensuite: boolean | null;
+  is_lettable: boolean | null;
+  floor: number | null;
+  properties_v2: { address_line_1: string | null } | null;
+}
+
+export interface RoomGap extends Omit<RoomGapRow, 'properties_v2'> {
+  property_address: string;
+}
+
+export interface TenantGap {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  national_insurance: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+}
+
+export interface TenancyGap {
+  id: string;
+  tenant_id: string;
+  property_id: string;
+  room_id: string;
+  rent_amount_pcm: number;
+  tenancy_type: string;
+  deposit_amount: number | null;
+  deposit_scheme: string | null;
+  deposit_reference: string | null;
+  deposit_protected_date: string | null;
+  how_to_rent_served_date: string | null;
+  prescribed_info_served_date: string | null;
+  status: string;
+}
+
+type MigrationPropertyUpdate = { id: string } & Record<string, unknown>;
+type MigrationRoomUpdate = { id: string } & Record<string, unknown>;
+type MigrationTenantUpdate = { id: string } & Record<string, unknown>;
+type MigrationTenancyUpdate = { id: string } & Record<string, unknown>;
+
 const MIGRATION_STEPS = [
   { key: 'companies', title: 'Companies → Legal Entities', v1Table: 'companies', v2Table: 'legal_entities', functionName: 'migrate_companies_to_entities' },
   { key: 'properties', title: 'Properties → Properties V2', v1Table: 'properties', v2Table: 'properties_v2', functionName: 'migrate_properties_to_v2' },
@@ -25,7 +92,7 @@ async function getTableCount(table: string, orgId: string): Promise<number> {
     // For rooms_v2, link via property_id → properties_v2.org_id
     if (table === 'rooms_v2') {
       const { count, error } = await supabase
-        .from('rooms_v2' as any)
+        .from('rooms_v2')
         .select('*, properties_v2!inner(org_id)', { count: 'exact', head: true })
         .eq('properties_v2.org_id', orgId);
       if (error) return 0;
@@ -33,14 +100,14 @@ async function getTableCount(table: string, orgId: string): Promise<number> {
     }
     // For income, loans, rooms — join via properties
     const { count, error } = await supabase
-      .from(table as any)
+      .from(table as never)
       .select('*, properties!inner(org_id)', { count: 'exact', head: true })
       .eq('properties.org_id', orgId);
     if (error) return 0;
     return count || 0;
   }
   const { count, error } = await supabase
-    .from(table as any)
+    .from(table as never)
     .select('*', { count: 'exact', head: true })
     .eq('org_id', orgId);
   if (error) return 0;
@@ -77,7 +144,7 @@ export function useRunMigrationStep() {
   return useMutation({
     mutationFn: async (functionName: string): Promise<MigrationResult> => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.rpc(functionName as any, { p_org_id: orgId });
+      const { data, error } = await supabase.rpc(functionName as never, { p_org_id: orgId });
       if (error) throw error;
       return data as unknown as MigrationResult;
     },
@@ -97,7 +164,7 @@ export function useRunFullMigration() {
   return useMutation({
     mutationFn: async (): Promise<FullMigrationResult> => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.rpc('run_v1_to_v2_migration' as any, { p_org_id: orgId });
+      const { data, error } = await supabase.rpc('run_v1_to_v2_migration' as never, { p_org_id: orgId });
       if (error) throw error;
       return data as unknown as FullMigrationResult;
     },
@@ -122,7 +189,7 @@ export function usePropertyGaps() {
         .select('id, address_line_1, postcode, city, entity_id, has_gas_supply, current_valuation, purchase_price, property_type, year_built, total_lettable_rooms, total_floors, council_name, council_area')
         .order('address_line_1');
       if (error) throw error;
-      return data || [];
+      return (data || []) as PropertyGap[];
     },
   });
 }
@@ -136,7 +203,7 @@ export function useRoomGaps() {
         .select('id, room_name, property_id, room_type, current_rent_pcm, target_rent_pcm, has_ensuite, is_lettable, floor, properties_v2!inner(address_line_1)')
         .order('room_name');
       if (error) throw error;
-      return (data || []).map((r: any) => ({
+      return ((data || []) as RoomGapRow[]).map((r) => ({
         ...r,
         property_address: r.properties_v2?.address_line_1 ?? '',
         properties_v2: undefined,
@@ -150,11 +217,11 @@ export function useTenantGaps() {
     queryKey: ['tenant_gaps'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('tenants_v2' as any)
+        .from('tenants_v2')
         .select('id, first_name, last_name, email, phone, date_of_birth, national_insurance, emergency_contact_name, emergency_contact_phone')
         .order('last_name');
       if (error) throw error;
-      return (data || []) as any[];
+      return (data || []) as TenantGap[];
     },
   });
 }
@@ -169,7 +236,7 @@ export function useTenancyGaps() {
         .eq('status', 'active')
         .order('start_date', { ascending: false });
       if (error) throw error;
-      return data || [];
+      return (data || []) as TenancyGap[];
     },
   });
 }
@@ -177,7 +244,7 @@ export function useTenancyGaps() {
 export function useBatchUpdateProperties() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: { id: string; [key: string]: any }[]) => {
+    mutationFn: async (updates: MigrationPropertyUpdate[]) => {
       for (const { id, ...fields } of updates) {
         const { error } = await supabase.from('properties_v2').update(fields).eq('id', id);
         if (error) throw error;
@@ -193,7 +260,7 @@ export function useBatchUpdateProperties() {
 export function useBatchUpdateRooms() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: { id: string; [key: string]: any }[]) => {
+    mutationFn: async (updates: MigrationRoomUpdate[]) => {
       for (const { id, ...fields } of updates) {
         const { error } = await supabase.from('rooms_v2').update(fields).eq('id', id);
         if (error) throw error;
@@ -209,9 +276,9 @@ export function useBatchUpdateRooms() {
 export function useBatchUpdateTenants() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: { id: string; [key: string]: any }[]) => {
+    mutationFn: async (updates: MigrationTenantUpdate[]) => {
       for (const { id, ...fields } of updates) {
-        const { error } = await supabase.from('tenants_v2' as any).update(fields).eq('id', id);
+        const { error } = await supabase.from('tenants_v2').update(fields).eq('id', id);
         if (error) throw error;
       }
     },
@@ -224,7 +291,7 @@ export function useBatchUpdateTenants() {
 export function useBatchUpdateTenancies() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: { id: string; [key: string]: any }[]) => {
+    mutationFn: async (updates: MigrationTenancyUpdate[]) => {
       for (const { id, ...fields } of updates) {
         const { error } = await supabase.from('tenancy_agreements').update(fields).eq('id', id);
         if (error) throw error;

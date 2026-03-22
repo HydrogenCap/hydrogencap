@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface PassportSuggestion {
   id: string;
   property_id: string;
   field_key: string;
-  suggested_value: any;
+  suggested_value: Json;
   confidence: number;
   source_type: 'postcode_lookup' | 'epc' | 'floorplan' | 'listing' | 'inventory' | 'photo' | 'default';
   source_ref: string | null;
@@ -17,7 +18,7 @@ export interface PassportSuggestion {
 export interface AcceptedSuggestion {
   id: string;
   field_key: string;
-  value: any;
+  value: Json;
   source_type: string;
   source_ref: string | null;
   confidence: number;

@@ -22,6 +22,41 @@ interface MortgageCalcResult {
   formula: string | null;
 }
 
+interface PropertyEditFormValues {
+  address_line: string;
+  area_name?: string;
+  postcode?: string;
+  property_type?: string;
+  beds?: number;
+  bathrooms?: number;
+  listed_status?: '' | 'Not listed' | 'Grade II' | 'Grade II*' | 'Grade I';
+  epc_rating?: '' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'N/A';
+  ownership_entity?: string;
+  geocode_confidence?: string;
+  tenure?: '' | 'Freehold' | 'Leasehold' | 'Share of Freehold' | 'Commonhold';
+  lease_years_remaining?: number;
+  uprn?: string;
+  purchase_price_gbp?: number;
+  original_purchase_date?: string;
+  current_value_gbp?: number;
+  stamp_duty_gbp?: number;
+  refurb_cost_gbp?: number;
+  legal_fees_gbp?: number;
+  other_acquisition_costs_gbp?: number;
+  mortgage_type?: '' | 'BTL' | 'Bridging' | 'Commercial' | 'PPR';
+  lender?: string;
+  current_mortgage_balance_gbp?: number;
+  interest_rate_percent?: number;
+  fixed_or_variable?: '' | 'fixed' | 'variable';
+  capital_or_interest?: '' | 'capital' | 'interest';
+  term_years?: number;
+  fixed_rate_expires?: string;
+  loan_start_date?: string;
+  mortgage_payment_gbp?: number;
+  annual_rent_gbp?: number;
+  notes?: string;
+}
+
 // Property Details Section
 export function PropertyDetailsSection({ 
   form, 
@@ -32,7 +67,7 @@ export function PropertyDetailsSection({
   onAddressSelect,
   onAutoPopulate,
 }: { 
-  form: UseFormReturn<any>;
+  form: UseFormReturn<PropertyEditFormValues>;
   watchedPostcode?: string;
   watchedAddress?: string;
   watchedGeocodeStatus?: string;
@@ -148,7 +183,7 @@ export function PropertyDetailsSection({
 }
 
 // Land Registry Section
-export function LandRegistrySection({ form, propertyId }: { form: UseFormReturn<any>; propertyId?: string }) {
+export function LandRegistrySection({ form, propertyId }: { form: UseFormReturn<PropertyEditFormValues>; propertyId?: string }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
@@ -193,7 +228,7 @@ export function LandRegistrySection({ form, propertyId }: { form: UseFormReturn<
 }
 
 // Valuation Section
-export function ValuationSection({ form }: { form: UseFormReturn<any> }) {
+export function ValuationSection({ form }: { form: UseFormReturn<PropertyEditFormValues> }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
@@ -233,7 +268,7 @@ export function MortgageSection({
   watchedCapitalOrInterest,
   mortgageCalc 
 }: { 
-  form: UseFormReturn<any>;
+  form: UseFormReturn<PropertyEditFormValues>;
   watchedCapitalOrInterest?: string;
   mortgageCalc: MortgageCalcResult;
 }) {
@@ -382,7 +417,7 @@ export function MortgageSection({
 }
 
 // Income Section
-export function IncomeSection({ form }: { form: UseFormReturn<any> }) {
+export function IncomeSection({ form }: { form: UseFormReturn<PropertyEditFormValues> }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader>
@@ -403,7 +438,7 @@ export function IncomeSection({ form }: { form: UseFormReturn<any> }) {
 }
 
 // Notes Section
-export function NotesSection({ form }: { form: UseFormReturn<any> }) {
+export function NotesSection({ form }: { form: UseFormReturn<PropertyEditFormValues> }) {
   return (
     <Card className="bg-card border-border">
       <CardHeader>

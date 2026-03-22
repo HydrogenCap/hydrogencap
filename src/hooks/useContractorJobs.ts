@@ -376,13 +376,13 @@ export function useContractorJobs(filters?: {
          description: `Job request sent to ${data.sentTo}`,
        });
      },
-     onError: (error: any) => {
-       toast({
-         title: 'Failed to send',
-         description: error.message,
-         variant: 'destructive',
-       });
-     },
+     onError: (error) => {
+        toast({
+          title: 'Failed to send',
+          description: error instanceof Error ? error.message : 'Failed to send job request',
+          variant: 'destructive',
+        });
+      },
    });
  }
  

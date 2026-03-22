@@ -75,6 +75,8 @@ export function useCreateShareholderInvite() {
 
   return useMutation({
     mutationFn: async ({ email, name }: { email: string; name?: string }) => {
+      const normalizedEmail = email.toLowerCase().trim();
+
       // Get user's org_id
       const { data: membership } = await supabase
         .from('memberships')
@@ -84,11 +86,18 @@ export function useCreateShareholderInvite() {
 
       if (!membership) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      await supabase
+        .from('shareholder_invites')
+        .delete()
+        .eq('org_id', membership.org_id)
+        .eq('email', normalizedEmail)
+        .is('accepted_at', null);
+
+      const { data: invite, error } = await supabase
         .from('shareholder_invites')
         .insert({
           org_id: membership.org_id,
-          email,
+          email: normalizedEmail,
           name: name || null,
           invited_by: user?.id,
         })
@@ -96,11 +105,31 @@ export function useCreateShareholderInvite() {
         .single();
 
       if (error) throw error;
-      return data as ShareholderInvite;
+
+      const { error: fnError } = await supabase.functions.invoke('send-shareholder-invite', {
+        body: { inviteId: invite.id },
+      });
+
+      if (fnError) {
+        console.error('Shareholder invite email failed:', fnError);
+        return {
+          invite: invite as ShareholderInvite,
+          emailSent: false,
+        };
+      }
+
+      return {
+        invite: invite as ShareholderInvite,
+        emailSent: true,
+      };
     },
-    onSuccess: () => {
+    onSuccess: ({ emailSent }) => {
       queryClient.invalidateQueries({ queryKey: ['shareholder-invites'] });
-      toast.success('Invitation sent successfully');
+      if (emailSent) {
+        toast.success('Invitation sent successfully');
+      } else {
+        toast.success('Invite created. Email delivery failed, but you can still copy the invite link.');
+      }
     },
     onError: (error: Error) => {
       if (error.message.includes('duplicate')) {
@@ -108,6 +137,54 @@ export function useCreateShareholderInvite() {
       } else {
         toast.error('Failed to send invitation');
       }
+    },
+  });
+}
+
+export function useResendShareholderInvite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (inviteId: string) => {
+      const { data: invite, error } = await supabase
+        .from('shareholder_invites')
+        .update({
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          revoked_at: null,
+        })
+        .eq('id', inviteId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const { error: fnError } = await supabase.functions.invoke('send-shareholder-invite', {
+        body: { inviteId },
+      });
+
+      if (fnError) {
+        console.error('Shareholder invite resend failed:', fnError);
+        return {
+          invite: invite as ShareholderInvite,
+          emailSent: false,
+        };
+      }
+
+      return {
+        invite: invite as ShareholderInvite,
+        emailSent: true,
+      };
+    },
+    onSuccess: ({ emailSent }) => {
+      queryClient.invalidateQueries({ queryKey: ['shareholder-invites'] });
+      if (emailSent) {
+        toast.success('Invitation resent');
+      } else {
+        toast.success('Invite renewed. Email delivery failed, but you can still copy the invite link.');
+      }
+    },
+    onError: () => {
+      toast.error('Failed to resend invitation');
     },
   });
 }

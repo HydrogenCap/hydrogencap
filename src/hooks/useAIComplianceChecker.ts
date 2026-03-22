@@ -40,6 +40,8 @@ export interface AIComplianceAnalysis {
 }
 
 type AnalysisMode = 'analyze' | 'quick' | 'audit';
+type PortfolioPropertyData = Record<string, unknown>;
+type PortfolioComplianceItem = Record<string, unknown>;
 
 export function useAIComplianceChecker(propertyId: string | undefined) {
   const [lastAnalysis, setLastAnalysis] = useState<AIComplianceAnalysis | null>(null);
@@ -132,8 +134,8 @@ export function usePortfolioAIComplianceChecker() {
 
   const analyzeProperty = useCallback(async (
     propertyId: string,
-    propertyData: any,
-    complianceItems: any[]
+    propertyData: PortfolioPropertyData,
+    complianceItems: PortfolioComplianceItem[]
   ): Promise<AIComplianceAnalysis> => {
     const { data, error } = await supabase.functions.invoke('ai-compliance-checker', {
       body: {

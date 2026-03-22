@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 interface BulkLoanUpdateParams {
@@ -15,6 +16,16 @@ interface BulkPropertyUpdateParams {
   entityId?: string | null;
 }
 
+type BulkLoanUpdates = Pick<
+  Database['public']['Tables']['loans']['Update'],
+  'interest_rate_percent' | 'fixed_rate_expires' | 'lender'
+>;
+
+type BulkPropertyUpdates = Pick<
+  Database['public']['Tables']['properties_v2']['Update'],
+  'lifecycle_stage' | 'operational_date' | 'entity_id'
+>;
+
 export function useBulkLoanUpdate() {
   const queryClient = useQueryClient();
 
@@ -26,7 +37,7 @@ export function useBulkLoanUpdate() {
       lender 
     }: BulkLoanUpdateParams) => {
       // Build update object with only provided fields
-      const updates: Record<string, any> = {};
+      const updates: BulkLoanUpdates = {};
       if (interestRate !== undefined) updates.interest_rate_percent = interestRate;
       if (fixedRateExpires !== undefined) updates.fixed_rate_expires = fixedRateExpires || null;
       if (lender !== undefined) updates.lender = lender || null;
@@ -64,7 +75,7 @@ export function useBulkPropertyUpdate() {
       lifecycleStage, 
       entityId 
     }: BulkPropertyUpdateParams) => {
-      const updates: Record<string, any> = {};
+      const updates: BulkPropertyUpdates = {};
       
       if (lifecycleStage) {
         updates.lifecycle_stage = lifecycleStage;

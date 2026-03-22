@@ -35,6 +35,12 @@ import {
 } from '@/lib/accountingTypes';
 import type { FinancialSnapshot } from '@/lib/financialSnapshotTypes';
 
+interface PropertyLookupRow {
+  id: string;
+  address_line_1: string | null;
+  postcode: string | null;
+}
+
 const EXPORT_TYPES: { value: ExportType; label: string; desc: string }[] = [
   { value: 'income_transactions', label: 'Income & Expense Transactions', desc: 'Monthly breakdown of all financial line items' },
   { value: 'combined_journal', label: 'Combined Journal', desc: 'All transactions as double-entry journal entries' },
@@ -130,17 +136,23 @@ export function ExportWizard() {
       if (error) throw error;
 
       // Get property addresses
-      const propertyIds = [...new Set((snapshots || []).map((s: any) => s.property_id))];
+      const typedSnapshots = (snapshots || []) as FinancialSnapshot[];
+      const propertyIds = [...new Set(typedSnapshots.map((snapshot) => snapshot.property_id))];
       const { data: properties } = await supabase
         .from('properties_v2')
         .select('id, address_line_1, postcode')
         .in('id', propertyIds);
 
-      const propMap = new Map((properties || []).map((p: any) => [p.id, `${p.address_line_1 || ''} ${p.postcode || ''}`.trim()]));
+      const propMap = new Map(
+        ((properties || []) as PropertyLookupRow[]).map((property) => [
+          property.id,
+          `${property.address_line_1 || ''} ${property.postcode || ''}`.trim(),
+        ]),
+      );
       const entityMap = new Map((entities || []).map(e => [e.id, e]));
 
       const allLines: TransactionLine[] = [];
-      for (const snap of (snapshots || []) as FinancialSnapshot[]) {
+      for (const snap of typedSnapshots) {
         const entity = entityMap.get(snap.entity_id);
         if (!entity) continue;
         const lines = generateTransactionLines(
@@ -155,8 +167,9 @@ export function ExportWizard() {
 
       setPreviewLines(allLines);
       setStep(4);
-    } catch (err: any) {
-      toast.error('Failed to generate preview: ' + (err.message || 'Unknown error'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast.error('Failed to generate preview: ' + message);
     } finally {
       setIsGenerating(false);
     }

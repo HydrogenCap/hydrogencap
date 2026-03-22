@@ -20,6 +20,14 @@ interface Props {
   unitId?: string;
 }
 
+type RoomCreateInput = Omit<RoomV2, 'id' | 'created_at' | 'updated_at'> & {
+  unit_id?: string | null;
+};
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoomCount, unitId }: Props) {
   const bulkCreate = useBulkCreateRooms();
   const { toast } = useToast();
@@ -36,9 +44,9 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
       return;
     }
     const start = parseInt(startNum) || (existingRoomCount + 1);
-    const rooms: any[] = [];
+    const rooms: RoomCreateInput[] = [];
     for (let i = 0; i < n; i++) {
-      const room: any = {
+      const room: RoomCreateInput = {
         property_id: propertyId,
         room_name: `Room ${start + i}`,
         room_type: roomType as RoomV2['room_type'],
@@ -57,8 +65,8 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
       await bulkCreate.mutateAsync(rooms);
       toast({ title: `${n} rooms added` });
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

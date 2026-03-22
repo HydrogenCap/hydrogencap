@@ -34,7 +34,7 @@ export default function ComplianceV2() {
   // Refresh statuses on mount
   useEffect(() => {
     refreshStatuses.mutate();
-  }, []);
+  }, [refreshStatuses]);
 
   const handleCellClick = (propertyId: string, docType: ComplianceDocType) => {
     const row = matrix?.find(r => r.property_id === propertyId && r.document_type === docType);

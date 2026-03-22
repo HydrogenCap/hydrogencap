@@ -4,6 +4,10 @@ import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { showMutationError } from '@/lib/errorToast';
 import { generateStructuredFilename } from '@/lib/documentNaming';
+
+interface PropertyAddressJoin {
+  address_line: string | null;
+}
  
 export interface ManagedDocument {
   id: string;
@@ -274,8 +278,9 @@ export interface ManagedDocument {
             .select('property_id, properties(address_line)')
             .eq('id', tenancyId)
             .single();
-          if (tenancy?.properties) {
-            propertyAddress = (tenancy.properties as any).address_line || null;
+          const tenancyProperty = tenancy?.properties as PropertyAddressJoin | null;
+          if (tenancyProperty) {
+            propertyAddress = tenancyProperty.address_line || null;
           }
         }
 
@@ -286,8 +291,9 @@ export interface ManagedDocument {
             .select('property_id, properties(address_line)')
             .eq('id', jobId)
             .single();
-          if (job?.properties) {
-            propertyAddress = (job.properties as any).address_line || null;
+          const jobProperty = job?.properties as PropertyAddressJoin | null;
+          if (jobProperty) {
+            propertyAddress = jobProperty.address_line || null;
           }
         }
 

@@ -107,8 +107,8 @@ export default function MigrationDashboard() {
       const result = await runStep.mutateAsync(step.functionName);
       setStepResults(prev => ({ ...prev, [step.key]: result }));
       toast.success(`${step.title}: ${result.migrated} records migrated`);
-    } catch (e: any) {
-      toast.error(`Migration failed: ${e.message}`);
+    } catch (e) {
+      toast.error(`Migration failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
       setRunningStep(null);
     }
@@ -124,8 +124,8 @@ export default function MigrationDashboard() {
         if (key) setStepResults(prev => ({ ...prev, [key]: r }));
       });
       toast.success(`Migration complete: ${totalMigrated} total records migrated`);
-    } catch (e: any) {
-      toast.error(`Full migration failed: ${e.message}`);
+    } catch (e) {
+      toast.error(`Full migration failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   };
 

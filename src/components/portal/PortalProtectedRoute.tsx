@@ -6,11 +6,12 @@ import { usePortalInvestorData } from '@/hooks/usePortalInvestorData';
 
 interface PortalProtectedRouteProps {
   children: React.ReactNode;
+  requiredPermission?: 'compliance' | 'investor';
 }
 
-export function PortalProtectedRoute({ children }: PortalProtectedRouteProps) {
+export function PortalProtectedRoute({ children, requiredPermission }: PortalProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { access, isLoading: accessLoading, isShareholderUser } = useShareholderSession();
+  const { isLoading: accessLoading, isShareholderUser, canViewCompliance } = useShareholderSession();
   const { isInvestorUser, isLoading: investorLoading } = usePortalInvestorData();
 
   // Show loading while checking auth and access
@@ -30,6 +31,17 @@ export function PortalProtectedRoute({ children }: PortalProtectedRouteProps) {
   // Allow access if user is a shareholder OR an investor
   if (!isShareholderUser && !isInvestorUser) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  const hasRequiredPermission =
+    requiredPermission === 'compliance'
+      ? canViewCompliance
+      : requiredPermission === 'investor'
+        ? isInvestorUser
+        : true;
+
+  if (!hasRequiredPermission) {
+    return <Navigate to="/portal" replace />;
   }
 
   return <>{children}</>;

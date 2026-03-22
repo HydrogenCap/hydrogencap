@@ -85,7 +85,7 @@ export function usePropertyRoomSummaries() {
         .select('*');
       if (error) throw error;
       const map = new Map<string, PropertyRoomSummary>();
-      (data || []).forEach((r: any) => map.set(r.property_id, r));
+      (data || []).forEach((summary) => map.set(summary.property_id, summary as PropertyRoomSummary));
       return map;
     },
   });

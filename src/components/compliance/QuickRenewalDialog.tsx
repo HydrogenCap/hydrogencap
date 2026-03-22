@@ -95,15 +95,14 @@
  
    const handleSubmit = async () => {
      try {
-       // Update the compliance item (cast to any for new renewal fields from migration)
-       await updateItem.mutateAsync({
-         id: complianceItem.id,
-         issue_date: newIssueDate,
-         expiry_date: newExpiryDate,
-         renewal_status: 'completed',
-         renewal_contractor_id: selectedContractor || null,
-         renewal_notes: notes || null,
-       } as any);
+        await updateItem.mutateAsync({
+          id: complianceItem.id,
+          issue_date: newIssueDate,
+          expiry_date: newExpiryDate,
+          renewal_status: 'completed',
+          renewal_contractor_id: selectedContractor || null,
+          renewal_notes: notes || null,
+        });
  
        // Upload document if provided
        if (file) {

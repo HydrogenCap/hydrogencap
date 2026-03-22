@@ -20,6 +20,7 @@ import {
   STAGE_ORDER,
   type LettingsStage,
   type LettingsPipelineItem,
+  type LettingsPipelineUpdate,
 } from '@/hooks/useLettingsPipeline';
 
 const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -103,13 +104,14 @@ function AdvanceForm({
   isPending,
 }: {
   item: LettingsPipelineItem;
-  onSubmit: (updates: Record<string, any>) => void;
+  onSubmit: (updates: LettingsPipelineUpdate) => void;
   isPending: boolean;
 }) {
   const next = nextStage(item.stage);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<LettingsPipelineUpdate>({});
 
-  const set = (key: string, value: any) => setFormData(prev => ({ ...prev, [key]: value }));
+  const set = <K extends keyof LettingsPipelineUpdate>(key: K, value: LettingsPipelineUpdate[K]) =>
+    setFormData((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,7 +233,7 @@ export default function LettingsPipeline() {
 
   const totalActive = (items || []).length;
 
-  const handleAdvanceSubmit = (updates: Record<string, any>) => {
+  const handleAdvanceSubmit = (updates: LettingsPipelineUpdate) => {
     if (!advancingItem) return;
 
     if (updates.stage === 'completed') {

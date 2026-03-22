@@ -56,6 +56,10 @@ interface Props {
   onEdit: (room: RoomV2) => void;
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function RoomCard({ room, onEdit }: Props) {
   const navigate = useNavigate();
   const deleteRoom = useDeleteRoom();
@@ -141,8 +145,8 @@ export function RoomCard({ room, onEdit }: Props) {
                     try {
                       await deleteRoom.mutateAsync({ id: room.id, propertyId: room.property_id });
                       toast({ title: 'Room deleted' });
-                    } catch (err: any) {
-                      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                    } catch (error: unknown) {
+                      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
                     }
                   }}
                 >Delete</AlertDialogAction>

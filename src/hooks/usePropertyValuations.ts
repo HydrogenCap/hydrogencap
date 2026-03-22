@@ -43,7 +43,7 @@
    };
  }
  
- export interface RefinancingOpportunity {
+export interface RefinancingOpportunity {
    id: string;
    property_id: string;
    current_value_gbp: number;
@@ -56,6 +56,16 @@
      postcode: string;
    };
  }
+
+type RefinancingStatus = RefinancingOpportunity['status'];
+
+interface RefinancingOpportunityUpdate {
+  status: RefinancingStatus;
+  updated_at: string;
+  reviewed_at?: string;
+  completed_at?: string;
+  notes?: string;
+}
  
  // Get valuation history for a property
  export function usePropertyValuationHistory(propertyId: string | undefined) {
@@ -245,12 +255,12 @@
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async ({ id, status, notes }: { id: string; status: string; notes?: string }) => {
-       const updates: Record<string, any> = { status, updated_at: new Date().toISOString() };
-       if (status === 'under_review') updates.reviewed_at = new Date().toISOString();
-       if (status === 'completed') updates.completed_at = new Date().toISOString();
-       if (notes) updates.notes = notes;
+  return useMutation({
+    mutationFn: async ({ id, status, notes }: { id: string; status: RefinancingStatus; notes?: string }) => {
+      const updates: RefinancingOpportunityUpdate = { status, updated_at: new Date().toISOString() };
+      if (status === 'under_review') updates.reviewed_at = new Date().toISOString();
+      if (status === 'completed') updates.completed_at = new Date().toISOString();
+      if (notes) updates.notes = notes;
  
        const { error } = await supabase
          .from('refinancing_opportunities')

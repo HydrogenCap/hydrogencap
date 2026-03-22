@@ -17,6 +17,15 @@ export interface LegalEntity {
   status: 'active' | 'dormant' | 'dissolved';
   notes: string | null;
   is_group_parent?: boolean;
+  ch_last_synced_at?: string | null;
+  ch_company_status?: string | null;
+  ch_company_type?: string | null;
+  accounts_due_date?: string | null;
+  accounts_period_end?: string | null;
+  accounts_last_filed_date?: string | null;
+  confirmation_statement_due_date?: string | null;
+  confirmation_statement_last_made_up_to?: string | null;
+  confirmation_statement_last_filed_date?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +46,7 @@ export interface EntityShareholder {
   entity_id: string;
   shareholder_name: string;
   share_class: string;
+  share_class_id?: string | null;
   shares_held: number;
   percentage: number;
   effective_date: string;

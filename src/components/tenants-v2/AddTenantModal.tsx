@@ -7,7 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateTenantV2, TENANT_TYPES, REFERRAL_SOURCES } from '@/hooks/useTenantsV2';
+import {
+  useCreateTenantV2,
+  TENANT_TYPES,
+  REFERRAL_SOURCES,
+  type TenantStatusV2,
+  type TenantTypeV2,
+} from '@/hooks/useTenantsV2';
 import { useToast } from '@/hooks/use-toast';
 
 const schema = z.object({
@@ -26,6 +32,9 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unexpected error occurred';
 
 interface AddTenantModalProps {
   open: boolean;
@@ -53,8 +62,8 @@ export function AddTenantModal({ open, onOpenChange, onSuccess }: AddTenantModal
         date_of_birth: values.date_of_birth || null,
         national_insurance: values.national_insurance || null,
         referral_source: values.referral_source || null,
-        tenant_type: values.tenant_type as any,
-        status: values.status as any,
+        tenant_type: values.tenant_type as TenantTypeV2,
+        status: values.status as TenantStatusV2,
         emergency_contact_name: values.emergency_contact_name || null,
         emergency_contact_phone: values.emergency_contact_phone || null,
         notes: values.notes || null,
@@ -63,8 +72,8 @@ export function AddTenantModal({ open, onOpenChange, onSuccess }: AddTenantModal
       form.reset();
       onOpenChange(false);
       onSuccess?.(result.id);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

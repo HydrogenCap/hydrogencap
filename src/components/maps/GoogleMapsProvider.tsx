@@ -1,5 +1,7 @@
+/* eslint-disable react-refresh/only-export-components -- mixed exports are intentional in this shared module */
 /// <reference types="google.maps" />
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 declare global {
   interface Window {
@@ -41,7 +43,6 @@ async function fetchApiKey(): Promise<string | null> {
 
   // Fallback: fetch from edge function using the user's session token
   try {
-    const { supabase } = await import('@/integrations/supabase/client');
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) return null;
 

@@ -17,7 +17,7 @@ import {
 import { LoadingState, EmptyState } from '@/components/common';
 import {
   useTenancyLedger, usePaidOnTimeStats,
-  useRentSchedule, normalizeRentItem, type LedgerEntry,
+  useRentSchedule, normalizeRentItem, type LedgerEntry, type RentScheduleWithDetails,
 } from '@/hooks/useRentCollection';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,7 @@ export default function TenancyLedger() {
   const [showFuture, setShowFuture] = useState(false);
   const [showPayments, setShowPayments] = useState(true);
   const [showRent, setShowRent] = useState(true);
-  const [paymentItem, setPaymentItem] = useState<any>(null);
+  const [paymentItem, setPaymentItem] = useState<RentScheduleWithDetails | null>(null);
 
   if (isLoading) return <AppLayout><LoadingState text="Loading ledger..." /></AppLayout>;
   if (!ledger || !tenancyId) return <AppLayout><EmptyState icon={PoundSterling} title="Ledger not found" description="No data for this tenancy." /></AppLayout>;

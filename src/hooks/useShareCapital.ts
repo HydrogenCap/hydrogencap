@@ -22,6 +22,11 @@ export interface ShareClassWithAllocation extends ShareClassV2 {
   is_fully_allocated: boolean;
 }
 
+interface ShareholderAllocation {
+  share_class_id: string | null;
+  shares_held: number;
+}
+
 export function useShareClasses(entityId: string | undefined) {
   return useQuery({
     queryKey: ['share_classes_v2', entityId],
@@ -56,10 +61,10 @@ export function useShareClassesWithAllocation(entityId: string | undefined) {
   });
 
   const enriched: ShareClassWithAllocation[] = (shareClasses || []).map(sc => {
-    const classHoldings = (shareholders || []).filter(
-      (sh: any) => sh.share_class_id === sc.id
+    const classHoldings = ((shareholders || []) as ShareholderAllocation[]).filter(
+      (shareholding) => shareholding.share_class_id === sc.id
     );
-    const allocated = classHoldings.reduce((sum: number, sh: any) => sum + sh.shares_held, 0);
+    const allocated = classHoldings.reduce((sum, shareholding) => sum + shareholding.shares_held, 0);
     return {
       ...sc,
       allocated_shares: allocated,

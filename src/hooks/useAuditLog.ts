@@ -2,12 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { AuditLogEntry, AuditLogFilters } from '@/lib/auditLogTypes';
 
+const AUDIT_LOG_TABLE = 'audit_log' as never;
+
 export function useAuditLog(filters: AuditLogFilters) {
   return useQuery({
     queryKey: ['audit_log', filters],
     queryFn: async () => {
       let query = supabase
-        .from('audit_log' as any)
+        .from(AUDIT_LOG_TABLE)
         .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at, context, session_id, ip_address', { count: 'exact' });
 
       if (filters.tableName && filters.tableName !== 'all') {
@@ -44,7 +46,7 @@ export function useRecordAuditHistory(tableName: string, recordId: string | unde
     queryFn: async () => {
       if (!recordId) return [];
       const { data, error } = await supabase
-        .from('audit_log' as any)
+        .from(AUDIT_LOG_TABLE)
         .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at, old_values, new_values')
         .eq('table_name', tableName)
         .eq('record_id', recordId)
@@ -63,8 +65,8 @@ export function useRelatedAuditHistory(recordId: string | undefined, relatedTabl
     queryFn: async () => {
       if (!recordId) return [];
       // Get audit entries where the record_id matches OR any value contains the recordId
-      let query = supabase
-        .from('audit_log' as any)
+      const query = supabase
+        .from(AUDIT_LOG_TABLE)
         .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at, old_values, new_values')
         .eq('record_id', recordId)
         .order('changed_at', { ascending: false })
@@ -83,7 +85,7 @@ export function useRecentActivity(limit = 10) {
     queryKey: ['audit_log_recent', limit],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('audit_log' as any)
+        .from(AUDIT_LOG_TABLE)
         .select('id, table_name, record_id, action, changed_fields, changed_by, changed_at')
         .order('changed_at', { ascending: false })
         .limit(limit);

@@ -21,6 +21,10 @@ interface Props {
   propertyValuation?: number | null;
 }
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function PropertyLoansSection({ propertyId, entityId, entities, propertyValuation }: Props) {
   const { data: facilities = [], isLoading } = useLoanFacilitiesByProperty(propertyId);
   const { data: alerts = [] } = useLoanAlerts();
@@ -39,8 +43,8 @@ export function PropertyLoansSection({ propertyId, entityId, entities, propertyV
     try {
       await updateFacility.mutateAsync({ id, status: 'redeemed' });
       toast({ title: 'Loan marked as redeemed' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 

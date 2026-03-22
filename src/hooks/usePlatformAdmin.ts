@@ -14,7 +14,7 @@ export function usePlatformAdmin() {
         .select('platform_role')
         .eq('user_id', user.id)
         .single();
-      return (data as any)?.platform_role || 'user';
+      return data?.platform_role || 'user';
     },
     enabled: !!user,
     staleTime: 10 * 60 * 1000,

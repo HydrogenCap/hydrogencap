@@ -73,6 +73,31 @@ export interface StructuralWarning {
   message: string;
 }
 
+interface FlowchartEntityRow {
+  id: string;
+  entity_name: string;
+  entity_type: string;
+  company_number: string | null;
+  incorporation_date: string | null;
+  status: string | null;
+  accounts_due_date: string | null;
+  confirmation_statement_due_date: string | null;
+}
+
+interface FlowchartShareholderRow {
+  id: string;
+  entity_id: string;
+  shareholder_name: string;
+  shareholder_entity_id: string | null;
+  percentage: number;
+}
+
+interface FlowchartEntityLinkRow {
+  parent_entity_id: string;
+  shareholder_entity_id: string;
+  shareholder_percent: number;
+}
+
 function mapEntityTypeToSubType(entityType: string): CompanySubType {
   switch (entityType) {
     case 'spv': return 'SPV';
@@ -128,7 +153,10 @@ export function useOwnershipFlowchartData() {
 
       if (!entities || !properties) throw new Error('Failed to load ownership data');
 
-      const entityIds = entities.map(e => e.id);
+      const typedEntities = entities as FlowchartEntityRow[];
+      const entityIds = typedEntities.map((entity) => entity.id);
+      const emptyShareholders: FlowchartShareholderRow[] = [];
+      const emptyEntityLinks: FlowchartEntityLinkRow[] = [];
 
       const [
         { data: shareholders },
@@ -140,13 +168,13 @@ export function useOwnershipFlowchartData() {
               .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type')
               .in('entity_id', entityIds)
               .is('effective_to', null)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: emptyShareholders, error: null }),
         entityIds.length > 0
           ? supabase
               .from('entity_shareholdings')
               .select('parent_entity_id, shareholder_entity_id, shareholder_percent')
               .in('parent_entity_id', entityIds)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: emptyEntityLinks, error: null }),
       ]);
 
       const entityIdSet = new Set(entityIds);
@@ -197,7 +225,7 @@ export function useOwnershipFlowchartData() {
         };
       });
 
-      const companyNodes: FlowchartCompany[] = entities.map(e => {
+      const companyNodes: FlowchartCompany[] = typedEntities.map((e) => {
         const companyProperties = propertyNodes.filter(p => p.companyId === e.id);
         const totalValue = companyProperties.reduce((s, p) => s + (p.value || 0), 0);
         const totalMortgage = companyProperties.reduce((s, p) => s + (p.mortgageBalance || 0), 0);
@@ -208,8 +236,8 @@ export function useOwnershipFlowchartData() {
           companyNumber: e.company_number,
           type: mapEntityTypeToSubType(e.entity_type),
           status: e.status || 'active',
-          accountsDue: (e as any).accounts_due_date,
-          confirmationStatementDue: (e as any).confirmation_statement_due_date,
+          accountsDue: e.accounts_due_date,
+          confirmationStatementDue: e.confirmation_statement_due_date,
           incorporationDate: e.incorporation_date,
           propertyCount: companyProperties.length,
           totalValue,

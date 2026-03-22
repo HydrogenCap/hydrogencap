@@ -41,7 +41,7 @@ export function usePropertyOwnershipV2(
   atDate?: Date
 ) {
   const { data: ownershipData, isLoading } = useOwnershipData();
-  const effectiveDate = atDate || new Date();
+  const effectiveDate = useMemo(() => atDate || new Date(), [atDate]);
 
   const result = useMemo(() => {
     if (!ownershipData || !entityId) return null;
@@ -85,7 +85,7 @@ export function usePortfolioOwnershipV2(
   atDate?: Date
 ) {
   const { data: ownershipData, isLoading } = useOwnershipData();
-  const effectiveDate = atDate || new Date();
+  const effectiveDate = useMemo(() => atDate || new Date(), [atDate]);
 
   const result = useMemo(() => {
     if (!ownershipData || !properties?.length) return null;

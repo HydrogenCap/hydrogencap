@@ -1,6 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
+
+type EntityShareholderRow = Pick<
+  Database['public']['Tables']['entity_shareholders']['Row'],
+  'id' | 'entity_id' | 'shareholder_name' | 'shareholder_entity_id' | 'shares_held' | 'percentage' | 'shareholder_type'
+>;
+
+type EntityShareholdingRow = Pick<
+  Database['public']['Tables']['entity_shareholdings']['Row'],
+  'parent_entity_id' | 'shareholder_entity_id' | 'shareholder_percent'
+>;
 
 export interface FlowchartPerson {
   id: string;
@@ -82,13 +93,13 @@ export function useOwnershipFlowchartData() {
               .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type')
               .in('entity_id', entityIds)
               .is('effective_to', null)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: [] as EntityShareholderRow[], error: null }),
         entityIds.length > 0
           ? supabase
               .from('entity_shareholdings')
               .select('parent_entity_id, shareholder_entity_id, shareholder_percent')
               .in('parent_entity_id', entityIds)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: [] as EntityShareholdingRow[], error: null }),
       ]);
 
       const entityIdSet = new Set(entityIds);

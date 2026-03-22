@@ -131,7 +131,7 @@ function parseBoolean(value: string): boolean {
 
 function parseDateValue(value: string): string | null {
   if (!value) return null;
-  const ukMatch = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  const ukMatch = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (ukMatch) {
     const [, day, month, year] = ukMatch;
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -192,7 +192,7 @@ function normalizeHeader(name: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[_\/\-]+/g, ' ')
+    .replace(/[_/-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .replace(/[()%]/g, '')
     .trim();

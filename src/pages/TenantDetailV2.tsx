@@ -53,6 +53,16 @@ function ComplianceRow({ label, value, ok }: { label: string; value: string; ok:
   );
 }
 
+interface RecurringCharge {
+  id: string;
+  org_id: string;
+  tenant_id: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  created_at: string;
+}
+
 export default function TenantDetailV2() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -64,9 +74,25 @@ export default function TenantDetailV2() {
   const [showCreateAgreement, setShowCreateAgreement] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
   const [showEnd, setShowEnd] = useState(false);
+  const [charges, setCharges] = useState<RecurringCharge[]>([]);
+  const [showAddCharge, setShowAddCharge] = useState(false);
+  const [newCharge, setNewCharge] = useState({ description: '', amount: '', frequency: 'monthly' });
 
   const activeAgreement = useMemo(() => agreements?.find(a => a.status === 'active' || a.status === 'notice_period'), [agreements]);
   const compliance = useMemo(() => allCompliance?.find(c => c.tenant_id === id), [allCompliance, id]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    void supabase
+      .from('recurring_charges' as never)
+      .select('*')
+      .eq('tenant_id', id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setCharges(((data as unknown as RecurringCharge[] | null) ?? []));
+      });
+  }, [id]);
 
   if (isLoading) return <AppLayout><div className="space-y-6"><Skeleton className="h-10 w-64" /><Skeleton className="h-48 w-full" /></div></AppLayout>;
   if (!tenant) return <AppLayout><div className="text-center py-16 text-muted-foreground">Tenant not found.</div></AppLayout>;
@@ -74,31 +100,34 @@ export default function TenantDetailV2() {
   const age = tenant.date_of_birth ? differenceInYears(new Date(), new Date(tenant.date_of_birth)) : null;
   const hasComplianceIssues = compliance && !compliance.section_21_ready;
 
-  const [charges, setCharges] = useState<any[]>([]);
-  const [showAddCharge, setShowAddCharge] = useState(false);
-  const [newCharge, setNewCharge] = useState({ description: '', amount: '', frequency: 'monthly' });
-
-  useEffect(() => {
-    if (!id) return;
-    (supabase as any).from('recurring_charges').select('*')
-      .eq('tenant_id', id).order('created_at', { ascending: false })
-      .then(({ data }: any) => setCharges(data || []));
-  }, [id]);
-
   const addCharge = async () => {
     if (!newCharge.description || !newCharge.amount) return;
-    const orgId = (tenant as any)?.org_id;
+    const orgId = (tenant as { org_id?: string | null }).org_id ?? null;
     if (!orgId) return;
-    const { data } = await (supabase as any)
-      .from('recurring_charges')
-      .insert({ org_id: orgId, tenant_id: id, description: newCharge.description, amount: parseFloat(newCharge.amount), frequency: newCharge.frequency })
-      .select().single();
-    if (data) { setCharges((p: any[]) => [data, ...p]); setNewCharge({ description: '', amount: '', frequency: 'monthly' }); setShowAddCharge(false); }
+
+    const { data } = await supabase
+      .from('recurring_charges' as never)
+      .insert({
+        org_id: orgId,
+        tenant_id: id,
+        description: newCharge.description,
+        amount: parseFloat(newCharge.amount),
+        frequency: newCharge.frequency,
+      } as never)
+      .select()
+      .single();
+
+    const createdCharge = data as unknown as RecurringCharge | null;
+    if (createdCharge) {
+      setCharges((previous) => [createdCharge, ...previous]);
+      setNewCharge({ description: '', amount: '', frequency: 'monthly' });
+      setShowAddCharge(false);
+    }
   };
 
   const removeCharge = async (chargeId: string) => {
-    await (supabase as any).from('recurring_charges').delete().eq('id', chargeId);
-    setCharges((p: any[]) => p.filter((c: any) => c.id !== chargeId));
+    await supabase.from('recurring_charges' as never).delete().eq('id', chargeId);
+    setCharges((previous) => previous.filter((charge) => charge.id !== chargeId));
   };
 
   return (
@@ -296,7 +325,7 @@ export default function TenantDetailV2() {
                   <TableHead>Frequency</TableHead><TableHead></TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {charges.map((c: any) => (
+                  {charges.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell>{c.description}</TableCell>
                       <TableCell>£{Number(c.amount).toFixed(2)}</TableCell>

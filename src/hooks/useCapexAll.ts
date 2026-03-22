@@ -69,7 +69,7 @@ export function useCreateCapexProjectFull() {
       queryClient.invalidateQueries({ queryKey: ['capex-projects'] });
       toast({ title: 'Project created' });
     },
-    onError: (e: any) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (error: Error) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
   });
 }
 

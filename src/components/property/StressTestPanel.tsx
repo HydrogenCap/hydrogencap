@@ -18,8 +18,8 @@ export function StressTestPanel() {
     if (!properties?.length) return null;
 
     const currentYear = new Date().getFullYear();
-    let basePortfolio = { totalValue: 0, totalDebt: 0, totalEquity: 0, totalCashflow: 0, totalRent: 0, avgLtv: 0, propertiesUnderwater: 0 };
-    let stressedPortfolio = { ...basePortfolio };
+    const basePortfolio = { totalValue: 0, totalDebt: 0, totalEquity: 0, totalCashflow: 0, totalRent: 0, avgLtv: 0, propertiesUnderwater: 0 };
+    const stressedPortfolio = { ...basePortfolio };
 
     properties.forEach(prop => {
       const loan = prop.loans?.[0];

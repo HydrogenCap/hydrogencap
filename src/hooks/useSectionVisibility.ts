@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   type SectionKey,
@@ -7,6 +8,9 @@ import {
   DEFAULT_SECTION_VISIBILITY,
   SECTION_ROUTES,
 } from '@/lib/sectionVisibility';
+
+type ProfileSectionVisibility =
+  Database['public']['Tables']['profiles']['Update']['section_visibility'];
 
 function mergeSectionVisibility(raw: unknown): SectionVisibility {
   const result = { ...DEFAULT_SECTION_VISIBILITY };
@@ -49,7 +53,7 @@ export function useSectionVisibility() {
       const updated = { ...settings, [key]: value };
       const { error } = await supabase
         .from('profiles')
-        .update({ section_visibility: updated as any, updated_at: new Date().toISOString() })
+        .update({ section_visibility: updated as ProfileSectionVisibility, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
       if (error) throw error;
       return updated;

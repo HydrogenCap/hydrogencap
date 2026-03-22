@@ -1,4 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type NotificationInsert = Database['public']['Tables']['notifications']['Insert'];
 
 interface CreateNotificationParams {
   orgId: string;
@@ -41,7 +44,7 @@ export async function createNotification(params: CreateNotificationParams) {
       entity_id: entityId || null,
     }));
 
-    const { error } = await supabase.from('notifications').insert(rows as any);
+    const { error } = await supabase.from('notifications').insert(rows as NotificationInsert[]);
     if (error) console.error('Failed to create notifications:', error);
   } else {
     const { error } = await supabase.from('notifications').insert({
@@ -54,7 +57,7 @@ export async function createNotification(params: CreateNotificationParams) {
       link_to: linkTo || null,
       entity_type: entityType || null,
       entity_id: entityId || null,
-    } as any);
+    } as NotificationInsert);
     if (error) console.error('Failed to create notification:', error);
   }
 }

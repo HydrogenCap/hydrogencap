@@ -19,6 +19,14 @@ interface ComplianceDetailModalProps {
   onUpload: () => void;
 }
 
+interface ComplianceHistoryDocument {
+  id: string;
+  issue_date: string | null;
+  expiry_date: string | null;
+  issuer_name: string | null;
+  is_current: boolean;
+}
+
 function statusBadge(status: ComplianceStatusV2) {
   const map: Record<ComplianceStatusV2, { label: string; className: string }> = {
     valid: { label: 'Valid', className: 'bg-success/20 text-success border-success/30' },
@@ -45,6 +53,8 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
   );
 
   if (!row) return null;
+
+  const typedHistory = (history || []) as ComplianceHistoryDocument[];
 
   const handleToggle = async () => {
     if (row.is_required && !showOverrideInput) {
@@ -131,10 +141,10 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
           )}
 
           {/* History toggle */}
-          {showHistory && history && history.length > 0 && (
+          {showHistory && typedHistory.length > 0 && (
             <div className="border rounded-lg p-3 space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Document History</p>
-              {history.map((doc: any) => (
+              {typedHistory.map((doc) => (
                 <div key={doc.id} className={cn('text-xs border-b pb-2 last:border-b-0', !doc.is_current && 'opacity-60')}>
                   <div className="flex justify-between">
                     <span>{doc.issue_date ? format(new Date(doc.issue_date), 'dd/MM/yyyy') : '—'}</span>

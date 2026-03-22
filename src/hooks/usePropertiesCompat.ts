@@ -1,9 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import type { PropertyWithFinancials } from './useProperties';
 
 // Re-export the V1 type so consumers can import from one place
 export type { PropertyWithFinancials } from './useProperties';
+
+type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
+type LoanFacilityRow = Database['public']['Tables']['loan_facilities']['Row'];
+type PropertyAnnualPerformanceRow = Database['public']['Tables']['property_annual_performance']['Row'];
+type TenancyAgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
+type V1Loan = PropertyWithFinancials['loans'][number];
+type V1Income = PropertyWithFinancials['income'][number];
+type V1Costs = PropertyWithFinancials['costs'][number];
+type V1Tenancy = PropertyWithFinancials['tenancies'][number];
+
+type PropertyV2WithEntity = PropertyV2Row & {
+  legal_entities?: { entity_name: string | null } | Array<{ entity_name: string | null }> | null;
+};
+
+export type PropertyCompatWithFinancials = PropertyWithFinancials & {
+  __v2_entity_id: string;
+  __v2_entity_name: string | null;
+};
 
 /**
  * Compatibility adapter: reads V2 tables, returns V1 PropertyWithFinancials shape.
@@ -13,15 +32,15 @@ export type { PropertyWithFinancials } from './useProperties';
  * native V2 hooks, this adapter can be removed.
  *
  * V2 sources:
- *   properties_v2              → core property fields
- *   loan_facilities            → replaces V1 loans
- *   property_annual_performance → replaces V1 income + costs
- *   tenancy_agreements         → replaces V1 tenancies
+ *   properties_v2              â†’ core property fields
+ *   loan_facilities            â†’ replaces V1 loans
+ *   property_annual_performance â†’ replaces V1 income + costs
+ *   tenancy_agreements         â†’ replaces V1 tenancies
  */
 export function usePropertiesCompat() {
   return useQuery({
     queryKey: ['properties_compat_v2'],
-    queryFn: async () => {
+    queryFn: async (): Promise<PropertyCompatWithFinancials[]> => {
       // Parallel fetch all V2 data
       const [propsRes, loansRes, perfRes, agreementsRes] = await Promise.all([
         supabase
@@ -44,88 +63,91 @@ export function usePropertiesCompat() {
       if (propsRes.error) throw propsRes.error;
 
       // Build lookup maps
-      const loansByProp = new Map<string, any[]>();
-      for (const loan of (loansRes.data || [])) {
-        const arr = loansByProp.get(loan.property_id) || [];
-        arr.push(loan);
-        loansByProp.set(loan.property_id, arr);
+      const loansByProp = new Map<string, LoanFacilityRow[]>();
+      for (const loan of loansRes.data || []) {
+        const loans = loansByProp.get(loan.property_id) || [];
+        loans.push(loan);
+        loansByProp.set(loan.property_id, loans);
       }
 
-      const perfByProp = new Map<string, any>();
-      for (const p of (perfRes.data || [])) {
-        if (p.property_id) perfByProp.set(p.property_id, p);
+      const perfByProp = new Map<string, PropertyAnnualPerformanceRow>();
+      for (const performance of perfRes.data || []) {
+        if (performance.property_id) perfByProp.set(performance.property_id, performance);
       }
 
-      const agreementsByProp = new Map<string, any[]>();
-      for (const a of (agreementsRes.data || [])) {
-        const arr = agreementsByProp.get(a.property_id) || [];
-        arr.push(a);
-        agreementsByProp.set(a.property_id, arr);
+      const agreementsByProp = new Map<string, TenancyAgreementRow[]>();
+      for (const agreement of agreementsRes.data || []) {
+        const agreements = agreementsByProp.get(agreement.property_id) || [];
+        agreements.push(agreement);
+        agreementsByProp.set(agreement.property_id, agreements);
       }
 
       // Map V2 properties to V1 PropertyWithFinancials shape
-      return (propsRes.data || []).map((v2: any): PropertyWithFinancials => {
-        const loans = (loansByProp.get(v2.id) || []).map(mapLoanToV1);
-        const perf = perfByProp.get(v2.id);
-        const agreements = agreementsByProp.get(v2.id) || [];
+      return ((propsRes.data || []) as PropertyV2WithEntity[]).map((property) => {
+        const loans = (loansByProp.get(property.id) || []).map(mapLoanToV1);
+        const performance = perfByProp.get(property.id);
+        const agreements = agreementsByProp.get(property.id) || [];
+        const legalEntity = Array.isArray(property.legal_entities)
+          ? property.legal_entities[0]
+          : property.legal_entities;
 
         return {
-          // ─── Core property fields (V2 → V1 mapping) ───
-          id: v2.id,
-          org_id: v2.org_id,
-          address_line: v2.address_line_1,
-          address_line2: v2.address_line_2,
-          area_name: v2.city,
-          town_city: v2.city,
-          postcode: v2.postcode,
-          county: v2.county,
-          country: v2.country,
-          property_type: v2.property_type,
-          beds: v2.total_lettable_rooms,
+          // â”€â”€â”€ Core property fields (V2 â†’ V1 mapping) â”€â”€â”€
+          id: property.id,
+          org_id: property.org_id,
+          address_line: property.address_line_1,
+          address_line2: property.address_line_2,
+          area_name: property.city,
+          town_city: property.city,
+          postcode: property.postcode,
+          county: property.county,
+          country: property.country,
+          property_type: property.property_type,
+          beds: property.total_lettable_rooms,
           bathrooms: null,
-          latitude: v2.latitude,
-          longitude: v2.longitude,
-          current_value_gbp: v2.current_valuation,
-          purchase_price_gbp: v2.purchase_price,
-          purchase_date: v2.purchase_date,
-          lifecycle_type: v2.lifecycle_stage || 'development',
-          has_gas: v2.has_gas_supply,
-          is_grade_listed: v2.listing_grade !== 'none',
-          listing_grade: v2.listing_grade,
-          notes: v2.notes,
-          created_at: v2.created_at,
-          updated_at: v2.updated_at,
+          latitude: property.latitude,
+          longitude: property.longitude,
+          current_value_gbp: property.current_valuation,
+          purchase_price_gbp: property.purchase_price,
+          purchase_date: property.purchase_date,
+          lifecycle_type: property.lifecycle_stage || 'development',
+          has_gas: property.has_gas_supply,
+          is_grade_listed: property.listing_grade !== 'none',
+          listing_grade: property.listing_grade,
+          notes: property.notes,
+          created_at: property.created_at,
+          updated_at: property.updated_at,
 
-          // Fields that don't exist in V2 — safe defaults
+          // Fields that don't exist in V2 â€” safe defaults
           is_hmo_licensed: null,
           epc_rating: null,
           conservation_area: false,
-          formatted_address: `${v2.address_line_1}, ${v2.city}, ${v2.postcode}`,
+          formatted_address: `${property.address_line_1}, ${property.city}, ${property.postcode}`,
           legal_owner_company_id: null,
           legal_owner_party_id: null,
-          last_valuation_date: v2.valuation_date,
-          last_valuation_estimate: v2.current_valuation,
-          capital_invested_gbp: v2.purchase_price,
+          last_valuation_date: property.valuation_date,
+          last_valuation_estimate: property.current_valuation,
+          capital_invested_gbp: property.purchase_price,
 
-          // ─── Nested financial data ───
-          loans: loans,
-          income: perf ? [mapPerfToIncome(v2.id, perf)] : [],
-          costs: perf ? [mapPerfToCosts(v2.id, perf)] : [],
-          tenancies: agreements.map(a => mapAgreementToTenancy(a)),
+          // â”€â”€â”€ Nested financial data â”€â”€â”€
+          loans,
+          income: performance ? [mapPerfToIncome(property.id, performance)] : [],
+          costs: performance ? [mapPerfToCosts(property.id, performance)] : [],
+          tenancies: agreements.map((agreement) => mapAgreementToTenancy(agreement)),
 
-          // ─── Extra V2 context ───
-          __v2_entity_id: v2.entity_id,
-          __v2_entity_name: v2.legal_entities?.entity_name,
-        } as any;
+          // â”€â”€â”€ Extra V2 context â”€â”€â”€
+          __v2_entity_id: property.entity_id,
+          __v2_entity_name: legalEntity?.entity_name || null,
+        } as PropertyCompatWithFinancials;
       });
     },
     staleTime: 5 * 60 * 1000,
   });
 }
 
-// ─── Mappers ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Mappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function mapLoanToV1(loan: any) {
+function mapLoanToV1(loan: LoanFacilityRow): V1Loan {
   return {
     id: loan.id,
     org_id: loan.org_id,
@@ -149,19 +171,19 @@ function mapLoanToV1(loan: any) {
   };
 }
 
-function mapPerfToIncome(propertyId: string, perf: any) {
+function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Income {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-income-${propertyId}`,
     org_id: null,
     property_id: propertyId,
     year: currentYear,
-    annual_rent_gbp: perf.annual_rent_received,
+    annual_rent_gbp: performance.annual_rent_received,
     created_at: null,
   };
 }
 
-function mapPerfToCosts(propertyId: string, perf: any) {
+function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Costs {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-costs-${propertyId}`,
@@ -173,23 +195,23 @@ function mapPerfToCosts(propertyId: string, perf: any) {
     maintenance_gbp_manual: null,
     utilities_gbp_manual: null,
     ground_rent_gbp_manual: null,
-    __total_annual_costs: perf.annual_costs,
+    __total_annual_costs: performance.annual_costs,
     created_at: null,
   };
 }
 
-function mapAgreementToTenancy(a: any) {
+function mapAgreementToTenancy(agreement: TenancyAgreementRow): V1Tenancy {
   return {
-    id: a.id,
+    id: agreement.id,
     org_id: null,
-    tenant_id: a.tenant_id,
-    room_id: a.room_id,
-    property_id: a.property_id,
-    start_date: a.start_date,
-    end_date: a.initial_end_date,
-    rent_amount_pcm: a.rent_amount_pcm,
+    tenant_id: agreement.tenant_id,
+    room_id: agreement.room_id,
+    property_id: agreement.property_id,
+    start_date: agreement.start_date,
+    end_date: agreement.initial_end_date,
+    rent_amount_pcm: agreement.rent_amount_pcm,
     rent_due_day: 1,
-    status: a.status === 'notice_period' ? 'notice' : a.status,
+    status: agreement.status === 'notice_period' ? 'notice' : agreement.status,
     created_at: null,
     updated_at: null,
   };

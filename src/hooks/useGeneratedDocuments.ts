@@ -9,7 +9,7 @@ export interface GeneratedDocument {
   property_id: string | null;
   tenancy_id: string | null;
   tenant_id: string | null;
-  generated_data: Record<string, any> | null;
+  generated_data: Record<string, unknown> | null;
   storage_path: string | null;
   created_at: string;
   created_by: string | null;
@@ -38,7 +38,7 @@ export function useCreateGeneratedDocument() {
       property_id?: string | null;
       tenancy_id?: string | null;
       tenant_id?: string | null;
-      generated_data?: Record<string, any>;
+      generated_data?: Record<string, unknown>;
     }) => {
       const orgId = await fetchUserOrgId();
       const { data: { user } } = await supabase.auth.getUser();

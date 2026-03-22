@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -91,6 +92,18 @@ interface AcceptComplianceDocumentParams {
     issueDate: string | null;
     expiryDate: string | null;
   };
+}
+
+type ComplianceDocumentUpdate = Pick<
+  Database['public']['Tables']['compliance_documents_v2']['Update'],
+  'issuer_name' | 'certificate_number'
+>;
+
+interface CompliancePropertySummary {
+  id: string;
+  address_line_1?: string | null;
+  city?: string | null;
+  address_line?: string | null;
 }
 
 // Compliance type to short code for filenames
@@ -281,7 +294,7 @@ export function useAcceptComplianceDocument() {
         .single();
 
       if (docMeta && newDoc) {
-        const updates: Record<string, any> = {};
+        const updates: ComplianceDocumentUpdate = {};
         if (docMeta.extracted_certifier_company || docMeta.extracted_certifier_name) {
           updates.issuer_name = docMeta.extracted_certifier_company || docMeta.extracted_certifier_name;
         }
@@ -426,7 +439,7 @@ export function useAcceptAllHighConfidence() {
       original_file_name: string;
       file_url: string;
       extracted_epc_rating: string | null;
-      property?: { id: string; address_line_1?: string; city?: string; address_line?: string } | null;
+      property?: CompliancePropertySummary | null;
     }>) => {
       const highConfidenceDocs = documents.filter(d => 
         d.ai_suggested_doc_type && 
@@ -442,7 +455,7 @@ export function useAcceptAllHighConfidence() {
 
       let accepted = 0;
       for (const doc of highConfidenceDocs) {
-        const prop = doc.property as any;
+        const prop = doc.property;
         const propertyAddress = prop?.address_line_1
           ? `${prop.address_line_1}, ${prop.city || ''}`
           : prop?.address_line || 'Unknown';

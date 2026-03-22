@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { useInvestors, Investor } from '@/hooks/useInvestors';
+import { useInvestors, useSendInvestorPortalAccessEmail, Investor } from '@/hooks/useInvestors';
 import { useInvestorCommitments, useInvestorDistributions, useInvestorReturnMetrics } from '@/hooks/useInvestorDetail';
 import { useInvestorReports } from '@/hooks/useInvestorReports';
+import { useDownloadFile } from '@/hooks/useSignedUrl';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { CommitmentFormModal } from '@/components/investors/CommitmentFormModal';
 import { DistributionFormModal } from '@/components/investors/DistributionFormModal';
@@ -64,6 +65,8 @@ export default function InvestorDetail() {
   const { data: distributions } = useInvestorDistributions(id);
   const { data: returnMetrics } = useInvestorReturnMetrics(id);
   const { data: reports } = useInvestorReports(id);
+  const { download: downloadInvestorReport, downloading: downloadingInvestorReport } = useDownloadFile('investor-reports');
+  const sendPortalAccessEmail = useSendInvestorPortalAccessEmail();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommitmentModal, setShowCommitmentModal] = useState(false);
@@ -133,6 +136,7 @@ export default function InvestorDetail() {
   const typeConfig = TYPE_BADGE[investor.investor_type] || TYPE_BADGE.individual;
   const multipleColor = kpis.weightedMultiple >= 1.5 ? 'text-emerald-600' : kpis.weightedMultiple >= 1 ? 'text-amber-600' : 'text-destructive';
   const equityColor = kpis.totalEquityValue > kpis.totalDrawn ? 'text-emerald-600' : '';
+  const canSendPortalAccessEmail = Boolean(investor.portal_access_enabled && investor.email);
 
   return (
     <AppLayout>
@@ -159,6 +163,14 @@ export default function InvestorDetail() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={!canSendPortalAccessEmail || sendPortalAccessEmail.isPending}
+              onClick={() => void sendPortalAccessEmail.mutateAsync(investor.id)}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Send Portal Access
+            </Button>
             <Button variant="outline" onClick={() => setShowReportModal(true)}>
               <FileText className="h-4 w-4 mr-2" />Statement
             </Button>
@@ -396,10 +408,13 @@ export default function InvestorDetail() {
                     </TableCell>
                     <TableCell>
                       {r.file_url && (
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={r.file_url} target="_blank" rel="noopener noreferrer">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={downloadingInvestorReport}
+                          onClick={() => void downloadInvestorReport(r.file_url!, r.file_name || r.title)}
+                        >
                             <Download className="h-4 w-4" />
-                          </a>
                         </Button>
                       )}
                     </TableCell>

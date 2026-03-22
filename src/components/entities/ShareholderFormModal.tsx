@@ -58,7 +58,7 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
       if (editingShareholder) {
         setForm({
           shareholder_name: editingShareholder.shareholder_name,
-          share_class_id: (editingShareholder as any).share_class_id || '',
+          share_class_id: editingShareholder.share_class_id || '',
           shares_held: String(editingShareholder.shares_held),
           effective_date: editingShareholder.effective_date,
           shareholder_entity_id: editingShareholder.shareholder_entity_id || null,
@@ -84,7 +84,7 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
   const selectedShareClass = shareClassesWithAllocation?.find(sc => sc.id === form.share_class_id);
   const sharesEntered = parseInt(form.shares_held, 10) || 0;
   const currentlyAllocated = selectedShareClass?.allocated_shares || 0;
-  const editingShares = ((editingShareholder as any)?.share_class_id === form.share_class_id)
+  const editingShares = (editingShareholder?.share_class_id === form.share_class_id)
     ? editingShareholder!.shares_held : 0;
   const wouldBeAllocated = currentlyAllocated - editingShares + sharesEntered;
   const isOverAllocated = selectedShareClass && sharesEntered > 0 && wouldBeAllocated > selectedShareClass.issued_shares;
@@ -140,8 +140,9 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
         toast({ title: 'Shareholder added' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : 'Failed to save shareholder';
+      toast({ title: 'Error', description, variant: 'destructive' });
     }
   };
 

@@ -24,6 +24,8 @@ const INITIAL: RenameProgress = {
   warnings: [],
 };
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Unknown error';
+
 export function useBatchRenameDocuments() {
   const [progress, setProgress] = useState<RenameProgress>(INITIAL);
   const abortRef = useRef(false);
@@ -218,8 +220,8 @@ export function useBatchRenameDocuments() {
             })
             .eq('id', update.id);
           renamed++;
-        } catch (err: any) {
-          warnings.push(`Failed to rename ${update.id}: ${err.message}`);
+        } catch (error: unknown) {
+          warnings.push(`Failed to rename ${update.id}: ${getErrorMessage(error)}`);
         }
       }
 

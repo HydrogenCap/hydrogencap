@@ -37,6 +37,18 @@ function fmtRent(v: number | null) {
   return `£${v.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+interface ComplianceDocument {
+  id: string;
+  document_type: string;
+  issue_date: string | null;
+  expiry_date: string | null;
+  status: string;
+}
+
+interface MaintenanceCostRow {
+  actual_cost: number | null;
+}
+
 export default function RoomDetailV2() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -48,7 +60,8 @@ export default function RoomDetailV2() {
   const [showCreateAgreement, setShowCreateAgreement] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
-  const [compliance, setCompliance] = useState<any[]>([]);
+  const [compliance, setCompliance] = useState<ComplianceDocument[]>([]);
+  const [maintenanceCosts, setMaintenanceCosts] = useState<MaintenanceCostRow[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -57,7 +70,17 @@ export default function RoomDetailV2() {
       .select('*')
       .eq('room_id', id)
       .order('expiry_date', { ascending: true })
-      .then(({ data }) => setCompliance(data || []));
+      .then(({ data }) => setCompliance((data as ComplianceDocument[] | null) || []));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from('maintenance_requests')
+      .select('actual_cost')
+      .eq('room_v2_id', id)
+      .not('actual_cost', 'is', null)
+      .then(({ data }) => setMaintenanceCosts((data as MaintenanceCostRow[] | null) || []));
   }, [id]);
 
   const activeAgreement = useMemo(() => roomAgreements?.find(a => a.status === 'active' || a.status === 'notice_period'), [roomAgreements]);
@@ -94,6 +117,17 @@ export default function RoomDetailV2() {
     return last > first ? 'up' : last < first ? 'down' : 'flat';
   }, [roomAgreements]);
 
+  const maintenanceCostTotal = useMemo(() =>
+    maintenanceCosts.reduce((sum, row) => sum + (row.actual_cost || 0), 0),
+  [maintenanceCosts]);
+
+  const annualRent = useMemo(() => {
+    const active = roomAgreements?.find((agreement) => agreement.status === 'active');
+    if (active) return active.rent_amount_pcm * 12;
+    if (roomAgreements && roomAgreements.length > 0) return roomAgreements[0].rent_amount_pcm * 12;
+    return 0;
+  }, [roomAgreements]);
+
   if (isLoading) {
     return <AppLayout><div className="space-y-6"><Skeleton className="h-10 w-64" /><Skeleton className="h-48 w-full" /></div></AppLayout>;
   }
@@ -113,33 +147,11 @@ export default function RoomDetailV2() {
       await updateRoom.mutateAsync({ id: room.id, notes: notesValue || null });
       setEditingNotes(false);
       toast({ title: 'Notes saved' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : 'Failed to save notes';
+      toast({ title: 'Error', description, variant: 'destructive' });
     }
   };
-
-  const [maintenanceCosts, setMaintenanceCosts] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!id) return;
-    supabase
-      .from('maintenance_requests')
-      .select('actual_cost')
-      .eq('room_v2_id', id)
-      .not('actual_cost', 'is', null)
-      .then(({ data }) => setMaintenanceCosts(data || []));
-  }, [id]);
-
-  const maintenanceCostTotal = useMemo(() =>
-    maintenanceCosts.reduce((sum: number, r: any) => sum + (r.actual_cost || 0), 0),
-  [maintenanceCosts]);
-
-  const annualRent = useMemo(() => {
-    const active = (roomAgreements as any[])?.find(a => a.status === 'active');
-    if (active) return active.rent_amount_pcm * 12;
-    if ((roomAgreements as any[])?.length > 0) return (roomAgreements as any[])[0].rent_amount_pcm * 12;
-    return 0;
-  }, [roomAgreements]);
 
   const netProfit = annualRent - maintenanceCostTotal;
   const profitMargin = annualRent > 0 ? Math.max(0, Math.min(100, (netProfit / annualRent) * 100)) : 0;

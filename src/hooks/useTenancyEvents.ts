@@ -13,6 +13,38 @@ interface UseTenancyEventsOptions {
   daysAhead?: number;
 }
 
+interface TenancyEventTenant {
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface TenancyEventProperty {
+  id: string;
+  address_line_1: string | null;
+  city: string | null;
+  postcode: string | null;
+}
+
+interface TenancyEventRoom {
+  room_name: string | null;
+  property_id: string | null;
+  properties_v2: TenancyEventProperty | null;
+}
+
+interface TenancyEventRow {
+  id: string;
+  start_date: string;
+  initial_end_date: string | null;
+  actual_end_date: string | null;
+  break_clause_date: string | null;
+  last_rent_review_date: string | null;
+  status: string;
+  rent_amount_pcm: number;
+  is_periodic: boolean;
+  tenants_v2: TenancyEventTenant | null;
+  rooms_v2: TenancyEventRoom | null;
+}
+
 export function useTenancyEvents(options?: UseTenancyEventsOptions) {
   return useQuery({
     queryKey: ['tenancy-events', options?.propertyId, options?.tenancyId, options?.daysAhead],
@@ -41,7 +73,7 @@ export function useTenancyEvents(options?: UseTenancyEventsOptions) {
       if (error) throw error;
 
       // Map to the shape expected by calculateAllEvents
-      let tenancies = (data || []).map((d: any) => ({
+      let tenancies = ((data || []) as TenancyEventRow[]).map((d) => ({
         id: d.id,
         start_date: d.start_date,
         initial_end_date: d.initial_end_date,

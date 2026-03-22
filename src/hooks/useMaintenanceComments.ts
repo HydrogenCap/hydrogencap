@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import type { CommentAuthorType } from '@/lib/maintenanceTypes';
+
+type MaintenanceCommentInsert = Database['public']['Tables']['maintenance_comments']['Insert'];
 
 export interface MaintenanceComment {
   id: string;
@@ -46,9 +49,10 @@ export function useAddMaintenanceComment() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
+      const payload: MaintenanceCommentInsert = { ...comment, org_id: orgId };
       const { data, error } = await supabase
         .from('maintenance_comments')
-        .insert({ ...comment, org_id: orgId } as any)
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;

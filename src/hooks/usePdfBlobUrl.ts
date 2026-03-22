@@ -67,10 +67,10 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
         blobUrlRef.current = url;
         setBlobUrl(url);
         setDataUrl(url);
-      } catch (err: any) {
+      } catch (err) {
         if (!cancelled) {
           console.error('PDF fetch error:', err);
-          setError(err.message || 'Failed to load PDF');
+          setError(err instanceof Error ? err.message : 'Failed to load PDF');
         }
       } finally {
         if (!cancelled) {

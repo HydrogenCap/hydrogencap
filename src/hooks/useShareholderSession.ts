@@ -51,47 +51,16 @@ export function useShareholderSession() {
 }
 
 export function useAcceptShareholderInvite() {
-  return async (token: string, userId: string) => {
-    // Find the invite
-    const { data: invite, error: inviteError } = await supabase
-      .from('shareholder_invites')
-      .select('*')
-      .eq('token', token)
-      .is('accepted_at', null)
-      .single();
+  return async (token: string) => {
+    const { data, error } = await supabase.rpc('accept_shareholder_invite', {
+      p_token: token,
+    });
 
-    if (inviteError || !invite) {
-      throw new Error('Invalid or expired invitation');
-    }
+    if (error) throw error;
 
-    // Check if expired
-    if (new Date(invite.expires_at) < new Date()) {
-      throw new Error('This invitation has expired');
-    }
+    const result = (data || {}) as { error?: string };
+    if (result.error) throw new Error(result.error);
 
-    // Create shareholder access
-    const { error: accessError } = await supabase
-      .from('shareholder_access')
-      .insert({
-        org_id: invite.org_id,
-        user_id: userId,
-        invite_id: invite.id,
-        access_level: 'read_only',
-        can_view_financials: true,
-        can_view_compliance: true,
-        can_view_documents: true,
-      });
-
-    if (accessError) throw accessError;
-
-    // Mark invite as accepted
-    const { error: updateError } = await supabase
-      .from('shareholder_invites')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('id', invite.id);
-
-    if (updateError) throw updateError;
-
-    return invite;
+    return result;
   };
 }

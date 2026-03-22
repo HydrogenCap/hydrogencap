@@ -23,6 +23,11 @@ interface ArrearsAgingTableProps {
   isPartiallySelected?: boolean;
 }
 
+type TenancyGroupingRow = ArrearsAgingRow['tenancies'][number] & {
+  property_address: string;
+  property_id: string;
+};
+
 function PropertyRow({
   row,
   selectedIds,
@@ -317,7 +322,7 @@ function TenancyGroupingTable({
   onToggleSelection,
   portfolioTotal,
 }: {
-  allTenancies: any[];
+  allTenancies: TenancyGroupingRow[];
   showCheckboxes: boolean;
   isAllSelected?: boolean;
   isPartiallySelected?: boolean;
@@ -366,8 +371,8 @@ function TenancyGroupingTable({
         </TableHeader>
         <TableBody>
           {allTenancies.map((t) => {
-            const tenancyItemIds = t.schedule_items.map((s: any) => s.id);
-            const tenancySelectedCount = tenancyItemIds.filter((id: string) => selectedIds?.has(id)).length;
+            const tenancyItemIds = t.schedule_items.map((scheduleItem) => scheduleItem.id);
+            const tenancySelectedCount = tenancyItemIds.filter((id) => selectedIds?.has(id)).length;
             const isAllTenancySelected = tenancyItemIds.length > 0 && tenancySelectedCount === tenancyItemIds.length;
             const isPartialTenancy = tenancySelectedCount > 0 && tenancySelectedCount < tenancyItemIds.length;
             const isTenancyExpanded = expandedTenancies.has(t.tenancy_id);
@@ -375,9 +380,9 @@ function TenancyGroupingTable({
             const toggleTenancySelection = () => {
               if (!onToggleSelection) return;
               if (isAllTenancySelected) {
-                tenancyItemIds.forEach((id: string) => { if (selectedIds?.has(id)) onToggleSelection(id); });
+                tenancyItemIds.forEach((id) => { if (selectedIds?.has(id)) onToggleSelection(id); });
               } else {
-                tenancyItemIds.forEach((id: string) => { if (!selectedIds?.has(id)) onToggleSelection(id); });
+                tenancyItemIds.forEach((id) => { if (!selectedIds?.has(id)) onToggleSelection(id); });
               }
             };
 

@@ -21,6 +21,17 @@ interface ChecklistItem {
   insuranceField?: string;
 }
 
+interface ComplianceChecklistRecord {
+  property_id: string;
+  compliance_type: string;
+  expiry_date: string | null;
+}
+
+interface InsurancePolicyRecord {
+  renewal_date: string | null;
+  status: string | null;
+}
+
 function getChecklist(isHmo: boolean, hasGas: boolean, tenure: string | null): ChecklistItem[] {
   const items: ChecklistItem[] = [
     { label: 'EPC Certificate', complianceTypes: ['EPC', 'epc'], source: 'compliance', required: true },
@@ -43,7 +54,7 @@ function getChecklist(isHmo: boolean, hasGas: boolean, tenure: string | null): C
 
 type ItemStatus = 'valid' | 'expired' | 'expiring_soon' | 'missing';
 
-function getComplianceStatus(item: any): ItemStatus {
+function getComplianceStatus(item: ComplianceChecklistRecord | undefined): ItemStatus {
   if (!item) return 'missing';
   if (!item.expiry_date) return 'valid';
   const expiry = new Date(item.expiry_date);
@@ -54,7 +65,7 @@ function getComplianceStatus(item: any): ItemStatus {
   return 'valid';
 }
 
-function getInsuranceStatus(policy: any): ItemStatus {
+function getInsuranceStatus(policy: InsurancePolicyRecord | null): ItemStatus {
   if (!policy) return 'missing';
   if (policy.status === 'expired') return 'expired';
   if (!policy.renewal_date) return 'valid';
@@ -68,8 +79,8 @@ function getInsuranceStatus(policy: any): ItemStatus {
 
 export function DocumentChecklist({ propertyId, isHmo = false, hasGas = true, tenure }: DocumentChecklistProps) {
   const { data: complianceData } = useAllCompliance();
-  const complianceItems = complianceData?.items;
-  const { data: insurancePolicy } = useQuery({
+  const complianceItems = complianceData?.items as ComplianceChecklistRecord[] | undefined;
+  const { data: insurancePolicy } = useQuery<InsurancePolicyRecord | null>({
     queryKey: ['insurance-policy', propertyId],
     queryFn: async () => {
       const { data } = await supabase

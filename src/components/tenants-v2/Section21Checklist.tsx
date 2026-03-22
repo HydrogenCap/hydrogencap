@@ -27,6 +27,7 @@ interface CheckItem {
 
 export function Section21Checklist({ open, onOpenChange, tenancyId }: Section21ChecklistProps) {
   const [manualChecks, setManualChecks] = useState<Record<string, boolean>>({});
+  const today = useMemo(() => new Date(), []);
 
   // Fetch tenancy
   const { data: tenancy } = useQuery({
@@ -67,8 +68,6 @@ export function Section21Checklist({ open, onOpenChange, tenancyId }: Section21C
       return data || [];
     },
   });
-
-  const today = new Date();
 
   const checks = useMemo((): CheckItem[] => {
     if (!tenancy) return [];

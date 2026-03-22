@@ -51,8 +51,9 @@ export function MappingsSection() {
         return next;
       });
       toast.success('Mapping updated');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update';
+      toast.error(message);
     }
   };
 

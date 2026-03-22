@@ -5,10 +5,15 @@ import { Button } from '@/components/ui/button';
 import { PortalLayout } from '@/components/portal/PortalLayout';
 import { usePortalInvestorData } from '@/hooks/usePortalInvestorData';
 import { LoadingState } from '@/components/common/LoadingState';
+import { useDownloadFile } from '@/hooks/useSignedUrl';
+import type { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 
+type InvestorReport = Database['public']['Tables']['investor_reports']['Row'];
+
 export default function PortalStatements() {
-  const { reports, investor, isLoading } = usePortalInvestorData();
+  const { reports, isLoading } = usePortalInvestorData();
+  const { download, downloading } = useDownloadFile('investor-reports');
 
   if (isLoading) {
     return (
@@ -36,7 +41,7 @@ export default function PortalStatements() {
           <CardContent>
             {reports && reports.length > 0 ? (
               <div className="space-y-3">
-                {reports.map((report: any) => (
+                {(reports as InvestorReport[]).map((report) => (
                   <div
                     key={report.id}
                     className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
@@ -69,12 +74,13 @@ export default function PortalStatements() {
                         <Button
                           variant="outline"
                           size="sm"
-                          asChild
+                          disabled={downloading}
+                          onClick={() => void download(report.file_url, report.file_name || report.title || 'statement.pdf')}
                         >
-                          <a href={report.file_url} target="_blank" rel="noopener noreferrer" download>
+                          <>
                             <Download className="mr-2 h-4 w-4" />
                             Download
-                          </a>
+                          </>
                         </Button>
                       ) : (
                         <Badge variant="secondary">Unavailable</Badge>

@@ -13,12 +13,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { TenantPortalLayout } from '@/components/tenant-portal/TenantPortalLayout';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 import { PRIORITY_CONFIG, STATUS_CONFIG, MAINTENANCE_CATEGORY_NAMES } from '@/lib/maintenanceTypes';
 
+type MaintenanceRequestInsert = Database['public']['Tables']['maintenance_requests']['Insert'];
+
 export default function TenantMaintenance() {
-  const { tenancyId, tenantId, orgId } = useTenantPortalSession();
+  const { tenancyId, tenantId, orgId, canSubmitMaintenance } = useTenantPortalSession();
   const queryClient = useQueryClient();
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [title, setTitle] = useState('');
@@ -38,7 +41,7 @@ export default function TenantMaintenance() {
       if (error) throw error;
       return data;
     },
-    enabled: !!tenancyId,
+    enabled: canSubmitMaintenance && !!tenancyId,
   });
 
   const { data: requests, isLoading } = useQuery({
@@ -53,25 +56,27 @@ export default function TenantMaintenance() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!tenantId,
+    enabled: canSubmitMaintenance && !!tenantId,
   });
 
   const createRequest = useMutation({
     mutationFn: async () => {
+      if (!canSubmitMaintenance) throw new Error('Maintenance access is disabled');
       if (!orgId || !tenantId || !tenancy?.property_id) throw new Error('Missing data');
+      const payload: MaintenanceRequestInsert = {
+        org_id: orgId,
+        tenant_id: tenantId,
+        property_id: tenancy.property_id,
+        title,
+        description,
+        category,
+        priority,
+        reported_by: 'tenant',
+        status: 'reported',
+      };
       const { error } = await supabase
         .from('maintenance_requests')
-        .insert({
-          org_id: orgId,
-          tenant_id: tenantId,
-          property_id: tenancy.property_id,
-          title,
-          description,
-          category,
-          priority,
-          reported_by: 'tenant',
-          status: 'reported',
-        } as any);
+        .insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -80,8 +85,8 @@ export default function TenantMaintenance() {
       setTitle(''); setDescription(''); setCategory('other'); setPriority('medium');
       toast.success('Maintenance request submitted');
     },
-    onError: (err: any) => {
-      toast.error('Failed to submit request', { description: err.message });
+    onError: (err) => {
+      toast.error('Failed to submit request', { description: err instanceof Error ? err.message : 'Unknown error' });
     },
   });
 

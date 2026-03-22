@@ -88,8 +88,9 @@ export function UploadComplianceDocModal({
       toast.success('Compliance document added');
       resetForm();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to upload document');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to upload document';
+      toast.error(message);
     } finally {
       setUploading(false);
     }

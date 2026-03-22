@@ -73,7 +73,7 @@ export function WorksOrderDetailForm({ worksOrder: wo }: Props) {
     updateWO.mutate({ id: wo.id, status });
   };
 
-  const currentIdx = WORKS_ORDER_PIPELINE.indexOf(wo.status as any);
+  const currentIdx = WORKS_ORDER_PIPELINE.indexOf(wo.status);
 
   return (
     <Card>

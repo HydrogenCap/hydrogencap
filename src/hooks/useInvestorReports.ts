@@ -1,9 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { InvestorStatementReport, type InvestorReportData } from '@/lib/investorReportGenerator';
+
+type InvestorReportInsert = Database['public']['Tables']['investor_reports']['Insert'];
 
 export function useInvestorReports(investorId: string | undefined) {
   return useQuery({
@@ -54,8 +57,8 @@ export function useGenerateInvestorReport() {
 
       let fileUrl: string | null = null;
       if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('investor-reports').getPublicUrl(storagePath);
-        fileUrl = urlData.publicUrl;
+        // Store the storage object path so downloads can always be re-signed.
+        fileUrl = storagePath;
       } else {
         console.warn('Failed to upload investor report:', uploadError);
       }
@@ -73,7 +76,7 @@ export function useGenerateInvestorReport() {
           file_url: fileUrl,
           file_name: filename,
           generated_at: new Date().toISOString(),
-        } as any);
+        } as InvestorReportInsert);
 
       if (insertError) {
         console.warn('Failed to save report record:', insertError);

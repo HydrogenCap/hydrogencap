@@ -46,7 +46,7 @@ export function StepSelectRoom({ payload, updatePayload }: StepProps) {
           updatePayload({ room_id: null, _room_name: undefined });
         }
       });
-  }, [propertyId]);
+  }, [propertyId, updatePayload]);
 
   if (loading) {
     return (

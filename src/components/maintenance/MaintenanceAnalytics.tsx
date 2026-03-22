@@ -16,7 +16,7 @@ function useMaintenanceAnalytics() {
   const spendByCategory = useQuery({
     queryKey: ['maintenance_spend_by_category'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('maintenance_spend_by_category' as any).select('*');
+      const { data, error } = await supabase.from('maintenance_spend_by_category' as never).select('*');
       if (error) throw error;
       return (data || []) as unknown as MaintenanceSpendByCategory[];
     },
@@ -25,7 +25,7 @@ function useMaintenanceAnalytics() {
   const contractorPerformance = useQuery({
     queryKey: ['contractor_maintenance_performance'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('contractor_maintenance_performance' as any).select('*');
+      const { data, error } = await supabase.from('contractor_maintenance_performance' as never).select('*');
       if (error) throw error;
       return (data || []) as unknown as ContractorPerformanceRow[];
     },
@@ -34,7 +34,7 @@ function useMaintenanceAnalytics() {
   const recurringIssues = useQuery({
     queryKey: ['recurring_issue_detection'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('recurring_issue_detection' as any).select('*');
+      const { data, error } = await supabase.from('recurring_issue_detection' as never).select('*');
       if (error) throw error;
       return (data || []) as unknown as RecurringIssueRow[];
     },

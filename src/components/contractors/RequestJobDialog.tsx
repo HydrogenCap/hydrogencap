@@ -81,7 +81,9 @@
      setCustomMessage('');
    };
  
-   const isMatchingContractor = (c: any): c is MatchingContractor => 'contractor_id' in c;
+  const isMatchingContractor = (
+    contractor: Contractor | MatchingContractor | null,
+  ): contractor is MatchingContractor => !!contractor && 'contractor_id' in contractor;
  
    return (
      <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) resetForm(); }}>

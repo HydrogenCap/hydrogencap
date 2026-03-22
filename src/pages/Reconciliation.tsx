@@ -21,8 +21,11 @@ import {
   useRejectMatch,
   useExcludeTransaction,
   useReconciliationSummary,
+  type ReconciliationTransaction,
 } from '@/hooks/useReconciliation';
 import { confidenceLabel, confidenceBadgeClass } from '@/lib/reconciliationEngine';
+
+type SuggestedTransaction = ReconciliationTransaction & { matched_schedule_id: string };
 
 // ─── Import Section ──────────────────────────────────────────────────
 
@@ -62,7 +65,7 @@ function TransactionRow({
   onExclude,
   isConfirming,
 }: {
-  txn: any;
+  txn: ReconciliationTransaction;
   confidence?: number;
   onConfirm?: () => void;
   onReject?: () => void;
@@ -130,13 +133,16 @@ export default function Reconciliation() {
   const rejectMatch = useRejectMatch();
   const excludeTxn = useExcludeTransaction();
 
+  const isSuggestedTransaction = (txn: ReconciliationTransaction): txn is SuggestedTransaction =>
+    txn.status === 'suggested' && typeof txn.matched_schedule_id === 'string';
+
   // Split unmatched into suggested vs truly unmatched
   const suggested = useMemo(() =>
-    (unmatched || []).filter((t: any) => t.status === 'suggested'),
+    (unmatched || []).filter(isSuggestedTransaction),
   [unmatched]);
 
   const trulyUnmatched = useMemo(() =>
-    (unmatched || []).filter((t: any) => t.status === 'unmatched'),
+    (unmatched || []).filter((t) => t.status === 'unmatched'),
   [unmatched]);
 
   // Auto-select first account
@@ -191,8 +197,7 @@ export default function Reconciliation() {
               variant="default"
               onClick={() => {
                 const pairs = suggested
-                  .filter((t: any) => t.matched_schedule_id)
-                  .map((t: any) => ({ transactionId: t.id, scheduleId: t.matched_schedule_id! }));
+                  .map((txn) => ({ transactionId: txn.id, scheduleId: txn.matched_schedule_id }));
                 bulkConfirm.mutate(pairs);
               }}
               disabled={bulkConfirm.isPending}
@@ -258,7 +263,7 @@ export default function Reconciliation() {
                   All transactions matched or excluded
                 </p>
               ) : (
-                trulyUnmatched.map((txn: any) => (
+                trulyUnmatched.map((txn) => (
                   <TransactionRow
                     key={txn.id}
                     txn={txn}
@@ -287,13 +292,13 @@ export default function Reconciliation() {
                   Run Auto-Match to find suggestions
                 </p>
               ) : (
-                suggested.map((txn: any) => (
+                suggested.map((txn) => (
                   <TransactionRow
                     key={txn.id}
                     txn={txn}
                     onConfirm={() => confirmMatch.mutate({
                       transactionId: txn.id,
-                      scheduleId: txn.matched_schedule_id!,
+                      scheduleId: txn.matched_schedule_id,
                     })}
                     onReject={() => rejectMatch.mutate(txn.id)}
                     isConfirming={confirmMatch.isPending}
@@ -321,7 +326,7 @@ export default function Reconciliation() {
                   No confirmed matches yet
                 </p>
               ) : (
-                matched.slice(0, 50).map((txn: any) => (
+                matched.slice(0, 50).map((txn) => (
                   <TransactionRow key={txn.id} txn={txn} />
                 ))
               )}

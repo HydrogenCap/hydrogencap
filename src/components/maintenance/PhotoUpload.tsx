@@ -12,6 +12,10 @@ interface Props {
   maxFiles?: number;
 }
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function PhotoUpload({ folder, onUpload, existingUrls = [], maxFiles = 5 }: Props) {
   const [uploading, setUploading] = useState(false);
   const [urls, setUrls] = useState<string[]>(existingUrls);
@@ -33,8 +37,8 @@ export function PhotoUpload({ folder, onUpload, existingUrls = [], maxFiles = 5 
       const updated = [...urls, ...newUrls];
       setUrls(updated);
       onUpload(updated);
-    } catch (err: any) {
-      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Upload failed', description: getErrorMessage(err), variant: 'destructive' });
     } finally {
       setUploading(false);
     }

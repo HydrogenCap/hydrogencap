@@ -71,6 +71,26 @@ export const riskTypeLabels: Record<RiskType, string> = {
   lease_expiry: 'Lease Expiry',
 };
 
+interface TenancyRiskRecord {
+  id: string;
+  property_id: string | null;
+  tenant_id: string | null;
+  status: string | null;
+  end_date: string | null;
+  tenant?: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+  room?: {
+    room_name: string | null;
+  } | null;
+  property?: {
+    id: string;
+    address_line: string | null;
+  } | null;
+}
+
 /**
  * Calculate all portfolio risks for core rental properties.
  * This is the single source of truth for risk calculations used by both
@@ -82,7 +102,7 @@ export function calculatePortfolioRisks(
   complianceMatrix: ComplianceMatrixRow[],
   tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = [],
   insurancePolicies: InsurancePolicy[] = [],
-  tenancies: any[] = []
+  tenancies: TenancyRiskRecord[] = []
 ): RiskItem[] {
   const riskItems: RiskItem[] = [];
   const currentYear = new Date().getFullYear();

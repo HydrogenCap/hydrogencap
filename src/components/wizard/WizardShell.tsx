@@ -68,14 +68,14 @@ export function WizardShell({
     if (draft && urlStep !== currentStep && urlStep >= 0 && urlStep < steps.length) {
       setStep(urlStep);
     }
-  }, [searchParams]);
+  }, [searchParams, currentStep, draft, setStep, steps.length]);
 
   // Auto-create draft on first load if none exists
   useEffect(() => {
     if (!isLoading && !draft) {
       createDraft();
     }
-  }, [isLoading, draft]);
+  }, [isLoading, draft, createDraft]);
 
   // Compute all issues across all steps + cross-checks
   const allIssues = useMemo<ValidationError[]>(() => {

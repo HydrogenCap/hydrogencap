@@ -18,8 +18,8 @@ import {
 } from '@/components/ui/select';
 import { useCreateWorkOrder, WO_CATEGORIES, type WOCategory, type WOPriority } from '@/hooks/useWorkOrders';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
-import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
-import { usePropertyRooms } from '@/hooks/useRoomsV2';
+import { usePropertiesV2, type PropertyWithEntity } from '@/hooks/usePropertiesV2';
+import { usePropertyRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 
 interface Props {
   open: boolean;
@@ -46,11 +46,11 @@ export function CreateWorkOrderDialog({ open, onOpenChange }: Props) {
   });
 
   // Filter properties by selected entity
-  const filteredProperties = allProperties?.filter(
-    p => !form.entity_id || (p as any).entity_id === form.entity_id
-  ) || [];
+  const filteredProperties: PropertyWithEntity[] = allProperties?.filter(
+    (property) => !form.entity_id || property.entity_id === form.entity_id
+  ) ?? [];
 
-  const { data: rooms } = usePropertyRooms(form.property_id || undefined);
+  const { data: rooms = [] } = usePropertyRooms(form.property_id || undefined);
 
   // Reset downstream selects when parent changes
   useEffect(() => {
@@ -147,7 +147,7 @@ export function CreateWorkOrderDialog({ open, onOpenChange }: Props) {
             <Select value={form.property_id} onValueChange={v => setForm(f => ({ ...f, property_id: v }))}>
               <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
               <SelectContent>
-                {filteredProperties.map((p: any) => (
+                {filteredProperties.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.address_line_1}, {p.city}
                   </SelectItem>
@@ -156,13 +156,13 @@ export function CreateWorkOrderDialog({ open, onOpenChange }: Props) {
             </Select>
           </div>
 
-          {form.property_id && rooms && rooms.length > 0 && (
+          {form.property_id && rooms.length > 0 && (
             <div>
               <Label>Room</Label>
               <Select value={form.room_id} onValueChange={v => setForm(f => ({ ...f, room_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
                 <SelectContent>
-                  {rooms.map((r: any) => (
+                  {rooms.map((r: RoomV2) => (
                     <SelectItem key={r.id} value={r.id}>{r.room_name}</SelectItem>
                   ))}
                 </SelectContent>

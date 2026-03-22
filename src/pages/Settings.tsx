@@ -32,6 +32,7 @@ import { useBatchImport } from '@/hooks/useBatchImport';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
+import type { Database as SupabaseDatabase } from '@/integrations/supabase/types';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,6 +58,8 @@ import {
 
 const PROPERTY_STEPS = ['Upload', 'Map Columns', 'Preview', 'Import'];
 const PASSPORT_STEPS = ['Upload', 'Map Columns', 'Match Properties', 'Import'];
+
+type PropertyPassportInsert = SupabaseDatabase['public']['Tables']['property_passport']['Insert'];
 
 export default function Settings() {
   const { user } = useAuth();
@@ -215,8 +218,8 @@ export default function Settings() {
     setPassCurrentStep(0);
   }, []);
 
-  const handlePassMappingChange = useCallback((csvColumn: string, fieldKey: string) => {
-    setPassMapping(prev => ({ ...prev, [csvColumn]: fieldKey as any }));
+  const handlePassMappingChange = useCallback((csvColumn: string, fieldKey: PassportColumnMapping[string]) => {
+    setPassMapping(prev => ({ ...prev, [csvColumn]: fieldKey }));
   }, []);
 
   const handlePassValidate = useCallback(() => {
@@ -264,7 +267,7 @@ export default function Settings() {
       try {
         await upsertPassport.mutateAsync({
           property_id: row.matchedPropertyId!,
-          ...row.data as any,
+          ...(row.data as PropertyPassportInsert),
         });
         success++;
       } catch {

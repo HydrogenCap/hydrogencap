@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface EscalationRule {
   id: string;
@@ -14,6 +15,9 @@ export interface EscalationRule {
   is_active: boolean;
   created_at: string;
 }
+
+type EscalationRuleInsert = Database['public']['Tables']['escalation_rules']['Insert'];
+type EscalationRuleUpdate = Database['public']['Tables']['escalation_rules']['Update'];
 
 export function useEscalationRules() {
   return useQuery({
@@ -32,8 +36,8 @@ export function useEscalationRules() {
 export function useCreateEscalationRule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (rule: Partial<EscalationRule>) => {
-      const { error } = await supabase.from('escalation_rules').insert(rule as any);
+    mutationFn: async (rule: Partial<EscalationRuleInsert>) => {
+      const { error } = await supabase.from('escalation_rules').insert(rule);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['escalation-rules'] }),
@@ -43,8 +47,8 @@ export function useCreateEscalationRule() {
 export function useUpdateEscalationRule() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EscalationRule> }) => {
-      const { error } = await supabase.from('escalation_rules').update(updates as any).eq('id', id);
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EscalationRuleUpdate> }) => {
+      const { error } = await supabase.from('escalation_rules').update(updates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['escalation-rules'] }),

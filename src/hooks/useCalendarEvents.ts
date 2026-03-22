@@ -20,10 +20,29 @@
    daysUntil: number;
  }
  
- const URGENCY_THRESHOLDS = {
-   compliance: { urgent: 14, warning: 30 },
-   mortgage: { urgent: 30, warning: 90 },
- };
+const URGENCY_THRESHOLDS = {
+  compliance: { urgent: 14, warning: 30 },
+  mortgage: { urgent: 30, warning: 90 },
+};
+
+interface ComplianceCalendarItem {
+  id: string;
+  property_id: string;
+  compliance_type: string;
+  expiry_date: string | null;
+  auto_job_id?: string | null;
+}
+
+interface ContractorJobCalendarItem {
+  id: string;
+  property_id: string;
+  booked_date: string | null;
+  status: string;
+  job_type: string;
+  contractor?: {
+    name?: string | null;
+  } | null;
+}
  
  export function useCalendarEvents(startDate?: string, endDate?: string) {
    const { data: complianceData, isLoading: complianceLoading } = useAllCompliance();
@@ -44,9 +63,10 @@
      const allEvents: CalendarEvent[] = [];
      const today = new Date();
  
-     // 1. Compliance expiries
-     complianceItems?.forEach(item => {
-       if (!item.expiry_date) return;
+    // 1. Compliance expiries
+    complianceItems?.forEach(item => {
+      const complianceItem = item as ComplianceCalendarItem;
+      if (!item.expiry_date) return;
        
        const expiryDate = new Date(item.expiry_date);
        const daysUntil = differenceInDays(expiryDate, today);
@@ -59,29 +79,30 @@
        allEvents.push({
          id: `compliance-${item.id}`,
          eventType: 'compliance',
-         propertyId: item.property_id,
-         propertyAddress: propertyMap.get(item.property_id) || 'Unknown',
-         title: item.compliance_type,
-         date: expiryDate,
-         urgency,
-         relatedJobId: (item as any).auto_job_id ?? null,
-         complianceType: item.compliance_type,
-         daysUntil,
-       });
-     });
- 
-     // 2. Booked contractor jobs
-     jobs?.forEach(job => {
-       if (!job.booked_date || ['completed', 'verified', 'cancelled'].includes(job.status)) return;
+        propertyId: item.property_id,
+        propertyAddress: propertyMap.get(item.property_id) || 'Unknown',
+        title: item.compliance_type,
+        date: expiryDate,
+        urgency,
+        relatedJobId: complianceItem.auto_job_id ?? null,
+        complianceType: item.compliance_type,
+        daysUntil,
+      });
+    });
+
+    // 2. Booked contractor jobs
+    jobs?.forEach(job => {
+      const contractorJob = job as ContractorJobCalendarItem;
+      if (!job.booked_date || ['completed', 'verified', 'cancelled'].includes(job.status)) return;
        
        const bookedDate = new Date(job.booked_date);
        const daysUntil = differenceInDays(bookedDate, today);
        
-       let urgency: CalendarEventUrgency = 'scheduled';
-       if (job.status === 'in_progress') urgency = 'scheduled';
-       else if (daysUntil < 0) urgency = 'overdue';
- 
-       const contractorName = (job as any).contractor?.name || 'No contractor';
+      let urgency: CalendarEventUrgency = 'scheduled';
+      if (job.status === 'in_progress') urgency = 'scheduled';
+      else if (daysUntil < 0) urgency = 'overdue';
+
+      const contractorName = contractorJob.contractor?.name || 'No contractor';
        
        allEvents.push({
          id: `job-${job.id}`,

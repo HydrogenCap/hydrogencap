@@ -79,8 +79,9 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
         toast({ title: 'Share class created' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : 'Failed to save share class';
+      toast({ title: 'Error', description, variant: 'destructive' });
     }
   };
 

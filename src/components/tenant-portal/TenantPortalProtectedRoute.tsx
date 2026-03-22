@@ -6,11 +6,18 @@ import { LoadingState } from '@/components/common/LoadingState';
 
 interface TenantPortalProtectedRouteProps {
   children: React.ReactNode;
+  requiredPermission?: 'rent' | 'documents' | 'maintenance';
 }
 
-export function TenantPortalProtectedRoute({ children }: TenantPortalProtectedRouteProps) {
+export function TenantPortalProtectedRoute({ children, requiredPermission }: TenantPortalProtectedRouteProps) {
   const { user, loading: authLoading } = useAuth();
-  const { access, isLoading, isTenantUser } = useTenantPortalSession();
+  const {
+    isLoading,
+    isTenantUser,
+    canViewRent,
+    canViewDocuments,
+    canSubmitMaintenance,
+  } = useTenantPortalSession();
 
   if (authLoading || isLoading) {
     return (
@@ -26,6 +33,19 @@ export function TenantPortalProtectedRoute({ children }: TenantPortalProtectedRo
 
   if (!isTenantUser) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  const hasRequiredPermission =
+    requiredPermission === 'rent'
+      ? canViewRent
+      : requiredPermission === 'documents'
+        ? canViewDocuments
+        : requiredPermission === 'maintenance'
+          ? canSubmitMaintenance
+          : true;
+
+  if (!hasRequiredPermission) {
+    return <Navigate to="/tenant-portal" replace />;
   }
 
   return <>{children}</>;

@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+
+type InvestorCommitmentInsert = Database['public']['Tables']['investor_commitments']['Insert'];
+type InvestorDistributionInsert = Database['public']['Tables']['investor_distributions']['Insert'];
 
 export function useInvestorCommitments(investorId: string | undefined) {
   return useQuery({
@@ -70,9 +74,10 @@ export function useCreateCommitment() {
       documentation_url?: string | null;
       notes?: string | null;
     }) => {
+      const payload: InvestorCommitmentInsert = { ...data, org_id: orgId! };
       const { data: result, error } = await supabase
         .from('investor_commitments')
-        .insert([{ ...data, org_id: orgId! } as any])
+        .insert([payload])
         .select()
         .single();
       if (error) throw error;
@@ -111,9 +116,10 @@ export function useCreateDistribution() {
       status?: string;
       notes?: string | null;
     }) => {
+      const payload: InvestorDistributionInsert = { ...data, org_id: orgId! };
       const { data: result, error } = await supabase
         .from('investor_distributions')
-        .insert([{ ...data, org_id: orgId! } as any])
+        .insert([payload])
         .select()
         .single();
       if (error) throw error;

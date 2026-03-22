@@ -5,8 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { seedDemoData, clearDemoData } from '@/lib/seedDemoData';
 import { useToast } from '@/hooks/use-toast';
 
-const sq = supabase as any;
-
 export function useDemoData() {
   const { user } = useAuth();
   const { data: org } = useOrganization();
@@ -17,7 +15,7 @@ export function useDemoData() {
     queryKey: ['demo-data-check', org?.id],
     queryFn: async () => {
       if (!org?.id) return false;
-      const { count } = await sq
+      const { count } = await supabase
         .from('properties_v2')
         .select('id', { count: 'exact', head: true })
         .eq('org_id', org.id)

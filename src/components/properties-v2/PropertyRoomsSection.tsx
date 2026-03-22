@@ -22,6 +22,12 @@ interface Props {
   wholeHouseRentPcm?: number | null;
 }
 
+type RoomWithUnit = RoomV2 & { unit_id?: string | null };
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 function fmtGBP(v: number) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 }).format(v);
 }
@@ -43,8 +49,8 @@ export function PropertyRoomsSection({ propertyId }: Props) {
 
   // Group rooms by unit
   const roomsByUnit = new Map<string, RoomV2[]>();
-  rooms?.forEach(room => {
-    const uid = (room as any).unit_id || 'unassigned';
+  (rooms as RoomWithUnit[] | undefined)?.forEach(room => {
+    const uid = room.unit_id || 'unassigned';
     if (!roomsByUnit.has(uid)) roomsByUnit.set(uid, []);
     roomsByUnit.get(uid)!.push(room);
   });
@@ -53,8 +59,8 @@ export function PropertyRoomsSection({ propertyId }: Props) {
     try {
       await deleteUnit.mutateAsync({ id: unit.id, propertyId });
       toast({ title: `Unit "${unit.unit_name}" deleted` });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

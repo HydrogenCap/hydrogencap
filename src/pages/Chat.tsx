@@ -206,7 +206,7 @@ export default function Chat() {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 px-6" ref={scrollRef as any}>
+        <ScrollArea className="flex-1 px-6" ref={scrollRef}>
           <div className="max-w-3xl mx-auto py-6 space-y-6">
             {messages.length === 0 ? (
               <div className="text-center py-12">

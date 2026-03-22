@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useAcceptComplianceDocument, useRejectComplianceDocument, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -44,12 +45,6 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: properties } = await import('@/hooks/usePropertiesV2').then(m => {
-        // We already have properties from the hook above, use those
-        return { data: null };
-      });
-      
       // Reset status to pending
       await supabase.from('documents').update({ 
         extraction_status: 'pending',

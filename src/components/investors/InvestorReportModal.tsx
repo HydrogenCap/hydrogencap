@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, startOfYear, endOfMonth, subYears, startOfMonth } from 'date-fns';
-import { FileText, Download, Calendar } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -13,14 +13,19 @@ import {
 import { useGenerateInvestorReport } from '@/hooks/useInvestorReports';
 import type { InvestorReportData } from '@/lib/investorReportGenerator';
 import type { Investor } from '@/hooks/useInvestors';
+import type { Database } from '@/integrations/supabase/types';
+
+type InvestorCommitmentDetail = Database['public']['Views']['investor_commitment_detail']['Row'];
+type InvestorDistribution = Database['public']['Tables']['investor_distributions']['Row'];
+type InvestorReturnMetric = Database['public']['Views']['investor_return_metrics']['Row'];
 
 interface InvestorReportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   investor: Investor & { id: string };
-  commitments: any[];
-  distributions: any[];
-  returnMetrics: any[];
+  commitments: InvestorCommitmentDetail[];
+  distributions: InvestorDistribution[];
+  returnMetrics: InvestorReturnMetric[];
 }
 
 export function InvestorReportModal({

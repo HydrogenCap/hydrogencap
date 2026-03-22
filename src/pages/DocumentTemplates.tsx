@@ -28,12 +28,30 @@ import {
 
 type WizardStep = 'browse' | 'select_context' | 'template_fields' | 'preview';
 
+interface TemplateFields {
+  noticeDate?: string;
+  earliestEndDate?: string;
+  currentRent?: number;
+  newRent?: number;
+  increaseDate?: string;
+  grounds?: string[];
+  groundDetails?: string;
+  earliestCourtDate?: string;
+  guarantorName?: string;
+  guarantorAddress?: string;
+  guaranteedAmount?: number;
+  date?: string;
+  servedDate?: string;
+  prospectName?: string;
+  previousAddress?: string;
+}
+
 export default function DocumentTemplates() {
   const [step, setStep] = useState<WizardStep>('browse');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [selectedTenancyId, setSelectedTenancyId] = useState<string>('');
-  const [templateFields, setTemplateFields] = useState<Record<string, any>>({});
+  const [templateFields, setTemplateFields] = useState<TemplateFields>({});
 
   const { toast } = useToast();
   const { data: properties } = usePropertiesV2();
@@ -75,7 +93,7 @@ export default function DocumentTemplates() {
 
   const handleContextNext = () => {
     // Pre-fill fields based on template
-    const fields: Record<string, any> = {};
+    const fields: TemplateFields = {};
     const today = format(new Date(), 'yyyy-MM-dd');
 
     if (selectedTemplateId === 'section_21_notice') {
@@ -211,7 +229,7 @@ export default function DocumentTemplates() {
     }
   };
 
-  const updateField = (key: string, value: any) => {
+  const updateField = <K extends keyof TemplateFields>(key: K, value: TemplateFields[K]) => {
     setTemplateFields(prev => ({ ...prev, [key]: value }));
   };
 

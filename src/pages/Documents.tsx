@@ -69,6 +69,7 @@ import {
   useDocumentCategories,
   useDownloadDocument,
   useDeleteManagedDocument,
+  type DocumentCategory,
   type ManagedDocument,
 } from '@/hooks/useDocumentManagement';
 import {
@@ -79,6 +80,7 @@ import {
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useCompanies } from '@/hooks/useCompanies';
 import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
 
 // ─── Constants ───────────────────────────────────────────────────
 
@@ -274,7 +276,11 @@ export default function Documents() {
     return groups;
   }, [sortBy, currentDocuments]);
 
-  const renderListRow = (doc: any, FileIcon: any, catMeta: any) => {
+  const renderListRow = (
+    doc: ManagedDocument,
+    FileIcon: LucideIcon,
+    catMeta?: DocumentCategory,
+  ) => {
     const isValuation = doc.category === 'valuations';
     return (
       <div key={doc.id}>

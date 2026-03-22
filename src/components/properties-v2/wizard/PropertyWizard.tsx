@@ -11,6 +11,7 @@ import { useBulkCreateRooms } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
 import { useLenders, useCreateLender } from '@/hooks/useLenders';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 import { StepAddress } from './StepAddress';
@@ -24,6 +25,13 @@ import { INITIAL_WIZARD_DATA, STEP_LABELS, type WizardData } from './types';
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+type PropertyUpdate = Database['public']['Tables']['properties_v2']['Update'];
+type RoomInsert = Database['public']['Tables']['rooms_v2']['Insert'];
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
 }
 
 export function PropertyWizard({ open, onOpenChange }: Props) {
@@ -130,7 +138,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.hmo_licence_number) {
         await supabase
           .from('properties_v2')
-          .update({ hmo_licence_number: data.hmo_licence_number } as any)
+          .update({ hmo_licence_number: data.hmo_licence_number } as PropertyUpdate)
           .eq('id', property.id);
       }
 
@@ -138,10 +146,10 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.rooms.length > 0) {
         try {
           await bulkCreateRooms.mutateAsync(
-            data.rooms.map(r => ({
+            data.rooms.map<RoomInsert>(r => ({
               property_id: property.id,
               room_name: r.room_name,
-              room_type: r.room_type as any,
+              room_type: r.room_type,
               floor: r.floor,
               has_ensuite: r.has_ensuite,
               is_lettable: r.is_lettable,
@@ -251,10 +259,10 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       setData({ ...INITIAL_WIZARD_DATA });
       setStep(0);
       navigate(`/properties-v2/${property.id}`);
-    } catch (err: any) {
-      console.error('Property creation failed:', err);
-      captureError(err, 'PropertyWizard.create');
-      toast({ title: 'Failed to create property', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      console.error('Property creation failed:', error);
+      captureError(error, 'PropertyWizard.create');
+      toast({ title: 'Failed to create property', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import type { TaxYearLabel } from '@/lib/accountingTypes';
 import { parseTaxYear } from '@/lib/accountingTypes';
@@ -11,6 +12,13 @@ import {
   type MarginalTaxRate,
 } from '@/lib/propertyTax';
 
+type TaxExpenseRow = Database['public']['Tables']['tax_expenses']['Row'];
+type TaxExpenseInsert = Database['public']['Tables']['tax_expenses']['Insert'];
+type ProfileTaxSettingsUpdate = Pick<
+  Database['public']['Tables']['profiles']['Update'],
+  'marginal_tax_rate' | 'corporation_tax_rate' | 'use_property_allowance'
+>;
+
 // ── Tax expenses CRUD ──
 
 export function useTaxExpenses(taxYear: TaxYearLabel) {
@@ -19,12 +27,12 @@ export function useTaxExpenses(taxYear: TaxYearLabel) {
     queryKey: ['tax_expenses', org?.id, taxYear],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('tax_expenses' as any)
+        .from('tax_expenses')
         .select('*')
         .eq('org_id', org!.id)
         .eq('tax_year', taxYear);
       if (error) throw error;
-      return data as any[];
+      return (data || []) as TaxExpenseRow[];
     },
     enabled: !!org?.id,
   });
@@ -41,7 +49,7 @@ export function useAddTaxExpense() {
       description?: string;
       amount: number;
     }) => {
-      const { error } = await supabase.from('tax_expenses' as any).insert(expense as any);
+      const { error } = await supabase.from('tax_expenses').insert(expense as TaxExpenseInsert);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tax_expenses'] }),
@@ -52,7 +60,7 @@ export function useDeleteTaxExpense() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('tax_expenses' as any).delete().eq('id', id);
+      const { error } = await supabase.from('tax_expenses').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tax_expenses'] }),
@@ -94,7 +102,7 @@ export function useUpdateTaxSettings() {
       if (!user) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('profiles')
-        .update(settings as any)
+        .update(settings as ProfileTaxSettingsUpdate)
         .eq('id', user.id);
       if (error) throw error;
     },

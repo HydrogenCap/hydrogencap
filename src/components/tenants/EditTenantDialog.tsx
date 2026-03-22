@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { sanitizeText } from '@/lib/utils';
@@ -80,7 +80,7 @@ export function EditTenantDialog({ tenant, open, onOpenChange }: EditTenantDialo
     if (open) {
       form.reset(tenantToForm(tenant));
     }
-  }, [open, tenant]);
+  }, [form, open, tenant]);
 
   function tenantToForm(t: Tenant): FormValues {
     return {
@@ -120,20 +120,21 @@ export function EditTenantDialog({ tenant, open, onOpenChange }: EditTenantDialo
   }
 
   async function onSubmit(values: FormValues) {
-    const updates: Record<string, any> = {};
-    for (const [key, val] of Object.entries(values)) {
-      updates[key] = val === '' ? null : val;
+    const updates: Partial<Tenant> = {};
+    for (const [key, value] of Object.entries(values) as Array<[keyof FormValues, FormValues[keyof FormValues]]>) {
+      const normalizedValue = value === '' ? null : value;
+      updates[key as keyof Tenant] = normalizedValue as Tenant[keyof Tenant];
     }
     await updateTenant.mutateAsync({ id: tenant.id, ...updates });
     onOpenChange(false);
   }
 
-  const Field = ({ label, name, type = 'text' }: { label: string; name: keyof FormValues; type?: string }) => (
+  const Field = ({ label, name, type = 'text' }: { label: string; name: FieldPath<FormValues>; type?: string }) => (
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
       <Input
         type={type}
-        {...form.register(name as any)}
+        {...form.register(name)}
         className="h-8 text-sm"
       />
     </div>

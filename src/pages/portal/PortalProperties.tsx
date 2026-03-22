@@ -9,7 +9,11 @@ import { formatGBP } from '@/lib/calculations';
 
 export default function PortalProperties() {
   const { canViewFinancials } = useShareholderSession();
-  const { properties, loansByProperty, coverPhotoMap, isLoading } = useShareholderPortfolioData();
+  const { properties, loansByProperty, coverPhotoMap, isLoading } = useShareholderPortfolioData({
+    includeFinancials: canViewFinancials,
+    includeCompliance: false,
+    includePhotos: true,
+  });
 
   if (isLoading) {
     return (

@@ -15,6 +15,16 @@ interface SharedDocumentData {
   expires_at: string;
   is_expired: boolean;
   view_limit_reached: boolean;
+  bucket_id?: string | null;
+}
+
+interface SharedDocumentResult {
+  success?: boolean;
+  error?: string;
+  file_url?: string;
+  file_name?: string;
+  expires_at?: string;
+  bucket_id?: string | null;
 }
 
 function isPdfUrl(url: string): boolean {
@@ -119,6 +129,19 @@ export default function SharedDocument() {
   const [error, setError] = useState<string | null>(null);
   const [document, setDocument] = useState<SharedDocumentData | null>(null);
 
+  const resolveStoragePath = (fileUrl: string) => {
+    const storageUrlMatch = fileUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/(.+?)(?:\?.*)?$/);
+    if (storageUrlMatch?.[1]) {
+      return storageUrlMatch[1].split('/').slice(1).join('/');
+    }
+
+    if (!fileUrl.startsWith('http')) {
+      return fileUrl;
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     const fetchDocument = async () => {
       if (!token) {
@@ -128,68 +151,30 @@ export default function SharedDocument() {
       }
 
       try {
-        // Fetch share link and validate
-        const { data: shareLink, error: linkError } = await supabase
-          .from('document_share_links')
-          .select('*, documents(*), compliance_documents(*)')
-          .eq('token', token)
-          .single();
+        const { data, error: rpcError } = await supabase.rpc('consume_document_share_link', {
+          p_token: token,
+        });
 
-        if (linkError || !shareLink) {
-          setError('Share link not found or has been revoked');
+        if (rpcError) {
+          setError('Failed to load document');
           setLoading(false);
           return;
         }
 
-        // Check if link is active
-        if (!shareLink.is_active) {
-          setError('This share link has been deactivated');
-          setLoading(false);
-          return;
-        }
-
-        // Check expiration
-        if (new Date(shareLink.expires_at) < new Date()) {
-          setError('This share link has expired');
-          setLoading(false);
-          return;
-        }
-
-        // Check view count
-        if (shareLink.max_views && shareLink.view_count >= shareLink.max_views) {
-          setError('This share link has reached its maximum view limit');
-          setLoading(false);
-          return;
-        }
-
-        // Increment view count
-        await supabase
-          .from('document_share_links')
-          .update({
-            view_count: shareLink.view_count + 1,
-            last_viewed_at: new Date().toISOString(),
-          })
-          .eq('id', shareLink.id);
-
-        // Get document details
-        const doc = shareLink.documents || shareLink.compliance_documents;
-        if (!doc) {
-          setError('Document not found');
+        const result = (data || {}) as SharedDocumentResult;
+        if (result.error || !result.file_url || !result.expires_at) {
+          setError(result.error || 'Failed to load document');
           setLoading(false);
           return;
         }
 
         // Generate a fresh short-lived signed URL instead of exposing the raw file_url
-        let secureUrl = doc.file_url;
-        const storagePath = doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/(.+?)(?:\?.*)?$/)?.[1];
-        if (storagePath) {
-          // Extract bucket and path from the storage URL
-          const parts = storagePath.split('/');
-          const bucket = parts[0];
-          const filePath = parts.slice(1).join('/');
+        let secureUrl = result.file_url;
+        const storagePath = resolveStoragePath(result.file_url);
+        if (storagePath && result.bucket_id) {
           const { data: signedData } = await supabase.storage
-            .from(bucket)
-            .createSignedUrl(filePath, 3600); // 1 hour expiry
+            .from(result.bucket_id)
+            .createSignedUrl(storagePath, 3600); // 1 hour expiry
           if (signedData?.signedUrl) {
             secureUrl = signedData.signedUrl;
           }
@@ -197,12 +182,13 @@ export default function SharedDocument() {
 
         setDocument({
           file_url: secureUrl,
-          file_name: doc.original_file_name || 'Document',
-          expires_at: shareLink.expires_at,
+          file_name: result.file_name || 'Document',
+          expires_at: result.expires_at,
           is_expired: false,
           view_limit_reached: false,
+          bucket_id: result.bucket_id || null,
         });
-      } catch (err) {
+      } catch {
         setError('Failed to load document');
       } finally {
         setLoading(false);

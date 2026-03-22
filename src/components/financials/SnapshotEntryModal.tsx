@@ -20,11 +20,63 @@ import { cn } from '@/lib/utils';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import type { Database } from '@/integrations/supabase/types';
+import type { FinancialSnapshot } from '@/lib/financialSnapshotTypes';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preselectedPropertyId?: string;
+}
+
+type EntryTab = 'detailed' | 'quick';
+type RoomSuggestion = Pick<
+  Database['public']['Tables']['rooms_v2']['Row'],
+  'property_id' | 'current_rent_pcm' | 'is_lettable' | 'occupancy_status' | 'target_rent_pcm'
+>;
+type LoanSuggestion = Pick<
+  Database['public']['Tables']['loan_facilities']['Row'],
+  'property_id' | 'monthly_payment' | 'current_balance' | 'status'
+>;
+type SnapshotUpsertInput = Omit<
+  FinancialSnapshot,
+  'id' | 'total_costs' | 'net_operating_income' | 'net_cash_flow' | 'rent_collection_rate' | 'created_at' | 'updated_at'
+>;
+type SnapshotFormValues = Pick<
+  SnapshotUpsertInput,
+  | 'gross_rent_due'
+  | 'gross_rent_received'
+  | 'void_loss'
+  | 'other_income'
+  | 'management_fees'
+  | 'maintenance_costs'
+  | 'insurance_costs'
+  | 'mortgage_payments'
+  | 'utilities'
+  | 'council_tax'
+  | 'licensing_costs'
+  | 'professional_fees'
+  | 'other_costs'
+  | 'valuation_at_snapshot'
+  | 'debt_at_snapshot'
+> & {
+  notes: string;
+};
+type SnapshotNumericField = Exclude<keyof SnapshotFormValues, 'notes'>;
+
+interface AutoSuggestions {
+  grossRentDue: number;
+  voidLoss: number;
+  occupancyRate: number;
+  mortgagePayments: number;
+  totalDebt: number;
+  valuation: number;
+  equity: number;
+  ltv: number;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
 }
 
 function getMonthOptions() {
@@ -40,7 +92,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const months = getMonthOptions();
   const [selectedMonth, setSelectedMonth] = useState(months[0].value);
   const [showAll, setShowAll] = useState(false);
-  const [tab, setTab] = useState<'detailed' | 'quick'>('detailed');
+  const [tab, setTab] = useState<EntryTab>('detailed');
   const [expandedProperty, setExpandedProperty] = useState<string | null>(preselectedPropertyId || null);
 
   const { data: properties, isLoading: propsLoading } = usePropertiesV2();
@@ -49,24 +101,24 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const lockMonth = useLockMonth();
 
   // Auto-suggestions: get room rent and loan payments
-  const { data: roomSuggestions } = useQuery({
+  const { data: roomSuggestions } = useQuery<RoomSuggestion[]>({
     queryKey: ['room_rent_suggestions'],
     queryFn: async () => {
       const { data } = await supabase
         .from('rooms_v2')
         .select('property_id, current_rent_pcm, is_lettable, occupancy_status, target_rent_pcm');
-      return data || [];
+      return (data || []) as RoomSuggestion[];
     },
   });
 
-  const { data: loanSuggestions } = useQuery({
+  const { data: loanSuggestions } = useQuery<LoanSuggestion[]>({
     queryKey: ['loan_payment_suggestions'],
     queryFn: async () => {
       const { data } = await supabase
         .from('loan_facilities')
         .select('property_id, monthly_payment, current_balance, status')
         .eq('status', 'active');
-      return data || [];
+      return (data || []) as LoanSuggestion[];
     },
   });
 
@@ -79,7 +131,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const isMonthLocked = existingSnapshots?.some(s => s.is_locked) || false;
   const existingCount = existingSnapshots?.length || 0;
 
-  const getAutoSuggestions = useCallback((propertyId: string) => {
+  const getAutoSuggestions = useCallback((propertyId: string): AutoSuggestions => {
     const rooms = roomSuggestions?.filter(r => r.property_id === propertyId) || [];
     const lettableRooms = rooms.filter(r => r.is_lettable);
     const occupiedRooms = lettableRooms.filter(r => r.occupancy_status === 'occupied');
@@ -91,7 +143,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
 
     const loans = loanSuggestions?.filter(l => l.property_id === propertyId) || [];
     const mortgagePayments = loans.reduce((s, l) => s + (l.monthly_payment || 0), 0);
-    const totalDebt = loans.reduce((s, l) => s + ((l as any).current_balance || 0), 0);
+    const totalDebt = loans.reduce((s, l) => s + (l.current_balance || 0), 0);
 
     // Get valuation from property
     const property = properties?.find(p => p.id === propertyId);
@@ -157,7 +209,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
           </div>
 
           {/* Tabs: Detailed / Quick */}
-          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+          <Tabs value={tab} onValueChange={(value) => setTab(value as EntryTab)}>
             <TabsList>
               <TabsTrigger value="detailed">Detailed Entry</TabsTrigger>
               <TabsTrigger value="quick">Quick Entry</TabsTrigger>
@@ -200,17 +252,17 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
 interface EntryProps {
   property: PropertyWithEntity;
   month: string;
-  existing: any;
-  suggestions: { grossRentDue: number; voidLoss: number; occupancyRate: number; mortgagePayments: number; totalDebt: number; valuation: number; equity: number; ltv: number };
+  existing: FinancialSnapshot | undefined;
+  suggestions: AutoSuggestions;
   isExpanded: boolean;
   onToggle: () => void;
   isLocked: boolean;
-  onSave: any;
+  onSave: ReturnType<typeof useUpsertSnapshot>;
 }
 
 function PropertySnapshotEntry({ property, month, existing, suggestions, isExpanded, onToggle, isLocked, onSave }: EntryProps) {
   const { toast } = useToast();
-  const [values, setValues] = useState(() => ({
+  const [values, setValues] = useState<SnapshotFormValues>(() => ({
     gross_rent_due: existing?.gross_rent_due ?? suggestions.grossRentDue,
     gross_rent_received: existing?.gross_rent_received ?? suggestions.grossRentDue,
     void_loss: existing?.void_loss ?? suggestions.voidLoss,
@@ -253,11 +305,11 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
       locked_by: null,
     }, {
       onSuccess: () => toast({ title: `Saved for ${property.address_line_1}` }),
-      onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+      onError: (err: unknown) => toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' }),
     });
   };
 
-  const setField = (field: string, val: string) => {
+  const setField = (field: SnapshotNumericField, val: string) => {
     setValues(prev => ({ ...prev, [field]: parseFloat(val) || 0 }));
   };
 
@@ -361,10 +413,10 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
 interface QuickProps {
   properties: PropertyWithEntity[];
   month: string;
-  existingSnapshots: any[];
-  getAutoSuggestions: (id: string) => any;
+  existingSnapshots: FinancialSnapshot[];
+  getAutoSuggestions: (id: string) => AutoSuggestions;
   isLocked: boolean;
-  onSave: any;
+  onSave: ReturnType<typeof useUpsertSnapshot>;
 }
 
 function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggestions, isLocked, onSave }: QuickProps) {

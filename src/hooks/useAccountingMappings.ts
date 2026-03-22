@@ -1,7 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import type { AccountingMapping, AccountingSystem } from '@/lib/accountingTypes';
+
+type AccountingMappingInsert = Database['public']['Tables']['accounting_mappings']['Insert'];
+type AccountingMappingUpdate = Database['public']['Tables']['accounting_mappings']['Update'];
 
 export function useAccountingMappings(system?: AccountingSystem, entityId?: string | null) {
   const { data: org } = useOrganization();
@@ -41,10 +45,10 @@ export function useAccountingMappings(system?: AccountingSystem, entityId?: stri
 export function useUpsertMapping() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (mapping: Partial<AccountingMapping> & { accounting_system: string; hydrogencap_category: string; account_code: string; account_name: string }) => {
+    mutationFn: async (mapping: AccountingMappingInsert) => {
       const { data, error } = await supabase
         .from('accounting_mappings')
-        .upsert(mapping as any, { onConflict: 'accounting_system,entity_id,hydrogencap_category' })
+        .upsert(mapping, { onConflict: 'accounting_system,entity_id,hydrogencap_category' })
         .select()
         .single();
       if (error) throw error;
@@ -59,10 +63,10 @@ export function useUpsertMapping() {
 export function useUpdateMapping() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<AccountingMapping> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: AccountingMappingUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('accounting_mappings')
-        .update(updates as any)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();

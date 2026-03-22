@@ -29,13 +29,52 @@ const ENTITY_TYPE_COLORS: Record<string, string> = {
   joint_venture: 'text-purple-600', trust: 'text-amber-600',
 };
 
+const initialForm = {
+  entity_id: '',
+  address_line_1: '',
+  address_line_2: '',
+  city: '',
+  county: '',
+  postcode: '',
+  country: 'England',
+  property_type: 'single_let',
+  lifecycle_stage: 'pipeline',
+  council_name: '',
+  council_area: '',
+  listing_grade: 'none',
+  rent_basis: 'room' as 'room' | 'whole_house',
+  whole_house_rent_pcm: '',
+  has_gas_supply: true,
+  year_built: '',
+  total_floors: '',
+  total_lettable_rooms: '0',
+  purchase_date: '',
+  purchase_price: '',
+  current_valuation: '',
+  valuation_date: '',
+  notes: '',
+};
+
+type PropertyFormState = typeof initialForm;
+type PropertyAutoFillValue = string | number | boolean | null;
+type PropertyAutoFillResponse = {
+  error?: string;
+  fields?: Partial<Record<keyof PropertyFormState, PropertyAutoFillValue>>;
+  sources?: Partial<Record<keyof PropertyFormState, string>>;
+};
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props) {
   const create = useCreatePropertyV2();
   const update = useUpdatePropertyV2();
   const { data: entities } = useLegalEntities();
   const { toast } = useToast();
   const [isAutoFilling, setIsAutoFilling] = useState(false);
-  const [autoFilledFields, setAutoFilledFields] = useState<Record<string, string>>({});
+  const [autoFilledFields, setAutoFilledFields] = useState<Partial<Record<keyof PropertyFormState, string>>>({});
+  const [form, setForm] = useState<PropertyFormState>(initialForm);
 
   const handleAutoFill = async () => {
     if (!form.postcode || form.postcode.length < 5) {
@@ -45,26 +84,27 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
     setIsAutoFilling(true);
     setAutoFilledFields({});
     try {
-      const { data, error } = await supabase.functions.invoke('property-autofill', {
+      const { data, error } = await supabase.functions.invoke<PropertyAutoFillResponse>('property-autofill', {
         body: { postcode: form.postcode, address_line_1: form.address_line_1 },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      const fields = data.fields || {};
-      const sources = data.sources || {};
+      const fields = data?.fields ?? {};
+      const sources = data?.sources ?? {};
 
       // Merge into form, only overwriting empty/default fields
       setForm(prev => {
-        const updated = { ...prev };
-        const fieldsToSet: Record<string, string> = {};
+        const updated: PropertyFormState = { ...prev };
+        const fieldsToSet: Partial<Record<keyof PropertyFormState, string>> = {};
 
-        for (const [key, value] of Object.entries(fields) as [string, any][]) {
-          const currentVal = (prev as any)[key];
+        for (const [key, value] of Object.entries(fields) as [keyof PropertyFormState, PropertyAutoFillValue][]) {
+          const currentVal = prev[key];
           const isEmpty = currentVal === '' || currentVal === null || currentVal === undefined
             || currentVal === 'none' || currentVal === 'pipeline' || currentVal === '0';
-          if (isEmpty && value) {
-            (updated as any)[key] = value;
+          const hasValue = typeof value === 'boolean' ? true : value !== '' && value !== null && value !== undefined;
+          if (isEmpty && hasValue) {
+            updated[key] = value as PropertyFormState[typeof key];
             fieldsToSet[key] = sources[key] || 'AI';
           }
         }
@@ -75,41 +115,15 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
       const count = Object.keys(fields).length;
       toast({
         title: count > 0 ? `Auto-filled ${count} fields` : 'No additional data found',
-        description: count > 0 ? Object.entries(data.sources || {}).map(([k, v]) => `${k}: ${v}`).join(', ') : 'Try adding more address details.',
+        description: count > 0 ? Object.entries(sources).map(([k, v]) => `${k}: ${v}`).join(', ') : 'Try adding more address details.',
       });
-    } catch (err: any) {
-      console.error('Auto-fill error:', err);
-      toast({ title: 'Auto-fill failed', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      console.error('Auto-fill error:', error);
+      toast({ title: 'Auto-fill failed', description: getErrorMessage(error), variant: 'destructive' });
     } finally {
       setIsAutoFilling(false);
     }
   };
-
-  const [form, setForm] = useState({
-    entity_id: '',
-    address_line_1: '',
-    address_line_2: '',
-    city: '',
-    county: '',
-    postcode: '',
-    country: 'England',
-    property_type: 'single_let',
-    lifecycle_stage: 'pipeline',
-    council_name: '',
-    council_area: '',
-    listing_grade: 'none',
-    rent_basis: 'room' as 'room' | 'whole_house',
-    whole_house_rent_pcm: '',
-    has_gas_supply: true,
-    year_built: '',
-    total_floors: '',
-    total_lettable_rooms: '0',
-    purchase_date: '',
-    purchase_price: '',
-    current_valuation: '',
-    valuation_date: '',
-    notes: '',
-  });
 
   useEffect(() => {
     if (editingProperty) {
@@ -139,13 +153,7 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
         notes: editingProperty.notes || '',
       });
     } else {
-      setForm({
-        entity_id: '', address_line_1: '', address_line_2: '', city: '', county: '',
-        postcode: '', country: 'England', property_type: 'single_let', lifecycle_stage: 'pipeline',
-        council_name: '', council_area: '', listing_grade: 'none', rent_basis: 'room' as 'room' | 'whole_house', whole_house_rent_pcm: '', has_gas_supply: true,
-        year_built: '', total_floors: '', total_lettable_rooms: '0', purchase_date: '',
-        purchase_price: '', current_valuation: '', valuation_date: '', notes: '',
-      });
+      setForm(initialForm);
     }
   }, [editingProperty, open]);
 
@@ -191,12 +199,13 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
         toast({ title: 'Property created' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
-  const set = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
+  const set = <K extends keyof PropertyFormState>(key: K, value: PropertyFormState[K]) =>
+    setForm(f => ({ ...f, [key]: value }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

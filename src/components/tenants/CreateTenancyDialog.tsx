@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { captureError } from '@/lib/sentry';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useProperties } from '@/hooks/useProperties';
 import { useRoomsWithTenancy, useUpdateRoom, useCreateRoom } from '@/hooks/useRooms';
-import { useCreateTenancy } from '@/hooks/useTenancies';
+import { useCreateTenancy, type PaymentMethod } from '@/hooks/useTenancies';
 import { useUpdateTenant } from '@/hooks/useTenants';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
@@ -97,14 +97,14 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const [depositReference, setDepositReference] = useState('');
   const [depositProtectedDate, setDepositProtectedDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
   const [paymentReference, setPaymentReference] = useState('');
   const [wholePropertyHmo, setWholePropertyHmo] = useState(false);
   const { data: properties } = useProperties();
   const { data: roomsWithTenancy } = useRoomsWithTenancy(propertyId);
   const createTenancy = useCreateTenancy();
-  const updateRoom = useUpdateRoom();
-  const createRoom = useCreateRoom();
+  const { mutateAsync: updateRoomAsync } = useUpdateRoom();
+  const { mutateAsync: createRoomAsync, isPending: isCreateRoomPending } = useCreateRoom();
   const updateTenant = useUpdateTenant();
   const { toast } = useToast();
 
@@ -112,13 +112,16 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
   const isNonHmoSingleLet = selectedProperty && selectedProperty.asset_category !== 'HMO' && selectedProperty.asset_category !== 'HMO (Licensed)';
   const isHmo = selectedProperty && (selectedProperty.asset_category === 'HMO' || selectedProperty.asset_category === 'HMO (Licensed)');
   const isWholePropertyLet = isNonHmoSingleLet || (isHmo && wholePropertyHmo);
-  const vacantRooms = roomsWithTenancy?.filter(r => r.status === 'vacant') || [];
+  const vacantRooms = useMemo(
+    () => roomsWithTenancy?.filter((room) => room.status === 'vacant') ?? [],
+    [roomsWithTenancy]
+  );
   const selectedRoom = roomsWithTenancy?.find(r => r.id === roomId);
 
   // Auto-create a "Whole Property" room for single-let properties that have no rooms
   useEffect(() => {
-    if (isWholePropertyLet && propertyId && roomsWithTenancy && roomsWithTenancy.length === 0 && !createRoom.isPending) {
-      createRoom.mutateAsync({
+    if (isWholePropertyLet && propertyId && roomsWithTenancy && roomsWithTenancy.length === 0 && !isCreateRoomPending) {
+      void createRoomAsync({
         property_id: propertyId,
         room_name: 'Whole Property',
         room_number: null,
@@ -132,7 +135,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
         photos: null,
       });
     }
-  }, [isWholePropertyLet, propertyId, roomsWithTenancy]);
+  }, [createRoomAsync, isCreateRoomPending, isWholePropertyLet, propertyId, roomsWithTenancy]);
 
   // Auto-select room for whole-property lets
   useEffect(() => {
@@ -201,7 +204,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
     setAiFilledFields(filled);
   }, [properties]);
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     if (file.type !== 'application/pdf') {
       toast({ title: 'Invalid file', description: 'Please upload a PDF file', variant: 'destructive' });
       return;
@@ -276,18 +279,18 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
         variant: 'destructive',
       });
     }
-  };
+  }, [applyExtraction, tenantName, tenantType, toast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file);
-  }, [tenantName, tenantType]);
+  }, [handleFileUpload]);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFileUpload(file);
-  }, [tenantName, tenantType]);
+  }, [handleFileUpload]);
 
   const canProceedStep2 = propertyId && (roomId || isWholePropertyLet);
   const canProceedStep3 = startDate && rentAmountPcm && Number(rentAmountPcm) > 0;
@@ -314,16 +317,16 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
         status: 'active' as const,
         notice_date: null,
         notice_period_weeks: Number(noticePeriodWeeks) || 4,
-        payment_method: (paymentMethod || null) as any,
+        payment_method: paymentMethod || null,
         payment_reference: paymentReference || null,
         notes: wholePropertyHmo ? `${notes || ''}\nWhole property let (${allRooms.length} rooms)`.trim() : (notes || null),
       });
 
       // Mark rooms as occupied
       if (wholePropertyHmo) {
-        await Promise.all(allRooms.map(r => updateRoom.mutateAsync({ id: r.id, status: 'occupied' })));
+        await Promise.all(allRooms.map(r => updateRoomAsync({ id: r.id, status: 'occupied' })));
       } else {
-        await updateRoom.mutateAsync({ id: effectiveRoomId, status: 'occupied' });
+        await updateRoomAsync({ id: effectiveRoomId, status: 'occupied' });
       }
 
       // Update tenant to active if prospect

@@ -75,7 +75,7 @@ export default function Financials() {
         </div>
 
         {/* Tabs: Live vs Snapshots */}
-        <Tabs value={tab} onValueChange={v => setTab(v as any)}>
+        <Tabs value={tab} onValueChange={(value) => setTab(value as 'live' | 'snapshots')}>
           <TabsList>
             <TabsTrigger value="live">Live P&L</TabsTrigger>
             <TabsTrigger value="snapshots">Manual Snapshots</TabsTrigger>

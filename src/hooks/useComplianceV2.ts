@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import type { ComplianceMatrixRow, PortfolioComplianceScore, ComplianceDocType } from '@/lib/complianceV2Types';
+
+type ComplianceTaskUpdate = Pick<
+  Database['public']['Tables']['compliance_tasks']['Update'],
+  'status' | 'resolved_at' | 'resolved_by' | 'resolution_notes'
+>;
 
 // ============================================================
 // Compliance Matrix (view)
@@ -131,12 +137,13 @@ export function useCreateComplianceDocV2() {
 
         if (openTask) {
           const userId = (await supabase.auth.getUser()).data.user?.id;
-          await supabase.from('compliance_tasks').update({
+          const taskUpdate: ComplianceTaskUpdate = {
             status: 'completed',
             resolved_at: new Date().toISOString(),
             resolved_by: userId,
             resolution_notes: `Auto-closed: new ${input.document_type} document uploaded`,
-          } as any).eq('id', openTask.id);
+          };
+          await supabase.from('compliance_tasks').update(taskUpdate).eq('id', openTask.id);
         }
       } catch (e) {
         console.warn('Failed to auto-close compliance task:', e);

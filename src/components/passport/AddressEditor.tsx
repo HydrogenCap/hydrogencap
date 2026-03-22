@@ -6,8 +6,16 @@ import { Label } from '@/components/ui/label';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { formatUKPostcode, isValidUKPostcode } from '@/hooks/useCoreIdentity';
 
+interface AddressFormValues {
+  address_line: string | null;
+  address_line2: string | null;
+  town_city: string | null;
+  county: string | null;
+  postcode: string | null;
+}
+
 interface AddressEditorProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<AddressFormValues>;
   showPreview?: boolean;
 }
 

@@ -17,6 +17,7 @@ import {
   useEndVoidPeriod,
   useCreateVoidPeriod,
   VOID_REASON_LABELS,
+  type ActiveVoid,
   type VoidReason,
 } from '@/hooks/useVoidPeriods';
 import { formatGBP } from '@/lib/calculations';
@@ -44,7 +45,7 @@ function KpiCard({ label, value, subtitle, icon: Icon, className }: {
   );
 }
 
-function VoidTrendChart({ voids }: { voids: any[] }) {
+function VoidTrendChart({ voids }: { voids: ActiveVoid[] }) {
   const chartData = useMemo(() => {
     const months: { month: string; voidRate: number }[] = [];
     const now = new Date();

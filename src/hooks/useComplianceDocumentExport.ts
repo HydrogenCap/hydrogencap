@@ -28,6 +28,25 @@ const INITIAL: ExportProgress = {
   errors: [],
 };
 
+interface ComplianceExportDocumentRow {
+  id: string;
+  file_url: string | null;
+  original_file_name: string | null;
+  is_current: boolean | null;
+  archived_at: string | null;
+}
+
+interface ComplianceExportPropertyRow {
+  address_line: string | null;
+  postcode: string | null;
+}
+
+interface ComplianceExportItemRow {
+  compliance_type: string;
+  properties: ComplianceExportPropertyRow | null;
+  documents: ComplianceExportDocumentRow[] | null;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────
 
 function sanitiseFolder(text: string): string {
@@ -51,6 +70,10 @@ function extractStoragePath(fileUrl: string): string | null {
   } catch {
     return null;
   }
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
 }
 
 // ─── Hook ────────────────────────────────────────────────────────
@@ -119,14 +142,14 @@ export function useComplianceDocumentExport() {
 
     const docsToDownload: DocEntry[] = [];
 
-    for (const item of items) {
-      const currentDocs = (item.documents || []).filter(
-        (d: any) => d.is_current && !d.archived_at && d.file_url
+    for (const item of (items ?? []) as ComplianceExportItemRow[]) {
+      const currentDocs = (item.documents ?? []).filter(
+        (document) => document.is_current && !document.archived_at && document.file_url
       );
 
       if (currentDocs.length === 0) continue;
 
-      const property = item.properties as any;
+      const property = item.properties;
       if (!property) continue;
 
       for (const doc of currentDocs) {
@@ -219,9 +242,9 @@ export function useComplianceDocumentExport() {
         } else {
           throw new Error('Empty response');
         }
-      } catch (err: any) {
+      } catch (error) {
         skipped++;
-        errors.push(`${entry.propertyAddress} / ${entry.complianceType}: ${err.message || 'Download failed'}`);
+        errors.push(`${entry.propertyAddress} / ${entry.complianceType}: ${getErrorMessage(error)}`);
       }
     }
 
@@ -271,8 +294,8 @@ export function useComplianceDocumentExport() {
         skipped,
         errors,
       });
-    } catch (err: any) {
-      patch({ phase: 'error', currentStep: `ZIP creation failed: ${err.message}`, errors });
+    } catch (error) {
+      patch({ phase: 'error', currentStep: `ZIP creation failed: ${getErrorMessage(error)}`, errors });
     }
   }, [patch]);
 

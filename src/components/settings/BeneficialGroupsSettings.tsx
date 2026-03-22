@@ -31,6 +31,10 @@ import {
 import { useOwnershipEntities } from '@/hooks/useOwnershipLookthrough';
 import { useToast } from '@/hooks/use-toast';
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function BeneficialGroupsSettings() {
   const { toast } = useToast();
   const { data: groups, isLoading } = useBeneficialGroups();
@@ -53,8 +57,8 @@ export function BeneficialGroupsSettings() {
       await createGroup.mutateAsync({ name: newGroupName.trim() });
       setNewGroupName('');
       toast({ title: 'Beneficial group created' });
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -62,8 +66,8 @@ export function BeneficialGroupsSettings() {
     try {
       await deleteGroup.mutateAsync(id);
       toast({ title: 'Beneficial group deleted' });
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -78,12 +82,13 @@ export function BeneficialGroupsSettings() {
       setAddEntityDialogOpen(false);
       setSelectedEntityForAdd('');
       toast({ title: 'Entity added to group' });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
       toast({ 
         title: 'Error', 
-        description: error.message?.includes('duplicate') 
+        description: errorMessage.includes('duplicate') 
           ? 'Entity is already in this group' 
-          : error.message, 
+          : errorMessage, 
         variant: 'destructive' 
       });
     }
@@ -93,8 +98,8 @@ export function BeneficialGroupsSettings() {
     try {
       await removeMapping.mutateAsync(mappingId);
       toast({ title: 'Entity removed from group' });
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+
+type InvestorInsert = Database['public']['Tables']['investors']['Insert'];
 
 export interface Investor {
   id: string;
@@ -87,9 +90,10 @@ export function useCreateInvestor() {
 
   return useMutation({
     mutationFn: async (data: Partial<InvestorFormData>) => {
+      const payload: InvestorInsert = { ...data, org_id: orgId! };
       const { data: result, error } = await supabase
         .from('investors')
-        .insert([{ ...data, org_id: orgId! } as any])
+        .insert([payload])
         .select()
         .single();
       if (error) throw error;
@@ -128,6 +132,30 @@ export function useUpdateInvestor() {
     },
     onError: (err: Error) => {
       toast({ title: 'Error updating investor', description: err.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useSendInvestorPortalAccessEmail() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (investorId: string) => {
+      const { error } = await supabase.functions.invoke('send-investor-portal-access', {
+        body: { investorId },
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: 'Portal access email sent' });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: 'Failed to send portal access email',
+        description: err.message,
+        variant: 'destructive',
+      });
     },
   });
 }

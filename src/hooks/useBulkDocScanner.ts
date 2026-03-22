@@ -36,6 +36,7 @@ const MAX_FILES = 50;
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const CONCURRENCY = 3;
 const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Unknown error';
 
 function extractPostcode(text: string): string | null {
   const match = text.match(/[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i);
@@ -140,7 +141,7 @@ export function useBulkDocScanner() {
         .eq('id', docRecord.id)
         .single();
 
-      const extractedData = (updated?.extracted_data as Record<string, any>) || {};
+      const extractedData = (updated?.extracted_data as Record<string, unknown>) || {};
       const matchedPropId = updated?.ai_suggested_property_id || matchProperty(updated?.extracted_address_text || undefined);
 
       updateDoc(idx, {
@@ -159,7 +160,7 @@ export function useBulkDocScanner() {
         },
         matchedPropertyId: matchedPropId,
       });
-    } catch (err: any) {
+    } catch (error: unknown) {
       // Still mark as ready with low confidence — user can manually classify
       updateDoc(idx, {
         status: 'ready',
@@ -168,7 +169,7 @@ export function useBulkDocScanner() {
           confidence: 0,
           extractedData: {},
         },
-        error: `Classification failed: ${err.message || 'Unknown error'}`,
+        error: `Classification failed: ${getErrorMessage(error)}`,
       });
     }
   }, [properties, matchProperty, updateDoc]);
@@ -297,8 +298,8 @@ export function useBulkDocScanner() {
         updateDoc(idx, { status: 'filed' });
         filedCount++;
         propertySet.add(propId);
-      } catch (err: any) {
-        updateDoc(idx, { status: 'error', error: `Filing failed: ${err.message}` });
+      } catch (error: unknown) {
+        updateDoc(idx, { status: 'error', error: `Filing failed: ${getErrorMessage(error)}` });
       }
     }
 

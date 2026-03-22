@@ -65,7 +65,7 @@ export default function Investors() {
 
   const filtered = useMemo(() => {
     if (!investors) return [];
-    let result = investors.filter(i => {
+    const result = investors.filter(i => {
       if (search && !i.investor_name.toLowerCase().includes(search.toLowerCase()) &&
           !(i.email && i.email.toLowerCase().includes(search.toLowerCase()))) return false;
       if (typeFilter !== 'all' && i.investor_type !== typeFilter) return false;

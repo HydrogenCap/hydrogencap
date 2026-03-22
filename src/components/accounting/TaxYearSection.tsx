@@ -27,8 +27,9 @@ export function TaxYearSection() {
     try {
       await generate.mutateAsync({ entityId, taxYear: selectedYear });
       toast.success('Tax year summary generated');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to generate summary');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to generate summary';
+      toast.error(message);
     }
   };
 
@@ -36,8 +37,9 @@ export function TaxYearSection() {
     try {
       await lockMutation.mutateAsync({ id: summary.id, lock: !summary.is_locked });
       toast.success(summary.is_locked ? 'Summary unlocked' : 'Summary locked');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed';
+      toast.error(message);
     }
   };
 

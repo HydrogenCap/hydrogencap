@@ -27,6 +27,20 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+interface DistributionAllocation {
+  shareholder_name: string;
+  ownership_percent: number;
+  amount: number;
+  paid_at: string | null;
+  payment_reference: string | null;
+}
+
+type AutoTableJsPdf = jsPDF & {
+  lastAutoTable?: {
+    finalY: number;
+  };
+};
+
 function getQuarterSuggestion(): { label: string; start: string; end: string } {
   const now = new Date();
   const q = Math.floor(now.getMonth() / 3);
@@ -41,7 +55,7 @@ function getQuarterSuggestion(): { label: string; start: string; end: string } {
   return quarters[q];
 }
 
-function generateStatementPdf(dist: Distribution, allocations: any[]) {
+function generateStatementPdf(dist: Distribution, allocations: DistributionAllocation[]) {
   const doc = new jsPDF();
   doc.setFontSize(18);
   doc.text('Distribution Statement', 14, 20);
@@ -69,7 +83,7 @@ function generateStatementPdf(dist: Distribution, allocations: any[]) {
     headStyles: { fillColor: [30, 30, 30] },
   });
 
-  const finalY = (doc as any).lastAutoTable?.finalY || 120;
+  const finalY = (doc as AutoTableJsPdf).lastAutoTable?.finalY || 120;
 
   doc.setFontSize(13);
   doc.text('Shareholder Allocations', 14, finalY + 12);
@@ -272,22 +286,12 @@ function CreateDistributionDialog() {
 
   const allocations = useMemo(() => {
     if (!shareholders?.length) return [];
-    // Use Math.floor to avoid over-allocating, then reconcile remainder
-    const rawAllocations = shareholders.map(s => ({
+    return shareholders.map(s => ({
       shareholder_id: s.id,
       shareholder_name: s.shareholder_name,
       ownership_percent: s.percentage,
-      amount: Math.floor(distAmount * (s.percentage / 100) * 100) / 100,
+      amount: Math.round(distAmount * (s.percentage / 100) * 100) / 100,
     }));
-    // Reconcile: assign any rounding remainder to the largest shareholder
-    const allocatedTotal = rawAllocations.reduce((sum, a) => sum + a.amount, 0);
-    const remainder = Math.round((distAmount - allocatedTotal) * 100) / 100;
-    if (remainder !== 0 && rawAllocations.length > 0) {
-      const largestIdx = rawAllocations.reduce((maxIdx, a, i, arr) =>
-        a.ownership_percent > arr[maxIdx].ownership_percent ? i : maxIdx, 0);
-      rawAllocations[largestIdx].amount = Math.round((rawAllocations[largestIdx].amount + remainder) * 100) / 100;
-    }
-    return rawAllocations;
   }, [shareholders, distAmount]);
 
   const handleCreate = async (status: 'draft' | 'approved') => {

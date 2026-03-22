@@ -91,7 +91,7 @@ export function DistributionFormModal({ open, onOpenChange, investorId, commitme
 
   useEffect(() => {
     if (open) form.reset();
-  }, [open]);
+  }, [open, form]);
 
   const onSubmit = async (values: FormValues) => {
     const commitment = commitments.find(c => c.id === values.commitment_id);

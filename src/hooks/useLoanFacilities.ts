@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
 
@@ -89,6 +90,30 @@ export interface PortfolioDebtSummary {
   nearest_rate_expiry: string | null;
 }
 
+type LenderDetails = Pick<
+  Database['public']['Tables']['lenders']['Row'],
+  'lender_name' | 'lender_type'
+>;
+
+type LegalEntityDetails = Pick<
+  Database['public']['Tables']['legal_entities']['Row'],
+  'entity_name'
+>;
+
+type PropertyDetails = Pick<
+  Database['public']['Tables']['properties_v2']['Row'],
+  'address_line_1' | 'postcode'
+>;
+
+interface LoanFacilityRow extends LoanFacility {
+  lenders: LenderDetails | null;
+  legal_entities: LegalEntityDetails | null;
+}
+
+interface LoanFacilityWithPropertyRow extends LoanFacilityRow {
+  properties_v2: PropertyDetails | null;
+}
+
 export const FACILITY_TYPES = [
   { value: 'term_mortgage', label: 'Term Mortgage', color: 'bg-blue-100 text-blue-700 border-blue-300' },
   { value: 'bridging', label: 'Bridging', color: 'bg-orange-100 text-orange-700 border-orange-300' },
@@ -138,7 +163,7 @@ export function useLoanFacilitiesByProperty(propertyId: string | undefined) {
         .order('status')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map((d: any) => ({
+      return ((data || []) as LoanFacilityRow[]).map((d) => ({
         ...d,
         lender_name: d.lenders?.lender_name,
         lender_type: d.lenders?.lender_type,
@@ -164,7 +189,7 @@ export function useAllLoanFacilities() {
         .eq('org_id', orgId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map((d: any) => ({
+      return ((data || []) as LoanFacilityWithPropertyRow[]).map((d) => ({
         ...d,
         lender_name: d.lenders?.lender_name,
         lender_type: d.lenders?.lender_type,

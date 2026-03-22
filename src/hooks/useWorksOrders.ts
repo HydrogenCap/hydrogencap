@@ -56,6 +56,28 @@ export interface WorksOrderWithContractor extends WorksOrder {
   } | null;
 }
 
+interface WorksOrderInsert {
+  maintenance_request_id: string;
+  property_id: string;
+  description: string;
+  contractor_id?: string | null;
+  contractor_name_override?: string | null;
+  contractor_phone_override?: string | null;
+  contractor_email_override?: string | null;
+  tenant_access_required?: boolean;
+  notes?: string | null;
+}
+
+interface MaintenanceCommentInsert {
+  org_id: string;
+  maintenance_request_id: string;
+  author_type: 'system';
+  author_name: string;
+  comment: string;
+}
+
+type WorksOrderUpdate = Partial<WorksOrder> & Record<string, unknown>;
+
 export function useWorksOrdersForRequest(requestId: string | undefined) {
   return useQuery({
     queryKey: ['works_orders', 'request', requestId],
@@ -99,17 +121,7 @@ export function useCreateWorksOrder() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (order: {
-      maintenance_request_id: string;
-      property_id: string;
-      description: string;
-      contractor_id?: string | null;
-      contractor_name_override?: string | null;
-      contractor_phone_override?: string | null;
-      contractor_email_override?: string | null;
-      tenant_access_required?: boolean;
-      notes?: string | null;
-    }) => {
+    mutationFn: async (order: WorksOrderInsert) => {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
@@ -123,7 +135,7 @@ export function useCreateWorksOrder() {
           org_id: orgId,
           order_number: orderNumber,
           status: 'draft',
-        } as any)
+        })
         .select()
         .single();
 
@@ -137,13 +149,16 @@ export function useCreateWorksOrder() {
 
       // Add system comment
       const contractorName = order.contractor_name_override || 'contractor';
-      await supabase.from('maintenance_comments').insert({
+      const comment: MaintenanceCommentInsert = {
         org_id: orgId,
         maintenance_request_id: order.maintenance_request_id,
         author_type: 'system',
         author_name: 'System',
         comment: `Works order ${orderNumber} created${order.contractor_id ? ` and assigned to ${contractorName}` : ''}`,
-      } as any);
+      };
+      await supabase.from('maintenance_comments').insert({
+        ...comment,
+      });
 
       return data;
     },
@@ -164,7 +179,7 @@ export function useUpdateWorksOrder() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & WorksOrderUpdate) => {
       const { data, error } = await supabase
         .from('work_orders')
         .update(updates)

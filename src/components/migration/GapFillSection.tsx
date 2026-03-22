@@ -12,13 +12,25 @@ import { toast } from 'sonner';
 import {
   usePropertyGaps, useRoomGaps, useTenantGaps, useTenancyGaps,
   useBatchUpdateProperties, useBatchUpdateRooms, useBatchUpdateTenants, useBatchUpdateTenancies,
+  type PropertyGap,
+  type RoomGap,
+  type TenantGap,
+  type TenancyGap,
 } from '@/hooks/useMigration';
 import { PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
 import { ROOM_TYPES } from '@/hooks/useRoomsV2';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
-function computeCompleteness(records: any[], fields: string[]): number {
+type EditableValue = string | number | boolean | null | undefined;
+type EditableRecord = { id: string } & Record<string, EditableValue>;
+type EditMap = Record<string, Record<string, EditableValue>>;
+type GapFillSuggestion = { id: string } & Record<string, EditableValue>;
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unexpected error occurred';
+
+function computeCompleteness<T extends EditableRecord>(records: T[], fields: Array<keyof T>): number {
   if (!records.length) return 100;
   const totalCells = records.length * fields.length;
   const filledCells = records.reduce((sum, r) => {
@@ -28,8 +40,8 @@ function computeCompleteness(records: any[], fields: string[]): number {
 }
 
 function CellInput({ value, onChange, type = 'text', placeholder, isNull }: {
-  value: any;
-  onChange: (v: any) => void;
+  value: EditableValue;
+  onChange: (v: string | number | null) => void;
   type?: 'text' | 'number' | 'date';
   placeholder?: string;
   isNull?: boolean;
@@ -69,7 +81,7 @@ function CellSelect({ value, onChange, options, isNull }: {
 }
 
 function CellToggle({ value, onChange, isNull }: {
-  value: boolean | null;
+  value: boolean | null | undefined;
   onChange: (v: boolean) => void;
   isNull?: boolean;
 }) {
@@ -86,17 +98,17 @@ function CellToggle({ value, onChange, isNull }: {
 function PropertiesGapFill() {
   const { data: properties, isLoading } = usePropertyGaps();
   const batchUpdate = useBatchUpdateProperties();
-  const [edits, setEdits] = useState<Record<string, Record<string, any>>>({});
+  const [edits, setEdits] = useState<EditMap>({});
   const [isAiFilling, setIsAiFilling] = useState(false);
 
-  const gapFields = ['has_gas_supply', 'year_built', 'total_lettable_rooms', 'total_floors', 'current_valuation', 'purchase_price', 'council_name', 'council_area'];
+  const gapFields: Array<keyof PropertyGap> = ['has_gas_supply', 'year_built', 'total_lettable_rooms', 'total_floors', 'current_valuation', 'purchase_price', 'council_name', 'council_area'];
   const completeness = properties ? computeCompleteness(properties, gapFields) : 0;
 
-  const setField = (id: string, field: string, value: any) => {
+  const setField = (id: string, field: keyof PropertyGap, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
-  const getVal = (record: any, field: string) => {
+  const getVal = (record: PropertyGap, field: keyof PropertyGap): EditableValue => {
     return edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
   };
 
@@ -113,7 +125,7 @@ function PropertiesGapFill() {
         body: { type: 'properties', records: withGaps },
       });
       if (error) throw error;
-      const suggestions = data?.suggestions || [];
+      const suggestions = (data?.suggestions || []) as GapFillSuggestion[];
       if (!suggestions.length) return toast.info('AI had no suggestions');
       let filled = 0;
       for (const s of suggestions) {
@@ -128,8 +140,8 @@ function PropertiesGapFill() {
         }
       }
       toast.success(`AI suggested ${filled} values across ${suggestions.length} properties — review & save`);
-    } catch (e: any) {
-      toast.error(`AI fill failed: ${e.message}`);
+    } catch (error: unknown) {
+      toast.error(`AI fill failed: ${getErrorMessage(error)}`);
     } finally {
       setIsAiFilling(false);
     }
@@ -142,8 +154,8 @@ function PropertiesGapFill() {
       await batchUpdate.mutateAsync(updates);
       setEdits({});
       toast.success(`Updated ${updates.length} properties`);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -208,20 +220,21 @@ function PropertiesGapFill() {
 function RoomsGapFill() {
   const { data: rooms, isLoading } = useRoomGaps();
   const batchUpdate = useBatchUpdateRooms();
-  const [edits, setEdits] = useState<Record<string, Record<string, any>>>({});
+  const [edits, setEdits] = useState<EditMap>({});
   const [isAiFilling, setIsAiFilling] = useState(false);
 
-  const gapFields = ['current_rent_pcm', 'target_rent_pcm', 'has_ensuite', 'floor'];
+  const gapFields: Array<keyof RoomGap> = ['current_rent_pcm', 'target_rent_pcm', 'has_ensuite', 'floor'];
   const completeness = rooms ? computeCompleteness(rooms, gapFields) : 0;
 
-  const setField = (id: string, field: string, value: any) => {
+  const setField = (id: string, field: keyof RoomGap, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const getVal = (record: any, field: string) => edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: RoomGap, field: keyof RoomGap): EditableValue =>
+    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
 
   const handleAiFill = async () => {
     if (!rooms?.length) return;
-    const withGaps = rooms.filter((r: any) =>
+    const withGaps = rooms.filter((r) =>
       ['target_rent_pcm', 'floor'].some(f => r[f] === null || r[f] === undefined)
     );
     if (!withGaps.length) return toast.info('No gaps to fill with AI');
@@ -231,12 +244,12 @@ function RoomsGapFill() {
         body: { type: 'rooms', records: withGaps },
       });
       if (error) throw error;
-      const suggestions = data?.suggestions || [];
+      const suggestions = (data?.suggestions || []) as GapFillSuggestion[];
       if (!suggestions.length) return toast.info('AI had no suggestions');
       let filled = 0;
       for (const s of suggestions) {
         const { id, ...fields } = s;
-        const record = rooms.find((r: any) => r.id === id);
+        const record = rooms.find((r) => r.id === id);
         if (!record) continue;
         for (const [field, value] of Object.entries(fields)) {
           if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
@@ -246,8 +259,8 @@ function RoomsGapFill() {
         }
       }
       toast.success(`AI suggested ${filled} values across ${suggestions.length} rooms — review & save`);
-    } catch (e: any) {
-      toast.error(`AI fill failed: ${e.message}`);
+    } catch (error: unknown) {
+      toast.error(`AI fill failed: ${getErrorMessage(error)}`);
     } finally {
       setIsAiFilling(false);
     }
@@ -260,7 +273,7 @@ function RoomsGapFill() {
       await batchUpdate.mutateAsync(updates);
       setEdits({});
       toast.success(`Updated ${updates.length} rooms`);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(getErrorMessage(error)); }
   };
 
   if (isLoading) return <Skeleton className="h-64" />;
@@ -295,7 +308,7 @@ function RoomsGapFill() {
             </tr>
           </thead>
           <tbody>
-            {rooms?.map((r: any) => (
+            {rooms?.map((r) => (
               <tr key={r.id} className="border-b hover:bg-muted/30">
                 <td className="p-2 font-medium sticky left-0 bg-background">
                   <div className="text-[10px] text-muted-foreground">{r.property_address}</div>
@@ -322,15 +335,16 @@ function RoomsGapFill() {
 function TenantsGapFill() {
   const { data: tenants, isLoading } = useTenantGaps();
   const batchUpdate = useBatchUpdateTenants();
-  const [edits, setEdits] = useState<Record<string, Record<string, any>>>({});
+  const [edits, setEdits] = useState<EditMap>({});
 
-  const gapFields = ['email', 'phone', 'date_of_birth', 'national_insurance', 'emergency_contact_name', 'emergency_contact_phone'];
+  const gapFields: Array<keyof TenantGap> = ['email', 'phone', 'date_of_birth', 'national_insurance', 'emergency_contact_name', 'emergency_contact_phone'];
   const completeness = tenants ? computeCompleteness(tenants, gapFields) : 0;
 
-  const setField = (id: string, field: string, value: any) => {
+  const setField = (id: string, field: keyof TenantGap, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const getVal = (record: any, field: string) => edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: TenantGap, field: keyof TenantGap): EditableValue =>
+    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
 
   const handleSave = async () => {
     const updates = Object.entries(edits).map(([id, fields]) => ({ id, ...fields }));
@@ -339,7 +353,7 @@ function TenantsGapFill() {
       await batchUpdate.mutateAsync(updates);
       setEdits({});
       toast.success(`Updated ${updates.length} tenants`);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(getErrorMessage(error)); }
   };
 
   if (isLoading) return <Skeleton className="h-64" />;
@@ -367,7 +381,7 @@ function TenantsGapFill() {
             </tr>
           </thead>
           <tbody>
-            {tenants?.map((t: any) => (
+            {tenants?.map((t) => (
               <tr key={t.id} className="border-b hover:bg-muted/30">
                 <td className="p-2 font-medium sticky left-0 bg-background">{t.first_name} {t.last_name}</td>
                 <td><CellInput value={getVal(t, 'email')} onChange={v => setField(t.id, 'email', v)} placeholder="email" isNull={t.email === null} /></td>
@@ -391,9 +405,9 @@ function TenantsGapFill() {
 function TenancyGapFill() {
   const { data: tenancies, isLoading } = useTenancyGaps();
   const batchUpdate = useBatchUpdateTenancies();
-  const [edits, setEdits] = useState<Record<string, Record<string, any>>>({});
+  const [edits, setEdits] = useState<EditMap>({});
 
-  const gapFields = ['deposit_amount', 'deposit_scheme', 'deposit_protected_date', 'how_to_rent_served_date', 'prescribed_info_served_date'];
+  const gapFields: Array<keyof TenancyGap> = ['deposit_amount', 'deposit_scheme', 'deposit_protected_date', 'how_to_rent_served_date', 'prescribed_info_served_date'];
   const completeness = tenancies ? computeCompleteness(tenancies, gapFields) : 0;
 
   const TENANCY_TYPES = [
@@ -409,10 +423,11 @@ function TenancyGapFill() {
     { value: 'N/A', label: 'N/A' },
   ];
 
-  const setField = (id: string, field: string, value: any) => {
+  const setField = (id: string, field: keyof TenancyGap, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const getVal = (record: any, field: string) => edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: TenancyGap, field: keyof TenancyGap): EditableValue =>
+    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
 
   const handleSave = async () => {
     const updates = Object.entries(edits).map(([id, fields]) => ({ id, ...fields }));
@@ -421,7 +436,7 @@ function TenancyGapFill() {
       await batchUpdate.mutateAsync(updates);
       setEdits({});
       toast.success(`Updated ${updates.length} tenancies`);
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(getErrorMessage(error)); }
   };
 
   if (isLoading) return <Skeleton className="h-64" />;
@@ -450,7 +465,7 @@ function TenancyGapFill() {
             </tr>
           </thead>
           <tbody>
-            {tenancies?.map((t: any) => (
+            {tenancies?.map((t) => (
               <tr key={t.id} className="border-b hover:bg-muted/30">
                 <td><CellSelect value={getVal(t, 'tenancy_type')} onChange={v => setField(t.id, 'tenancy_type', v)} options={TENANCY_TYPES} /></td>
                 <td><CellInput value={getVal(t, 'rent_amount_pcm')} onChange={v => setField(t.id, 'rent_amount_pcm', v)} type="number" /></td>

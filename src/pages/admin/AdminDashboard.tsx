@@ -30,6 +30,25 @@ const TIER_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'outline' | '
   pro: 'default',
 };
 
+interface RecentSignup {
+  id: string;
+  email: string;
+  created_at: string;
+  tier: string;
+}
+
+interface AdminUser {
+  id: string;
+  full_name: string | null;
+  email: string;
+  org_name: string | null;
+  tier: string;
+  status: string;
+  created_at: string | null;
+  last_sign_in_at: string | null;
+  stripe_customer_id: string | null;
+}
+
 function formatPence(pence: number) {
   return `£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 0 })}`;
 }
@@ -155,7 +174,7 @@ export default function AdminDashboard() {
                 <Skeleton className="h-48" />
               ) : (
                 <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                  {(dashboard?.recentSignups || []).slice(0, 10).map((u: any) => (
+                  {((dashboard?.recentSignups || []) as RecentSignup[]).slice(0, 10).map((u) => (
                     <div key={u.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0">
                       <div>
                         <span className="font-medium">{u.email}</span>
@@ -233,7 +252,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(usersData?.users || []).map((u: any) => (
+                    {((usersData?.users || []) as AdminUser[]).map((u) => (
                       <TableRow key={u.id}>
                         <TableCell>
                           <div>

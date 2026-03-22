@@ -39,7 +39,7 @@ function AuditLogPage() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const { data, isLoading } = useAuditLog(filters);
-  const entries = data?.entries || [];
+  const entries = useMemo(() => data?.entries || [], [data?.entries]);
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -310,7 +310,7 @@ function AuditDetail({ entry }: { entry: AuditLogEntry }) {
   );
 }
 
-function ValueList({ values, className }: { values: Record<string, any> | null; className?: string }) {
+function ValueList({ values, className }: { values: Record<string, unknown> | null; className?: string }) {
   if (!values) return <p className="text-xs text-muted-foreground">No data.</p>;
 
   const filteredEntries = Object.entries(values).filter(([k]) => !['id', 'org_id', 'created_at', 'updated_at'].includes(k));

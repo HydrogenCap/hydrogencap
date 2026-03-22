@@ -15,12 +15,43 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+interface PortalDistributionEntity {
+  id: string;
+  entity_name: string;
+}
+
+interface PortalDistributionAllocation {
+  distribution_id: string;
+  shareholder_name: string;
+  ownership_percent: number;
+  amount: number;
+  paid_at: string | null;
+}
+
+interface PortalDistribution {
+  id: string;
+  period_label: string;
+  total_rental_income: number;
+  total_expenses: number;
+  total_mortgage_costs: number;
+  net_distributable: number;
+  total_distributed: number;
+  status: string;
+  period_start: string;
+  entity?: PortalDistributionEntity | null;
+  allocations?: PortalDistributionAllocation[];
+}
+
 export default function PortalDashboard() {
   const { canViewFinancials, orgId, isShareholderUser } = useShareholderSession();
-  const { properties, loansByProperty, performanceByProperty, isLoading } = useShareholderPortfolioData();
+  const { properties, loansByProperty, performanceByProperty, isLoading } = useShareholderPortfolioData({
+    includeFinancials: canViewFinancials,
+    includeCompliance: false,
+    includePhotos: false,
+  });
 
   // Fetch recent distributions for portal
-  const { data: portalDistributions } = useQuery({
+  const { data: portalDistributions } = useQuery<PortalDistribution[]>({
     queryKey: ['portal-distributions', orgId],
     queryFn: async () => {
       if (!orgId) return [];
@@ -45,15 +76,15 @@ export default function PortalDashboard() {
         .select('*')
         .in('distribution_id', distIds);
 
-      return (data || []).map(d => ({
-        ...d,
-        allocations: (allocs || []).filter(a => a.distribution_id === d.id),
+      return (data || []).map((distribution) => ({
+        ...distribution,
+        allocations: (allocs || []).filter((allocation) => allocation.distribution_id === distribution.id),
       }));
     },
     enabled: !!orgId && isShareholderUser && canViewFinancials,
   });
 
-  const generatePortalPdf = (dist: any) => {
+  const generatePortalPdf = (dist: PortalDistribution) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text('Distribution Statement', 14, 20);
@@ -76,16 +107,16 @@ export default function PortalDashboard() {
       headStyles: { fillColor: [30, 30, 30] },
     });
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 110;
+    const finalY = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY || 110;
     if (dist.allocations?.length) {
       autoTable(doc, {
         startY: finalY + 10,
         head: [['Shareholder', '%', 'Amount', 'Paid']],
-        body: dist.allocations.map((a: any) => [
-          a.shareholder_name,
-          `${a.ownership_percent.toFixed(1)}%`,
-          formatGBPDecimal(a.amount),
-          a.paid_at ? format(new Date(a.paid_at), 'dd/MM/yyyy') : 'Pending',
+        body: dist.allocations.map((allocation) => [
+          allocation.shareholder_name,
+          `${allocation.ownership_percent.toFixed(1)}%`,
+          formatGBPDecimal(allocation.amount),
+          allocation.paid_at ? format(new Date(allocation.paid_at), 'dd/MM/yyyy') : 'Pending',
         ]),
         theme: 'grid',
         headStyles: { fillColor: [30, 30, 30] },

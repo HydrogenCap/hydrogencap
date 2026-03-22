@@ -38,7 +38,7 @@ export function CompanySearchInput({ onSelect, placeholder = 'Search Companies H
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query]);
+  }, [query, searchCompanies]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

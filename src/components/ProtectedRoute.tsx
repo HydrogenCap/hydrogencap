@@ -35,8 +35,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       if (error) throw error;
       setResendCooldown(60);
       toast({ title: 'Verification email sent', description: 'Please check your inbox.' });
-    } catch (err: any) {
-      toast({ title: 'Failed to resend', description: err.message || 'Please try again later.', variant: 'destructive' });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : 'Please try again later.';
+      toast({ title: 'Failed to resend', description, variant: 'destructive' });
     }
   }, [user?.email, resendCooldown, toast]);
 

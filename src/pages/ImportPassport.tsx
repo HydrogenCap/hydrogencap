@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileSpreadsheet, ArrowLeft, ArrowRight, Upload, CheckCircle2, AlertTriangle } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ import {
 } from '@/lib/passportCsvParser';
 
 const STEPS = ['Upload', 'Map Columns', 'Match Properties', 'Import'];
+type PropertyPassportInsert = Database['public']['Tables']['property_passport']['Insert'];
 
 export default function ImportPassport() {
   const navigate = useNavigate();
@@ -69,8 +71,8 @@ export default function ImportPassport() {
     setCurrentStep(0);
   }, []);
 
-  const handleMappingChange = useCallback((csvColumn: string, fieldKey: string) => {
-    setMapping(prev => ({ ...prev, [csvColumn]: fieldKey as any }));
+  const handleMappingChange = useCallback((csvColumn: string, fieldKey: PassportColumnMapping[string]) => {
+    setMapping(prev => ({ ...prev, [csvColumn]: fieldKey }));
   }, []);
 
   const handleValidate = useCallback(() => {
@@ -121,9 +123,13 @@ export default function ImportPassport() {
 
     for (const row of validRows) {
       try {
-        await upsertPassport.mutateAsync({
+        const passportData: PropertyPassportInsert = {
           property_id: row.matchedPropertyId!,
-          ...row.data as any,
+          ...row.data,
+        };
+
+        await upsertPassport.mutateAsync({
+          ...passportData,
         });
         success++;
       } catch (err) {

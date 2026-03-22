@@ -14,12 +14,18 @@ interface LenderSelectorProps {
   onChange: (value: string) => void;
 }
 
+type LenderFormState = Omit<Lender, 'id' | 'org_id' | 'created_at' | 'updated_at'>;
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function LenderSelector({ value, onChange }: LenderSelectorProps) {
   const { data: lenders = [] } = useLenders();
   const createLender = useCreateLender();
   const { toast } = useToast();
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<LenderFormState>({
     lender_name: '', lender_type: 'high_street',
     contact_name: '', contact_email: '', contact_phone: '',
     broker_name: '', broker_email: '', broker_phone: '',
@@ -43,8 +49,8 @@ export function LenderSelector({ value, onChange }: LenderSelectorProps) {
       onChange(created.id);
       setShowAdd(false);
       toast({ title: 'Lender created' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 

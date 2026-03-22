@@ -1,10 +1,12 @@
+type AuditRecordValues = Record<string, unknown>;
+
 export interface AuditLogEntry {
   id: string;
   table_name: string;
   record_id: string;
   action: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_values: Record<string, any> | null;
-  new_values: Record<string, any> | null;
+  old_values: AuditRecordValues | null;
+  new_values: AuditRecordValues | null;
   changed_fields: string[] | null;
   changed_by: string | null;
   changed_at: string;
@@ -38,7 +40,6 @@ export const TABLE_DISPLAY_NAMES: Record<string, string> = {
   contractor_jobs: 'Contractor Job',
   financial_snapshots: 'Financial Snapshot',
   financial_categories: 'Financial Category',
-  // Legacy tables (in case they appear)
   properties: 'Property (Legacy)',
   rooms: 'Room (Legacy)',
   tenants: 'Tenant',
@@ -49,43 +50,58 @@ export const TABLE_DISPLAY_NAMES: Record<string, string> = {
 export const AUDITED_TABLES = Object.keys(TABLE_DISPLAY_NAMES);
 
 export function getTableDisplayName(tableName: string): string {
-  return TABLE_DISPLAY_NAMES[tableName] || tableName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return TABLE_DISPLAY_NAMES[tableName] || tableName.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function getRecordIdentifier(tableName: string, values: Record<string, any> | null): string {
-  if (!values) return '—';
+function getStringValue(values: AuditRecordValues, key: string): string | undefined {
+  const value = values[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function getIdPreview(values: AuditRecordValues): string | undefined {
+  return getStringValue(values, 'id')?.slice(0, 6);
+}
+
+export function getRecordIdentifier(tableName: string, values: AuditRecordValues | null): string {
+  if (!values) return '-';
+
   switch (tableName) {
     case 'properties_v2':
     case 'properties':
-      return values.address_line_1 || values.address_line || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'address_line_1') || getStringValue(values, 'address_line') || getIdPreview(values) || '-';
     case 'tenants':
-      return [values.first_name, values.last_name].filter(Boolean).join(' ') || values.company_name || values.id?.slice(0, 6) || '—';
+      return [getStringValue(values, 'first_name'), getStringValue(values, 'last_name')].filter(Boolean).join(' ')
+        || getStringValue(values, 'company_name')
+        || getIdPreview(values)
+        || '-';
     case 'legal_entities':
-      return values.entity_name || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'entity_name') || getIdPreview(values) || '-';
     case 'rooms_v2':
     case 'rooms':
-      return values.room_name || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'room_name') || getIdPreview(values) || '-';
     case 'compliance_documents_v2':
     case 'compliance_documents':
-      return values.document_type || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'document_type') || getIdPreview(values) || '-';
     case 'loan_facilities':
-      return values.facility_type || values.account_reference || values.id?.slice(0, 6) || '—';
-    case 'tenancy_agreements':
-      return values.start_date ? `Tenancy ${values.start_date}` : values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'facility_type') || getStringValue(values, 'account_reference') || getIdPreview(values) || '-';
+    case 'tenancy_agreements': {
+      const startDate = getStringValue(values, 'start_date');
+      return startDate ? `Tenancy ${startDate}` : getIdPreview(values) || '-';
+    }
     case 'financial_snapshots':
-      return values.snapshot_month || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'snapshot_month') || getIdPreview(values) || '-';
     case 'contractors':
-      return values.name || values.company_name || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'name') || getStringValue(values, 'company_name') || getIdPreview(values) || '-';
     case 'contractor_jobs':
-      return values.job_type || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'job_type') || getIdPreview(values) || '-';
     case 'entity_directors':
-      return values.director_name || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'director_name') || getIdPreview(values) || '-';
     case 'entity_shareholders':
-      return values.shareholder_name || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'shareholder_name') || getIdPreview(values) || '-';
     case 'lenders':
-      return values.lender_name || values.id?.slice(0, 6) || '—';
+      return getStringValue(values, 'lender_name') || getIdPreview(values) || '-';
     default:
-      return values.id?.slice(0, 6) || '—';
+      return getIdPreview(values) || '-';
   }
 }
 
@@ -95,32 +111,32 @@ export function humanizeFieldName(field: string): string {
     spv: 'SPV', hmo: 'HMO', epc: 'EPC', eicr: 'EICR', vat: 'VAT',
     id: 'ID', uuid: 'UUID', url: 'URL', ip: 'IP', gbp: 'GBP',
   };
+
   return field
     .split('_')
-    .map(word => overrides[word] || word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => overrides[word] || word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
-export function formatAuditValue(field: string, value: any): string {
-  if (value === null || value === undefined) return '—';
+export function formatAuditValue(field: string, value: unknown): string {
+  if (value === null || value === undefined) return '-';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (typeof value === 'object') return JSON.stringify(value);
 
-  if (field.includes('amount') || field.includes('price') || field.includes('valuation') ||
-      field.includes('balance') || field.includes('payment') || field.includes('cost') ||
-      field.includes('fee') || field.includes('rent') || field.includes('income') ||
-      field.includes('loss') || field.endsWith('_gbp')) {
-    return `£${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2 })}`;
+  if (field.includes('amount') || field.includes('price') || field.includes('valuation')
+      || field.includes('balance') || field.includes('payment') || field.includes('cost')
+      || field.includes('fee') || field.includes('rent') || field.includes('income')
+      || field.includes('loss') || field.endsWith('_gbp')) {
+    return `GBP ${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2 })}`;
   }
 
-  if (field.includes('rate') || field.includes('ltv') || field.includes('percentage') ||
-      field.includes('occupancy') || field.includes('yield')) {
+  if (field.includes('rate') || field.includes('ltv') || field.includes('percentage')
+      || field.includes('occupancy') || field.includes('yield')) {
     return `${value}%`;
   }
 
   if (field.includes('date') && typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
-    const d = new Date(value);
-    return d.toLocaleDateString('en-GB');
+    return new Date(value).toLocaleDateString('en-GB');
   }
 
   return String(value);

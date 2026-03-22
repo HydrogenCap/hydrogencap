@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -68,6 +69,30 @@ export interface WorkOrderCostItem {
   created_at: string;
 }
 
+type WorkOrderRow = Database['public']['Tables']['work_orders']['Row'];
+type WorkOrderInsert = Database['public']['Tables']['work_orders']['Insert'];
+type WorkOrderUpdate = Database['public']['Tables']['work_orders']['Update'];
+type WorkOrderCostRow = Database['public']['Tables']['work_order_costs']['Row'];
+type WorkOrderCostInsert = Database['public']['Tables']['work_order_costs']['Insert'];
+type ContractorJobUpdate = Database['public']['Tables']['contractor_jobs']['Update'];
+type MaintenanceRequestRow = Database['public']['Tables']['maintenance_requests']['Row'];
+
+interface WorkOrderCountItem {
+  status: WOStatus;
+  priority: WOPriority;
+  estimated_cost: number | null;
+  actual_cost: number | null;
+}
+
+interface WorkOrderCostSummary {
+  amount: number;
+  vat_amount: number | null;
+}
+
+interface MaintenanceRequestWithProperty extends MaintenanceRequestRow {
+  property_v2: { entity_id: string | null } | null;
+}
+
 // ─── Constants ───────────────────────────────────────────────────────
 
 export const WO_STATUSES: { value: WOStatus; label: string; color: string }[] = [
@@ -126,7 +151,7 @@ export function useWorkOrders(filters?: {
     queryKey: ['work_orders', filters],
     queryFn: async () => {
       let query = supabase
-        .from('work_orders' as any)
+        .from('work_orders')
         .select(WORK_ORDER_SELECT)
         .order('created_at', { ascending: false });
 
@@ -149,7 +174,7 @@ export function useWorkOrder(id: string | undefined) {
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
-        .from('work_orders' as any)
+        .from('work_orders')
         .select(WORK_ORDER_SELECT)
         .eq('id', id)
         .single();
@@ -165,11 +190,11 @@ export function useWorkOrderCounts() {
     queryKey: ['work_order_counts'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('work_orders' as any)
+        .from('work_orders')
         .select('status, priority, estimated_cost, actual_cost');
       if (error) throw error;
 
-      const items = (data || []) as any[];
+      const items = (data || []) as WorkOrderCountItem[];
       return {
         total: items.length,
         draft: items.filter(w => w.status === 'draft').length,
@@ -178,9 +203,9 @@ export function useWorkOrderCounts() {
         inProgress: items.filter(w => w.status === 'in_progress').length,
         completed: items.filter(w => ['completed', 'invoiced', 'closed'].includes(w.status)).length,
         urgent: items.filter(w => w.priority === 'urgent' && !['closed', 'cancelled', 'completed', 'invoiced'].includes(w.status)).length,
-        totalEstimated: items.reduce((s: number, w: any) => s + (w.estimated_cost || 0), 0),
+        totalEstimated: items.reduce((s: number, w) => s + (w.estimated_cost || 0), 0),
         totalActual: items.filter(w => ['completed', 'invoiced', 'closed'].includes(w.status))
-          .reduce((s: number, w: any) => s + (w.actual_cost || 0), 0),
+          .reduce((s: number, w) => s + (w.actual_cost || 0), 0),
       };
     },
   });
@@ -216,9 +241,7 @@ export function useCreateWorkOrder() {
         .rpc('generate_wo_number', { p_org_id: orgId, p_entity_id: input.entity_id });
       if (numErr) throw numErr;
 
-      const { data, error } = await supabase
-        .from('work_orders' as any)
-        .insert({
+      const payload: WorkOrderInsert = {
           org_id: orgId,
           wo_number: woNumber,
           title: input.title,
@@ -235,12 +258,16 @@ export function useCreateWorkOrder() {
           internal_notes: input.internal_notes || null,
           raised_by: user?.id || null,
           status: 'draft',
-        } as any)
+        };
+
+      const { data, error } = await supabase
+        .from('work_orders')
+        .insert(payload)
         .select()
         .single();
 
       if (error) throw error;
-      return data as any;
+      return data as WorkOrderRow;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['work_orders'] });
@@ -260,8 +287,8 @@ export function useSubmitWorkOrder() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('work_orders' as any)
-        .update({ status: 'submitted', updated_at: new Date().toISOString() } as any)
+        .from('work_orders')
+        .update({ status: 'submitted', updated_at: new Date().toISOString() } satisfies WorkOrderUpdate)
         .eq('id', id);
       if (error) throw error;
     },
@@ -282,15 +309,16 @@ export function useApproveWorkOrder() {
   return useMutation({
     mutationFn: async ({ id, approvedBudget }: { id: string; approvedBudget: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
+      const payload: WorkOrderUpdate = {
+        status: 'approved',
+        approved_budget: approvedBudget,
+        approved_by: user?.id || null,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
       const { error } = await supabase
-        .from('work_orders' as any)
-        .update({
-          status: 'approved',
-          approved_budget: approvedBudget,
-          approved_by: user?.id || null,
-          approved_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as any)
+        .from('work_orders')
+        .update(payload)
         .eq('id', id);
       if (error) throw error;
     },
@@ -310,13 +338,14 @@ export function useRejectWorkOrder() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const payload: WorkOrderUpdate = {
+        status: 'rejected',
+        rejected_reason: reason,
+        updated_at: new Date().toISOString(),
+      };
       const { error } = await supabase
-        .from('work_orders' as any)
-        .update({
-          status: 'rejected',
-          rejected_reason: reason,
-          updated_at: new Date().toISOString(),
-        } as any)
+        .from('work_orders')
+        .update(payload)
         .eq('id', id);
       if (error) throw error;
     },
@@ -335,15 +364,15 @@ export function useUpdateWorkOrder() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<WorkOrder> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: Partial<WorkOrderUpdate> & { id: string }) => {
       const { data, error } = await supabase
-        .from('work_orders' as any)
-        .update({ ...updates, updated_at: new Date().toISOString() } as any)
+        .from('work_orders')
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
       if (error) throw error;
-      return data as any;
+      return data as WorkOrderRow;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['work_orders'] });
@@ -365,25 +394,26 @@ export function useCompleteWorkOrder() {
       let cost = actualCost;
       if (cost === undefined) {
         const { data: items } = await supabase
-          .from('work_order_costs' as any)
+          .from('work_order_costs')
           .select('amount, vat_amount')
           .eq('work_order_id', id)
           .eq('is_estimated', false);
 
-        cost = ((items || []) as any[]).reduce((s, i) => s + i.amount + (i.vat_amount || 0), 0);
+        cost = ((items || []) as WorkOrderCostSummary[]).reduce((s, i) => s + i.amount + (i.vat_amount || 0), 0);
       }
 
       // TODO: When WO is closed, sync actual_cost to financial_snapshots.maintenance_costs
       // for the property's entity + month. This will be automated in a future section.
 
+      const payload: WorkOrderUpdate = {
+        status: 'completed',
+        actual_cost: cost,
+        actual_completion_date: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString(),
+      };
       const { error } = await supabase
-        .from('work_orders' as any)
-        .update({
-          status: 'completed',
-          actual_cost: cost,
-          actual_completion_date: new Date().toISOString().split('T')[0],
-          updated_at: new Date().toISOString(),
-        } as any)
+        .from('work_orders')
+        .update(payload)
         .eq('id', id);
       if (error) throw error;
     },
@@ -414,13 +444,14 @@ export function useAddCostItem() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
+      const payload: WorkOrderCostInsert = { ...input, org_id: orgId };
       const { data, error } = await supabase
-        .from('work_order_costs' as any)
-        .insert({ ...input, org_id: orgId } as any)
+        .from('work_order_costs')
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
-      return data as any;
+      return data as WorkOrderCostRow;
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['work_order', vars.work_order_id] });
@@ -434,7 +465,7 @@ export function useDeleteCostItem() {
   return useMutation({
     mutationFn: async ({ id, workOrderId }: { id: string; workOrderId: string }) => {
       const { error } = await supabase
-        .from('work_order_costs' as any)
+        .from('work_order_costs')
         .delete()
         .eq('id', id);
       if (error) throw error;
@@ -454,9 +485,10 @@ export function useLinkJobToWorkOrder() {
 
   return useMutation({
     mutationFn: async ({ jobId, workOrderId }: { jobId: string; workOrderId: string }) => {
+      const payload: ContractorJobUpdate = { work_order_id: workOrderId };
       const { error } = await supabase
         .from('contractor_jobs')
-        .update({ work_order_id: workOrderId } as any)
+        .update(payload)
         .eq('id', jobId);
       if (error) throw error;
     },
@@ -485,8 +517,9 @@ export function useCreateWOFromMaintenance() {
         .single();
 
       if (error || !req) throw error || new Error('Request not found');
+      const maintenanceRequest = req as MaintenanceRequestWithProperty;
 
-      const entityId = (req as any).property_v2?.entity_id;
+      const entityId = maintenanceRequest.property_v2?.entity_id;
       if (!entityId) throw new Error('Property has no entity — cannot create WO');
 
       const categoryMap: Record<string, WOCategory> = {
@@ -503,13 +536,13 @@ export function useCreateWOFromMaintenance() {
       };
 
       return createWO.mutateAsync({
-        title: req.title,
-        description: req.description,
+        title: maintenanceRequest.title,
+        description: maintenanceRequest.description || undefined,
         entity_id: entityId,
-        property_id: (req as any).property_v2_id || undefined,
-        room_id: (req as any).room_v2_id || undefined,
-        category: categoryMap[req.category] || 'general',
-        priority: req.priority === 'emergency' ? 'urgent' : (req.priority as WOPriority),
+        property_id: maintenanceRequest.property_id || undefined,
+        room_id: maintenanceRequest.room_id || undefined,
+        category: categoryMap[maintenanceRequest.category] || 'general',
+        priority: maintenanceRequest.priority === 'emergency' ? 'urgent' : (maintenanceRequest.priority as WOPriority),
         maintenance_request_id: requestId,
       });
     },

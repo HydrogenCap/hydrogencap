@@ -569,7 +569,7 @@ const App = () => (
             <Route
               path="/portal/compliance"
               element={
-                <PortalProtectedRoute>
+                <PortalProtectedRoute requiredPermission="compliance">
                   <PortalCompliance />
                 </PortalProtectedRoute>
               }
@@ -577,7 +577,7 @@ const App = () => (
             <Route
               path="/portal/investments"
               element={
-                <PortalProtectedRoute>
+                <PortalProtectedRoute requiredPermission="investor">
                   <PortalInvestments />
                 </PortalProtectedRoute>
               }
@@ -585,7 +585,7 @@ const App = () => (
             <Route
               path="/portal/statements"
               element={
-                <PortalProtectedRoute>
+                <PortalProtectedRoute requiredPermission="investor">
                   <PortalStatements />
                 </PortalProtectedRoute>
               }
@@ -594,9 +594,9 @@ const App = () => (
             {/* Tenant portal routes */}
             <Route path="/tenant-portal/accept/:token" element={<TenantAcceptInvite />} />
             <Route path="/tenant-portal" element={<TenantPortalProtectedRoute><TenantPortalHome /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/rent" element={<TenantPortalProtectedRoute><TenantRentHistory /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/maintenance" element={<TenantPortalProtectedRoute><TenantMaintenance /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/documents" element={<TenantPortalProtectedRoute><TenantDocuments /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/rent" element={<TenantPortalProtectedRoute requiredPermission="rent"><TenantRentHistory /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/maintenance" element={<TenantPortalProtectedRoute requiredPermission="maintenance"><TenantMaintenance /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/documents" element={<TenantPortalProtectedRoute requiredPermission="documents"><TenantDocuments /></TenantPortalProtectedRoute>} />
             
             {/* Team invite acceptance */}
             <Route path="/team/accept/:token" element={<AcceptTeamInvite />} />

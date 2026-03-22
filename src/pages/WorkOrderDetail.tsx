@@ -94,7 +94,7 @@ export default function WorkOrderDetail() {
       invoice_reference: invoiceRef || null,
       invoice_amount: invoiceAmount ? parseFloat(invoiceAmount) : null,
       invoice_date: new Date().toISOString().split('T')[0],
-    } as any);
+    });
     setShowInvoice(false);
   };
 
@@ -155,7 +155,7 @@ export default function WorkOrderDetail() {
               </>
             )}
             {wo.status === 'approved' && (
-              <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'in_progress', actual_start_date: new Date().toISOString().split('T')[0] } as any)}>
+              <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'in_progress', actual_start_date: new Date().toISOString().split('T')[0] })}>
                 <Play className="h-4 w-4 mr-1" /> Mark In Progress
               </Button>
             )}
@@ -170,12 +170,12 @@ export default function WorkOrderDetail() {
               </Button>
             )}
             {wo.status === 'invoiced' && (
-              <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'closed', payment_status: 'paid' } as any)}>
+              <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'closed', payment_status: 'paid' })}>
                 <CreditCard className="h-4 w-4 mr-1" /> Mark Paid & Close
               </Button>
             )}
             {!['closed', 'cancelled', 'rejected'].includes(wo.status) && (
-              <Button size="sm" variant="outline" onClick={() => updateWO.mutate({ id: wo.id, status: 'cancelled' } as any)} className="ml-auto">
+              <Button size="sm" variant="outline" onClick={() => updateWO.mutate({ id: wo.id, status: 'cancelled' })} className="ml-auto">
                 Cancel
               </Button>
             )}

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import type {
   FinancialSnapshot,
@@ -8,13 +9,18 @@ import type {
   PropertyAnnualPerformance,
 } from '@/lib/financialSnapshotTypes';
 
+type FinancialSnapshotUpdate = Database['public']['Tables']['financial_snapshots']['Update'];
+const PORTFOLIO_MONTHLY_SUMMARY_VIEW = 'portfolio_monthly_summary' as never;
+const ENTITY_FINANCIAL_SUMMARY_VIEW = 'entity_financial_summary' as never;
+const PROPERTY_ANNUAL_PERFORMANCE_VIEW = 'property_annual_performance' as never;
+
 // ── Portfolio Monthly Summary ──
 export function usePortfolioMonthlySummary(months = 12) {
   return useQuery({
     queryKey: ['portfolio_monthly_summary', months],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('portfolio_monthly_summary' as any)
+        .from(PORTFOLIO_MONTHLY_SUMMARY_VIEW)
         .select('snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate')
         .order('snapshot_month', { ascending: false })
         .limit(months);
@@ -29,7 +35,7 @@ export function useEntityFinancialSummary(month?: string) {
   return useQuery({
     queryKey: ['entity_financial_summary', month],
     queryFn: async () => {
-      let query = supabase.from('entity_financial_summary' as any).select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate');
+      let query = supabase.from(ENTITY_FINANCIAL_SUMMARY_VIEW).select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate');
       if (month) query = query.eq('snapshot_month', month);
       query = query.order('snapshot_month', { ascending: false });
       const { data, error } = await query;
@@ -46,7 +52,7 @@ export function useEntityMonthlySnapshots(entityId: string | undefined, months =
     queryFn: async () => {
       if (!entityId) return [];
       const { data, error } = await supabase
-        .from('entity_financial_summary' as any)
+        .from(ENTITY_FINANCIAL_SUMMARY_VIEW)
         .select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate')
         .eq('entity_id', entityId)
         .order('snapshot_month', { ascending: false })
@@ -82,7 +88,7 @@ export function usePropertyAnnualPerformance() {
     queryKey: ['property_annual_performance'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('property_annual_performance' as any)
+        .from(PROPERTY_ANNUAL_PERFORMANCE_VIEW)
         .select('property_id, property_address, entity_id, entity_name, total_gross_rent, total_costs, total_noi, total_cash_flow, avg_collection_rate, months_active');
       if (error) throw error;
       return (data || []) as unknown as PropertyAnnualPerformance[];
@@ -159,7 +165,7 @@ export function useLockMonth() {
   return useMutation({
     mutationFn: async ({ month, lock }: { month: string; lock: boolean }) => {
       const orgId = await fetchUserOrgId();
-      const updates: any = { is_locked: lock };
+      const updates: FinancialSnapshotUpdate = { is_locked: lock };
       if (lock) {
         updates.locked_at = new Date().toISOString();
         const { data: { user } } = await supabase.auth.getUser();

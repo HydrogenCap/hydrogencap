@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import type { AccountingExport } from '@/lib/accountingTypes';
+
+type AccountingExportInsert = Database['public']['Tables']['accounting_exports']['Insert'];
 
 export function useAccountingExports(entityId?: string, limit = 20) {
   const { data: org } = useOrganization();
@@ -28,9 +31,13 @@ export function useCreateExportRecord() {
   return useMutation({
     mutationFn: async (record: Omit<AccountingExport, 'id' | 'generated_at'>) => {
       const { data: { user } } = await supabase.auth.getUser();
+      const payload: AccountingExportInsert = {
+        ...record,
+        generated_by: user?.id ?? null,
+      };
       const { data, error } = await supabase
         .from('accounting_exports')
-        .insert({ ...record, generated_by: user?.id } as any)
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;

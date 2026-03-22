@@ -11,7 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronDown, AlertTriangle } from 'lucide-react';
-import { useCreateTenancyAgreement, TENANCY_TYPES, RENT_FREQUENCIES, DEPOSIT_SCHEMES } from '@/hooks/useTenancyAgreements';
+import {
+  useCreateTenancyAgreement,
+  TENANCY_TYPES,
+  RENT_FREQUENCIES,
+  DEPOSIT_SCHEMES,
+  type DepositScheme,
+  type TenancyType,
+} from '@/hooks/useTenancyAgreements';
 import { useTenantsV2 } from '@/hooks/useTenantsV2';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { usePropertyRooms } from '@/hooks/useRoomsV2';
@@ -37,6 +44,9 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unexpected error occurred';
 
 interface Props {
   open: boolean;
@@ -69,20 +79,22 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
   });
 
   const selectedPropertyId = form.watch('property_id');
+  const selectedRoomId = form.watch('room_id');
   const depositAmount = form.watch('deposit_amount');
+  const startDate = form.watch('start_date');
+  const depositScheme = form.watch('deposit_scheme');
   const { data: rooms } = usePropertyRooms(selectedPropertyId);
 
   // Auto-fill rent from room
   useEffect(() => {
-    const roomId = form.watch('room_id');
-    if (roomId && rooms) {
-      const room = rooms.find(r => r.id === roomId);
+    if (selectedRoomId && rooms) {
+      const room = rooms.find(r => r.id === selectedRoomId);
       if (room) {
         const rent = room.target_rent_pcm || room.current_rent_pcm;
         if (rent) form.setValue('rent_amount_pcm', rent);
       }
     }
-  }, [form.watch('room_id'), rooms]);
+  }, [form, rooms, selectedRoomId]);
 
   // Reset defaults when opening
   useEffect(() => {
@@ -96,17 +108,16 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
         rent_frequency: 'monthly',
       });
     }
-  }, [open]);
+  }, [form, open, preselectedPropertyId, preselectedRoomId, preselectedTenantId]);
 
   const warnings: string[] = [];
-  const startDate = form.watch('start_date');
   if (startDate && new Date(startDate) < new Date(new Date().toISOString().split('T')[0])) {
     warnings.push('Start date is in the past');
   }
-  if (depositAmount && depositAmount > 0 && !form.watch('deposit_scheme')) {
+  if (depositAmount && depositAmount > 0 && !depositScheme) {
     warnings.push('Deposit amount entered but no scheme selected');
   }
-  const selectedRoom = rooms?.find(r => r.id === form.watch('room_id'));
+  const selectedRoom = rooms?.find(r => r.id === selectedRoomId);
   if (selectedRoom?.occupancy_status === 'occupied') {
     warnings.push('This room already has an active tenancy');
   }
@@ -117,14 +128,14 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
         tenant_id: values.tenant_id,
         property_id: values.property_id,
         room_id: values.room_id,
-        tenancy_type: values.tenancy_type as any,
+        tenancy_type: values.tenancy_type as TenancyType,
         start_date: values.start_date,
         initial_end_date: values.initial_end_date || null,
         actual_end_date: null,
         rent_amount_pcm: values.rent_amount_pcm,
         rent_frequency: values.rent_frequency,
         deposit_amount: values.deposit_amount || null,
-        deposit_scheme: (values.deposit_scheme as any) || null,
+        deposit_scheme: (values.deposit_scheme as DepositScheme | undefined) || null,
         deposit_reference: values.deposit_reference || null,
         deposit_protected_date: values.deposit_protected_date || null,
         prescribed_info_served_date: values.prescribed_info_served_date || null,
@@ -145,8 +156,8 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
       toast({ title: 'Tenancy agreement created' });
       onOpenChange(false);
       onSuccess?.(values.tenant_id);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

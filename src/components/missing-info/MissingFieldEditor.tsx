@@ -23,8 +23,8 @@ import { FieldDefinition } from '@/hooks/useMissingInfo';
 
 interface Props {
   field: FieldDefinition;
-  value: any;
-  onChange: (value: any) => void;
+  value: string | number | boolean | null | undefined;
+  onChange: (value: string | number | boolean | undefined) => void;
   isFilled?: boolean;
 }
 
@@ -100,7 +100,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
           </div>
         );
 
-      case 'date':
+      case 'date': {
         const dateValue = value ? new Date(value) : undefined;
         // Calculate a reasonable year range (30 years back, 40 years forward for mortgages)
         const currentYear = new Date().getFullYear();
@@ -135,6 +135,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
             </PopoverContent>
           </Popover>
         );
+      }
 
       case 'select':
         return (

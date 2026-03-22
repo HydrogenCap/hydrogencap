@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart3, TrendingUp, PieChart } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { usePropertySnapshots } from '@/hooks/useFinancialSnapshots';
-import { formatGBPDecimal, formatPercent } from '@/lib/calculations';
+import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -13,11 +13,19 @@ import {
   PieChart as RechartPie, Pie, Cell,
 } from 'recharts';
 import { SnapshotEntryModal } from './SnapshotEntryModal';
+import type { FinancialSnapshot } from '@/lib/financialSnapshotTypes';
 
 interface Props {
   propertyId: string;
   currentValuation: number | null;
 }
+
+type SnapshotTableKey =
+  | 'gross_rent_received'
+  | 'total_costs'
+  | 'mortgage_payments'
+  | 'net_operating_income'
+  | 'net_cash_flow';
 
 const COST_COLORS = [
   'hsl(var(--primary))',
@@ -140,17 +148,17 @@ export function PropertyFinancialSection({ propertyId, currentValuation }: Props
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { label: 'Rent Received', key: 'gross_rent_received' },
-                      { label: 'Total Costs', key: 'total_costs' },
-                      { label: 'Mortgage', key: 'mortgage_payments' },
-                      { label: 'NOI', key: 'net_operating_income' },
-                      { label: 'Cash Flow', key: 'net_cash_flow' },
+                    {[ 
+                      { label: 'Rent Received', key: 'gross_rent_received' as SnapshotTableKey },
+                      { label: 'Total Costs', key: 'total_costs' as SnapshotTableKey },
+                      { label: 'Mortgage', key: 'mortgage_payments' as SnapshotTableKey },
+                      { label: 'NOI', key: 'net_operating_income' as SnapshotTableKey },
+                      { label: 'Cash Flow', key: 'net_cash_flow' as SnapshotTableKey },
                     ].map(row => (
                       <tr key={row.key} className="border-b border-border/50">
                         <td className="px-2 py-1 font-medium text-muted-foreground">{row.label}</td>
                         {last6.map(s => {
-                          const val = (s as any)[row.key];
+                          const val = s[row.key as keyof FinancialSnapshot] as number;
                           const isFinancial = row.key === 'net_operating_income' || row.key === 'net_cash_flow';
                           return (
                             <td key={s.snapshot_month} className={cn('px-2 py-1 text-center',

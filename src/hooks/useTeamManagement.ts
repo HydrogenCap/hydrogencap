@@ -30,6 +30,11 @@ export interface TeamInvite {
   revokedAt: string | null;
 }
 
+interface AcceptTeamInviteResult {
+  error?: string;
+  message?: string;
+}
+
 // ─── Current user role ───────────────────────────────────────────
 
 export function useCurrentUserRole() {
@@ -353,7 +358,7 @@ export function useAcceptTeamInvite() {
 
       if (error) throw error;
 
-      const result = data as any;
+      const result = (data || {}) as AcceptTeamInviteResult;
       if (result?.error) throw new Error(result.error);
 
       return result;

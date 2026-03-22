@@ -182,7 +182,7 @@ export function parseStatement(csvText: string): StatementParseResult {
 
 function parseUKDate(raw: string): string {
   if (!raw) return '';
-  const match = raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  const match = raw.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
   if (match) return `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
   return parseFlexibleDate(raw);
 }
@@ -196,7 +196,7 @@ function parseISODate(raw: string): string {
 function parseFlexibleDate(raw: string): string {
   if (!raw) return '';
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  const uk = raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  const uk = raw.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
   if (uk) return `${uk[3]}-${uk[2].padStart(2, '0')}-${uk[1].padStart(2, '0')}`;
   const d = new Date(raw);
   if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);

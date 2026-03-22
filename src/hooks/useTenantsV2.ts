@@ -38,6 +38,29 @@ export interface TenantWithCurrentTenancy extends TenantV2 {
   } | null;
 }
 
+interface AgreementPropertyDetails {
+  address_line_1: string | null;
+  city: string | null;
+  postcode: string | null;
+}
+
+interface AgreementRoomDetails {
+  room_name: string | null;
+}
+
+interface AgreementWithDisplayDetails {
+  id: string;
+  tenant_id: string;
+  property_id: string;
+  room_id: string;
+  rent_amount_pcm: number;
+  start_date: string;
+  tenancy_type: string;
+  status: string;
+  properties_v2: AgreementPropertyDetails | null;
+  rooms_v2: AgreementRoomDetails | null;
+}
+
 export const TENANT_TYPES = [
   { value: 'private', label: 'Private' },
   { value: 'dss_hb', label: 'DSS/HB' },
@@ -118,8 +141,8 @@ export function useTenantsV2WithTenancy() {
         .in('status', ['active', 'notice_period']);
       if (ae) throw ae;
 
-      const tenancyMap = new Map<string, (typeof agreements)[0]>();
-      for (const a of agreements || []) {
+      const tenancyMap = new Map<string, AgreementWithDisplayDetails>();
+      for (const a of (agreements ?? []) as AgreementWithDisplayDetails[]) {
         if (!tenancyMap.has(a.tenant_id)) tenancyMap.set(a.tenant_id, a);
       }
 
@@ -135,8 +158,8 @@ export function useTenantsV2WithTenancy() {
             start_date: a.start_date,
             tenancy_type: a.tenancy_type,
             status: a.status,
-            property_address: (a as any).properties_v2 ? `${(a as any).properties_v2.address_line_1}, ${(a as any).properties_v2.city}` : undefined,
-            room_name: (a as any).rooms_v2?.room_name,
+            property_address: a.properties_v2 ? `${a.properties_v2.address_line_1}, ${a.properties_v2.city}` : undefined,
+            room_name: a.rooms_v2?.room_name ?? undefined,
           } : null,
         } as TenantWithCurrentTenancy;
       });

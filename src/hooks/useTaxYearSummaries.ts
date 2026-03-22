@@ -47,7 +47,7 @@ export function useLockTaxYear() {
     mutationFn: async ({ id, lock }: { id: string; lock: boolean }) => {
       const { error } = await supabase
         .from('tax_year_summaries')
-        .update({ is_locked: lock } as any)
+        .update({ is_locked: lock })
         .eq('id', id);
       if (error) throw error;
     },

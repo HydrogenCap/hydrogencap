@@ -18,7 +18,7 @@ import {
 import {
   useRentScheduleItem, useUpdateRentScheduleStatus,
   usePaymentReminders, useDeleteRentSchedule, useDuplicateRentSchedule,
-  normalizeRentItem,
+  normalizeRentItem, type RentScheduleWithDetails,
 } from '@/hooks/useRentCollection';
 import { LoadingState } from '@/components/common';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
@@ -82,6 +82,8 @@ export default function PaymentDetail() {
     });
   };
 
+  const paymentReference = (item as RentScheduleWithDetails & { payment_reference?: string | null }).payment_reference;
+
   return (
     <div className="container py-6 space-y-6 max-w-3xl">
       {/* Back button & header */}
@@ -97,8 +99,8 @@ export default function PaymentDetail() {
               {status.label}
             </span>
           </div>
-          {(item as any).payment_reference && (
-            <p className="text-sm text-muted-foreground">Ref: {(item as any).payment_reference}</p>
+          {paymentReference && (
+            <p className="text-sm text-muted-foreground">Ref: {paymentReference}</p>
           )}
         </div>
       </div>

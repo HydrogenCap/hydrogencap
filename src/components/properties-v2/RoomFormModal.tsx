@@ -22,22 +22,33 @@ interface Props {
   unitId?: string | null;
 }
 
+const initialForm = {
+  room_name: '',
+  room_type: 'double' as RoomV2['room_type'],
+  floor: '',
+  has_ensuite: false,
+  is_lettable: true,
+  current_rent_pcm: '',
+  target_rent_pcm: '',
+  occupancy_status: 'vacant' as RoomV2['occupancy_status'],
+  notes: '',
+};
+
+type RoomFormState = typeof initialForm;
+type RoomCreateInput = Omit<RoomV2, 'id' | 'created_at' | 'updated_at'> & {
+  unit_id?: string | null;
+};
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, unitId }: Props) {
   const create = useCreateRoom();
   const update = useUpdateRoom();
   const { toast } = useToast();
 
-  const [form, setForm] = useState({
-    room_name: '',
-    room_type: 'double' as string,
-    floor: '',
-    has_ensuite: false,
-    is_lettable: true,
-    current_rent_pcm: '',
-    target_rent_pcm: '',
-    occupancy_status: 'vacant' as string,
-    notes: '',
-  });
+  const [form, setForm] = useState<RoomFormState>(initialForm);
 
   useEffect(() => {
     if (editingRoom) {
@@ -53,11 +64,7 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
         notes: editingRoom.notes || '',
       });
     } else {
-      setForm({
-        room_name: '', room_type: 'double', floor: '', has_ensuite: false,
-        is_lettable: true, current_rent_pcm: '', target_rent_pcm: '',
-        occupancy_status: 'vacant', notes: '',
-      });
+      setForm(initialForm);
     }
   }, [editingRoom, open]);
 
@@ -82,16 +89,16 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
       toast({ title: 'Room name is required', variant: 'destructive' });
       return;
     }
-    const payload: any = {
+    const payload: RoomCreateInput = {
       property_id: propertyId,
-      room_name: form.room_name,
-      room_type: form.room_type as RoomV2['room_type'],
+      room_name: form.room_name.trim(),
+      room_type: form.room_type,
       floor: form.floor ? parseInt(form.floor) : null,
       has_ensuite: form.has_ensuite,
       is_lettable: form.is_lettable,
       current_rent_pcm: form.current_rent_pcm ? parseFloat(form.current_rent_pcm) : null,
       target_rent_pcm: form.target_rent_pcm ? parseFloat(form.target_rent_pcm) : null,
-      occupancy_status: form.occupancy_status as RoomV2['occupancy_status'],
+      occupancy_status: form.occupancy_status,
       notes: form.notes || null,
     };
     if (unitId) payload.unit_id = unitId;
@@ -104,12 +111,13 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
         toast({ title: 'Room created' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
-  const set = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
+  const set = <K extends keyof RoomFormState>(key: K, value: RoomFormState[K]) =>
+    setForm(f => ({ ...f, [key]: value }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

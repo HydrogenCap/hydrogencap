@@ -56,7 +56,7 @@ const FIELD_OPTIONS: Record<string, string[]> = {
 type SuggestionState = {
   accepted: boolean;
   rejected: boolean;
-  editedValue: any;
+  editedValue: PassportSuggestion['suggested_value'];
 };
 
 export function AutofillSuggestionsModal({
@@ -126,7 +126,7 @@ export function AutofillSuggestionsModal({
     }));
   };
 
-  const handleValueChange = (id: string, value: any) => {
+  const handleValueChange = (id: string, value: PassportSuggestion['suggested_value']) => {
     setSuggestionStates((prev) => ({
       ...prev,
       [id]: { ...prev[id], editedValue: value },

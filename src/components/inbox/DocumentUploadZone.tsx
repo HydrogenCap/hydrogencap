@@ -20,7 +20,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
 
-  const processWithAI = async (documentId: string, fileUrl: string) => {
+  const processWithAI = useCallback(async (documentId: string, fileUrl: string) => {
     try {
       const propertyList = (properties || []).map(p => ({
         id: p.id,
@@ -45,9 +45,9 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       console.error('AI processing error:', err);
       captureError(err, 'DocumentUploadZone.aiProcess');
     }
-  };
+  }, [properties, toast]);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = useCallback(async (file: File) => {
     const orgId = await getUserOrgId();
     if (!orgId) {
       throw new Error('No organization found. Please log in again.');
@@ -90,7 +90,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     await processWithAI(document.id, urlData.signedUrl);
 
     return document;
-  };
+  }, [createDocument, processWithAI]);
 
   const handleFiles = useCallback(async (files: FileList) => {
     const validFiles = Array.from(files).filter(file => {
@@ -130,7 +130,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       setIsUploading(false);
       setUploadProgress(null);
     }
-  }, [createDocument, properties, toast, onUploadComplete]);
+  }, [toast, onUploadComplete, uploadFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

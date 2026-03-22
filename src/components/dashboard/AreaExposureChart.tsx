@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import type { Payload as TooltipPayload } from 'recharts/types/component/DefaultTooltipContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
@@ -65,9 +65,9 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
   const [debugOpen, setDebugOpen] = useState(false);
 
   // Process data with normalization
-  const { areaData, missingCount, debugData, totalValue } = useMemo(() => {
+  const { areaData, missingCount, debugData } = useMemo(() => {
     if (!properties?.length) {
-      return { areaData: [], missingCount: 0, debugData: [], totalValue: 0 };
+      return { areaData: [], missingCount: 0, debugData: [] };
     }
 
     const bucketMap: Record<string, { value: number; count: number }> = {};
@@ -134,7 +134,6 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
       areaData: sorted,
       missingCount: missing,
       debugData: debug.sort((a, b) => a.bucket.localeCompare(b.bucket)),
-      totalValue: total,
     };
   }, [properties, groupBy]);
 
@@ -251,10 +250,13 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
                     tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + '…' : value}
                   />
                   <Tooltip
-                    formatter={(value: number, name: string, props: any) => [
-                      formatGBP(value),
-                      `${props.payload.propertyCount} properties`,
-                    ]}
+                    formatter={(value, _name, item: TooltipPayload<number, string>) => {
+                      const payload = item.payload as AreaBucket | undefined;
+                      return [
+                        formatGBP(Number(value)),
+                        `${payload?.propertyCount ?? 0} properties`,
+                      ];
+                    }}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--popover))',
                       border: '1px solid hsl(var(--border))',

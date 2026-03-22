@@ -37,14 +37,17 @@ import {
   useUpdateLegalEntity,
   useCreateDirector,
   useCreateShareholder,
+  type EntityDirector,
+  type EntityShareholder,
 } from '@/hooks/useLegalEntities';
 import {
   useShareClassesWithAllocation,
   useDeleteShareClass,
   validateShareIntegrity,
+  type ShareClassWithAllocation,
 } from '@/hooks/useShareCapital';
 import { supabase } from '@/integrations/supabase/client';
-import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
+import { useCompaniesHouse, type CHLookupResult } from '@/hooks/useCompaniesHouse';
 import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
 import { useFreeAgentConnectionForEntity } from '@/hooks/useFreeAgentIntegration';
 import { useToast } from '@/hooks/use-toast';
@@ -116,6 +119,9 @@ export default function EntityDetail() {
   const updateEntity = useUpdateLegalEntity();
   const { data: freeAgentConnection } = useFreeAgentConnectionForEntity(id || '');
 
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'An unexpected error occurred';
+
   // Share capital integrity
   const integrityErrors = shareClassesWithAllocation
     ? validateShareIntegrity(shareClassesWithAllocation)
@@ -123,12 +129,12 @@ export default function EntityDetail() {
 
   // Import officers & PSCs from CH result, skipping duplicates
   const importFromCH = useCallback(async (
-    result: any,
+    result: CHLookupResult,
     entityId: string,
     existingDirectors: typeof directors,
     existingShareholders: typeof shareholders,
   ) => {
-    let imported = { directors: 0, shareholders: 0 };
+    const imported = { directors: 0, shareholders: 0 };
 
     if (result.officers?.length) {
       const existingNames = new Set((existingDirectors || []).map(d => d.director_name.toLowerCase()));
@@ -175,17 +181,17 @@ export default function EntityDetail() {
 
   const [showEditEntity, setShowEditEntity] = useState(false);
   const [showAddDirector, setShowAddDirector] = useState(false);
-  const [editingDirector, setEditingDirector] = useState<any>(null);
+  const [editingDirector, setEditingDirector] = useState<EntityDirector | null>(null);
   const [showAddShareholder, setShowAddShareholder] = useState(false);
-  const [editingShareholder, setEditingShareholder] = useState<any>(null);
+  const [editingShareholder, setEditingShareholder] = useState<EntityShareholder | null>(null);
   const [showAddShareClass, setShowAddShareClass] = useState(false);
-  const [editingShareClass, setEditingShareClass] = useState<any>(null);
+  const [editingShareClass, setEditingShareClass] = useState<ShareClassWithAllocation | null>(null);
 
   // Auto-sync from CH if stale (>24hrs)
   const performAutoSync = useCallback(async () => {
     if (!entity?.company_number || isLookingUp || hasAutoSynced.current) return;
 
-    const lastSynced = (entity as any).ch_last_synced_at ? new Date((entity as any).ch_last_synced_at as string) : null;
+    const lastSynced = entity.ch_last_synced_at ? new Date(entity.ch_last_synced_at) : null;
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     if (!lastSynced || lastSynced < twentyFourHoursAgo) {
@@ -206,7 +212,7 @@ export default function EntityDetail() {
             confirmation_statement_due_date: result.compliance.confirmation_statement_due_date,
             confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
             confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
-          } as any);
+          });
           const imported = await importFromCH(result, entity.id, directors, shareholders);
           const parts = [];
           if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
@@ -243,7 +249,7 @@ export default function EntityDetail() {
           confirmation_statement_due_date: result.compliance.confirmation_statement_due_date,
           confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
           confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
-        } as any);
+        });
         const imported = await importFromCH(result, entity.id, directors, shareholders);
         const parts = [];
         if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
@@ -261,8 +267,8 @@ export default function EntityDetail() {
       await deleteEntity.mutateAsync(id);
       toast({ title: 'Entity deleted' });
       navigate('/entities');
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
@@ -321,9 +327,9 @@ export default function EntityDetail() {
               {entity.company_number && (
                 <span className="text-sm text-muted-foreground font-mono">#{entity.company_number}</span>
               )}
-              {(entity as any).ch_company_status && (
+              {entity.ch_company_status && (
                 <Badge variant="outline" className="text-xs">
-                  CH: {(entity as any).ch_company_status}
+                  CH: {entity.ch_company_status}
                 </Badge>
               )}
               {(['ltd', 'llp'] as string[]).includes(entity.entity_type) && (
@@ -347,20 +353,20 @@ export default function EntityDetail() {
                         if (checked) {
                           await supabase
                             .from('legal_entities')
-                            .update({ is_group_parent: false } as any)
+                            .update({ is_group_parent: false })
                             .eq('org_id', entity.org_id)
                             .eq('is_group_parent', true);
                         }
                         await supabase
                           .from('legal_entities')
-                          .update({ is_group_parent: checked } as any)
+                          .update({ is_group_parent: checked })
                           .eq('id', entity.id);
                         queryClient.invalidateQueries({ queryKey: ['legal_entities'] });
                         queryClient.invalidateQueries({ queryKey: ['legal_entity', entity.id] });
                         queryClient.invalidateQueries({ queryKey: ['ownership_data_v2'] });
                         toast({ title: checked ? 'Set as group parent' : 'Removed group parent status' });
-                      } catch (err: any) {
-                        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                      } catch (error: unknown) {
+                        toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
                       }
                     }}
                     className="scale-75"
@@ -451,10 +457,10 @@ export default function EntityDetail() {
                     </p>
                   </div>
                 )}
-                {(entity as any).ch_last_synced_at && (
+                {entity.ch_last_synced_at && (
                   <div>
                     <span className="text-muted-foreground">Last CH Sync</span>
-                    <p className="font-medium">{formatDate((entity as any).ch_last_synced_at)}</p>
+                    <p className="font-medium">{formatDate(entity.ch_last_synced_at)}</p>
                   </div>
                 )}
                 {entity.notes && (
@@ -472,17 +478,17 @@ export default function EntityDetail() {
         {entity.company_number && (
           <ComplianceFilingsCard
             data={{
-              accounts_due_date: (entity as any).accounts_due_date,
-              accounts_period_end: (entity as any).accounts_period_end,
-              accounts_last_filed_date: (entity as any).accounts_last_filed_date,
-              confirmation_statement_due_date: (entity as any).confirmation_statement_due_date,
-              confirmation_statement_last_made_up_to: (entity as any).confirmation_statement_last_made_up_to,
-              confirmation_statement_last_filed_date: (entity as any).confirmation_statement_last_filed_date,
-              ch_last_synced_at: (entity as any).ch_last_synced_at,
+              accounts_due_date: entity.accounts_due_date,
+              accounts_period_end: entity.accounts_period_end,
+              accounts_last_filed_date: entity.accounts_last_filed_date,
+              confirmation_statement_due_date: entity.confirmation_statement_due_date,
+              confirmation_statement_last_made_up_to: entity.confirmation_statement_last_made_up_to,
+              confirmation_statement_last_filed_date: entity.confirmation_statement_last_filed_date,
+              ch_last_synced_at: entity.ch_last_synced_at,
               company_number: entity.company_number,
             }}
             onUpdate={async (updates) => {
-              await updateEntity.mutateAsync({ id: entity.id, ...updates } as any);
+              await updateEntity.mutateAsync({ id: entity.id, ...updates });
               toast({ title: 'Filing dates updated' });
             }}
             onSyncFromCH={handleRefreshFromCH}
@@ -535,8 +541,8 @@ export default function EntityDetail() {
                               try {
                                 await deleteDirector.mutateAsync({ id: d.id, entityId: d.entity_id });
                                 toast({ title: 'Director removed' });
-                              } catch (err: any) {
-                                toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                              } catch (error: unknown) {
+                                toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
                               }
                             }}
                           >
@@ -637,8 +643,8 @@ export default function EntityDetail() {
                                 try {
                                   await deleteShareClassMutation.mutateAsync({ id: sc.id, entityId: entity.id });
                                   toast({ title: 'Share class deleted' });
-                                } catch (err: any) {
-                                  toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                                } catch (error: unknown) {
+                                  toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
                                 }
                               }}>
                               <Trash2 className="h-3 w-3" />
@@ -709,8 +715,8 @@ export default function EntityDetail() {
                               try {
                                 await deleteShareholder.mutateAsync({ id: sh.id, entityId: sh.entity_id });
                                 toast({ title: 'Shareholder removed' });
-                              } catch (err: any) {
-                                toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                              } catch (error: unknown) {
+                                toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
                               }
                             }}
                           >

@@ -44,6 +44,24 @@ export interface PropertyAttributableOwnership {
   warnings: string[];
 }
 
+interface OwnershipEntitySummary {
+  id: string;
+  name: string;
+  entity_type: string;
+}
+
+interface PropertyLegalOwnerRow {
+  property_id: string;
+  owner_percent: number | string;
+  ownership_entities: OwnershipEntitySummary;
+}
+
+interface EntityShareholdingRow {
+  parent_entity_id: string;
+  shareholder_percent: number | string;
+  shareholder_entity: OwnershipEntitySummary;
+}
+
 // getUserOrgId replaced by shared fetchUserOrgId
 
 // ============================================
@@ -270,14 +288,16 @@ export function usePropertyAttributableOwnership(propertyId: string | undefined)
       // 5. Calculate effective ownership
       const effectiveOwnership: Map<string, EffectiveOwnershipWithBenefit> = new Map();
       const warnings: string[] = [];
+      const typedLegalOwners = (legalOwners || []) as PropertyLegalOwnerRow[];
+      const typedShareholdings = (allShareholdings || []) as EntityShareholdingRow[];
 
-      for (const legalOwner of legalOwners || []) {
+      for (const legalOwner of typedLegalOwners) {
         const entity = legalOwner.ownership_entities;
         const legalPercent = Number(legalOwner.owner_percent);
 
         const isCompanyType = entity.entity_type === 'SPV' || entity.entity_type === 'Company';
-        const entityShareholdings = (allShareholdings || []).filter(
-          (s: any) => s.parent_entity_id === entity.id
+        const entityShareholdings = typedShareholdings.filter(
+          (shareholding) => shareholding.parent_entity_id === entity.id
         );
 
         if (isCompanyType && entityShareholdings.length > 0) {
@@ -443,6 +463,7 @@ export async function calculatePortfolioAttributableMetrics(
   let attrNOI = 0;
   let attrCashflow = 0;
   let weightedAttrSum = 0;
+  const typedShareholdings = (allShareholdings || []) as EntityShareholdingRow[];
 
   for (const property of properties) {
     const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
@@ -500,8 +521,8 @@ export async function calculatePortfolioAttributableMetrics(
         const legalPercent = Number(legalOwner.owner_percent);
         const isCompanyType = entity.entity_type === 'SPV' || entity.entity_type === 'Company';
         
-        const entityShareholdings = (allShareholdings || []).filter(
-          (s: any) => s.parent_entity_id === entity.id
+        const entityShareholdings = typedShareholdings.filter(
+          (shareholding) => shareholding.parent_entity_id === entity.id
         );
 
         if (isCompanyType && entityShareholdings.length > 0) {

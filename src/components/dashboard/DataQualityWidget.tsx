@@ -1,7 +1,6 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -10,24 +9,15 @@ import {
   ArrowRight, 
   CheckCircle2, 
   AlertTriangle, 
-  XCircle,
   ChevronDown,
   ChevronRight,
   Edit,
-  ExternalLink,
   RefreshCw,
   Ban
 } from 'lucide-react';
 import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { useCompanies } from '@/hooks/useCompanies';
-
-// Event name for property updates
-export const PROPERTY_UPDATED_EVENT = 'propertyUpdated';
-
-// Helper function to notify when a property is updated
-export function notifyPropertyUpdated(propertyId?: string) {
-  window.dispatchEvent(new CustomEvent(PROPERTY_UPDATED_EVENT, { detail: { propertyId } }));
-}
+import { PROPERTY_UPDATED_EVENT } from './dataQualityEvents';
 
 interface DataQualityWidgetProps {
   properties: PropertyWithFinancials[];
@@ -68,6 +58,13 @@ interface QualityAnalysis {
   issues: QualityIssue[];
 }
 
+type PropertyWithExemptions = PropertyWithFinancials & {
+  epc_required?: boolean | null;
+  is_grade_listed?: boolean | null;
+  listing_grade?: string | null;
+  has_gas?: boolean | null;
+};
+
 // Field name formatter
 function formatFieldName(field: string): string {
   const formatted = field
@@ -92,22 +89,24 @@ function checkFieldExemption(
   property: PropertyWithFinancials, 
   fieldKey: string
 ): { exempt: boolean; reason: string | null } {
+  const exemptionAwareProperty = property as PropertyWithExemptions;
+
   // EPC Rating - exempt if Grade Listed building
   if (fieldKey === 'epcRating') {
     // Check explicit epc_required flag first
-    if ((property as any).epc_required === false) {
+    if (exemptionAwareProperty.epc_required === false) {
       return { exempt: true, reason: 'EPC not required' };
     }
     // Check if Grade Listed
-    if ((property as any).is_grade_listed === true) {
-      const grade = (property as any).listing_grade || 'Listed';
+    if (exemptionAwareProperty.is_grade_listed === true) {
+      const grade = exemptionAwareProperty.listing_grade || 'Listed';
       return { exempt: true, reason: `Grade ${grade} Listed Building - legally exempt` };
     }
   }
   
   // Gas Safety fields - exempt if no gas at property
   if (fieldKey === 'gasExpiry' || fieldKey === 'gasSafety') {
-    if ((property as any).has_gas === false) {
+    if (exemptionAwareProperty.has_gas === false) {
       return { exempt: true, reason: 'No gas supply at property' };
     }
   }
@@ -521,7 +520,7 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
       return { overallCompleteness: 1, completeFields: 0, totalFields: 0, requiredFields: 0, exemptedFields: 0, issues: [] };
     }
     return analyzeDataQuality(properties, companyMap);
-  }, [properties, companyMap, lastUpdateTime]);
+  }, [properties, companyMap]);
 
   const overallPercentage = Math.round(qualityAnalysis.overallCompleteness * 100);
 

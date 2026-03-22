@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, isPast } from 'date-fns';
-import { Mail, UserX, Clock, Shield, Eye, EyeOff, Copy, Plus, Users } from 'lucide-react';
+import { Mail, UserX, Clock, Shield, Copy, Plus, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ import {
   useShareholderInvites,
   useShareholderAccessList,
   useCreateShareholderInvite,
+  useResendShareholderInvite,
   useRevokeShareholderInvite,
   useRevokeShareholderAccess,
   useUpdateShareholderPermissions,
@@ -45,6 +46,7 @@ export function ShareholderManagement() {
   const { data: invites, isLoading: invitesLoading } = useShareholderInvites();
   const { data: accessList, isLoading: accessLoading } = useShareholderAccessList();
   const createInvite = useCreateShareholderInvite();
+  const resendInvite = useResendShareholderInvite();
   const revokeInvite = useRevokeShareholderInvite();
   const revokeAccess = useRevokeShareholderAccess();
   const updatePermissions = useUpdateShareholderPermissions();
@@ -249,6 +251,14 @@ export function ShareholderManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => resendInvite.mutate(invite.id)}
+                            disabled={resendInvite.isPending}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

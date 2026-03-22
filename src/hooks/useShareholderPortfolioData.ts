@@ -61,8 +61,27 @@ export interface PortalComplianceRowV2 {
   days_remaining: number | null;
 }
 
-export function useShareholderPortfolioData() {
+interface PortalCoverPhoto {
+  id: string;
+  property_id: string;
+  file_url: string;
+  is_cover: boolean;
+}
+
+const PROPERTY_ANNUAL_PERFORMANCE_TABLE = 'property_annual_performance' as never;
+const COMPLIANCE_MATRIX_V2_TABLE = 'compliance_matrix_v2' as never;
+
+interface UseShareholderPortfolioDataOptions {
+  includeFinancials?: boolean;
+  includeCompliance?: boolean;
+  includePhotos?: boolean;
+}
+
+export function useShareholderPortfolioData(options?: UseShareholderPortfolioDataOptions) {
   const { orgId, isShareholderUser } = useShareholderSession();
+  const includeFinancials = options?.includeFinancials ?? true;
+  const includeCompliance = options?.includeCompliance ?? true;
+  const includePhotos = options?.includePhotos ?? true;
 
   // Properties with entity
   const { data: properties, isLoading: propertiesLoading } = useQuery<PortalPropertyV2[]>({
@@ -108,7 +127,7 @@ export function useShareholderPortfolioData() {
       if (error) throw error;
       return (data || []) as PortalLoanV2[];
     },
-    enabled: !!orgId && isShareholderUser,
+    enabled: includeFinancials && !!orgId && isShareholderUser,
   });
 
   // Annual performance
@@ -117,13 +136,13 @@ export function useShareholderPortfolioData() {
     queryFn: async () => {
       if (!orgId) return [];
       const { data, error } = await supabase
-        .from('property_annual_performance' as any)
+        .from(PROPERTY_ANNUAL_PERFORMANCE_TABLE)
         .select('*')
         .eq('org_id', orgId);
       if (error) throw error;
-      return (data || []) as unknown as PortalPerformanceV2[];
+      return (data || []) as PortalPerformanceV2[];
     },
-    enabled: !!orgId && isShareholderUser,
+    enabled: includeFinancials && !!orgId && isShareholderUser,
   });
 
   // Compliance matrix
@@ -132,18 +151,18 @@ export function useShareholderPortfolioData() {
     queryFn: async () => {
       if (!orgId) return [];
       const { data, error } = await supabase
-        .from('compliance_matrix_v2' as any)
+        .from(COMPLIANCE_MATRIX_V2_TABLE)
         .select('property_id, property_address, document_type, calculated_status, expiry_date, issue_date, is_required, days_remaining')
         .eq('org_id', orgId);
       if (error) throw error;
-      return (data || []) as unknown as PortalComplianceRowV2[];
+      return (data || []) as PortalComplianceRowV2[];
     },
-    enabled: !!orgId && isShareholderUser,
+    enabled: includeCompliance && !!orgId && isShareholderUser,
   });
 
   // Cover photos — scoped to shareholder's property IDs only
-  const propertyIds = (properties || []).map((p: any) => p.id);
-  const { data: coverPhotos, isLoading: photosLoading } = useQuery({
+  const propertyIds = (properties || []).map((property) => property.id);
+  const { data: coverPhotos, isLoading: photosLoading } = useQuery<PortalCoverPhoto[]>({
     queryKey: ['shareholder-cover-photos', orgId, propertyIds],
     queryFn: async () => {
       if (!orgId || propertyIds.length === 0) return [];
@@ -155,7 +174,7 @@ export function useShareholderPortfolioData() {
       if (error) throw error;
       return data;
     },
-    enabled: !!orgId && isShareholderUser && !!properties && properties.length > 0,
+    enabled: includePhotos && !!orgId && isShareholderUser && !!properties && properties.length > 0,
   });
 
   const coverPhotoMap = new Map<string, string>();

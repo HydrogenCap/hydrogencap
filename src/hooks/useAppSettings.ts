@@ -3,6 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
+interface AppSettingRow {
+  setting_key: string;
+  setting_value: string;
+}
+
+const APP_SETTINGS_TABLE = 'app_settings' as never;
+
 export function useAppSettings() {
   return useQuery({
     queryKey: ['app-settings'],
@@ -11,13 +18,13 @@ export function useAppSettings() {
       if (!orgId) throw new Error('No org');
 
       const { data, error } = await supabase
-        .from('app_settings' as any)
+        .from(APP_SETTINGS_TABLE)
         .select('*')
         .eq('org_id', orgId);
 
       if (error) throw error;
       const settings: Record<string, string> = {};
-      for (const row of (data || []) as any[]) {
+      for (const row of (data || []) as AppSettingRow[]) {
         settings[row.setting_key] = row.setting_value;
       }
       return settings;
@@ -35,7 +42,7 @@ export function useUpdateAppSetting() {
       if (!orgId) throw new Error('No org');
 
       const { error } = await supabase
-        .from('app_settings' as any)
+        .from(APP_SETTINGS_TABLE)
         .upsert({
           org_id: orgId,
           setting_key: key,

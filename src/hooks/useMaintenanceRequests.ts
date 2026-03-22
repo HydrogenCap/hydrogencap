@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
@@ -11,6 +12,10 @@ import type {
 // Re-export types for backwards compat
 export type { MaintenanceCategory, MaintenancePriority, MaintenanceStatus };
 export type MaintenanceUrgency = MaintenancePriority; // alias
+
+type MaintenanceRequestInsert = Database['public']['Tables']['maintenance_requests']['Insert'];
+type MaintenanceRequestUpdate = Database['public']['Tables']['maintenance_requests']['Update'];
+type MaintenanceCommentInsert = Database['public']['Tables']['maintenance_comments']['Insert'];
 
 const MAINTENANCE_SELECT = `
   *,
@@ -93,7 +98,7 @@ export function useMaintenanceOverview() {
     queryKey: ['maintenance_overview'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('maintenance_overview' as any)
+        .from('maintenance_overview' as never)
         .select('*');
       if (error) throw error;
       return (data || []) as unknown as MaintenanceOverviewRow[];
@@ -157,26 +162,30 @@ export function useCreateMaintenanceRequest() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
+      const requestPayload: MaintenanceRequestInsert = {
+        ...request,
+        org_id: orgId,
+        reported_by: request.reported_by || 'operator',
+        status: 'reported',
+      };
+
       const { data, error } = await supabase
         .from('maintenance_requests')
-        .insert({
-          ...request,
-          org_id: orgId,
-          status: 'reported',
-        } as any)
+        .insert(requestPayload)
         .select()
         .single();
 
       if (error) throw error;
 
       // Auto-create system comment
-      await supabase.from('maintenance_comments').insert({
+      const commentPayload: MaintenanceCommentInsert = {
         org_id: orgId,
         maintenance_request_id: data.id,
         author_type: 'system',
         author_name: 'System',
         comment: `Issue reported by ${request.reported_by || 'operator'} on ${new Date().toLocaleDateString('en-GB')}`,
-      } as any);
+      };
+      await supabase.from('maintenance_comments').insert(commentPayload);
 
       return data;
     },
@@ -211,7 +220,7 @@ export function useUpdateMaintenanceRequest() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+    mutationFn: async ({ id, ...updates }: MaintenanceRequestUpdate & { id: string }) => {
       const { data, error } = await supabase
         .from('maintenance_requests')
         .update(updates)
@@ -253,8 +262,8 @@ export function useMaintenanceStats() {
     open: openRequests.length,
     emergency: openRequests.filter(r => r.is_emergency).length,
     completed: completedRequests.length,
-    totalEstimatedCost: openRequests.reduce((sum, r) => sum + ((r as any).estimated_cost || 0), 0),
-    totalActualCost: completedRequests.reduce((sum, r) => sum + ((r as any).actual_cost || 0), 0),
+    totalEstimatedCost: openRequests.reduce((sum, r) => sum + (r.estimated_cost || 0), 0),
+    totalActualCost: completedRequests.reduce((sum, r) => sum + (r.actual_cost || 0), 0),
     avgResolutionDays: resolutionDays.length > 0
       ? Math.round(resolutionDays.reduce((a, b) => a + b, 0) / resolutionDays.length)
       : null,

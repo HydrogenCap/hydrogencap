@@ -147,7 +147,7 @@ function PropertyEditPage() {
         mortgage_type: (loan?.mortgage_type === 'BTL' || loan?.mortgage_type === 'Bridging' || loan?.mortgage_type === 'Commercial' || loan?.mortgage_type === 'PPR')
           ? loan.mortgage_type as 'BTL' | 'Bridging' | 'Commercial' | 'PPR'
           : '',
-        term_years: (loan as any)?.term_years ?? undefined,
+        term_years: loan?.term_years ?? undefined,
         mortgage_payment_gbp: loan?.payment_override_gbp ?? undefined,
         fixed_rate_expires: loan?.fixed_rate_expires || '',
         loan_start_date: loan?.loan_start_date || '',

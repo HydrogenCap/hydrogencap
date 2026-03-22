@@ -22,6 +22,7 @@ import { ArrowLeft, Home, User, Calendar, MessageSquare, AlertTriangle, MapPin }
 import { format, formatDistanceToNow } from 'date-fns';
 import { useState } from 'react';
 import type { CommentAuthorType } from '@/lib/maintenanceTypes';
+import type { MaintenanceRequestWithDetails } from '@/hooks/useMaintenanceRequests';
 
 export default function MaintenanceRequestDetail() {
   const { requestId } = useParams<{ requestId: string }>();
@@ -65,6 +66,7 @@ export default function MaintenanceRequestDetail() {
   const authorColors: Record<string, string> = {
     operator: 'bg-primary', tenant: 'bg-success', contractor: 'bg-warning', system: 'bg-muted-foreground',
   };
+  const typedRequest: MaintenanceRequestWithDetails = request;
 
   return (
     <AppLayout>
@@ -162,11 +164,11 @@ export default function MaintenanceRequestDetail() {
             {/* Cost Tracking */}
             <CostTrackingSection
               requestId={request.id}
-              estimatedCost={(request as any).estimated_cost ?? null}
-              actualCost={(request as any).actual_cost ?? null}
-              invoiceReference={(request as any).invoice_reference ?? null}
-              costApprovedBy={(request as any).cost_approved_by ?? null}
-              costApprovedAt={(request as any).cost_approved_at ?? null}
+              estimatedCost={typedRequest.estimated_cost ?? null}
+              actualCost={typedRequest.actual_cost ?? null}
+              invoiceReference={typedRequest.invoice_reference ?? null}
+              costApprovedBy={typedRequest.cost_approved_by ?? null}
+              costApprovedAt={typedRequest.cost_approved_at ?? null}
             />
 
             {!wo ? (

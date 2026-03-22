@@ -29,6 +29,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unexpected error occurred';
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -70,8 +73,8 @@ export function EndTenancyModal({ open, onOpenChange, tenancyId, tenantId }: Pro
       await updateTenant.mutateAsync({ id: tenantId, status: 'departed' });
       toast({ title: 'Tenancy ended' });
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

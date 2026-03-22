@@ -4,6 +4,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { format, subMonths } from 'date-fns';
 import { calculatePropertyPnL, type PropertyFinancials, type MonthlyPnL } from '@/lib/propertyPnL';
 
@@ -39,6 +40,12 @@ export interface PortfolioFinancials {
   costBreakdown: { name: string; value: number }[];
 }
 
+type WorkOrderPaymentRow = Pick<Database['public']['Tables']['work_orders']['Row'], 'property_id' | 'paid_amount' | 'paid_date'>;
+type CapexLineItemRow = Pick<Database['public']['Tables']['capex_line_items']['Row'], 'actual_gbp' | 'paid_date' | 'created_at'>;
+type CapexProjectWithLineItems = Pick<Database['public']['Tables']['capex_projects']['Row'], 'property_id'> & {
+  capex_line_items: CapexLineItemRow[] | null;
+};
+
 export function usePortfolioFinancials() {
   return useQuery({
     queryKey: ['portfolio-financials-live'],
@@ -69,7 +76,7 @@ export function usePortfolioFinancials() {
 
       // 3. Fetch rent payments for all agreements
       const allAgreementIds = (agreementsRes.data || []).map(a => a.id);
-      let allRentPayments: { agreement_id: string; amount: number; payment_date: string }[] = [];
+      const allRentPayments: { agreement_id: string; amount: number; payment_date: string }[] = [];
       if (allAgreementIds.length > 0) {
         // Batch in chunks of 100 to avoid URL length limits
         for (let i = 0; i < allAgreementIds.length; i += 100) {
@@ -113,16 +120,17 @@ export function usePortfolioFinancials() {
         loansByProperty.set(l.property_id, existing);
       }
 
-      const maintenanceByProperty = new Map<string, any[]>();
-      for (const m of ((maintenanceRes.data || []) as any[])) {
+      const maintenanceByProperty = new Map<string, WorkOrderPaymentRow[]>();
+      for (const m of (maintenanceRes.data || []) as WorkOrderPaymentRow[]) {
+        if (!m.property_id) continue;
         const existing = maintenanceByProperty.get(m.property_id) || [];
         existing.push(m);
         maintenanceByProperty.set(m.property_id, existing);
       }
 
-      const capexByProperty = new Map<string, any[]>();
-      for (const c of (capexRes.data || [])) {
-        const items = (c as any).capex_line_items || [];
+      const capexByProperty = new Map<string, CapexLineItemRow[]>();
+      for (const c of (capexRes.data || []) as CapexProjectWithLineItems[]) {
+        const items = c.capex_line_items || [];
         const existing = capexByProperty.get(c.property_id) || [];
         existing.push(...items);
         capexByProperty.set(c.property_id, existing);
@@ -153,7 +161,7 @@ export function usePortfolioFinancials() {
           paid_date: m.paid_date,
         }));
 
-        const capex = (capexByProperty.get(prop.id) || []).map((c: any) => ({
+        const capex = (capexByProperty.get(prop.id) || []).map((c) => ({
           actual_gbp: c.actual_gbp || 0,
           paid_date: c.paid_date || null,
           created_at: c.created_at || '',

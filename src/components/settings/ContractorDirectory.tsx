@@ -12,6 +12,11 @@
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
  
  const COMPLIANCE_TYPE_OPTIONS = COMPLIANCE_TYPES.map(t => ({ value: t, label: t }));
+ type ContractorCreateInput = Omit<Contractor, 'id' | 'org_id' | 'average_rating' | 'total_jobs' | 'last_used_at'>;
+ type ContractorFormData = Pick<
+   ContractorCreateInput,
+   'name' | 'company_name' | 'email' | 'phone' | 'website' | 'compliance_types' | 'notes' | 'is_preferred'
+ >;
  
  export function ContractorDirectory() {
    const { data: contractors, isLoading } = useContractors();
@@ -21,7 +26,7 @@
    
    const [dialogOpen, setDialogOpen] = useState(false);
    const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
-   const [formData, setFormData] = useState({
+   const [formData, setFormData] = useState<ContractorFormData>({
      name: '',
      company_name: '',
      email: '',
@@ -65,7 +70,17 @@
      if (editingContractor) {
        await updateContractor.mutateAsync({ id: editingContractor.id, ...formData });
      } else {
-       await createContractor.mutateAsync(formData as any);
+       const contractorPayload: ContractorCreateInput = {
+         ...formData,
+         is_active: true,
+         service_areas: null,
+         avg_response_hours: null,
+         hourly_rate_gbp: null,
+         call_out_fee_gbp: null,
+         typical_costs: {},
+         availability_notes: null,
+       };
+       await createContractor.mutateAsync(contractorPayload);
      }
      setDialogOpen(false);
      resetForm();

@@ -333,7 +333,7 @@ export default function Tax() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {manualExpenses.map((exp: any) => (
+                    {manualExpenses.map((exp) => (
                       <TableRow key={exp.id}>
                         <TableCell className="capitalize">{exp.category?.replace(/_/g, ' ')}</TableCell>
                         <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>

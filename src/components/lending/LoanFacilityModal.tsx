@@ -21,7 +21,37 @@ interface Props {
   propertyValuation?: number | null;
 }
 
-const emptyForm = {
+type LoanFacilityForm = {
+  lender_id: string;
+  entity_id: string;
+  facility_type: string;
+  product_name: string;
+  account_reference: string;
+  status: string;
+  original_amount: string;
+  current_balance: string;
+  monthly_payment: string;
+  repayment_type: string;
+  rate_type: string;
+  interest_rate: string;
+  rate_expiry_date: string;
+  revert_rate: string;
+  term_start_date: string;
+  term_end_date: string;
+  early_repayment_charge_until: string;
+  erc_percentage: string;
+  ltv_at_drawdown: string;
+  current_ltv: string;
+  covenant_ltv_max: string;
+  covenant_icr_min: string;
+  arrangement_fee: string;
+  valuation_fee: string;
+  legal_fee: string;
+  total_setup_costs: string;
+  notes: string;
+};
+
+const emptyForm: LoanFacilityForm = {
   lender_id: '', entity_id: '', facility_type: 'term_mortgage', product_name: '', account_reference: '',
   status: 'active', original_amount: '', current_balance: '', monthly_payment: '', repayment_type: 'interest_only',
   rate_type: 'fixed', interest_rate: '', rate_expiry_date: '', revert_rate: '',
@@ -31,11 +61,15 @@ const emptyForm = {
   notes: '',
 };
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, defaultEntityId, editingFacility, propertyValuation }: Props) {
   const { toast } = useToast();
   const createFacility = useCreateLoanFacility();
   const updateFacility = useUpdateLoanFacility();
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<LoanFacilityForm>(emptyForm);
   const [showCosts, setShowCosts] = useState(false);
   const isEditing = !!editingFacility;
 
@@ -75,12 +109,14 @@ export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, de
     }
   }, [editingFacility, defaultEntityId, open]);
 
-  const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
+  const setField = <K extends keyof LoanFacilityForm>(key: K, value: LoanFacilityForm[K]) =>
+    setForm((current) => ({ ...current, [key]: value }));
+  const set = setField;
 
   const calcLtv = () => {
     const balance = parseFloat(form.current_balance);
     if (propertyValuation && balance) {
-      set('current_ltv', ((balance / propertyValuation) * 100).toFixed(2));
+      setField('current_ltv', ((balance / propertyValuation) * 100).toFixed(2));
     }
   };
 
@@ -88,7 +124,7 @@ export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, de
     const arr = parseFloat(form.arrangement_fee) || 0;
     const val = parseFloat(form.valuation_fee) || 0;
     const leg = parseFloat(form.legal_fee) || 0;
-    set('total_setup_costs', (arr + val + leg).toString());
+    setField('total_setup_costs', (arr + val + leg).toString());
   };
 
   const handleSubmit = async () => {
@@ -137,8 +173,8 @@ export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, de
         toast({ title: 'Loan facility created' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 

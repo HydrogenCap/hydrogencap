@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CompanySearchInput } from './CompanySearchInput';
-import { useCompaniesHouse, type CHCompanySearchResult } from '@/hooks/useCompaniesHouse';
+import { useCompaniesHouse, type CHCompanySearchResult, type CHLookupResult } from '@/hooks/useCompaniesHouse';
 import { useCreateCompany, type CompanyType } from '@/hooks/useCompanies';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,7 +50,7 @@ export function CreateCompanyDialog({
 
   const [tab, setTab] = useState<'search' | 'manual'>('search');
   const [selectedCompany, setSelectedCompany] = useState<CHCompanySearchResult | null>(null);
-  const [chDetails, setChDetails] = useState<any>(null);
+  const [chDetails, setChDetails] = useState<CHLookupResult | null>(null);
 
   // Manual entry fields
   const [legalName, setLegalName] = useState('');
@@ -101,10 +101,11 @@ export function CreateCompanyDialog({
       toast({ title: 'Company created', description: `${legalName} has been added` });
       onOpenChange(false);
       onSuccess?.(company.id);
-    } catch (err: any) {
+    } catch (err) {
+      const description = err instanceof Error ? err.message : 'Failed to create company';
       toast({
         title: 'Error',
-        description: err.message || 'Failed to create company',
+        description,
         variant: 'destructive',
       });
     }
@@ -164,7 +165,7 @@ export function CreateCompanyDialog({
                   <div>
                     <p className="text-sm font-medium mb-1">Persons with Significant Control:</p>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      {chDetails.significant_controllers.map((psc: any, i: number) => (
+                      {chDetails.significant_controllers.map((psc, i) => (
                         <li key={i}>• {psc.name}</li>
                       ))}
                     </ul>

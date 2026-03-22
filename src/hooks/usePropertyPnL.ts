@@ -5,6 +5,21 @@ import { calculatePropertyPnL, type PropertyFinancials } from '@/lib/propertyPnL
 
 export type { PropertyFinancials } from '@/lib/propertyPnL';
 
+interface CapexLineItemRow {
+  actual_gbp: number;
+  paid_date: string | null;
+  created_at: string;
+}
+
+interface CapexProjectRow {
+  capex_line_items: CapexLineItemRow[] | null;
+}
+
+interface MaintenanceCostRow {
+  paid_amount: number | null;
+  paid_date: string | null;
+}
+
 /**
  * Fetch and calculate per-property P&L from actual transaction data.
  * Uses: tenancy_agreements → rent_payments, loan_facilities, works_orders, capex_line_items
@@ -99,8 +114,8 @@ export function usePropertyPnL(propertyId: string | undefined) {
         .reduce((sum, r) => sum + (r.current_rent_pcm || 0), 0);
 
       // Flatten capex line items
-      const capexItems = (capexRes.data || []).flatMap(
-        (p: any) => (p.capex_line_items || []) as { actual_gbp: number; paid_date: string | null; created_at: string }[]
+      const capexItems = ((capexRes.data ?? []) as CapexProjectRow[]).flatMap(
+        (project) => project.capex_line_items ?? [],
       );
 
       return calculatePropertyPnL(
@@ -109,7 +124,7 @@ export function usePropertyPnL(propertyId: string | undefined) {
         expectedRentPcm,
         rentPayments,
         loansRes.data || [],
-        (maintenanceRes.data || []) as any[],
+        (maintenanceRes.data ?? []) as MaintenanceCostRow[],
         capexItems,
         0, // management fee % — default self-managed
       );

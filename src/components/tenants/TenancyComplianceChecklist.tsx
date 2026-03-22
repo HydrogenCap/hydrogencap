@@ -60,6 +60,8 @@ const ITEM_CATEGORIES: Record<string, string> = {
   smoke_co_alarms: 'Property Setup',
 };
 
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Unknown error';
+
 export function TenancyComplianceChecklist({ tenancyId, tenantType, tenantId, propertyId }: Props) {
   const { data: items, isLoading } = useTenancyCompliance(tenancyId);
   const completeMutation = useCompleteTenancyComplianceItem();
@@ -154,8 +156,8 @@ export function TenancyComplianceChecklist({ tenancyId, tenantType, tenantId, pr
           notes: notes || undefined,
           documentUrl,
         });
-      } catch (err: any) {
-        toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      } catch (error: unknown) {
+        toast({ title: 'Upload failed', description: getErrorMessage(error), variant: 'destructive' });
       } finally {
         setIsUploading(false);
       }

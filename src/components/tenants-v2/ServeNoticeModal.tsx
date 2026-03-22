@@ -9,7 +9,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
-import { useUpdateTenancyAgreement, NOTICE_TYPES, type TenancyComplianceCheck } from '@/hooks/useTenancyAgreements';
+import {
+  useUpdateTenancyAgreement,
+  NOTICE_TYPES,
+  type NoticeType,
+  type TenancyComplianceCheck,
+} from '@/hooks/useTenancyAgreements';
 import { useUpdateTenantV2 } from '@/hooks/useTenantsV2';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -19,6 +24,11 @@ const schema = z.object({
   notice_served_date: z.string().min(1, 'Required'),
   notes: z.string().optional(),
 });
+
+type FormData = z.infer<typeof schema>;
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'An unexpected error occurred';
 
 interface Props {
   open: boolean;
@@ -34,7 +44,7 @@ export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, comp
   const { toast } = useToast();
   const [confirmed, setConfirmed] = useState(false);
 
-  const form = useForm({
+  const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       notice_type: '',
@@ -54,7 +64,7 @@ export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, comp
     if (compliance.how_to_rent_compliance === 'not_served') issues.push('How to Rent guide not served');
   }
 
-  const handleSubmit = async (values: z.infer<typeof schema>) => {
+  const handleSubmit = async (values: FormData) => {
     if (showS21Warning && !confirmed) {
       setConfirmed(true);
       return;
@@ -63,14 +73,14 @@ export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, comp
       await updateAgreement.mutateAsync({
         id: tenancyId,
         notice_served_date: values.notice_served_date,
-        notice_type: values.notice_type as any,
+        notice_type: values.notice_type as NoticeType,
         status: 'notice_period',
       });
       await updateTenant.mutateAsync({ id: tenantId, status: 'in_notice' });
       toast({ title: 'Notice served' });
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

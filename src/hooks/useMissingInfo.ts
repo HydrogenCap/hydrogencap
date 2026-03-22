@@ -156,7 +156,7 @@ export const CRITICAL_PASSPORT_FIELDS = [
 ];
 
 // Check if a field value is considered "missing"
-export function isMissing(value: any, fieldKey: string): boolean {
+export function isMissing(value: unknown, fieldKey: string): boolean {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string' && value.trim() === '') return true;
   

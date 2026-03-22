@@ -205,7 +205,7 @@ function DashboardPage() {
         longitude: p.longitude,
         lifecycle_type: ['stabilised', 'letting'].includes(p.lifecycle_stage) ? 'core_rental' : 'development',
         town_city: p.city,
-      })) as any[];
+      }));
   }, [filteredProperties]);
 
   const hasPropertiesWithCoords = mapProperties.length > 0;

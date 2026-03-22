@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 
 export default function TenantDocuments() {
-  const { tenancyId } = useTenantPortalSession();
+  const { tenancyId, canViewDocuments } = useTenantPortalSession();
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['tenant-portal-documents', tenancyId],
@@ -26,11 +26,23 @@ export default function TenantDocuments() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!tenancyId,
+    enabled: canViewDocuments && !!tenancyId,
   });
 
   const handleView = async (fileUrl: string) => {
-    const { data } = await supabase.storage.from('documents').createSignedUrl(fileUrl, 3600);
+    const storageUrlMatch = fileUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/(.+?)(?:\?.*)?$/);
+    const storagePath = storageUrlMatch?.[1]
+      ? storageUrlMatch[1].split('/').slice(1).join('/')
+      : !fileUrl.startsWith('http')
+        ? fileUrl
+        : null;
+
+    if (!storagePath) {
+      window.open(fileUrl, '_blank');
+      return;
+    }
+
+    const { data } = await supabase.storage.from('documents').createSignedUrl(storagePath, 3600);
     if (data?.signedUrl) {
       window.open(data.signedUrl, '_blank');
     }

@@ -87,7 +87,7 @@ export default function Entities() {
 
   const filtered = useMemo(() => {
     if (!entities) return [];
-    let result = entities.filter(e =>
+    const result = entities.filter(e =>
       e.entity_name.toLowerCase().includes(search.toLowerCase()) ||
       (e.company_number && e.company_number.toLowerCase().includes(search.toLowerCase()))
     );

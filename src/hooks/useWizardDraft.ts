@@ -62,7 +62,7 @@ export function useWizardDraft(wizardType: WizardType) {
       }
     }, AUTO_SAVE_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [draft?.id]);
+  }, [draft, saveDraft]);
 
   // Save on visibility change
   useEffect(() => {
@@ -73,7 +73,7 @@ export function useWizardDraft(wizardType: WizardType) {
     };
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
-  }, [draft?.id]);
+  }, [draft, saveDraft]);
 
   const saveDraft = useCallback(async () => {
     if (!draft?.id) return;

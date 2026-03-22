@@ -84,7 +84,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
   // Seed default management company on mount
   useEffect(() => {
     seedDefaultManagement.mutate();
-  }, []);
+  }, [seedDefaultManagement]);
 
   const form = useForm<PassportFormData>({
     resolver: zodResolver(passportSchema),
@@ -631,7 +631,7 @@ function getDefaultValues(passport: PropertyPassport | null): PassportFormData {
     kitchens: passport?.kitchens ?? null,
     living_rooms_communal: passport?.living_rooms_communal ?? null,
     // Note: HMO Licence is managed in Compliance tab
-    management_company_id: (passport as any)?.management_company_id ?? null,
+    management_company_id: passport?.management_company_id ?? null,
     property_management_fee_percent: passport?.property_management_fee_percent ? Number(passport.property_management_fee_percent) : null,
     
     // TIER 2 - ADVANCED

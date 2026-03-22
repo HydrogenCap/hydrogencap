@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Loader2, CheckCircle, XCircle, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,24 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
 type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted';
+type ShareholderInvite = Pick<Database['public']['Tables']['shareholder_invites']['Row'], 'email' | 'name'>;
+
+interface ShareholderInviteLookupResult {
+  status: InviteStatus;
+  email?: string;
+  name?: string | null;
+  error?: string;
+}
+
+interface ShareholderInviteAcceptResult {
+  success?: boolean;
+  error?: string;
+}
 
 export default function AcceptInvite() {
   const { token } = useParams<{ token: string }>();
@@ -18,7 +32,7 @@ export default function AcceptInvite() {
   const { user, signUp, signIn } = useAuth();
 
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>('loading');
-  const [invite, setInvite] = useState<any>(null);
+  const [invite, setInvite] = useState<ShareholderInvite | null>(null);
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,75 +47,62 @@ export default function AcceptInvite() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('shareholder_invites')
-        .select('*')
-        .eq('token', token)
-        .single();
+      const { data, error } = await supabase.rpc('get_shareholder_invite', {
+        p_token: token,
+      });
 
-      if (error || !data) {
+      const result = (data || {}) as ShareholderInviteLookupResult;
+      if (error || !result.status) {
         setInviteStatus('invalid');
         return;
       }
 
-      if (data.accepted_at) {
-        setInviteStatus('accepted');
+      if (result.status !== 'valid') {
+        setInviteStatus(result.status);
         return;
       }
 
-      if (new Date(data.expires_at) < new Date()) {
-        setInviteStatus('expired');
-        return;
-      }
-
-      setInvite(data);
-      setEmail(data.email);
-      setFullName(data.name || '');
+      const previewInvite = {
+        email: result.email || '',
+        name: result.name || '',
+      };
+      setInvite(previewInvite);
+      setEmail(previewInvite.email);
+      setFullName(previewInvite.name || '');
       setInviteStatus('valid');
     }
 
     validateInvite();
   }, [token]);
 
-  // If user is already logged in with matching email, accept automatically
-  useEffect(() => {
-    async function autoAccept() {
-      if (user && invite && user.email === invite.email) {
-        await acceptInvite(user.id);
-      }
-    }
-    autoAccept();
-  }, [user, invite]);
-
-  const acceptInvite = async (userId: string) => {
+  const acceptInvite = useCallback(async () => {
+    if (!token) return;
     try {
-      // Create shareholder access
-      const { error: accessError } = await supabase
-        .from('shareholder_access')
-        .insert({
-          org_id: invite.org_id,
-          user_id: userId,
-          invite_id: invite.id,
-          access_level: 'read_only',
-          can_view_financials: true,
-          can_view_compliance: true,
-          can_view_documents: true,
-        });
+      const { data, error } = await supabase.rpc('accept_shareholder_invite', {
+        p_token: token,
+      });
 
-      if (accessError) throw accessError;
+      if (error) throw error;
 
-      // Mark invite as accepted
-      await supabase
-        .from('shareholder_invites')
-        .update({ accepted_at: new Date().toISOString() })
-        .eq('id', invite.id);
+      const result = (data || {}) as ShareholderInviteAcceptResult;
+      if (result.error) throw new Error(result.error);
 
       toast.success('Invitation accepted! Welcome to the portal.');
       navigate('/portal');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to accept invitation');
     }
-  };
+  }, [navigate, token]);
+
+  // If user is already logged in with matching email, accept automatically
+  useEffect(() => {
+    async function autoAccept() {
+      if (user && invite && user.email && user.email.toLowerCase() === invite.email.toLowerCase()) {
+        await acceptInvite();
+      }
+    }
+    autoAccept();
+  }, [user, invite, acceptInvite]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

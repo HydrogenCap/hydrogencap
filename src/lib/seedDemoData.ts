@@ -17,8 +17,6 @@ import {
   DEMO_MAINTENANCE,
 } from './demoData';
 
-const sq = supabase as any;
-
 export async function seedDemoData(
   orgId: string,
   userId: string
@@ -27,7 +25,7 @@ export async function seedDemoData(
     // 1. Create legal entities
     const entityIds: string[] = [];
     for (const ent of DEMO_ENTITIES) {
-      const { data, error } = await sq
+      const { data, error } = await supabase
         .from('legal_entities')
         .insert({ ...ent, org_id: orgId })
         .select('id')
@@ -40,7 +38,7 @@ export async function seedDemoData(
     const propertyIds: string[] = [];
     for (const prop of DEMO_PROPERTIES) {
       const { entity_index, ...rest } = prop;
-      const { data, error } = await sq
+      const { data, error } = await supabase
         .from('properties_v2')
         .insert({
           ...rest,
@@ -58,7 +56,7 @@ export async function seedDemoData(
     for (const room of DEMO_ROOMS) {
       const { property_index, ...rest } = room;
       const propId = propertyIds[property_index];
-      const { data, error } = await sq
+      const { data, error } = await supabase
         .from('rooms_v2')
         .insert({
           ...rest,
@@ -79,7 +77,7 @@ export async function seedDemoData(
       const { property_index, room_index, rent_amount_pcm, start_date, is_periodic, break_clause_date, ...tenantData } = t;
       
       // Create tenant
-      const { data: tenant, error: tErr } = await sq
+      const { data: tenant, error: tErr } = await supabase
         .from('tenants_v2')
         .insert({ ...tenantData, org_id: orgId, status: 'active', tenant_type: 'individual' })
         .select('id')
@@ -93,10 +91,10 @@ export async function seedDemoData(
       if (!roomId) throw new Error(`Room not found: prop=${property_index}, room=${room_index}`);
 
       // Mark room as occupied
-      await sq.from('rooms_v2').update({ occupancy_status: 'occupied', current_rent_pcm: rent_amount_pcm }).eq('id', roomId);
+      await supabase.from('rooms_v2').update({ occupancy_status: 'occupied', current_rent_pcm: rent_amount_pcm }).eq('id', roomId);
 
       // Create tenancy agreement
-      const { data: tenancy, error: taErr } = await sq
+      const { data: tenancy, error: taErr } = await supabase
         .from('tenancy_agreements')
         .insert({
           org_id: orgId,
@@ -121,7 +119,7 @@ export async function seedDemoData(
     // 5. Create lenders
     const lenderIds: string[] = [];
     for (const lender of DEMO_LENDERS) {
-      const { data, error } = await sq
+      const { data, error } = await supabase
         .from('lenders')
         .insert({ ...lender, org_id: orgId })
         .select('id')
@@ -133,7 +131,7 @@ export async function seedDemoData(
     // 6. Create loan facilities
     for (const loan of DEMO_LOANS) {
       const { property_index, entity_index, lender_index, ...rest } = loan;
-      const { error } = await sq.from('loan_facilities').insert({
+      const { error } = await supabase.from('loan_facilities').insert({
         ...rest,
         org_id: orgId,
         property_id: propertyIds[property_index],
@@ -147,7 +145,7 @@ export async function seedDemoData(
     // 7. Create compliance requirements
     for (const req of DEMO_COMPLIANCE_REQS) {
       const { property_index, ...rest } = req;
-      const { error } = await sq.from('compliance_requirements_v2').insert({
+      const { error } = await supabase.from('compliance_requirements_v2').insert({
         ...rest,
         org_id: orgId,
         property_id: propertyIds[property_index],
@@ -158,7 +156,7 @@ export async function seedDemoData(
     // 8. Create compliance documents
     for (const doc of DEMO_COMPLIANCE_DOCS) {
       const { property_index, ...rest } = doc;
-      const { error } = await sq.from('compliance_documents_v2').insert({
+      const { error } = await supabase.from('compliance_documents_v2').insert({
         ...rest,
         org_id: orgId,
         property_id: propertyIds[property_index],
@@ -170,7 +168,7 @@ export async function seedDemoData(
     for (const v of DEMO_VOIDS) {
       const { property_index, room_index, ...rest } = v;
       const roomId = roomIdsByProperty[property_index]?.[room_index];
-      const { error } = await sq.from('void_periods').insert({
+      const { error } = await supabase.from('void_periods').insert({
         ...rest,
         org_id: orgId,
         property_id: propertyIds[property_index],
@@ -182,7 +180,7 @@ export async function seedDemoData(
     // 10. Create maintenance requests
     for (const m of DEMO_MAINTENANCE) {
       const { property_index, ...rest } = m;
-      const { error } = await sq.from('maintenance_requests').insert({
+      const { error } = await supabase.from('maintenance_requests').insert({
         ...rest,
         org_id: orgId,
         property_v2_id: propertyIds[property_index],
@@ -192,16 +190,19 @@ export async function seedDemoData(
     }
 
     return { success: true };
-  } catch (err: any) {
-    console.error('Demo data seed failed:', err);
-    return { success: false, error: err.message || 'Unknown error' };
+  } catch (error: unknown) {
+    console.error('Demo data seed failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }
 
 export async function clearDemoData(orgId: string): Promise<{ success: boolean; error?: string }> {
   try {
     // Find all demo property IDs
-    const { data: demoProps } = await sq
+    const { data: demoProps } = await supabase
       .from('properties_v2')
       .select('id')
       .eq('org_id', orgId)
@@ -209,61 +210,64 @@ export async function clearDemoData(orgId: string): Promise<{ success: boolean; 
 
     if (!demoProps || demoProps.length === 0) return { success: true };
 
-    const propIds = demoProps.map((p: any) => p.id);
+    const propIds = demoProps.map((property) => property.id);
 
     // Delete in dependency order
     // Maintenance requests
-    await sq.from('maintenance_requests').delete().in('property_v2_id', propIds);
+    await supabase.from('maintenance_requests').delete().in('property_v2_id', propIds);
     // Void periods
-    await sq.from('void_periods').delete().in('property_id', propIds);
+    await supabase.from('void_periods').delete().in('property_id', propIds);
     // Compliance docs & reqs
-    await sq.from('compliance_documents_v2').delete().in('property_id', propIds);
-    await sq.from('compliance_requirements_v2').delete().in('property_id', propIds);
+    await supabase.from('compliance_documents_v2').delete().in('property_id', propIds);
+    await supabase.from('compliance_requirements_v2').delete().in('property_id', propIds);
 
     // Find rooms for these properties
-    const { data: demoRooms } = await sq.from('rooms_v2').select('id').in('property_id', propIds);
-    const roomIds = demoRooms?.map((r: any) => r.id) || [];
+    const { data: demoRooms } = await supabase.from('rooms_v2').select('id').in('property_id', propIds);
+    const roomIds = demoRooms?.map((room) => room.id) || [];
 
     // Tenancy agreements (which reference rooms_v2)
     if (roomIds.length > 0) {
       // Find tenancy agreements
-      const { data: demoTenancies } = await sq
+      const { data: demoTenancies } = await supabase
         .from('tenancy_agreements')
         .select('id, tenant_id')
         .in('room_id', roomIds);
       
-      const tenancyAgreementIds = demoTenancies?.map((t: any) => t.id) || [];
-      const tenantIds = [...new Set(demoTenancies?.map((t: any) => t.tenant_id) || [])];
+      const tenancyAgreementIds = demoTenancies?.map((tenancy) => tenancy.id) || [];
+      const tenantIds = [...new Set(demoTenancies?.map((tenancy) => tenancy.tenant_id) || [])];
 
       // Delete tenancy agreements
       if (tenancyAgreementIds.length > 0) {
-        await sq.from('tenancy_agreements').delete().in('id', tenancyAgreementIds);
+        await supabase.from('tenancy_agreements').delete().in('id', tenancyAgreementIds);
       }
 
       // Delete demo tenants (those tagged with [DEMO])
       if (tenantIds.length > 0) {
-        await sq.from('tenants_v2').delete().in('id', tenantIds).ilike('notes', '%[DEMO]%');
+        await supabase.from('tenants_v2').delete().in('id', tenantIds).ilike('notes', '%[DEMO]%');
       }
     }
 
     // Loan facilities
-    await sq.from('loan_facilities').delete().in('property_id', propIds);
+    await supabase.from('loan_facilities').delete().in('property_id', propIds);
 
     // Rooms
-    await sq.from('rooms_v2').delete().in('property_id', propIds);
+    await supabase.from('rooms_v2').delete().in('property_id', propIds);
 
     // Properties
-    await sq.from('properties_v2').delete().in('id', propIds);
+    await supabase.from('properties_v2').delete().in('id', propIds);
 
     // Demo lenders (tagged with [DEMO])
-    await sq.from('lenders').delete().eq('org_id', orgId).ilike('notes', '%[DEMO]%');
+    await supabase.from('lenders').delete().eq('org_id', orgId).ilike('notes', '%[DEMO]%');
 
     // Demo entities (tagged with [DEMO])
-    await sq.from('legal_entities').delete().eq('org_id', orgId).ilike('notes', '%[DEMO]%');
+    await supabase.from('legal_entities').delete().eq('org_id', orgId).ilike('notes', '%[DEMO]%');
 
     return { success: true };
-  } catch (err: any) {
-    console.error('Demo data clear failed:', err);
-    return { success: false, error: err.message || 'Unknown error' };
+  } catch (error: unknown) {
+    console.error('Demo data clear failed:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }

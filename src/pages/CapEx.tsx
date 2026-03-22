@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { HardHat, Plus, ChevronDown, ChevronRight, Briefcase, TrendingUp, PoundSterling, AlertTriangle } from 'lucide-react';
+import { HardHat, Plus, ChevronDown, ChevronRight, Briefcase, TrendingUp, PoundSterling, AlertTriangle, type LucideIcon } from 'lucide-react';
 import { useAllCapexProjects, useCreateCapexProjectFull, CAPEX_TEMPLATES, type CapexProjectWithProperty } from '@/hooks/useCapexAll';
 import { useAddCapexLineItem } from '@/hooks/useCapex';
 import { useQuery } from '@tanstack/react-query';
@@ -169,7 +169,7 @@ export default function CapExPage() {
   );
 }
 
-function KPICard({ icon: Icon, label, value, className }: { icon: any; label: string; value: string; className?: string }) {
+function KPICard({ icon: Icon, label, value, className }: { icon: LucideIcon; label: string; value: string; className?: string }) {
   return (
     <Card>
       <CardContent className="p-4 flex items-center gap-3">

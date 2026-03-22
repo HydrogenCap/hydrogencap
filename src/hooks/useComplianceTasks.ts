@@ -1,7 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import type { ComplianceTaskOverview, ComplianceScanResult, TaskStatus, TaskPriority } from '@/lib/complianceTaskTypes';
+
+type ComplianceTaskInsert = Database['public']['Tables']['compliance_tasks']['Insert'];
 
 export function useComplianceTasks() {
   const { data: org } = useOrganization();
@@ -74,8 +77,8 @@ export function useCreateTask() {
   const qc = useQueryClient();
   const { data: org } = useOrganization();
   return useMutation({
-    mutationFn: async (task: Record<string, unknown>) => {
-      const { error } = await supabase.from('compliance_tasks').insert({ ...task, org_id: org!.id, source: 'manual' } as any);
+    mutationFn: async (task: Partial<ComplianceTaskInsert>) => {
+      const { error } = await supabase.from('compliance_tasks').insert({ ...task, org_id: org!.id, source: 'manual' });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),

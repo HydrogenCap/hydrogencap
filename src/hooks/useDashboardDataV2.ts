@@ -6,8 +6,38 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import type { PropertyWithFinancials } from './useProperties';
+
+type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
+type LoanFacilityRow = Database['public']['Tables']['loan_facilities']['Row'];
+type TenancyAgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
+type RoomV2Row = Database['public']['Tables']['rooms_v2']['Row'];
+
+type PropertyWithEntity = PropertyV2Row & {
+  legal_entities?: { entity_name: string | null; entity_type: string | null } | Array<{ entity_name: string | null; entity_type: string | null }> | null;
+};
+
+type LoanWithLender = LoanFacilityRow & {
+  lenders?: { lender_name: string | null } | Array<{ lender_name: string | null }> | null;
+};
+
+type DashboardTenancyRow = Pick<
+  TenancyAgreementRow,
+  'id' | 'status' | 'rent_amount_pcm' | 'start_date' | 'initial_end_date' | 'actual_end_date' | 'property_id' | 'room_id' | 'tenant_id'
+> & {
+  tenants_v2?: { first_name: string | null; last_name: string | null } | Array<{ first_name: string | null; last_name: string | null }> | null;
+  rooms_v2?: { room_name: string | null } | Array<{ room_name: string | null }> | null;
+  properties_v2?: { address_line_1: string | null } | Array<{ address_line_1: string | null }> | null;
+};
+
+type DashboardRoom = Pick<RoomV2Row, 'id' | 'property_id' | 'room_name' | 'occupancy_status' | 'is_lettable'>;
+
+function getSingleRelation<T>(relation: T | T[] | null | undefined): T | null {
+  if (Array.isArray(relation)) return relation[0] ?? null;
+  return relation ?? null;
+}
 
 export function useDashboardPropertiesV2() {
   return useQuery({
@@ -40,111 +70,91 @@ export function useDashboardPropertiesV2() {
       if (agErr) throw agErr;
 
       // Build lookup maps
-      const loansByProperty = new Map<string, typeof loans>();
-      for (const loan of loans || []) {
+      const loansByProperty = new Map<string, LoanWithLender[]>();
+      for (const loan of (loans || []) as LoanWithLender[]) {
         const existing = loansByProperty.get(loan.property_id) || [];
         existing.push(loan);
         loansByProperty.set(loan.property_id, existing);
       }
 
       const rentByProperty = new Map<string, number>();
-      for (const ag of agreements || []) {
-        const current = rentByProperty.get(ag.property_id) || 0;
-        rentByProperty.set(ag.property_id, current + (ag.rent_amount_pcm || 0));
+      for (const agreement of agreements || []) {
+        const current = rentByProperty.get(agreement.property_id) || 0;
+        rentByProperty.set(agreement.property_id, current + (agreement.rent_amount_pcm || 0));
       }
 
       // Map V2 → V1 PropertyWithFinancials shape
       const currentYear = new Date().getFullYear();
-      const mapped: PropertyWithFinancials[] = (properties || []).map((p: any) => {
-        const propertyLoans = loansByProperty.get(p.id) || [];
-        const monthlyRent = rentByProperty.get(p.id) || 0;
+      const mapped: PropertyWithFinancials[] = ((properties || []) as PropertyWithEntity[]).map((property) => {
+        const propertyLoans = loansByProperty.get(property.id) || [];
+        const monthlyRent = rentByProperty.get(property.id) || 0;
         const annualRent = monthlyRent * 12;
+        const legalEntity = getSingleRelation(property.legal_entities);
 
-        // Map the primary loan to V1 loan shape
-        const primaryLoan = propertyLoans[0];
-        const v1Loans = propertyLoans.map((lf: any) => ({
-          id: lf.id,
-          property_id: lf.property_id,
-          org_id: lf.org_id,
-          lender: (lf as any).lenders?.lender_name || null,
-          current_mortgage_balance_gbp: lf.current_balance,
-          interest_rate_percent: lf.interest_rate,
-          loan_term_months: null, // V2 uses term dates not months
-          capital_or_interest: lf.interest_only ? 'interest' : 'repayment',
-          fixed_rate_expires: lf.rate_expiry_date,
-          mortgage_payment_gbp: lf.monthly_payment,
-          payment_override_gbp: null,
-          created_at: lf.created_at,
-          updated_at: lf.updated_at,
-        }));
+        const v1Loans = propertyLoans.map((loan) => {
+          const lender = getSingleRelation(loan.lenders);
+          return {
+            id: loan.id,
+            property_id: loan.property_id,
+            org_id: loan.org_id,
+            lender: lender?.lender_name || null,
+            current_mortgage_balance_gbp: loan.current_balance,
+            interest_rate_percent: loan.interest_rate,
+            loan_term_months: null,
+            capital_or_interest: loan.interest_only ? 'interest' : 'repayment',
+            fixed_rate_expires: loan.rate_expiry_date,
+            mortgage_payment_gbp: loan.monthly_payment,
+            payment_override_gbp: null,
+            created_at: loan.created_at,
+            updated_at: loan.updated_at,
+          };
+        });
 
-        // Map to V1 income shape
         const v1Income = annualRent > 0 ? [{
-          id: `v2-income-${p.id}`,
-          property_id: p.id,
-          org_id: p.org_id,
+          id: `v2-income-${property.id}`,
+          property_id: property.id,
+          org_id: property.org_id,
           year: currentYear,
           annual_rent_gbp: annualRent,
           other_income_gbp: null,
-          created_at: p.created_at,
-          updated_at: p.updated_at,
+          created_at: property.created_at,
+          updated_at: property.updated_at,
         }] : [];
 
-        // Determine lifecycle from V2 lifecycle_stage
-        const isCore = ['stabilised', 'letting'].includes(p.lifecycle_stage);
+        const isCore = ['stabilised', 'letting'].includes(property.lifecycle_stage);
         const lifecycleType = isCore ? 'core_rental' : 'development';
-
-        // Property type mapping for HMO check
-        const isHmo = p.property_type?.startsWith('hmo');
-
-        // Sum total debt for this property
-        const totalDebt = propertyLoans.reduce((s: number, l: any) => s + (l.current_balance || 0), 0);
+        const isHmo = property.property_type?.startsWith('hmo');
 
         return {
-          // Core identity fields mapped from V2
-          id: p.id,
-          org_id: p.org_id,
-          address_line: p.address_line_1 + (p.address_line_2 ? `, ${p.address_line_2}` : ''),
-          postcode: p.postcode,
-          city: p.city || null,
-          county: p.county || null,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          property_type: p.property_type,
+          id: property.id,
+          org_id: property.org_id,
+          address_line: property.address_line_1 + (property.address_line_2 ? `, ${property.address_line_2}` : ''),
+          postcode: property.postcode,
+          city: property.city || null,
+          county: property.county || null,
+          latitude: property.latitude,
+          longitude: property.longitude,
+          property_type: property.property_type,
           lifecycle_type: lifecycleType,
-          
-          // Financial fields
-          current_value_gbp: p.current_valuation,
-          purchase_price_gbp: p.purchase_price,
-          original_purchase_date: p.purchase_date,
-          
-          // Property characteristics
-          beds: p.total_lettable_rooms,
+          current_value_gbp: property.current_valuation,
+          purchase_price_gbp: property.purchase_price,
+          original_purchase_date: property.purchase_date,
+          beds: property.total_lettable_rooms,
           bathrooms: null,
           tenure: null,
-          epc_rating: p.epc_rating || null,
-          epc_required: p.listing_grade === 'none' || !p.listing_grade,
-          
-          // HMO
+          epc_rating: property.epc_rating || null,
+          epc_required: property.listing_grade === 'none' || !property.listing_grade,
           is_hmo_licensed: isHmo,
-          
-          // Leasehold
           lease_years_remaining: null,
-          
-          // Entity info (not on V1 but useful)
-          entity_name: p.legal_entities?.entity_name,
-          entity_type: p.legal_entities?.entity_type,
-
-          // Nested financial data in V1 shape
+          entity_name: legalEntity?.entity_name || null,
+          entity_type: legalEntity?.entity_type || null,
           loans: v1Loans,
           income: v1Income,
           costs: [],
           tenancies: [],
-
-          // Fields that don't exist on V2 — null them out
-          created_at: p.created_at,
-          updated_at: p.updated_at,
-        } as any as PropertyWithFinancials;
+          created_at: property.created_at,
+          updated_at: property.updated_at,
+        } as PropertyWithFinancials;
       });
 
       return mapped;
@@ -172,22 +182,28 @@ export function useDashboardTenanciesV2() {
         `)
         .eq('org_id', orgId);
       if (error) throw error;
-      return (data || []).map((d: any) => ({
-        ...d,
-        // Map to shapes expected by rentalStats
-        rent_amount_pcm: d.rent_amount_pcm,
-        end_date: d.actual_end_date || d.initial_end_date,
-        tenant: {
-          id: d.tenant_id,
-          first_name: d.tenants_v2?.first_name || '',
-          last_name: d.tenants_v2?.last_name || '',
-        },
-        room: { room_name: d.rooms_v2?.room_name || '' },
-        property: {
-          id: d.property_id,
-          address_line: d.properties_v2?.address_line_1 || '',
-        },
-      }));
+
+      return ((data || []) as DashboardTenancyRow[]).map((agreement) => {
+        const tenant = getSingleRelation(agreement.tenants_v2);
+        const room = getSingleRelation(agreement.rooms_v2);
+        const property = getSingleRelation(agreement.properties_v2);
+
+        return {
+          ...agreement,
+          rent_amount_pcm: agreement.rent_amount_pcm,
+          end_date: agreement.actual_end_date || agreement.initial_end_date,
+          tenant: {
+            id: agreement.tenant_id,
+            first_name: tenant?.first_name || '',
+            last_name: tenant?.last_name || '',
+          },
+          room: { room_name: room?.room_name || '' },
+          property: {
+            id: agreement.property_id,
+            address_line: property?.address_line_1 || '',
+          },
+        };
+      });
     },
   });
 }
@@ -203,10 +219,10 @@ export function useDashboardRoomsV2() {
         .from('rooms_v2')
         .select('id, property_id, room_name, occupancy_status, is_lettable');
       if (error) throw error;
-      return (data || []).map((r: any) => ({
-        ...r,
-        // Map V2 occupancy_status to V1 status
-        status: r.occupancy_status === 'occupied' ? 'occupied' : 'vacant',
+
+      return ((data || []) as DashboardRoom[]).map((room) => ({
+        ...room,
+        status: room.occupancy_status === 'occupied' ? 'occupied' : 'vacant',
       }));
     },
   });

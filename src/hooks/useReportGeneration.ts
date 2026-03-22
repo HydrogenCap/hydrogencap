@@ -32,6 +32,31 @@ export interface ReportTemplate {
   availableFor: ('core_rental' | 'development' | 'all')[];
 }
 
+interface ComplianceDocumentSummary {
+  file_url: string | null;
+  original_file_name: string | null;
+}
+
+interface ComplianceItemSummary {
+  id: string;
+  property_id: string;
+  compliance_type: string;
+  issue_date: string | null;
+  expiry_date: string | null;
+  is_required?: boolean | null;
+  is_manually_excluded?: boolean | null;
+  documents?: ComplianceDocumentSummary[] | null;
+}
+
+interface PropertyInsuranceSummary {
+  insurance_policies?: unknown[] | null;
+}
+
+interface ShareholderPartySummary {
+  display_name?: string | null;
+  party_type?: string | null;
+}
+
 export const REPORT_TEMPLATES: ReportTemplate[] = [
   {
     id: 'portfolio_compliance',
@@ -87,9 +112,10 @@ export function useReportData() {
 
   // Build enriched property data
   const enrichedProperties: PropertyReportData[] = (properties || []).map(prop => {
-    const propCompliance = complianceItems?.filter(c => c.property_id === prop.id) || [];
+    const propCompliance = ((complianceItems?.filter(c => c.property_id === prop.id) || []) as ComplianceItemSummary[]);
     const passport = passports?.find(p => p.property_id === prop.id);
     const ownerCompany = companies?.find(c => c.id === prop.legal_owner_company_id);
+    const propertyWithInsurance = prop as typeof prop & PropertyInsuranceSummary;
     
     return {
       id: prop.id,
@@ -113,8 +139,8 @@ export function useReportData() {
         compliance_type: c.compliance_type,
         issue_date: c.issue_date,
         expiry_date: c.expiry_date,
-        is_required: (c as any).is_required ?? null,
-        is_manually_excluded: (c as any).is_manually_excluded ?? null,
+        is_required: c.is_required ?? null,
+        is_manually_excluded: c.is_manually_excluded ?? null,
         documents: c.documents?.map(d => ({
           file_url: d.file_url,
           original_file_name: d.original_file_name,
@@ -136,7 +162,7 @@ export function useReportData() {
         council_tax_band: passport.council_tax_band,
         local_authority_text: passport.local_authority_text,
       } : null,
-      insurancePolicy: (prop as any).insurance_policies?.[0] || null,
+      insurancePolicy: propertyWithInsurance.insurance_policies?.[0] || null,
       ownerName: ownerCompany?.legal_name,
     };
   });
@@ -221,9 +247,9 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
       const totalShares = shareholdings?.reduce((sum, sh) => sum + (sh.shares_held || 0), 0) || 0;
       
       const shareholders = shareholdings?.map(sh => ({
-        name: (sh.shareholder_party as any)?.display_name || 'Unknown',
+        name: (sh.shareholder_party as ShareholderPartySummary | null)?.display_name || 'Unknown',
         percent: totalShares > 0 ? ((sh.shares_held || 0) / totalShares) * 100 : 0,
-        party_type: (sh.shareholder_party as any)?.party_type || 'INDIVIDUAL',
+        party_type: (sh.shareholder_party as ShareholderPartySummary | null)?.party_type || 'INDIVIDUAL',
       })) || [];
 
       return {

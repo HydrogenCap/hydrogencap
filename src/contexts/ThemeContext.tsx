@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- provider and hook are intentionally co-located */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';

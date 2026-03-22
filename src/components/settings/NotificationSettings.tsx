@@ -30,6 +30,14 @@ import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
    { value: 3, label: '3 days' },
    { value: 1, label: '1 day' },
  ];
+
+ type TogglePreferenceKey =
+   | 'email_enabled'
+   | 'weekly_digest_enabled'
+   | 'notify_expired'
+   | 'notify_expiring_soon'
+   | 'notify_rate_expiry'
+   | 'notify_negative_cashflow';
  
  export function NotificationSettings() {
    const { user } = useAuth();
@@ -37,8 +45,27 @@ import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
    const updatePrefs = useUpdateNotificationPreferences();
   const sendReminders = useSendComplianceReminders();
  
-   const handleToggle = (key: string, value: boolean) => {
-     updatePrefs.mutate({ [key]: value } as any);
+   const handleToggle = (key: TogglePreferenceKey, value: boolean) => {
+     switch (key) {
+       case 'email_enabled':
+         updatePrefs.mutate({ email_enabled: value });
+         return;
+       case 'weekly_digest_enabled':
+         updatePrefs.mutate({ weekly_digest_enabled: value });
+         return;
+       case 'notify_expired':
+         updatePrefs.mutate({ notify_expired: value });
+         return;
+       case 'notify_expiring_soon':
+         updatePrefs.mutate({ notify_expiring_soon: value });
+         return;
+       case 'notify_rate_expiry':
+         updatePrefs.mutate({ notify_rate_expiry: value });
+         return;
+       case 'notify_negative_cashflow':
+         updatePrefs.mutate({ notify_negative_cashflow: value });
+         return;
+     }
    };
  
    const handleReminderDaysChange = (day: number) => {

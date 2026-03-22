@@ -9,8 +9,8 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { EntityVerification, CHOfficer, CHFilingHistoryItem, useCHOfficers, useCHFilingHistory } from '@/hooks/useCompaniesHouseV2';
-import { EntityDirector } from '@/hooks/useLegalEntities';
+import { EntityVerification, useCHOfficers, useCHFilingHistory } from '@/hooks/useCompaniesHouseV2';
+import { EntityDirector, LegalEntity } from '@/hooks/useLegalEntities';
 import { useUpdateLegalEntity, useCreateDirector } from '@/hooks/useLegalEntities';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -20,6 +20,13 @@ interface Props {
   companyNumber: string | null;
   verification: EntityVerification | null;
   localDirectors: EntityDirector[];
+}
+
+type LegalEntityUpdateInput = Partial<LegalEntity> & { id: string };
+type UpdatableField = 'entity_name' | 'status' | 'incorporation_date' | 'registered_address';
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
 }
 
 function MatchBadge({ match }: { match: boolean }) {
@@ -69,17 +76,27 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
   const chAddress = [v.ch_address_line_1, v.ch_postcode].filter(Boolean).join(', ');
   const addressMatch = normalizeForCompare(v.local_registered_address).includes(normalizeForCompare(v.ch_postcode));
 
-  const handleUpdateField = async (field: string, value: string) => {
+  const handleUpdateField = async (field: UpdatableField, value: string) => {
     try {
-      const updates: any = { id: entityId };
-      if (field === 'entity_name') updates.entity_name = value;
-      if (field === 'status') updates.status = value;
-      if (field === 'incorporation_date') updates.incorporation_date = value;
-      if (field === 'registered_address') updates.registered_address = value;
+      let updates: LegalEntityUpdateInput;
+      switch (field) {
+        case 'entity_name':
+          updates = { id: entityId, entity_name: value };
+          break;
+        case 'status':
+          updates = { id: entityId, status: value as LegalEntity['status'] };
+          break;
+        case 'incorporation_date':
+          updates = { id: entityId, incorporation_date: value };
+          break;
+        case 'registered_address':
+          updates = { id: entityId, registered_address: value };
+          break;
+      }
       await updateEntity.mutateAsync(updates);
       toast({ title: `Updated ${field.replace('_', ' ')}` });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 
@@ -107,20 +124,24 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
   };
 
   const handleImportAll = async () => {
-    const updates: any = { id: entityId };
+    const updates: LegalEntityUpdateInput = { id: entityId };
     if (v.ch_company_name) updates.entity_name = v.ch_company_name;
     if (v.ch_incorporation_date) updates.incorporation_date = v.ch_incorporation_date;
     if (chAddress) updates.registered_address = chAddress;
     if (v.ch_company_status) {
-      const statusMap: Record<string, string> = { active: 'active', dissolved: 'dissolved', liquidation: 'dissolved' };
+      const statusMap: Record<string, LegalEntity['status']> = {
+        active: 'active',
+        dissolved: 'dissolved',
+        liquidation: 'dissolved',
+      };
       updates.status = statusMap[v.ch_company_status] || v.local_status;
     }
     try {
       await updateEntity.mutateAsync(updates);
       await handleImportOfficers();
       toast({ title: 'All company data imported from Companies House' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 

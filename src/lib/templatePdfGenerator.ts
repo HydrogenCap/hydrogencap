@@ -2,6 +2,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, addMonths } from 'date-fns';
 
+type AutoTableDocument = jsPDF & {
+  lastAutoTable?: {
+    finalY: number;
+  };
+};
+
 // ── Shared helpers ──────────────────────────────────────────
 
 function addHeader(doc: jsPDF, title: string, subtitle?: string) {
@@ -318,7 +324,7 @@ export function generateInventoryPDF(data: InventoryData): jsPDF {
       columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 50 }, 2: { cellWidth: 80 } },
     });
 
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = ((doc as AutoTableDocument).lastAutoTable?.finalY || y) + 10;
   }
 
   // Signature block at the end

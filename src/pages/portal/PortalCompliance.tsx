@@ -14,7 +14,11 @@ import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 
 export default function PortalCompliance() {
   const { canViewCompliance } = useShareholderSession();
-  const { properties, complianceRows, isLoading } = useShareholderPortfolioData();
+  const { properties, complianceRows, isLoading } = useShareholderPortfolioData({
+    includeFinancials: false,
+    includeCompliance: canViewCompliance,
+    includePhotos: false,
+  });
 
   // Derive which doc types exist in the matrix
   const activeDocTypes = useMemo(() => {

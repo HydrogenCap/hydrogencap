@@ -19,7 +19,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function TenantRentHistory() {
-  const { tenancyId } = useTenantPortalSession();
+  const { tenancyId, canViewRent } = useTenantPortalSession();
 
   const { data: schedule, isLoading } = useQuery({
     queryKey: ['tenant-portal-rent-history', tenancyId],
@@ -33,7 +33,7 @@ export default function TenantRentHistory() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!tenancyId,
+    enabled: canViewRent && !!tenancyId,
   });
 
   const { data: payments } = useQuery({
@@ -48,7 +48,7 @@ export default function TenantRentHistory() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!tenancyId,
+    enabled: canViewRent && !!tenancyId,
   });
 
   return (

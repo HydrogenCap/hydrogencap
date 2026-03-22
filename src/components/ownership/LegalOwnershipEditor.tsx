@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Building2, Search, User, Trash2 } from 'lucide-react';
 import {
   Dialog,
@@ -81,12 +81,6 @@ export function LegalOwnershipEditor({
   const addOwnershipLink = useAddOwnershipLink();
   const deleteOwnershipLink = useDeleteOwnershipLink();
 
-  // Determine initial owner type based on existing data
-  const getInitialOwnerType = (): OwnerType => {
-    if (property?.legal_owner_company_id) return 'company';
-    return 'individuals';
-  };
-
   const [ownerType, setOwnerType] = useState<OwnerType>('company');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -111,7 +105,10 @@ export function LegalOwnershipEditor({
   const isSubmitting = updateProperty.isPending || addOwnershipLink.isPending;
 
   // Filter parties to only show individuals
-  const individuals = parties?.filter(p => p.party_type === 'INDIVIDUAL') || [];
+  const individuals = useMemo(
+    () => parties?.filter((party) => party.party_type === 'INDIVIDUAL') ?? [],
+    [parties],
+  );
 
   // Calculate totals
   const pendingTotal = pendingOwners.reduce((sum, o) => sum + o.percent, 0);
@@ -119,7 +116,7 @@ export function LegalOwnershipEditor({
 
   useEffect(() => {
     if (open) {
-      const initialType = getInitialOwnerType();
+      const initialType: OwnerType = property?.legal_owner_company_id ? 'company' : 'individuals';
       setOwnerType(initialType);
       setSelectedCompanyId(property?.legal_owner_company_id || '');
       setShowNewCompanyForm(false);
@@ -156,7 +153,10 @@ export function LegalOwnershipEditor({
       setShowNewPersonForm(false);
       setNewPersonName('');
     }
-  }, [open, property?.legal_owner_company_id, property?.legal_owner_party_id, existingOwners]);
+  }, [existingOwners, individuals, open, property?.legal_owner_company_id, property?.legal_owner_party_id]);
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Failed to update ownership';
 
   const handleCreateCompany = async () => {
     if (!newCompanyName.trim()) {
@@ -287,8 +287,8 @@ export function LegalOwnershipEditor({
       
       toast({ title: 'Ownership updated' });
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to update ownership', variant: 'destructive' });
+    } catch (error) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

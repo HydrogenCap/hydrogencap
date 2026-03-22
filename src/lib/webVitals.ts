@@ -9,6 +9,21 @@ interface VitalsReport {
   navigationType: string;
 }
 
+interface SentryMetrics {
+  distribution?: (name: string, value: number, options: {
+    unit: string;
+    tags: { rating: VitalsReport['rating'] };
+  }) => void;
+}
+
+declare global {
+  interface Window {
+    __SENTRY__?: {
+      metrics?: SentryMetrics;
+    };
+  }
+}
+
 function sendToAnalytics(metric: Metric) {
   const report: VitalsReport = {
     name: metric.name,
@@ -25,9 +40,9 @@ function sendToAnalytics(metric: Metric) {
     return;
   }
 
-  if (typeof window !== 'undefined' && (window as any).__SENTRY__) {
+  if (typeof window !== 'undefined' && window.__SENTRY__) {
     try {
-      const Sentry = (window as any).__SENTRY__;
+      const Sentry = window.__SENTRY__;
       Sentry.metrics?.distribution(report.name, report.value, {
         unit: 'millisecond',
         tags: { rating: report.rating },

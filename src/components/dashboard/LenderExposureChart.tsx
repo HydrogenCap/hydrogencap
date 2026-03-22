@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- mixed exports are intentional in this shared module */
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { BarChart3 } from 'lucide-react';

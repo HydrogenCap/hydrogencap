@@ -79,6 +79,11 @@ interface PassportBasic {
   local_authority?: string | null;
 }
 
+interface PropertyIncomeBasic {
+  year: number;
+  annual_rent_gbp: number | null;
+}
+
 export function validatePropertyData(
   property: PropertyWithFinancials | null,
   complianceItems: ComplianceItemBasic[],
@@ -181,7 +186,9 @@ export function validatePropertyData(
   const hasLegionella = hasValidDoc('legionella');
 
   // Finance
-  const currentYearIncome = property.income?.find((i: any) => i.year === new Date().getFullYear());
+  const currentYearIncome = (property.income as PropertyIncomeBasic[] | undefined)?.find(
+    (income) => income.year === new Date().getFullYear()
+  );
   const hasIncome = !!(currentYearIncome?.annual_rent_gbp && currentYearIncome.annual_rent_gbp > 0);
   
   const loan = property.loans?.[0];

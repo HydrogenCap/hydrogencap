@@ -32,7 +32,8 @@ const schema = z.object({
   notes: z.string().optional().transform(v => v || null),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormInput = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 interface Props {
   open: boolean;
@@ -68,17 +69,17 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
   const createCommitment = useCreateCommitment();
   const { data: entities } = useLegalEntities();
 
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       entity_id: '',
       commitment_type: 'equity' as const,
-      committed_amount: '' as any,
-      drawn_amount: '' as any,
-      equity_percentage: '' as any,
+      committed_amount: '',
+      drawn_amount: '',
+      equity_percentage: '',
       commitment_date: new Date().toISOString().split('T')[0],
       maturity_date: '',
-      coupon_rate: '' as any,
+      coupon_rate: '',
       payment_frequency: '',
       status: 'active',
       documentation_url: '',
@@ -88,7 +89,7 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
 
   useEffect(() => {
     if (open) form.reset();
-  }, [open]);
+  }, [open, form]);
 
   const commitmentType = form.watch('commitment_type');
   const showEquity = commitmentType === 'equity';

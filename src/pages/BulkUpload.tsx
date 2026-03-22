@@ -11,6 +11,18 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { useBulkDocScanner, type ScannedDocument } from '@/hooks/useBulkDocScanner';
 import { COMPLIANCE_DOC_TYPES, DOC_TYPE_DISPLAY_NAMES, type ComplianceDocType } from '@/lib/complianceV2Types';
 
+interface PropertyOption {
+  id: string;
+  address_line_1: string | null;
+}
+
+type DocumentOverride = Partial<{
+  documentType: string;
+  propertyId: string;
+  expiryDate: string;
+  certificateNumber: string;
+}>;
+
 function ConfidenceBadge({ confidence }: { confidence: number }) {
   const pct = Math.round(confidence * 100);
   if (pct >= 80) return <Badge variant="default">{pct}%</Badge>;
@@ -194,8 +206,8 @@ function DocumentRow({
 }: {
   doc: ScannedDocument;
   idx: number;
-  properties: any[];
-  onOverride: (idx: number, o: any) => void;
+  properties: PropertyOption[];
+  onOverride: (idx: number, o: DocumentOverride) => void;
   onConfirm: (idx: number) => void;
   onReject: (idx: number) => void;
 }) {

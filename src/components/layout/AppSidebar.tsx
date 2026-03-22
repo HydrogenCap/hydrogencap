@@ -62,7 +62,7 @@ interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks';
+  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks' | 'tenancy_events';
   sectionKey?: SectionKey;
 }
 
@@ -88,7 +88,7 @@ const operationsItems: NavItem[] = [
   { title: 'Accounting', icon: PoundSterling, href: '/accounting' },
   { title: 'Contractors', icon: HardHat, href: '/contractors' },
   { title: 'Jobs & Works', icon: Wrench, href: '/jobs-and-works', badgeType: 'jobs', sectionKey: 'jobs' },
-  { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' as any },
+  { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' },
   { title: 'Rent', icon: PoundSterling, href: '/rent' },
   { title: 'Voids', icon: DoorOpen, href: '/voids', sectionKey: 'voids' },
   { title: 'Lettings', icon: ArrowRight, href: '/lettings' },
@@ -189,7 +189,7 @@ export function AppSidebar() {
         </Badge>
       );
     }
-    if ((item.badgeType as string) === 'tenancy_events' && tenancyUrgentCount > 0) {
+    if (item.badgeType === 'tenancy_events' && tenancyUrgentCount > 0) {
       return (
         <Badge
           variant="destructive"

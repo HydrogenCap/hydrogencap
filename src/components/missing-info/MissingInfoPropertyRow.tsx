@@ -43,13 +43,16 @@ interface Props {
   item: PropertyMissingInfo;
 }
 
+type MissingFieldValue = string | number | boolean | null | undefined;
+type MissingFieldChanges = Record<string, MissingFieldValue>;
+
 export function MissingInfoPropertyRow({ item }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const [propertyChanges, setPropertyChanges] = useState<Record<string, any>>({});
-  const [incomeChanges, setIncomeChanges] = useState<Record<string, any>>({});
-  const [financeChanges, setFinanceChanges] = useState<Record<string, any>>({});
-  const [insuranceChanges, setInsuranceChanges] = useState<Record<string, any>>({});
-  const [passportChanges, setPassportChanges] = useState<Record<string, any>>({});
+  const [propertyChanges, setPropertyChanges] = useState<MissingFieldChanges>({});
+  const [incomeChanges, setIncomeChanges] = useState<MissingFieldChanges>({});
+  const [financeChanges, setFinanceChanges] = useState<MissingFieldChanges>({});
+  const [insuranceChanges, setInsuranceChanges] = useState<MissingFieldChanges>({});
+  const [passportChanges, setPassportChanges] = useState<MissingFieldChanges>({});
   const [isSaving, setIsSaving] = useState(false);
   const [showPaymentOverride, setShowPaymentOverride] = useState(false);
   const [paymentOverrideValue, setPaymentOverrideValue] = useState<number | undefined>();
@@ -156,7 +159,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
       const hasPaymentOverride = paymentOverrideValue !== undefined;
 
       if ((hasFinanceChanges || hasPaymentOverride) && loan) {
-        const loanUpdate: Record<string, any> = { ...financeChanges };
+        const loanUpdate: MissingFieldChanges = { ...financeChanges };
         
         if (hasPaymentOverride) {
           loanUpdate.mortgage_payment_gbp = paymentOverrideValue;

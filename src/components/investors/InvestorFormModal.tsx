@@ -120,7 +120,7 @@ export function InvestorFormModal({ open, onOpenChange, investor }: Props) {
     } else {
       form.reset();
     }
-  }, [investor, open]);
+  }, [investor, open, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (isEditing) {

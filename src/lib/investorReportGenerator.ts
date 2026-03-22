@@ -478,7 +478,7 @@ export class InvestorStatementReport {
 
   private addPageFooter(): void {
     const ph = this.doc.internal.pageSize.getHeight();
-    const pageNum = (this.doc as any).internal.getNumberOfPages();
+    const pageNum = this.doc.getNumberOfPages();
     this.doc.setFontSize(8);
     this.doc.setTextColor(...BRAND_SECONDARY);
     this.doc.text(`Page ${pageNum}`, this.pageWidth / 2, ph - 10, { align: 'center' });

@@ -96,8 +96,8 @@ export default function PropertyDetailV2() {
       await updateProperty.mutateAsync({ id: property.id, notes: notesValue || null });
       setEditingNotes(false);
       toast({ title: 'Notes saved' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to save notes', variant: 'destructive' });
     }
   };
 

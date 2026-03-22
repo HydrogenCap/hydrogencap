@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- shadcn UI modules intentionally export helpers with components */
 import { useTheme } from "@/contexts/ThemeContext";
 import { Toaster as Sonner, toast } from "sonner";
 

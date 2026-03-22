@@ -64,6 +64,13 @@ export interface LettingsPipelineItem {
   room?: { room_name: string; current_rent_pcm: number | null } | null;
 }
 
+export type LettingsPipelineUpdate = Partial<
+  Omit<
+    LettingsPipelineItem,
+    'id' | 'org_id' | 'property_id' | 'created_at' | 'updated_at' | 'property' | 'room'
+  >
+>;
+
 export function useLettingsPipeline() {
   return useQuery({
     queryKey: ['lettings-pipeline'],
@@ -144,7 +151,7 @@ export function useAdvanceStage() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Record<string, any> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: LettingsPipelineUpdate }) => {
       const { data, error } = await supabase
         .from('lettings_pipeline')
         .update(updates)
@@ -152,11 +159,11 @@ export function useAdvanceStage() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as LettingsPipelineItem;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['lettings-pipeline'] });
-      toast({ title: `Moved to ${STAGE_LABELS[(data as any).stage as LettingsStage]}` });
+      toast({ title: `Moved to ${STAGE_LABELS[data.stage]}` });
     },
   });
 }
@@ -172,7 +179,7 @@ export function useCompleteLetting() {
       actualMoveIn?: string;
       voidPeriodId?: string | null;
     }) => {
-      const updates: Record<string, any> = {
+      const updates: LettingsPipelineUpdate = {
         stage: 'completed',
         actual_move_in: actualMoveIn || new Date().toISOString().slice(0, 10),
       };

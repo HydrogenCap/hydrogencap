@@ -44,7 +44,7 @@ export function StepCompliance({ data, onChange }: Props) {
       onChange({ compliance_items: buildDefaults(data.property_type, data.has_gas_supply) });
       setInitialized(true);
     }
-  }, [initialized, data.property_type, data.has_gas_supply]);
+  }, [initialized, data.compliance_items.length, data.property_type, data.has_gas_supply, onChange]);
 
   const items = data.compliance_items;
 

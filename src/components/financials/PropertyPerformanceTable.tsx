@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { formatGBPDecimal, formatPercent } from '@/lib/calculations';
+import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import type { PropertyAnnualPerformance } from '@/lib/financialSnapshotTypes';
 
@@ -28,8 +28,8 @@ export function PropertyPerformanceTable({ data }: Props) {
 
   const sorted = useMemo(() => {
     return [...data].sort((a, b) => {
-      const av = (a as any)[sortField] ?? -Infinity;
-      const bv = (b as any)[sortField] ?? -Infinity;
+      const av = a[sortField] ?? -Infinity;
+      const bv = b[sortField] ?? -Infinity;
       return sortAsc ? av - bv : bv - av;
     });
   }, [data, sortField, sortAsc]);

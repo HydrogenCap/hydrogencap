@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+
+type TenancyComplianceUpdate = Database['public']['Tables']['tenancy_compliance_items']['Update'];
 
 export interface TenancyComplianceItem {
   id: string;
@@ -42,7 +45,7 @@ export function useCompleteTenancyComplianceItem() {
   return useMutation({
     mutationFn: async ({ itemId, notes, documentUrl }: { itemId: string; notes?: string; documentUrl?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const updatePayload: Record<string, any> = {
+      const updatePayload: TenancyComplianceUpdate = {
         completed_date: new Date().toISOString().split('T')[0],
         completed_by: user?.email || 'Unknown',
         notes: notes || null,

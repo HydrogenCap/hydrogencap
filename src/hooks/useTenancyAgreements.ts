@@ -58,6 +58,26 @@ export interface TenancyComplianceCheck {
   section_21_ready: boolean;
 }
 
+interface AgreementTenantJoin {
+  first_name: string | null;
+  last_name: string | null;
+}
+
+interface AgreementRoomJoin {
+  room_name: string | null;
+}
+
+interface AgreementPropertyJoin {
+  address_line_1: string | null;
+  city: string | null;
+}
+
+interface TenancyAgreementQueryRow extends TenancyAgreement {
+  tenants_v2: AgreementTenantJoin | null;
+  rooms_v2: AgreementRoomJoin | null;
+  properties_v2: AgreementPropertyJoin | null;
+}
+
 export const TENANCY_TYPES = [
   { value: 'ast', label: 'AST' },
   { value: 'licence_to_occupy', label: 'Licence to Occupy' },
@@ -107,7 +127,7 @@ export function useTenancyAgreements(filters?: { tenantId?: string; roomId?: str
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []).map((d: any) => ({
+      return ((data || []) as TenancyAgreementQueryRow[]).map((d) => ({
         ...d,
         tenant_name: d.tenants_v2 ? `${d.tenants_v2.first_name} ${d.tenants_v2.last_name}` : undefined,
         room_name: d.rooms_v2?.room_name,

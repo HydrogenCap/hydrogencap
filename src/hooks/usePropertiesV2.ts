@@ -41,6 +41,13 @@ export interface PropertyWithEntity extends PropertyV2 {
   entity_type: string;
 }
 
+type PropertyWithEntityJoin = PropertyV2 & {
+  legal_entities?: {
+    entity_name: string;
+    entity_type: string;
+  } | null;
+};
+
 export function usePropertiesV2() {
   return useQuery({
     queryKey: ['properties_v2'],
@@ -50,7 +57,7 @@ export function usePropertiesV2() {
         .select('*, legal_entities!inner(entity_name, entity_type)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data || []).map((p: any) => ({
+      return ((data || []) as PropertyWithEntityJoin[]).map((p) => ({
         ...p,
         entity_name: p.legal_entities?.entity_name ?? '',
         entity_type: p.legal_entities?.entity_type ?? '',
@@ -72,10 +79,11 @@ export function usePropertyV2(id: string | undefined) {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
+      const property = data as PropertyWithEntityJoin;
       return {
-        ...data,
-        entity_name: (data as any).legal_entities?.entity_name ?? '',
-        entity_type: (data as any).legal_entities?.entity_type ?? '',
+        ...property,
+        entity_name: property.legal_entities?.entity_name ?? '',
+        entity_type: property.legal_entities?.entity_type ?? '',
         legal_entities: undefined,
       } as PropertyWithEntity;
     },

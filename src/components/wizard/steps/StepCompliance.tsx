@@ -48,7 +48,7 @@ export function StepCompliance({ payload, updatePayload }: StepProps) {
       }
     }
     load();
-  }, []);
+  }, [items.length, payload, updatePayload]);
 
   const updateItem = (idx: number, field: keyof ComplianceItem, value: unknown) => {
     const updated = items.map((item, i) => (i === idx ? { ...item, [field]: value } : item));

@@ -23,7 +23,7 @@ export default function Inbox() {
     queryKey: ['compliance_matrix_v2_inbox'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('compliance_matrix_v2' as any)
+        .from('compliance_matrix_v2')
         .select('calculated_status');
       if (error) throw error;
       return (data || []) as unknown as Array<{ calculated_status: string }>;
@@ -65,7 +65,7 @@ export default function Inbox() {
     if (highConfidenceDocs.length === 0) return;
     setIsAcceptingAll(true);
     try {
-      await acceptAllHighConfidence.mutateAsync(highConfidenceDocs as any);
+      await acceptAllHighConfidence.mutateAsync(highConfidenceDocs);
     } finally {
       setIsAcceptingAll(false);
     }

@@ -39,6 +39,32 @@ interface FileIndexEntry {
   sizeBytes: number;
 }
 
+interface BackupManifest {
+  createdAt: string;
+  version: string;
+  essentialOnly: boolean;
+  includesFiles: boolean;
+  totalRecords: number;
+  totalFiles: number;
+  totalFileSizeBytes: number;
+}
+
+interface BackupRow {
+  id?: string;
+  deleted_at?: string | null;
+  [key: string]: unknown;
+}
+
+interface FetchRowsResult {
+  data: BackupRow[] | null;
+  error: { message?: string } | null;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────
 
 function extractStoragePath(fileUrl: string, bucket: string): string | null {
@@ -59,7 +85,7 @@ function extractStoragePath(fileUrl: string, bucket: string): string | null {
 }
 
 function generateSummaryMarkdown(
-  manifest: Record<string, any>,
+  manifest: BackupManifest,
   tableSummary: Array<{ table: string; count: number }>,
   warnings: string[],
 ): string {
@@ -188,7 +214,7 @@ export function usePortfolioBackup() {
           // Filter out soft-deleted documents
           const rows =
             cfg.table === 'documents'
-              ? allRows.filter((r: any) => !r.deleted_at)
+              ? allRows.filter((row) => !row.deleted_at)
               : allRows;
 
           zip.file(`${root}/data/${cfg.prefix}-${cfg.table}.json`, JSON.stringify(rows, null, 2));
@@ -207,7 +233,7 @@ export function usePortfolioBackup() {
                     originalUrl: url,
                     zipPath: `${root}/files/${cfg.storageBucket}/${storagePath}`,
                     table: cfg.table,
-                    recordId: row.id,
+                    recordId: typeof row.id === 'string' ? row.id : '',
                     bucket: cfg.storageBucket,
                     sizeBytes: 0,
                   });
@@ -215,8 +241,8 @@ export function usePortfolioBackup() {
               }
             }
           }
-        } catch (err: any) {
-          warnings.push(`Failed to export ${cfg.table}: ${err.message}`);
+        } catch (error: unknown) {
+          warnings.push(`Failed to export ${cfg.table}: ${getErrorMessage(error)}`);
         }
 
         stepsCompleted++;
@@ -277,8 +303,8 @@ export function usePortfolioBackup() {
               totalFileSize += buf.byteLength;
               totalFiles++;
             }
-          } catch (err: any) {
-            warnings.push(`${entry.bucket}/${shortName}: ${err.message}`);
+          } catch (error: unknown) {
+            warnings.push(`${entry.bucket}/${shortName}: ${getErrorMessage(error)}`);
           }
 
           filesDone++;
@@ -352,11 +378,12 @@ export function usePortfolioBackup() {
           downloadUrl: url,
           downloadFileName: fileName,
         });
-      } catch (err: any) {
+      } catch (error: unknown) {
+        const message = getErrorMessage(error);
         patch({
           phase: 'error',
-          currentStep: `ZIP generation failed: ${err.message}`,
-          warnings: [...warnings, err.message],
+          currentStep: `ZIP generation failed: ${message}`,
+          warnings: [...warnings, message],
         });
       }
     },
@@ -382,24 +409,30 @@ export function usePortfolioBackup() {
 
 const BATCH = 1000;
 
-async function fetchAllRows(table: string, warnings: string[]): Promise<any[]> {
-  let all: any[] = [];
+async function queryTableRows(table: string, offset: number, orderByCreatedAt: boolean): Promise<FetchRowsResult> {
+  const query = supabase
+    .from(table as never)
+    .select('*')
+    .range(offset, offset + BATCH - 1);
+
+  const result = orderByCreatedAt
+    ? await query.order('created_at', { ascending: true })
+    : await query;
+
+  return result as unknown as FetchRowsResult;
+}
+
+async function fetchAllRows(table: string, warnings: string[]): Promise<BackupRow[]> {
+  let all: BackupRow[] = [];
   let offset = 0;
   let hasMore = true;
 
   while (hasMore) {
-    let result = await (supabase as any)
-      .from(table)
-      .select('*')
-      .range(offset, offset + BATCH - 1)
-      .order('created_at', { ascending: true });
+    let result = await queryTableRows(table, offset, true);
 
     // Fallback: some tables lack created_at
     if (result.error?.message?.includes('created_at')) {
-      result = await (supabase as any)
-        .from(table)
-        .select('*')
-        .range(offset, offset + BATCH - 1);
+      result = await queryTableRows(table, offset, false);
     }
 
     if (result.error) {

@@ -62,7 +62,7 @@ export function TenancyTimeline({ startDate, endDate, breakClauseDate, lastRentR
     // Sort by date
     result.sort((a, b) => a.date.getTime() - b.date.getTime());
     return result;
-  }, [startDate, endDate, breakClauseDate, lastRentReviewDate]);
+  }, [startDate, endDate, breakClauseDate]);
 
   const now = new Date();
   const timelineStart = markers[0]?.date || now;

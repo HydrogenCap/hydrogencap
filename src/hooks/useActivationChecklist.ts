@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/hooks/useOrganization';
 
@@ -23,6 +24,8 @@ export interface ChecklistItem {
   optional?: boolean;
 }
 
+type ProfileChecklistRow = Pick<Database['public']['Tables']['profiles']['Row'], 'checklist_dismissed'>;
+
 export function useActivationChecklist() {
   const { user } = useAuth();
   const { data: org } = useOrganization();
@@ -32,14 +35,13 @@ export function useActivationChecklist() {
     queryFn: async (): Promise<ChecklistData | null> => {
       if (!org?.id) return null;
 
-      const sq = supabase as any;
-      const propertiesRes = await sq.from('properties_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
-      const roomsRes = await sq.from('rooms_v2').select('id, properties_v2!inner(id)', { count: 'exact', head: true }).eq('properties_v2.org_id', org.id);
-      const complianceRes = await sq.from('compliance_documents_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
-      const tenantsRes = await sq.from('tenants_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
-      const loansRes = await sq.from('loan_facilities').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
-      const membersRes = await sq.from('memberships').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
-      const invitesRes = await sq.from('team_invites').select('id', { count: 'exact', head: true }).eq('org_id', org.id).is('revoked_at', null);
+      const propertiesRes = await supabase.from('properties_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const roomsRes = await supabase.from('rooms_v2').select('id, properties_v2!inner(id)', { count: 'exact', head: true }).eq('properties_v2.org_id', org.id);
+      const complianceRes = await supabase.from('compliance_documents_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const tenantsRes = await supabase.from('tenants_v2').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const loansRes = await supabase.from('loan_facilities').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const membersRes = await supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('org_id', org.id);
+      const invitesRes = await supabase.from('team_invites').select('id', { count: 'exact', head: true }).eq('org_id', org.id).is('revoked_at', null);
       const profileRes = await supabase.from('profiles').select('checklist_dismissed').eq('user_id', user!.id).single();
 
       return {
@@ -50,7 +52,7 @@ export function useActivationChecklist() {
         loansCount: loansRes.count ?? 0,
         membersCount: membersRes.count ?? 0,
         invitesCount: invitesRes.count ?? 0,
-        dismissed: (profileRes.data as any)?.checklist_dismissed ?? false,
+        dismissed: (profileRes.data as ProfileChecklistRow | null)?.checklist_dismissed ?? false,
       };
     },
     enabled: !!org?.id && !!user,
@@ -112,7 +114,7 @@ export function useActivationChecklist() {
     if (!user) return;
     await supabase
       .from('profiles')
-      .update({ checklist_dismissed: true } as any)
+      .update({ checklist_dismissed: true })
       .eq('user_id', user.id);
   };
 

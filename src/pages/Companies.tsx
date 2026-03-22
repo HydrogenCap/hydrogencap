@@ -115,7 +115,7 @@ export default function Companies() {
 
   // Filter and sort companies
   const filteredCompanies = useMemo(() => {
-    let filtered = companies?.filter((company) => {
+    const filtered = companies?.filter((company) => {
       const matchesSearch = 
         company.legal_name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
         company.trading_name?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
@@ -162,16 +162,18 @@ export default function Companies() {
         case 'name':
           comparison = a.legal_name.localeCompare(b.legal_name);
           break;
-        case 'accounts_due':
+        case 'accounts_due': {
           const aDate = a.accounts_due_date ? new Date(a.accounts_due_date).getTime() : Infinity;
           const bDate = b.accounts_due_date ? new Date(b.accounts_due_date).getTime() : Infinity;
           comparison = aDate - bDate;
           break;
-        case 'cs_due':
+        }
+        case 'cs_due': {
           const aCsDate = a.confirmation_statement_due_date ? new Date(a.confirmation_statement_due_date).getTime() : Infinity;
           const bCsDate = b.confirmation_statement_due_date ? new Date(b.confirmation_statement_due_date).getTime() : Infinity;
           comparison = aCsDate - bCsDate;
           break;
+        }
       }
 
       return sortDirection === 'asc' ? comparison : -comparison;

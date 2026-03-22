@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 
 // Types
@@ -84,6 +85,11 @@ export interface EntityVerification {
   confirmation_filing_status: FilingStatus;
 }
 
+type EntityVerificationStatusRow = Database['public']['Views']['entity_verification_status']['Row'];
+type CompaniesHouseCacheRow = Database['public']['Tables']['companies_house_cache']['Row'];
+type OfficersCacheResponse = { items?: CHOfficer[] };
+type FilingHistoryCacheResponse = { items?: CHFilingHistoryItem[] };
+
 // Hook: call the new companies-house edge function
 export function useCompaniesHouseV2() {
   const [isSearching, setIsSearching] = useState(false);
@@ -143,11 +149,11 @@ export function useEntityVerificationStatus() {
     queryKey: ['entity_verification_status', org?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('entity_verification_status' as any)
+        .from('entity_verification_status')
         .select('*')
         .eq('org_id', org!.id);
       if (error) throw error;
-      return (data || []) as unknown as EntityVerification[];
+      return ((data || []) as EntityVerificationStatusRow[]) as unknown as EntityVerification[];
     },
     enabled: !!org?.id,
   });
@@ -159,12 +165,12 @@ export function useEntityVerification(entityId: string | undefined) {
     queryKey: ['entity_verification', entityId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('entity_verification_status' as any)
+        .from('entity_verification_status')
         .select('*')
         .eq('entity_id', entityId!)
         .maybeSingle();
       if (error) throw error;
-      return data as unknown as EntityVerification | null;
+      return (data as EntityVerificationStatusRow | null) as unknown as EntityVerification | null;
     },
     enabled: !!entityId,
   });
@@ -176,7 +182,7 @@ export function useSyncEntity() {
 
   return useMutation({
     mutationFn: async ({ entityId, companyNumber }: { entityId: string; companyNumber: string }) => {
-      const ch = useCompaniesHouseV2Standalone();
+      const ch = createCompaniesHouseClient();
       
       // Fetch all three in parallel
       const [profile, officers, filings] = await Promise.all([
@@ -197,7 +203,7 @@ export function useSyncEntity() {
 }
 
 // Standalone function (not a hook) for use inside mutations
-function useCompaniesHouseV2Standalone() {
+function createCompaniesHouseClient() {
   const fetchProfile = async (companyNumber: string, entityId?: string) => {
     const { data, error } = await supabase.functions.invoke('companies-house', {
       body: { action: 'profile', company_number: companyNumber, entity_id: entityId }
@@ -234,16 +240,16 @@ export function useCHOfficers(entityId: string | undefined, companyNumber: strin
     queryKey: ['ch_officers', entityId],
     queryFn: async () => {
       const { data: cached } = await supabase
-        .from('companies_house_cache' as any)
+        .from('companies_house_cache')
         .select('response_data')
         .eq('entity_id', entityId!)
         .eq('data_type', 'officers')
         .maybeSingle();
       
-      const row = cached as any;
-      if (row?.response_data) {
-        const items = row.response_data.items || [];
-        return items.filter((o: any) => !o.resigned_on) as CHOfficer[];
+      const row = cached as Pick<CompaniesHouseCacheRow, 'response_data'> | null;
+      const responseData = row?.response_data as unknown as OfficersCacheResponse | undefined;
+      if (responseData?.items) {
+        return responseData.items.filter((officer) => !officer.resigned_on);
       }
       return [] as CHOfficer[];
     },
@@ -257,15 +263,16 @@ export function useCHFilingHistory(entityId: string | undefined, companyNumber: 
     queryKey: ['ch_filing_history', entityId],
     queryFn: async () => {
       const { data: cached } = await supabase
-        .from('companies_house_cache' as any)
+        .from('companies_house_cache')
         .select('response_data')
         .eq('entity_id', entityId!)
         .eq('data_type', 'filing_history')
         .maybeSingle();
       
-      const row = cached as any;
-      if (row?.response_data) {
-        return (row.response_data.items || []) as CHFilingHistoryItem[];
+      const row = cached as Pick<CompaniesHouseCacheRow, 'response_data'> | null;
+      const responseData = row?.response_data as unknown as FilingHistoryCacheResponse | undefined;
+      if (responseData?.items) {
+        return responseData.items;
       }
       return [] as CHFilingHistoryItem[];
     },

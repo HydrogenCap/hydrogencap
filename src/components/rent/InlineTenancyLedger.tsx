@@ -26,12 +26,15 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
   const { data: ledger, isLoading } = useTenancyLedger(tenancyId);
   const { data: scheduleItems } = useRentSchedule({ tenancyId });
   const { data: reconciledIds } = useReconciledScheduleIds();
-  const [paymentItem, setPaymentItem] = useState<any>(null);
+  const [paymentItem, setPaymentItem] = useState<RentScheduleWithDetails | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [markPaidMode, setMarkPaidMode] = useState<'on_time' | 'late' | null>(null);
 
   // Only show past & current entries (not future) in inline view
-  const visibleEntries = ledger?.filter(e => !e.is_future) ?? [];
+  const visibleEntries = useMemo(
+    () => ledger?.filter((entry) => !entry.is_future) ?? [],
+    [ledger]
+  );
 
   // Unpaid rent entries that can be selected
   const selectableEntries = useMemo(() =>
@@ -96,7 +99,7 @@ export function InlineTenancyLedger({ tenancyId, colSpan }: InlineTenancyLedgerP
   }
 
   // Get the first schedule item for recording payment
-  const firstItem = scheduleItems?.[0];
+  const firstItem = scheduleItems?.items?.[0] ?? null;
 
   return (
     <>

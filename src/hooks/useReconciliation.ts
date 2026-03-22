@@ -4,10 +4,48 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { parseStatement, computeTransactionHash } from '@/lib/statementParser';
 import { findMatches, type MatchCandidate } from '@/lib/reconciliationEngine';
+import type { RentScheduleItem } from './useRentCollection';
+
+type BankTransactionRow = Database['public']['Tables']['bank_transactions']['Row'];
+type BankTransactionInsert = Database['public']['Tables']['bank_transactions']['Insert'];
+type BankTransactionUpdate = Database['public']['Tables']['bank_transactions']['Update'];
+type RentPaymentInsert = Database['public']['Tables']['rent_payments']['Insert'];
+type RentScheduleRow = Database['public']['Tables']['rent_schedule']['Row'];
+
+type ReconciliationStatus = 'unmatched' | 'suggested' | 'matched' | 'excluded' | 'non_rent';
+type SummaryBucketKey = keyof ReconciliationSummary;
+
+type RelatedTenant = {
+  first_name: string | null;
+  last_name: string | null;
+  tenant_type: string | null;
+  company_name?: string | null;
+};
+
+type ScheduleItemWithRelations = RentScheduleRow & {
+  agreement?: { tenant?: RelatedTenant | null } | null;
+  tenancy?: { tenant?: RelatedTenant | null } | null;
+};
+
+type EnrichedScheduleItem = RentScheduleItem & {
+  tenant_name?: string;
+  payment_reference?: string | null;
+};
+
+export type ReconciliationTransaction = BankTransactionRow;
+
+export interface ReconciliationSummary {
+  unmatched: { count: number; total: number };
+  suggested: { count: number; total: number };
+  matched: { count: number; total: number };
+  excluded: { count: number; total: number };
+  non_rent: { count: number; total: number };
+}
 
 // ─── Import Bank Statement ───────────────────────────────────────────
 
@@ -35,33 +73,23 @@ export function useImportStatement() {
       let imported = 0;
       let skipped = 0;
 
-      // 1. Compute all hashes upfront
-      const txnsWithHash = await Promise.all(
-        result.transactions.map(async (txn) => ({
-          ...txn,
-          hash: await computeTransactionHash(txn.date, txn.amount, txn.description),
-        }))
-      );
+      for (const txn of result.transactions) {
+        const hash = await computeTransactionHash(txn.date, txn.amount, txn.description);
 
-      // 2. Batch check for existing hashes in a single query
-      const allHashes = txnsWithHash.map(t => t.hash);
-      const existingHashes = new Set<string>();
-
-      // Query in chunks of 200 to avoid URL length limits
-      for (let i = 0; i < allHashes.length; i += 200) {
-        const chunk = allHashes.slice(i, i + 200);
+        // Check for existing (dedup)
         const { data: existing } = await supabase
           .from('bank_transactions')
-          .select('import_hash')
+          .select('id')
+          .eq('import_hash', hash)
           .eq('bank_account_id', bankAccountId)
-          .in('import_hash', chunk);
-        if (existing) existing.forEach(e => existingHashes.add((e as any).import_hash));
-      }
+          .limit(1);
 
-      // 3. Build new records and bulk upsert
-      const newRecords = txnsWithHash
-        .filter(txn => !existingHashes.has(txn.hash))
-        .map(txn => ({
+        if (existing && existing.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        const payload: BankTransactionInsert = {
           org_id: orgId,
           bank_account_id: bankAccountId,
           transaction_date: txn.date,
@@ -71,22 +99,13 @@ export function useImportStatement() {
           reference: txn.reference,
           transaction_type: txn.type || 'unknown',
           import_batch_id: batchId,
-          import_hash: txn.hash,
+          import_hash: hash,
           status: 'unmatched',
-        }));
+        };
 
-      skipped = txnsWithHash.length - newRecords.length;
+        const { error } = await supabase.from('bank_transactions').insert(payload);
 
-      if (newRecords.length > 0) {
-        // Upsert in chunks of 200
-        for (let i = 0; i < newRecords.length; i += 200) {
-          const chunk = newRecords.slice(i, i + 200);
-          const { data, error } = await supabase
-            .from('bank_transactions')
-            .upsert(chunk as any[], { onConflict: 'import_hash,bank_account_id', ignoreDuplicates: true })
-            .select('id');
-          if (!error && data) imported += data.length;
-        }
+        if (!error) imported++;
       }
 
       return {
@@ -142,16 +161,20 @@ export function useMatchedTransactions(bankAccountId?: string) {
   return useQuery({
     queryKey: ['bank_transactions', 'matched', bankAccountId],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from('bank_transactions')
         .select('*')
         .eq('is_reconciled', true)
         .order('transaction_date', { ascending: false })
         .limit(100);
 
+      if (bankAccountId) {
+        query.eq('bank_account_id', bankAccountId);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []) as ReconciliationTransaction[];
     },
   });
 }
@@ -194,7 +217,7 @@ export function useRunAutoMatch() {
       if (schedErr) throw schedErr;
 
       // Enrich schedule items with tenant names
-      const enriched = (schedItems || []).map((item: any) => {
+      const enriched: EnrichedScheduleItem[] = ((schedItems || []) as ScheduleItemWithRelations[]).map((item) => {
         let tenant_name = '';
         if (item.agreement?.tenant) {
           const t = item.agreement.tenant;
@@ -209,7 +232,7 @@ export function useRunAutoMatch() {
       });
 
       // Run matching engine
-      const bankTxns = (txns || []).map((t: any) => ({
+      const bankTxns = ((txns || []) as ReconciliationTransaction[]).map((t) => ({
         id: t.id,
         transaction_date: t.transaction_date,
         description: t.description,
@@ -223,9 +246,13 @@ export function useRunAutoMatch() {
       // Update suggested matches in DB
       let suggested = 0;
       for (const match of matches) {
+        const updatePayload: BankTransactionUpdate = {
+          status: 'suggested',
+          matched_schedule_id: match.scheduleId,
+        };
         const { error } = await supabase
           .from('bank_transactions')
-          .update({ status: 'suggested', matched_schedule_id: match.scheduleId } as any)
+          .update(updatePayload)
           .eq('id', match.transactionId);
 
         if (!error) suggested++;
@@ -279,39 +306,43 @@ export function useConfirmMatch() {
       if (schedErr || !sched) throw schedErr || new Error('Schedule item not found');
 
       // 3. Record a rent_payment
+      const paymentPayload: RentPaymentInsert = {
+        org_id: orgId,
+        tenancy_id: sched.tenancy_id,
+        agreement_id: sched.agreement_id,
+        rent_schedule_id: scheduleId,
+        amount: txn.amount,
+        payment_date: txn.transaction_date,
+        payment_method: 'bank_transfer',
+        is_reconciled: true,
+        recorded_by: user?.id || null,
+        notes: 'Auto-reconciled from bank statement',
+      };
+
       const { data: payment, error: payErr } = await supabase
         .from('rent_payments')
-        .insert({
-          org_id: orgId,
-          tenancy_id: sched.tenancy_id,
-          agreement_id: (sched as any).agreement_id,
-          rent_schedule_id: scheduleId,
-          amount: txn.amount,
-          payment_date: txn.transaction_date,
-          payment_method: 'bank_transfer',
-          is_reconciled: true,
-          recorded_by: user?.id || null,
-          notes: 'Auto-reconciled from bank statement',
-        } as any)
+        .insert(paymentPayload)
         .select()
         .single();
       if (payErr) throw payErr;
 
       // 4. Update the bank transaction status
+      const transactionUpdate: BankTransactionUpdate = {
+        status: 'matched',
+        matched_schedule_id: scheduleId,
+        matched_payment_id: payment.id,
+        matched_at: new Date().toISOString(),
+        matched_by: user?.id || null,
+      };
+
       await supabase
         .from('bank_transactions')
-        .update({
-          status: 'matched',
-          matched_schedule_id: scheduleId,
-          matched_payment_id: payment.id,
-          matched_at: new Date().toISOString(),
-          matched_by: user?.id || null,
-        } as any)
+        .update(transactionUpdate)
         .eq('id', transactionId);
 
       // 5. Update rent_schedule status
       const totalPaid = (sched.amount_paid || 0) + txn.amount;
-      const expected = sched.rent_amount + ((sched as any).additional_charges || 0);
+      const expected = sched.rent_amount + (sched.additional_charges || 0);
       const newStatus = totalPaid >= expected ? 'paid' : 'partial';
 
       await supabase.rpc('update_rent_schedule_item_status', {
@@ -371,9 +402,14 @@ export function useRejectMatch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (transactionId: string) => {
+      const updatePayload: BankTransactionUpdate = {
+        status: 'unmatched',
+        matched_schedule_id: null,
+      };
+
       await supabase
         .from('bank_transactions')
-        .update({ status: 'unmatched', matched_schedule_id: null } as any)
+        .update(updatePayload)
         .eq('id', transactionId);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bank_transactions'] }),
@@ -384,9 +420,11 @@ export function useExcludeTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: 'excluded' | 'non_rent' }) => {
+      const updatePayload: BankTransactionUpdate = { status: reason };
+
       await supabase
         .from('bank_transactions')
-        .update({ status: reason } as any)
+        .update(updatePayload)
         .eq('id', id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bank_transactions'] }),
@@ -410,7 +448,7 @@ export function useReconciliationSummary(bankAccountId?: string) {
       if (error) throw error;
 
       const items = data || [];
-      const summary = {
+      const summary: ReconciliationSummary = {
         unmatched: { count: 0, total: 0 },
         suggested: { count: 0, total: 0 },
         matched: { count: 0, total: 0 },
@@ -419,7 +457,8 @@ export function useReconciliationSummary(bankAccountId?: string) {
       };
 
       for (const item of items) {
-        const bucket = summary[(item as any).status as keyof typeof summary];
+        const status = item.status as ReconciliationStatus;
+        const bucket = summary[status as SummaryBucketKey];
         if (bucket) {
           bucket.count++;
           bucket.total += item.amount;
@@ -443,7 +482,7 @@ export function useReconciledScheduleIds() {
         .eq('status', 'matched')
         .not('matched_schedule_id', 'is', null);
       if (error) throw error;
-      return new Set((data || []).map((r: any) => r.matched_schedule_id));
+      return new Set((data || []).map((row) => row.matched_schedule_id).filter(Boolean));
     },
     staleTime: 60_000,
   });

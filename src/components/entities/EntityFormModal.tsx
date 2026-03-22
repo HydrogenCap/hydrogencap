@@ -162,12 +162,14 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
         toast({ title: 'Entity created' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      const description = err instanceof Error ? err.message : 'Failed to save entity';
+      toast({ title: 'Error', description, variant: 'destructive' });
     }
   };
 
-  const update = (field: string, value: any) => setForm(prev => ({ ...prev, [field]: value }));
+  const update = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) =>
+    setForm(prev => ({ ...prev, [field]: value }));
 
   const spvFields = (
     <>

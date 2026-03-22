@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
@@ -26,9 +26,25 @@ export function InviteTenantPortalDialog({ open, onOpenChange, tenant, tenancies
   const queryClient = useQueryClient();
   const isCompany = tenant.tenant_type === 'company';
   const defaultEmail = isCompany ? (tenant.company_contact_email || tenant.email || '') : (tenant.email || '');
+  const activeTenancies = useMemo(
+    () => tenancies.filter(t => t.status === 'active' || t.status === 'notice'),
+    [tenancies]
+  );
 
   const [email, setEmail] = useState(defaultEmail);
-  const [selectedTenancyId, setSelectedTenancyId] = useState(tenancies[0]?.id || '');
+  const [selectedTenancyId, setSelectedTenancyId] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+
+    setEmail(defaultEmail);
+    setSelectedTenancyId((current) => {
+      if (current && activeTenancies.some((tenancy) => tenancy.id === current)) {
+        return current;
+      }
+      return activeTenancies[0]?.id || '';
+    });
+  }, [activeTenancies, defaultEmail, open]);
 
   // Fetch existing invites for this tenant
   const { data: existingInvites } = useQuery({
@@ -96,11 +112,10 @@ export function InviteTenantPortalDialog({ open, onOpenChange, tenant, tenancies
     },
   });
 
-  const activeTenancies = tenancies.filter(t => t.status === 'active' || t.status === 'notice');
   const hasAccess = (portalAccess?.length ?? 0) > 0;
 
   const getInviteUrl = (token: string) => {
-    return `${window.location.origin}/tenant-portal/accept-invite?token=${token}`;
+    return `${window.location.origin}/tenant-portal/accept/${token}`;
   };
 
   const copyLink = (token: string) => {

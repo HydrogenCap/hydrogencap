@@ -152,7 +152,7 @@ export function normalizeRentItem(item: RentScheduleWithDetails): RentItemDispla
   };
 }
  
- export interface RentPayment {
+export interface RentPayment {
    id: string;
    org_id: string;
    tenancy_id: string;
@@ -167,6 +167,14 @@ export function normalizeRentItem(item: RentScheduleWithDetails): RentItemDispla
    recorded_by: string | null;
    created_at: string;
  }
+
+interface RentScheduleNotesUpdate {
+  notes?: string;
+  tags?: string[];
+}
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Unknown error';
  
 // Shared select fragment for dual V1/V2 joins
 const RENT_SCHEDULE_SELECT = `
@@ -470,7 +478,7 @@ export function useUpdateRentScheduleNotes() {
 
   return useMutation({
     mutationFn: async ({ id, notes, tags }: { id: string; notes?: string; tags?: string[] }) => {
-      const updates: Record<string, any> = {};
+      const updates: RentScheduleNotesUpdate = {};
       if (notes !== undefined) updates.notes = notes;
       if (tags !== undefined) updates.tags = tags;
 
@@ -820,9 +828,9 @@ export function useBulkMarkPaid() {
           if (schedError) throw schedError;
 
           results.success++;
-        } catch (err: any) {
+        } catch (error) {
           results.failed++;
-          results.errors.push(`${display.propertyAddress}: ${err.message}`);
+          results.errors.push(`${display.propertyAddress}: ${getErrorMessage(error)}`);
         }
         onProgress?.(i + 1);
       }
@@ -1133,7 +1141,7 @@ export function useGenerateScheduleFromAgreement() {
           additional_charges: 0,
           amount_paid: 0,
           amount_outstanding: rentPCM,
-          status: 'upcoming' as any,
+          status: 'upcoming' as RentStatus,
           payment_reference: `${prefix}-${letters}${numbers}`,
         });
 

@@ -17,15 +17,24 @@ interface Props {
   existingCount: number;
 }
 
+const initialForm = {
+  unit_name: '',
+  notes: '',
+};
+
+type UnitFormState = typeof initialForm;
+type PropertyUnitCreateInput = Omit<PropertyUnit, 'id' | 'created_at' | 'updated_at'>;
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, existingCount }: Props) {
   const create = useCreatePropertyUnit();
   const update = useUpdatePropertyUnit();
   const { toast } = useToast();
 
-  const [form, setForm] = useState({
-    unit_name: '',
-    notes: '',
-  });
+  const [form, setForm] = useState<UnitFormState>(initialForm);
 
   useEffect(() => {
     if (editingUnit) {
@@ -34,7 +43,7 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
         notes: editingUnit.notes || '',
       });
     } else {
-      setForm({ unit_name: '', notes: '' });
+      setForm(initialForm);
     }
   }, [editingUnit, open]);
 
@@ -44,7 +53,7 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
       toast({ title: 'Unit name is required', variant: 'destructive' });
       return;
     }
-    const payload = {
+    const payload: PropertyUnitCreateInput = {
       property_id: propertyId,
       unit_name: form.unit_name,
       rent_basis: editingUnit ? editingUnit.rent_basis : 'room' as const,
@@ -62,12 +71,13 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
         toast({ title: 'Unit added' });
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 
-  const set = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
+  const set = <K extends keyof UnitFormState>(key: K, value: UnitFormState[K]) =>
+    setForm(f => ({ ...f, [key]: value }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

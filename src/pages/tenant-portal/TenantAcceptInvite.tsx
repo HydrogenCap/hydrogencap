@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle, XCircle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,31 @@ import logo from '@/assets/logo.png';
 
 type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted';
 
+interface TenantPortalInvite {
+  email: string;
+}
+
+interface TenantInviteLookupResult {
+  status: InviteStatus;
+  email?: string;
+  error?: string;
+}
+
+interface TenantInviteAcceptResult {
+  success?: boolean;
+  error?: string;
+}
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : 'Something went wrong';
+
 export default function TenantAcceptInvite() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { user, signUp, signIn } = useAuth();
 
   const [inviteStatus, setInviteStatus] = useState<InviteStatus>('loading');
-  const [invite, setInvite] = useState<any>(null);
+  const [invite, setInvite] = useState<TenantPortalInvite | null>(null);
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,57 +47,60 @@ export default function TenantAcceptInvite() {
     async function validateInvite() {
       if (!token) { setInviteStatus('invalid'); return; }
 
-      const { data, error } = await supabase
-        .from('tenant_portal_invites')
-        .select('*')
-        .eq('token', token)
-        .single();
+      const { data, error } = await supabase.rpc('get_tenant_portal_invite', {
+        p_token: token,
+      });
 
-      if (error || !data) { setInviteStatus('invalid'); return; }
-      if (data.accepted_at) { setInviteStatus('accepted'); return; }
-      if (new Date(data.expires_at) < new Date()) { setInviteStatus('expired'); return; }
+      const result = (data || {}) as TenantInviteLookupResult;
+      if (error || !result.status) {
+        setInviteStatus('invalid');
+        return;
+      }
 
-      setInvite(data);
-      setEmail(data.email);
+      if (result.status !== 'valid') {
+        setInviteStatus(result.status);
+        return;
+      }
+
+      const previewInvite = { email: result.email || '' };
+      setInvite(previewInvite);
+      setEmail(previewInvite.email);
       setInviteStatus('valid');
     }
     validateInvite();
   }, [token]);
 
   // Auto-accept if already logged in
-  useEffect(() => {
-    if (user && invite && inviteStatus === 'valid') {
-      acceptInvite(user.id);
-    }
-  }, [user, invite, inviteStatus]);
-
-  const acceptInvite = async (userId: string) => {
+  const acceptInvite = useCallback(async () => {
+    if (!token) return;
     try {
-      // Create tenant portal access
-      const { error: accessError } = await supabase
-        .from('tenant_portal_access')
-        .insert({
-          org_id: invite.org_id,
-          tenant_id: invite.tenant_id,
-          tenancy_id: invite.tenancy_id,
-          user_id: userId,
-          invite_id: invite.id,
-        });
+      const { data, error } = await supabase.rpc('accept_tenant_portal_invite', {
+        p_token: token,
+      });
 
-      if (accessError && !accessError.message.includes('duplicate')) throw accessError;
+      if (error) throw error;
 
-      // Mark invite as accepted
-      await supabase
-        .from('tenant_portal_invites')
-        .update({ accepted_at: new Date().toISOString() })
-        .eq('id', invite.id);
+      const result = (data || {}) as TenantInviteAcceptResult;
+      if (result.error) throw new Error(result.error);
 
       toast.success('Welcome to the Tenant Portal!');
       navigate('/tenant-portal');
-    } catch (err: any) {
-      toast.error('Failed to accept invite', { description: err.message });
+    } catch (error) {
+      toast.error('Failed to accept invite', { description: getErrorMessage(error) });
     }
-  };
+  }, [navigate, token]);
+
+  useEffect(() => {
+    if (
+      user &&
+      invite &&
+      inviteStatus === 'valid' &&
+      user.email &&
+      user.email.toLowerCase() === invite.email.toLowerCase()
+    ) {
+      void acceptInvite();
+    }
+  }, [acceptInvite, invite, inviteStatus, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,8 +116,8 @@ export default function TenantAcceptInvite() {
         if (error) throw error;
         // Auth state change will trigger acceptInvite via useEffect
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
@@ -158,7 +179,7 @@ export default function TenantAcceptInvite() {
             )}
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} disabled={!!invite?.email} required />
             </div>
             <div className="space-y-2">
               <Label>Password</Label>

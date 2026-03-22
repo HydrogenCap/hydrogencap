@@ -52,6 +52,22 @@ export interface PropertyFinancialAttribution {
   attributableCashflow: number;
 }
 
+interface OwnershipShareholderRow {
+  id: string;
+  entity_id: string;
+  shareholder_name: string;
+  shareholder_entity_id: string | null;
+  shares_held: number | null;
+  percentage: number | null;
+  share_class_id: string | null;
+}
+
+interface OwnershipEntityLinkRow {
+  parent_entity_id: string;
+  shareholder_entity_id: string;
+  shareholder_percent: number | null;
+}
+
 /**
  * Hook: Get ownership attribution for a single property using V2 data
  */
@@ -142,7 +158,7 @@ export function usePropertyAttribution(propertyId: string | undefined) {
  * No longer requires PropertyWithFinancials[] parameter.
  */
 export function usePortfolioAttribution(
-  _propertiesLegacy?: any,
+  _propertiesLegacy?: unknown,
   asOfDate?: string
 ) {
   const { data: org } = useOrganization();
@@ -166,6 +182,8 @@ export function usePortfolioAttribution(
       ]);
 
       const entityIds = (entities || []).map(e => e.id);
+      const emptyShareholders: OwnershipShareholderRow[] = [];
+      const emptyEntityLinks: OwnershipEntityLinkRow[] = [];
 
       const [
         { data: shareholders },
@@ -173,10 +191,10 @@ export function usePortfolioAttribution(
       ] = await Promise.all([
         entityIds.length > 0
           ? supabase.from('entity_shareholders').select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, share_class_id').in('entity_id', entityIds).is('effective_to', null)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: emptyShareholders, error: null }),
         entityIds.length > 0
           ? supabase.from('entity_shareholdings').select('parent_entity_id, shareholder_entity_id, shareholder_percent').in('parent_entity_id', entityIds)
-          : Promise.resolve({ data: [] as any[], error: null }),
+          : Promise.resolve({ data: emptyEntityLinks, error: null }),
       ]);
 
       // Only include active SPV properties

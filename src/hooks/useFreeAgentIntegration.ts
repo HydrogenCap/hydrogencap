@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+
+type FreeAgentConnectionRow = Database['public']['Tables']['freeagent_connections']['Row'];
+type FreeAgentConnectionUpdate = Database['public']['Tables']['freeagent_connections']['Update'];
+type FreeAgentSyncResult = { synced?: number };
 
 export interface FreeAgentConnection {
   id: string;
@@ -44,16 +49,46 @@ export interface FreeAgentBankAccount {
   opening_balance: string;
 }
 
+function mapFreeAgentConnection(row: FreeAgentConnectionRow): FreeAgentConnection {
+  return {
+    id: row.id,
+    org_id: row.org_id,
+    company_id: row.company_id,
+    entity_id: row.entity_id,
+    freeagent_company_name: row.freeagent_company_name,
+    freeagent_company_url: row.freeagent_company_url,
+    token_expires_at: row.token_expires_at,
+    last_sync_at: row.last_sync_at,
+    last_sync_status: row.last_sync_status,
+    last_sync_error: row.last_sync_error,
+    last_sync_items_count: row.last_sync_items_count ?? 0,
+    rent_income_category_url: row.rent_income_category_url,
+    expense_category_url: row.expense_category_url,
+    bank_account_url: row.bank_account_url,
+    auto_sync_enabled: row.auto_sync_enabled ?? false,
+    sync_rent_payments: row.sync_rent_payments ?? false,
+    sync_expenses: row.sync_expenses ?? false,
+    use_sandbox: row.use_sandbox ?? false,
+    connected_by: row.connected_by,
+    connected_at: row.connected_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
+
 export function useFreeAgentConnections() {
   return useQuery({
     queryKey: ['freeagent-connections'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('freeagent_connections')
         .select('*')
         .order('connected_at', { ascending: false });
       if (error) throw error;
-      return data as FreeAgentConnection[];
+      return (data || []).map(mapFreeAgentConnection);
     },
   });
 }
@@ -62,13 +97,13 @@ export function useFreeAgentConnectionForEntity(entityId: string) {
   return useQuery({
     queryKey: ['freeagent-connections', entityId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('freeagent_connections')
         .select('*')
         .eq('entity_id', entityId)
         .maybeSingle();
       if (error) throw error;
-      return data as FreeAgentConnection | null;
+      return data ? mapFreeAgentConnection(data) : null;
     },
     enabled: !!entityId,
   });
@@ -79,13 +114,13 @@ export function useFreeAgentConnectionForCompany(companyId: string) {
   return useQuery({
     queryKey: ['freeagent-connections', companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('freeagent_connections')
         .select('*')
         .eq('company_id', companyId)
         .maybeSingle();
       if (error) throw error;
-      return data as FreeAgentConnection | null;
+      return data ? mapFreeAgentConnection(data) : null;
     },
     enabled: !!companyId,
   });
@@ -111,7 +146,7 @@ export function useDisconnectFreeAgent() {
 
   return useMutation({
     mutationFn: async (connectionId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('freeagent_connections')
         .delete()
         .eq('id', connectionId);
@@ -128,22 +163,22 @@ export function useUpdateFreeAgentSettings() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<FreeAgentConnection> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+    mutationFn: async ({ id, ...updates }: FreeAgentConnectionUpdate & { id: string }) => {
+      const { data, error } = await supabase
         .from('freeagent_connections')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return mapFreeAgentConnection(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['freeagent-connections'] });
       toast({ title: 'FreeAgent settings updated' });
     },
     onError: (error) => {
-      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+      toast({ title: 'Failed to update', description: getErrorMessage(error), variant: 'destructive' });
     },
   });
 }
@@ -154,21 +189,22 @@ export function useSyncToFreeAgent() {
 
   return useMutation({
     mutationFn: async (entityOrCompanyId: string) => {
-      const { data, error } = await supabase.functions.invoke('freeagent-sync-payments', {
+      const { data, error } = await supabase.functions.invoke<FreeAgentSyncResult>('freeagent-sync-payments', {
         body: { entityId: entityOrCompanyId },
       });
       if (error) throw error;
       return data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['freeagent-connections'] });
-      const msg = data.synced > 0
-        ? `${data.synced} payment${data.synced !== 1 ? 's' : ''} synced to FreeAgent`
+      const syncedCount = data?.synced ?? 0;
+      const msg = syncedCount > 0
+        ? `${syncedCount} payment${syncedCount !== 1 ? 's' : ''} synced to FreeAgent`
         : 'All payments already synced';
       toast({ title: 'FreeAgent sync complete', description: msg });
     },
     onError: (error) => {
-      toast({ title: 'Sync failed', description: error.message, variant: 'destructive' });
+      toast({ title: 'Sync failed', description: getErrorMessage(error), variant: 'destructive' });
     },
   });
 }
