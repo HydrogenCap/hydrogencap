@@ -272,12 +272,22 @@ function CreateDistributionDialog() {
 
   const allocations = useMemo(() => {
     if (!shareholders?.length) return [];
-    return shareholders.map(s => ({
+    // Use Math.floor to avoid over-allocating, then reconcile remainder
+    const rawAllocations = shareholders.map(s => ({
       shareholder_id: s.id,
       shareholder_name: s.shareholder_name,
       ownership_percent: s.percentage,
-      amount: Math.round(distAmount * (s.percentage / 100) * 100) / 100,
+      amount: Math.floor(distAmount * (s.percentage / 100) * 100) / 100,
     }));
+    // Reconcile: assign any rounding remainder to the largest shareholder
+    const allocatedTotal = rawAllocations.reduce((sum, a) => sum + a.amount, 0);
+    const remainder = Math.round((distAmount - allocatedTotal) * 100) / 100;
+    if (remainder !== 0 && rawAllocations.length > 0) {
+      const largestIdx = rawAllocations.reduce((maxIdx, a, i, arr) =>
+        a.ownership_percent > arr[maxIdx].ownership_percent ? i : maxIdx, 0);
+      rawAllocations[largestIdx].amount = Math.round((rawAllocations[largestIdx].amount + remainder) * 100) / 100;
+    }
+    return rawAllocations;
   }, [shareholders, distAmount]);
 
   const handleCreate = async (status: 'draft' | 'approved') => {
