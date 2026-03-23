@@ -295,6 +295,7 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
       property_id: property.id,
       entity_id: property.entity_id,
       snapshot_month: month,
+      org_id: property.org_id,
       ...values,
       occupancy_rate: suggestions.occupancyRate,
       // Balance sheet derived fields
@@ -457,6 +458,7 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
         property_id: p.id,
         entity_id: p.entity_id,
         snapshot_month: month,
+        org_id: p.org_id,
         gross_rent_due: r.gross_rent_due,
         gross_rent_received: r.gross_rent_received,
         void_loss: suggestions.voidLoss,

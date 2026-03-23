@@ -154,7 +154,7 @@ export function useDashboardPropertiesV2() {
           tenancies: [],
           created_at: property.created_at,
           updated_at: property.updated_at,
-        } as PropertyWithFinancials;
+        } as unknown as PropertyWithFinancials;
       });
 
       return mapped;

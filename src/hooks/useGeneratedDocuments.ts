@@ -44,7 +44,7 @@ export function useCreateGeneratedDocument() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('generated_documents')
-        .insert({
+        .insert([{
           org_id: orgId,
           template_id: doc.template_id,
           property_id: doc.property_id ?? null,
@@ -52,7 +52,7 @@ export function useCreateGeneratedDocument() {
           tenant_id: doc.tenant_id ?? null,
           generated_data: doc.generated_data ?? null,
           created_by: user?.id ?? null,
-        })
+        }])
         .select()
         .single();
       if (error) throw error;
