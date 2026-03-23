@@ -189,7 +189,7 @@ async function getDashboardStats(supabase: any) {
 }
 
 async function getUsers(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   params: { search?: string; tierFilter?: string; statusFilter?: string; page?: number; pageSize?: number }
 ) {
   const { search, tierFilter, statusFilter, page = 1, pageSize = 50 } = params;
@@ -276,7 +276,7 @@ async function getUsers(
 }
 
 async function grantTrial(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   params: { userId: string; days?: number }
 ) {
   const { userId, days = 14 } = params;
@@ -298,7 +298,7 @@ async function grantTrial(
 }
 
 async function changePlan(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   params: { userId: string; newTier: string }
 ) {
   const { userId, newTier } = params;

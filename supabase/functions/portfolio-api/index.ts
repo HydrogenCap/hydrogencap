@@ -81,7 +81,7 @@ function jsonResponse(body: unknown, status = 200) {
 
 // ─── V2 Handlers ──────────────────────────────────────────────────────
 
-async function getPortfolioSummary(supabase: ReturnType<typeof createClient>) {
+async function getPortfolioSummary(supabase: any) {
   const [propertiesRes, loansRes, entitiesRes] = await Promise.all([
     supabase.from("properties_v2").select("id, address_line_1, postcode, current_valuation, total_lettable_rooms, property_type, epc_rating"),
     supabase.from("loan_facilities").select("current_balance, interest_rate, property_id").eq("status", "active"),
@@ -114,7 +114,7 @@ async function getPortfolioSummary(supabase: ReturnType<typeof createClient>) {
   });
 }
 
-async function getProperties(supabase: ReturnType<typeof createClient>, params: URLSearchParams) {
+async function getProperties(supabase: any, params: URLSearchParams) {
   const limit = Math.min(parseInt(params.get("limit") || "50"), 200);
 
   let query = supabase
@@ -132,7 +132,7 @@ async function getProperties(supabase: ReturnType<typeof createClient>, params: 
   });
 }
 
-async function getCompanies(supabase: ReturnType<typeof createClient>) {
+async function getCompanies(supabase: any) {
   const { data, error } = await supabase
     .from("legal_entities")
     .select("id, entity_name, entity_type, company_number, status, incorporation_date");
@@ -146,7 +146,7 @@ async function getCompanies(supabase: ReturnType<typeof createClient>) {
   });
 }
 
-async function getComplianceStatus(supabase: ReturnType<typeof createClient>) {
+async function getComplianceStatus(supabase: any) {
   const { data, error } = await supabase
     .from("compliance_documents_v2")
     .select("id, document_type, expiry_date, status, property_id, is_current")
@@ -182,7 +182,7 @@ async function getComplianceStatus(supabase: ReturnType<typeof createClient>) {
   });
 }
 
-async function getLoans(supabase: ReturnType<typeof createClient>) {
+async function getLoans(supabase: any) {
   const { data, error } = await supabase
     .from("loan_facilities")
     .select("id, property_id, lender_id, current_balance, interest_rate, rate_type, repayment_type, rate_expiry_date, monthly_payment, status, facility_type")
@@ -217,7 +217,7 @@ async function getLoans(supabase: ReturnType<typeof createClient>) {
   });
 }
 
-async function getActionItems(supabase: ReturnType<typeof createClient>) {
+async function getActionItems(supabase: any) {
   const [propertiesRes, complianceRes, loansRes, entitiesRes] = await Promise.all([
     supabase.from("properties_v2").select("id, address_line_1, postcode, current_valuation, epc_rating"),
     supabase.from("compliance_documents_v2").select("id, document_type, expiry_date, status, property_id, is_current").eq("is_current", true),
