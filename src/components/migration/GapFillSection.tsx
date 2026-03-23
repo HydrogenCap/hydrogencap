@@ -104,12 +104,12 @@ function PropertiesGapFill() {
   const gapFields: Array<keyof PropertyGap> = ['has_gas_supply', 'year_built', 'total_lettable_rooms', 'total_floors', 'current_valuation', 'purchase_price', 'council_name', 'council_area'];
   const completeness = properties ? computeCompleteness(properties, gapFields) : 0;
 
-  const setField = (id: string, field: keyof PropertyGap, value: EditableValue) => {
+  const setField = (id: string, field: string, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
-  const getVal = (record: PropertyGap, field: keyof PropertyGap): EditableValue => {
-    return edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: PropertyGap, field: string): EditableValue => {
+    return edits[record.id]?.[field] !== undefined ? edits[record.id][field] : (record as any)[field];
   };
 
   const handleAiFill = async () => {
@@ -133,8 +133,8 @@ function PropertiesGapFill() {
         const record = properties.find(p => p.id === id);
         if (!record) continue;
         for (const [field, value] of Object.entries(fields)) {
-          if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
-            setField(id, field, value);
+          if (value !== null && value !== undefined && ((record as any)[field] === null || (record as any)[field] === undefined)) {
+            setField(id, field as any, value);
             filled++;
           }
         }
@@ -196,8 +196,8 @@ function PropertiesGapFill() {
             {properties?.map(p => (
               <tr key={p.id} className="border-b hover:bg-muted/30">
                 <td className="p-2 font-medium sticky left-0 bg-background">{p.address_line_1}, {p.postcode}</td>
-                <td><CellSelect value={getVal(p, 'property_type')} onChange={v => setField(p.id, 'property_type', v)} options={[...PROPERTY_TYPES]} /></td>
-                <td><CellToggle value={getVal(p, 'has_gas_supply')} onChange={v => setField(p.id, 'has_gas_supply', v)} isNull={p.has_gas_supply === null} /></td>
+                <td><CellSelect value={getVal(p, 'property_type') as string} onChange={v => setField(p.id, 'property_type', v)} options={[...PROPERTY_TYPES]} /></td>
+                <td><CellToggle value={getVal(p, 'has_gas_supply') as boolean} onChange={v => setField(p.id, 'has_gas_supply', v)} isNull={p.has_gas_supply === null} /></td>
                 <td><CellInput value={getVal(p, 'year_built')} onChange={v => setField(p.id, 'year_built', v)} type="number" placeholder="e.g. 1920" isNull={p.year_built === null} /></td>
                 <td><CellInput value={getVal(p, 'total_lettable_rooms')} onChange={v => setField(p.id, 'total_lettable_rooms', v)} type="number" isNull={p.total_lettable_rooms === null} /></td>
                 <td><CellInput value={getVal(p, 'total_floors')} onChange={v => setField(p.id, 'total_floors', v)} type="number" isNull={p.total_floors === null} /></td>
