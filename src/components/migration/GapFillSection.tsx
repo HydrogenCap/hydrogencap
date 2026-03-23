@@ -226,11 +226,11 @@ function RoomsGapFill() {
   const gapFields: Array<keyof RoomGap> = ['current_rent_pcm', 'target_rent_pcm', 'has_ensuite', 'floor'];
   const completeness = rooms ? computeCompleteness(rooms, gapFields) : 0;
 
-  const setField = (id: string, field: keyof RoomGap, value: EditableValue) => {
+  const setField = (id: string, field: string, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const getVal = (record: RoomGap, field: keyof RoomGap): EditableValue =>
-    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: RoomGap, field: string): EditableValue =>
+    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : (record as any)[field];
 
   const handleAiFill = async () => {
     if (!rooms?.length) return;
@@ -252,8 +252,8 @@ function RoomsGapFill() {
         const record = rooms.find((r) => r.id === id);
         if (!record) continue;
         for (const [field, value] of Object.entries(fields)) {
-          if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
-            setField(id, field, value);
+          if (value !== null && value !== undefined && ((record as any)[field] === null || (record as any)[field] === undefined)) {
+            setField(id, field as any, value);
             filled++;
           }
         }
@@ -314,11 +314,11 @@ function RoomsGapFill() {
                   <div className="text-[10px] text-muted-foreground">{r.property_address}</div>
                 </td>
                 <td><CellInput value={getVal(r, 'room_name')} onChange={v => setField(r.id, 'room_name', v)} placeholder="Room name" /></td>
-                <td><CellSelect value={getVal(r, 'room_type')} onChange={v => setField(r.id, 'room_type', v)} options={[...ROOM_TYPES]} /></td>
+                <td><CellSelect value={getVal(r, 'room_type') as string} onChange={v => setField(r.id, 'room_type', v)} options={[...ROOM_TYPES]} /></td>
                 <td><CellInput value={getVal(r, 'current_rent_pcm')} onChange={v => setField(r.id, 'current_rent_pcm', v)} type="number" isNull={r.current_rent_pcm === null} /></td>
                 <td><CellInput value={getVal(r, 'target_rent_pcm')} onChange={v => setField(r.id, 'target_rent_pcm', v)} type="number" isNull={r.target_rent_pcm === null} /></td>
-                <td><CellToggle value={getVal(r, 'has_ensuite')} onChange={v => setField(r.id, 'has_ensuite', v)} /></td>
-                <td><CellToggle value={getVal(r, 'is_lettable')} onChange={v => setField(r.id, 'is_lettable', v)} /></td>
+                <td><CellToggle value={getVal(r, 'has_ensuite') as boolean} onChange={v => setField(r.id, 'has_ensuite', v)} /></td>
+                <td><CellToggle value={getVal(r, 'is_lettable') as boolean} onChange={v => setField(r.id, 'is_lettable', v)} /></td>
                 <td><CellInput value={getVal(r, 'floor')} onChange={v => setField(r.id, 'floor', v)} type="number" isNull={r.floor === null} /></td>
               </tr>
             ))}
@@ -340,11 +340,11 @@ function TenantsGapFill() {
   const gapFields: Array<keyof TenantGap> = ['email', 'phone', 'date_of_birth', 'national_insurance', 'emergency_contact_name', 'emergency_contact_phone'];
   const completeness = tenants ? computeCompleteness(tenants, gapFields) : 0;
 
-  const setField = (id: string, field: keyof TenantGap, value: EditableValue) => {
+  const setField = (id: string, field: string, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const getVal = (record: TenantGap, field: keyof TenantGap): EditableValue =>
-    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: TenantGap, field: string): EditableValue =>
+    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : (record as any)[field];
 
   const handleSave = async () => {
     const updates = Object.entries(edits).map(([id, fields]) => ({ id, ...fields }));
@@ -467,10 +467,10 @@ function TenancyGapFill() {
           <tbody>
             {tenancies?.map((t) => (
               <tr key={t.id} className="border-b hover:bg-muted/30">
-                <td><CellSelect value={getVal(t, 'tenancy_type')} onChange={v => setField(t.id, 'tenancy_type', v)} options={TENANCY_TYPES} /></td>
+                <td><CellSelect value={getVal(t, 'tenancy_type') as string} onChange={v => setField(t.id, 'tenancy_type', v)} options={TENANCY_TYPES} /></td>
                 <td><CellInput value={getVal(t, 'rent_amount_pcm')} onChange={v => setField(t.id, 'rent_amount_pcm', v)} type="number" /></td>
                 <td><CellInput value={getVal(t, 'deposit_amount')} onChange={v => setField(t.id, 'deposit_amount', v)} type="number" isNull={t.deposit_amount === null} /></td>
-                <td><CellSelect value={getVal(t, 'deposit_scheme')} onChange={v => setField(t.id, 'deposit_scheme', v)} options={DEPOSIT_SCHEMES} isNull={t.deposit_scheme === null} /></td>
+                <td><CellSelect value={getVal(t, 'deposit_scheme') as string} onChange={v => setField(t.id, 'deposit_scheme', v)} options={DEPOSIT_SCHEMES} isNull={t.deposit_scheme === null} /></td>
                 <td><CellInput value={getVal(t, 'deposit_reference')} onChange={v => setField(t.id, 'deposit_reference', v)} isNull={t.deposit_reference === null} /></td>
                 <td><CellInput value={getVal(t, 'deposit_protected_date')} onChange={v => setField(t.id, 'deposit_protected_date', v)} type="date" isNull={t.deposit_protected_date === null} /></td>
                 <td><CellInput value={getVal(t, 'how_to_rent_served_date')} onChange={v => setField(t.id, 'how_to_rent_served_date', v)} type="date" isNull={t.how_to_rent_served_date === null} /></td>
