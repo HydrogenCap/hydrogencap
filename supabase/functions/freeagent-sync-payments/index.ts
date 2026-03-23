@@ -238,6 +238,9 @@ serve(async (req) => {
       });
     }
 
+    const apiBase = connection.use_sandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
+    const accessToken = await getValidToken(connection, supabase);
+
     // V2-first property lookup with V1 fallback
     let propertyIds: string[] = [];
     const propertyMap = new Map<string, string>(); // id -> address
