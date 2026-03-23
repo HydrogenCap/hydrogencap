@@ -23,14 +23,14 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 type EditableValue = string | number | boolean | null | undefined;
-type EditableRecord = { id: string } & Record<string, EditableValue>;
+type EditableRecord = { id: string; [key: string]: EditableValue };
 type EditMap = Record<string, Record<string, EditableValue>>;
-type GapFillSuggestion = { id: string } & Record<string, EditableValue>;
+type GapFillSuggestion = { id: string; [key: string]: EditableValue };
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unexpected error occurred';
 
-function computeCompleteness<T extends EditableRecord>(records: T[], fields: Array<keyof T>): number {
+function computeCompleteness<T extends Record<string, any>>(records: T[], fields: Array<keyof T>): number {
   if (!records.length) return 100;
   const totalCells = records.length * fields.length;
   const filledCells = records.reduce((sum, r) => {
@@ -49,7 +49,7 @@ function CellInput({ value, onChange, type = 'text', placeholder, isNull }: {
   return (
     <Input
       type={type}
-      value={value ?? ''}
+      value={(value as string | number) ?? ''}
       onChange={e => onChange(type === 'number' ? (e.target.value ? Number(e.target.value) : null) : (e.target.value || null))}
       placeholder={placeholder}
       className={cn(
