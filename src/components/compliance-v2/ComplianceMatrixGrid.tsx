@@ -4,12 +4,14 @@ import { DOC_TYPE_SHORT_LABELS, MATRIX_COLUMN_ORDER } from '@/lib/complianceV2Ty
 import type { ComplianceMatrixRow } from '@/lib/complianceV2Types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
+import { useNavigate } from 'react-router-dom';
 
 interface ComplianceMatrixGridProps {
   rows: ComplianceMatrixRow[];
   onCellClick: (propertyId: string, docType: ComplianceDocType) => void;
   statusFilter: string;
   searchQuery: string;
+  onPropertyClick?: (propertyId: string) => void;
 }
 
 /** Group matrix rows by property */
@@ -87,8 +89,12 @@ function shouldShowProperty(cells: Map<ComplianceDocType, ComplianceMatrixRow>, 
   }
 }
 
-export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQuery }: ComplianceMatrixGridProps) {
+export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQuery, onPropertyClick }: ComplianceMatrixGridProps) {
   const grouped = groupByProperty(rows);
+  const navigate = useNavigate();
+  const handlePropertyClick = onPropertyClick
+    ? onPropertyClick
+    : (id: string) => navigate(`/properties-v2/${id}`);
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -99,7 +105,16 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
               <th className="text-left p-2 font-medium text-muted-foreground sticky left-0 bg-muted/50 min-w-[200px] z-10">Property</th>
               {MATRIX_COLUMN_ORDER.map(docType => (
                 <th key={docType} className="p-2 text-center font-medium text-muted-foreground whitespace-nowrap text-xs">
-                  {DOC_TYPE_SHORT_LABELS[docType]}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-help border-b border-dotted border-muted-foreground/50 pb-px">
+                        {DOC_TYPE_SHORT_LABELS[docType]}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px] text-center text-xs">
+                      {DOC_TYPE_DISPLAY_NAMES[docType]}
+                    </TooltipContent>
+                  </Tooltip>
                 </th>
               ))}
             </tr>
@@ -114,8 +129,20 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
               .map(([propertyId, prop]) => (
                 <tr key={propertyId} className="border-t hover:bg-muted/30 transition-colors">
                   <td className="p-2 font-medium sticky left-0 bg-background z-10">
-                    <div className="truncate max-w-[220px]" title={prop.address}>{prop.address}</div>
-                    {prop.entityName && <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>}
+                    <button
+                      className="text-left group w-full"
+                      onClick={() => handlePropertyClick(propertyId)}
+                    >
+                      <div
+                        className="truncate max-w-[220px] group-hover:text-primary group-hover:underline transition-colors"
+                        title={prop.address}
+                      >
+                        {prop.address}
+                      </div>
+                      {prop.entityName && (
+                        <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>
+                      )}
+                    </button>
                   </td>
                   {MATRIX_COLUMN_ORDER.map(docType => {
                     const cell = prop.cells.get(docType);
