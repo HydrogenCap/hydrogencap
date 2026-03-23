@@ -101,7 +101,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
         );
 
       case 'date': {
-        const dateValue = value ? new Date(value) : undefined;
+        const dateValue = value ? new Date(String(value)) : undefined;
         // Calculate a reasonable year range (30 years back, 40 years forward for mortgages)
         const currentYear = new Date().getFullYear();
         const fromYear = currentYear - 30;
@@ -139,7 +139,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
 
       case 'select':
         return (
-          <Select value={value || ''} onValueChange={v => onChange(v || undefined)}>
+          <Select value={String(value ?? '')} onValueChange={v => onChange(v || undefined)}>
             <SelectTrigger className={cn(isFilled && 'border-green-500')}>
               <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
             </SelectTrigger>

@@ -423,11 +423,11 @@ function TenancyGapFill() {
     { value: 'N/A', label: 'N/A' },
   ];
 
-  const setField = (id: string, field: keyof TenancyGap, value: EditableValue) => {
+  const setField = (id: string, field: string, value: EditableValue) => {
     setEdits(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
-  const getVal = (record: TenancyGap, field: keyof TenancyGap): EditableValue =>
-    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : record[field];
+  const getVal = (record: TenancyGap, field: string): EditableValue =>
+    edits[record.id]?.[field] !== undefined ? edits[record.id][field] : (record as any)[field];
 
   const handleSave = async () => {
     const updates = Object.entries(edits).map(([id, fields]) => ({ id, ...fields }));

@@ -37,7 +37,7 @@ export function useCreateEscalationRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (rule: Partial<EscalationRuleInsert>) => {
-      const { error } = await supabase.from('escalation_rules').insert(rule);
+      const { error } = await supabase.from('escalation_rules').insert([rule] as any);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['escalation-rules'] }),
