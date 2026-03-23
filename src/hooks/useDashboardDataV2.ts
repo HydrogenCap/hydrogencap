@@ -125,7 +125,7 @@ export function useDashboardPropertiesV2() {
         const lifecycleType = isCore ? 'core_rental' : 'development';
         const isHmo = property.property_type?.startsWith('hmo');
 
-        return {
+        return ({
           id: property.id,
           org_id: property.org_id,
           address_line: property.address_line_1 + (property.address_line_2 ? `, ${property.address_line_2}` : ''),

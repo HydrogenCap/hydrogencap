@@ -41,14 +41,14 @@ export function useUpdateAppSetting() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
-      const { error } = await supabase
-        .from(APP_SETTINGS_TABLE)
-        .upsert([{
+      const { error } = await (supabase
+        .from(APP_SETTINGS_TABLE) as any)
+        .upsert({
           org_id: orgId,
           setting_key: key,
           setting_value: value,
           updated_at: new Date().toISOString(),
-        }], { onConflict: 'org_id,setting_key' });
+        }, { onConflict: 'org_id,setting_key' });
 
       if (error) throw error;
     },
