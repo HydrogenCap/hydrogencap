@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
 
 export type Photo = Tables<'photos'>;
 export type PhotoInsert = TablesInsert<'photos'>;
@@ -18,7 +19,14 @@ export function usePropertyPhotos(propertyId: string | undefined) {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      return data as Photo[];
+      const resolvedPhotos = await Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          file_url: await createSignedStorageUrl('photos', photo.file_url),
+        }))
+      );
+
+      return resolvedPhotos as Photo[];
     },
     enabled: !!propertyId,
   });
@@ -39,11 +47,6 @@ export function useUploadPhoto() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('photos')
-        .getPublicUrl(fileName);
-
       // Check how many photos exist to set display order
       const { count } = await supabase
         .from('photos')
@@ -55,7 +58,7 @@ export function useUploadPhoto() {
         .from('photos')
         .insert({
           property_id: propertyId,
-          file_url: urlData.publicUrl,
+          file_url: fileName,
           display_order: (count || 0) + 1,
           is_cover: count === 0, // First photo is cover by default
         })
@@ -106,9 +109,7 @@ export function useDeletePhoto() {
 
   return useMutation({
     mutationFn: async ({ photoId, propertyId, fileUrl }: { photoId: string; propertyId: string; fileUrl: string }) => {
-      // Extract file path from URL
-      const urlParts = fileUrl.split('/photos/');
-      const filePath = urlParts[urlParts.length - 1];
+      const filePath = extractStoragePath('photos', fileUrl);
 
       // Delete from storage
       if (filePath) {

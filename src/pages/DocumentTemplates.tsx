@@ -219,7 +219,7 @@ export default function DocumentTemplates() {
           property_id: selectedPropertyId || null,
           tenancy_id: selectedTenancyId || null,
           tenant_id: selectedTenancy?.tenant_id || null,
-          generated_data: templateFields as unknown as Record<string, unknown>,
+          generated_data: templateFields,
         });
 
         toast({ title: 'Document generated', description: 'PDF has been downloaded.' });
@@ -421,11 +421,11 @@ export default function DocumentTemplates() {
             </div>
             <div>
               <Label>Current Rent (£/month)</Label>
-              <Input type="number" value={templateFields.currentRent || ''} onChange={e => updateField('currentRent', Number(e.target.value))} />
+              <Input type="number" value={templateFields.currentRent || ''} onChange={e => updateField('currentRent', e.target.value)} />
             </div>
             <div>
               <Label>New Rent (£/month)</Label>
-              <Input type="number" value={templateFields.newRent || ''} onChange={e => updateField('newRent', Number(e.target.value))} />
+              <Input type="number" value={templateFields.newRent || ''} onChange={e => updateField('newRent', e.target.value)} />
             </div>
             {templateFields.currentRent > 0 && templateFields.newRent > 0 && (
               <p className="text-sm text-muted-foreground">
@@ -451,7 +451,7 @@ export default function DocumentTemplates() {
             </div>
             <div>
               <Label>Guaranteed Amount (£)</Label>
-              <Input type="number" value={templateFields.guaranteedAmount || ''} onChange={e => updateField('guaranteedAmount', Number(e.target.value))} />
+              <Input type="number" value={templateFields.guaranteedAmount || ''} onChange={e => updateField('guaranteedAmount', e.target.value)} />
             </div>
           </div>
         )}

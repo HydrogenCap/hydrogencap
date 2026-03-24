@@ -1,23 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-
-const ALLOWED_ORIGINS = [
-  "https://tenureiq.com",
-  "https://www.tenureiq.com",
-  "https://hydrogencapital.lovable.app",
-  Deno.env.get("ALLOWED_ORIGIN"),
-].filter(Boolean) as string[];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 // Deterministic mapping from doc_type → vault category slug
 const DOC_TYPE_TO_CATEGORY: Record<string, string> = {
@@ -257,12 +241,28 @@ serve(async (req) => {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
+    const { data: memberships, error: membershipError } = await supabase
+      .from("memberships")
+      .select("org_id")
+      .eq("user_id", user.id)
+      .in("role", ["owner", "admin"]);
+
+    if (membershipError || !memberships || memberships.length === 0) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const manageableOrgIds = memberships.map((membership) => membership.org_id);
+
     const { dryRun = false } = await req.json().catch(() => ({}));
 
     // Fetch all documents with property/company info
     const { data: docs, error: fetchErr } = await supabase
       .from("documents")
       .select("id, original_file_name, display_name, doc_type, description, category, property_id, company_id, created_at")
+      .in("org_id", manageableOrgIds)
       .is("deleted_at", null);
 
     if (fetchErr) throw fetchErr;
@@ -278,6 +278,7 @@ serve(async (req) => {
       const { data: props } = await supabase
         .from("properties")
         .select("id, address_line")
+        .in("org_id", manageableOrgIds)
         .in("id", propertyIds);
       for (const p of props || []) {
         propertyMap.set(p.id, p.address_line || "");
@@ -288,6 +289,7 @@ serve(async (req) => {
       const { data: comps } = await supabase
         .from("companies")
         .select("id, legal_name")
+        .in("org_id", manageableOrgIds)
         .in("id", companyIds);
       for (const c of comps || []) {
         companyMap.set(c.id, c.legal_name || "");
@@ -401,8 +403,14 @@ Return ONLY a JSON array of objects: [{"index": 1, "category": "slug"}]`;
     const LOVABLE_API_KEY_VISION = Deno.env.get("LOVABLE_API_KEY");
 
     // Fetch all companies and properties for matching
-    const { data: allCompanies } = await supabase.from("companies").select("id, legal_name");
-    const { data: allProperties } = await supabase.from("properties").select("id, address_line, postcode");
+    const { data: allCompanies } = await supabase
+      .from("companies")
+      .select("id, legal_name")
+      .in("org_id", manageableOrgIds);
+    const { data: allProperties } = await supabase
+      .from("properties")
+      .select("id, address_line, postcode")
+      .in("org_id", manageableOrgIds);
 
     const companyList = (allCompanies || []).map(c => ({ id: c.id, name: c.legal_name }));
     const propertyList = (allProperties || []).map(p => ({ id: p.id, address: p.address_line, postcode: p.postcode }));

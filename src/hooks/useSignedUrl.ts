@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { extractStoragePath } from '@/lib/storagePaths';
 
 interface SignedUrlOptions {
   /** URL expiration time in seconds (default: 3600 = 1 hour) */
@@ -13,28 +14,6 @@ interface SignedUrlResult {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-}
-
-/**
- * Extract storage path from a Supabase storage URL
- */
-function extractStoragePath(bucketName: string, fileUrl: string): string | null {
-  // Pattern: .../storage/v1/object/public/{bucket}/...
-  const publicPattern = new RegExp(`/storage/v1/object/public/${bucketName}/(.+)$`);
-  const publicMatch = fileUrl.match(publicPattern);
-  if (publicMatch) return decodeURIComponent(publicMatch[1]);
-  
-  // Pattern: .../storage/v1/object/sign/{bucket}/...
-  const signedPattern = new RegExp(`/storage/v1/object/sign/${bucketName}/(.+?)(\\?|$)`);
-  const signedMatch = fileUrl.match(signedPattern);
-  if (signedMatch) return decodeURIComponent(signedMatch[1]);
-  
-  // Try to extract just the path after '{bucket}/'
-  const simplePattern = new RegExp(`${bucketName}/(.+?)(\\?|$)`);
-  const simpleMatch = fileUrl.match(simplePattern);
-  if (simpleMatch) return decodeURIComponent(simpleMatch[1]);
-  
-  return null;
 }
 
 /**

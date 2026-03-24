@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { PortalLayout } from '@/components/portal/PortalLayout';
 import { usePortalInvestorData } from '@/hooks/usePortalInvestorData';
 import { LoadingState } from '@/components/common/LoadingState';
+import { formatGBP } from '@/lib/calculations';
 import { format } from 'date-fns';
 
 function fmt(amount: number | null | undefined): string {
-  return `£${(amount || 0).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return formatGBP(amount || 0);
 }
 
 const COMMITMENT_TYPE_LABEL: Record<string, string> = {
@@ -99,7 +100,7 @@ export default function PortalInvestments() {
             <CardContent>
               <div className="text-2xl font-bold">{fmt(stats.totalDrawn)}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.totalCommitted > 0 ? `${((stats.totalDrawn / stats.totalCommitted) * 100).toFixed(0)}% deployed` : '—'}
+                {stats.totalCommitted > 0 ? `${((stats.totalDrawn / stats.totalCommitted) * 100).toFixed(0)}% deployed` : '-'}
               </p>
             </CardContent>
           </Card>
@@ -155,15 +156,15 @@ export default function PortalInvestments() {
                 <tbody>
                   {typedCommitments?.map((c, i: number) => (
                     <tr key={i} className="border-b last:border-0">
-                      <td className="py-3 px-2 font-medium">{c.entity_name || '—'}</td>
+                      <td className="py-3 px-2 font-medium">{c.entity_name || '-'}</td>
                       <td className="py-3 px-2">
                         <Badge variant="outline">
-                          {COMMITMENT_TYPE_LABEL[c.commitment_type] || c.commitment_type || '—'}
+                          {COMMITMENT_TYPE_LABEL[c.commitment_type] || c.commitment_type || '-'}
                         </Badge>
                       </td>
                       <td className="py-3 px-2 text-right">{fmt(c.committed_amount)}</td>
                       <td className="py-3 px-2 text-right">{fmt(c.drawn_amount)}</td>
-                      <td className="py-3 px-2 text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '—'}</td>
+                      <td className="py-3 px-2 text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '-'}</td>
                       <td className="py-3 px-2 text-right">{fmt(c.investors_share_valuation)}</td>
                       <td className="py-3 px-2">
                         <Badge variant={c.status === 'active' ? 'default' : 'secondary'} className="capitalize">
@@ -207,7 +208,7 @@ export default function PortalInvestments() {
                   <tbody>
                   {typedReturnMetrics.map((m, i: number) => (
                       <tr key={i} className="border-b last:border-0">
-                        <td className="py-3 px-2 font-medium">{m.entity_name || '—'}</td>
+                        <td className="py-3 px-2 font-medium">{m.entity_name || '-'}</td>
                         <td className="py-3 px-2 text-right">{fmt(m.capital_invested)}</td>
                         <td className="py-3 px-2 text-right">{fmt(m.total_distributions)}</td>
                         <td className="py-3 px-2 text-right">{fmt(m.current_equity_value)}</td>
@@ -260,7 +261,7 @@ export default function PortalInvestments() {
                         <td className="py-3 px-2 text-right">{fmt(d.amount)}</td>
                         <td className="py-3 px-2 text-right">{fmt(d.tax_deducted)}</td>
                         <td className="py-3 px-2 text-right font-medium">{fmt(d.net_amount || (d.amount - (d.tax_deducted || 0)))}</td>
-                        <td className="py-3 px-2 text-muted-foreground">{d.payment_reference || '—'}</td>
+                        <td className="py-3 px-2 text-muted-foreground">{d.payment_reference || '-'}</td>
                         <td className="py-3 px-2">
                           <Badge variant={d.status === 'paid' ? 'default' : 'secondary'} className="capitalize">
                             {d.status}

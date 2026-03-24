@@ -36,25 +36,50 @@ Deno.serve(async (req) => {
 
   try {
     const stateData = JSON.parse(atob(state));
-    const { entityId, companyId, orgId, userId, useSandbox } = stateData;
+    const { entityId, companyId, orgId, userId, useSandbox, nonce } = stateData;
 
     // Validate required state fields to prevent forged states
-    if (!orgId || !userId) {
+    if (!orgId || !userId || !nonce) {
       return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_state`, 302);
     }
 
-    // Verify the userId from state matches a real user in the org
+    // Verify the userId from state is an owner/admin in the target org
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: membership } = await supabase
       .from("memberships")
       .select("id")
       .eq("user_id", userId)
       .eq("org_id", orgId)
+      .in("role", ["owner", "admin"])
       .maybeSingle();
 
     if (!membership) {
-      console.error("OAuth CSRF check failed: userId not a member of orgId");
+      console.error("OAuth CSRF check failed: userId not authorized for orgId");
       return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=unauthorized`, 302);
+    }
+
+    if (entityId) {
+      const { data: entity } = await supabase
+        .from("legal_entities")
+        .select("id, org_id")
+        .eq("id", entityId)
+        .maybeSingle();
+
+      if (!entity || entity.org_id !== orgId) {
+        return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_target`, 302);
+      }
+    }
+
+    if (companyId) {
+      const { data: company } = await supabase
+        .from("companies")
+        .select("id, org_id")
+        .eq("id", companyId)
+        .maybeSingle();
+
+      if (!company || company.org_id !== orgId) {
+        return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_target`, 302);
+      }
     }
 
     const apiBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";

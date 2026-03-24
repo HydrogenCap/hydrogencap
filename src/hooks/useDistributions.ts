@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useUserOrg } from '@/hooks/useUserOrg';
 
 export interface Distribution {
   id: string;
@@ -38,33 +38,24 @@ export interface DistributionAllocation {
 }
 
 export function useDistributions() {
-  const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
 
   return useQuery({
-    queryKey: ['distributions'],
+    queryKey: ['distributions', orgId],
     queryFn: async () => {
-      const { data: membership } = await supabase
-        .from('memberships')
-        .select('org_id')
-        .eq('user_id', user!.id)
-        .limit(1)
-        .single();
-
-      if (!membership) return [];
-
       const { data, error } = await supabase
         .from('distributions')
         .select(`
           *,
           entity:legal_entities!distributions_entity_id_fkey ( id, entity_name )
         `)
-        .eq('org_id', membership.org_id)
+        .eq('org_id', orgId!)
         .order('period_start', { ascending: false });
 
       if (error) throw error;
       return (data || []) as Distribution[];
     },
-    enabled: !!user,
+    enabled: !!orgId,
   });
 }
 

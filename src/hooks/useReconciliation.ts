@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { parseStatement, computeTransactionHash } from '@/lib/statementParser';
 import { findMatches, type MatchCandidate } from '@/lib/reconciliationEngine';
@@ -133,12 +133,15 @@ export function useImportStatement() {
 // ─── Fetch Unmatched Transactions ────────────────────────────────────
 
 export function useUnmatchedTransactions(bankAccountId?: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['bank_transactions', 'unmatched', bankAccountId],
+    queryKey: ['bank_transactions', orgId, 'unmatched', bankAccountId],
     queryFn: async () => {
       let query = supabase
         .from('bank_transactions')
         .select('*')
+        .eq('org_id', orgId!)
         .gt('amount', 0)
         .order('transaction_date', { ascending: false });
 
@@ -152,18 +155,22 @@ export function useUnmatchedTransactions(bankAccountId?: string) {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!orgId,
   });
 }
 
 // ─── Fetch All Transactions (for history) ────────────────────────────
 
 export function useMatchedTransactions(bankAccountId?: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['bank_transactions', 'matched', bankAccountId],
+    queryKey: ['bank_transactions', orgId, 'matched', bankAccountId],
     queryFn: async () => {
       const query = supabase
         .from('bank_transactions')
         .select('*')
+        .eq('org_id', orgId!)
         .eq('is_reconciled', true)
         .order('transaction_date', { ascending: false })
         .limit(100);
@@ -176,6 +183,7 @@ export function useMatchedTransactions(bankAccountId?: string) {
       if (error) throw error;
       return (data || []) as ReconciliationTransaction[];
     },
+    enabled: !!orgId,
   });
 }
 
@@ -187,10 +195,13 @@ export function useRunAutoMatch() {
 
   return useMutation({
     mutationFn: async (bankAccountId?: string) => {
+      const orgId = await fetchUserOrgId();
+
       // Fetch unmatched transactions
       let txnQuery = supabase
         .from('bank_transactions')
         .select('*')
+        .eq('org_id', orgId)
         .eq('is_reconciled', false)
         .gt('amount', 0);
 
@@ -212,6 +223,7 @@ export function useRunAutoMatch() {
       const { data: schedItems, error: schedErr } = await supabase
         .from('rent_schedule')
         .select(SCHEDULE_SELECT)
+        .eq('org_id', orgId)
         .in('status', ['due', 'overdue', 'partial', 'upcoming']);
 
       if (schedErr) throw schedErr;
@@ -293,6 +305,7 @@ export function useConfirmMatch() {
       const { data: txn, error: txnErr } = await supabase
         .from('bank_transactions')
         .select('amount, transaction_date')
+        .eq('org_id', orgId)
         .eq('id', transactionId)
         .single();
       if (txnErr || !txn) throw txnErr || new Error('Transaction not found');
@@ -301,6 +314,7 @@ export function useConfirmMatch() {
       const { data: sched, error: schedErr } = await supabase
         .from('rent_schedule')
         .select('tenancy_id, agreement_id, rent_amount, additional_charges, amount_paid')
+        .eq('org_id', orgId)
         .eq('id', scheduleId)
         .single();
       if (schedErr || !sched) throw schedErr || new Error('Schedule item not found');
@@ -434,12 +448,15 @@ export function useExcludeTransaction() {
 // ─── Reconciliation Summary ──────────────────────────────────────────
 
 export function useReconciliationSummary(bankAccountId?: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['reconciliation_summary', bankAccountId],
+    queryKey: ['reconciliation_summary', orgId, bankAccountId],
     queryFn: async () => {
       let query = supabase
         .from('bank_transactions')
         .select('status, amount')
+        .eq('org_id', orgId!)
         .gt('amount', 0);
 
       if (bankAccountId) query = query.eq('bank_account_id', bankAccountId);
@@ -467,23 +484,28 @@ export function useReconciliationSummary(bankAccountId?: string) {
 
       return summary;
     },
+    enabled: !!orgId,
   });
 }
 
 // ─── Reconciled Schedule IDs (for rent collection badges) ────────────
 
 export function useReconciledScheduleIds() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['reconciled_schedule_ids'],
+    queryKey: ['reconciled_schedule_ids', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bank_transactions')
         .select('matched_schedule_id')
+        .eq('org_id', orgId!)
         .eq('status', 'matched')
         .not('matched_schedule_id', 'is', null);
       if (error) throw error;
       return new Set((data || []).map((row) => row.matched_schedule_id).filter(Boolean));
     },
+    enabled: !!orgId,
     staleTime: 60_000,
   });
 }

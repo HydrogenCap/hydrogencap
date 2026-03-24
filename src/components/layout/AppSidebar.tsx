@@ -57,6 +57,7 @@ import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { LogoWordmark } from '@/components/LogoWordmark';
 import { useSectionVisibility } from '@/hooks/useSectionVisibility';
 import type { SectionKey } from '@/lib/sectionVisibility';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 
 interface NavItem {
   title: string;
@@ -223,7 +224,10 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
-        <LogoWordmark to="/dashboard" size="lg" />
+        <div className="space-y-3">
+          <LogoWordmark to="/dashboard" size="lg" />
+          <OrganizationSwitcher />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

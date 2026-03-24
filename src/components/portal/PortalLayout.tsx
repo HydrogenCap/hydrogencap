@@ -13,8 +13,8 @@ interface PortalLayoutProps {
 }
 
 const navItems = [
-  { path: '/portal', icon: LayoutDashboard, label: 'Overview', permission: null },
-  { path: '/portal/properties', icon: Building2, label: 'Properties', permission: null },
+  { path: '/portal', icon: LayoutDashboard, label: 'Overview', permission: 'shareholder_only' },
+  { path: '/portal/properties', icon: Building2, label: 'Properties', permission: 'shareholder_only' },
   { path: '/portal/compliance', icon: Shield, label: 'Compliance', permission: 'can_view_compliance' },
   { path: '/portal/investments', icon: Wallet, label: 'Investments', permission: 'investor_only' },
   { path: '/portal/statements', icon: FileText, label: 'Statements', permission: 'investor_only' },
@@ -24,7 +24,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { access, canViewCompliance } = useShareholderSession();
+  const { isShareholderUser, canViewCompliance } = useShareholderSession();
   const { isInvestorUser } = usePortalInvestorData();
 
   const handleSignOut = async () => {
@@ -33,6 +33,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
   };
 
   const filteredNav = navItems.filter((item) => {
+    if (item.permission === 'shareholder_only') return isShareholderUser;
     if (item.permission === 'can_view_compliance') return canViewCompliance;
     if (item.permission === 'investor_only') return isInvestorUser;
     return true;
@@ -46,7 +47,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
           <div className="flex items-center gap-3">
             <img src={logo} alt="Logo" className="h-8 w-8" />
             <div>
-              <span className="font-semibold">Investor Portal</span>
+              <span className="font-semibold">Portal Access</span>
               <span className="ml-2 text-xs text-muted-foreground">Read-only access</span>
             </div>
           </div>

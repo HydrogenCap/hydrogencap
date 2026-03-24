@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 export interface CapexProject {
   id: string;
@@ -62,17 +63,11 @@ export function useCreateCapexProject() {
       start_date?: string;
       target_end_date?: string;
     }) => {
-      const { data: membership } = await supabase
-        .from('memberships')
-        .select('org_id')
-        .limit(1)
-        .single();
-
-      if (!membership) throw new Error('No organization found');
+      const orgId = await fetchUserOrgId();
 
       const { data, error } = await supabase
         .from('capex_projects')
-        .insert({ ...project, org_id: membership.org_id })
+        .insert({ ...project, org_id: orgId })
         .select()
         .single();
 

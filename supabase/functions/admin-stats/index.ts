@@ -1,13 +1,45 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+import { getCorsHeaders } from "../_shared/cors.ts";
+type SubscriptionRow = {
+  user_id: string;
+  product_id: string | null;
+  status: string;
+  stripe_customer_id?: string | null;
+  updated_at?: string;
+};
+type ProfileRow = {
+  user_id: string;
+  full_name: string | null;
+  email: string;
+  platform_role?: string;
+};
+type MembershipRow = {
+  user_id: string;
+  org_id: string;
+  organizations?: { name?: string | null } | null;
+};
+type RecentUser = {
+  id: string;
+  email: string | null | undefined;
+  created_at: string;
+  last_sign_in_at: string | null | undefined;
+};
+type EnrichedUser = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  org_name: string | null;
+  org_id: string | null;
+  tier: string;
+  status: string;
+  stripe_customer_id: string | null;
+  created_at: string;
+  last_sign_in_at: string | null | undefined;
 };
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -78,9 +110,10 @@ serve(async (req) => {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("[ADMIN-STATS] Error:", err);
-    return new Response(JSON.stringify({ error: err?.message || "Unknown error" }), {
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -89,10 +122,11 @@ serve(async (req) => {
 
 async function getDashboardStats(supabase: any) {
   // Active subscriptions + MRR
-  const { data: activeSubs } = await supabase
+  const { data: activeSubsData } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("status", "active");
+  const activeSubs = (activeSubsData || []) as SubscriptionRow[];
 
   const activeCount = activeSubs?.length || 0;
 
@@ -116,11 +150,12 @@ async function getDashboardStats(supabase: any) {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const { data: canceledSubs } = await supabase
+  const { data: canceledSubsData } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("status", "canceled")
     .gte("updated_at", startOfMonth.toISOString());
+  const canceledSubs = (canceledSubsData || []) as SubscriptionRow[];
 
   const churnCount = canceledSubs?.length || 0;
 
@@ -148,7 +183,12 @@ async function getDashboardStats(supabase: any) {
   tierBreakdown.free.count = Math.max(0, totalUsers - activeCount);
 
   // Recent signups (last 20)
-  const recentUsers = (authData?.users || [])
+  const recentUsers: RecentUser[] = ((authData?.users || []) as Array<{
+    id: string;
+    email?: string | null;
+    created_at: string;
+    last_sign_in_at?: string | null;
+  }>)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 20)
     .map((u) => ({
@@ -166,14 +206,15 @@ async function getDashboardStats(supabase: any) {
     .in("user_id", userIds);
 
   const subsByUser = new Map(
-    (userSubs || []).map((s) => [s.user_id, s])
+    ((userSubs || []) as SubscriptionRow[]).map((s) => [s.user_id, s])
   );
 
   const enrichedRecent = recentUsers.map((u) => {
     const sub = subsByUser.get(u.id);
+    const productId = typeof sub?.product_id === "string" ? sub.product_id : null;
     return {
       ...u,
-      tier: sub ? PRODUCT_TO_TIER[sub.product_id || ""] || "free" : "free",
+      tier: productId ? PRODUCT_TO_TIER[productId] || "free" : "free",
       status: sub?.status || "free",
     };
   });
@@ -196,29 +237,38 @@ async function getUsers(
 
   // Get all users
   const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-  let users = authData?.users || [];
+  const users = (authData?.users || []) as Array<{
+    id: string;
+    email?: string | null;
+    created_at: string;
+    last_sign_in_at?: string | null;
+  }>;
 
   // Get all profiles
-  const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, email");
-  const profileMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+  const { data: profilesData } = await supabase.from("profiles").select("user_id, full_name, email");
+  const profiles = (profilesData || []) as ProfileRow[];
+  const profileMap = new Map(profiles.map((p) => [p.user_id, p]));
 
   // Get all subscriptions
-  const { data: subs } = await supabase.from("subscriptions").select("*");
-  const subMap = new Map((subs || []).map((s) => [s.user_id, s]));
+  const { data: subsData } = await supabase.from("subscriptions").select("*");
+  const subs = (subsData || []) as SubscriptionRow[];
+  const subMap = new Map(subs.map((s) => [s.user_id, s]));
 
   // Get memberships + orgs
-  const { data: memberships } = await supabase
+  const { data: membershipsData } = await supabase
     .from("memberships")
     .select("user_id, org_id, organizations(name)");
+  const memberships = (membershipsData || []) as MembershipRow[];
   const orgMap = new Map(
-    (memberships || []).map((m) => [m.user_id, (m.organizations as any)?.name || null])
+    memberships.map((m) => [m.user_id, m.organizations?.name || null])
   );
 
   // Get property counts per org
-  const { data: orgIds } = await supabase
+  const { data: orgIdsData } = await supabase
     .from("memberships")
     .select("user_id, org_id");
-  const userOrgMap = new Map((orgIds || []).map((m) => [m.user_id, m.org_id]));
+  const orgIds = (orgIdsData || []) as Array<{ user_id: string; org_id: string }>;
+  const userOrgMap = new Map(orgIds.map((m) => [m.user_id, m.org_id]));
 
   const PRODUCT_TO_TIER: Record<string, string> = {
     prod_TxJdFT8No80v9S: "solo",
@@ -226,7 +276,7 @@ async function getUsers(
     prod_TxJeGRcMMMPHwP: "pro",
   };
 
-  let enriched = users.map((u) => {
+  let enriched: EnrichedUser[] = users.map((u) => {
     const profile = profileMap.get(u.id);
     const sub = subMap.get(u.id);
     const tier = sub ? PRODUCT_TO_TIER[sub.product_id || ""] || "free" : "free";

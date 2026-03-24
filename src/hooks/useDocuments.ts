@@ -4,6 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { ActivityLoggers } from './useActivityLog';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
+import { resolveManagedDocumentUrls } from './useDocumentManagement';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 type DocumentInsert = Database['public']['Tables']['documents']['Insert'];
@@ -32,7 +33,7 @@ export function useDocuments(propertyId?: string, options?: { page?: number; pag
 
       const { data, error, count } = await query;
       if (error) throw error;
-      const items = (data ?? []) as Document[];
+      const items = await resolveManagedDocumentUrls((data ?? []) as Document[]);
       const total = count ?? items.length;
       return {
         items,
@@ -56,7 +57,7 @@ export function useInboxDocuments() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Document[];
+      return resolveManagedDocumentUrls((data ?? []) as Document[]);
     },
   });
 }

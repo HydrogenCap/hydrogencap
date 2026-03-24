@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 /**
  * Fetches cover photos for V2 properties by matching them to V1 properties 
@@ -29,9 +30,16 @@ export function usePropertyPhotosV2() {
         .eq('is_cover', true);
       if (photoErr) throw photoErr;
 
+      const resolvedPhotos = await Promise.all(
+        (photos || []).map(async (photo) => ({
+          property_id: photo.property_id,
+          file_url: await createSignedStorageUrl('photos', photo.file_url),
+        }))
+      );
+
       // Build V1 photo map
       const v1PhotoMap = new Map<string, string>();
-      photos?.forEach(p => v1PhotoMap.set(p.property_id, p.file_url));
+      resolvedPhotos.forEach((photo) => v1PhotoMap.set(photo.property_id, photo.file_url));
 
       // Build V1 lookup by normalised postcode
       const v1ByPostcode = new Map<string, typeof v1Props>();

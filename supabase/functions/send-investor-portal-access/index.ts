@@ -145,8 +145,9 @@ serve(async (req) => {
     );
   } catch (err) {
     console.error('send-investor-portal-access error:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

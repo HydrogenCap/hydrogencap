@@ -51,7 +51,61 @@ interface ComplianceGroup {
   items: Array<ComplianceItem & { status: 'overdue' | 'due_soon' | 'unknown' }>;
 }
 
+interface RequestAuthorization {
+  mode: "cron" | "user";
+  manageableOrgIds: string[] | null;
+  userEmail: string | null;
+}
+
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const authHeader = req.headers.get("Authorization");
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return { mode: "cron", manageableOrgIds: null, userEmail: null };
+  }
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabaseAuth = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+  const token = authHeader.replace("Bearer ", "");
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseAuth.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: memberships, error: membershipError } = await supabaseAuth
+    .from("memberships")
+    .select("org_id, role")
+    .eq("user_id", user.id)
+    .in("role", ["owner", "admin"]);
+
+  if (membershipError) {
+    throw membershipError;
+  }
+
+  const manageableOrgIds = [...new Set((memberships || []).map((membership) => membership.org_id))];
+  if (manageableOrgIds.length === 0) {
+    throw new Error("Access denied");
+  }
+
+  return {
+    mode: "user",
+    manageableOrgIds,
+    userEmail: user.email ?? null,
+  };
+}
 
 function getWeeklyRunKey(): string {
   const now = new Date();
@@ -298,28 +352,7 @@ serve(async (req) => {
   }
 
   try {
-    // Verify cron/admin authorization
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    const authHeader = req.headers.get("Authorization");
-
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      // Authorized as cron job
-    } else if (authHeader?.startsWith("Bearer ")) {
-      const supabaseAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
-      const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabaseAuth.auth.getUser(token);
-      if (authError) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
+    const authorization = await authorizeRequest(req);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -343,7 +376,9 @@ serve(async (req) => {
     }
 
     const runKey = isTestSend ? `test_${Date.now()}` : getWeeklyRunKey();
-    const recipientEmail = "office@oxygen.rocks";
+    const recipientEmail = authorization.mode === "user"
+      ? (authorization.userEmail || "office@oxygen.rocks")
+      : "office@oxygen.rocks";
 
     // Check for idempotency (skip for test sends and force resends)
     if (!isTestSend && !forceResend) {
@@ -367,10 +402,16 @@ serve(async (req) => {
     }
 
     // Fetch all CORE RENTAL properties only (development properties are excluded from compliance emails)
-    const { data: properties, error: propError } = await supabase
+    let propertiesQuery = supabase
       .from("properties")
       .select("id, address_line, postcode, town_city, lifecycle_type, org_id")
       .eq("lifecycle_type", "core_rental");
+
+    if (authorization.mode === "user" && authorization.manageableOrgIds) {
+      propertiesQuery = propertiesQuery.in("org_id", authorization.manageableOrgIds);
+    }
+
+    const { data: properties, error: propError } = await propertiesQuery;
 
     if (propError) throw propError;
 
@@ -386,11 +427,17 @@ serve(async (req) => {
     const coreRentalPropertyIds = new Set(coreRentalProperties.map(p => p.id));
 
     // Fetch all compliance items with is_required = true or not excluded
-    const { data: complianceItems, error: compError } = await supabase
+    let complianceQuery = supabase
       .from("compliance_items")
       .select("id, property_id, compliance_type, expiry_date, issue_date, notes")
       .or("is_required.eq.true,is_required.is.null")
       .eq("is_manually_excluded", false);
+
+    if (coreRentalPropertyIds.size > 0) {
+      complianceQuery = complianceQuery.in("property_id", Array.from(coreRentalPropertyIds));
+    }
+
+    const { data: complianceItems, error: compError } = await complianceQuery;
 
     if (compError) throw compError;
 
@@ -446,12 +493,31 @@ serve(async (req) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const { data: recentActivity, error: actError } = await supabase
+    let activityQuery = supabase
       .from("activity_log")
       .select("id, property_id, entry_type, title, body, created_at")
       .gte("created_at", sevenDaysAgo.toISOString())
       .order("created_at", { ascending: false })
       .limit(50);
+
+    if (coreRentalPropertyIds.size > 0) {
+      activityQuery = activityQuery.in("property_id", Array.from(coreRentalPropertyIds));
+    } else if (authorization.mode === "user") {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          preview: previewOnly,
+          html: previewOnly ? "" : undefined,
+          text: previewOnly ? "" : undefined,
+          subject: previewOnly ? "" : undefined,
+          kpis: { activeProperties: 0, overdueCount: 0, dueSoonCount: 0 },
+          message: "No accessible core rental properties found",
+        }),
+        { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: recentActivity, error: actError } = await activityQuery;
 
     if (actError) throw actError;
 
@@ -573,14 +639,16 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in send-weekly-compliance-email:", error);
+    const message = error instanceof Error ? error.message : "Unknown error occurred";
+    const status = message === "Unauthorized" ? 401 : message === "Access denied" ? 403 : 500;
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred"
+        error: message,
       }),
       { 
-        status: 500,
+        status,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } 
       }
     );

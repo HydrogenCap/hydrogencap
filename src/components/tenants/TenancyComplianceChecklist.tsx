@@ -132,10 +132,7 @@ export function TenancyComplianceChecklist({ tenancyId, tenantType, tenantId, pr
             .upload(filePath, uploadFile);
           if (uploadError) throw uploadError;
 
-          const { data: urlData } = supabase.storage
-            .from('documents')
-            .getPublicUrl(filePath);
-          documentUrl = urlData.publicUrl;
+          documentUrl = filePath;
 
           // Create document record linked to tenancy
           await createDocument.mutateAsync({

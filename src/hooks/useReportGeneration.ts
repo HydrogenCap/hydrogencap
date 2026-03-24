@@ -162,7 +162,7 @@ export function useReportData() {
         council_tax_band: passport.council_tax_band,
         local_authority_text: passport.local_authority_text,
       } : null,
-      insurancePolicy: (propertyWithInsurance.insurance_policies?.[0] || { insurer_name: null, policy_number: null, renewal_date: null, premium_gbp: null }) as PropertyReportData['insurancePolicy'],
+      insurancePolicy: propertyWithInsurance.insurance_policies?.[0] || null,
       ownerName: ownerCompany?.legal_name,
     };
   });

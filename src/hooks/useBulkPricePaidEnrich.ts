@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 interface PricePaidResult {
   propertyId: string;
@@ -32,8 +33,9 @@ export function useBulkPricePaidEnrich() {
     setIsEnriching(true);
     
     try {
+      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase.functions.invoke('bulk-price-paid-enrich', {
-        body: { mode },
+        body: { mode, orgId },
       });
 
       if (error) {

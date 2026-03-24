@@ -28,10 +28,6 @@ interface Props {
   isFilled?: boolean;
 }
 
-// Helper to safely convert value to string for Input components
-const toInputValue = (v: string | number | boolean | null | undefined): string | number | readonly string[] =>
-  typeof v === 'boolean' ? '' : (v ?? '');
-
 export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) {
   const renderInput = () => {
     switch (field.type) {
@@ -39,9 +35,9 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
         return (
           <Input
             placeholder={`Enter ${field.label.toLowerCase()}`}
-            value={toInputValue(value)}
+            value={value || ''}
             onChange={e => onChange(e.target.value || undefined)}
-            className={cn(isFilled && 'border-success')}
+            className={cn(isFilled && 'border-green-500')}
           />
         );
 
@@ -54,9 +50,9 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
               step="0.01"
               min="0"
               placeholder="0.00"
-              value={toInputValue(value)}
+              value={value || ''}
               onChange={e => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-              className={cn('pl-7', isFilled && 'border-success')}
+              className={cn('pl-7', isFilled && 'border-green-500')}
             />
           </div>
         );
@@ -70,9 +66,9 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
               min="0"
               max="100"
               placeholder="0.00"
-              value={toInputValue(value)}
+              value={value || ''}
               onChange={e => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-              className={cn('pr-7', isFilled && 'border-success')}
+              className={cn('pr-7', isFilled && 'border-green-500')}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
           </div>
@@ -85,9 +81,9 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
             step="1"
             min="0"
             placeholder="0"
-            value={toInputValue(value)}
+            value={value || ''}
             onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-            className={cn(isFilled && 'border-success')}
+            className={cn(isFilled && 'border-green-500')}
           />
         );
 
@@ -105,7 +101,8 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
         );
 
       case 'date': {
-        const dateValue = value ? new Date(String(value)) : undefined;
+        const dateValue = value ? new Date(value) : undefined;
+        // Calculate a reasonable year range (30 years back, 40 years forward for mortgages)
         const currentYear = new Date().getFullYear();
         const fromYear = currentYear - 30;
         const toYear = currentYear + 40;
@@ -117,7 +114,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
                 className={cn(
                   'w-full justify-start text-left font-normal',
                   !value && 'text-muted-foreground',
-                  isFilled && 'border-success'
+                  isFilled && 'border-green-500'
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -142,8 +139,8 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
 
       case 'select':
         return (
-          <Select value={String(value ?? '')} onValueChange={v => onChange(v || undefined)}>
-            <SelectTrigger className={cn(isFilled && 'border-success')}>
+          <Select value={value || ''} onValueChange={v => onChange(v || undefined)}>
+            <SelectTrigger className={cn(isFilled && 'border-green-500')}>
               <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
             </SelectTrigger>
             <SelectContent>

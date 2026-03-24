@@ -31,8 +31,9 @@ serve(async (req) => {
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err) {
-      console.error("[STRIPE-WEBHOOK] Signature verification failed:", err.message);
-      return new Response(`Webhook signature verification failed: ${err.message}`, { status: 400 });
+      const errorMessage = err instanceof Error ? err.message : "Unknown signature verification error";
+      console.error("[STRIPE-WEBHOOK] Signature verification failed:", errorMessage);
+      return new Response(`Webhook signature verification failed: ${errorMessage}`, { status: 400 });
     }
 
     console.log(`[STRIPE-WEBHOOK] Received event: ${event.type} (${event.id})`);
@@ -100,7 +101,7 @@ serve(async (req) => {
  */
 async function syncSubscriptionByEmail(
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   email: string,
   overrideStatus?: string
 ) {
@@ -113,16 +114,23 @@ async function syncSubscriptionByEmail(
 
   let userId: string | undefined;
 
-  if (profiles?.length) {
-    userId = profiles[0].user_id;
+  const typedProfiles = (profiles || []) as Array<{ user_id: string | null }>;
+
+  if (typedProfiles.length && typedProfiles[0].user_id) {
+    userId = typedProfiles[0].user_id;
   } else {
-    // Fallback to auth admin API — use targeted lookup instead of listing all users
-    const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserByEmail(email);
-    if (authError || !authUser) {
+    const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+    const authUser = listData?.users.find((candidate: { email?: string | null }) => candidate.email === email);
+    if (listError || !authUser) {
       console.error(`[STRIPE-WEBHOOK] No user found for email: ${email}`);
       return;
     }
     userId = authUser.id;
+  }
+
+  if (!userId) {
+    console.error(`[STRIPE-WEBHOOK] Unable to resolve user for email: ${email}`);
+    return;
   }
 
   await upsertSubscription(stripe, supabase, userId, email, overrideStatus);
@@ -130,7 +138,7 @@ async function syncSubscriptionByEmail(
 
 async function upsertSubscription(
   stripe: Stripe,
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   email: string,
   overrideStatus?: string

@@ -12,10 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { uploadToStorage, getPublicUrl, removeFromStorage } from '@/hooks/useStorageUpload';
+import { uploadToStorage, removeFromStorage } from '@/hooks/useStorageUpload';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 import { useToast } from '@/hooks/use-toast';
 import { useUpdateComplianceItem, useUploadComplianceDocument } from '@/hooks/useCompliance';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 interface AIAnalysisResult {
   issueDate: string | null;
@@ -123,7 +124,7 @@ export function ComplianceUploadDialog({
       
       await uploadToStorage('compliance', tempPath, file);
 
-      const publicUrl = getPublicUrl('compliance', tempPath);
+      const signedUrl = await createSignedStorageUrl('compliance', tempPath, 600);
 
       setProgress(40);
 
@@ -134,7 +135,7 @@ export function ComplianceUploadDialog({
         address_match?: boolean; issues?: { message: string; severity: 'critical' | 'warning' }[];
         confidence?: number;
       }>('process-document', {
-        documentUrl: publicUrl,
+        documentUrl: signedUrl,
         documentType: complianceType,
         propertyAddress,
         extractMode: 'compliance',

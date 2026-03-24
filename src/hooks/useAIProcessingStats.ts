@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { useUserOrg } from './useUserOrg';
 
 export interface AIProcessingStats {
   processedToday: number;
@@ -14,10 +14,11 @@ export interface AIProcessingStats {
 }
 
 export function useAIProcessingStats() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['ai-processing-stats'],
+    queryKey: ['ai-processing-stats', orgId],
     queryFn: async (): Promise<AIProcessingStats> => {
-      const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
       const today = new Date().toISOString().split('T')[0];
@@ -75,14 +76,16 @@ export function useAIProcessingStats() {
         classificationAccuracy,
       };
     },
+    enabled: !!orgId,
   });
 }
 
 export function useProcessingHistory(limit = 50) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['ai-processing-history', limit],
+    queryKey: ['ai-processing-history', orgId, limit],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
       const { data, error } = await supabase
@@ -102,5 +105,6 @@ export function useProcessingHistory(limit = 50) {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!orgId,
   });
 }

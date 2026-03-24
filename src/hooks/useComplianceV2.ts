@@ -2,11 +2,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { ComplianceMatrixRow, PortfolioComplianceScore, ComplianceDocType } from '@/lib/complianceV2Types';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 type ComplianceTaskUpdate = Pick<
   Database['public']['Tables']['compliance_tasks']['Update'],
   'status' | 'resolved_at' | 'resolved_by' | 'resolution_notes'
 >;
+
+async function resolveComplianceV2Rows<T extends { file_url?: string | null }>(rows: T[]): Promise<T[]> {
+  return Promise.all(
+    rows.map(async (row) => ({
+      ...row,
+      file_url: row.file_url ? await createSignedStorageUrl('compliance-documents', row.file_url) : row.file_url,
+    }))
+  );
+}
 
 // ============================================================
 // Compliance Matrix (view)
@@ -21,7 +31,7 @@ export function useComplianceMatrix() {
         .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url')
         .order('urgency_score', { ascending: true });
       if (error) throw error;
-      return data as unknown as ComplianceMatrixRow[];
+      return resolveComplianceV2Rows((data || []) as unknown as ComplianceMatrixRow[]);
     },
   });
 }
@@ -58,7 +68,7 @@ export function useComplianceDocumentsV2(propertyId?: string, documentType?: str
       query = query.order('issue_date', { ascending: false });
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return resolveComplianceV2Rows(data || []);
     },
     enabled: !!propertyId || !documentType,
   });
@@ -220,7 +230,7 @@ export function usePropertyComplianceV2(propertyId: string | undefined) {
         .eq('property_id', propertyId!)
         .order('urgency_score', { ascending: true });
       if (error) throw error;
-      return data as unknown as ComplianceMatrixRow[];
+      return resolveComplianceV2Rows((data || []) as unknown as ComplianceMatrixRow[]);
     },
     enabled: !!propertyId,
   });

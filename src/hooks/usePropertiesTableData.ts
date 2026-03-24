@@ -5,6 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 /**
  * Hook to fetch cover photos for all properties
@@ -21,7 +22,13 @@ export function usePropertyPhotos() {
       if (error) throw error;
       
       const photoMap = new Map<string, string>();
-      data?.forEach(photo => {
+      const resolvedPhotos = await Promise.all(
+        (data || []).map(async (photo) => ({
+          property_id: photo.property_id,
+          file_url: await createSignedStorageUrl('photos', photo.file_url),
+        }))
+      );
+      resolvedPhotos.forEach((photo) => {
         photoMap.set(photo.property_id, photo.file_url);
       });
       return photoMap;

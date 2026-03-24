@@ -206,7 +206,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Entity Type *</Label>
-              <Select value={form.entity_type} onValueChange={(v) => update('entity_type', v as LegalEntity['entity_type'])}>
+              <Select value={form.entity_type} onValueChange={(v) => update('entity_type', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ENTITY_TYPES.map(t => (
@@ -217,7 +217,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => update('status', v as LegalEntity['status'])}>
+              <Select value={form.status} onValueChange={(v) => update('status', v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map(s => (

@@ -1,6 +1,7 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
- import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { fetchUserOrgId, fetchUserOrgIdOrNull, useUserOrg } from '@/hooks/useUserOrg';
  
  export type JobStatus = 'draft' | 'requested' | 'quoted' | 'accepted' | 'booked' | 'in_progress' | 'completed' | 'verified' | 'cancelled';
  export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
@@ -114,11 +115,12 @@ export function useContractorJobs(filters?: {
   page?: number;
   pageSize?: number;
 }) {
+  const { data: orgId } = useUserOrg();
   const page = filters?.page;
   const pageSize = filters?.pageSize ?? 25;
 
   return useQuery({
-    queryKey: ['contractor-jobs', filters],
+    queryKey: ['contractor-jobs', orgId, filters],
     queryFn: async () => {
       let query = supabase
         .from('contractor_jobs')
@@ -129,6 +131,7 @@ export function useContractorJobs(filters?: {
           property_v2:properties_v2(id, address_line_1, city, postcode),
           compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)
         `, { count: 'exact' })
+        .eq('org_id', orgId!)
         .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -171,18 +174,22 @@ export function useContractorJobs(filters?: {
         totalPages: page ? Math.ceil(total / pageSize) : 1,
       };
     },
+    enabled: !!orgId,
   });
 }
  
  // Get job counts by status for dashboard widgets
- export function useJobCounts() {
-   return useQuery({
-     queryKey: ['job-counts'],
-     queryFn: async () => {
-       const { data, error } = await supabase
-         .from('contractor_jobs')
-         .select('status, priority, contractor_id')
-         .not('status', 'in', '("completed","verified","cancelled")');
+export function useJobCounts() {
+  const { data: orgId } = useUserOrg();
+
+  return useQuery({
+    queryKey: ['job-counts', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contractor_jobs')
+        .select('status, priority, contractor_id')
+        .eq('org_id', orgId!)
+        .not('status', 'in', '("completed","verified","cancelled")');
  
        if (error) throw error;
  
@@ -195,11 +202,12 @@ export function useContractorJobs(filters?: {
          urgent: data.filter(j => j.priority === 'urgent').length,
          high: data.filter(j => j.priority === 'high').length,
        };
- 
-       return counts;
-     },
-   });
- }
+
+      return counts;
+    },
+    enabled: !!orgId,
+  });
+}
  
  export function useContractorJob(jobId: string | undefined) {
    return useQuery({
@@ -226,13 +234,15 @@ export function useContractorJobs(filters?: {
    });
  }
  
- export function useJobsCalendar(startDate: Date, endDate: Date) {
-   return useQuery({
-     queryKey: ['contractor-jobs-calendar', startDate.toISOString(), endDate.toISOString()],
-     queryFn: async () => {
-       const { data, error } = await supabase
-         .from('contractor_jobs')
-         .select(`
+export function useJobsCalendar(startDate: Date, endDate: Date) {
+  const { data: orgId } = useUserOrg();
+
+  return useQuery({
+    queryKey: ['contractor-jobs-calendar', orgId, startDate.toISOString(), endDate.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contractor_jobs')
+        .select(`
            id,
            job_type,
            status,
@@ -241,34 +251,31 @@ export function useContractorJobs(filters?: {
            contractor:contractors(name),
            property:properties(address_line)
          `)
+         .eq('org_id', orgId!)
          .gte('booked_date', startDate.toISOString().split('T')[0])
          .lte('booked_date', endDate.toISOString().split('T')[0])
          .not('booked_date', 'is', null);
- 
-       if (error) throw error;
-       return data;
-     },
-   });
- }
- 
- export function useMatchingContractors(complianceType: string, postcode: string) {
-   return useQuery({
-     queryKey: ['matching-contractors', complianceType, postcode],
-     queryFn: async () => {
-       const { data: membership } = await supabase
-         .from('memberships')
-         .select('org_id')
-         .limit(1)
-         .single();
- 
-       if (!membership) return [];
- 
-       const { data, error } = await supabase
-         .rpc('find_matching_contractors', {
-           p_org_id: membership.org_id,
-           p_compliance_type: complianceType,
-           p_postcode: postcode,
-         });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useMatchingContractors(complianceType: string, postcode: string) {
+  return useQuery({
+    queryKey: ['matching-contractors', complianceType, postcode],
+    queryFn: async () => {
+      const orgId = await fetchUserOrgIdOrNull();
+      if (!orgId) return [];
+
+      const { data, error } = await supabase
+        .rpc('find_matching_contractors', {
+          p_org_id: orgId,
+          p_compliance_type: complianceType,
+          p_postcode: postcode,
+        });
  
        if (error) throw error;
        return data as MatchingContractor[];
@@ -282,28 +289,24 @@ export function useContractorJobs(filters?: {
    const { toast } = useToast();
  
    return useMutation({
-    mutationFn: async (job: {
+   mutationFn: async (job: {
       propertyId?: string;
       propertyV2Id?: string;
       complianceItemId?: string;
       contractorId?: string;
       jobType: string;
       description?: string;
-      requestMessage?: string;
+     requestMessage?: string;
      priority?: JobPriority;
     }) => {
-       const { data: membership } = await supabase
-         .from('memberships')
-         .select('org_id')
-         .limit(1)
-         .single();
- 
-       const { data: { user } } = await supabase.auth.getUser();
- 
+      const orgId = await fetchUserOrgId();
+
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { data, error } = await supabase
           .from('contractor_jobs')
           .insert({
-            org_id: membership!.org_id,
+            org_id: orgId,
             property_id: job.propertyId || null,
             property_v2_id: job.propertyV2Id || null,
             compliance_item_id: job.complianceItemId || null,

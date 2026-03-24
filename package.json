@@ -8,12 +8,15 @@
     "build": "vite build",
     "build:analyze": "VITE_ANALYZE=true vite build",
     "build:dev": "vite build --mode development",
-    "lint": "eslint .",
+    "check:edge": "node scripts/check-edge-functions.mjs",
+    "lint": "eslint src e2e scripts playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.ts eslint.config.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:smoke": "playwright test e2e/smoke.spec.ts e2e/route-guards.spec.ts e2e/invite-pages.spec.ts e2e/shared-document.spec.ts",
+    "e2e:ui": "playwright test --ui",
+    "verify": "npm run lint && npm test && npm run build && npm run check:edge"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -61,7 +64,7 @@
     "embla-carousel-react": "^8.6.0",
     "file-saver": "^2.0.5",
     "input-otp": "^1.4.2",
-    "jspdf": "^4.0.0",
+    "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
@@ -78,14 +81,13 @@
     "react-leaflet-cluster": "^4.0.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.9",
-    "react-router-dom": "^6.30.1",
+    "react-router-dom": "^6.30.3",
     "recharts": "^2.15.4",
     "rollup-plugin-visualizer": "^5.14.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "vite-plugin-pwa": "^1.2.0",
     "web-vitals": "^4.2.4",
     "zod": "^3.25.76"
   },
@@ -109,7 +111,7 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
-    "vite": "^5.4.19",
+    "vite": "^5.4.21",
     "vitest": "^3.2.4"
   }
 }

@@ -48,9 +48,8 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -58,7 +57,7 @@ serve(async (req) => {
     }
 
     // Rate limit check
-    const userId = claimsData.claims.sub as string;
+    const userId = userData.user.id;
     const rateLimit = await checkRateLimit(userId, 'portfolio-chat', 30, 60);
     if (!rateLimit.allowed) {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);

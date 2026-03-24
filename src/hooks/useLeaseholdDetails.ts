@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
 export interface LeaseholdDetails {
@@ -25,20 +25,23 @@ export interface LeaseholdDetails {
 }
 
 export function useLeaseholdDetails(propertyId?: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['leasehold-details', propertyId],
+    queryKey: ['leasehold-details', orgId, propertyId],
     queryFn: async () => {
-      if (!propertyId) return null;
+      if (!propertyId || !orgId) return null;
       const { data, error } = await supabase
         .from('leasehold_details')
         .select('*')
+        .eq('org_id', orgId)
         .eq('property_id', propertyId)
         .maybeSingle();
 
       if (error) throw error;
       return data as LeaseholdDetails | null;
     },
-    enabled: !!propertyId,
+    enabled: !!propertyId && !!orgId,
   });
 }
 

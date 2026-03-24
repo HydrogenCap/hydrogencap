@@ -36,8 +36,12 @@ serve(async (req: Request) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
+
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error("Unauthorized");
 
     const ReminderSchema = z.object({
@@ -53,28 +57,51 @@ serve(async (req: Request) => {
     if ("error" in parsed) return parsed.error;
     const { rentScheduleId, tenancyId, reminderType, customMessage } = parsed.data;
 
-    // Get schedule item with tenant info
     const { data: scheduleItem, error: scheduleError } = await supabase
       .from("rent_schedule")
-      .select("id, due_date, rent_amount, amount_outstanding, payment_reference")
+      .select("id, org_id, tenancy_id, due_date, rent_amount, amount_outstanding, payment_reference")
       .eq("id", rentScheduleId)
       .single();
     if (scheduleError || !scheduleItem) throw new Error("Rent schedule item not found");
+    if (scheduleItem.tenancy_id !== tenancyId) throw new Error("Rent schedule does not match tenancy");
 
-    // Get tenancy with tenant and property
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("org_id, role")
+      .eq("user_id", user.id)
+      .eq("org_id", scheduleItem.org_id)
+      .maybeSingle();
+
+    if (!membership?.org_id) throw new Error("Access denied");
+    if (membership.role === "viewer") throw new Error("Viewers cannot send rent reminders");
+
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
       .select(`
         id,
+        org_id,
         tenant:tenants(id, first_name, last_name, email, phone),
         property:properties(id, address_line, postcode)
       `)
       .eq("id", tenancyId)
       .single();
     if (tenancyError || !tenancy) throw new Error("Tenancy not found");
+    if (tenancy.org_id !== membership.org_id) throw new Error("Access denied");
 
-    const tenant = (tenancy as any).tenant;
-    const property = (tenancy as any).property;
+    const tenancyRelations = tenancy as unknown as {
+      tenant:
+        | { first_name: string; last_name: string; email: string | null }
+        | Array<{ first_name: string; last_name: string; email: string | null }>;
+      property:
+        | { id: string; address_line: string; postcode: string | null }
+        | Array<{ id: string; address_line: string; postcode: string | null }>;
+    };
+    const tenant = Array.isArray(tenancyRelations.tenant)
+      ? tenancyRelations.tenant[0]
+      : tenancyRelations.tenant;
+    const property = Array.isArray(tenancyRelations.property)
+      ? tenancyRelations.property[0]
+      : tenancyRelations.property;
 
     if (!tenant?.email) throw new Error("Tenant has no email address");
 
@@ -82,7 +109,6 @@ serve(async (req: Request) => {
     const propertyAddress = `${property.address_line}${property.postcode ? `, ${property.postcode}` : ""}`;
     const amount = scheduleItem.amount_outstanding || scheduleItem.rent_amount;
 
-    // Build email subject and body
     const dueDate = new Date(scheduleItem.due_date);
     const now = new Date();
     const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -92,36 +118,36 @@ serve(async (req: Request) => {
 
     if (customMessage) {
       subject = reminderType === "overdue"
-        ? `URGENT: Overdue Rent Payment — ${propertyAddress}`
+        ? `URGENT: Overdue Rent Payment - ${propertyAddress}`
         : reminderType === "due_date"
-        ? `Rent Payment Due Today — ${propertyAddress}`
-        : `Upcoming Rent Payment — ${propertyAddress}`;
+        ? `Rent Payment Due Today - ${propertyAddress}`
+        : `Upcoming Rent Payment - ${propertyAddress}`;
       body = customMessage.replace(/\n/g, "<br>");
     } else {
       switch (reminderType) {
         case "overdue":
-          subject = `URGENT: Overdue Rent Payment — ${propertyAddress}`;
+          subject = `URGENT: Overdue Rent Payment - ${propertyAddress}`;
           body = `
             <p>Dear ${tenantName},</p>
-            <p>Your rent payment of <strong>£${amount.toLocaleString()}</strong> is now <strong>${daysOverdue} day${daysOverdue !== 1 ? "s" : ""}</strong> overdue.</p>
+            <p>Your rent payment of <strong>GBP ${amount.toLocaleString()}</strong> is now <strong>${daysOverdue} day${daysOverdue !== 1 ? "s" : ""}</strong> overdue.</p>
             <p>Please contact us immediately to arrange payment or discuss a payment plan.</p>
-            <p><strong>Outstanding Amount:</strong> £${amount.toLocaleString()}<br>
+            <p><strong>Outstanding Amount:</strong> GBP ${amount.toLocaleString()}<br>
             <strong>Original Due Date:</strong> ${formatDate(dueDate)}</p>
             <p>Thank you</p>`;
           break;
         case "due_date":
-          subject = `Rent Payment Due Today — ${propertyAddress}`;
+          subject = `Rent Payment Due Today - ${propertyAddress}`;
           body = `
             <p>Dear ${tenantName},</p>
-            <p>Your rent payment of <strong>£${amount.toLocaleString()}</strong> is due today.</p>
+            <p>Your rent payment of <strong>GBP ${amount.toLocaleString()}</strong> is due today.</p>
             <p>Please make payment as soon as possible.</p>
             <p>Thank you</p>`;
           break;
         default:
-          subject = `Upcoming Rent Payment — ${propertyAddress}`;
+          subject = `Upcoming Rent Payment - ${propertyAddress}`;
           body = `
             <p>Dear ${tenantName},</p>
-            <p>This is a friendly reminder that your rent payment of <strong>£${amount.toLocaleString()}</strong> will be due on <strong>${formatDate(dueDate)}</strong>.</p>
+            <p>This is a friendly reminder that your rent payment of <strong>GBP ${amount.toLocaleString()}</strong> will be due on <strong>${formatDate(dueDate)}</strong>.</p>
             <p>Please ensure payment is made on time.</p>
             <p>Thank you</p>`;
       }
@@ -141,53 +167,42 @@ serve(async (req: Request) => {
       html: emailHtml,
     });
 
-    console.log("Reminder email sent:", emailResult);
+    await supabase.from("payment_reminders").insert({
+      org_id: membership.org_id,
+      rent_schedule_id: rentScheduleId,
+      tenancy_id: tenancyId,
+      reminder_type: reminderType,
+      recipient_email: tenant.email,
+      recipient_name: tenantName,
+      status: "sent",
+      resend_id: emailResult?.data?.id || null,
+    });
 
-    // Get org_id
-    const { data: orgData } = await supabase
-      .from("memberships")
-      .select("org_id")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
+    const updateField = reminderType === "overdue" ? "warning_sent_at" : "reminder_sent_at";
+    await supabase
+      .from("rent_schedule")
+      .update({ [updateField]: new Date().toISOString() })
+      .eq("id", rentScheduleId);
 
-    if (orgData?.org_id) {
-      // Record reminder
-      await supabase.from("payment_reminders").insert({
-        org_id: orgData.org_id,
-        rent_schedule_id: rentScheduleId,
-        tenancy_id: tenancyId,
-        reminder_type: reminderType,
-        recipient_email: tenant.email,
-        recipient_name: tenantName,
-        status: "sent",
-        resend_id: emailResult?.data?.id || null,
-      });
-
-      // Update rent_schedule reminder tracking
-      const updateField = reminderType === "overdue" ? "warning_sent_at" : "reminder_sent_at";
-      await supabase.from("rent_schedule").update({ [updateField]: new Date().toISOString() }).eq("id", rentScheduleId);
-
-      // Log activity
-      await supabase.from("activity_log").insert({
-        org_id: orgData.org_id,
-        property_id: property.id,
-        entry_type: "rent_reminder_sent",
-        title: `${reminderType.replace("_", " ")} reminder sent to ${tenantName}`,
-        body: `Rent reminder for £${amount.toLocaleString()} sent to ${tenant.email}`,
-        metadata: { tenancy_id: tenancyId, reminder_type: reminderType, resend_id: emailResult?.data?.id },
-      });
-    }
+    await supabase.from("activity_log").insert({
+      org_id: membership.org_id,
+      property_id: property.id,
+      entry_type: "rent_reminder_sent",
+      title: `${reminderType.replace("_", " ")} reminder sent to ${tenantName}`,
+      body: `Rent reminder for GBP ${amount.toLocaleString()} sent to ${tenant.email}`,
+      metadata: { tenancy_id: tenancyId, reminder_type: reminderType, resend_id: emailResult?.data?.id },
+    });
 
     return new Response(
       JSON.stringify({ success: true, sentTo: tenant.email, resendId: emailResult?.data?.id }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   }
 });

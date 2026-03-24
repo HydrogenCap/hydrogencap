@@ -31,8 +31,7 @@ export function PhotoUpload({ folder, onUpload, existingUrls = [], maxFiles = 5 
         const path = `${folder}/${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from('maintenance-photos').upload(path, file);
         if (error) throw error;
-        const { data } = supabase.storage.from('maintenance-photos').getPublicUrl(path);
-        newUrls.push(data.publicUrl);
+        newUrls.push(path);
       }
       const updated = [...urls, ...newUrls];
       setUrls(updated);

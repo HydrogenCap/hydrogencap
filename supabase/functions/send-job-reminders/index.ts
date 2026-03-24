@@ -26,12 +26,57 @@
  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
  const resend = new Resend(RESEND_API_KEY);
  
- interface ReminderResult {
-   jobId: string;
-   type: 'contractor_reminder' | 'owner_reminder';
-   sent: boolean;
-   error?: string;
- }
+interface ReminderResult {
+  jobId: string;
+  type: 'contractor_reminder' | 'owner_reminder';
+  sent: boolean;
+  error?: string;
+}
+
+interface RequestAuthorization {
+  mode: 'cron' | 'user';
+  manageableOrgIds: string[] | null;
+}
+
+async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
+  const authHeader = req.headers.get('Authorization');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return { mode: 'cron', manageableOrgIds: null };
+  }
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw new Error('Unauthorized');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  const { data: memberships, error: membershipError } = await supabase
+    .from('memberships')
+    .select('org_id, role')
+    .eq('user_id', user.id)
+    .in('role', ['owner', 'admin']);
+
+  if (membershipError) {
+    throw membershipError;
+  }
+
+  const manageableOrgIds = [...new Set((memberships || []).map((membership) => membership.org_id))];
+  if (manageableOrgIds.length === 0) {
+    throw new Error('Access denied');
+  }
+
+  return { mode: 'user', manageableOrgIds };
+}
  
  serve(async (req) => {
    const corsHeaders = getCorsHeaders(req);
@@ -40,6 +85,7 @@
    }
  
    try {
+     const authorization = await authorizeRequest(req);
      const results: ReminderResult[] = [];
  
      // 1. Find jobs requested but no response in 3+ days
@@ -48,7 +94,7 @@
  
      console.log('Finding pending jobs older than:', threeDaysAgo.toISOString());
  
-     const { data: pendingJobs, error: pendingError } = await supabase
+     let pendingJobsQuery = supabase
        .from('contractor_jobs')
        .select(`
          *,
@@ -57,6 +103,12 @@
        `)
        .eq('status', 'requested')
        .lt('requested_at', threeDaysAgo.toISOString());
+
+     if (authorization.mode === 'user' && authorization.manageableOrgIds) {
+       pendingJobsQuery = pendingJobsQuery.in('org_id', authorization.manageableOrgIds);
+     }
+
+     const { data: pendingJobs, error: pendingError } = await pendingJobsQuery;
  
      if (pendingError) {
        console.error('Error fetching pending jobs:', pendingError);
@@ -105,7 +157,7 @@
  
      console.log('Finding jobs booked for:', tomorrowStr);
  
-     const { data: tomorrowJobs, error: tomorrowError } = await supabase
+     let tomorrowJobsQuery = supabase
        .from('contractor_jobs')
        .select(`
          *,
@@ -115,6 +167,12 @@
        `)
        .eq('status', 'booked')
        .eq('booked_date', tomorrowStr);
+
+     if (authorization.mode === 'user' && authorization.manageableOrgIds) {
+       tomorrowJobsQuery = tomorrowJobsQuery.in('org_id', authorization.manageableOrgIds);
+     }
+
+     const { data: tomorrowJobs, error: tomorrowError } = await tomorrowJobsQuery;
  
      if (tomorrowError) {
        console.error('Error fetching tomorrow jobs:', tomorrowError);
@@ -172,9 +230,11 @@
      });
  
    } catch (error: any) {
+     const message = error instanceof Error ? error.message : 'Unknown error';
+     const status = message === 'Unauthorized' ? 401 : message === 'Access denied' ? 403 : 500;
      console.error('Error in send-job-reminders:', error);
-     return new Response(JSON.stringify({ error: error.message }), {
-       status: 500,
+     return new Response(JSON.stringify({ error: message }), {
+       status,
        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
      });
    }

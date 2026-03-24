@@ -241,7 +241,7 @@ export function AutofillSuggestionsModal({
             <div className="mt-2">
               {isDropdown ? (
                 <Select
-                  value={String(state.editedValue ?? '')}
+                  value={state.editedValue || ''}
                   onValueChange={(v) => handleValueChange(suggestion.id, v)}
                   disabled={state.rejected}
                 >
@@ -258,7 +258,7 @@ export function AutofillSuggestionsModal({
                 </Select>
               ) : (
                 <Input
-                  value={String(state.editedValue ?? '')}
+                  value={state.editedValue ?? ''}
                   onChange={(e) => handleValueChange(suggestion.id, e.target.value)}
                   disabled={state.rejected}
                   className="max-w-xs h-9"

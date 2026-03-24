@@ -21,6 +21,50 @@ function getCorsHeaders(req: Request) {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+interface RequestAuthorization {
+  mode: "cron" | "user";
+  manageableOrgIds: string[] | null;
+}
+
+async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const authHeader = req.headers.get("Authorization");
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return { mode: "cron", manageableOrgIds: null };
+  }
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  const token = authHeader.replace("Bearer ", "");
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseAuth.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: memberships, error: membershipError } = await supabaseAuth
+    .from("memberships")
+    .select("org_id, role")
+    .eq("user_id", user.id)
+    .in("role", ["owner", "admin"]);
+
+  if (membershipError) throw membershipError;
+
+  const manageableOrgIds = [...new Set((memberships || []).map((membership) => membership.org_id))];
+  if (manageableOrgIds.length === 0) {
+    throw new Error("Access denied");
+  }
+
+  return { mode: "user", manageableOrgIds };
+}
+
 function daysBetween(a: string, b: string): number {
   const msPerDay = 86400000;
   return Math.floor((new Date(b).getTime() - new Date(a).getTime()) / msPerDay);
@@ -39,28 +83,7 @@ serve(async (req) => {
   }
 
   try {
-    // Auth: accept cron secret OR user bearer token
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    const authHeader = req.headers.get("Authorization");
-
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      // authorized as cron
-    } else if (authHeader?.startsWith("Bearer ")) {
-      const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!);
-      const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabaseAuth.auth.getUser(token);
-      if (authError) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
+    const authorization = await authorizeRequest(req);
 
     console.log("Starting auto-compliance-pipeline scan");
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -78,7 +101,7 @@ serve(async (req) => {
     const futureDate = new Date(Date.now() + maxLeadDays * 86400000).toISOString().slice(0, 10);
 
     // 2. Fetch expiring documents (current, with expiry in the window)
-    const { data: expiringDocs, error: docErr } = await supabase
+    let docsQuery = supabase
       .from("compliance_documents_v2")
       .select(`
         id, property_id, document_type, expiry_date, org_id,
@@ -88,6 +111,12 @@ serve(async (req) => {
       .not("expiry_date", "is", null)
       .lte("expiry_date", futureDate)
       .order("expiry_date", { ascending: true });
+
+    if (authorization.mode === "user" && authorization.manageableOrgIds) {
+      docsQuery = docsQuery.in("org_id", authorization.manageableOrgIds);
+    }
+
+    const { data: expiringDocs, error: docErr } = await docsQuery;
 
     if (docErr) throw docErr;
 
@@ -190,11 +219,17 @@ serve(async (req) => {
     }
 
     // 8. Update priorities on existing open tasks based on current days until due
-    const { data: openTasks } = await supabase
+    let openTasksQuery = supabase
       .from("compliance_tasks")
       .select("id, due_date, priority")
       .in("status", ["open", "in_progress", "waiting", "pending", "contractor_assigned", "contractor_requested", "awaiting_upload"])
       .not("due_date", "is", null);
+
+    if (authorization.mode === "user" && authorization.manageableOrgIds) {
+      openTasksQuery = openTasksQuery.in("org_id", authorization.manageableOrgIds);
+    }
+
+    const { data: openTasks } = await openTasksQuery;
 
     let prioritiesUpdated = 0;
     for (const task of openTasks || []) {
@@ -222,8 +257,9 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in auto-compliance-pipeline:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";
+    const status = msg === "Unauthorized" ? 401 : msg === "Access denied" ? 403 : 500;
     return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
+      status,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }

@@ -1,22 +1,6 @@
  import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
- 
- const ALLOWED_ORIGINS = [
-   "https://tenureiq.com",
-   "https://www.tenureiq.com",
-   "https://hydrogencapital.lovable.app",
-   Deno.env.get("ALLOWED_ORIGIN"),
- ].filter(Boolean) as string[];
-
- function getCorsHeaders(req: Request) {
-   const origin = req.headers.get("Origin") ?? "";
-   const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-   return {
-     "Access-Control-Allow-Origin": allowedOrigin,
-     "Access-Control-Allow-Headers":
-       "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-   };
- }
+ import { getCorsHeaders } from "../_shared/cors.ts";
  
  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
  const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -168,6 +152,21 @@
        console.error("Property not found:", propError);
        return new Response(JSON.stringify({ error: "Property not found" }), { 
          status: 404,
+         headers: { ...corsHeaders, "Content-Type": "application/json" },
+       });
+     }
+
+     const { data: membership } = await supabase
+       .from("memberships")
+       .select("id")
+       .eq("user_id", userData.user.id)
+       .eq("org_id", property.org_id)
+       .in("role", ["owner", "admin"])
+       .maybeSingle();
+
+     if (!membership) {
+       return new Response(JSON.stringify({ error: "Access denied" }), {
+         status: 403,
          headers: { ...corsHeaders, "Content-Type": "application/json" },
        });
      }

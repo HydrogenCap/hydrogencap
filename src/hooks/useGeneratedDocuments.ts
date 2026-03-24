@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 
 export interface GeneratedDocument {
   id: string;
@@ -16,17 +16,23 @@ export interface GeneratedDocument {
 }
 
 export function useGeneratedDocuments() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['generated_documents'],
+    queryKey: ['generated_documents', orgId],
     queryFn: async () => {
+      if (!orgId) return [];
+
       const { data, error } = await supabase
         .from('generated_documents')
         .select('*')
+        .eq('org_id', orgId)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
       return data as GeneratedDocument[];
     },
+    enabled: !!orgId,
   });
 }
 
@@ -44,15 +50,15 @@ export function useCreateGeneratedDocument() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('generated_documents')
-        .insert([{
+        .insert({
           org_id: orgId,
           template_id: doc.template_id,
           property_id: doc.property_id ?? null,
           tenancy_id: doc.tenancy_id ?? null,
           tenant_id: doc.tenant_id ?? null,
-          generated_data: (doc.generated_data ?? null) as any,
+          generated_data: doc.generated_data ?? null,
           created_by: user?.id ?? null,
-        }])
+        })
         .select()
         .single();
       if (error) throw error;

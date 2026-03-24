@@ -12,7 +12,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Plus, FileText, Check, Banknote } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   useDistributions,
   useDistributionAllocations,
@@ -21,6 +20,7 @@ import {
   useMarkAllocationPaid,
   Distribution,
 } from '@/hooks/useDistributions';
+import { useUserOrg } from '@/hooks/useUserOrg';
 import { formatGBP, formatGBPDecimal } from '@/lib/calculations';
 import { LoadingState } from '@/components/common/LoadingState';
 import { format } from 'date-fns';
@@ -175,7 +175,7 @@ function AllocationRow({ dist }: { dist: Distribution }) {
 }
 
 function CreateDistributionDialog() {
-  const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
   const [open, setOpen] = useState(false);
   const [entityId, setEntityId] = useState('');
   const [periodLabel, setPeriodLabel] = useState(getQuarterSuggestion().label);
@@ -184,18 +184,6 @@ function CreateDistributionDialog() {
   const [distributionAmount, setDistributionAmount] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
   const createDist = useCreateDistribution();
-
-  // Fetch entities
-  const { data: membership } = useQuery({
-    queryKey: ['user-membership', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from('memberships').select('org_id').eq('user_id', user!.id).limit(1).single();
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const orgId = membership?.org_id;
 
   const { data: entities } = useQuery({
     queryKey: ['entities-for-dist', orgId],

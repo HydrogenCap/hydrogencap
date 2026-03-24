@@ -134,7 +134,7 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
         dissolved: 'dissolved',
         liquidation: 'dissolved',
       };
-      updates.status = (statusMap[v.ch_company_status] || v.local_status) as LegalEntity['status'];
+      updates.status = statusMap[v.ch_company_status] || v.local_status;
     }
     try {
       await updateEntity.mutateAsync(updates);

@@ -8,7 +8,7 @@ export type { PropertyWithFinancials } from './useProperties';
 
 type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
 type LoanFacilityRow = Database['public']['Tables']['loan_facilities']['Row'];
-type PropertyAnnualPerformanceRow = Database['public']['Views']['property_annual_performance']['Row'];
+type PropertyAnnualPerformanceRow = Database['public']['Tables']['property_annual_performance']['Row'];
 type TenancyAgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
 type V1Loan = PropertyWithFinancials['loans'][number];
 type V1Income = PropertyWithFinancials['income'][number];
@@ -78,7 +78,7 @@ export function usePropertiesCompat() {
       const agreementsByProp = new Map<string, TenancyAgreementRow[]>();
       for (const agreement of agreementsRes.data || []) {
         const agreements = agreementsByProp.get(agreement.property_id) || [];
-        agreements.push(agreement as unknown as TenancyAgreementRow);
+        agreements.push(agreement);
         agreementsByProp.set(agreement.property_id, agreements);
       }
 
@@ -138,7 +138,7 @@ export function usePropertiesCompat() {
           // â”€â”€â”€ Extra V2 context â”€â”€â”€
           __v2_entity_id: property.entity_id,
           __v2_entity_name: legalEntity?.entity_name || null,
-        } as unknown as PropertyCompatWithFinancials;
+        } as PropertyCompatWithFinancials;
       });
     },
     staleTime: 5 * 60 * 1000,
@@ -147,9 +147,10 @@ export function usePropertiesCompat() {
 
 // â”€â”€â”€ Mappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function mapLoanToV1(loan: LoanFacilityRow) {
+function mapLoanToV1(loan: LoanFacilityRow): V1Loan {
   return {
     id: loan.id,
+    org_id: loan.org_id,
     property_id: loan.property_id,
     lender: loan.lender_id,
     lender_name: null,
@@ -167,40 +168,42 @@ function mapLoanToV1(loan: LoanFacilityRow) {
     current_ltv: loan.current_ltv,
     facility_type: loan.facility_type,
     status: loan.status,
-  } as any;
+  };
 }
 
-function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow) {
+function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Income {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-income-${propertyId}`,
+    org_id: null,
     property_id: propertyId,
     year: currentYear,
     annual_rent_gbp: performance.annual_rent_received,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  } as any;
+    created_at: null,
+  };
 }
 
-function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow) {
+function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Costs {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-costs-${propertyId}`,
+    org_id: null,
     property_id: propertyId,
     year: currentYear,
     insurance_gbp_manual: null,
     management_gbp_manual: null,
+    maintenance_gbp_manual: null,
     utilities_gbp_manual: null,
     ground_rent_gbp_manual: null,
     __total_annual_costs: performance.annual_costs,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  } as any;
+    created_at: null,
+  };
 }
 
 function mapAgreementToTenancy(agreement: TenancyAgreementRow): V1Tenancy {
   return {
     id: agreement.id,
+    org_id: null,
     tenant_id: agreement.tenant_id,
     room_id: agreement.room_id,
     property_id: agreement.property_id,
@@ -208,6 +211,8 @@ function mapAgreementToTenancy(agreement: TenancyAgreementRow): V1Tenancy {
     end_date: agreement.initial_end_date,
     rent_amount_pcm: agreement.rent_amount_pcm,
     rent_due_day: 1,
-    status: (agreement.status === 'notice_period' ? 'notice' : agreement.status) as V1Tenancy['status'],
-  } as V1Tenancy;
+    status: agreement.status === 'notice_period' ? 'notice' : agreement.status,
+    created_at: null,
+    updated_at: null,
+  };
 }

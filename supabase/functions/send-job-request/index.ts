@@ -167,14 +167,6 @@
        });
      }
 
-     // Verify user belongs to the same org as the job
-     const { data: membership } = await supabase
-       .from('memberships')
-       .select('org_id')
-       .eq('user_id', user.id)
-       .limit(1)
-       .maybeSingle();
-
      console.log('Processing job request:', jobId);
  
     // Get job details with related data
@@ -197,9 +189,22 @@
        });
      }
 
-     // Verify the job belongs to the user's org
-     if (membership && job.org_id !== membership.org_id) {
+     const { data: membership } = await supabase
+       .from('memberships')
+       .select('org_id, role')
+       .eq('user_id', user.id)
+       .eq('org_id', job.org_id)
+       .maybeSingle();
+
+     if (!membership) {
        return new Response(JSON.stringify({ error: 'Access denied' }), {
+         status: 403,
+         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+       });
+     }
+
+     if (membership.role === 'viewer') {
+       return new Response(JSON.stringify({ error: 'Viewers cannot send job requests' }), {
          status: 403,
          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
        });

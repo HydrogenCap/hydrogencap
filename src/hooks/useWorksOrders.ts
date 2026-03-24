@@ -133,10 +133,9 @@ export function useCreateWorksOrder() {
         .insert({
           ...order,
           org_id: orgId,
-          wo_number: orderNumber ?? '',
-          entity_id: (order as any).entity_id ?? orgId,
+          order_number: orderNumber,
           status: 'draft',
-        } as any)
+        })
         .select()
         .single();
 

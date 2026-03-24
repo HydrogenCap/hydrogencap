@@ -6,7 +6,7 @@ import { usePortalInvestorData } from '@/hooks/usePortalInvestorData';
 
 interface PortalProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermission?: 'compliance' | 'investor';
+  requiredPermission?: 'shareholder' | 'compliance' | 'investor';
 }
 
 export function PortalProtectedRoute({ children, requiredPermission }: PortalProtectedRouteProps) {
@@ -34,13 +34,19 @@ export function PortalProtectedRoute({ children, requiredPermission }: PortalPro
   }
 
   const hasRequiredPermission =
-    requiredPermission === 'compliance'
+    requiredPermission === 'shareholder'
+      ? isShareholderUser
+      : requiredPermission === 'compliance'
       ? canViewCompliance
       : requiredPermission === 'investor'
         ? isInvestorUser
         : true;
 
   if (!hasRequiredPermission) {
+    if (isInvestorUser) {
+      return <Navigate to="/portal/investments" replace />;
+    }
+
     return <Navigate to="/portal" replace />;
   }
 
