@@ -89,7 +89,7 @@ function PropertyEditPage() {
   const [suspiciousChange, setSuspiciousChange] = useState(false);
 
 
-  const form = useForm<PropertyFormData>({
+  const form = useForm({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       address_line: '',
