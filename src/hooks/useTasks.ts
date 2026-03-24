@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Task {
@@ -26,10 +26,11 @@ export interface Task {
 }
 
 export function useTasks(filters?: { status?: string; propertyId?: string; entityId?: string }) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['tasks', filters],
+    queryKey: ['tasks', orgId, filters],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       let query = supabase
         .from('tasks')
         .select('*')
@@ -50,14 +51,16 @@ export function useTasks(filters?: { status?: string; propertyId?: string; entit
       if (error) throw error;
       return data as Task[];
     },
+    enabled: !!orgId,
   });
 }
 
 export function useTaskCounts() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['task-counts'],
+    queryKey: ['task-counts', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('tasks')
         .select('status')
@@ -71,6 +74,7 @@ export function useTaskCounts() {
         total: data?.length || 0,
       };
     },
+    enabled: !!orgId,
   });
 }
 

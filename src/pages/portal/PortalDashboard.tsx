@@ -415,7 +415,7 @@ export default function PortalDashboard() {
                           <div className="text-xs text-muted-foreground">{property.city}, {property.postcode}</div>
                         </td>
                         <td className="py-3 px-2 capitalize">
-                          {property.property_type?.replace('_', ' ') || '—'}
+                          {property.property_type?.replace('_', ' ') || '-'}
                         </td>
                         {canViewFinancials && (
                           <>
@@ -442,7 +442,7 @@ export default function PortalDashboard() {
                 Distributions
               </CardTitle>
               <CardDescription>
-                Recent quarterly distributions — Total received: <span className="font-medium text-foreground">{formatGBP(totalDistributed)}</span>
+                Recent quarterly distributions - Total received: <span className="font-medium text-foreground">{formatGBP(totalDistributed)}</span>
               </CardDescription>
             </CardHeader>
             <CardContent>

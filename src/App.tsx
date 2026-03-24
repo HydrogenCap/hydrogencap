@@ -553,7 +553,7 @@ const App = () => (
             <Route
               path="/portal"
               element={
-                <PortalProtectedRoute>
+                <PortalProtectedRoute requiredPermission="shareholder">
                   <PortalDashboard />
                 </PortalProtectedRoute>
               }
@@ -561,7 +561,7 @@ const App = () => (
             <Route
               path="/portal/properties"
               element={
-                <PortalProtectedRoute>
+                <PortalProtectedRoute requiredPermission="shareholder">
                   <PortalProperties />
                 </PortalProtectedRoute>
               }

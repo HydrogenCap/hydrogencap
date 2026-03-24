@@ -1,23 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-
-const ALLOWED_ORIGINS = [
-  "https://tenureiq.com",
-  "https://www.tenureiq.com",
-  "https://hydrogencapital.lovable.app",
-  Deno.env.get("ALLOWED_ORIGIN"),
-].filter(Boolean) as string[];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 interface ProcessTenancyRequest {
   fileUrl: string;
@@ -26,38 +10,56 @@ interface ProcessTenancyRequest {
   propertyAddress: string;
 }
 
+function extractDocumentsStoragePath(fileUrl: string): string | null {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+
+  if (!fileUrl) {
+    return null;
+  }
+
+  if (!fileUrl.startsWith("http")) {
+    return fileUrl;
+  }
+
+  if (!fileUrl.startsWith(supabaseUrl)) {
+    return null;
+  }
+
+  try {
+    const url = new URL(fileUrl);
+    const path = url.pathname;
+    const patterns = [
+      "/storage/v1/object/sign/documents/",
+      "/storage/v1/object/signed/documents/",
+      "/storage/v1/object/public/documents/",
+      "/storage/v1/object/documents/",
+    ];
+
+    for (const pattern of patterns) {
+      const index = path.indexOf(pattern);
+      if (index >= 0) {
+        return decodeURIComponent(path.slice(index + pattern.length));
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 async function fetchFileAsDataUrl(
-  fileUrl: string,
-  authHeader: string
+  storagePath: string,
 ): Promise<{ dataUrl: string; mimeType: string }> {
-  // For Supabase storage URLs, use the service role to download private files
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-  let response: Response;
-
-  if (fileUrl.includes(supabaseUrl) && fileUrl.includes("/storage/")) {
-    // Extract bucket and path from the URL
-    // URL format: .../storage/v1/object/public|sign/bucket/path
-    const storageMatch = fileUrl.match(/\/storage\/v1\/object\/(?:public|sign(?:ed)?)\/([^/]+)\/(.+)/);
-    if (storageMatch) {
-      const [, bucket, path] = storageMatch;
-      const downloadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${decodeURIComponent(path)}`;
-      response = await fetch(downloadUrl, {
-        headers: {
-          Authorization: `Bearer ${serviceRoleKey}`,
-          apikey: serviceRoleKey,
-        },
-      });
-    } else {
-      // Try fetching with the user's auth token as fallback
-      response = await fetch(fileUrl, {
-        headers: { Authorization: authHeader },
-      });
-    }
-  } else {
-    response = await fetch(fileUrl);
-  }
+  const downloadUrl = `${supabaseUrl}/storage/v1/object/documents/${storagePath}`;
+  const response = await fetch(downloadUrl, {
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      apikey: serviceRoleKey,
+    },
+  });
 
   if (!response.ok) throw new Error(`Failed to fetch file: ${response.status}`);
   const arrayBuffer = await response.arrayBuffer();
@@ -119,7 +121,33 @@ serve(async (req) => {
 
     console.log("Processing tenancy agreement for:", tenantName);
 
-    const { dataUrl } = await fetchFileAsDataUrl(fileUrl, authHeader);
+    const storagePath = extractDocumentsStoragePath(fileUrl);
+    if (!storagePath) {
+      return new Response(JSON.stringify({ error: "Only workspace document storage files are supported" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const orgPrefix = storagePath.split("/")[0];
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: memberships, error: membershipError } = await adminClient
+      .from("memberships")
+      .select("org_id")
+      .eq("user_id", userData.user.id)
+      .eq("org_id", orgPrefix);
+
+    if (membershipError || !memberships || memberships.length === 0) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { dataUrl } = await fetchFileAsDataUrl(storagePath);
 
     const systemPrompt = `You are a UK property solicitor's assistant. Analyze this tenancy agreement PDF and extract the key terms.
 

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
 
 export interface Floorplan {
   id: string;
@@ -25,6 +26,15 @@ interface UploadFloorplanParams {
   notes?: string;
 }
 
+async function resolveFloorplanUrls<T extends { file_url: string }>(floorplans: T[]): Promise<T[]> {
+  return Promise.all(
+    floorplans.map(async (floorplan) => ({
+      ...floorplan,
+      file_url: await createSignedStorageUrl('floorplans', floorplan.file_url),
+    }))
+  );
+}
+
 export function useFloorplans(propertyId: string) {
   return useQuery({
     queryKey: ['floorplans', propertyId],
@@ -37,7 +47,7 @@ export function useFloorplans(propertyId: string) {
         .order('uploaded_at', { ascending: false });
 
       if (error) throw error;
-      return data as Floorplan[];
+      return resolveFloorplanUrls((data ?? []) as Floorplan[]);
     },
     enabled: !!propertyId,
   });
@@ -55,7 +65,9 @@ export function usePrimaryFloorplan(propertyId: string) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as Floorplan | null;
+      if (!data) return null;
+      const [resolvedFloorplan] = await resolveFloorplanUrls([data as Floorplan]);
+      return resolvedFloorplan;
     },
     enabled: !!propertyId,
   });
@@ -88,17 +100,12 @@ export function useUploadFloorplan() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('floorplans')
-        .getPublicUrl(storagePath);
-
       // Insert floorplan record
       const { data, error } = await supabase
         .from('floorplans')
         .insert({
           property_id: propertyId,
-          file_url: urlData.publicUrl,
+          file_url: storagePath,
           file_type: fileType,
           original_file_name: file.name,
           is_primary: isPrimary,
@@ -169,10 +176,8 @@ export function useDeleteFloorplan() {
 
   return useMutation({
     mutationFn: async ({ id, propertyId, fileUrl }: { id: string; propertyId: string; fileUrl: string }) => {
-      // Extract storage path from URL
-      const urlParts = fileUrl.split('/floorplans/');
-      if (urlParts.length > 1) {
-        const storagePath = urlParts[1];
+      const storagePath = extractStoragePath('floorplans', fileUrl);
+      if (storagePath) {
         await supabase.storage.from('floorplans').remove([storagePath]);
       }
 

@@ -1,22 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const ALLOWED_ORIGINS = [
-  "https://tenureiq.com",
-  "https://www.tenureiq.com",
-  "https://hydrogencapital.lovable.app",
-  Deno.env.get("ALLOWED_ORIGIN"),
-].filter(Boolean) as string[];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 // Field mapping from suggestion field_key to passport table column
 const FIELD_MAPPING: Record<string, string> = {
@@ -31,6 +15,18 @@ const FIELD_MAPPING: Record<string, string> = {
   living_rooms_communal: "living_rooms_communal",
   county: "county",
 };
+
+const ALLOWED_FIELD_KEYS = new Set(Object.keys(FIELD_MAPPING).concat("epc_rating"));
+
+interface PendingSuggestionRow {
+  id: string;
+  property_id: string;
+  field_key: string;
+  suggested_value: unknown;
+  confidence: number;
+  source_type: string;
+  source_ref: string | null;
+}
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -73,6 +69,73 @@ serve(async (req) => {
       });
     }
 
+    const { data: property, error: propertyError } = await supabaseClient
+      .from("properties")
+      .select("id, org_id")
+      .eq("id", property_id)
+      .maybeSingle();
+
+    if (propertyError || !property) {
+      return new Response(JSON.stringify({ error: "Property not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: membership } = await supabaseClient
+      .from("memberships")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("org_id", property.org_id)
+      .in("role", ["owner", "admin"])
+      .maybeSingle();
+
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Access denied" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const acceptedIds = Array.isArray(accepted_suggestions)
+      ? accepted_suggestions
+        .map((suggestion: { id?: unknown }) => suggestion?.id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+      : [];
+    const rejectedIds = Array.isArray(rejected_suggestion_ids)
+      ? rejected_suggestion_ids.filter((id: unknown): id is string => typeof id === "string" && id.length > 0)
+      : [];
+    const requestedSuggestionIds = Array.from(new Set([...acceptedIds, ...rejectedIds]));
+
+    const pendingSuggestions = new Map<string, PendingSuggestionRow>();
+    if (requestedSuggestionIds.length > 0) {
+      const { data: suggestions, error: suggestionsError } = await supabaseClient
+        .from("passport_autofill_suggestions")
+        .select("id, property_id, field_key, suggested_value, confidence, source_type, source_ref")
+        .eq("property_id", property_id)
+        .eq("status", "pending")
+        .in("id", requestedSuggestionIds);
+
+      if (suggestionsError) {
+        return new Response(JSON.stringify({ error: "Failed to validate suggestions" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      for (const suggestion of (suggestions || []) as PendingSuggestionRow[]) {
+        pendingSuggestions.set(suggestion.id, suggestion);
+      }
+
+      const invalidSuggestionIds = requestedSuggestionIds.filter((id) => !pendingSuggestions.has(id));
+      if (invalidSuggestionIds.length > 0) {
+        return new Response(JSON.stringify({ error: "One or more suggestions are invalid for this property" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // Get current passport data
     const { data: existingPassport } = await supabaseClient
       .from("property_passport")
@@ -94,26 +157,34 @@ serve(async (req) => {
       confidence: number;
     }> = [];
 
-    if (accepted_suggestions && Array.isArray(accepted_suggestions)) {
-      for (const suggestion of accepted_suggestions) {
-        const { id, field_key, value, source_type, source_ref, confidence } = suggestion;
+    if (acceptedIds.length > 0) {
+      for (const acceptedId of acceptedIds) {
+        const suggestion = pendingSuggestions.get(acceptedId);
+        if (!suggestion) continue;
+        const { id, field_key, suggested_value, source_type, source_ref, confidence } = suggestion;
         
         // Skip meta fields
         if (field_key === 'has_floorplan') continue;
+        if (!ALLOWED_FIELD_KEYS.has(field_key)) {
+          return new Response(JSON.stringify({ error: `Unsupported suggestion field: ${field_key}` }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
         
         const dbField = FIELD_MAPPING[field_key] || field_key;
         const oldValue = existingPassport?.[dbField] ?? null;
         
         // Only update if value is not null/undefined
-        if (value !== null && value !== undefined) {
-          passportUpdates[dbField] = value;
+        if (suggested_value !== null && suggested_value !== undefined) {
+          passportUpdates[dbField] = suggested_value;
           
           // Create audit entry
           auditEntries.push({
             property_id,
             field_key,
             old_value: oldValue,
-            new_value: value,
+            new_value: suggested_value,
             changed_by: user.id,
             change_reason: "ai_accept",
             source_type: source_type || "default",
@@ -137,8 +208,8 @@ serve(async (req) => {
     }
 
     // Process rejected suggestions
-    if (rejected_suggestion_ids && Array.isArray(rejected_suggestion_ids)) {
-      for (const suggestionId of rejected_suggestion_ids) {
+    if (rejectedIds.length > 0) {
+      for (const suggestionId of rejectedIds) {
         await supabaseClient
           .from("passport_autofill_suggestions")
           .update({
@@ -189,7 +260,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         updated_fields: Object.keys(passportUpdates).length,
-        rejected_count: rejected_suggestion_ids?.length || 0,
+        rejected_count: rejectedIds.length,
         passport: updatedPassport,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

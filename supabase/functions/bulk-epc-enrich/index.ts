@@ -1,22 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const ALLOWED_ORIGINS = [
-  "https://tenureiq.com",
-  "https://www.tenureiq.com",
-  "https://hydrogencapital.lovable.app",
-  Deno.env.get("ALLOWED_ORIGIN"),
-].filter(Boolean) as string[];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 interface EPCRecord {
   propertyId: string;
@@ -156,28 +140,40 @@ serve(async (req) => {
       );
     }
 
-    // Get user's org
-    const { data: membership } = await supabase
+    const { mode, orgId } = await req.json();
+
+    const { data: memberships, error: membershipError } = await supabase
       .from('memberships')
       .select('org_id')
       .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle();
+      .in('role', ['owner', 'admin']);
 
-    if (!membership?.org_id) {
+    if (membershipError || !memberships || memberships.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'No organization found' }),
+        JSON.stringify({ error: 'Owner or admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { mode } = await req.json();
+    const manageableOrgIds = memberships.map((membership) => membership.org_id);
+    const targetOrgId = typeof orgId === 'string' && orgId.length > 0
+      ? orgId
+      : manageableOrgIds.length === 1
+        ? manageableOrgIds[0]
+        : null;
+
+    if (!targetOrgId || !manageableOrgIds.includes(targetOrgId)) {
+      return new Response(
+        JSON.stringify({ error: 'A valid organization must be selected' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Fetch properties that need EPC data
     let query = supabase
       .from('properties')
       .select('id, address_line, postcode, epc_rating')
-      .eq('org_id', membership.org_id)
+      .eq('org_id', targetOrgId)
       .not('postcode', 'is', null);
 
     if (mode === 'missing-only') {
@@ -278,7 +274,7 @@ serve(async (req) => {
                 .from('compliance_items')
                 .insert({
                   property_id: property.id,
-                  org_id: membership.org_id,
+                  org_id: targetOrgId,
                   compliance_type: 'EPC',
                   expiry_date: epcData.expiryDate,
                   issue_date: issueDate,

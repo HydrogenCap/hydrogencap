@@ -19,11 +19,11 @@
    };
  }
  
- interface ComplianceItem {
-   id: string;
-   property_id: string;
-   compliance_type: string;
-   expiry_date: string;
+interface ComplianceItem {
+  id: string;
+  property_id: string;
+  compliance_type: string;
+  expiry_date: string;
   org_id: string;
   last_reminder_sent_at: string | null;
   reminder_count: number | null;
@@ -32,9 +32,58 @@
      postcode: string;
   }[] | { address_line: string; postcode: string; } | null;
  }
+
+interface RequestAuthorization {
+  mode: "cron" | "user";
+  manageableOrgIds: string[] | null;
+}
  
  const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
- 
+
+async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const authHeader = req.headers.get("Authorization");
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return { mode: "cron", manageableOrgIds: null };
+  }
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabaseAuth = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+  const token = authHeader.replace("Bearer ", "");
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseAuth.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: memberships, error: membershipError } = await supabaseAuth
+    .from("memberships")
+    .select("org_id, role")
+    .eq("user_id", user.id)
+    .in("role", ["owner", "admin"]);
+
+  if (membershipError) {
+    throw membershipError;
+  }
+
+  const manageableOrgIds = [...new Set((memberships || []).map((membership) => membership.org_id))];
+  if (manageableOrgIds.length === 0) {
+    throw new Error("Access denied");
+  }
+
+  return { mode: "user", manageableOrgIds };
+}
+
 function getPropertyAddress(item: ComplianceItem): string {
   // Handle both array (from Supabase join) and object formats
   const prop = Array.isArray(item.property) ? item.property[0] : item.property;
@@ -118,25 +167,14 @@ function getPropertyAddress(item: ComplianceItem): string {
       return new Response(null, { headers: getCorsHeaders(req) });
     }
 
-    // Verify cron/admin authorization
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    const authHeader = req.headers.get("Authorization");
-
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      // Authorized as cron job
-    } else if (authHeader?.startsWith("Bearer ")) {
-      const supabaseAuth = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!);
-      const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabaseAuth.auth.getUser(token);
-      if (authError) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+    let authorization: RequestAuthorization;
+    try {
+      authorization = await authorizeRequest(req);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unauthorized";
+      const status = message === "Access denied" ? 403 : 401;
+      return new Response(JSON.stringify({ error: message }), {
+        status,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
@@ -157,7 +195,7 @@ function getPropertyAddress(item: ComplianceItem): string {
     const futureDate = new Date(today);
     futureDate.setDate(futureDate.getDate() + 90);
     
-    const { data: expiringItems, error: itemsError } = await supabase
+    let itemsQuery = supabase
       .from('compliance_items')
       .select(`
         id, property_id, compliance_type, expiry_date, org_id, 
@@ -166,6 +204,12 @@ function getPropertyAddress(item: ComplianceItem): string {
       `)
       .gte('expiry_date', today.toISOString().split('T')[0])
       .lte('expiry_date', futureDate.toISOString().split('T')[0]);
+
+    if (authorization.mode === "user" && authorization.manageableOrgIds) {
+      itemsQuery = itemsQuery.in("org_id", authorization.manageableOrgIds);
+    }
+
+    const { data: expiringItems, error: itemsError } = await itemsQuery;
 
     if (itemsError) throw itemsError;
 
@@ -281,9 +325,11 @@ function getPropertyAddress(item: ComplianceItem): string {
      });
  
    } catch (error: any) {
+     const message = error instanceof Error ? error.message : "Unknown error";
+     const status = message === "Unauthorized" ? 401 : message === "Access denied" ? 403 : 500;
      console.error('Error:', error);
-     return new Response(JSON.stringify({ error: error.message }), {
-       status: 500,
+     return new Response(JSON.stringify({ error: message }), {
+       status,
        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
      });
    }

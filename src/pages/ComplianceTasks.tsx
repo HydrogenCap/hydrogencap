@@ -455,14 +455,14 @@ export default function ComplianceTasks() {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
               createTask.mutate({
-                property_id: fd.get('property_id') as string,
-                document_type: fd.get('document_type') as string,
-                task_type: fd.get('task_type') as string,
-                title: fd.get('title') as string,
-                priority: fd.get('priority') as string,
-                assigned_to: (fd.get('assigned_to') as string) || null,
-                due_date: (fd.get('due_date') as string) || null,
-                notes: (fd.get('notes') as string) || null,
+                property_id: fd.get('property_id'),
+                document_type: fd.get('document_type'),
+                task_type: fd.get('task_type'),
+                title: fd.get('title'),
+                priority: fd.get('priority'),
+                assigned_to: fd.get('assigned_to') || null,
+                due_date: fd.get('due_date') || null,
+                notes: fd.get('notes') || null,
               }, {
                 onSuccess: () => { setShowCreate(false); toast({ title: 'Task created' }); },
                 onError: (err) => toast({ title: 'Error', description: String(err), variant: 'destructive' }),

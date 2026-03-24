@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -39,20 +39,22 @@ interface AcceptTeamInviteResult {
 
 export function useCurrentUserRole() {
   const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
 
   return useQuery({
-    queryKey: ['current-user-role', user?.id],
+    queryKey: ['current-user-role', user?.id, orgId],
     queryFn: async () => {
-      if (!user) return null;
+      if (!user || !orgId) return null;
       const { data, error } = await supabase
         .from('memberships')
         .select('role')
         .eq('user_id', user.id)
+        .eq('org_id', orgId)
         .maybeSingle();
       if (error) throw error;
       return (data?.role as AppRole) || null;
     },
-    enabled: !!user,
+    enabled: !!user && !!orgId,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -61,12 +63,11 @@ export function useCurrentUserRole() {
 
 export function useTeamMembers() {
   const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
 
   return useQuery({
-    queryKey: ['team-members'],
+    queryKey: ['team-members', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
-
       const { data: memberships, error: mError } = await supabase
         .from('memberships')
         .select('id, user_id, role, created_at')
@@ -100,7 +101,7 @@ export function useTeamMembers() {
         } as TeamMember;
       });
     },
-    enabled: !!user,
+    enabled: !!user && !!orgId,
   });
 }
 
@@ -108,12 +109,11 @@ export function useTeamMembers() {
 
 export function useTeamInvites() {
   const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
 
   return useQuery({
-    queryKey: ['team-invites'],
+    queryKey: ['team-invites', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
-
       const { data, error } = await supabase
         .from('team_invites')
         .select('*')
@@ -145,7 +145,7 @@ export function useTeamInvites() {
         revokedAt: i.revoked_at,
       } as TeamInvite));
     },
-    enabled: !!user,
+    enabled: !!user && !!orgId,
   });
 }
 

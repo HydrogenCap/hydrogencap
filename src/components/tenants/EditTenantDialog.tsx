@@ -123,7 +123,7 @@ export function EditTenantDialog({ tenant, open, onOpenChange }: EditTenantDialo
     const updates: Partial<Tenant> = {};
     for (const [key, value] of Object.entries(values) as Array<[keyof FormValues, FormValues[keyof FormValues]]>) {
       const normalizedValue = value === '' ? null : value;
-      (updates as any)[key as string] = normalizedValue;
+      updates[key as keyof Tenant] = normalizedValue as Tenant[keyof Tenant];
     }
     await updateTenant.mutateAsync({ id: tenant.id, ...updates });
     onOpenChange(false);

@@ -1,7 +1,8 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
- import { useAuth } from '@/contexts/AuthContext';
- import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
  
  export interface NotificationPreferences {
    id: string;
@@ -19,26 +20,28 @@
    timezone: string;
  }
  
- export function useNotificationPreferences() {
-   const { user } = useAuth();
-   
-   return useQuery({
-     queryKey: ['notification-preferences', user?.id],
-     queryFn: async () => {
-       if (!user) return null;
-       
-       const { data, error } = await supabase
-         .from('notification_preferences')
-         .select('*')
-         .eq('user_id', user.id)
-         .maybeSingle();
+export function useNotificationPreferences() {
+  const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
+  
+  return useQuery({
+    queryKey: ['notification-preferences', user?.id, orgId],
+    queryFn: async () => {
+      if (!user || !orgId) return null;
+      
+      const { data, error } = await supabase
+        .from('notification_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('org_id', orgId)
+        .maybeSingle();
        
        if (error) throw error;
        return data as NotificationPreferences | null;
      },
-     enabled: !!user,
-   });
- }
+    enabled: !!user && !!orgId,
+  });
+}
  
  export function useUpdateNotificationPreferences() {
    const queryClient = useQueryClient();
@@ -46,25 +49,18 @@
    const { toast } = useToast();
    
    return useMutation({
-     mutationFn: async (prefs: Partial<NotificationPreferences>) => {
-       if (!user) throw new Error('Not authenticated');
-       
-       // Get org_id
-       const { data: membership } = await supabase
-         .from('memberships')
-         .select('org_id')
-         .eq('user_id', user.id)
-         .single();
-       
-       if (!membership) throw new Error('No organization');
-       
-       const { data, error } = await supabase
-         .from('notification_preferences')
-         .upsert({
-           user_id: user.id,
-           org_id: membership.org_id,
-           ...prefs,
-           updated_at: new Date().toISOString(),
+    mutationFn: async (prefs: Partial<NotificationPreferences>) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const orgId = await fetchUserOrgId();
+      
+      const { data, error } = await supabase
+        .from('notification_preferences')
+        .upsert({
+          user_id: user.id,
+          org_id: orgId,
+          ...prefs,
+          updated_at: new Date().toISOString(),
          }, {
            onConflict: 'user_id,org_id',
          })

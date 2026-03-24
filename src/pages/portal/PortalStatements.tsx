@@ -56,7 +56,7 @@ export default function PortalStatements() {
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {report.report_period_from && report.report_period_to
-                              ? `${format(new Date(report.report_period_from), 'MMM yyyy')} – ${format(new Date(report.report_period_to), 'MMM yyyy')}`
+                              ? `${format(new Date(report.report_period_from), 'MMM yyyy')} - ${format(new Date(report.report_period_to), 'MMM yyyy')}`
                               : 'N/A'}
                           </span>
                           <span>

@@ -54,7 +54,7 @@ export default function Install() {
         <p className="text-muted-foreground">
           {installed
             ? "You can now launch Tenure IQ from your home screen."
-            : "Add Tenure IQ to your home screen for quick access, offline support, and a native app experience."}
+            : "Add Tenure IQ to your home screen for quick access and a more app-like experience."}
         </p>
 
         {!installed && deferredPrompt && (

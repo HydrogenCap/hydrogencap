@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Smoke Tests', () => {
   test('marketing homepage loads', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/Hydrogen/i);
+    await expect(page).toHaveTitle(/Tenure/i);
     await expect(page.locator('nav')).toBeVisible();
   });
 
@@ -27,7 +27,7 @@ test.describe('Smoke Tests', () => {
 
   test('404 page renders for unknown routes', async ({ page }) => {
     await page.goto('/this-page-does-not-exist');
-    await expect(page.locator('text=/not found|404/i')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /page not found/i })).toBeVisible();
   });
 
   test('privacy policy page loads (public)', async ({ page }) => {

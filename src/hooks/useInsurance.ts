@@ -1,7 +1,7 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase } from '@/integrations/supabase/client';
  import { useToast } from '@/hooks/use-toast';
- import { fetchUserOrgId } from './useUserOrg';
+ import { fetchUserOrgId, useUserOrg } from './useUserOrg';
  
  export interface InsurancePolicy {
    id: string;
@@ -41,20 +41,23 @@
  ];
  
  // Get all policies
- export function useInsurancePolicies(filters?: {
-   propertyId?: string;
-   status?: string;
- }) {
-   return useQuery({
-     queryKey: ['insurance-policies', filters],
-     queryFn: async () => {
-       let query = supabase
-         .from('insurance_policies')
-         .select(`
+export function useInsurancePolicies(filters?: {
+  propertyId?: string;
+  status?: string;
+}) {
+  const { data: orgId } = useUserOrg();
+
+  return useQuery({
+    queryKey: ['insurance-policies', orgId, filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('insurance_policies')
+        .select(`
            *,
            property:properties(address_line, postcode)
          `)
-         .order('renewal_date', { ascending: true });
+        .eq('org_id', orgId!)
+        .order('renewal_date', { ascending: true });
  
        if (filters?.propertyId) {
          query = query.eq('property_id', filters.propertyId);
@@ -67,17 +70,21 @@
        if (error) throw error;
        return data as InsurancePolicy[];
      },
+     enabled: !!orgId,
    });
  }
- 
+
  // Get insurance totals
  export function useInsuranceTotals() {
+   const { data: orgId } = useUserOrg();
+
    return useQuery({
-     queryKey: ['insurance-totals'],
+     queryKey: ['insurance-totals', orgId],
      queryFn: async () => {
        const { data, error } = await supabase
          .from('insurance_policies')
          .select('premium_gbp, status')
+         .eq('org_id', orgId!)
          .or('status.eq.active,status.is.null');
  
        if (error) throw error;
@@ -90,29 +97,33 @@
          policy_count: data.length,
        };
      },
+     enabled: !!orgId,
    });
  }
- 
+
  // Get single policy
  export function useInsurancePolicy(policyId: string | undefined) {
+   const { data: orgId } = useUserOrg();
+
    return useQuery({
-     queryKey: ['insurance-policy', policyId],
+     queryKey: ['insurance-policy', orgId, policyId],
      queryFn: async () => {
-       if (!policyId) return null;
- 
+       if (!policyId || !orgId) return null;
+
        const { data, error } = await supabase
          .from('insurance_policies')
          .select(`
            *,
            property:properties(address_line, postcode)
          `)
+         .eq('org_id', orgId)
          .eq('id', policyId)
          .single();
  
        if (error) throw error;
        return data as InsurancePolicy;
      },
-     enabled: !!policyId,
+     enabled: !!policyId && !!orgId,
    });
  }
  

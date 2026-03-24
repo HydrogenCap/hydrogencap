@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 export type Photo = Tables<'photos'>;
 
@@ -19,7 +20,14 @@ export function useAllPropertyCoverPhotos() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Photo[];
+      const resolvedPhotos = await Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          file_url: await createSignedStorageUrl('photos', photo.file_url),
+        }))
+      );
+
+      return resolvedPhotos as Photo[];
     },
   });
 }
@@ -39,7 +47,14 @@ export function useAllPropertyPhotos() {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      return data as Photo[];
+      const resolvedPhotos = await Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          file_url: await createSignedStorageUrl('photos', photo.file_url),
+        }))
+      );
+
+      return resolvedPhotos as Photo[];
     },
   });
 }

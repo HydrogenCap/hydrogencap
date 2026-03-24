@@ -78,7 +78,7 @@ export function useCreateTask() {
   const { data: org } = useOrganization();
   return useMutation({
     mutationFn: async (task: Partial<ComplianceTaskInsert>) => {
-      const { error } = await supabase.from('compliance_tasks').insert([{ ...task, org_id: org!.id, source: 'manual' }] as any);
+      const { error } = await supabase.from('compliance_tasks').insert({ ...task, org_id: org!.id, source: 'manual' });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),

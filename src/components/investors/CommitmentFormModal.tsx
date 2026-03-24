@@ -74,8 +74,8 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
     defaultValues: {
       entity_id: '',
       commitment_type: 'equity' as const,
-      committed_amount: '' as unknown as number,
-      drawn_amount: '' as unknown as number,
+      committed_amount: '',
+      drawn_amount: '',
       equity_percentage: '',
       commitment_date: new Date().toISOString().split('T')[0],
       maturity_date: '',

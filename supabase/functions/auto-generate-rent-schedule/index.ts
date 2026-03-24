@@ -19,43 +19,27 @@ function getCorsHeaders(req: Request) {
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: getCorsHeaders(req) });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify cron/admin authorization
     const cronSecret = Deno.env.get("CRON_SECRET");
     const authHeader = req.headers.get("Authorization");
 
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      // Authorized as cron job — continue
-    } else if (authHeader?.startsWith("Bearer ")) {
-      const supabaseAuth = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!
-      );
-      const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabaseAuth.auth.getUser(token);
-      if (authError) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return new Response(JSON.stringify({ error: "Cron authorization required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Get all active tenancies with rent details
     const { data: tenancies, error: tenError } = await supabase
       .from("tenancies")
       .select("id, org_id, property_id, room_id, rent_amount_pcm, rent_due_day, start_date, end_date, status")
@@ -64,7 +48,7 @@ serve(async (req: Request) => {
     if (tenError) throw tenError;
     if (!tenancies || tenancies.length === 0) {
       return new Response(JSON.stringify({ created: 0, message: "No active tenancies" }), {
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -73,7 +57,6 @@ serve(async (req: Request) => {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
-    // Generate schedule items for current month and next month
     for (const tenancy of tenancies) {
       if (!tenancy.rent_amount_pcm || tenancy.rent_amount_pcm <= 0) continue;
 
@@ -84,17 +67,14 @@ serve(async (req: Request) => {
         const targetYear = currentYear + Math.floor(targetMonth / 12);
         const normalizedMonth = targetMonth % 12;
 
-        // Calculate due date (clamp day to max days in month)
         const maxDays = new Date(targetYear, normalizedMonth + 1, 0).getDate();
         const clampedDay = Math.min(dueDay, maxDays);
         const dueDate = new Date(targetYear, normalizedMonth, clampedDay);
         const dueDateStr = dueDate.toISOString().split("T")[0];
 
-        // Skip if due date is before tenancy start or after end
         if (tenancy.start_date && dueDateStr < tenancy.start_date) continue;
         if (tenancy.end_date && dueDateStr > tenancy.end_date) continue;
 
-        // Check if schedule item already exists for this tenancy+due_date
         const { data: existing } = await supabase
           .from("rent_schedule")
           .select("id")
@@ -104,11 +84,9 @@ serve(async (req: Request) => {
 
         if (existing && existing.length > 0) continue;
 
-        // Calculate period start/end
         const periodStart = new Date(targetYear, normalizedMonth, clampedDay);
         const periodEnd = new Date(targetYear, normalizedMonth + 1, clampedDay - 1);
 
-        // Adjust for pro-rata: first period starts at tenancy start, last period ends at tenancy end
         let actualPeriodStart = periodStart;
         let actualPeriodEnd = periodEnd;
 
@@ -118,6 +96,7 @@ serve(async (req: Request) => {
             actualPeriodStart = tenancyStart;
           }
         }
+
         if (tenancy.end_date) {
           const tenancyEnd = new Date(tenancy.end_date);
           if (tenancyEnd >= periodStart && tenancyEnd < periodEnd) {
@@ -128,7 +107,6 @@ serve(async (req: Request) => {
         const actualPeriodStartStr = actualPeriodStart.toISOString().split("T")[0];
         const actualPeriodEndStr = actualPeriodEnd.toISOString().split("T")[0];
 
-        // Pro-rata calculation
         const fullPeriodDays = Math.round((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         const actualDays = Math.round((actualPeriodEnd.getTime() - actualPeriodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         const isProRata = actualDays < fullPeriodDays;
@@ -136,7 +114,6 @@ serve(async (req: Request) => {
           ? Math.round((tenancy.rent_amount_pcm * actualDays / fullPeriodDays) * 100) / 100
           : tenancy.rent_amount_pcm;
 
-        // Generate payment reference
         const prefix = "HYD";
         const letters = Array.from({ length: 3 }, () =>
           String.fromCharCode(65 + Math.floor(Math.random() * 26))
@@ -144,7 +121,6 @@ serve(async (req: Request) => {
         const numbers = Math.floor(Math.random() * 100).toString().padStart(2, "0");
         const paymentReference = `${prefix}-${letters}${numbers}`;
 
-        // Use upsert to avoid duplicates (unique index on tenancy_id, due_date)
         const { error: insertError } = await supabase
           .from("rent_schedule")
           .upsert({
@@ -158,25 +134,25 @@ serve(async (req: Request) => {
             amount_paid: 0,
             amount_outstanding: rentAmount,
             payment_reference: paymentReference,
-          }, { onConflict: 'tenancy_id,due_date', ignoreDuplicates: true });
+          }, { onConflict: "tenancy_id,due_date", ignoreDuplicates: true });
 
         if (!insertError) created++;
         else console.error("Insert error:", insertError);
       }
     }
 
-    // Update past-due statuses via DB function (avoids enum type mismatch)
     await supabase.rpc("update_rent_schedule_statuses");
 
     return new Response(
       JSON.stringify({ success: true, created, message: `Generated ${created} schedule items` }),
-      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

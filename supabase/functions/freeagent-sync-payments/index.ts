@@ -1,27 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FREEAGENT_CLIENT_ID = Deno.env.get("FREEAGENT_CLIENT_ID")!;
 const FREEAGENT_CLIENT_SECRET = Deno.env.get("FREEAGENT_CLIENT_SECRET")!;
-
-const ALLOWED_ORIGINS = [
-  "https://tenureiq.com",
-  "https://www.tenureiq.com",
-  "https://hydrogencapital.lovable.app",
-  Deno.env.get("ALLOWED_ORIGIN"),
-].filter(Boolean) as string[];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
 
 async function getKey(): Promise<CryptoKey> {
   const keyString = Deno.env.get("COMPANY_SECRETS_KEY")!;
@@ -223,6 +207,7 @@ serve(async (req) => {
       .select("id")
       .eq("user_id", user.id)
       .eq("org_id", connection.org_id)
+      .in("role", ["owner", "admin"])
       .single();
     if (!membership) {
       return new Response(JSON.stringify({ error: "Access denied" }), {
@@ -238,7 +223,9 @@ serve(async (req) => {
       });
     }
 
-    const apiBase = connection.use_sandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
+    const apiBase = connection.use_sandbox
+      ? "https://api.sandbox.freeagent.com"
+      : "https://api.freeagent.com";
     const accessToken = await getValidToken(connection, supabase);
 
     // V2-first property lookup with V1 fallback

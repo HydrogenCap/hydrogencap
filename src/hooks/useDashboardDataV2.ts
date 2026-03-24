@@ -7,7 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { fetchUserOrgId } from './useUserOrg';
+import { useUserOrg } from './useUserOrg';
 import type { PropertyWithFinancials } from './useProperties';
 
 type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
@@ -40,11 +40,11 @@ function getSingleRelation<T>(relation: T | T[] | null | undefined): T | null {
 }
 
 export function useDashboardPropertiesV2() {
-  return useQuery({
-    queryKey: ['dashboard_properties_v2'],
-    queryFn: async () => {
-      const orgId = await fetchUserOrgId();
+  const { data: orgId } = useUserOrg();
 
+  return useQuery({
+    queryKey: ['dashboard_properties_v2', orgId],
+    queryFn: async () => {
       // Fetch V2 properties with entity info
       const { data: properties, error: propErr } = await supabase
         .from('properties_v2')
@@ -154,11 +154,12 @@ export function useDashboardPropertiesV2() {
           tenancies: [],
           created_at: property.created_at,
           updated_at: property.updated_at,
-        } as unknown as PropertyWithFinancials;
+        } as PropertyWithFinancials;
       });
 
       return mapped;
     },
+    enabled: !!orgId,
   });
 }
 
@@ -166,10 +167,11 @@ export function useDashboardPropertiesV2() {
  * V2 tenancy data for rental/occupancy stats
  */
 export function useDashboardTenanciesV2() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['dashboard_tenancies_v2'],
+    queryKey: ['dashboard_tenancies_v2', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('tenancy_agreements')
         .select(`
@@ -205,6 +207,7 @@ export function useDashboardTenanciesV2() {
         };
       });
     },
+    enabled: !!orgId,
   });
 }
 
@@ -212,12 +215,15 @@ export function useDashboardTenanciesV2() {
  * V2 rooms data for occupancy stats
  */
 export function useDashboardRoomsV2() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['dashboard_rooms_v2'],
+    queryKey: ['dashboard_rooms_v2', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rooms_v2')
-        .select('id, property_id, room_name, occupancy_status, is_lettable');
+        .select('id, property_id, room_name, occupancy_status, is_lettable')
+        .eq('org_id', orgId!);
       if (error) throw error;
 
       return ((data || []) as DashboardRoom[]).map((room) => ({
@@ -225,5 +231,6 @@ export function useDashboardRoomsV2() {
         status: room.occupancy_status === 'occupied' ? 'occupied' : 'vacant',
       }));
     },
+    enabled: !!orgId,
   });
 }

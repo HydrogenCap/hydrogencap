@@ -64,10 +64,7 @@ export function UploadComplianceDocModal({
           .upload(path, file);
         if (uploadErr) throw uploadErr;
 
-        const { data: urlData } = supabase.storage
-          .from('compliance-documents')
-          .getPublicUrl(path);
-        fileUrl = urlData.publicUrl;
+        fileUrl = path;
         fileName = file.name;
       }
 

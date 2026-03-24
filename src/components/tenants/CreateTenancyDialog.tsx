@@ -588,7 +588,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>How will rent be paid?</Label>
-                    <Select value={paymentMethod} onValueChange={v => setPaymentMethod(v as PaymentMethod)}>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                       <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="standing_order">Standing Order</SelectItem>

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 export interface ScannedDocument {
   file: File;
@@ -85,10 +86,6 @@ export function useBulkDocScanner() {
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('documents')
-      .getPublicUrl(storagePath);
-
     // 2. Create document record
     const { data: { user } } = await supabase.auth.getUser();
     const { data: docRecord, error: docErr } = await supabase
@@ -96,7 +93,7 @@ export function useBulkDocScanner() {
       .insert({
         org_id: orgId,
         original_file_name: file.name,
-        file_url: publicUrl,
+        file_url: storagePath,
         file_type: file.type.split('/')[1] || 'pdf',
         mime_type: file.type,
         file_size_bytes: file.size,
@@ -117,6 +114,7 @@ export function useBulkDocScanner() {
 
     // 3. Call process-document for AI classification
     try {
+      const signedUrl = await createSignedStorageUrl('documents', storagePath, 600);
       const propsForAI = (properties || []).map(p => ({
         id: p.id,
         address_line: p.address_line_1 || '',
@@ -127,7 +125,7 @@ export function useBulkDocScanner() {
       const { data: result, error: fnErr } = await supabase.functions.invoke('process-document', {
         body: {
           documentId: docRecord.id,
-          fileUrl: publicUrl,
+          fileUrl: signedUrl,
           properties: propsForAI.length > 0 ? propsForAI : [{ id: '00000000-0000-0000-0000-000000000000', address_line: 'N/A', postcode: null, title_number: null }],
         },
       });
@@ -150,12 +148,12 @@ export function useBulkDocScanner() {
           documentType: updated?.ai_suggested_doc_type || null,
           confidence: updated?.ai_doc_type_confidence || 0,
           extractedData: {
-            address: (updated?.ai_suggested_doc_type || null) as string | undefined ? undefined : updated?.extracted_address_text as string || undefined,
-            postcode: (extractedData.postcode as string) || undefined,
-            expiryDate: (updated?.expiry_date || extractedData.expiry_date) as string || undefined,
-            issueDate: (updated?.extracted_issue_date || extractedData.issue_date) as string || undefined,
-            certificateNumber: (updated?.extracted_reference_number || extractedData.certificate_number) as string || undefined,
-            rating: (extractedData.epc_rating) as string || undefined,
+            address: updated?.extracted_address_text || undefined,
+            postcode: extractedData.postcode || undefined,
+            expiryDate: updated?.expiry_date || extractedData.expiry_date || undefined,
+            issueDate: updated?.extracted_issue_date || extractedData.issue_date || undefined,
+            certificateNumber: updated?.extracted_reference_number || extractedData.certificate_number || undefined,
+            rating: extractedData.epc_rating || undefined,
           },
         },
         matchedPropertyId: matchedPropId,
@@ -270,7 +268,7 @@ export function useBulkDocScanner() {
             issue_date: issueDate,
             expiry_date: expiryDate || null,
             certificate_number: certNumber || null,
-            file_url: doc.storagePath ? supabase.storage.from('documents').getPublicUrl(doc.storagePath).data.publicUrl : null,
+            file_url: doc.storagePath || null,
             file_name: doc.file.name,
             status: expiryDate && new Date(expiryDate) < new Date() ? 'expired'
               : expiryDate && new Date(expiryDate) < new Date(Date.now() + 30 * 86400000) ? 'critical'

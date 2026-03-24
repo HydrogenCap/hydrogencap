@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 
 export interface Lender {
   id: string;
@@ -28,18 +28,20 @@ export const LENDER_TYPES = [
 ] as const;
 
 export function useLenders() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['lenders'],
+    queryKey: ['lenders', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('lenders')
         .select('*')
-        .eq('org_id', orgId)
+        .eq('org_id', orgId!)
         .order('lender_name');
       if (error) throw error;
       return data as Lender[];
     },
+    enabled: !!orgId,
   });
 }
 

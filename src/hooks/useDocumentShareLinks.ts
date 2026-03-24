@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 
 export interface DocumentShareLink {
   id: string;
@@ -21,13 +22,15 @@ export interface DocumentShareLink {
 
 export function useDocumentShareLinks(documentId?: string, complianceDocumentId?: string) {
   const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
 
   return useQuery({
-    queryKey: ['document-share-links', documentId, complianceDocumentId],
+    queryKey: ['document-share-links', orgId, documentId, complianceDocumentId],
     queryFn: async () => {
       let query = supabase
         .from('document_share_links')
         .select('*')
+        .eq('org_id', orgId!)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
@@ -41,26 +44,28 @@ export function useDocumentShareLinks(documentId?: string, complianceDocumentId?
       if (error) throw error;
       return data as DocumentShareLink[];
     },
-    enabled: !!user && (!!documentId || !!complianceDocumentId),
+    enabled: !!user && !!orgId && (!!documentId || !!complianceDocumentId),
   });
 }
 
 export function useAllDocumentShareLinks() {
   const { user } = useAuth();
+  const { data: orgId } = useUserOrg();
 
   return useQuery({
-    queryKey: ['document-share-links', 'all'],
+    queryKey: ['document-share-links', orgId, 'all'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('document_share_links')
         .select('*')
+        .eq('org_id', orgId!)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as DocumentShareLink[];
     },
-    enabled: !!user,
+    enabled: !!user && !!orgId,
   });
 }
 
@@ -80,14 +85,7 @@ export function useCreateDocumentShareLink() {
       expiresInDays?: number;
       maxViews?: number;
     }) => {
-      // Get user's org_id
-      const { data: membership } = await supabase
-        .from('memberships')
-        .select('org_id')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (!membership) throw new Error('No organization found');
+      const orgId = await fetchUserOrgId();
 
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + expiresInDays);
@@ -95,7 +93,7 @@ export function useCreateDocumentShareLink() {
       const { data, error } = await supabase
         .from('document_share_links')
         .insert({
-          org_id: membership.org_id,
+          org_id: orgId,
           document_id: documentId || null,
           compliance_document_id: complianceDocumentId || null,
           created_by: user?.id,

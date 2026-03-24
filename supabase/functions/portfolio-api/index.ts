@@ -79,6 +79,46 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+interface PortfolioPropertyRow {
+  id: string;
+  address_line_1: string | null;
+  postcode: string | null;
+  current_valuation: number | null;
+  property_type?: string | null;
+  epc_rating?: string | null;
+}
+
+interface PortfolioLoanRow {
+  id?: string;
+  property_id: string | null;
+  current_balance: number | null;
+  interest_rate?: number | null;
+  rate_expiry_date?: string | null;
+}
+
+interface PortfolioEntityRow {
+  id: string;
+  entity_name: string | null;
+}
+
+interface PortfolioComplianceRow {
+  id: string;
+  document_type: string | null;
+  expiry_date: string | null;
+  status: string | null;
+  property_id: string | null;
+}
+
+interface ActionItem {
+  type: string;
+  priority: "high" | "medium";
+  description: string;
+  property?: string;
+  propertyId?: string;
+  entity?: string;
+  entityId?: string;
+}
+
 // ─── V2 Handlers ──────────────────────────────────────────────────────
 
 async function getPortfolioSummary(supabase: any) {
@@ -88,9 +128,9 @@ async function getPortfolioSummary(supabase: any) {
     supabase.from("legal_entities").select("id, entity_name, status"),
   ]);
 
-  const properties = propertiesRes.data || [];
-  const loans = loansRes.data || [];
-  const entities = entitiesRes.data || [];
+  const properties = (propertiesRes.data || []) as PortfolioPropertyRow[];
+  const loans = (loansRes.data || []) as PortfolioLoanRow[];
+  const entities = (entitiesRes.data || []) as PortfolioEntityRow[];
 
   const totalValue = properties.reduce((sum, p) => sum + (p.current_valuation || 0), 0);
   const totalDebt = loans.reduce((sum, l) => sum + (l.current_balance || 0), 0);
@@ -154,8 +194,7 @@ async function getComplianceStatus(supabase: any) {
 
   if (error) return jsonResponse({ error: error.message }, 500);
 
-  const items = data || [];
-  const now = new Date();
+  const items = (data || []) as PortfolioComplianceRow[];
 
   const expired = items.filter(c => c.status === 'expired');
   const expiringSoon = items.filter(c => c.status === 'critical' || c.status === 'expiring_soon');
@@ -190,7 +229,7 @@ async function getLoans(supabase: any) {
 
   if (error) return jsonResponse({ error: error.message }, 500);
 
-  const loans = data || [];
+  const loans = (data || []) as PortfolioLoanRow[];
   const now = new Date();
 
   const loansWithAlerts = loans.map(l => ({
@@ -218,17 +257,16 @@ async function getLoans(supabase: any) {
 }
 
 async function getActionItems(supabase: any) {
-  const [propertiesRes, complianceRes, loansRes, entitiesRes] = await Promise.all([
+  const [propertiesRes, complianceRes, loansRes] = await Promise.all([
     supabase.from("properties_v2").select("id, address_line_1, postcode, current_valuation, epc_rating"),
     supabase.from("compliance_documents_v2").select("id, document_type, expiry_date, status, property_id, is_current").eq("is_current", true),
     supabase.from("loan_facilities").select("id, property_id, current_balance, rate_expiry_date").eq("status", "active"),
-    supabase.from("legal_entities").select("id, entity_name"),
   ]);
 
-  const actions: Array<{ type: string; priority: string; description: string; property?: string; propertyId?: string; entity?: string; entityId?: string }> = [];
-  const properties = propertiesRes.data || [];
-  const compliance = complianceRes.data || [];
-  const loans = loansRes.data || [];
+  const actions: ActionItem[] = [];
+  const properties = (propertiesRes.data || []) as PortfolioPropertyRow[];
+  const compliance = (complianceRes.data || []) as PortfolioComplianceRow[];
+  const loans = (loansRes.data || []) as PortfolioLoanRow[];
   const now = new Date();
 
   // Expired compliance documents
@@ -241,7 +279,7 @@ async function getActionItems(supabase: any) {
         priority: "high",
         description: `${c.document_type} expired on ${c.expiry_date}`,
         property: prop ? `${prop.address_line_1}, ${prop.postcode}` : "Unknown",
-        propertyId: c.property_id,
+        propertyId: c.property_id ?? undefined,
       });
     });
 
@@ -272,12 +310,15 @@ async function getActionItems(supabase: any) {
         priority: "medium",
         description: `Fixed rate expires on ${l.rate_expiry_date}`,
         property: prop ? `${prop.address_line_1}, ${prop.postcode}` : "Unknown",
-        propertyId: l.property_id,
+        propertyId: l.property_id ?? undefined,
       });
     });
 
   return jsonResponse({
-    actions: actions.sort((a, b) => (a.priority === "high" ? -1 : 1) - (b.priority === "high" ? -1 : 1)),
+    actions: actions.sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    }),
     summary: {
       total: actions.length,
       high: actions.filter(a => a.priority === "high").length,
@@ -287,10 +328,10 @@ async function getActionItems(supabase: any) {
   });
 }
 
-function groupBy(arr: Array<Record<string, unknown>>, key: string): Record<string, number> {
-  return arr.reduce((acc, item) => {
+function groupBy<T extends object>(arr: T[], key: keyof T): Record<string, number> {
+  return arr.reduce<Record<string, number>>((acc, item) => {
     const val = String(item[key] || "Unknown");
     acc[val] = (acc[val] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 }

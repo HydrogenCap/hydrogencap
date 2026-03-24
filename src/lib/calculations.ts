@@ -5,7 +5,7 @@
 
 // Format currency in GBP with thousand separators
 export function formatGBP(amount: number | null | undefined): string {
-  if (amount == null) return '—';
+  if (amount == null) return '\u2014';
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
@@ -16,7 +16,7 @@ export function formatGBP(amount: number | null | undefined): string {
 
 // Format currency with decimals
 export function formatGBPDecimal(amount: number | null | undefined): string {
-  if (amount == null) return '—';
+  if (amount == null) return '\u2014';
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: 'GBP',
@@ -27,13 +27,13 @@ export function formatGBPDecimal(amount: number | null | undefined): string {
 
 // Format percentage with % sign
 export function formatPercent(value: number | null | undefined, decimals: number = 1): string {
-  if (value == null) return '—';
+  if (value == null) return '\u2014';
   return `${value.toFixed(decimals)}%`;
 }
 
 // Format date in UK format
 export function formatDateUK(date: string | Date | null | undefined): string {
-  if (!date) return '—';
+  if (!date) return '\u2014';
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -44,7 +44,7 @@ export function formatDateUK(date: string | Date | null | undefined): string {
 
 // Format date in short format
 export function formatDateShort(date: string | Date | null | undefined): string {
-  if (!date) return '—';
+  if (!date) return '\u2014';
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -54,15 +54,15 @@ export function formatDateShort(date: string | Date | null | undefined): string 
 }
 // Format compact GBP (e.g. £1.2M, £450K)
 export function formatGBPCompact(amount: number | null | undefined): string {
-  if (amount == null) return '—';
-  if (Math.abs(amount) >= 1_000_000) return `£${(amount / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(amount) >= 1_000) return `£${(amount / 1_000).toFixed(0)}K`;
-  return `£${amount.toFixed(0)}`;
+  if (amount == null) return '\u2014';
+  if (Math.abs(amount) >= 1_000_000) return `\u00A3${(amount / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(amount) >= 1_000) return `\u00A3${(amount / 1_000).toFixed(0)}K`;
+  return `\u00A3${amount.toFixed(0)}`;
 }
 
 // Format date/time in UK format
 export function formatDateTimeUK(date: string | Date | null | undefined): string {
-  if (!date) return '—';
+  if (!date) return '\u2014';
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleString('en-GB', {
     day: '2-digit',

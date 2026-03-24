@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import type {
   FinancialSnapshot,
   PortfolioMonthlySummary,
@@ -16,8 +16,10 @@ const PROPERTY_ANNUAL_PERFORMANCE_VIEW = 'property_annual_performance' as never;
 
 // ── Portfolio Monthly Summary ──
 export function usePortfolioMonthlySummary(months = 12) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['portfolio_monthly_summary', months],
+    queryKey: ['portfolio_monthly_summary', orgId, months],
     queryFn: async () => {
       const { data, error } = await supabase
         .from(PORTFOLIO_MONTHLY_SUMMARY_VIEW)
@@ -27,13 +29,16 @@ export function usePortfolioMonthlySummary(months = 12) {
       if (error) throw error;
       return (data || []) as unknown as PortfolioMonthlySummary[];
     },
+    enabled: !!orgId,
   });
 }
 
 // ── Entity Financial Summary ──
 export function useEntityFinancialSummary(month?: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['entity_financial_summary', month],
+    queryKey: ['entity_financial_summary', orgId, month],
     queryFn: async () => {
       let query = supabase.from(ENTITY_FINANCIAL_SUMMARY_VIEW).select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate');
       if (month) query = query.eq('snapshot_month', month);
@@ -42,13 +47,16 @@ export function useEntityFinancialSummary(month?: string) {
       if (error) throw error;
       return (data || []) as unknown as EntityFinancialSummary[];
     },
+    enabled: !!orgId,
   });
 }
 
 // ── Entity Monthly Snapshots (for entity detail) ──
 export function useEntityMonthlySnapshots(entityId: string | undefined, months = 12) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['entity_financial_summary_monthly', entityId, months],
+    queryKey: ['entity_financial_summary_monthly', orgId, entityId, months],
     queryFn: async () => {
       if (!entityId) return [];
       const { data, error } = await supabase
@@ -60,32 +68,37 @@ export function useEntityMonthlySnapshots(entityId: string | undefined, months =
       if (error) throw error;
       return (data || []) as unknown as EntityFinancialSummary[];
     },
-    enabled: !!entityId,
+    enabled: !!orgId && !!entityId,
   });
 }
 
 // ── Entity property breakdown for a month ──
 export function useEntityPropertyBreakdown(entityId: string | undefined, month?: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['entity_property_breakdown', entityId, month],
+    queryKey: ['entity_property_breakdown', orgId, entityId, month],
     queryFn: async () => {
       if (!entityId || !month) return [];
       const { data, error } = await supabase
         .from('financial_snapshots')
         .select('property_id, gross_rent_received, total_costs, net_operating_income, net_cash_flow, mortgage_payments')
+        .eq('org_id', orgId!)
         .eq('entity_id', entityId)
         .eq('snapshot_month', month);
       if (error) throw error;
       return (data || []) as { property_id: string; gross_rent_received: number; total_costs: number; net_operating_income: number; net_cash_flow: number; mortgage_payments: number }[];
     },
-    enabled: !!entityId && !!month,
+    enabled: !!orgId && !!entityId && !!month,
   });
 }
 
 // ── Property Annual Performance ──
 export function usePropertyAnnualPerformance() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['property_annual_performance'],
+    queryKey: ['property_annual_performance', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from(PROPERTY_ANNUAL_PERFORMANCE_VIEW)
@@ -93,42 +106,49 @@ export function usePropertyAnnualPerformance() {
       if (error) throw error;
       return (data || []) as unknown as PropertyAnnualPerformance[];
     },
+    enabled: !!orgId,
   });
 }
 
 // ── Property snapshots (for property detail) ──
 export function usePropertySnapshots(propertyId: string | undefined, months = 12) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['financial_snapshots', propertyId, months],
+    queryKey: ['financial_snapshots', orgId, propertyId, months],
     queryFn: async () => {
       if (!propertyId) return [];
       const { data, error } = await supabase
         .from('financial_snapshots')
         .select('id, org_id, property_id, entity_id, snapshot_month, gross_rent_due, gross_rent_received, other_income, management_fees, maintenance_costs, insurance_costs, utilities, council_tax, licensing_costs, professional_fees, other_costs, mortgage_payments, total_costs, net_operating_income, net_cash_flow, rent_collection_rate, is_locked, locked_at, locked_by, created_at, updated_at')
+        .eq('org_id', orgId!)
         .eq('property_id', propertyId)
         .order('snapshot_month', { ascending: false })
         .limit(months);
       if (error) throw error;
       return (data || []) as FinancialSnapshot[];
     },
-    enabled: !!propertyId,
+    enabled: !!orgId && !!propertyId,
   });
 }
 
 // ── All snapshots for a given month ──
 export function useMonthSnapshots(month: string | undefined) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['financial_snapshots_month', month],
+    queryKey: ['financial_snapshots_month', orgId, month],
     queryFn: async () => {
       if (!month) return [];
       const { data, error } = await supabase
         .from('financial_snapshots')
         .select('id, org_id, property_id, entity_id, snapshot_month, gross_rent_due, gross_rent_received, other_income, management_fees, maintenance_costs, insurance_costs, utilities, council_tax, licensing_costs, professional_fees, other_costs, mortgage_payments, total_costs, net_operating_income, net_cash_flow, rent_collection_rate, is_locked, locked_at, locked_by, created_at, updated_at')
+        .eq('org_id', orgId!)
         .eq('snapshot_month', month);
       if (error) throw error;
       return (data || []) as FinancialSnapshot[];
     },
-    enabled: !!month,
+    enabled: !!orgId && !!month,
   });
 }
 

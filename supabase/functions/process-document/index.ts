@@ -93,6 +93,22 @@ interface AIExtractionResult {
   compliance_type: string | null;
 }
 
+interface ExistingComplianceItemRow {
+  id: string;
+}
+
+interface ComplianceDocumentVersionRow {
+  version_number: number | null;
+}
+
+interface PropertyIdRow {
+  id: string;
+}
+
+interface InsurancePolicyIdRow {
+  id: string;
+}
+
 function isValidUUID(str: string | null | undefined): boolean {
   if (!str) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
@@ -149,7 +165,7 @@ function generateComplianceFilename(complianceType: string, propertyAddress: str
 
 // Auto-filing: creates compliance_items and compliance_documents records
 async function autoFileDocument(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   extraction: AIExtractionResult,
   documentId: string,
   orgId: string,
@@ -178,8 +194,10 @@ async function autoFileDocument(
 
     let complianceItemId: string;
 
-    if (existingItems && existingItems.length > 0) {
-      complianceItemId = existingItems[0].id;
+    const typedExistingItems = (existingItems || []) as ExistingComplianceItemRow[];
+
+    if (typedExistingItems.length > 0) {
+      complianceItemId = typedExistingItems[0].id;
       await supabase.from('compliance_items').update({
         issue_date: extraction.extracted_issue_date,
         expiry_date: calculatedExpiryDate,
@@ -200,8 +218,8 @@ async function autoFileDocument(
         })
         .select()
         .single();
-      if (createError) return { success: false, error: createError.message };
-      complianceItemId = newItem.id;
+      if (createError || !newItem?.id) return { success: false, error: createError?.message || 'Failed to create compliance item' };
+      complianceItemId = newItem.id as string;
     }
 
     // Archive previous documents
@@ -216,9 +234,10 @@ async function autoFileDocument(
       .eq('compliance_item_id', complianceItemId)
       .order('version_number', { ascending: false })
       .limit(1);
-    const nextVersion = existingDocs?.[0]?.version_number ? existingDocs[0].version_number + 1 : 1;
+    const typedExistingDocs = (existingDocs || []) as ComplianceDocumentVersionRow[];
+    const nextVersion = typedExistingDocs[0]?.version_number ? typedExistingDocs[0].version_number + 1 : 1;
 
-    // Generate filename and copy file
+    // Generate filename and copy file into the private compliance buckets using org-prefixed paths
     const structuredFilename = generateComplianceFilename(complianceType, propertyAddress, originalFilename);
     const sourcePath = fileUrl.includes('/documents/') ? fileUrl.split('/documents/')[1] : fileUrl;
 
@@ -226,13 +245,12 @@ async function autoFileDocument(
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('documents').download(sourcePath);
       if (!downloadError && fileData) {
-        const compliancePath = `${extraction.matched_property_id}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
+        const compliancePath = `${orgId}/${extraction.matched_property_id}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
         await supabase.storage.from('compliance').upload(compliancePath, fileData);
-        const { data: urlData } = supabase.storage.from('compliance').getPublicUrl(compliancePath);
 
         await supabase.from('compliance_documents').insert({
           compliance_item_id: complianceItemId,
-          file_url: urlData.publicUrl,
+          file_url: compliancePath,
           original_file_name: structuredFilename,
           file_type: originalFilename.split('.').pop() || 'pdf',
           uploaded_by: userId,
@@ -240,6 +258,58 @@ async function autoFileDocument(
           version_number: nextVersion,
           notes: 'Auto-filed via AI Document Processing',
         });
+        // === Also file into compliance_documents_v2 for /compliance-v2 page ===
+        const v2DocType = DOC_TYPE_TO_V2_TYPE[extraction.doc_type];
+        if (v2DocType && extraction.matched_property_id) {
+          const { data: v1Prop } = await supabase.from('properties')
+            .select('postcode, address_line')
+            .eq('id', extraction.matched_property_id)
+            .maybeSingle();
+
+          let v2PropertyId: string | null = null;
+          if (v1Prop?.postcode) {
+            const { data: v2Prop } = await supabase.from('properties_v2')
+              .select('id')
+              .eq('postcode', v1Prop.postcode)
+              .limit(1)
+              .maybeSingle();
+            v2PropertyId = ((v2Prop as PropertyIdRow | null)?.id) || null;
+          }
+
+          if (v2PropertyId) {
+            await supabase.from('compliance_documents_v2')
+              .update({ is_current: false })
+              .eq('property_id', v2PropertyId)
+              .eq('document_type', v2DocType)
+              .eq('is_current', true);
+
+            const v2FilePath = `${orgId}/${v2PropertyId}/${v2DocType}/${Date.now()}-${structuredFilename}`;
+            const { error: v2UploadError } = await supabase.storage
+              .from('compliance-documents')
+              .upload(v2FilePath, fileData);
+
+            if (v2UploadError) {
+              return { success: false, error: v2UploadError.message };
+            }
+
+            await supabase.from('compliance_documents_v2').insert({
+              org_id: orgId,
+              property_id: v2PropertyId,
+              document_type: v2DocType,
+              issue_date: extraction.extracted_issue_date || new Date().toISOString().split('T')[0],
+              expiry_date: calculatedExpiryDate,
+              status: 'valid',
+              is_current: true,
+              file_url: v2FilePath,
+              file_name: structuredFilename,
+              certificate_number: extraction.extracted_reference_number,
+              issuer_name: extraction.extracted_certifier_company || extraction.extracted_certifier_name,
+              ai_extracted: true,
+              ai_confidence_score: extraction.doc_type_confidence,
+              notes: 'Auto-filed via AI Document Processing',
+            });
+          }
+        }
       }
     }
 
@@ -254,53 +324,6 @@ async function autoFileDocument(
       renamed_at: new Date().toISOString(),
     }).eq('id', documentId);
 
-    // === Also file into compliance_documents_v2 for /compliance-v2 page ===
-    const v2DocType = DOC_TYPE_TO_V2_TYPE[extraction.doc_type];
-    if (v2DocType && extraction.matched_property_id) {
-      // Look up v1 property to get postcode for v2 matching
-      const { data: v1Prop } = await supabase.from('properties')
-        .select('postcode, address_line')
-        .eq('id', extraction.matched_property_id)
-        .maybeSingle();
-
-      // Find corresponding v2 property by postcode match
-      let v2PropertyId: string | null = null;
-      if (v1Prop?.postcode) {
-        const { data: v2Prop } = await supabase.from('properties_v2')
-          .select('id')
-          .eq('postcode', v1Prop.postcode)
-          .limit(1)
-          .maybeSingle();
-        v2PropertyId = v2Prop?.id || null;
-      }
-
-      if (v2PropertyId) {
-        // Mark any existing v2 docs of this type as not current
-        await supabase.from('compliance_documents_v2')
-          .update({ is_current: false })
-          .eq('property_id', v2PropertyId)
-          .eq('document_type', v2DocType)
-          .eq('is_current', true);
-
-        await supabase.from('compliance_documents_v2').insert({
-          org_id: orgId,
-          property_id: v2PropertyId,
-          document_type: v2DocType,
-          issue_date: extraction.extracted_issue_date || new Date().toISOString().split('T')[0],
-          expiry_date: calculatedExpiryDate,
-          status: 'valid',
-          is_current: true,
-          file_url: fileUrl,
-          file_name: structuredFilename,
-          certificate_number: extraction.extracted_reference_number,
-          issuer_name: extraction.extracted_certifier_company || extraction.extracted_certifier_name,
-          ai_extracted: true,
-          ai_confidence_score: extraction.doc_type_confidence,
-          notes: 'Auto-filed via AI Document Processing',
-        });
-      }
-    }
-
     // Sync EPC rating
     if (extraction.doc_type === 'epc_certificate' && extraction.extracted_epc_rating) {
       await supabase.from('properties').update({ epc_rating: extraction.extracted_epc_rating })
@@ -314,13 +337,14 @@ async function autoFileDocument(
       if (renewalDate) {
         const { data: existingPolicy } = await supabase.from('insurance_policies')
           .select('id').eq('property_id', extraction.matched_property_id).limit(1);
-        if (existingPolicy?.length) {
+        const typedExistingPolicies = (existingPolicy || []) as InsurancePolicyIdRow[];
+        if (typedExistingPolicies.length) {
           await supabase.from('insurance_policies').update({
             insurer_name: insurerName, renewal_date: renewalDate,
             policy_number: extraction.extracted_reference_number,
             start_date: extraction.extracted_issue_date, status: 'active',
             notes: 'Auto-updated from AI Document Processing',
-          }).eq('id', existingPolicy[0].id);
+          }).eq('id', typedExistingPolicies[0].id);
         } else {
           await supabase.from('insurance_policies').insert({
             org_id: orgId, property_id: extraction.matched_property_id,

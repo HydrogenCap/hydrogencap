@@ -1,22 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const ALLOWED_ORIGINS = [
-  "https://tenureiq.com",
-  "https://www.tenureiq.com",
-  "https://hydrogencapital.lovable.app",
-  Deno.env.get("ALLOWED_ORIGIN"),
-].filter(Boolean) as string[];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
+import { getCorsHeaders } from "../_shared/cors.ts";
 
 // AES-GCM encryption utilities
 async function getKey(): Promise<CryptoKey> {
@@ -82,6 +66,23 @@ function getLast2(value: string): string {
   return value.slice(-2);
 }
 
+async function getManageableOrgIds(
+  supabaseAdmin: any,
+  userId: string,
+): Promise<string[]> {
+  const { data, error } = await supabaseAdmin
+    .from("memberships")
+    .select("org_id")
+    .eq("user_id", userId)
+    .in("role", ["owner", "admin"]);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((membership: { org_id: string }) => membership.org_id);
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   // Handle CORS
@@ -121,38 +122,8 @@ serve(async (req) => {
     const body = await req.json();
     const { action, company_id, auth_code, utr } = body;
 
-    // Check user has admin/owner role for the company's org
-    const { data: membership, error: membershipError } = await supabaseAdmin
-      .from("memberships")
-      .select("role, org_id")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
-
-    if (membershipError || !membership) {
-      return new Response(
-        JSON.stringify({ error: "User not found in organization" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Verify company belongs to user's org
-    const { data: company, error: companyError } = await supabaseAdmin
-      .from("companies")
-      .select("id, org_id")
-      .eq("id", company_id)
-      .single();
-
-    if (companyError || !company || company.org_id !== membership.org_id) {
-      return new Response(
-        JSON.stringify({ error: "Company not found or access denied" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check role is admin or owner
-    const allowedRoles = ["owner", "admin"];
-    if (!allowedRoles.includes(membership.role)) {
+    const manageableOrgIds = await getManageableOrgIds(supabaseAdmin, user.id);
+    if (manageableOrgIds.length === 0) {
       return new Response(
         JSON.stringify({ error: "Insufficient permissions. Admin or Owner role required." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -160,6 +131,19 @@ serve(async (req) => {
     }
 
     if (action === "set") {
+      const { data: company, error: companyError } = await supabaseAdmin
+        .from("companies")
+        .select("id, org_id")
+        .eq("id", company_id)
+        .maybeSingle();
+
+      if (companyError || !company || !manageableOrgIds.includes(company.org_id)) {
+        return new Response(
+          JSON.stringify({ error: "Company not found or access denied" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // SET SECRETS
       const secretData: Record<string, unknown> = {
         company_id,
@@ -206,6 +190,19 @@ serve(async (req) => {
       );
 
     } else if (action === "get") {
+      const { data: company, error: companyError } = await supabaseAdmin
+        .from("companies")
+        .select("id, org_id")
+        .eq("id", company_id)
+        .maybeSingle();
+
+      if (companyError || !company || !manageableOrgIds.includes(company.org_id)) {
+        return new Response(
+          JSON.stringify({ error: "Company not found or access denied" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       // GET SECRETS (DECRYPT)
       const { data: secrets, error: fetchError } = await supabaseAdmin
         .from("company_secrets")
@@ -274,7 +271,7 @@ serve(async (req) => {
           .from("companies")
           .select("id, org_id")
           .eq("company_number", company_number)
-          .eq("org_id", membership.org_id)
+          .in("org_id", manageableOrgIds)
           .single();
 
         if (!targetCompany) {

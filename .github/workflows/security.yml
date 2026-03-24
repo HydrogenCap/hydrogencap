@@ -32,7 +32,7 @@ jobs:
         id: audit
         continue-on-error: true
         run: |
-          npm audit --production --audit-level=high 2>&1 | tee audit-output.txt
+          npm audit --omit=dev --audit-level=high 2>&1 | tee audit-output.txt
           echo "exit_code=$?" >> $GITHUB_OUTPUT
 
       - name: Check for critical vulnerabilities

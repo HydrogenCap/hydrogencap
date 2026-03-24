@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 interface EPCResult {
   propertyId: string;
@@ -34,8 +35,9 @@ export function useBulkEpcEnrich() {
     setIsEnriching(true);
     
     try {
+      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase.functions.invoke('bulk-epc-enrich', {
-        body: { mode },
+        body: { mode, orgId },
       });
 
       if (error) {

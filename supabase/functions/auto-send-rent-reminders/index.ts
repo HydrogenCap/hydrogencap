@@ -25,28 +25,15 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Verify cron/admin authorization
+    // This function performs cross-org automated sends and should only run on cron.
     const cronSecret = Deno.env.get("CRON_SECRET");
     const authHeader = req.headers.get("Authorization");
 
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
       // Authorized as cron job
-    } else if (authHeader?.startsWith("Bearer ")) {
-      const supabaseAuth = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!
-      );
-      const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabaseAuth.auth.getUser(token);
-      if (authError) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
     } else {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+      return new Response(JSON.stringify({ error: "Cron authorization required" }), {
+        status: 403,
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
@@ -249,10 +236,12 @@ serve(async (req: Request) => {
       { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message === "Cron authorization required" ? 403 : 500;
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      JSON.stringify({ error: message }),
+      { status, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });

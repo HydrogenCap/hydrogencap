@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
 
 export interface LoanFacility {
@@ -168,17 +168,17 @@ export function useLoanFacilitiesByProperty(propertyId: string | undefined) {
         lender_name: d.lenders?.lender_name,
         lender_type: d.lenders?.lender_type,
         entity_name: d.legal_entities?.entity_name,
-        property_address: '',
-      })) as unknown as LoanFacilityWithDetails[];
+      })) as LoanFacilityWithDetails[];
     },
   });
 }
 
 export function useAllLoanFacilities() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['loan_facilities', 'all'],
+    queryKey: ['loan_facilities', 'all', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('loan_facilities')
         .select(`
@@ -187,7 +187,7 @@ export function useAllLoanFacilities() {
           legal_entities!inner(entity_name),
           properties_v2!inner(address_line_1, postcode)
         `)
-        .eq('org_id', orgId)
+        .eq('org_id', orgId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return ((data || []) as LoanFacilityWithPropertyRow[]).map((d) => ({
@@ -198,36 +198,41 @@ export function useAllLoanFacilities() {
         property_address: `${d.properties_v2?.address_line_1}, ${d.properties_v2?.postcode}`,
       })) as LoanFacilityWithDetails[];
     },
+    enabled: !!orgId,
   });
 }
 
 export function useLoanAlerts() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['loan_alerts'],
+    queryKey: ['loan_alerts', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('loan_alerts')
         .select('*')
-        .eq('org_id', orgId);
+        .eq('org_id', orgId!);
       if (error) throw error;
       return data as LoanAlert[];
     },
+    enabled: !!orgId,
   });
 }
 
 export function usePortfolioDebtSummary() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['portfolio_debt_summary'],
+    queryKey: ['portfolio_debt_summary', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('portfolio_debt_summary')
         .select('*')
-        .eq('org_id', orgId);
+        .eq('org_id', orgId!);
       if (error) throw error;
       return data as PortfolioDebtSummary[];
     },
+    enabled: !!orgId,
   });
 }
 

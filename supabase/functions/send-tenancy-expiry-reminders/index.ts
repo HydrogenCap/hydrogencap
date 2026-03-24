@@ -24,46 +24,82 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+interface RequestAuthorization {
+  mode: "cron" | "user";
+  manageableOrgIds: string[] | null;
+}
+
+interface MembershipRow {
+  org_id: string;
+  role: string;
+  user_id: string;
+}
+
+interface ProfileRow {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+}
+
+async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const authHeader = req.headers.get("Authorization");
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return { mode: "cron", manageableOrgIds: null };
+  }
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  const token = authHeader.replace("Bearer ", "");
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseAuth.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error("Unauthorized");
+  }
+
+  const { data: memberships, error: membershipError } = await supabaseAuth
+    .from("memberships")
+    .select("org_id, role")
+    .eq("user_id", user.id)
+    .in("role", ["owner", "admin"]);
+
+  if (membershipError) {
+    throw membershipError;
+  }
+
+  const manageableOrgIds = [...new Set((memberships || []).map((membership) => membership.org_id))];
+  if (manageableOrgIds.length === 0) {
+    throw new Error("Access denied");
+  }
+
+  return { mode: "user", manageableOrgIds };
+}
+
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: getCorsHeaders(req) });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify cron/admin authorization
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    const authHeader = req.headers.get("Authorization");
-
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      // Authorized as cron job
-    } else if (authHeader?.startsWith("Bearer ")) {
-      const supabaseAuth = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!);
-      const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabaseAuth.auth.getUser(token);
-      if (authError) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-      });
-    }
-
+    const authorization = await authorizeRequest(req);
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const resend = new Resend(RESEND_API_KEY);
 
-    // Find active tenancies expiring within 60 days
     const now = new Date();
     const sixtyDays = new Date(now.getTime() + 60 * 86400000).toISOString().split("T")[0];
 
-    const { data: tenancies, error } = await supabase
+    let tenanciesQuery = supabase
       .from("tenancies")
       .select(`
-        id, end_date, rent_amount_pcm, status,
+        id, org_id, end_date, rent_amount_pcm, status,
         tenant:tenants(id, first_name, last_name, email),
         room:rooms(room_name),
         property:properties(id, address_line, postcode)
@@ -73,41 +109,86 @@ serve(async (req) => {
       .lte("end_date", sixtyDays)
       .order("end_date", { ascending: true });
 
+    if (authorization.mode === "user" && authorization.manageableOrgIds) {
+      tenanciesQuery = tenanciesQuery.in("org_id", authorization.manageableOrgIds);
+    }
+
+    const { data: tenancies, error } = await tenanciesQuery;
     if (error) throw error;
+
     if (!tenancies || tenancies.length === 0) {
       return new Response(JSON.stringify({ sent: 0, message: "No expiring tenancies" }), {
-        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Get org users who should receive alerts
-    const { data: orgUsers, error: usersError } = await supabase
+    const tenancyOrgIds = [...new Set(tenancies.map((tenancy) => tenancy.org_id).filter(Boolean))];
+    const { data: memberships, error: membershipsError } = await supabase
+      .from("memberships")
+      .select("org_id, role, user_id")
+      .in("org_id", tenancyOrgIds)
+      .in("role", ["owner", "admin"]);
+
+    if (membershipsError) throw membershipsError;
+
+    const adminMemberships = (memberships || []) as MembershipRow[];
+    const uniqueUserIds = [...new Set(adminMemberships.map((membership) => membership.user_id))];
+
+    if (uniqueUserIds.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, tenancies: tenancies.length, message: "No org admins found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, email")
+      .select("user_id, email, full_name")
+      .in("user_id", uniqueUserIds)
       .not("email", "is", null);
 
-    if (usersError) throw usersError;
+    if (profilesError) throw profilesError;
+
+    const profilesByUserId = new Map(
+      ((profiles || []) as ProfileRow[]).map((profile) => [profile.user_id, profile]),
+    );
+    const adminMembershipsByOrg = new Map<string, MembershipRow[]>();
+    adminMemberships.forEach((membership) => {
+      const existing = adminMembershipsByOrg.get(membership.org_id) || [];
+      existing.push(membership);
+      adminMembershipsByOrg.set(membership.org_id, existing);
+    });
+    const tenanciesByOrg = new Map<string, typeof tenancies>();
+    tenancies.forEach((tenancy) => {
+      const existing = tenanciesByOrg.get(tenancy.org_id) || [];
+      existing.push(tenancy);
+      tenanciesByOrg.set(tenancy.org_id, existing);
+    });
 
     let sentCount = 0;
 
-    // Send one summary email to each admin
-    for (const user of orgUsers || []) {
-      if (!user.email) continue;
+    for (const [orgId, orgTenancies] of tenanciesByOrg.entries()) {
+      const recipients = (adminMembershipsByOrg.get(orgId) || [])
+        .map((membership) => profilesByUserId.get(membership.user_id))
+        .filter((profile): profile is ProfileRow => Boolean(profile?.email));
 
-      const rows = tenancies.map((t: any) => {
-        const endDate = new Date(t.end_date!);
+      if (recipients.length === 0) {
+        continue;
+      }
+
+      const rows = orgTenancies.map((tenancy) => {
+        const endDate = new Date(tenancy.end_date!);
         const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / 86400000);
-        const tenant = t.tenant;
-        const room = t.room;
-        const property = t.property;
+        const tenant = Array.isArray(tenancy.tenant) ? tenancy.tenant[0] : tenancy.tenant;
+        const room = Array.isArray(tenancy.room) ? tenancy.room[0] : tenancy.room;
+        const property = Array.isArray(tenancy.property) ? tenancy.property[0] : tenancy.property;
 
         return `
           <tr>
-            <td style="padding:8px;border-bottom:1px solid #eee">${tenant?.first_name} ${tenant?.last_name}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee">${room?.room_name || '—'}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee">${property?.address_line || '—'}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee">${endDate.toLocaleDateString('en-GB')}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;color:${daysLeft <= 0 ? '#dc2626' : daysLeft <= 30 ? '#d97706' : '#6b7280'};font-weight:bold">
+            <td style="padding:8px;border-bottom:1px solid #eee">${tenant?.first_name || ""} ${tenant?.last_name || ""}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee">${room?.room_name || "-"}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee">${property?.address_line || "-"}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee">${endDate.toLocaleDateString("en-GB")}</td>
+            <td style="padding:8px;border-bottom:1px solid #eee;color:${daysLeft <= 0 ? "#dc2626" : daysLeft <= 30 ? "#d97706" : "#6b7280"};font-weight:bold">
               ${daysLeft <= 0 ? `Expired ${Math.abs(daysLeft)}d ago` : `${daysLeft} days`}
             </td>
           </tr>
@@ -133,32 +214,36 @@ serve(async (req) => {
           <p style="color:#64748b;font-size:14px">
             Review these tenancies and decide whether to renew, renegotiate, or end each one.
           </p>
-          <p style="margin-top:24px;color:#94a3b8;font-size:12px">— Tenure IQ</p>
+          <p style="margin-top:24px;color:#94a3b8;font-size:12px">- Tenure IQ</p>
         </div>
       `;
 
-      try {
-        await resend.emails.send({
-          from: FROM_EMAIL,
-          to: user.email,
-          subject: `⚠️ ${tenancies.length} Tenancies Expiring Soon`,
-          html,
-        });
-        sentCount++;
-      } catch (emailErr) {
-        console.error(`Failed to send to ${user.email}:`, emailErr);
+      for (const recipient of recipients) {
+        try {
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: recipient.email!,
+            subject: `${orgTenancies.length} Tenancies Expiring Soon`,
+            html,
+          });
+          sentCount++;
+        } catch (emailErr) {
+          console.error(`Failed to send to ${recipient.email}:`, emailErr);
+        }
       }
     }
 
     return new Response(
       JSON.stringify({ sent: sentCount, tenancies: tenancies.length }),
-      { headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message === "Unauthorized" ? 401 : message === "Access denied" ? 403 : 500;
     console.error("Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: message }), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

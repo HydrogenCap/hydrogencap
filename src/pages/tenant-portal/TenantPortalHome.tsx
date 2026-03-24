@@ -10,7 +10,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP } from '@/lib/calculations';
 
 export default function TenantPortalHome() {
-  const { tenancyId, canViewRent } = useTenantPortalSession();
+  const { tenancyId, tenantId, canViewRent } = useTenantPortalSession();
 
   // Fetch tenancy details
   const { data: tenancy } = useQuery({
@@ -52,20 +52,20 @@ export default function TenantPortalHome() {
 
   // Fetch open maintenance requests
   const { data: openRequests } = useQuery({
-    queryKey: ['tenant-portal-open-maintenance', tenancyId],
+    queryKey: ['tenant-portal-open-maintenance', tenantId],
     queryFn: async () => {
-      if (!tenancyId) return null;
+      if (!tenantId) return null;
       const { data, error } = await supabase
         .from('maintenance_requests')
         .select('*')
-        .eq('tenant_id', tenancyId)
+        .eq('tenant_id', tenantId)
         .not('status', 'eq', 'completed')
         .order('created_at', { ascending: false })
         .limit(5);
       if (error) throw error;
       return data;
     },
-    enabled: !!tenancyId,
+    enabled: !!tenantId,
   });
 
   if (!tenancy) {
@@ -90,7 +90,7 @@ export default function TenantPortalHome() {
         <div>
           <h1 className="text-2xl font-bold">Welcome, {tenantName}</h1>
           <p className="text-muted-foreground">
-            {tenancy.room?.room_name && `${tenancy.room.room_name} · `}
+            {tenancy.room?.room_name && `${tenancy.room.room_name} - `}
             {tenancy.property?.address_line}, {tenancy.property?.postcode}
           </p>
         </div>
@@ -113,7 +113,7 @@ export default function TenantPortalHome() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Start date</span>
-                  <span>{tenancy.start_date ? format(new Date(tenancy.start_date), 'dd MMM yyyy') : '—'}</span>
+                  <span>{tenancy.start_date ? format(new Date(tenancy.start_date), 'dd MMM yyyy') : '-'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">End date</span>
@@ -182,7 +182,7 @@ export default function TenantPortalHome() {
                   <p className="text-sm font-medium">{openRequests.length} open request(s)</p>
                   {openRequests.slice(0, 2).map(req => (
                     <div key={req.id} className="text-xs text-muted-foreground">
-                      {req.title} · <Badge variant="outline" className="text-xs">{req.status}</Badge>
+                      {req.title} - <Badge variant="outline" className="text-xs">{req.status}</Badge>
                     </div>
                   ))}
                 </div>

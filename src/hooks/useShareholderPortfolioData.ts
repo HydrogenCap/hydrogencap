@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useShareholderSession } from './useShareholderSession';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 export interface PortalPropertyV2 {
   id: string;
@@ -172,7 +173,12 @@ export function useShareholderPortfolioData(options?: UseShareholderPortfolioDat
         .eq('is_cover', true)
         .in('property_id', propertyIds);
       if (error) throw error;
-      return data;
+      return Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          file_url: await createSignedStorageUrl('photos', photo.file_url),
+        }))
+      );
     },
     enabled: includePhotos && !!orgId && isShareholderUser && !!properties && properties.length > 0,
   });

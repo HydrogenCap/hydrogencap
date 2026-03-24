@@ -14,6 +14,7 @@ import { useInvestors, useSendInvestorPortalAccessEmail, Investor } from '@/hook
 import { useInvestorCommitments, useInvestorDistributions, useInvestorReturnMetrics } from '@/hooks/useInvestorDetail';
 import { useInvestorReports } from '@/hooks/useInvestorReports';
 import { useDownloadFile } from '@/hooks/useSignedUrl';
+import { formatGBP } from '@/lib/calculations';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { CommitmentFormModal } from '@/components/investors/CommitmentFormModal';
 import { DistributionFormModal } from '@/components/investors/DistributionFormModal';
@@ -54,7 +55,7 @@ const DIST_TYPE_LABEL: Record<string, string> = {
 };
 
 function fmt(amount: number | null | undefined): string {
-  return `£${(amount || 0).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return formatGBP(amount || 0);
 }
 
 export default function InvestorDetail() {
@@ -242,14 +243,14 @@ export default function InvestorDetail() {
                         <TableCell className="text-right font-mono text-sm">{fmt(c.committed_amount)}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{fmt(c.drawn_amount)}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{fmt(c.undrawn_amount)}</TableCell>
-                        <TableCell className="text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '—'}</TableCell>
+                        <TableCell className="text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '-'}</TableCell>
                         <TableCell className="text-right font-mono text-sm">{fmt(c.investors_share_valuation)}</TableCell>
                         <TableCell className="text-center">{c.property_count || 0}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{c.commitment_date ? format(new Date(c.commitment_date), 'dd MMM yyyy') : '—'}</TableCell>
-                        <TableCell className="text-sm">{c.maturity_date ? format(new Date(c.maturity_date), 'dd MMM yyyy') : '—'}</TableCell>
+                        <TableCell className="text-sm">{c.commitment_date ? format(new Date(c.commitment_date), 'dd MMM yyyy') : '-'}</TableCell>
+                        <TableCell className="text-sm">{c.maturity_date ? format(new Date(c.maturity_date), 'dd MMM yyyy') : '-'}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -305,10 +306,10 @@ export default function InvestorDetail() {
                     <TableCell className="text-right font-mono text-sm font-semibold">{fmt(d.net_amount)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {d.period_from && d.period_to
-                        ? `${format(new Date(d.period_from), 'MMM yy')} – ${format(new Date(d.period_to), 'MMM yy')}`
-                        : '—'}
+                        ? `${format(new Date(d.period_from), 'MMM yy')} - ${format(new Date(d.period_to), 'MMM yy')}`
+                        : '-'}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{d.payment_reference || '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{d.payment_reference || '-'}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={d.status === 'paid' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : ''}>
                         {d.status}
@@ -396,9 +397,9 @@ export default function InvestorDetail() {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.title}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(r.report_period_from), 'MMM yyyy')} – {format(new Date(r.report_period_to), 'MMM yyyy')}
+                      {format(new Date(r.report_period_from), 'MMM yyyy')} - {format(new Date(r.report_period_to), 'MMM yyyy')}
                     </TableCell>
-                    <TableCell className="text-sm">{r.generated_at ? format(new Date(r.generated_at), 'dd MMM yyyy') : '—'}</TableCell>
+                    <TableCell className="text-sm">{r.generated_at ? format(new Date(r.generated_at), 'dd MMM yyyy') : '-'}</TableCell>
                     <TableCell>
                       {r.sent_to_investor ? (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Sent</Badge>

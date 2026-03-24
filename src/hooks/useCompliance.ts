@@ -2,6 +2,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { ComplianceItem, ComplianceDocument } from '@/lib/complianceTypes';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
+
+async function resolveComplianceDocuments<T extends { file_url: string }>(documents: T[]): Promise<T[]> {
+  return Promise.all(
+    documents.map(async (document) => ({
+      ...document,
+      file_url: await createSignedStorageUrl('compliance', document.file_url),
+    }))
+  );
+}
+
+async function resolveComplianceItemsWithDocuments<T extends { documents: ComplianceDocument[] }>(items: T[]): Promise<T[]> {
+  return Promise.all(
+    items.map(async (item) => ({
+      ...item,
+      documents: await resolveComplianceDocuments(item.documents || []),
+    }))
+  );
+}
 
 // Fetch compliance items for a property
 export function usePropertyCompliance(propertyId: string | undefined) {
@@ -24,7 +43,9 @@ export function usePropertyCompliance(propertyId: string | undefined) {
         .order('expiry_date', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      return data as (ComplianceItem & { documents: ComplianceDocument[] })[];
+      return resolveComplianceItemsWithDocuments(
+        (data || []) as (ComplianceItem & { documents: ComplianceDocument[] })[]
+      );
     },
     enabled: !!propertyId,
   });
@@ -57,7 +78,9 @@ export function useAllCompliance(options?: { page?: number; pageSize?: number })
 
       const { data, error, count } = await query;
       if (error) throw error;
-      const items = (data ?? []) as (ComplianceItem & { documents: ComplianceDocument[] })[];
+      const items = await resolveComplianceItemsWithDocuments(
+        (data ?? []) as (ComplianceItem & { documents: ComplianceDocument[] })[]
+      );
       const total = count ?? items.length;
       return {
         items,
@@ -99,20 +122,22 @@ export function useAllComplianceWithProperties() {
         .order('expiry_date', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      return data as (ComplianceItem & { 
-        documents: ComplianceDocument[];
-        property: {
-          id: string;
-          address_line: string;
-          postcode: string;
-          lifecycle_type: string | null;
-          is_hmo_licensed: boolean | null;
-          has_gas: boolean | null;
-          is_grade_listed: boolean | null;
-          epc_required: boolean | null;
-          asset_category: string | null;
-        };
-      })[];
+      return resolveComplianceItemsWithDocuments(
+        data as (ComplianceItem & {
+          documents: ComplianceDocument[];
+          property: {
+            id: string;
+            address_line: string;
+            postcode: string;
+            lifecycle_type: string | null;
+            is_hmo_licensed: boolean | null;
+            has_gas: boolean | null;
+            is_grade_listed: boolean | null;
+            epc_required: boolean | null;
+            asset_category: string | null;
+          };
+        })[]
+      );
     },
   });
 }
@@ -329,11 +354,6 @@ export function useUploadComplianceDocument() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('compliance')
-        .getPublicUrl(storagePath);
-
       // Archive previous current documents
       await supabase
         .from('compliance_documents')
@@ -346,7 +366,7 @@ export function useUploadComplianceDocument() {
         .from('compliance_documents')
         .insert({
           compliance_item_id: complianceItemId,
-          file_url: urlData.publicUrl,
+          file_url: storagePath,
           original_file_name: structuredFilename,
           file_type: file.type,
           uploaded_by: user.id,
@@ -382,7 +402,7 @@ export function useDeleteComplianceDocument() {
       fileUrl: string;
     }) => {
       // Delete from storage
-      const path = fileUrl.split('/compliance/')[1];
+      const path = extractStoragePath('compliance', fileUrl);
       if (path) {
         await supabase.storage.from('compliance').remove([path]);
       }

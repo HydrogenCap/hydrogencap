@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+import { extractStoragePath } from '@/lib/storagePaths';
 
 // Map document types to compliance types
 export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
@@ -223,9 +224,7 @@ export function useAcceptComplianceDocument() {
 
       // 3. Copy file to compliance storage
       let newFileUrl: string | null = null;
-      const sourcePath = fileUrl.includes('/documents/')
-        ? fileUrl.split('/documents/')[1]
-        : null;
+      const sourcePath = extractStoragePath('documents', fileUrl);
 
       if (sourcePath) {
         const { data: fileData, error: downloadError } = await supabase.storage
@@ -234,15 +233,15 @@ export function useAcceptComplianceDocument() {
 
         if (!downloadError && fileData) {
           const compliancePath = `${orgId}/${propertyId}/${docType}/${Date.now()}-${structuredFilename}`;
-          await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('compliance-documents')
             .upload(compliancePath, fileData);
 
-          const { data: urlData } = supabase.storage
-            .from('compliance-documents')
-            .getPublicUrl(compliancePath);
+          if (uploadError) {
+            throw uploadError;
+          }
 
-          newFileUrl = urlData.publicUrl;
+          newFileUrl = compliancePath;
         }
       }
 

@@ -3,7 +3,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import type { CapexProject, CapexLineItem } from './useCapex';
 
@@ -12,10 +12,11 @@ export interface CapexProjectWithProperty extends CapexProject {
 }
 
 export function useAllCapexProjects() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['capex-all-projects'],
+    queryKey: ['capex-all-projects', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await supabase
         .from('capex_projects')
         .select('*, capex_line_items(*), properties(id, address_line_1, city, postcode)')
@@ -24,21 +25,26 @@ export function useAllCapexProjects() {
       if (error) throw error;
       return (data || []) as unknown as CapexProjectWithProperty[];
     },
+    enabled: !!orgId,
   });
 }
 
 export function useCapexProject(projectId: string) {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['capex-project', projectId],
+    queryKey: ['capex-project', orgId, projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('capex_projects')
         .select('*, capex_line_items(*), properties(id, address_line_1, city, postcode)')
+        .eq('org_id', orgId!)
         .eq('id', projectId)
         .single();
       if (error) throw error;
       return data as unknown as CapexProjectWithProperty;
     },
+    enabled: !!orgId && !!projectId,
   });
 }
 

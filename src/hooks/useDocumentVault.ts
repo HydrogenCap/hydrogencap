@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useDocumentCategories, type ManagedDocument } from '@/hooks/useDocumentManagement';
+import {
+  resolveManagedDocumentUrls,
+  useDocumentCategories,
+  type ManagedDocument,
+} from '@/hooks/useDocumentManagement';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -152,7 +156,7 @@ export function useVaultDocuments(filters: VaultFilters) {
         );
       }
 
-      return results;
+      return resolveManagedDocumentUrls(results);
     },
   });
 }

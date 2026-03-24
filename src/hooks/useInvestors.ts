@@ -75,7 +75,8 @@ export function useInvestorPortfolioSummaries() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('investor_portfolio_summary')
-        .select('*');
+        .select('*')
+        .eq('org_id', orgId!);
       if (error) throw error;
       return data as InvestorPortfolioSummary[];
     },
@@ -90,7 +91,7 @@ export function useCreateInvestor() {
 
   return useMutation({
     mutationFn: async (data: Partial<InvestorFormData>) => {
-      const payload = { ...data, org_id: orgId! } as any;
+      const payload: InvestorInsert = { ...data, org_id: orgId! };
       const { data: result, error } = await supabase
         .from('investors')
         .insert([payload])

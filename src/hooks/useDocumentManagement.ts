@@ -4,6 +4,7 @@ import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { showMutationError } from '@/lib/errorToast';
 import { generateStructuredFilename } from '@/lib/documentNaming';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 interface PropertyAddressJoin {
   address_line: string | null;
@@ -57,7 +58,7 @@ export interface ManagedDocument {
    is_system: boolean | null;
  }
  
- export interface DocumentFilters {
+export interface DocumentFilters {
    propertyId?: string;
    companyId?: string;
    tenantId?: string;
@@ -85,6 +86,17 @@ export interface ManagedDocument {
    return 'other';
  }
  
+export async function resolveManagedDocumentUrls<T extends { file_url: string }>(
+  documents: T[]
+): Promise<T[]> {
+  return Promise.all(
+    documents.map(async (document) => ({
+      ...document,
+      file_url: await createSignedStorageUrl('documents', document.file_url),
+    }))
+  );
+}
+
 // getUserOrgId replaced by shared fetchUserOrgId
 
  // Get documents with filters
@@ -141,8 +153,8 @@ export interface ManagedDocument {
            doc.description?.toLowerCase().includes(searchLower)
          );
        }
- 
-       return results;
+
+       return resolveManagedDocumentUrls(results);
      },
    });
  }
@@ -319,17 +331,12 @@ export interface ManagedDocument {
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('documents')
-          .getPublicUrl(filePath);
-
         // Create document record with structured filename
         const { data, error } = await supabase
           .from('documents')
           .insert({
             org_id: orgId,
-            file_url: urlData.publicUrl,
+            file_url: filePath,
             original_file_name: file.name,
             display_name: displayName,
             final_file_name: finalFileName,
@@ -478,17 +485,21 @@ export interface ManagedDocument {
   }
  
  // Download document (logs the download)
- export function useDownloadDocument() {
-   return useMutation({
-     mutationFn: async (document: ManagedDocument) => {
-       // Log download
-       await supabase.rpc('log_document_download', { p_document_id: document.id });
- 
-       // Trigger download
-       const response = await fetch(document.file_url);
-       const blob = await response.blob();
-       const url = window.URL.createObjectURL(blob);
-       const a = window.document.createElement('a');
+export function useDownloadDocument() {
+  return useMutation({
+    mutationFn: async (document: ManagedDocument) => {
+      // Log download
+      await supabase.rpc('log_document_download', { p_document_id: document.id });
+
+      // Trigger download
+      const downloadUrl = await createSignedStorageUrl('documents', document.file_url);
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download document: ${response.status} ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
        a.href = url;
        a.download = document.final_file_name || document.display_name || document.original_file_name;
        window.document.body.appendChild(a);

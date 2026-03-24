@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { ShareLinkButton } from '@/components/documents/ShareLinkButton';
 import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
+import { extractStoragePath } from '@/lib/storagePaths';
 
 interface DocumentViewerModalProps {
   open: boolean;
@@ -23,22 +24,6 @@ interface DocumentViewerModalProps {
     version_number: number;
   } | null;
   title?: string;
-}
-
-/**
- * Extract storage path from a Supabase storage URL
- */
-function extractStoragePath(fileUrl: string): string | null {
-  const publicMatch = fileUrl.match(/\/storage\/v1\/object\/public\/compliance\/(.+)$/);
-  if (publicMatch) return publicMatch[1];
-  
-  const signedMatch = fileUrl.match(/\/storage\/v1\/object\/sign\/compliance\/(.+?)(\?|$)/);
-  if (signedMatch) return signedMatch[1];
-  
-  const simpleMatch = fileUrl.match(/compliance\/(.+?)(\?|$)/);
-  if (simpleMatch) return simpleMatch[1];
-  
-  return null;
 }
 
 function canPreviewInline(fileType: string | null, fileName: string): boolean {
@@ -100,7 +85,7 @@ export function DocumentViewerModal({
       setError(null);
 
       try {
-        const path = extractStoragePath(document.file_url);
+        const path = extractStoragePath('compliance', document.file_url);
         
         if (!path) {
           setSignedUrl(document.file_url);

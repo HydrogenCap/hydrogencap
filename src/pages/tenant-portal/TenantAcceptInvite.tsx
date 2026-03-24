@@ -51,7 +51,7 @@ export default function TenantAcceptInvite() {
         p_token: token,
       });
 
-      const result = (data as unknown as TenantInviteLookupResult) || {} as TenantInviteLookupResult;
+      const result = (data || {}) as TenantInviteLookupResult;
       if (error || !result.status) {
         setInviteStatus('invalid');
         return;

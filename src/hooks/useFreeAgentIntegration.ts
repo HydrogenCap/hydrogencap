@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useUserOrg } from '@/hooks/useUserOrg';
 
 type FreeAgentConnectionRow = Database['public']['Tables']['freeagent_connections']['Row'];
 type FreeAgentConnectionUpdate = Database['public']['Tables']['freeagent_connections']['Update'];
@@ -80,16 +81,20 @@ function getErrorMessage(error: unknown) {
 }
 
 export function useFreeAgentConnections() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['freeagent-connections'],
+    queryKey: ['freeagent-connections', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('freeagent_connections')
         .select('*')
+        .eq('org_id', orgId!)
         .order('connected_at', { ascending: false });
       if (error) throw error;
       return (data || []).map(mapFreeAgentConnection);
     },
+    enabled: !!orgId,
   });
 }
 

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
 interface AppSettingRow {
@@ -11,10 +11,11 @@ interface AppSettingRow {
 const APP_SETTINGS_TABLE = 'app_settings' as never;
 
 export function useAppSettings() {
+  const { data: orgId } = useUserOrg();
+
   return useQuery({
-    queryKey: ['app-settings'],
+    queryKey: ['app-settings', orgId],
     queryFn: async () => {
-      const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
       const { data, error } = await supabase
@@ -29,6 +30,7 @@ export function useAppSettings() {
       }
       return settings;
     },
+    enabled: !!orgId,
   });
 }
 
@@ -41,8 +43,8 @@ export function useUpdateAppSetting() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
-      const { error } = await (supabase
-        .from(APP_SETTINGS_TABLE) as any)
+      const { error } = await supabase
+        .from(APP_SETTINGS_TABLE)
         .upsert({
           org_id: orgId,
           setting_key: key,
@@ -52,8 +54,9 @@ export function useUpdateAppSetting() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['app-settings'] });
+    onSuccess: async () => {
+      const orgId = await fetchUserOrgId();
+      queryClient.invalidateQueries({ queryKey: ['app-settings', orgId] });
       toast({ title: 'Setting saved' });
     },
     onError: (err) => {

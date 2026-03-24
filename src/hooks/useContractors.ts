@@ -1,6 +1,7 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
- import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
  
  export interface Contractor {
    id: string;
@@ -39,17 +40,20 @@
    reviewed_by: string | null;
  }
  
- export function useContractors(filters?: {
-   complianceType?: string;
-   isActive?: boolean;
-   isPreferred?: boolean;
- }) {
-   return useQuery({
-     queryKey: ['contractors', filters],
-     queryFn: async () => {
+export function useContractors(filters?: {
+  complianceType?: string;
+  isActive?: boolean;
+  isPreferred?: boolean;
+}) {
+  const { data: orgId } = useUserOrg();
+
+  return useQuery({
+    queryKey: ['contractors', orgId, filters],
+    queryFn: async () => {
       let query = supabase
           .from('contractors')
           .select('id, org_id, name, company_name, email, phone, website, compliance_types, service_areas, notes, is_preferred, is_active, average_rating, total_jobs, avg_response_hours, hourly_rate_gbp, call_out_fee_gbp, typical_costs, availability_notes, last_used_at')
+          .eq('org_id', orgId!)
           .order('is_preferred', { ascending: false })
           .order('average_rating', { ascending: false, nullsFirst: false })
           .order('name');
@@ -64,12 +68,13 @@
          query = query.eq('is_preferred', filters.isPreferred);
        }
  
-       const { data, error } = await query;
-       if (error) throw error;
-       return data as Contractor[];
-     },
-   });
- }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Contractor[];
+    },
+    enabled: !!orgId,
+  });
+}
  
  export function useContractor(contractorId: string | undefined) {
    return useQuery({
@@ -142,19 +147,15 @@
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async (contractor: Omit<Contractor, 'id' | 'org_id' | 'average_rating' | 'total_jobs' | 'last_used_at'>) => {
-       const { data: membership } = await supabase
-         .from('memberships')
-         .select('org_id')
-         .limit(1)
-         .single();
- 
-       const { data, error } = await supabase
-         .from('contractors')
-         .insert({ ...contractor, org_id: membership!.org_id })
-         .select()
-         .single();
+  return useMutation({
+    mutationFn: async (contractor: Omit<Contractor, 'id' | 'org_id' | 'average_rating' | 'total_jobs' | 'last_used_at'>) => {
+      const orgId = await fetchUserOrgId();
+
+      const { data, error } = await supabase
+        .from('contractors')
+        .insert({ ...contractor, org_id: orgId })
+        .select()
+        .single();
  
        if (error) throw error;
        return data;
@@ -201,29 +202,25 @@
    const { toast } = useToast();
  
    return useMutation({
-     mutationFn: async (review: {
-       contractorId: string;
+    mutationFn: async (review: {
+      contractorId: string;
        jobId?: string;
        rating: number;
        reviewText?: string;
        punctualityRating?: number;
        qualityRating?: number;
        valueRating?: number;
-       communicationRating?: number;
-     }) => {
-       const { data: membership } = await supabase
-         .from('memberships')
-         .select('org_id')
-         .limit(1)
-         .single();
- 
-       const { data: { user } } = await supabase.auth.getUser();
- 
-       const { data, error } = await supabase
-         .from('contractor_reviews')
-         .insert({
-           org_id: membership!.org_id,
-           contractor_id: review.contractorId,
+      communicationRating?: number;
+    }) => {
+      const orgId = await fetchUserOrgId();
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase
+        .from('contractor_reviews')
+        .insert({
+          org_id: orgId,
+          contractor_id: review.contractorId,
            job_id: review.jobId || null,
            rating: review.rating,
            review_text: review.reviewText || null,
