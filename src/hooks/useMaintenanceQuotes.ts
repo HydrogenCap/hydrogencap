@@ -44,7 +44,7 @@ interface MaintenanceRequestApprovalUpdate {
   status: 'approved';
 }
 
-const MAINTENANCE_QUOTES_TABLE = 'maintenance_quotes' as never;
+const MAINTENANCE_QUOTES_TABLE = 'maintenance_quotes' as const;
 const QUOTE_SELECT = `
   *,
   contractor:compliance_contractors_v2(id, company_name, contact_name, phone, email)

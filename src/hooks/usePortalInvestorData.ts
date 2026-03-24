@@ -33,7 +33,7 @@ export function usePortalInvestorData() {
     queryFn: async (): Promise<PortalInvestorDataResponse> => {
       if (!user?.id) return EMPTY_PORTAL_INVESTOR_DATA;
 
-      const { data, error } = await supabase.rpc('get_portal_investor_data');
+      const { data, error } = await supabase.rpc('get_portal_investor_data' as never);
       if (error) throw error;
 
       const result = data as Partial<PortalInvestorDataResponse> | null;
