@@ -115,8 +115,6 @@ export function useWizardDraft(wizardType: WizardType) {
     }
   }, [draft?.id, draft?.current_step]);
 
-  const saveDraft = saveDraftFn;
-
   const createDraft = useCallback(async () => {
     if (!user) return null;
     const orgId = await fetchUserOrgId();
