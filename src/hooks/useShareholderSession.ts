@@ -54,7 +54,7 @@ export function useAcceptShareholderInvite() {
   return async (token: string) => {
     const { data, error } = await supabase.rpc('accept_shareholder_invite' as never, {
       p_token: token,
-    });
+    } as never);
 
     if (error) throw error;
 

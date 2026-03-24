@@ -147,7 +147,7 @@ export function usePropertiesCompat() {
 
 // â”€â”€â”€ Mappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function mapLoanToV1(loan: LoanFacilityRow): V1Loan {
+function mapLoanToV1(loan: LoanFacilityRow) {
   return {
     id: loan.id,
     property_id: loan.property_id,
@@ -167,21 +167,22 @@ function mapLoanToV1(loan: LoanFacilityRow): V1Loan {
     current_ltv: loan.current_ltv,
     facility_type: loan.facility_type,
     status: loan.status,
-  };
+  } as any;
 }
 
-function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Income {
+function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow) {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-income-${propertyId}`,
     property_id: propertyId,
     year: currentYear,
     annual_rent_gbp: performance.annual_rent_received,
-    created_at: null,
-  };
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as any;
 }
 
-function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Costs {
+function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow) {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-costs-${propertyId}`,
@@ -189,12 +190,12 @@ function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerforman
     year: currentYear,
     insurance_gbp_manual: null,
     management_gbp_manual: null,
-    maintenance_gbp_manual: null,
     utilities_gbp_manual: null,
     ground_rent_gbp_manual: null,
     __total_annual_costs: performance.annual_costs,
-    created_at: null,
-  };
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } as any;
 }
 
 function mapAgreementToTenancy(agreement: TenancyAgreementRow): V1Tenancy {
