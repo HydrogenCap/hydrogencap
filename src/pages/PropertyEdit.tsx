@@ -89,13 +89,13 @@ function PropertyEditPage() {
   const [suspiciousChange, setSuspiciousChange] = useState(false);
 
 
-  const form = useForm({
+  const form = useForm<PropertyFormData>({
     resolver: zodResolver(propertySchema),
     defaultValues: {
       address_line: '',
       ownership_percent: 100,
       country: 'United Kingdom',
-    },
+    } as PropertyFormData,
   });
 
   // Populate form when property data loads
