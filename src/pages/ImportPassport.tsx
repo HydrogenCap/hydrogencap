@@ -225,7 +225,7 @@ export default function ImportPassport() {
                       </div>
                       <Select
                         value={mapping[header] || '__skip__'}
-                        onValueChange={(value) => handleMappingChange(header, value === '__skip__' ? '' : value)}
+                        onValueChange={(value) => handleMappingChange(header, value === '__skip__' ? '' : value as any)}
                       >
                         <SelectTrigger className="w-[200px]">
                           <SelectValue placeholder="Skip this column" />

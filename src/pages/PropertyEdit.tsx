@@ -95,7 +95,7 @@ function PropertyEditPage() {
       address_line: '',
       ownership_percent: 100,
       country: 'United Kingdom',
-    },
+    } as PropertyFormData,
   });
 
   // Populate form when property data loads
@@ -414,7 +414,7 @@ function PropertyEditPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <PropertyDetailsSection
-              form={form}
+              form={form as any}
               watchedPostcode={watchedPostcode}
               watchedAddress={watchedAddress}
               watchedGeocodeStatus={watchedGeocodeStatus}
@@ -423,19 +423,19 @@ function PropertyEditPage() {
               onAutoPopulate={handleAutoPopulate}
             />
 
-            <LandRegistrySection form={form} propertyId={id} />
+            <LandRegistrySection form={form as any} propertyId={id} />
 
-            <ValuationSection form={form} />
+            <ValuationSection form={form as any} />
 
             <MortgageSection
-              form={form}
+              form={form as any}
               watchedCapitalOrInterest={watchedCapitalOrInterest}
               mortgageCalc={mortgageCalc}
             />
 
-            <IncomeSection form={form} />
+            <IncomeSection form={form as any} />
 
-            <NotesSection form={form} />
+            <NotesSection form={form as any} />
 
             {/* Actions */}
             <div className="flex gap-4">

@@ -631,7 +631,7 @@ export default function Settings() {
                           </div>
                           <Select
                             value={passMapping[header] || ''}
-                            onValueChange={(value) => handlePassMappingChange(header, value)}
+                            onValueChange={(value) => handlePassMappingChange(header, value as any)}
                           >
                             <SelectTrigger className="w-[200px]">
                               <SelectValue placeholder="Select field..." />
