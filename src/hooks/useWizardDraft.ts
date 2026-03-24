@@ -54,26 +54,46 @@ export function useWizardDraft(wizardType: WizardType) {
     return () => { cancelled = true; };
   }, [user, wizardType]);
 
+  const saveDraftFn = useCallback(async () => {
+    if (!draft?.id) return;
+    setIsSaving(true);
+    try {
+      await supabase
+        .from('wizard_drafts')
+        .update({
+          payload: payloadRef.current as unknown as Json,
+          current_step: draft.current_step,
+        })
+        .eq('id', draft.id);
+      dirtyRef.current = false;
+      setLastSaved(new Date());
+    } catch (err) {
+      console.error('Draft save failed:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [draft?.id, draft?.current_step]);
+
   // Auto-save interval
   useEffect(() => {
     const interval = setInterval(() => {
       if (dirtyRef.current && draft) {
-        saveDraft();
+        saveDraftFn();
       }
     }, AUTO_SAVE_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [draft, saveDraft]);
+  }, [draft, saveDraftFn]);
 
   // Save on visibility change
   useEffect(() => {
     const handler = () => {
       if (document.hidden && dirtyRef.current && draft) {
-        saveDraft();
+        saveDraftFn();
       }
     };
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
-  }, [draft, saveDraft]);
+  }, [draft, saveDraftFn]);
 
   const saveDraft = useCallback(async () => {
     if (!draft?.id) return;

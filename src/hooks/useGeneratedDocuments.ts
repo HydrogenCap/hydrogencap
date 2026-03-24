@@ -50,7 +50,7 @@ export function useCreateGeneratedDocument() {
           property_id: doc.property_id ?? null,
           tenancy_id: doc.tenancy_id ?? null,
           tenant_id: doc.tenant_id ?? null,
-          generated_data: doc.generated_data ?? null,
+          generated_data: (doc.generated_data ?? null) as any,
           created_by: user?.id ?? null,
         }])
         .select()

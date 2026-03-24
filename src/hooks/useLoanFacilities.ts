@@ -168,7 +168,8 @@ export function useLoanFacilitiesByProperty(propertyId: string | undefined) {
         lender_name: d.lenders?.lender_name,
         lender_type: d.lenders?.lender_type,
         entity_name: d.legal_entities?.entity_name,
-      })) as LoanFacilityWithDetails[];
+        property_address: '',
+      })) as unknown as LoanFacilityWithDetails[];
     },
   });
 }

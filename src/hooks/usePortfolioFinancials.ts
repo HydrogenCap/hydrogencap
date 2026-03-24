@@ -40,7 +40,7 @@ export interface PortfolioFinancials {
   costBreakdown: { name: string; value: number }[];
 }
 
-type WorkOrderPaymentRow = Pick<Database['public']['Tables']['work_orders']['Row'], 'property_id' | 'paid_amount' | 'paid_date'>;
+interface WorkOrderPaymentRow { property_id: string | null; paid_amount: number | null; paid_date: string | null; }
 type CapexLineItemRow = Pick<Database['public']['Tables']['capex_line_items']['Row'], 'actual_gbp' | 'paid_date' | 'created_at'>;
 type CapexProjectWithLineItems = Pick<Database['public']['Tables']['capex_projects']['Row'], 'property_id'> & {
   capex_line_items: CapexLineItemRow[] | null;
@@ -70,7 +70,7 @@ export function usePortfolioFinancials() {
         supabase.from('rooms_v2').select('property_id, current_rent_pcm, is_lettable').in('property_id', propertyIds),
         supabase.from('tenancy_agreements').select('id, property_id').in('property_id', propertyIds),
         supabase.from('loan_facilities').select('property_id, current_balance, interest_rate, monthly_payment').in('property_id', propertyIds).eq('status', 'active'),
-        supabase.from('work_orders').select('property_id, paid_amount, paid_date').in('property_id', propertyIds).not('paid_amount', 'is', null).gte('paid_date', twelveMonthsAgo),
+        supabase.from('work_orders').select('property_id, actual_cost, actual_completion_date').in('property_id', propertyIds).not('actual_cost', 'is', null).gte('actual_completion_date', twelveMonthsAgo),
         supabase.from('capex_projects').select('property_id, capex_line_items(actual_gbp, paid_date, created_at)').in('property_id', propertyIds),
       ]);
 
@@ -121,7 +121,7 @@ export function usePortfolioFinancials() {
       }
 
       const maintenanceByProperty = new Map<string, WorkOrderPaymentRow[]>();
-      for (const m of (maintenanceRes.data || []) as WorkOrderPaymentRow[]) {
+      for (const m of (maintenanceRes.data || []).map(r => ({ property_id: r.property_id, paid_amount: (r as any).actual_cost ?? null, paid_date: (r as any).actual_completion_date ?? null } as WorkOrderPaymentRow))) {
         if (!m.property_id) continue;
         const existing = maintenanceByProperty.get(m.property_id) || [];
         existing.push(m);
