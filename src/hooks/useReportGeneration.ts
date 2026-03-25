@@ -111,7 +111,7 @@ export function useReportData() {
   const isLoading = propertiesLoading || complianceLoading || passportsLoading || companiesLoading;
 
   // Build enriched property data
-  const enrichedProperties: PropertyReportData[] = (properties || []).map(prop => {
+  const enrichedProperties = (properties || []).map(prop => {
     const propCompliance = ((complianceItems?.filter(c => c.property_id === prop.id) || []) as ComplianceItemSummary[]);
     const passport = passports?.find(p => p.property_id === prop.id);
     const ownerCompany = companies?.find(c => c.id === prop.legal_owner_company_id);

@@ -54,27 +54,6 @@ export function useWizardDraft(wizardType: WizardType) {
     return () => { cancelled = true; };
   }, [user, wizardType]);
 
-  // Auto-save interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (dirtyRef.current && draft) {
-        saveDraft();
-      }
-    }, AUTO_SAVE_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [draft, saveDraft]);
-
-  // Save on visibility change
-  useEffect(() => {
-    const handler = () => {
-      if (document.hidden && dirtyRef.current && draft) {
-        saveDraft();
-      }
-    };
-    document.addEventListener('visibilitychange', handler);
-    return () => document.removeEventListener('visibilitychange', handler);
-  }, [draft, saveDraft]);
-
   const saveDraft = useCallback(async () => {
     if (!draft?.id) return;
     setIsSaving(true);

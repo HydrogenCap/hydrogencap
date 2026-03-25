@@ -154,7 +154,7 @@ export function useDashboardPropertiesV2() {
           tenancies: [],
           created_at: property.created_at,
           updated_at: property.updated_at,
-        } as PropertyWithFinancials;
+        } as unknown as PropertyWithFinancials;
       });
 
       return mapped;
@@ -226,7 +226,7 @@ export function useDashboardRoomsV2() {
         .eq('org_id', orgId!);
       if (error) throw error;
 
-      return ((data || []) as DashboardRoom[]).map((room) => ({
+      return ((data || []) as unknown as DashboardRoom[]).map((room) => ({
         ...room,
         status: room.occupancy_status === 'occupied' ? 'occupied' : 'vacant',
       }));

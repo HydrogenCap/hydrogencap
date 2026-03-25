@@ -121,7 +121,7 @@ export function usePortfolioFinancials() {
       }
 
       const maintenanceByProperty = new Map<string, WorkOrderPaymentRow[]>();
-      for (const m of (maintenanceRes.data || []) as WorkOrderPaymentRow[]) {
+      for (const m of (maintenanceRes.data || []) as unknown as WorkOrderPaymentRow[]) {
         if (!m.property_id) continue;
         const existing = maintenanceByProperty.get(m.property_id) || [];
         existing.push(m);

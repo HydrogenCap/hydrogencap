@@ -252,7 +252,7 @@ function DocumentRow({
             <SelectContent>
               {properties.map(p => (
                 <SelectItem key={p.id} value={p.id} className="text-xs">
-                  {p.address_line_1}{p.postcode ? `, ${p.postcode}` : ''}
+                  {(p as any).address_line_1}{(p as any).postcode ? `, ${(p as any).postcode}` : ''}
                 </SelectItem>
               ))}
             </SelectContent>
