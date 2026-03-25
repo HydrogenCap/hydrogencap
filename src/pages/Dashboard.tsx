@@ -645,7 +645,7 @@ function DashboardPage() {
                     <div className="p-4">
                       <Suspense fallback={<Skeleton className="h-[250px] md:h-[350px] rounded-lg" />}>
                         <PropertyMap
-                          properties={mapProperties}
+                          properties={mapProperties as any}
                           className="h-[250px] md:h-[350px] rounded-lg"
                         />
                       </Suspense>

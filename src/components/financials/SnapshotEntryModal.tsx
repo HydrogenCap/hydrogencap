@@ -292,6 +292,7 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
 
   const handleSave = () => {
     onSave.mutate({
+      org_id: property.org_id,
       property_id: property.id,
       entity_id: property.entity_id,
       snapshot_month: month,
@@ -454,6 +455,7 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
       const totalCosts = r.management_fees + r.maintenance_costs + r.insurance_costs + r.utilities + r.council_tax + r.other_costs;
       const suggestions = getAutoSuggestions(p.id);
       return onSave.mutateAsync({
+        org_id: p.org_id,
         property_id: p.id,
         entity_id: p.entity_id,
         snapshot_month: month,

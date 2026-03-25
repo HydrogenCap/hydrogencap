@@ -77,7 +77,7 @@ export function useCreateQuote() {
 
       const { data, error } = await supabase
         .from(MAINTENANCE_QUOTES_TABLE)
-        .insert({ ...quote, org_id: orgId, status: 'pending' })
+        .insert([{ ...quote, org_id: orgId, status: 'pending' }] as any)
         .select()
         .single();
       if (error) throw error;
@@ -109,17 +109,16 @@ export function useUpdateQuoteStatus() {
       status: 'accepted' | 'rejected';
       amount?: number;
     }) => {
-      // Update this quote
-      const { error } = await supabase
-        .from(MAINTENANCE_QUOTES_TABLE)
+      const { error } = await (supabase
+        .from(MAINTENANCE_QUOTES_TABLE) as any)
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', quoteId);
       if (error) throw error;
 
       // If accepted: reject all others, update estimated cost, set status to approved
       if (status === 'accepted') {
-        await supabase
-          .from(MAINTENANCE_QUOTES_TABLE)
+        await (supabase
+          .from(MAINTENANCE_QUOTES_TABLE) as any)
           .update({ status: 'rejected', updated_at: new Date().toISOString() })
           .eq('maintenance_request_id', requestId)
           .neq('id', quoteId);

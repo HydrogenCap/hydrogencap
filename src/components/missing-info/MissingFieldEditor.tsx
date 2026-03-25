@@ -29,13 +29,14 @@ interface Props {
 }
 
 export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) {
+  const stringValue = typeof value === 'boolean' ? '' : (value ?? '');
   const renderInput = () => {
     switch (field.type) {
       case 'text':
         return (
           <Input
             placeholder={`Enter ${field.label.toLowerCase()}`}
-            value={value || ''}
+            value={stringValue}
             onChange={e => onChange(e.target.value || undefined)}
             className={cn(isFilled && 'border-green-500')}
           />
@@ -50,7 +51,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
               step="0.01"
               min="0"
               placeholder="0.00"
-              value={value || ''}
+              value={stringValue}
               onChange={e => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
               className={cn('pl-7', isFilled && 'border-green-500')}
             />
@@ -66,7 +67,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
               min="0"
               max="100"
               placeholder="0.00"
-              value={value || ''}
+              value={stringValue}
               onChange={e => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
               className={cn('pr-7', isFilled && 'border-green-500')}
             />
@@ -76,13 +77,13 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
 
       case 'number':
         return (
-          <Input
-            type="number"
-            step="1"
-            min="0"
-            placeholder="0"
-            value={value || ''}
-            onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+            <Input
+              type="number"
+              step="1"
+              min="0"
+              placeholder="0"
+              value={stringValue}
+              onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
             className={cn(isFilled && 'border-green-500')}
           />
         );
@@ -101,7 +102,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
         );
 
       case 'date': {
-        const dateValue = value ? new Date(value) : undefined;
+        const dateValue = value && typeof value !== 'boolean' ? new Date(value as string | number) : undefined;
         // Calculate a reasonable year range (30 years back, 40 years forward for mortgages)
         const currentYear = new Date().getFullYear();
         const fromYear = currentYear - 30;
@@ -139,7 +140,7 @@ export function MissingFieldEditor({ field, value, onChange, isFilled }: Props) 
 
       case 'select':
         return (
-          <Select value={value || ''} onValueChange={v => onChange(v || undefined)}>
+          <Select value={String(value || '')} onValueChange={v => onChange(v || undefined)}>
             <SelectTrigger className={cn(isFilled && 'border-green-500')}>
               <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
             </SelectTrigger>

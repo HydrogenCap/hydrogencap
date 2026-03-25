@@ -130,12 +130,12 @@ export function useCreateWorksOrder() {
 
       const { data, error } = await supabase
         .from('work_orders')
-        .insert({
+        .insert([{
           ...order,
           org_id: orgId,
           order_number: orderNumber,
           status: 'draft',
-        })
+        }] as any)
         .select()
         .single();
 

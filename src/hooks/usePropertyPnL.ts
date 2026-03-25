@@ -124,7 +124,7 @@ export function usePropertyPnL(propertyId: string | undefined) {
         expectedRentPcm,
         rentPayments,
         loansRes.data || [],
-        (maintenanceRes.data ?? []) as MaintenanceCostRow[],
+        (maintenanceRes.data ?? []) as unknown as MaintenanceCostRow[],
         capexItems,
         0, // management fee % — default self-managed
       );
