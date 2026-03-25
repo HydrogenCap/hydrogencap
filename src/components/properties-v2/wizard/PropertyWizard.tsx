@@ -7,7 +7,7 @@ import { Building2, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCreatePropertyV2 } from '@/hooks/usePropertiesV2';
-import { useBulkCreateRooms } from '@/hooks/useRoomsV2';
+import { useBulkCreateRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
 import { useLenders, useCreateLender } from '@/hooks/useLenders';
 import { supabase } from '@/integrations/supabase/client';
