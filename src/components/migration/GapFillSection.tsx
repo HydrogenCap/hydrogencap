@@ -30,7 +30,7 @@ type GapFillSuggestion = { id: string; [key: string]: EditableValue };
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unexpected error occurred';
 
-function computeCompleteness<T extends Record<string, unknown>>(records: T[], fields: Array<keyof T>): number {
+function computeCompleteness(records: Array<Record<string, any>>, fields: string[]): number {
   if (!records.length) return 100;
   const totalCells = records.length * fields.length;
   const filledCells = records.reduce((sum, r) => {
