@@ -51,7 +51,7 @@ export default function AcceptInvite() {
         p_token: token,
       });
 
-      const result = (data || {}) as ShareholderInviteLookupResult;
+      const result = (data || {}) as unknown as ShareholderInviteLookupResult;
       if (error || !result.status) {
         setInviteStatus('invalid');
         return;

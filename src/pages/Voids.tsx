@@ -262,7 +262,7 @@ export default function Voids() {
         </Card>
 
         {/* Void Trend Chart */}
-        {allVoids && allVoids.length > 0 && <VoidTrendChart voids={allVoids} />}
+        {allVoids && allVoids.length > 0 && <VoidTrendChart voids={allVoids as any} />}
 
         {/* Void History */}
         {completedVoids.length > 0 && (

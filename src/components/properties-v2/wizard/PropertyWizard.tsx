@@ -146,10 +146,10 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.rooms.length > 0) {
         try {
           await bulkCreateRooms.mutateAsync(
-            data.rooms.map<RoomInsert>(r => ({
+            data.rooms.map(r => ({
               property_id: property.id,
               room_name: r.room_name,
-              room_type: r.room_type as RoomInsert['room_type'],
+              room_type: r.room_type as RoomV2['room_type'],
               floor: r.floor,
               has_ensuite: r.has_ensuite,
               is_lettable: r.is_lettable,
