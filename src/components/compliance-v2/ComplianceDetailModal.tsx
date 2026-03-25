@@ -11,6 +11,7 @@ import { useComplianceDocumentsV2, useToggleRequirementV2 } from '@/hooks/useCom
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 interface ComplianceDetailModalProps {
   row: ComplianceMatrixRow | null;
