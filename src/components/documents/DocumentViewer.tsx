@@ -104,13 +104,18 @@ export function DocumentViewer({
                   </Button>
                 </div>
               ) : (pdfBlobUrl || pdfDataUrl) ? (
-                <embed
-                  src={`${pdfBlobUrl || pdfDataUrl}#view=FitH`}
+                <object
+                  data={`${pdfDataUrl || pdfBlobUrl}#toolbar=1&navpanes=0&view=FitH`}
                   type="application/pdf"
                   className="w-full h-full"
                   title={document.display_name || document.original_file_name}
-                />
-                
+                >
+                  <iframe
+                    src={`${pdfBlobUrl || pdfDataUrl}#toolbar=1&navpanes=0&view=FitH`}
+                    className="w-full h-full border-0"
+                    title={document.display_name || document.original_file_name}
+                  />
+                </object>
               ) : null
             ) : (
               <div className="text-center">
