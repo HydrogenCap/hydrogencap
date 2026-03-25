@@ -23,14 +23,14 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 type EditableValue = string | number | boolean | null | undefined;
-type EditableRecord = { id: string } & Record<string, EditableValue>;
+type EditableRecord = { id: string; [key: string]: EditableValue };
 type EditMap = Record<string, Record<string, EditableValue>>;
-type GapFillSuggestion = { id: string } & Record<string, EditableValue>;
+type GapFillSuggestion = { id: string; [key: string]: EditableValue };
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unexpected error occurred';
 
-function computeCompleteness<T extends EditableRecord>(records: T[], fields: Array<keyof T>): number {
+function computeCompleteness<T extends Record<string, unknown>>(records: T[], fields: Array<keyof T>): number {
   if (!records.length) return 100;
   const totalCells = records.length * fields.length;
   const filledCells = records.reduce((sum, r) => {
@@ -46,10 +46,11 @@ function CellInput({ value, onChange, type = 'text', placeholder, isNull }: {
   placeholder?: string;
   isNull?: boolean;
 }) {
+  const displayValue = typeof value === 'boolean' ? String(value) : (value ?? '');
   return (
     <Input
       type={type}
-      value={value ?? ''}
+      value={displayValue}
       onChange={e => onChange(type === 'number' ? (e.target.value ? Number(e.target.value) : null) : (e.target.value || null))}
       placeholder={placeholder}
       className={cn(
@@ -61,13 +62,13 @@ function CellInput({ value, onChange, type = 'text', placeholder, isNull }: {
 }
 
 function CellSelect({ value, onChange, options, isNull }: {
-  value: string | null;
+  value: EditableValue;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
   isNull?: boolean;
 }) {
   return (
-    <Select value={value || ''} onValueChange={onChange}>
+    <Select value={String(value || '')} onValueChange={onChange}>
       <SelectTrigger className={cn('h-8 text-xs border-0 bg-transparent rounded-none', isNull && 'bg-warning/10')}>
         <SelectValue placeholder="Select..." />
       </SelectTrigger>
@@ -133,8 +134,8 @@ function PropertiesGapFill() {
         const record = properties.find(p => p.id === id);
         if (!record) continue;
         for (const [field, value] of Object.entries(fields)) {
-          if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
-            setField(id, field, value);
+          if (value !== null && value !== undefined && ((record as any)[field] === null || (record as any)[field] === undefined)) {
+            setField(id, field as keyof PropertyGap, value);
             filled++;
           }
         }
@@ -197,7 +198,7 @@ function PropertiesGapFill() {
               <tr key={p.id} className="border-b hover:bg-muted/30">
                 <td className="p-2 font-medium sticky left-0 bg-background">{p.address_line_1}, {p.postcode}</td>
                 <td><CellSelect value={getVal(p, 'property_type')} onChange={v => setField(p.id, 'property_type', v)} options={[...PROPERTY_TYPES]} /></td>
-                <td><CellToggle value={getVal(p, 'has_gas_supply')} onChange={v => setField(p.id, 'has_gas_supply', v)} isNull={p.has_gas_supply === null} /></td>
+                <td><CellToggle value={getVal(p, 'has_gas_supply') as boolean | null | undefined} onChange={v => setField(p.id, 'has_gas_supply', v)} isNull={p.has_gas_supply === null} /></td>
                 <td><CellInput value={getVal(p, 'year_built')} onChange={v => setField(p.id, 'year_built', v)} type="number" placeholder="e.g. 1920" isNull={p.year_built === null} /></td>
                 <td><CellInput value={getVal(p, 'total_lettable_rooms')} onChange={v => setField(p.id, 'total_lettable_rooms', v)} type="number" isNull={p.total_lettable_rooms === null} /></td>
                 <td><CellInput value={getVal(p, 'total_floors')} onChange={v => setField(p.id, 'total_floors', v)} type="number" isNull={p.total_floors === null} /></td>
@@ -252,8 +253,8 @@ function RoomsGapFill() {
         const record = rooms.find((r) => r.id === id);
         if (!record) continue;
         for (const [field, value] of Object.entries(fields)) {
-          if (value !== null && value !== undefined && (record[field] === null || record[field] === undefined)) {
-            setField(id, field, value);
+          if (value !== null && value !== undefined && ((record as any)[field] === null || (record as any)[field] === undefined)) {
+            setField(id, field as keyof RoomGap, value);
             filled++;
           }
         }
@@ -317,8 +318,8 @@ function RoomsGapFill() {
                 <td><CellSelect value={getVal(r, 'room_type')} onChange={v => setField(r.id, 'room_type', v)} options={[...ROOM_TYPES]} /></td>
                 <td><CellInput value={getVal(r, 'current_rent_pcm')} onChange={v => setField(r.id, 'current_rent_pcm', v)} type="number" isNull={r.current_rent_pcm === null} /></td>
                 <td><CellInput value={getVal(r, 'target_rent_pcm')} onChange={v => setField(r.id, 'target_rent_pcm', v)} type="number" isNull={r.target_rent_pcm === null} /></td>
-                <td><CellToggle value={getVal(r, 'has_ensuite')} onChange={v => setField(r.id, 'has_ensuite', v)} /></td>
-                <td><CellToggle value={getVal(r, 'is_lettable')} onChange={v => setField(r.id, 'is_lettable', v)} /></td>
+                <td><CellToggle value={getVal(r, 'has_ensuite') as boolean | null | undefined} onChange={v => setField(r.id, 'has_ensuite', v)} /></td>
+                <td><CellToggle value={getVal(r, 'is_lettable') as boolean | null | undefined} onChange={v => setField(r.id, 'is_lettable', v)} /></td>
                 <td><CellInput value={getVal(r, 'floor')} onChange={v => setField(r.id, 'floor', v)} type="number" isNull={r.floor === null} /></td>
               </tr>
             ))}
