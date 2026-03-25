@@ -91,7 +91,7 @@ export function useCreateInvestor() {
 
   return useMutation({
     mutationFn: async (data: Partial<InvestorFormData>) => {
-      const payload: InvestorInsert = { ...data, org_id: orgId! };
+      const payload = { ...data, org_id: orgId! } as any;
       const { data: result, error } = await supabase
         .from('investors')
         .insert([payload])

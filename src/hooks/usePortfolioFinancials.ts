@@ -40,7 +40,7 @@ export interface PortfolioFinancials {
   costBreakdown: { name: string; value: number }[];
 }
 
-type WorkOrderPaymentRow = Pick<Database['public']['Tables']['work_orders']['Row'], 'property_id' | 'paid_amount' | 'paid_date'>;
+type WorkOrderPaymentRow = { property_id: string; paid_amount: number; paid_date: string | null };
 type CapexLineItemRow = Pick<Database['public']['Tables']['capex_line_items']['Row'], 'actual_gbp' | 'paid_date' | 'created_at'>;
 type CapexProjectWithLineItems = Pick<Database['public']['Tables']['capex_projects']['Row'], 'property_id'> & {
   capex_line_items: CapexLineItemRow[] | null;

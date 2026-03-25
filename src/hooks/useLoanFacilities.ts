@@ -163,11 +163,12 @@ export function useLoanFacilitiesByProperty(propertyId: string | undefined) {
         .order('status')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return ((data || []) as LoanFacilityRow[]).map((d) => ({
+      return ((data || []) as any[]).map((d: any) => ({
         ...d,
         lender_name: d.lenders?.lender_name,
         lender_type: d.lenders?.lender_type,
         entity_name: d.legal_entities?.entity_name,
+        property_address: d.property_address ?? '',
       })) as LoanFacilityWithDetails[];
     },
   });

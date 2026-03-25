@@ -8,7 +8,7 @@ export type { PropertyWithFinancials } from './useProperties';
 
 type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
 type LoanFacilityRow = Database['public']['Tables']['loan_facilities']['Row'];
-type PropertyAnnualPerformanceRow = Database['public']['Tables']['property_annual_performance']['Row'];
+type PropertyAnnualPerformanceRow = any; // View may not exist in types yet
 type TenancyAgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
 type V1Loan = PropertyWithFinancials['loans'][number];
 type V1Income = PropertyWithFinancials['income'][number];

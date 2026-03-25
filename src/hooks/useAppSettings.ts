@@ -45,12 +45,12 @@ export function useUpdateAppSetting() {
 
       const { error } = await supabase
         .from(APP_SETTINGS_TABLE)
-        .upsert({
+        .upsert([{
           org_id: orgId,
           setting_key: key,
           setting_value: value,
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'org_id,setting_key' });
+        }] as any, { onConflict: 'org_id,setting_key' });
 
       if (error) throw error;
     },
