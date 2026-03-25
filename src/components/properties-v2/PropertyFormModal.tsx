@@ -104,7 +104,7 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
             || currentVal === 'none' || currentVal === 'pipeline' || currentVal === '0';
           const hasValue = typeof value === 'boolean' ? true : value !== '' && value !== null && value !== undefined;
           if (isEmpty && hasValue) {
-            updated[key] = value as PropertyFormState[typeof key];
+            (updated as Record<string, PropertyAutoFillValue>)[key] = value;
             fieldsToSet[key] = sources[key] || 'AI';
           }
         }
@@ -309,7 +309,7 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
               </div>
               <div>
                 <Label>Rent Basis</Label>
-                <Select value={form.rent_basis} onValueChange={v => set('rent_basis', v)}>
+                <Select value={form.rent_basis} onValueChange={v => set('rent_basis', v as 'room' | 'whole_house')}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="room">Per Room</SelectItem>

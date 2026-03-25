@@ -120,10 +120,10 @@ export function EditTenantDialog({ tenant, open, onOpenChange }: EditTenantDialo
   }
 
   async function onSubmit(values: FormValues) {
-    const updates: Partial<Tenant> = {};
-    for (const [key, value] of Object.entries(values) as Array<[keyof FormValues, FormValues[keyof FormValues]]>) {
+    const updates: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(values)) {
       const normalizedValue = value === '' ? null : value;
-      updates[key as keyof Tenant] = normalizedValue as Tenant[keyof Tenant];
+      updates[key] = normalizedValue;
     }
     await updateTenant.mutateAsync({ id: tenant.id, ...updates });
     onOpenChange(false);
