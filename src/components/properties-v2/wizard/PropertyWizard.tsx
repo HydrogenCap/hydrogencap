@@ -7,7 +7,7 @@ import { Building2, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useCreatePropertyV2 } from '@/hooks/usePropertiesV2';
-import { useBulkCreateRooms } from '@/hooks/useRoomsV2';
+import { useBulkCreateRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
 import { useLenders, useCreateLender } from '@/hooks/useLenders';
 import { supabase } from '@/integrations/supabase/client';
@@ -146,10 +146,10 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.rooms.length > 0) {
         try {
           await bulkCreateRooms.mutateAsync(
-            data.rooms.map<RoomInsert>(r => ({
+            data.rooms.map(r => ({
               property_id: property.id,
               room_name: r.room_name,
-              room_type: r.room_type as RoomInsert['room_type'],
+              room_type: r.room_type as RoomV2['room_type'],
               floor: r.floor,
               has_ensuite: r.has_ensuite,
               is_lettable: r.is_lettable,

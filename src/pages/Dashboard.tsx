@@ -717,7 +717,7 @@ function DashboardPage() {
                     <div className="p-4">
                       <Suspense fallback={<Skeleton className="h-[400px] rounded-lg" />}>
                         <PropertyMap
-                          properties={mapProperties}
+                          properties={mapProperties as any}
                           className="h-[400px] rounded-lg pointer-events-none"
                         />
                       </Suspense>

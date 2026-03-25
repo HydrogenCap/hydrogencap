@@ -220,7 +220,7 @@ export function useDashboardRoomsV2() {
   return useQuery({
     queryKey: ['dashboard_rooms_v2', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rooms_v2')
         .select('id, property_id, room_name, occupancy_status, is_lettable')
         .eq('org_id', orgId!);
