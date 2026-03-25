@@ -10211,14 +10211,22 @@ export type Database = {
       }
     }
     Functions: {
+      accept_shareholder_invite: { Args: { p_token: string }; Returns: Json }
       accept_team_invite: { Args: { p_token: string }; Returns: Json }
+      accept_tenant_portal_invite: { Args: { p_token: string }; Returns: Json }
       bulk_update_rent_schedule_status: {
         Args: { p_ids: string[]; p_notes?: string; p_status: string }
         Returns: undefined
       }
-      cancel_renewed_compliance_jobs: { Args: never; Returns: number }
+      cancel_renewed_compliance_jobs:
+        | { Args: never; Returns: number }
+        | { Args: { p_org_ids?: string[] }; Returns: number }
+      claim_portal_investor_access: { Args: never; Returns: string }
       cleanup_rate_limits: { Args: never; Returns: undefined }
-      create_jobs_for_expiring_compliance: { Args: never; Returns: number }
+      consume_document_share_link: { Args: { p_token: string }; Returns: Json }
+      create_jobs_for_expiring_compliance:
+        | { Args: never; Returns: number }
+        | { Args: { p_org_ids?: string[] }; Returns: number }
       find_matching_contractors: {
         Args: {
           p_compliance_type: string
@@ -10268,7 +10276,10 @@ export type Database = {
         Returns: string
       }
       generate_works_order_number: { Args: never; Returns: string }
+      get_portal_investor_data: { Args: never; Returns: Json }
+      get_shareholder_invite: { Args: { p_token: string }; Returns: Json }
       get_tenant_org_id: { Args: never; Returns: string }
+      get_tenant_portal_invite: { Args: { p_token: string }; Returns: Json }
       get_user_org_id: { Args: never; Returns: string }
       get_user_role: {
         Args: { _org_id: string; _user_id: string }
@@ -10340,6 +10351,10 @@ export type Database = {
         Returns: Json
       }
       migrate_tenants_to_v2: { Args: { p_org_id: string }; Returns: Json }
+      portal_investor_can_access_report_object: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
       refresh_compliance_statuses_v2: { Args: never; Returns: undefined }
       restore_document: { Args: { p_document_id: string }; Returns: boolean }
       run_compliance_scan: { Args: { p_org_id: string }; Returns: Json }
@@ -10360,7 +10375,9 @@ export type Database = {
         Args: { p_document_id: string }
         Returns: boolean
       }
-      update_job_priorities: { Args: never; Returns: number }
+      update_job_priorities:
+        | { Args: never; Returns: number }
+        | { Args: { p_org_ids?: string[] }; Returns: number }
       update_rent_schedule_item_status: {
         Args: {
           p_amount_outstanding?: number
@@ -10381,12 +10398,52 @@ export type Database = {
         Args: { check_org_id: string }
         Returns: boolean
       }
+      user_has_shareholder_compliance_access: {
+        Args: { check_org_id: string }
+        Returns: boolean
+      }
+      user_has_shareholder_documents_access: {
+        Args: { check_org_id: string }
+        Returns: boolean
+      }
+      user_has_shareholder_financials_access: {
+        Args: { check_org_id: string }
+        Returns: boolean
+      }
+      user_has_tenancy_portal_access: {
+        Args: { check_tenancy_id: string }
+        Returns: boolean
+      }
       user_has_tenant_access: {
         Args: { check_tenancy_id: string }
         Returns: boolean
       }
       user_has_tenant_access_by_tenant_id: {
         Args: { check_tenant_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_documents_access: {
+        Args: { check_tenancy_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_maintenance_access: {
+        Args: { check_tenant_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_profile_access: {
+        Args: { check_tenant_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_property_access: {
+        Args: { check_property_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_rent_access: {
+        Args: { check_tenancy_id: string }
+        Returns: boolean
+      }
+      user_has_tenant_room_access: {
+        Args: { check_room_id: string }
         Returns: boolean
       }
       user_is_tenant_portal_user: { Args: never; Returns: boolean }
