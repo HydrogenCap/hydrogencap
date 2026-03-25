@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { useComplianceDocumentsV2, useToggleRequirementV2 } from '@/hooks/useCom
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 interface ComplianceDetailModalProps {
   row: ComplianceMatrixRow | null;
@@ -122,9 +123,20 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">AI Extracted</Badge>
               )}
               {row.file_url && (
-                <a href={row.file_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const signedUrl = await createSignedStorageUrl('compliance', row.file_url!);
+                      window.open(signedUrl, '_blank');
+                    } catch {
+                      toast.error('Failed to open document');
+                    }
+                  }}
+                  className="text-primary underline text-sm flex items-center gap-1 cursor-pointer"
+                >
                   <FileText className="h-3.5 w-3.5" /> View / Download
-                </a>
+                </button>
               )}
               {row.document_notes && (
                 <div>
