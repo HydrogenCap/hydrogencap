@@ -123,9 +123,20 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">AI Extracted</Badge>
               )}
               {row.file_url && (
-                <a href={row.file_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const signedUrl = await createSignedStorageUrl('compliance', row.file_url!);
+                      window.open(signedUrl, '_blank');
+                    } catch {
+                      toast.error('Failed to open document');
+                    }
+                  }}
+                  className="text-primary underline text-sm flex items-center gap-1 cursor-pointer"
+                >
                   <FileText className="h-3.5 w-3.5" /> View / Download
-                </a>
+                </button>
               )}
               {row.document_notes && (
                 <div>
