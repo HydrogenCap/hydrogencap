@@ -17,7 +17,10 @@ export interface Notification {
   created_at: string;
 }
 
-export function useNotifications(filter?: { category?: string; unreadOnly?: boolean }) {
+const PAGE_SIZE = 50;
+
+export function useNotifications(filter?: { category?: string; unreadOnly?: boolean; page?: number }) {
+  const page = filter?.page ?? 0;
   return useQuery({
     queryKey: ['notifications', filter],
     queryFn: async () => {
@@ -26,7 +29,7 @@ export function useNotifications(filter?: { category?: string; unreadOnly?: bool
         .select('*')
         .is('dismissed_at', null)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (filter?.category && filter.category !== 'all') {
         query = query.eq('category', filter.category);
