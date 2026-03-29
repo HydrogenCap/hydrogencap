@@ -24,7 +24,7 @@ interface KpiCardProps {
  * KPI Card component matching the Demo dashboard styling.
  * Elevated card with subtle gradient, consistent spacing, and clear hierarchy.
  */
-export function KpiCard({
+export const KpiCard = React.memo(function KpiCard({
   label,
   value,
   trend,
@@ -132,4 +132,4 @@ export function KpiCard({
       )}
     </div>
   );
-}
+});

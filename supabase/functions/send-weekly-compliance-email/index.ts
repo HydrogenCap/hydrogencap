@@ -377,8 +377,8 @@ serve(async (req) => {
 
     const runKey = isTestSend ? `test_${Date.now()}` : getWeeklyRunKey();
     const recipientEmail = authorization.mode === "user"
-      ? (authorization.userEmail || "office@oxygen.rocks")
-      : "office@oxygen.rocks";
+      ? (authorization.userEmail || Deno.env.get("COMPLIANCE_EMAIL_RECIPIENT") || "office@oxygen.rocks")
+      : Deno.env.get("COMPLIANCE_EMAIL_RECIPIENT") || "office@oxygen.rocks";
 
     // Check for idempotency (skip for test sends and force resends)
     if (!isTestSend && !forceResend) {

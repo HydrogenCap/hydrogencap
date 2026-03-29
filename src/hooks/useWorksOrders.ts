@@ -1,3 +1,9 @@
+/**
+ * @description Handles the `works_orders` table — maintenance-linked works created from
+ * maintenance requests. Distinct from `useWorkOrders` which manages the formal
+ * `work_orders` table (the structured work order system).
+ * @see useWorkOrders for the formal work order system.
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';

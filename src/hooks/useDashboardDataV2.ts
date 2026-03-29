@@ -45,28 +45,30 @@ export function useDashboardPropertiesV2() {
   return useQuery({
     queryKey: ['dashboard_properties_v2', orgId],
     queryFn: async () => {
-      // Fetch V2 properties with entity info
-      const { data: properties, error: propErr } = await supabase
-        .from('properties_v2')
-        .select('*, legal_entities!inner(entity_name, entity_type)')
-        .eq('org_id', orgId)
-        .order('created_at', { ascending: false });
+      // Fetch all three in parallel for performance
+      const [
+        { data: properties, error: propErr },
+        { data: loans, error: loanErr },
+        { data: agreements, error: agErr },
+      ] = await Promise.all([
+        supabase
+          .from('properties_v2')
+          .select('*, legal_entities!inner(entity_name, entity_type)')
+          .eq('org_id', orgId)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('loan_facilities')
+          .select('*, lenders!inner(lender_name)')
+          .eq('org_id', orgId)
+          .eq('status', 'active'),
+        supabase
+          .from('tenancy_agreements')
+          .select('id, status, rent_amount_pcm, start_date, initial_end_date, actual_end_date, property_id, room_id, tenant_id')
+          .eq('org_id', orgId)
+          .in('status', ['active', 'periodic', 'notice_period']),
+      ]);
       if (propErr) throw propErr;
-
-      // Fetch active loan facilities for all properties
-      const { data: loans, error: loanErr } = await supabase
-        .from('loan_facilities')
-        .select('*, lenders!inner(lender_name)')
-        .eq('org_id', orgId)
-        .eq('status', 'active');
       if (loanErr) throw loanErr;
-
-      // Fetch active tenancy agreements for rent data
-      const { data: agreements, error: agErr } = await supabase
-        .from('tenancy_agreements')
-        .select('*')
-        .eq('org_id', orgId)
-        .in('status', ['active', 'periodic', 'notice_period']);
       if (agErr) throw agErr;
 
       // Build lookup maps

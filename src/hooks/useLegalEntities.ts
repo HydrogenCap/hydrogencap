@@ -70,6 +70,7 @@ export function useLegalEntities() {
       return data as LegalEntity[];
     },
     enabled: !!org?.id,
+    staleTime: 15 * 60 * 1000,
   });
 }
 

@@ -42,6 +42,7 @@ export function useLenders() {
       return data as Lender[];
     },
     enabled: !!orgId,
+    staleTime: 15 * 60 * 1000,
   });
 }
 

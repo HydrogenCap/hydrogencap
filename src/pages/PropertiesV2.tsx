@@ -285,7 +285,7 @@ function PropertyCard({ property: p, roomSummary, photoUrl, onClick }: { propert
     >
       {photoUrl && (
         <div className="h-32 w-full overflow-hidden">
-          <img src={photoUrl} alt={p.address_line_1} className="w-full h-full object-cover" />
+          <img src={photoUrl} alt={p.address_line_1} loading="lazy" width={400} height={128} className="w-full h-full object-cover" />
         </div>
       )}
       <CardContent className="pt-4 pb-3 space-y-2">

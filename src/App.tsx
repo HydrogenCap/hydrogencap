@@ -9,6 +9,7 @@ import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
 import { TenantPortalProtectedRoute } from "@/components/tenant-portal/TenantPortalProtectedRoute";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
@@ -512,7 +513,7 @@ const App = () => (
             <Route path="/capex" element={<ProtectedRoute><CapExPage /></ProtectedRoute>} />
             <Route path="/capex/:id" element={<ProtectedRoute><CapExDetail /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute></ProtectedRoute>} />
 
             {/* Wizard routes */}
             <Route path="/wizards" element={<ProtectedRoute><Wizards /></ProtectedRoute>} />
