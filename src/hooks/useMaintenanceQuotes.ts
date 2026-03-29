@@ -44,7 +44,7 @@ interface MaintenanceRequestApprovalUpdate {
   status: 'approved';
 }
 
-const MAINTENANCE_QUOTES_TABLE = 'maintenance_quotes' as never;
+const MAINTENANCE_QUOTES_TABLE = 'maintenance_quotes' as const;
 const QUOTE_SELECT = `
   *,
   contractor:compliance_contractors_v2(id, company_name, contact_name, phone, email)
@@ -77,7 +77,7 @@ export function useCreateQuote() {
 
       const { data, error } = await supabase
         .from(MAINTENANCE_QUOTES_TABLE)
-        .insert([{ ...quote, org_id: orgId, status: 'pending' }] as any)
+        .insert([{ ...quote, org_id: orgId, status: 'pending' }])
         .select()
         .single();
       if (error) throw error;
@@ -109,16 +109,16 @@ export function useUpdateQuoteStatus() {
       status: 'accepted' | 'rejected';
       amount?: number;
     }) => {
-      const { error } = await (supabase
-        .from(MAINTENANCE_QUOTES_TABLE) as any)
+      const { error } = await supabase
+        .from(MAINTENANCE_QUOTES_TABLE)
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', quoteId);
       if (error) throw error;
 
       // If accepted: reject all others, update estimated cost, set status to approved
       if (status === 'accepted') {
-        await (supabase
-          .from(MAINTENANCE_QUOTES_TABLE) as any)
+        await supabase
+          .from(MAINTENANCE_QUOTES_TABLE)
           .update({ status: 'rejected', updated_at: new Date().toISOString() })
           .eq('maintenance_request_id', requestId)
           .neq('id', quoteId);

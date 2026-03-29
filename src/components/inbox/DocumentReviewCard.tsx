@@ -197,18 +197,20 @@ export function DocumentReviewCard({ document }: DocumentReviewCardProps) {
                 </Button>
               </CollapsibleTrigger>
               
-              <Button 
-                size="icon" 
-                variant="ghost" 
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Reject document"
                 className="text-destructive hover:text-destructive"
                 onClick={handleReject}
                 disabled={isProcessing}
               >
                 <X className="h-4 w-4" />
               </Button>
-              
-              <Button 
+
+              <Button
                 size="icon"
+                aria-label={isProcessing ? 'Processing…' : 'Accept document'}
                 onClick={handleAccept}
                 disabled={isProcessing || !isProcessed}
               >
