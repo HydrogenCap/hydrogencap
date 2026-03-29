@@ -206,7 +206,7 @@ export default function PropertiesV2() {
         <div className="flex flex-wrap gap-2 md:gap-3 items-center">
           <div className="relative w-full md:flex-1 md:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search address or postcode..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <Input aria-label="Search properties by address or postcode" placeholder="Search address or postcode..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterEntity} onValueChange={setFilterEntity}>
             <SelectTrigger className="w-[160px]"><SelectValue placeholder="Entity" /></SelectTrigger>

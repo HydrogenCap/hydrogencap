@@ -82,7 +82,7 @@ interface MaintenanceCommentInsert {
   comment: string;
 }
 
-type WorksOrderUpdate = Partial<WorksOrder> & Record<string, unknown>;
+type WorksOrderUpdate = Partial<Omit<WorksOrder, 'id'>>;
 
 export function useWorksOrdersForRequest(requestId: string | undefined) {
   return useQuery({

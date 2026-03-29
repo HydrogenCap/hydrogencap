@@ -338,13 +338,13 @@ export default function ComplianceCalendar() {
               <div className="flex items-center justify-between">
                 <CardTitle>{format(currentMonth, 'MMMM yyyy')}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+                  <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => navigateMonth(-1)}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
                     Today
                   </Button>
-                  <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+                  <Button variant="outline" size="icon" aria-label="Next month" onClick={() => navigateMonth(1)}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>

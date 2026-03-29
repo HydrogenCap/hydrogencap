@@ -228,27 +228,27 @@ export function useOwnershipGrid(filters?: OwnershipGridFilters) {
 
       if (error) throw error;
 
-      // Enrich with subject details
-      const enriched = await Promise.all(
-        (data || []).map(async (link) => {
-          if (link.subject_type === 'COMPANY') {
-            const { data: company } = await supabase
-              .from('companies')
-              .select('id, legal_name, company_type, company_number')
-              .eq('id', link.subject_id)
-              .single();
-            return { ...link, company };
-          } else if (link.subject_type === 'PROPERTY') {
-            const { data: property } = await supabase
-              .from('properties_v2')
-              .select('id, address_line_1, postcode, county')
-              .eq('id', link.subject_id)
-              .single();
-            return { ...link, property };
-          }
-          return link;
-        })
-      );
+      // Enrich with subject details — batch fetch to avoid N+1 queries
+      const companyIds = (data || []).filter(l => l.subject_type === 'COMPANY').map(l => l.subject_id);
+      const propertyIds = (data || []).filter(l => l.subject_type === 'PROPERTY').map(l => l.subject_id);
+
+      const [companiesRes, propertiesRes] = await Promise.all([
+        companyIds.length
+          ? supabase.from('companies').select('id, legal_name, company_type, company_number').in('id', companyIds)
+          : Promise.resolve({ data: [] as { id: string; legal_name: string | null; company_type: string | null; company_number: string | null }[] }),
+        propertyIds.length
+          ? supabase.from('properties_v2').select('id, address_line_1, postcode, county').in('id', propertyIds)
+          : Promise.resolve({ data: [] as { id: string; address_line_1: string; postcode: string; county: string | null }[] }),
+      ]);
+
+      const companyMap = new Map((companiesRes.data || []).map(c => [c.id, c]));
+      const propertyMap = new Map((propertiesRes.data || []).map(p => [p.id, p]));
+
+      const enriched = (data || []).map(link => ({
+        ...link,
+        ...(link.subject_type === 'COMPANY' ? { company: companyMap.get(link.subject_id) ?? null } : {}),
+        ...(link.subject_type === 'PROPERTY' ? { property: propertyMap.get(link.subject_id) ?? null } : {}),
+      }));
 
       return enriched as OwnershipLink[];
     },

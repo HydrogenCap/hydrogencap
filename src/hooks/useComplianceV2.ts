@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { ComplianceMatrixRow, PortfolioComplianceScore, ComplianceDocType } from '@/lib/complianceV2Types';
-import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { extractStoragePath } from '@/lib/storagePaths';
 
 type ComplianceTaskUpdate = Pick<
   Database['public']['Tables']['compliance_tasks']['Update'],
@@ -10,12 +10,27 @@ type ComplianceTaskUpdate = Pick<
 >;
 
 async function resolveComplianceV2Rows<T extends { file_url?: string | null }>(rows: T[]): Promise<T[]> {
-  return Promise.all(
-    rows.map(async (row) => ({
-      ...row,
-      file_url: row.file_url ? await createSignedStorageUrl('compliance-documents', row.file_url) : row.file_url,
-    }))
-  );
+  const urlRows = rows.filter(r => r.file_url);
+  if (urlRows.length === 0) return rows;
+
+  const paths = urlRows
+    .map(r => extractStoragePath('compliance-documents', r.file_url!))
+    .filter((p): p is string => p !== null);
+
+  if (paths.length === 0) return rows;
+
+  const { data: signed } = await supabase.storage
+    .from('compliance-documents')
+    .createSignedUrls(paths, 3600);
+
+  const signedMap = new Map((signed || []).map(s => [s.path, s.signedUrl]));
+
+  return rows.map(row => ({
+    ...row,
+    file_url: row.file_url
+      ? (signedMap.get(extractStoragePath('compliance-documents', row.file_url) ?? '') ?? row.file_url)
+      : row.file_url,
+  }));
 }
 
 // ============================================================
