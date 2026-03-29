@@ -1,4 +1,5 @@
  import { useState } from 'react';
+ import { toast } from 'sonner';
  import { Link } from 'react-router-dom';
  import { format } from 'date-fns';
  import { 
@@ -111,8 +112,12 @@
  
    const handleDelete = async () => {
      if (!deletingDocument) return;
-     await deleteDocument.mutateAsync(deletingDocument.id);
-     setDeletingDocument(null);
+     try {
+       await deleteDocument.mutateAsync(deletingDocument.id);
+       setDeletingDocument(null);
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : 'Failed to delete document');
+     }
    };
  
    // Group by category
