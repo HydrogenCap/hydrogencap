@@ -104,7 +104,7 @@ export default function MigrationDashboard() {
   const handleRunStep = async (step: MigrationStep) => {
     setRunningStep(step.key);
     try {
-      const result = await runStep.mutateAsync(step.functionName);
+      const result = await runStep.mutateAsync(step.functionName as any);
       setStepResults(prev => ({ ...prev, [step.key]: result }));
       toast.success(`${step.title}: ${result.migrated} records migrated`);
     } catch (e) {
