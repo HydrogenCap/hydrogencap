@@ -202,7 +202,9 @@ const App = () => (
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <RouteBoundary>
+                    <Dashboard />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -210,7 +212,9 @@ const App = () => (
               path="/dashboard/map"
               element={
                 <ProtectedRoute>
-                  <DashboardMap />
+                  <RouteBoundary>
+                    <DashboardMap />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -220,7 +224,9 @@ const App = () => (
               path="/properties/new"
               element={
                 <ProtectedRoute>
-                  <PropertyNew />
+                  <RouteBoundary>
+                    <PropertyNew />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -228,7 +234,9 @@ const App = () => (
               path="/properties/:id/edit"
               element={
                 <ProtectedRoute>
-                  <PropertyEdit />
+                  <RouteBoundary>
+                    <PropertyEdit />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -238,7 +246,9 @@ const App = () => (
               path="/entities"
               element={
                 <ProtectedRoute>
-                  <Entities />
+                  <RouteBoundary>
+                    <Entities />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -246,7 +256,9 @@ const App = () => (
               path="/entities/:id"
               element={
                 <ProtectedRoute>
-                  <EntityDetail />
+                  <RouteBoundary>
+                    <EntityDetail />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -254,7 +266,9 @@ const App = () => (
               path="/properties-v2"
               element={
                 <ProtectedRoute>
-                  <PropertiesV2 />
+                  <RouteBoundary>
+                    <PropertiesV2 />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -262,7 +276,9 @@ const App = () => (
               path="/properties-v2/:id"
               element={
                 <ProtectedRoute>
-                  <PropertyDetailV2 />
+                  <RouteBoundary>
+                    <PropertyDetailV2 />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -270,7 +286,9 @@ const App = () => (
               path="/rooms-v2/:id"
               element={
                 <ProtectedRoute>
-                  <RoomDetailV2 />
+                  <RouteBoundary>
+                    <RoomDetailV2 />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -288,7 +306,9 @@ const App = () => (
               path="/tenants-v2/:id"
               element={
                 <ProtectedRoute>
-                  <TenantDetailV2 />
+                  <RouteBoundary>
+                    <TenantDetailV2 />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -296,7 +316,9 @@ const App = () => (
               path="/ownership"
               element={
                 <ProtectedRoute>
-                  <Ownership />
+                  <RouteBoundary>
+                    <Ownership />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -304,7 +326,9 @@ const App = () => (
               path="/inbox"
               element={
                 <ProtectedRoute>
-                  <Inbox />
+                  <RouteBoundary>
+                    <Inbox />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -312,7 +336,9 @@ const App = () => (
               path="/import"
               element={
                 <ProtectedRoute>
-                  <Import />
+                  <RouteBoundary>
+                    <Import />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -320,7 +346,9 @@ const App = () => (
               path="/import/passport"
               element={
                 <ProtectedRoute>
-                  <ImportPassport />
+                  <RouteBoundary>
+                    <ImportPassport />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -328,7 +356,9 @@ const App = () => (
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <Settings />
+                  <RouteBoundary>
+                    <Settings />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -336,7 +366,9 @@ const App = () => (
               path="/insights"
               element={
                 <ProtectedRoute>
-                  <Insights />
+                  <RouteBoundary>
+                    <Insights />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -344,7 +376,9 @@ const App = () => (
               path="/timeline"
               element={
                 <ProtectedRoute>
-                  <Timeline />
+                  <RouteBoundary>
+                    <Timeline />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -352,7 +386,9 @@ const App = () => (
               path="/missing-info"
               element={
                 <ProtectedRoute>
-                  <MissingInfo />
+                  <RouteBoundary>
+                    <MissingInfo />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -362,7 +398,9 @@ const App = () => (
               path="/reports"
               element={
                 <ProtectedRoute>
-                  <Reports />
+                  <RouteBoundary>
+                    <Reports />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -370,7 +408,9 @@ const App = () => (
               path="/actions"
               element={
                 <ProtectedRoute>
-                  <Actions />
+                  <RouteBoundary>
+                    <Actions />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -378,7 +418,9 @@ const App = () => (
               path="/passport"
               element={
                 <ProtectedRoute>
-                  <Passport />
+                  <RouteBoundary>
+                    <Passport />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -386,7 +428,9 @@ const App = () => (
               path="/pipeline"
               element={
                 <ProtectedRoute>
-                  <Pipeline />
+                  <RouteBoundary>
+                    <Pipeline />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -398,7 +442,9 @@ const App = () => (
               path="/chat"
               element={
                 <ProtectedRoute>
-                  <Chat />
+                  <RouteBoundary>
+                    <Chat />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -406,7 +452,9 @@ const App = () => (
               path="/compliance-calendar"
               element={
                 <ProtectedRoute>
-                  <ComplianceCalendar />
+                  <RouteBoundary>
+                    <ComplianceCalendar />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -434,7 +482,9 @@ const App = () => (
               path="/compliance-tasks"
               element={
                 <ProtectedRoute>
-                  <ComplianceTasks />
+                  <RouteBoundary>
+                    <ComplianceTasks />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -462,7 +512,9 @@ const App = () => (
               path="/investors/:id"
               element={
                 <ProtectedRoute>
-                  <InvestorDetail />
+                  <RouteBoundary>
+                    <InvestorDetail />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -470,7 +522,9 @@ const App = () => (
               path="/accounting"
               element={
                 <ProtectedRoute>
-                  <Accounting />
+                  <RouteBoundary>
+                    <Accounting />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -478,23 +532,27 @@ const App = () => (
               path="/tax"
               element={
                 <ProtectedRoute>
-                  <Tax />
+                  <RouteBoundary>
+                    <Tax />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
-            <Route path="/distributions" element={<ProtectedRoute><Distributions /></ProtectedRoute>} />
-            <Route path="/templates" element={<ProtectedRoute><DocumentTemplates /></ProtectedRoute>} />
+            <Route path="/distributions" element={<ProtectedRoute><RouteBoundary><Distributions /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/templates" element={<ProtectedRoute><RouteBoundary><DocumentTemplates /></RouteBoundary></ProtectedRoute>} />
             <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
             <Route
               path="/contractors"
               element={
                 <ProtectedRoute>
-                  <Contractors />
+                  <RouteBoundary>
+                    <Contractors />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
             {/* Unified Jobs & Works page */}
-            <Route path="/jobs-and-works" element={<ProtectedRoute><JobsAndWorks /></ProtectedRoute>} />
+            <Route path="/jobs-and-works" element={<ProtectedRoute><RouteBoundary><JobsAndWorks /></RouteBoundary></ProtectedRoute>} />
             {/* Legacy routes redirect to unified page */}
             <Route path="/jobs" element={<Navigate to="/jobs-and-works" replace />} />
             <Route path="/maintenance" element={<Navigate to="/jobs-and-works" replace />} />
@@ -504,29 +562,31 @@ const App = () => (
               path="/jobs/:jobId"
               element={
                 <ProtectedRoute>
-                  <JobDetail />
+                  <RouteBoundary>
+                    <JobDetail />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
-            <Route path="/maintenance/:requestId" element={<ProtectedRoute><MaintenanceRequestDetail /></ProtectedRoute>} />
-            <Route path="/work-orders/:id" element={<ProtectedRoute><WorkOrderDetail /></ProtectedRoute>} />
+            <Route path="/maintenance/:requestId" element={<ProtectedRoute><RouteBoundary><MaintenanceRequestDetail /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/work-orders/:id" element={<ProtectedRoute><RouteBoundary><WorkOrderDetail /></RouteBoundary></ProtectedRoute>} />
 
-            <Route path="/voids" element={<ProtectedRoute><Voids /></ProtectedRoute>} />
-            <Route path="/lettings" element={<ProtectedRoute><LettingsPipeline /></ProtectedRoute>} />
-            <Route path="/rent" element={<ProtectedRoute><RentCollection /></ProtectedRoute>} />
-            <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><TenancyLedger /></ProtectedRoute>} />
-            <Route path="/rent/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
-            <Route path="/rent/:scheduleId" element={<ProtectedRoute><PaymentDetail /></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-            <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
-            <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
+            <Route path="/voids" element={<ProtectedRoute><RouteBoundary><Voids /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/lettings" element={<ProtectedRoute><RouteBoundary><LettingsPipeline /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/rent" element={<ProtectedRoute><RouteBoundary><RentCollection /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><RouteBoundary><TenancyLedger /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/rent/reconciliation" element={<ProtectedRoute><RouteBoundary><Reconciliation /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/rent/:scheduleId" element={<ProtectedRoute><RouteBoundary><PaymentDetail /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute><RouteBoundary><Documents /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/capex/:id" element={<ProtectedRoute><CapExDetail /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute></ProtectedRoute>} />
 
             {/* Wizard routes */}
-            <Route path="/wizards" element={<ProtectedRoute><Wizards /></ProtectedRoute>} />
+            <Route path="/wizards" element={<ProtectedRoute><RouteBoundary><Wizards /></RouteBoundary></ProtectedRoute>} />
             <Route path="/wizards/add-property" element={<ProtectedRoute><AddPropertyWizard /></ProtectedRoute>} />
             <Route path="/wizards/add-entity" element={<ProtectedRoute><AddEntityWizard /></ProtectedRoute>} />
             <Route path="/wizards/add-compliance" element={<ProtectedRoute><AddComplianceWizard /></ProtectedRoute>} />

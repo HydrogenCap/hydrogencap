@@ -1,6 +1,30 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { z } from "https://esm.sh/zod@3.23.8";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { validateBody } from "../_shared/validate.ts";
+
+const secretString = z.string().max(500).nullable().optional();
+const SetSchema = z.object({
+  action: z.literal("set"),
+  company_id: z.string().uuid(),
+  auth_code: secretString,
+  utr: secretString,
+});
+const GetSchema = z.object({
+  action: z.literal("get"),
+  company_id: z.string().uuid(),
+});
+const BulkSecretItemSchema = z.object({
+  company_number: z.string().min(1).max(50),
+  auth_code: secretString,
+  utr: secretString,
+});
+const BulkSetSchema = z.object({
+  action: z.literal("bulk_set"),
+  secrets: z.array(BulkSecretItemSchema).min(1).max(100),
+});
+const RequestSchema = z.discriminatedUnion("action", [SetSchema, GetSchema, BulkSetSchema]);
 
 // AES-GCM encryption utilities
 async function getKey(): Promise<CryptoKey> {
@@ -119,8 +143,10 @@ serve(async (req) => {
       );
     }
 
-    const body = await req.json();
-    const { action, company_id, auth_code, utr } = body;
+    const parsed = await validateBody(req, RequestSchema, corsHeaders);
+    if ("error" in parsed) return parsed.error;
+    const body = parsed.data;
+    const { action } = body;
 
     const manageableOrgIds = await getManageableOrgIds(supabaseAdmin, user.id);
     if (manageableOrgIds.length === 0) {
@@ -131,6 +157,7 @@ serve(async (req) => {
     }
 
     if (action === "set") {
+      const { company_id, auth_code, utr } = body;
       const { data: company, error: companyError } = await supabaseAdmin
         .from("companies")
         .select("id, org_id")
@@ -190,6 +217,7 @@ serve(async (req) => {
       );
 
     } else if (action === "get") {
+      const { company_id } = body;
       const { data: company, error: companyError } = await supabaseAdmin
         .from("companies")
         .select("id, org_id")
@@ -253,15 +281,7 @@ serve(async (req) => {
 
     } else if (action === "bulk_set") {
       // BULK SET for admin backfill
-      const { secrets: bulkSecrets } = body;
-      
-      if (!Array.isArray(bulkSecrets)) {
-        return new Response(
-          JSON.stringify({ error: "secrets must be an array" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      const bulkSecrets = body.secrets;
       const results = [];
       for (const item of bulkSecrets) {
         const { company_number, auth_code: itemAuthCode, utr: itemUtr } = item;
