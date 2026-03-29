@@ -532,12 +532,12 @@ const App = () => (
             <Route path="/wizards/add-compliance" element={<ProtectedRoute><AddComplianceWizard /></ProtectedRoute>} />
 
             <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/:id" element={<PropertyV1Redirect />} />
+            <Route path="/properties/:id" element={<ProtectedRoute><PropertyV1Redirect /></ProtectedRoute>} />
 
             <Route path="/companies" element={<Navigate to="/entities" replace />} />
             <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
             <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
-            <Route path="/tenants/:tenantId" element={<TenantV1Redirect />} />
+            <Route path="/tenants/:tenantId" element={<ProtectedRoute><TenantV1Redirect /></ProtectedRoute>} />
             <Route path="/compliance" element={<Navigate to="/compliance-v2" replace />} />
 
             {/* Marketing pages (public) */}
