@@ -1,6 +1,7 @@
  import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
  import { Resend } from 'https://esm.sh/resend@4.0.0';
+ import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
  
  const ALLOWED_ORIGINS = [
    "https://tenureiq.com",
@@ -157,6 +158,9 @@
          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
        });
      }
+
+     const rateLimit = await checkRateLimit(user.id, 'send-job-request', 30, 60);
+     if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
 
      const { jobId, customMessage }: JobRequestParams = await req.json();
  
