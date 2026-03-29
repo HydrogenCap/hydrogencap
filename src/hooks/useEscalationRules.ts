@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 
 export interface EscalationRule {
   id: string;
@@ -35,12 +36,14 @@ export function useEscalationRules() {
 
 export function useCreateEscalationRule() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async (rule: Partial<EscalationRuleInsert>) => {
-      const { error } = await supabase.from('escalation_rules').insert([rule] as any);
+      const { error } = await supabase.from('escalation_rules').insert([rule as EscalationRuleInsert]);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['escalation-rules'] }),
+    onError: (error: Error) => toast({ title: 'Failed to create escalation rule', description: error.message, variant: 'destructive' }),
   });
 }
 

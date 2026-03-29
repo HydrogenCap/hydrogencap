@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useToast } from '@/hooks/use-toast';
 import type { AccountingExport } from '@/lib/accountingTypes';
 
 type AccountingExportInsert = Database['public']['Tables']['accounting_exports']['Insert'];
@@ -28,6 +29,7 @@ export function useAccountingExports(entityId?: string, limit = 20) {
 
 export function useCreateExportRecord() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async (record: Omit<AccountingExport, 'id' | 'generated_at'>) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -46,5 +48,6 @@ export function useCreateExportRecord() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['accounting_exports'] });
     },
+    onError: (error: Error) => toast({ title: 'Failed to save export record', description: error.message, variant: 'destructive' }),
   });
 }
