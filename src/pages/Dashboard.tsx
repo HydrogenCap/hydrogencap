@@ -645,7 +645,7 @@ function DashboardPage() {
                     <div className="p-4">
                       <Suspense fallback={<Skeleton className="h-[250px] md:h-[350px] rounded-lg" />}>
                         <PropertyMap
-                          properties={mapProperties as any}
+                          properties={mapProperties as unknown as import('@/hooks/useProperties').PropertyWithFinancials[]}
                           className="h-[250px] md:h-[350px] rounded-lg"
                         />
                       </Suspense>
@@ -717,7 +717,7 @@ function DashboardPage() {
                     <div className="p-4">
                       <Suspense fallback={<Skeleton className="h-[400px] rounded-lg" />}>
                         <PropertyMap
-                          properties={mapProperties as any}
+                          properties={mapProperties as unknown as import('@/hooks/useProperties').PropertyWithFinancials[]}
                           className="h-[400px] rounded-lg pointer-events-none"
                         />
                       </Suspense>
