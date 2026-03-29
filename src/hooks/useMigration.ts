@@ -156,7 +156,7 @@ export function useRunMigrationStep() {
   return useMutation({
     mutationFn: async (functionName: MigrationFunctionName): Promise<MigrationResult> => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.rpc(functionName, { p_org_id: orgId } as any);
+      const { data, error } = await supabase.rpc(functionName, { p_org_id: orgId } as { p_org_id: string });
       if (error) throw error;
       return data as unknown as MigrationResult;
     },
@@ -176,7 +176,7 @@ export function useRunFullMigration() {
   return useMutation({
     mutationFn: async (): Promise<FullMigrationResult> => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.rpc('run_v1_to_v2_migration' as MigrationFunctionName, { p_org_id: orgId } as any);
+      const { data, error } = await supabase.rpc('run_v1_to_v2_migration' as MigrationFunctionName, { p_org_id: orgId } as { p_org_id: string });
       if (error) throw error;
       return data as unknown as FullMigrationResult;
     },
