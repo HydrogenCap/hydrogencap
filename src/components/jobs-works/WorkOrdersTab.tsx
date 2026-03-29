@@ -104,8 +104,8 @@ export default function WorkOrdersTab() {
           </SelectContent>
         </Select>
         <div className="ml-auto flex items-center gap-1 border rounded-lg p-1">
-          <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="sm" className="h-7 w-7 p-0" onClick={() => setViewMode('board')}><LayoutGrid className="h-3.5 w-3.5" /></Button>
-          <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" className="h-7 w-7 p-0" onClick={() => setViewMode('list')}><List className="h-3.5 w-3.5" /></Button>
+          <Button variant={viewMode === 'board' ? 'secondary' : 'ghost'} size="sm" aria-label="Board view" className="h-7 w-7 p-0" onClick={() => setViewMode('board')}><LayoutGrid className="h-3.5 w-3.5" /></Button>
+          <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" aria-label="List view" className="h-7 w-7 p-0" onClick={() => setViewMode('list')}><List className="h-3.5 w-3.5" /></Button>
         </div>
       </div>
 
