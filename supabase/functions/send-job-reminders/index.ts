@@ -2,6 +2,7 @@
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
  import { Resend } from 'https://esm.sh/resend@4.0.0';
  
+ const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@tenureiq.com';
  const ALLOWED_ORIGINS = [
    "https://tenureiq.com",
    "https://www.tenureiq.com",
@@ -124,7 +125,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
            );
  
            await resend.emails.send({
-             from: 'HydrogenCap <noreply@hydrogencapital.lovable.app>',
+             from: `HydrogenCap <${FROM_EMAIL}>`,
              to: [job.contractor.email],
              subject: `Reminder: Quote requested - ${job.property.address_line.split(',')[0]}`,
              html: `
@@ -188,7 +189,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
            
            if (ownerAuth?.user?.email) {
              await resend.emails.send({
-               from: 'HydrogenCap <noreply@hydrogencapital.lovable.app>',
+               from: `HydrogenCap <${FROM_EMAIL}>`,
                to: [ownerAuth.user.email],
                subject: `Reminder: ${job.job_type} scheduled tomorrow`,
                html: `
