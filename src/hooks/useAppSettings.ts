@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -50,7 +51,7 @@ export function useUpdateAppSetting() {
           setting_key: key,
           setting_value: value,
           updated_at: new Date().toISOString(),
-        }] as any, { onConflict: 'org_id,setting_key' });
+        }] satisfies Database['public']['Tables']['app_settings']['Insert'][], { onConflict: 'org_id,setting_key' });
 
       if (error) throw error;
     },

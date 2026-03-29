@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 
 export interface GeneratedDocument {
@@ -56,9 +57,9 @@ export function useCreateGeneratedDocument() {
           property_id: doc.property_id ?? null,
           tenancy_id: doc.tenancy_id ?? null,
           tenant_id: doc.tenant_id ?? null,
-          generated_data: (doc.generated_data ?? null) as any,
+          generated_data: (doc.generated_data ?? null) as Json | null,
           created_by: user?.id ?? null,
-        }] as any)
+        }])
         .select()
         .single();
       if (error) throw error;

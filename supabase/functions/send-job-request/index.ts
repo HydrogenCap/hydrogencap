@@ -134,7 +134,8 @@
  }
  
  serve(async (req) => {
-   const corsHeaders = getCorsHeaders(req);
+   const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@tenureiq.com';
+const corsHeaders = getCorsHeaders(req);
    // Handle CORS preflight requests
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: corsHeaders });
@@ -254,7 +255,7 @@
  
      // Send email via Resend
      const emailResponse = await resend.emails.send({
-       from: 'Tenure IQ <noreply@hydrogencapital.lovable.app>',
+       from: `Tenure IQ <${FROM_EMAIL}>`,
        to: [job.contractor.email],
        subject,
        html,
