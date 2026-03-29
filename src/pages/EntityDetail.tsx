@@ -530,12 +530,13 @@ export default function EntityDetail() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingDirector(d); setShowAddDirector(true); }}>
+                          <Button variant="ghost" size="icon" aria-label="Edit director" className="h-7 w-7" onClick={() => { setEditingDirector(d); setShowAddDirector(true); }}>
                             <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Remove director"
                             className="h-7 w-7 text-destructive"
                             onClick={async () => {
                               try {
@@ -704,12 +705,13 @@ export default function EntityDetail() {
                       <TableCell>{formatDate(sh.effective_date)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingShareholder(sh); setShowAddShareholder(true); }}>
+                          <Button variant="ghost" size="icon" aria-label="Edit shareholder" className="h-7 w-7" onClick={() => { setEditingShareholder(sh); setShowAddShareholder(true); }}>
                             <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Remove shareholder"
                             className="h-7 w-7 text-destructive"
                             onClick={async () => {
                               try {
