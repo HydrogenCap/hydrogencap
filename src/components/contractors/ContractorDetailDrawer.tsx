@@ -10,7 +10,8 @@
  import { useContractor, useUpdateContractor, useDeleteContractor } from '@/hooks/useContractors';
  import { useContractorJobs } from '@/hooks/useContractorJobs';
 import { useContractorReviews } from '@/hooks/useContractors';
- import { AddReviewDialog } from './AddReviewDialog';
+ import { toast } from 'sonner';
+import { AddReviewDialog } from './AddReviewDialog';
  import { EditContractorForm } from './EditContractorForm';
  import { format } from 'date-fns';
  import { cn } from '@/lib/utils';
@@ -34,17 +35,25 @@ import { useContractorReviews } from '@/hooks/useContractors';
  
    const handleTogglePreferred = async () => {
      if (!contractor) return;
-     await updateContractor.mutateAsync({
-       id: contractor.id,
-       is_preferred: !contractor.is_preferred,
-     });
+     try {
+       await updateContractor.mutateAsync({
+         id: contractor.id,
+         is_preferred: !contractor.is_preferred,
+       });
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : 'Failed to update contractor');
+     }
    };
  
    const handleDelete = async () => {
      if (!contractor) return;
      if (!confirm('Are you sure you want to delete this contractor?')) return;
-     await deleteContractor.mutateAsync(contractor.id);
-     onOpenChange(false);
+     try {
+       await deleteContractor.mutateAsync(contractor.id);
+       onOpenChange(false);
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : 'Failed to delete contractor');
+     }
    };
  
    if (isLoading || !contractor) {

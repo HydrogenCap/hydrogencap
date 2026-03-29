@@ -50,17 +50,20 @@ export function ShareLinkButton({
   const deactivateLink = useDeactivateShareLink();
 
   const handleCreateLink = async () => {
-    const result = await createLink.mutateAsync({
-      documentId,
-      complianceDocumentId,
-      expiresInDays: parseInt(expiresInDays),
-      maxViews: maxViews ? parseInt(maxViews) : undefined,
-    });
-
-    if (result) {
-      const url = generateShareUrl(result.token);
-      navigator.clipboard.writeText(url);
-      toast.success('Link created and copied to clipboard');
+    try {
+      const result = await createLink.mutateAsync({
+        documentId,
+        complianceDocumentId,
+        expiresInDays: parseInt(expiresInDays),
+        maxViews: maxViews ? parseInt(maxViews) : undefined,
+      });
+      if (result) {
+        const url = generateShareUrl(result.token);
+        navigator.clipboard.writeText(url);
+        toast.success('Link created and copied to clipboard');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create share link');
     }
   };
 
