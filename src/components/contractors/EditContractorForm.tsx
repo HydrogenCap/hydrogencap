@@ -7,6 +7,7 @@
  import { Checkbox } from '@/components/ui/checkbox';
  import { Badge } from '@/components/ui/badge';
  import { useUpdateContractor, type Contractor } from '@/hooks/useContractors';
+import { useToast } from '@/hooks/use-toast';
  import { COMPLIANCE_TYPES } from '@/lib/complianceTypes';
  
  interface EditContractorFormProps {
@@ -31,10 +32,11 @@
    });
  
    const updateContractor = useUpdateContractor();
+   const { toast } = useToast();
  
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
-     
+     try {
      await updateContractor.mutateAsync({
        id: contractor.id,
        name: formData.name,
@@ -49,6 +51,10 @@
        call_out_fee_gbp: formData.call_out_fee_gbp ? parseInt(formData.call_out_fee_gbp) : null,
        availability_notes: formData.availability_notes || null,
      });
+     } catch (err) {
+       toast({ title: 'Failed to save contractor', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+       return;
+     }
  
      onSave();
    };

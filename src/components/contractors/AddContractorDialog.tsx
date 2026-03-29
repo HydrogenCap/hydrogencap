@@ -8,6 +8,7 @@
  import { Checkbox } from '@/components/ui/checkbox';
  import { Badge } from '@/components/ui/badge';
  import { useCreateContractor } from '@/hooks/useContractors';
+import { useToast } from '@/hooks/use-toast';
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
  
  interface AddContractorDialogProps {
@@ -31,10 +32,11 @@
    });
  
    const createContractor = useCreateContractor();
+   const { toast } = useToast();
  
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
-     
+     try {
      await createContractor.mutateAsync({
        name: formData.name,
        company_name: formData.company_name || null,
@@ -52,6 +54,10 @@
        availability_notes: null,
        avg_response_hours: null,
      });
+     } catch (err) {
+       toast({ title: 'Failed to save contractor', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+       return;
+     }
  
      onOpenChange(false);
      setFormData({

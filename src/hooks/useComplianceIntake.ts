@@ -370,8 +370,8 @@ export function useAcceptComplianceDocument() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
-      queryClient.invalidateQueries({ queryKey: ['compliance_documents_v2'] });
-      queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
+      queryClient.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
       queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
       queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_inbox'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });

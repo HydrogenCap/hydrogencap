@@ -123,15 +123,18 @@ export function TeamManagement() {
       return;
     }
 
-    await sendInvite.mutateAsync({
-      email: inviteEmail.trim(),
-      name: inviteName.trim() || undefined,
-      role: inviteRole,
-    });
-
-    setInviteEmail('');
-    setInviteName('');
-    setInviteRole('viewer');
+    try {
+      await sendInvite.mutateAsync({
+        email: inviteEmail.trim(),
+        name: inviteName.trim() || undefined,
+        role: inviteRole,
+      });
+      setInviteEmail('');
+      setInviteName('');
+      setInviteRole('viewer');
+    } catch (err) {
+      toast({ title: 'Failed to send invite', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+    }
   };
 
   const copyInviteLink = (token: string) => {
