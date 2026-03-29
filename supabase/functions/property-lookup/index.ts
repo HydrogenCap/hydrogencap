@@ -318,6 +318,20 @@ serve(async (req) => {
       );
     }
 
+    if (typeof postcode !== 'string' || postcode.length > 10) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid postcode' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (addressLine !== undefined && (typeof addressLine !== 'string' || addressLine.length > 200)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'addressLine must be 200 characters or fewer' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Property lookup for:', postcode, addressLine);
 
     // Fetch all data sources in parallel

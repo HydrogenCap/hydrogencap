@@ -81,7 +81,7 @@ export function useInboundEmails(filters?: {
         query = query.eq('requires_review', true);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.limit(200);
       if (error) throw error;
       return data as unknown as InboundEmail[];
     },
@@ -92,19 +92,22 @@ export function useInboundEmailStats() {
   return useQuery({
     queryKey: ['inbound-email-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('inbound_emails')
-        .select('processing_status, requires_review');
-
-      if (error) throw error;
+      const [total, pending, processing, processed, failed, needsReview] = await Promise.all([
+        supabase.from('inbound_emails').select('*', { count: 'exact', head: true }),
+        supabase.from('inbound_emails').select('*', { count: 'exact', head: true }).eq('processing_status', 'pending'),
+        supabase.from('inbound_emails').select('*', { count: 'exact', head: true }).eq('processing_status', 'processing'),
+        supabase.from('inbound_emails').select('*', { count: 'exact', head: true }).eq('processing_status', 'processed'),
+        supabase.from('inbound_emails').select('*', { count: 'exact', head: true }).eq('processing_status', 'failed'),
+        supabase.from('inbound_emails').select('*', { count: 'exact', head: true }).eq('requires_review', true),
+      ]);
 
       return {
-        total: data.length,
-        pending: data.filter(e => e.processing_status === 'pending').length,
-        processing: data.filter(e => e.processing_status === 'processing').length,
-        processed: data.filter(e => e.processing_status === 'processed').length,
-        failed: data.filter(e => e.processing_status === 'failed').length,
-        needsReview: data.filter(e => e.requires_review).length,
+        total: total.count ?? 0,
+        pending: pending.count ?? 0,
+        processing: processing.count ?? 0,
+        processed: processed.count ?? 0,
+        failed: failed.count ?? 0,
+        needsReview: needsReview.count ?? 0,
       };
     },
   });
