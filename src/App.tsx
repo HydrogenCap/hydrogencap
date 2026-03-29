@@ -278,7 +278,9 @@ const App = () => (
               path="/tenants-v2"
               element={
                 <ProtectedRoute>
-                  <TenantsV2 />
+                  <RouteBoundary>
+                    <TenantsV2 />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -412,7 +414,9 @@ const App = () => (
               path="/lending"
               element={
                 <ProtectedRoute>
-                  <Lending />
+                  <RouteBoundary>
+                    <Lending />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -420,7 +424,9 @@ const App = () => (
               path="/compliance-v2"
               element={
                 <ProtectedRoute>
-                  <ComplianceV2 />
+                  <RouteBoundary>
+                    <ComplianceV2 />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -436,7 +442,9 @@ const App = () => (
               path="/financials"
               element={
                 <ProtectedRoute>
-                  <Financials />
+                  <RouteBoundary>
+                    <Financials />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -444,7 +452,9 @@ const App = () => (
               path="/investors"
               element={
                 <ProtectedRoute>
-                  <Investors />
+                  <RouteBoundary>
+                    <Investors />
+                  </RouteBoundary>
                 </ProtectedRoute>
               }
             />
@@ -474,7 +484,7 @@ const App = () => (
             />
             <Route path="/distributions" element={<ProtectedRoute><Distributions /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><DocumentTemplates /></ProtectedRoute>} />
-            <Route path="/bulk-upload" element={<ProtectedRoute><BulkUpload /></ProtectedRoute>} />
+            <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
             <Route
               path="/contractors"
               element={
@@ -510,7 +520,7 @@ const App = () => (
             <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><AuditLog /></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><MigrationDashboard /></ProtectedRoute>} />
-            <Route path="/capex" element={<ProtectedRoute><CapExPage /></ProtectedRoute>} />
+            <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex/:id" element={<ProtectedRoute><CapExDetail /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute></ProtectedRoute>} />
