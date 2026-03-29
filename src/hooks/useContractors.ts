@@ -73,9 +73,10 @@ export function useContractors(filters?: {
       return data as Contractor[];
     },
     enabled: !!orgId,
+    staleTime: 15 * 60 * 1000,
   });
 }
- 
+
  export function useContractor(contractorId: string | undefined) {
    return useQuery({
      queryKey: ['contractor', contractorId],

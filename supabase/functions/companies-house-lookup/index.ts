@@ -116,7 +116,7 @@ serve(async (req) => {
 
     // Companies House API uses HTTP Basic Auth with API key as username, empty password
     const chAuthHeader = `Basic ${btoa(apiKey + ':')}`;
-    console.log(`CH Auth header length: ${chAuthHeader.length}, API key length: ${apiKey.length}`);
+    console.log('Companies House API key configured:', !!apiKey);
 
     if (action === 'search' && searchQuery) {
       // Search for companies by name

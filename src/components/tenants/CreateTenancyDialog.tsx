@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, FileText, ChevronLeft, ChevronRight, Loader2, Bot, AlertTriangle, CheckCircle2, Info, Sparkles, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { useProperties } from '@/hooks/useProperties';
+import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useRoomsWithTenancy, useUpdateRoom, useCreateRoom } from '@/hooks/useRooms';
 import { useCreateTenancy, type PaymentMethod } from '@/hooks/useTenancies';
 import { useUpdateTenant } from '@/hooks/useTenants';

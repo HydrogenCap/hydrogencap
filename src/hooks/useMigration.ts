@@ -139,12 +139,24 @@ export function useMigrationStatus() {
   });
 }
 
+type MigrationFunctionName =
+  | 'migrate_companies_to_entities'
+  | 'migrate_properties_to_v2'
+  | 'migrate_rooms_to_v2'
+  | 'migrate_tenants_to_v2'
+  | 'migrate_tenancies_to_agreements'
+  | 'migrate_compliance_to_v2'
+  | 'migrate_loans_to_v2'
+  | 'migrate_income_costs_to_snapshots'
+  | 'migrate_contractors_to_v2'
+  | 'run_v1_to_v2_migration';
+
 export function useRunMigrationStep() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (functionName: string): Promise<MigrationResult> => {
+    mutationFn: async (functionName: MigrationFunctionName): Promise<MigrationResult> => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.rpc(functionName as any, { p_org_id: orgId } as any);
+      const { data, error } = await supabase.rpc(functionName, { p_org_id: orgId } as any);
       if (error) throw error;
       return data as unknown as MigrationResult;
     },
@@ -164,7 +176,7 @@ export function useRunFullMigration() {
   return useMutation({
     mutationFn: async (): Promise<FullMigrationResult> => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase.rpc('run_v1_to_v2_migration' as any, { p_org_id: orgId } as any);
+      const { data, error } = await supabase.rpc('run_v1_to_v2_migration' as MigrationFunctionName, { p_org_id: orgId } as any);
       if (error) throw error;
       return data as unknown as FullMigrationResult;
     },

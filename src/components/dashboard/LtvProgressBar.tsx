@@ -12,7 +12,7 @@ interface LtvProgressBarProps {
  * LTV Progress Bar matching the Demo dashboard styling.
  * Shows entity name, LTV percentage, and a progress bar with color coding.
  */
-export function LtvProgressBar({
+export const LtvProgressBar = React.memo(function LtvProgressBar({
   name,
   ltv,
   value,
@@ -48,7 +48,7 @@ export function LtvProgressBar({
       )}
     </div>
   );
-}
+});
 
 interface LtvProgressListProps {
   items: Array<{

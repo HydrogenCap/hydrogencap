@@ -30,12 +30,19 @@ export function usePropertyPhotosV2() {
         .eq('is_cover', true);
       if (photoErr) throw photoErr;
 
-      const resolvedPhotos = await Promise.all(
-        (photos || []).map(async (photo) => ({
-          property_id: photo.property_id,
-          file_url: await createSignedStorageUrl('photos', photo.file_url),
-        }))
-      );
+      // Batch all signed URL requests into a single Storage API call
+      const photoPaths = (photos || []).map(p => p.file_url).filter(Boolean);
+      const { data: signedUrlsData } = photoPaths.length > 0
+        ? await supabase.storage.from('photos').createSignedUrls(photoPaths, 3600)
+        : { data: [] };
+      const signedUrlMap = new Map<string, string>();
+      (signedUrlsData || []).forEach((entry) => {
+        if (entry.signedUrl) signedUrlMap.set(entry.path, entry.signedUrl);
+      });
+      const resolvedPhotos = (photos || []).map((photo) => ({
+        property_id: photo.property_id,
+        file_url: signedUrlMap.get(photo.file_url) || photo.file_url,
+      }));
 
       // Build V1 photo map
       const v1PhotoMap = new Map<string, string>();
@@ -73,7 +80,7 @@ export function usePropertyPhotosV2() {
 
       return result;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
   });
 }
 
