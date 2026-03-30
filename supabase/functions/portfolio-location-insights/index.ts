@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
 interface PropertyLocation {
   address: string;
@@ -50,6 +51,10 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Subscription check
+    const subCheck = await requireActiveSubscription(userData.user.id, corsHeaders);
+    if (!subCheck.allowed) return subCheck.response;
 
     // Rate limit check
     const rateLimit = await checkRateLimit(userData.user.id, 'portfolio-location-insights', 10, 60);
