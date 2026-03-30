@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { usePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { EpcRoadmapCard } from '@/components/property/EpcRoadmapCard';
+import { ComparableSalesTable } from '@/components/valuations';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
 import { PropertyRoomsSection } from '@/components/properties-v2/PropertyRoomsSection';
 import { PropertyLoansSection } from '@/components/lending/PropertyLoansSection';
@@ -190,6 +191,9 @@ export default function PropertyDetailV2() {
 
         {/* EPC Improvement Roadmap */}
         <EpcRoadmapCard epcRating={property.epc_rating} />
+
+        {/* Market Comparables */}
+        <ComparableSalesTable propertyId={property.id} />
 
         {/* Compliance */}
         <PropertyComplianceSectionWrapper propertyId={property.id} orgId={property.org_id} />
