@@ -51,7 +51,7 @@ export function useUpdateAppSetting() {
           setting_key: key,
           setting_value: value,
           updated_at: new Date().toISOString(),
-        }] satisfies Database['public']['Tables']['app_settings']['Insert'][], { onConflict: 'org_id,setting_key' });
+        }] as any[], { onConflict: 'org_id,setting_key' });
 
       if (error) throw error;
     },

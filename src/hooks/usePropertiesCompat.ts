@@ -183,7 +183,7 @@ function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerforma
   };
 }
 
-function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Costs {
+function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): any {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-costs-${propertyId}`,
