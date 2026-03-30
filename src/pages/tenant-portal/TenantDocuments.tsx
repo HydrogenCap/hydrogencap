@@ -31,22 +31,8 @@ export default function TenantDocuments() {
   });
 
   const handleView = async (fileUrl: string) => {
-    const storageUrlMatch = fileUrl.match(/\/storage\/v1\/object\/(?:public|sign)\/(.+?)(?:\?.*)?$/);
-    const storagePath = storageUrlMatch?.[1]
-      ? storageUrlMatch[1].split('/').slice(1).join('/')
-      : !fileUrl.startsWith('http')
-        ? fileUrl
-        : null;
-
-    if (!storagePath) {
-      window.open(fileUrl, '_blank');
-      return;
-    }
-
-    const { data } = await supabase.storage.from('documents').createSignedUrl(storagePath, 3600);
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, '_blank');
-    }
+    const signedUrl = await createSignedStorageUrl('documents', fileUrl);
+    window.open(signedUrl, '_blank');
   };
 
   return (
