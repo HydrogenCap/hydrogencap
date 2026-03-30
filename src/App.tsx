@@ -462,6 +462,16 @@ const App = () => (
               }
             />
             <Route
+              path="/valuation-alerts"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <ValuationAlerts />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/refinancing-opportunities"
               element={
                 <ProtectedRoute>
