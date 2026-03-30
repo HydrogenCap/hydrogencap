@@ -173,7 +173,7 @@ export function useLoanFacilitiesByProperty(propertyId: string | undefined) {
         lender_name: d.lenders?.lender_name,
         lender_type: d.lenders?.lender_type,
         entity_name: d.legal_entities?.entity_name,
-        property_address: d.property_address ?? '',
+        property_address: (d as any).property_address ?? '',
       })) as LoanFacilityWithDetails[];
     },
   });
