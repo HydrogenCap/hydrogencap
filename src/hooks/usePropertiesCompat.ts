@@ -171,7 +171,7 @@ function mapLoanToV1(loan: LoanFacilityRow): any {
   };
 }
 
-function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Income {
+function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): any {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-income-${propertyId}`,
