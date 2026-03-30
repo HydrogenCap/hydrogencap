@@ -147,7 +147,7 @@ export function usePropertiesCompat() {
 
 // â”€â”€â”€ Mappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function mapLoanToV1(loan: LoanFacilityRow): any {
+function mapLoanToV1(loan: LoanFacilityRow): V1Loan {
   return {
     id: loan.id,
     org_id: loan.org_id,
@@ -171,7 +171,7 @@ function mapLoanToV1(loan: LoanFacilityRow): any {
   };
 }
 
-function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): any {
+function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Income {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-income-${propertyId}`,
@@ -183,7 +183,7 @@ function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerforma
   };
 }
 
-function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): any {
+function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): V1Costs {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-costs-${propertyId}`,

@@ -83,6 +83,7 @@ const operationsItems: NavItem[] = [
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Lending', icon: PoundSterling, href: '/lending', sectionKey: 'lending' },
+  { title: 'Refinancing', icon: TrendingUp, href: '/refinancing-opportunities', sectionKey: 'lending' },
   { title: 'Financials', icon: TrendingUp, href: '/financials' },
   { title: 'Investors', icon: Briefcase, href: '/investors', sectionKey: 'investors' },
   { title: 'Distributions', icon: Banknote, href: '/distributions', sectionKey: 'distributions' },
@@ -103,6 +104,7 @@ const intelligenceItems: NavItem[] = [
   { title: 'Reports', icon: FileText, href: '/reports' },
   { title: 'Tax', icon: Receipt, href: '/tax' },
   { title: 'Timeline', icon: History, href: '/timeline' },
+  { title: 'Performance', icon: TrendingUp, href: '/portfolio-timeline' },
   { title: 'Val. Alerts', icon: AlertTriangle, href: '/valuation-alerts' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
 ];

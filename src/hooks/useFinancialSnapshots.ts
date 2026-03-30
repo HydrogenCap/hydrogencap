@@ -179,6 +179,36 @@ export function useUpsertSnapshot() {
   });
 }
 
+// ── Portfolio value/debt/equity timeline (for PortfolioTimeline page) ──
+export function usePortfolioValueTimeline(months = 24) {
+  const { data: orgId } = useUserOrg();
+
+  return useQuery({
+    queryKey: ['portfolio_value_timeline', orgId, months],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from(PORTFOLIO_MONTHLY_SUMMARY_VIEW)
+        .select('snapshot_month, total_valuation, total_debt, total_equity, portfolio_ltv, total_rent_received, total_noi, total_cash_flow, property_count')
+        .order('snapshot_month', { ascending: true })
+        .limit(months);
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        month: row.snapshot_month?.slice(0, 7) ?? '',
+        label: new Date((row.snapshot_month ?? '').slice(0, 7) + '-01').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+        totalValuation: row.total_valuation ?? 0,
+        totalDebt: row.total_debt ?? 0,
+        totalEquity: row.total_equity ?? 0,
+        ltv: row.portfolio_ltv,
+        grossRentReceived: row.total_rent_received ?? 0,
+        netCashFlow: row.total_cash_flow ?? 0,
+        netOperatingIncome: row.total_noi ?? 0,
+      }));
+    },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // ── Lock/unlock month ──
 export function useLockMonth() {
   const qc = useQueryClient();
