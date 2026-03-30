@@ -104,6 +104,8 @@ const intelligenceItems: NavItem[] = [
   { title: 'Reports', icon: FileText, href: '/reports' },
   { title: 'Tax', icon: Receipt, href: '/tax' },
   { title: 'Timeline', icon: History, href: '/timeline' },
+  { title: 'Performance', icon: TrendingUp, href: '/portfolio-timeline' },
+  { title: 'Val. Alerts', icon: AlertTriangle, href: '/valuation-alerts' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
 ];
 

@@ -72,7 +72,9 @@ const RoomDetailV2 = lazy(() => import("./pages/RoomDetailV2"));
 const TenantsV2 = lazy(() => import("./pages/TenantsV2"));
 const TenantDetailV2 = lazy(() => import("./pages/TenantDetailV2"));
 const Lending = lazy(() => import("./pages/Lending"));
+const PortfolioTimeline = lazy(() => import("./pages/PortfolioTimeline"));
 const RefinancingOpportunities = lazy(() => import("./pages/RefinancingOpportunities"));
+const ValuationAlerts = lazy(() => import("./pages/ValuationAlerts"));
 const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
 const ComplianceTasks = lazy(() => import("./pages/ComplianceTasks"));
 const Financials = lazy(() => import("./pages/Financials"));
@@ -475,6 +477,36 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <Lending />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/refinancing-opportunities"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <RefinancingOpportunities />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/valuation-alerts"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <ValuationAlerts />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/portfolio-timeline"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <PortfolioTimeline />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
