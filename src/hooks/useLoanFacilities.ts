@@ -309,6 +309,24 @@ export function useDeleteLoanFacility() {
 }
 
 // Helpers
+export function getCovenantStatus(
+  facility: LoanFacility,
+): 'breach' | 'warning' | 'ok' | 'unknown' {
+  const hasCovenants = facility.covenant_ltv_max || facility.covenant_icr_min;
+  if (facility.covenant_ltv_max != null && facility.current_ltv != null) {
+    if (facility.current_ltv > facility.covenant_ltv_max) return 'breach';
+    if (facility.current_ltv > facility.covenant_ltv_max * 0.9) return 'warning';
+  }
+  if (facility.early_repayment_charge_until) {
+    const msToErc =
+      new Date(facility.early_repayment_charge_until).getTime() - Date.now();
+    const daysToErc = Math.ceil(msToErc / 86_400_000);
+    if (daysToErc > 0 && daysToErc <= 90) return 'warning';
+  }
+  if (hasCovenants) return 'ok';
+  return 'unknown';
+}
+
 export function getLtvColor(ltv: number | null): string {
   if (ltv == null) return '';
   if (ltv < 65) return 'text-emerald-600';
