@@ -472,6 +472,16 @@ const App = () => (
               }
             />
             <Route
+              path="/refinancing-opportunities"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <RefinancingOpportunities />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/lending"
               element={
                 <ProtectedRoute>
