@@ -8,6 +8,7 @@ import { TenantPortalLayout } from '@/components/tenant-portal/TenantPortalLayou
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 export default function TenantDocuments() {
   const { tenancyId, canViewDocuments } = useTenantPortalSession();
