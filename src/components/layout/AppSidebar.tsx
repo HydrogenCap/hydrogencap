@@ -83,6 +83,7 @@ const operationsItems: NavItem[] = [
   { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
   { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
   { title: 'Lending', icon: PoundSterling, href: '/lending', sectionKey: 'lending' },
+  { title: 'Refinancing', icon: TrendingUp, href: '/refinancing-opportunities', sectionKey: 'lending' },
   { title: 'Financials', icon: TrendingUp, href: '/financials' },
   { title: 'Investors', icon: Briefcase, href: '/investors', sectionKey: 'investors' },
   { title: 'Distributions', icon: Banknote, href: '/distributions', sectionKey: 'distributions' },
