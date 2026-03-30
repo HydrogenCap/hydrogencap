@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { DoorOpen, AlertTriangle, TrendingDown, Clock, PoundSterling, Percent, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -20,6 +20,7 @@ import {
   type ActiveVoid,
   type VoidReason,
 } from '@/hooks/useVoidPeriods';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatGBP } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import {
@@ -99,6 +100,49 @@ function VoidTrendChart({ voids }: { voids: ActiveVoid[] }) {
         </ResponsiveContainer>
       </CardContent>
     </Card>
+  );
+}
+
+const CHECKLIST_ITEMS = [
+  'Clean & deep clean',
+  'Repaint / touch-up',
+  'Inventory check',
+  'Advertise room',
+  'Reference applicants',
+];
+
+function VoidChecklist({ voidId }: { voidId: string }) {
+  const storageKey = `void-checklist-${voidId}`;
+  const [checked, setChecked] = useState<boolean[]>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? JSON.parse(stored) : CHECKLIST_ITEMS.map(() => false);
+    } catch {
+      return CHECKLIST_ITEMS.map(() => false);
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(checked));
+  }, [checked, storageKey]);
+
+  const toggle = (i: number) =>
+    setChecked((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
+
+  const done = checked.filter(Boolean).length;
+
+  return (
+    <div className="mt-2 space-y-1">
+      <p className="text-xs text-muted-foreground font-medium mb-1">
+        Turnover checklist ({done}/{CHECKLIST_ITEMS.length})
+      </p>
+      {CHECKLIST_ITEMS.map((item, i) => (
+        <label key={i} className="flex items-center gap-2 text-xs cursor-pointer select-none">
+          <Checkbox checked={checked[i]} onCheckedChange={() => toggle(i)} className="h-3.5 w-3.5" />
+          <span className={checked[i] ? 'line-through text-muted-foreground' : ''}>{item}</span>
+        </label>
+      ))}
+    </div>
   );
 }
 
@@ -220,6 +264,7 @@ export default function Voids() {
                     <TableHead>Lost Rent</TableHead>
                     <TableHead>Reason</TableHead>
                     <TableHead>Actions</TableHead>
+                    <TableHead>Checklist</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -251,6 +296,9 @@ export default function Voids() {
                           >
                             End Void
                           </Button>
+                        </TableCell>
+                        <TableCell>
+                          <VoidChecklist voidId={v.id} />
                         </TableCell>
                       </TableRow>
                     );

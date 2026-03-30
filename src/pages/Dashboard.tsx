@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar, ShieldCheck, Clock, CircleDot } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { PoundSterling, TrendingUp, Percent, AlertTriangle, AlertCircle, ArrowRight, Users, Building2, MapPin, FileText, Wallet, DoorOpen, Calendar, ShieldCheck, Clock, CircleDot, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -374,6 +374,18 @@ function DashboardPage() {
             <LifecycleFilterToggle />
           </div>
         </div>
+
+        {/* Empty state for new orgs with no properties */}
+        {filteredProperties.length === 0 && propertiesV2 !== undefined && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Home className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Welcome to Tenure IQ</h2>
+            <p className="text-muted-foreground mb-4">Add your first property to see your portfolio dashboard.</p>
+            <Button asChild>
+              <Link to="/wizards/add-property">Add your first property</Link>
+            </Button>
+          </div>
+        )}
 
         {/* Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

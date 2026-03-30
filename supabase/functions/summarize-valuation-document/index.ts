@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
@@ -77,6 +78,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Subscription check
+    const subCheck = await requireActiveSubscription(userData.user.id, corsHeaders);
+    if (!subCheck.allowed) return subCheck.response;
 
     // Rate limit check
     const rateLimit = await checkRateLimit(userData.user.id, 'summarize-valuation-document', 15, 60);

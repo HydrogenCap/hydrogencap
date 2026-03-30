@@ -12,6 +12,7 @@ import {
   fmtDate,
   getLtvColor,
   getFacilityTypeInfo,
+  getCovenantStatus,
   type LoanAlert,
   type PortfolioDebtSummary,
 } from '@/hooks/useLoanFacilities';
@@ -175,6 +176,71 @@ export default function Lending() {
                           <td className="py-2 text-right">{fmtDate(f.term_end_date)}</td>
                         </tr>
                       ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Covenant & ERC Monitor */}
+        {activeFacilities.some(f => f.covenant_ltv_max || f.covenant_icr_min || f.early_repayment_charge_until) && (
+          <Card>
+            <CardHeader><CardTitle>Covenant &amp; ERC Monitor</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-muted-foreground text-left">
+                      <th className="pb-2 font-medium">Property</th>
+                      <th className="pb-2 font-medium">Lender</th>
+                      <th className="pb-2 font-medium text-right">Current LTV</th>
+                      <th className="pb-2 font-medium text-right">LTV Covenant</th>
+                      <th className="pb-2 font-medium text-right">ERC Until</th>
+                      <th className="pb-2 font-medium text-right">ERC %</th>
+                      <th className="pb-2 font-medium text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeFacilities
+                      .filter(f => f.covenant_ltv_max || f.covenant_icr_min || f.early_repayment_charge_until)
+                      .sort((a, b) => {
+                        const order = { breach: 0, warning: 1, ok: 2, unknown: 3 };
+                        return order[getCovenantStatus(a)] - order[getCovenantStatus(b)];
+                      })
+                      .map(f => {
+                        const status = getCovenantStatus(f);
+                        const statusConfig = {
+                          breach: { label: 'Breach', cls: 'bg-red-100 text-red-700' },
+                          warning: { label: 'Warning', cls: 'bg-amber-100 text-amber-700' },
+                          ok: { label: 'OK', cls: 'bg-emerald-100 text-emerald-700' },
+                          unknown: { label: '—', cls: 'bg-gray-100 text-gray-600' },
+                        }[status];
+                        const rowCls = status === 'breach' ? 'bg-red-50/40' : status === 'warning' ? 'bg-amber-50/40' : '';
+                        return (
+                          <tr key={f.id} className={`border-b last:border-0 ${rowCls}`}>
+                            <td className="py-2">
+                              <Link to={`/properties-v2/${f.property_id}`} className="text-primary hover:underline">{f.property_address}</Link>
+                            </td>
+                            <td className="py-2">{f.lender_name}</td>
+                            <td className={`py-2 text-right font-medium ${getLtvColor(f.current_ltv)}`}>
+                              {f.current_ltv != null ? `${f.current_ltv.toFixed(1)}%` : '—'}
+                            </td>
+                            <td className="py-2 text-right">
+                              {f.covenant_ltv_max != null ? `${f.covenant_ltv_max}%` : '—'}
+                            </td>
+                            <td className="py-2 text-right">{fmtDate(f.early_repayment_charge_until)}</td>
+                            <td className="py-2 text-right">
+                              {f.erc_percentage != null ? `${f.erc_percentage}%` : '—'}
+                            </td>
+                            <td className="py-2 text-right">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusConfig.cls}`}>
+                                {statusConfig.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
