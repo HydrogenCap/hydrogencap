@@ -1,6 +1,6 @@
  import React, { useState } from 'react';
  import { format, differenceInDays } from 'date-fns';
- import { Shield, Plus, Calendar, PoundSterling, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+ import { Shield, Plus, Calendar, PoundSterling, EllipsisVertical, Pencil, Trash2 } from 'lucide-react';
  import { Card, CardContent } from '@/components/ui/card';
  import { Button } from '@/components/ui/button';
  import { Badge } from '@/components/ui/badge';
@@ -160,7 +160,7 @@
                      <DropdownMenu>
                        <DropdownMenuTrigger asChild>
                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                           <MoreVertical className="h-4 w-4" />
+                           <EllipsisVertical className="h-4 w-4" />
                          </Button>
                        </DropdownMenuTrigger>
                        <DropdownMenuContent align="end">
