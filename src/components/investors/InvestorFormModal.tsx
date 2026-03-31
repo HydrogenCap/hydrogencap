@@ -20,7 +20,7 @@ import { useCreateInvestor, useUpdateInvestor, Investor } from '@/hooks/useInves
 const schema = z.object({
   investor_name: z.string().min(1, 'Name is required'),
   investor_type: z.enum(['individual', 'company', 'trust', 'family_office', 'fund', 'jv_partner']),
-  email: z.string().email().optional().or(z.literal('')).transform(v => v || null),
+  email: z.union([z.string().email(), z.literal('')]).optional().transform(v => v || null),
   phone: z.string().optional().transform(v => v || null),
   company_name: z.string().optional().transform(v => v || null),
   contact_person: z.string().optional().transform(v => v || null),
