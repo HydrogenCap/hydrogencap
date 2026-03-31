@@ -110,7 +110,7 @@ export function usePropertiesCompat() {
           current_value_gbp: property.current_valuation,
           purchase_price_gbp: property.purchase_price,
           purchase_date: property.purchase_date,
-          lifecycle_type: property.lifecycle_stage || 'development',
+          lifecycle_type: ['stabilised', 'letting'].includes(property.lifecycle_stage) ? 'core_rental' : 'development',
           has_gas: property.has_gas_supply,
           is_grade_listed: property.listing_grade !== 'none',
           listing_grade: property.listing_grade,
