@@ -88,9 +88,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("[STRIPE-WEBHOOK] Error:", error);
-    // Return 200 to prevent Stripe from retrying
-    return new Response(JSON.stringify({ error: "Internal error, logged" }), {
-      status: 200,
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }

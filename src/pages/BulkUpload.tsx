@@ -14,6 +14,7 @@ import { COMPLIANCE_DOC_TYPES, DOC_TYPE_DISPLAY_NAMES, type ComplianceDocType } 
 interface PropertyOption {
   id: string;
   address_line_1: string | null;
+  postcode?: string | null;
 }
 
 type DocumentOverride = Partial<{
@@ -252,7 +253,7 @@ function DocumentRow({
             <SelectContent>
               {properties.map(p => (
                 <SelectItem key={p.id} value={p.id} className="text-xs">
-                  {(p as any).address_line_1}{(p as any).postcode ? `, ${(p as any).postcode}` : ''}
+                  {p.address_line_1}{p.postcode ? `, ${p.postcode}` : ''}
                 </SelectItem>
               ))}
             </SelectContent>

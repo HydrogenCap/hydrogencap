@@ -1,6 +1,7 @@
  import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
  import { Resend } from 'https://esm.sh/resend@4.0.0';
+ import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
  
  const ALLOWED_ORIGINS = [
    "https://tenureiq.com",
@@ -133,7 +134,8 @@
  }
  
  serve(async (req) => {
-   const corsHeaders = getCorsHeaders(req);
+   const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@tenureiq.com';
+const corsHeaders = getCorsHeaders(req);
    // Handle CORS preflight requests
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: corsHeaders });
@@ -158,10 +160,17 @@
        });
      }
 
-     const { jobId, customMessage }: JobRequestParams = await req.json();
- 
+     const rateLimit = await checkRateLimit(user.id, 'send-job-request', 30, 60);
+     if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
+
+     const body = await req.json();
+     const jobId = typeof body?.jobId === 'string' ? body.jobId.trim() : null;
+     const customMessage = typeof body?.customMessage === 'string'
+       ? body.customMessage.slice(0, 5000)
+       : undefined;
+
      if (!jobId) {
-       return new Response(JSON.stringify({ error: 'jobId required' }), { 
+       return new Response(JSON.stringify({ error: 'jobId required' }), {
          status: 400,
          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
        });
@@ -246,14 +255,18 @@
  
      // Send email via Resend
      const emailResponse = await resend.emails.send({
-       from: 'Tenure IQ <noreply@hydrogencapital.lovable.app>',
+       from: `Tenure IQ <${FROM_EMAIL}>`,
        to: [job.contractor.email],
        subject,
        html,
       replyTo: senderAuth?.user?.email,
      });
  
-     console.log('Email sent:', emailResponse);
+     if (emailResponse?.error) {
+       throw new Error(`Failed to send email: ${emailResponse.error.message}`);
+     }
+
+     console.log('Email sent:', emailResponse.data?.id);
  
      // Update job status
      await supabase

@@ -57,10 +57,15 @@ export function ComplianceStatusBar({
       )}
 
       {/* Bar */}
-      <div className="flex h-2 rounded-full overflow-hidden bg-muted/50">
+      <div
+        role="img"
+        aria-label={`Compliance breakdown: ${segments.map(s => `${s.label} ${s.count}`).join(', ')}`}
+        className="flex h-2 rounded-full overflow-hidden bg-muted/50"
+      >
         {segments.map((segment) => (
           <div
             key={segment.label}
+            aria-hidden="true"
             className={cn('h-full transition-all duration-300', segment.color)}
             style={{ width: `${segment.percent}%` }}
           />

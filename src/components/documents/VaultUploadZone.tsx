@@ -31,12 +31,24 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
       'text/csv',
     ];
 
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
     const validFiles = Array.from(files).filter(f => validTypes.includes(f.type));
 
     if (validFiles.length === 0) {
       toast({
         title: 'Invalid file type',
         description: 'Please upload PDF, image, Word, or Excel files.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const oversizedFiles = validFiles.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: 'File too large',
+        description: `${oversizedFiles.map(f => f.name).join(', ')} exceed${oversizedFiles.length === 1 ? 's' : ''} the 50MB limit.`,
         variant: 'destructive',
       });
       return;

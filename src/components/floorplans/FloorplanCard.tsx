@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FileText, Upload, Eye, Download, Trash2, Star, MoreVertical, Image as ImageIcon } from 'lucide-react';
+import { FileText, Upload, Eye, Download, Trash2, Star, EllipsisVertical, Image as ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -351,7 +351,7 @@ function FloorplanItem({ floorplan, onView, onDownload, onDelete, onSetPrimary }
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
-              <MoreVertical className="h-4 w-4" />
+              <EllipsisVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

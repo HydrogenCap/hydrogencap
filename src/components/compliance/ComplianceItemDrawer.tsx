@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   Home, 
-  MoreVertical, 
+  EllipsisVertical, 
   Upload, 
   CheckCircle2, 
   Calendar,
@@ -313,7 +313,7 @@ export function ComplianceItemDrawer({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
+                              <EllipsisVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">

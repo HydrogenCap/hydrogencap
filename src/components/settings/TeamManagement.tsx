@@ -5,7 +5,7 @@ import {
   Crown,
   ShieldCheck,
   Eye,
-  MoreHorizontal,
+  Ellipsis,
   Mail,
   Copy,
   Trash2,
@@ -123,15 +123,18 @@ export function TeamManagement() {
       return;
     }
 
-    await sendInvite.mutateAsync({
-      email: inviteEmail.trim(),
-      name: inviteName.trim() || undefined,
-      role: inviteRole,
-    });
-
-    setInviteEmail('');
-    setInviteName('');
-    setInviteRole('viewer');
+    try {
+      await sendInvite.mutateAsync({
+        email: inviteEmail.trim(),
+        name: inviteName.trim() || undefined,
+        role: inviteRole,
+      });
+      setInviteEmail('');
+      setInviteName('');
+      setInviteRole('viewer');
+    } catch (err) {
+      toast({ title: 'Failed to send invite', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+    }
   };
 
   const copyInviteLink = (token: string) => {
@@ -364,7 +367,7 @@ function MemberRow({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
+              <Ellipsis className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -465,7 +468,7 @@ function InviteRow({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
+            <Ellipsis className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

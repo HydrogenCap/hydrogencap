@@ -1,4 +1,5 @@
  import { useState, useCallback } from 'react';
+ import { toast } from 'sonner';
  import { useDropzone } from 'react-dropzone';
  import { Upload, File, X, Loader2 } from 'lucide-react';
  import {
@@ -99,37 +100,40 @@
      e.preventDefault();
      if (!file || !formData.displayName || !formData.category) return;
  
-     await uploadDocument.mutateAsync({
-       file,
-       displayName: formData.displayName,
-       category: formData.category,
-       description: formData.description || undefined,
-       propertyId,
-       companyId,
-       tenantId,
-       tenancyId,
-       complianceItemId,
-       jobId,
-       documentDate: formData.documentDate || undefined,
-       expiryDate: formData.expiryDate || undefined,
-       isConfidential: formData.isConfidential,
-       visibleToShareholders: formData.visibleToShareholders,
-       visibleToTenants: formData.visibleToTenants,
-     });
- 
-     // Reset and close
-     setFile(null);
-     setFormData({
-       displayName: '',
-       category: '',
-       description: '',
-       documentDate: '',
-       expiryDate: '',
-       isConfidential: false,
-       visibleToShareholders: false,
-       visibleToTenants: false,
-     });
-     onOpenChange(false);
+     try {
+       await uploadDocument.mutateAsync({
+         file,
+         displayName: formData.displayName,
+         category: formData.category,
+         description: formData.description || undefined,
+         propertyId,
+         companyId,
+         tenantId,
+         tenancyId,
+         complianceItemId,
+         jobId,
+         documentDate: formData.documentDate || undefined,
+         expiryDate: formData.expiryDate || undefined,
+         isConfidential: formData.isConfidential,
+         visibleToShareholders: formData.visibleToShareholders,
+         visibleToTenants: formData.visibleToTenants,
+       });
+       // Reset and close
+       setFile(null);
+       setFormData({
+         displayName: '',
+         category: '',
+         description: '',
+         documentDate: '',
+         expiryDate: '',
+         isConfidential: false,
+         visibleToShareholders: false,
+         visibleToTenants: false,
+       });
+       onOpenChange(false);
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : 'Failed to upload document');
+     }
    };
  
    return (

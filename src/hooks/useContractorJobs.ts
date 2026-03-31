@@ -219,7 +219,7 @@ export function useJobCounts() {
         .from('contractor_jobs')
         .select(`
           *,
-          contractor:contractors(*),
+          contractor:contractors(id, name, company_name, email, phone),
           property:properties(id, address_line, postcode),
           property_v2:properties_v2(id, address_line_1, city, postcode),
           compliance_item:compliance_items!contractor_jobs_compliance_item_id_fkey(id, compliance_type, expiry_date)

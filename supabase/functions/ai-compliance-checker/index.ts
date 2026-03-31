@@ -4,6 +4,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
+import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
@@ -127,6 +128,10 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Subscription check
+    const subCheck = await requireActiveSubscription(userData.user.id, corsHeaders);
+    if (!subCheck.allowed) return subCheck.response;
 
     // Rate limit check
     const rateLimit = await checkRateLimit(userData.user.id, 'ai-compliance-checker', 20, 60);

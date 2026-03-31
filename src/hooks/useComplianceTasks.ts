@@ -2,9 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
+import { useToast } from '@/hooks/use-toast';
 import type { ComplianceTaskOverview, ComplianceScanResult, TaskStatus, TaskPriority } from '@/lib/complianceTaskTypes';
 
 type ComplianceTaskInsert = Database['public']['Tables']['compliance_tasks']['Insert'];
+type ComplianceTaskUpdate = Database['public']['Tables']['compliance_tasks']['Update'];
 
 export function useComplianceTasks() {
   const { data: org } = useOrganization();
@@ -37,9 +39,10 @@ export function useComplianceTaskStats() {
 
 export function useUpdateTaskStatus() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: TaskStatus; notes?: string }) => {
-      const updates: Record<string, unknown> = { status };
+      const updates: ComplianceTaskUpdate = { status };
       if (status === 'completed') {
         updates.resolved_at = new Date().toISOString();
         if (notes) updates.resolution_notes = notes;
@@ -48,40 +51,47 @@ export function useUpdateTaskStatus() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
+    onError: (error: Error) => toast({ title: 'Failed to update task status', description: error.message, variant: 'destructive' }),
   });
 }
 
 export function useUpdateTaskPriority() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, priority }: { id: string; priority: TaskPriority }) => {
       const { error } = await supabase.from('compliance_tasks').update({ priority }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
+    onError: (error: Error) => toast({ title: 'Failed to update task priority', description: error.message, variant: 'destructive' }),
   });
 }
 
 export function useUpdateTask() {
   const qc = useQueryClient();
+  const { toast } = useToast();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Record<string, unknown> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: ComplianceTaskUpdate }) => {
       const { error } = await supabase.from('compliance_tasks').update(updates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
+    onError: (error: Error) => toast({ title: 'Failed to update task', description: error.message, variant: 'destructive' }),
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   const { data: org } = useOrganization();
+  const { toast } = useToast();
   return useMutation({
     mutationFn: async (task: Partial<ComplianceTaskInsert>) => {
-      const { error } = await supabase.from('compliance_tasks').insert([{ ...task, org_id: org!.id, source: 'manual' }] as any);
+      const { error } = await supabase.from('compliance_tasks').insert([{ ...task, org_id: org!.id, source: 'manual' } as ComplianceTaskInsert]);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
+    onError: (error: Error) => toast({ title: 'Failed to create task', description: error.message, variant: 'destructive' }),
   });
 }
 

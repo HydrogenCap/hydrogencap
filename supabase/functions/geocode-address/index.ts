@@ -158,6 +158,13 @@ serve(async (req) => {
       );
     }
 
+    if (typeof address !== 'string' || address.length > 300) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Address must be a string of 300 characters or fewer" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log(`Geocoding address: ${address}`);
 
     // Strategy 1: Try cleaned full address

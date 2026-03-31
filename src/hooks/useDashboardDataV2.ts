@@ -222,10 +222,18 @@ export function useDashboardRoomsV2() {
   return useQuery({
     queryKey: ['dashboard_rooms_v2', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      // rooms_v2 has no org_id; filter via properties_v2 join
+      const { data: propIds } = await supabase
+        .from('properties_v2')
+        .select('id')
+        .eq('org_id', orgId!);
+      const propertyIds = (propIds || []).map((p) => p.id);
+      if (propertyIds.length === 0) return [];
+
+      const { data, error } = await supabase
         .from('rooms_v2')
         .select('id, property_id, room_name, occupancy_status, is_lettable')
-        .eq('org_id', orgId!);
+        .in('property_id', propertyIds);
       if (error) throw error;
 
       return ((data || []) as unknown as DashboardRoom[]).map((room) => ({

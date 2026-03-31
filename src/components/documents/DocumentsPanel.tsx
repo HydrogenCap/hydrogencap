@@ -1,9 +1,10 @@
  import { useState } from 'react';
+ import { toast } from 'sonner';
  import { Link } from 'react-router-dom';
  import { format } from 'date-fns';
  import { 
    FileText, Upload, Search, Grid, List, 
-   MoreVertical, Download, Pencil, Trash2, Eye,
+   EllipsisVertical, Download, Pencil, Trash2, Eye,
    FolderOpen, File, Image, FileSpreadsheet
  } from 'lucide-react';
  import { Button } from '@/components/ui/button';
@@ -111,8 +112,12 @@
  
    const handleDelete = async () => {
      if (!deletingDocument) return;
-     await deleteDocument.mutateAsync(deletingDocument.id);
-     setDeletingDocument(null);
+     try {
+       await deleteDocument.mutateAsync(deletingDocument.id);
+       setDeletingDocument(null);
+     } catch (err) {
+       toast.error(err instanceof Error ? err.message : 'Failed to delete document');
+     }
    };
  
    // Group by category
@@ -262,7 +267,7 @@
                            <DropdownMenu>
                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                <Button variant="secondary" size="icon" className="h-7 w-7">
-                                 <MoreVertical className="h-4 w-4" />
+                                 <EllipsisVertical className="h-4 w-4" />
                                </Button>
                              </DropdownMenuTrigger>
                              <DropdownMenuContent align="end">
@@ -339,7 +344,7 @@
                  <DropdownMenu>
                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                       <MoreVertical className="h-4 w-4" />
+                       <EllipsisVertical className="h-4 w-4" />
                      </Button>
                    </DropdownMenuTrigger>
                    <DropdownMenuContent align="end">

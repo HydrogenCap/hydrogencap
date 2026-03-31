@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,14 +44,14 @@ export function useUpdateAppSetting() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No org');
 
-      const { error } = await supabase
-        .from(APP_SETTINGS_TABLE)
+      const { error } = await (supabase
+        .from(APP_SETTINGS_TABLE) as any)
         .upsert([{
           org_id: orgId,
           setting_key: key,
           setting_value: value,
           updated_at: new Date().toISOString(),
-        }] as any, { onConflict: 'org_id,setting_key' });
+        }], { onConflict: 'org_id,setting_key' });
 
       if (error) throw error;
     },

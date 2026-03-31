@@ -377,8 +377,11 @@ serve(async (req) => {
 
     const runKey = isTestSend ? `test_${Date.now()}` : getWeeklyRunKey();
     const recipientEmail = authorization.mode === "user"
-      ? (authorization.userEmail || Deno.env.get("COMPLIANCE_EMAIL_RECIPIENT") || "office@oxygen.rocks")
-      : Deno.env.get("COMPLIANCE_EMAIL_RECIPIENT") || "office@oxygen.rocks";
+      ? (authorization.userEmail || Deno.env.get("COMPLIANCE_EMAIL_RECIPIENT"))
+      : Deno.env.get("COMPLIANCE_EMAIL_RECIPIENT");
+    if (!recipientEmail) {
+      throw new Error("No recipient email: set COMPLIANCE_EMAIL_RECIPIENT or send as an authenticated user");
+    }
 
     // Check for idempotency (skip for test sends and force resends)
     if (!isTestSend && !forceResend) {

@@ -114,7 +114,8 @@ export function useOpenMaintenanceRequests() {
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .not('status', 'in', '("completed","verified","closed","cancelled")')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(200);
 
       if (error) throw error;
       return (data || []) as unknown as MaintenanceRequestWithDetails[];

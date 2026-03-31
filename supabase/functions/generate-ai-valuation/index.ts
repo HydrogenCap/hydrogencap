@@ -4,7 +4,8 @@
  import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
  import { validateBody } from "../_shared/validate.ts";
  import { getCorsHeaders } from "../_shared/cors.ts";
- 
+import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
+
  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
  const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
@@ -179,6 +180,10 @@
 
       // Use service-role client for DB operations
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+      // Subscription check
+      const subCheck = await requireActiveSubscription(userData.user.id, corsHeaders);
+      if (!subCheck.allowed) return subCheck.response;
 
       // Rate limit check
       const rateLimit = await checkRateLimit(userData.user.id, 'generate-ai-valuation', 10, 60);

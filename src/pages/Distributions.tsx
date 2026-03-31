@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Plus, FileText, Check, Banknote } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -282,8 +283,11 @@ function CreateDistributionDialog() {
     }));
   }, [shareholders, distAmount]);
 
+  const { toast } = useToast();
+
   const handleCreate = async (status: 'draft' | 'approved') => {
     if (!orgId || !entityId) return;
+    try {
     await createDist.mutateAsync({
       org_id: orgId,
       entity_id: entityId,
@@ -300,6 +304,10 @@ function CreateDistributionDialog() {
       notes: notes || undefined,
       allocations,
     });
+    } catch (err) {
+      toast({ title: 'Failed to create distribution', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+      return;
+    }
     setOpen(false);
   };
 

@@ -11,7 +11,7 @@ import {
   Pencil,
   Trash2,
   Eye,
-  MoreVertical,
+  EllipsisVertical,
   File,
   FileText,
   Image,
@@ -325,7 +325,7 @@ export default function Documents() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                <MoreVertical className="h-4 w-4" />
+                <EllipsisVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -719,7 +719,7 @@ export default function Documents() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                             <Button variant="secondary" size="icon" className="h-7 w-7">
-                              <MoreVertical className="h-4 w-4" />
+                              <EllipsisVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">

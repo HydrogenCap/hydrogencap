@@ -13,7 +13,7 @@ export default function TenantPortalHome() {
   const { tenancyId, tenantId, canViewRent } = useTenantPortalSession();
 
   // Fetch tenancy details
-  const { data: tenancy } = useQuery({
+  const { data: tenancy, isLoading: tenancyLoading, isError: tenancyError } = useQuery({
     queryKey: ['tenant-portal-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
@@ -68,10 +68,21 @@ export default function TenantPortalHome() {
     enabled: !!tenantId,
   });
 
-  if (!tenancy) {
+  if (tenancyLoading) {
     return (
       <TenantPortalLayout>
         <LoadingState text="Loading your tenancy..." />
+      </TenantPortalLayout>
+    );
+  }
+
+  if (tenancyError || !tenancy) {
+    return (
+      <TenantPortalLayout>
+        <div className="text-center py-12 text-muted-foreground">
+          <AlertCircle className="h-10 w-10 mx-auto mb-3 opacity-50" />
+          <p>Unable to load your tenancy. Please try refreshing.</p>
+        </div>
       </TenantPortalLayout>
     );
   }
