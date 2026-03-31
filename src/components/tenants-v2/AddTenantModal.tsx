@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 const schema = z.object({
   first_name: z.string().min(1, 'Required'),
   last_name: z.string().min(1, 'Required'),
-  email: z.string().email().or(z.literal('')).nullable().optional(),
+  email: z.union([z.string().email(), z.literal('')]).nullable().optional(),
   phone: z.string().nullable().optional(),
   date_of_birth: z.string().nullable().optional(),
   national_insurance: z.string().nullable().optional(),
