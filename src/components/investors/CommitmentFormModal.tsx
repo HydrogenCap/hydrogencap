@@ -183,7 +183,7 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
               <FormField control={form.control} name="equity_percentage" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Equity Percentage (%)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} value={field.value as string | number ?? ''} /></FormControl>
                   <FormDescription>This investor's percentage ownership of the entity</FormDescription>
                 </FormItem>
               )} />
