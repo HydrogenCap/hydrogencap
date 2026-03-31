@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { useAdminDashboard, useAdminUsers, useGrantTrial, useChangePlan } from '@/hooks/useAdminStats';
-import { PoundSterling, Users, TrendingUp, TrendingDown, MoreHorizontal, Search, ExternalLink } from 'lucide-react';
+import { PoundSterling, Users, TrendingUp, TrendingDown, Ellipsis, Search, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { format } from 'date-fns';
 
@@ -279,7 +279,7 @@ export default function AdminDashboard() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
+                                <Ellipsis className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
