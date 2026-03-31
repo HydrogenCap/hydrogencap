@@ -167,14 +167,14 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
               <FormField control={form.control} name="committed_amount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Committed Amount (£) *</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} value={field.value as string | number ?? ''} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="drawn_amount" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Drawn Amount (£) *</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} value={field.value as string | number ?? ''} /></FormControl>
                 </FormItem>
               )} />
             </div>
