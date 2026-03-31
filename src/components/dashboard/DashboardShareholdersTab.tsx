@@ -128,10 +128,10 @@ export function DashboardShareholdersTab() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number, _name: string, props: { payload: ShareholderEntry }) => [
+                    formatter={((value: number, _name: string, props: any) => [
                       `${value.toFixed(1)}% equity`,
-                      props.payload.name,
-                    ]}
+                      props?.payload?.name,
+                    ]) as any}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',

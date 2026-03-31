@@ -209,7 +209,7 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
                   <FormField control={form.control} name="coupon_rate" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Coupon Rate (%)</FormLabel>
-                      <FormControl><Input type="number" step="0.001" {...field} value={field.value ?? ''} /></FormControl>
+                      <FormControl><Input type="number" step="0.001" {...field} value={field.value as string | number ?? ''} /></FormControl>
                     </FormItem>
                   )} />
                 </div>
