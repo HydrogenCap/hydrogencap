@@ -141,7 +141,7 @@ export function useCreateWorksOrder() {
           org_id: orgId,
           order_number: orderNumber,
           status: 'draft',
-        }] as WorksOrder[])
+        }] as any[])
         .select()
         .single();
 

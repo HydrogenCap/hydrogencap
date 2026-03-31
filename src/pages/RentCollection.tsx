@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { useArrearsAging, useMonthSummary, useRentSchedule, type RentScheduleWithDetails, type RentStatus } from '@/hooks/useRentCollection';
+import { useArrearsAging, useMonthSummary, useRentSchedule, useRentTrend, type RentScheduleWithDetails, type RentStatus } from '@/hooks/useRentCollection';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTenancies, type TenancyWithDetails } from '@/hooks/useTenancies';
 import { LoadingState } from '@/components/common';
 import { RentSummaryCards } from '@/components/rent/RentSummaryCards';
@@ -42,6 +43,7 @@ export default function RentCollection() {
   const [showSendReminder, setShowSendReminder] = useState(false);
 
   const { data: monthSummary, isLoading: summaryLoading } = useMonthSummary();
+  const { data: trendData } = useRentTrend(12);
   const { data: arrearsData, isLoading: arrearsLoading } = useArrearsAging();
   const { data: allTenancies } = useTenancies();
 
@@ -206,6 +208,43 @@ export default function RentCollection() {
 
         {/* Summary Cards */}
         {monthSummary && <RentSummaryCards data={monthSummary} />}
+
+        {/* 12-Month Collection Trend */}
+        {trendData && trendData.length > 1 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">12-Month Collection Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={trendData} margin={{ top: 4, right: 8, bottom: 0, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis
+                    tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
+                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                    width={48}
+                  />
+                  <Tooltip
+                    formatter={(v: number) =>
+                      new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v)
+                    }
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      borderColor: 'hsl(var(--border))',
+                      color: 'hsl(var(--foreground))',
+                      fontSize: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Area type="monotone" dataKey="due" name="Rent Due" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground) / 0.15)" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="paid" name="Collected" stroke="hsl(142 76% 36%)" fill="hsl(142 76% 36% / 0.2)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="outstanding" name="Outstanding" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive) / 0.15)" strokeWidth={1.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tenancy Expiry Alerts */}
         {expiringTenancies.length > 0 && (

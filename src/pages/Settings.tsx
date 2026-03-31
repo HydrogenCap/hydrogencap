@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
  import { User, Building2, Users, FileSpreadsheet, Upload, ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark, Database, ToggleRight } from 'lucide-react';
 import { FreeAgentIntegrationPanel } from '@/components/settings/FreeAgentIntegrationPanel';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
+import { AccountDeletionSection } from '@/components/settings/AccountDeletionSection';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
 import { LocationSettingsTab } from '@/components/settings/LocationSettingsTab';
  import { ShareholderManagement } from '@/components/settings/ShareholderManagement';
@@ -412,6 +413,9 @@ export default function Settings() {
 
             {/* Security Settings */}
             <SecuritySettings />
+
+            {/* Account Deletion */}
+            <AccountDeletionSection />
           </TabsContent>
 
           <TabsContent value="organization" className="space-y-6 max-w-2xl">

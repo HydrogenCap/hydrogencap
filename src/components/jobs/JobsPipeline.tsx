@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { 
   Calendar, Clock, User, AlertTriangle, Building2, 
-  ChevronRight, Zap, MoreHorizontal, GripVertical
+  ChevronRight, Zap, Ellipsis, GripVertical
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -184,7 +184,7 @@ function PipelineJobCard({ job }: { job: ContractorJob }) {
                   size="icon" 
                   className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <MoreHorizontal className="h-4 w-4" />
+                  <Ellipsis className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

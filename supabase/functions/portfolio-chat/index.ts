@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { validateBody } from "../_shared/validate.ts";
+import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
@@ -55,6 +56,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Subscription check
+    const subCheck = await requireActiveSubscription(userData.user.id, corsHeaders);
+    if (!subCheck.allowed) return subCheck.response;
 
     // Rate limit check
     const userId = userData.user.id;

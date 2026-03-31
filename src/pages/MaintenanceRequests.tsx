@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import CreateMaintenanceRequestDialog from '@/components/maintenance/CreateMaintenanceRequestDialog';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Home, User, Siren, PoundSterling } from 'lucide-react';
+import { Wrench, Plus, AlertTriangle, Clock, CheckCircle2, Home, User, Siren, PoundSterling, TrendingUp } from 'lucide-react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +61,52 @@ function RequestCard({ request }: { request: MaintenanceRequestWithDetails }) {
         </CardContent>
       </Card>
     </Link>
+  );
+}
+
+function CostByCategorySection({ requests }: { requests: MaintenanceRequestWithDetails[] }) {
+  const categoryTotals = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of requests) {
+      if (r.actual_cost && r.actual_cost > 0) {
+        map.set(r.category, (map.get(r.category) || 0) + r.actual_cost);
+      }
+    }
+    return Array.from(map.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6);
+  }, [requests]);
+
+  if (categoryTotals.length === 0) return null;
+
+  const maxCost = categoryTotals[0][1];
+  const fmt = (v: number) =>
+    new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(v);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <TrendingUp className="h-4 w-4" /> Cost by Category
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {categoryTotals.map(([category, total]) => (
+          <div key={category} className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground w-36 shrink-0 truncate">
+              {MAINTENANCE_CATEGORY_NAMES[category as keyof typeof MAINTENANCE_CATEGORY_NAMES] || category}
+            </span>
+            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full"
+                style={{ width: `${(total / maxCost) * 100}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium w-16 text-right">{fmt(total)}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -142,7 +189,40 @@ export default function MaintenanceRequests() {
               <p className="text-2xl font-bold text-green-600">{completedRequests.length}</p>
             </CardContent>
           </Card>
+          {stats && stats.totalActualCost > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <PoundSterling className="h-3.5 w-3.5" /> Total Spent
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">
+                  {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(stats.totalActualCost)}
+                </p>
+                <p className="text-xs text-muted-foreground">completed jobs</p>
+              </CardContent>
+            </Card>
+          )}
+          {stats && stats.totalEstimatedCost > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <PoundSterling className="h-3.5 w-3.5" /> Pending Cost
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-amber-600">
+                  {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(stats.totalEstimatedCost)}
+                </p>
+                <p className="text-xs text-muted-foreground">estimated open jobs</p>
+              </CardContent>
+            </Card>
+          )}
         </div>
+
+        {/* Cost by Category */}
+        <CostByCategorySection requests={requests || []} />
 
         {/* Request List */}
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>

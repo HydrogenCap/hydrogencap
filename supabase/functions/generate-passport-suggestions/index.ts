@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
 // Field configuration for passport suggestions
 const MUST_CONFIRM_FIELDS = ['local_authority', 'council_tax_band', 'construction_type'];
@@ -64,6 +65,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Subscription check
+    const subCheck = await requireActiveSubscription(user.id, corsHeaders);
+    if (!subCheck.allowed) return subCheck.response;
 
     const { property_id } = await req.json();
 

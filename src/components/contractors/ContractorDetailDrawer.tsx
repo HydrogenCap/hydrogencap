@@ -172,8 +172,46 @@ import { AddReviewDialog } from './AddReviewDialog';
                      </div>
                    </div>
  
+                   {/* Performance Breakdown */}
+                   {reviews && reviews.length > 0 && (() => {
+                     const avg = (key: 'punctuality_rating' | 'quality_rating' | 'value_rating' | 'communication_rating') => {
+                       const vals = reviews.map(r => r[key]).filter((v): v is number => v != null);
+                       return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+                     };
+                     const dims: { label: string; key: 'punctuality_rating' | 'quality_rating' | 'value_rating' | 'communication_rating' }[] = [
+                       { label: 'Punctuality', key: 'punctuality_rating' },
+                       { label: 'Quality', key: 'quality_rating' },
+                       { label: 'Value', key: 'value_rating' },
+                       { label: 'Communication', key: 'communication_rating' },
+                     ];
+                     const scored = dims.filter(d => avg(d.key) != null);
+                     if (!scored.length) return null;
+                     return (
+                       <div className="space-y-3">
+                         <h3 className="text-sm font-medium text-muted-foreground">Performance Breakdown</h3>
+                         <div className="space-y-2">
+                           {scored.map(d => {
+                             const score = avg(d.key)!;
+                             return (
+                               <div key={d.key} className="flex items-center gap-3">
+                                 <span className="text-xs text-muted-foreground w-28 shrink-0">{d.label}</span>
+                                 <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                   <div
+                                     className="h-full bg-amber-400 rounded-full"
+                                     style={{ width: `${(score / 5) * 100}%` }}
+                                   />
+                                 </div>
+                                 <span className="text-xs font-medium w-8 text-right">{score.toFixed(1)}</span>
+                               </div>
+                             );
+                           })}
+                         </div>
+                       </div>
+                     );
+                   })()}
+
                    <Separator />
- 
+
                    {/* Services */}
                    <div className="space-y-3">
                      <h3 className="text-sm font-medium text-muted-foreground">Services</h3>

@@ -3,7 +3,7 @@
  import { format, formatDistanceToNow } from 'date-fns';
  import { 
    Calendar, Clock, User, Send, AlertTriangle, Building2, 
-   ChevronRight, Zap, MoreVertical 
+   ChevronRight, Zap, EllipsisVertical 
  } from 'lucide-react';
  import { Card, CardContent } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';
@@ -83,7 +83,7 @@
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
+                    <EllipsisVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
