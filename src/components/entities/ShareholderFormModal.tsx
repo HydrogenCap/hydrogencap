@@ -56,10 +56,12 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
   useEffect(() => {
     if (open) {
       if (editingShareholder) {
+        const primaryClass = shareClassesWithAllocation?.find(sc => sc.is_primary);
+        const fallbackClassId = primaryClass?.id || shareClassesWithAllocation?.[0]?.id || '';
         setForm({
           shareholder_name: editingShareholder.shareholder_name,
-          share_class_id: editingShareholder.share_class_id || '',
-          shares_held: String(editingShareholder.shares_held),
+          share_class_id: editingShareholder.share_class_id || fallbackClassId,
+          shares_held: editingShareholder.shares_held > 0 ? String(editingShareholder.shares_held) : '',
           effective_date: editingShareholder.effective_date,
           shareholder_entity_id: editingShareholder.shareholder_entity_id || null,
           shareholder_type: editingShareholder.shareholder_type || 'individual',
