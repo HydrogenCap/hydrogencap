@@ -103,12 +103,12 @@ const ChartTooltipContent = React.forwardRef<
   (
     {
       active,
-      payload,
+      payload: payloadProp,
       className,
       indicator = "dot",
       hideLabel = false,
       hideIndicator = false,
-      label,
+      label: labelProp,
       labelFormatter,
       labelClassName,
       formatter,
@@ -118,6 +118,8 @@ const ChartTooltipContent = React.forwardRef<
     },
     ref,
   ) => {
+    const payload = payloadProp as any[];
+    const label = labelProp as string;
     const { config } = useChart();
 
     const tooltipLabel = React.useMemo(() => {
