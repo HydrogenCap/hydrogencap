@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useArrearsAging, useMonthSummary, useRentSchedule, useRentTrend, type RentScheduleWithDetails, type RentStatus } from '@/hooks/useRentCollection';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useTenancies, type TenancyWithDetails } from '@/hooks/useTenancies';
-import { LoadingState } from '@/components/common';
+import { KpiCardSkeleton, TableRowSkeleton } from '@/components/common';
 import { RentSummaryCards } from '@/components/rent/RentSummaryCards';
 import { ArrearsAgingTable } from '@/components/rent/ArrearsAgingTable';
 import BulkActionToolbar from '@/components/rent/BulkActionToolbar';
@@ -168,7 +168,16 @@ export default function RentCollection() {
   const overdueCount = allScheduleItems.filter(i => i.status === 'overdue' || i.status === 'partial').length;
   const unpaidCount = allScheduleItems.filter(i => i.status !== 'paid' && i.status !== 'bad_debt').length;
 
-  if (isLoading) return <AppLayout><LoadingState text="Loading rent collection..." /></AppLayout>;
+  if (isLoading) return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => <KpiCardSkeleton key={i} />)}
+        </div>
+        <TableRowSkeleton columns={6} rows={8} />
+      </div>
+    </AppLayout>
+  );
 
   const groupingOptions: { value: Grouping; label: string; icon: React.ElementType }[] = [
     { value: 'property', label: 'Property', icon: Building2 },

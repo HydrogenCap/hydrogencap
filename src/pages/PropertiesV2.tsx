@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PropertyCardSkeleton } from '@/components/common';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -251,7 +251,7 @@ export default function PropertiesV2() {
         {/* Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-48 rounded-lg" />)}
+            {[1, 2, 3].map(i => <PropertyCardSkeleton key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">

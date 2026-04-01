@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PageSkeleton } from '@/components/common';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   useLegalEntity,
@@ -102,10 +102,7 @@ export default function EntityDetail() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-48 w-full" />
-        </div>
+        <PageSkeleton tabs={5} />
       </AppLayout>
     );
   }
