@@ -21,3 +21,8 @@ export { MetricValue, StatusBadge, PercentBadge } from './MetricValue';
 export { RiskRadar } from './RiskRadar';
 export { ComplianceStatusBar } from './ComplianceStatusBar';
 export { LtvProgressBar, LtvProgressList } from './LtvProgressBar';
+
+// Zone layout components
+export { TodayStrip } from './TodayStrip';
+export { KpiCards } from './KpiCards';
+export { DashboardTabs } from './DashboardTabs';
