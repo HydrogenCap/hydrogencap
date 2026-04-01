@@ -271,4 +271,9 @@
     overflow-x: auto;
     -mx-4: 0;
   }
+
+  /* Safe area padding for mobile bottom nav on notched devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
