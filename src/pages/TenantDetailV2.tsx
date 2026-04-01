@@ -15,6 +15,8 @@ import { AddTenantModal } from '@/components/tenants-v2/AddTenantModal';
 import { CreateTenancyAgreementModal } from '@/components/tenants-v2/CreateTenancyAgreementModal';
 import { ServeNoticeModal } from '@/components/tenants-v2/ServeNoticeModal';
 import { EndTenancyModal } from '@/components/tenants-v2/EndTenancyModal';
+import { DepositProtectionCard } from '@/components/tenants-v2/DepositProtectionCard';
+import { RightToRentCard } from '@/components/tenants-v2/RightToRentCard';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -178,28 +180,6 @@ export default function TenantDetailV2() {
                 {activeAgreement.is_periodic && <Row label="Periodic" value={<Badge variant="secondary">Periodic</Badge>} />}
               </div>
 
-              {/* Deposit compliance */}
-              {compliance && (
-                <div className="border-t pt-4 space-y-1">
-                  <h4 className="text-sm font-semibold mb-2">Deposit & Compliance</h4>
-                  <ComplianceRow label="Deposit Amount" value={fmtRent(compliance.deposit_amount)} ok={true} />
-                  {compliance.deposit_amount && compliance.deposit_amount > 0 && (
-                    <>
-                      <ComplianceRow label="Deposit Scheme" value={compliance.deposit_scheme || 'Not set'} ok={!!compliance.deposit_scheme && compliance.deposit_scheme !== 'none'} />
-                      <ComplianceRow label="Date Protected" value={fmtDate(compliance.deposit_protected_date)} ok={!!compliance.deposit_protected_date} />
-                      <ComplianceRow label="Prescribed Info Served" value={fmtDate(compliance.prescribed_info_served_date)} ok={!!compliance.prescribed_info_served_date} />
-                    </>
-                  )}
-                  <ComplianceRow label="How to Rent Served" value={fmtDate(compliance.how_to_rent_served_date)} ok={!!compliance.how_to_rent_served_date} />
-                  <div className="flex items-center justify-between text-sm py-2 border-t mt-2">
-                    <span className="font-semibold">Section 21 Ready</span>
-                    <span className={`font-bold text-lg ${compliance.section_21_ready ? 'text-emerald-600' : 'text-destructive'}`}>
-                      {compliance.section_21_ready ? 'YES' : 'NO'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
               {hasComplianceIssues && (
                 <Alert variant="destructive">
                   <FileWarning className="h-4 w-4" />
@@ -210,6 +190,14 @@ export default function TenantDetailV2() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {activeAgreement && (
+          <DepositProtectionCard agreement={activeAgreement} />
+        )}
+
+        {activeAgreement && (
+          <RightToRentCard tenancyId={activeAgreement.id} />
         )}
 
         {/* Action Buttons */}
