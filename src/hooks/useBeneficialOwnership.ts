@@ -121,7 +121,6 @@ export function useAddBeneficialOwner() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['beneficial_owners', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['beneficial_owners_active', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['company_properties'] });
     },
   });
 }
@@ -149,7 +148,6 @@ export function useUpdateBeneficialOwner() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['beneficial_owners', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['beneficial_owners_active', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['company_properties'] });
     },
   });
 }
@@ -171,7 +169,6 @@ export function useDeleteBeneficialOwner() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['beneficial_owners', data.propertyId] });
       queryClient.invalidateQueries({ queryKey: ['beneficial_owners_active', data.propertyId] });
-      queryClient.invalidateQueries({ queryKey: ['company_properties'] });
     },
   });
 }

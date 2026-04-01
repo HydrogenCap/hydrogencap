@@ -170,8 +170,6 @@ export function useCreateTenancyAgreement() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tenancy_agreements'] });
-      qc.invalidateQueries({ queryKey: ['tenants_v2'] });
-      qc.invalidateQueries({ queryKey: ['rooms_v2'] });
       qc.invalidateQueries({ queryKey: ['tenancy_compliance_check_v2'] });
     },
   });
@@ -192,8 +190,6 @@ export function useUpdateTenancyAgreement() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tenancy_agreements'] });
-      qc.invalidateQueries({ queryKey: ['tenants_v2'] });
-      qc.invalidateQueries({ queryKey: ['rooms_v2'] });
       qc.invalidateQueries({ queryKey: ['tenancy_compliance_check_v2'] });
     },
   });

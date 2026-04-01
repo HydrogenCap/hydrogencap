@@ -277,10 +277,11 @@ export function useUpdateLoanFacility() {
         .select()
         .single();
       if (error) throw error;
-      return data;
+      return data as LoanFacility;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['loan_facilities'] });
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['loan_facilities', 'property', data.property_id] });
+      qc.invalidateQueries({ queryKey: ['loan_facilities', 'all'] });
       qc.invalidateQueries({ queryKey: ['loan_alerts'] });
       qc.invalidateQueries({ queryKey: ['portfolio_debt_summary'] });
     },

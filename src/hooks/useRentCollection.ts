@@ -354,12 +354,23 @@ export function useUpdateRentScheduleStatus() {
       if (error) throw error;
       return { id, status };
     },
-    onSuccess: () => {
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ['rent_schedule', newData.id] });
+      const previous = queryClient.getQueryData<RentScheduleWithDetails>(['rent_schedule', newData.id]);
+      if (previous) {
+        queryClient.setQueryData(['rent_schedule', newData.id], { ...previous, status: newData.status });
+      }
+      return { previous };
+    },
+    onError: (_err, newData, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['rent_schedule', newData.id], context.previous);
+      }
+      toast({ title: 'Failed to update status', description: _err.message, variant: 'destructive' });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
       toast({ title: 'Status updated' });
-    },
-    onError: (error) => {
-      toast({ title: 'Failed to update status', description: error.message, variant: 'destructive' });
     },
   });
 }
@@ -492,12 +503,23 @@ export function useUpdateRentScheduleNotes() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ['rent_schedule', newData.id] });
+      const previous = queryClient.getQueryData<RentScheduleWithDetails>(['rent_schedule', newData.id]);
+      if (previous) {
+        queryClient.setQueryData(['rent_schedule', newData.id], { ...previous, ...newData });
+      }
+      return { previous };
+    },
+    onError: (_err, newData, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['rent_schedule', newData.id], context.previous);
+      }
+      toast({ title: 'Failed to update', description: _err.message, variant: 'destructive' });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
       toast({ title: 'Updated' });
-    },
-    onError: (error) => {
-      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
     },
   });
 }

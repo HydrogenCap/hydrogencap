@@ -331,7 +331,6 @@ export function useRemoveTeamMember() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      queryClient.invalidateQueries({ queryKey: ['team-invites'] });
       toast({ title: 'Team member removed' });
     },
     onError: (error) => {
