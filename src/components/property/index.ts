@@ -6,3 +6,5 @@ export { QuickPerformanceCard } from './QuickPerformanceCard';
 export { LifecycleSwitcher, LifecycleBadge } from './LifecycleSwitcher';
 export { GoLiveChecklist } from './GoLiveChecklist';
 export { AutoPopulateButton } from './AutoPopulateButton';
+export { PropertyForm } from './PropertyForm';
+export type { PropertyFormData } from './PropertyForm';
