@@ -3,6 +3,7 @@ import { Building2, Search, Loader2, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SEVERITY } from '@/lib/design-tokens';
 import { useCompaniesHouse, type CHCompanySearchResult } from '@/hooks/useCompaniesHouse';
 import { cn } from '@/lib/utils';
 
@@ -60,11 +61,11 @@ export function CompanySearchInput({ onSelect, placeholder = 'Search Companies H
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+        return SEVERITY.success.badge;
       case 'dissolved':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+        return SEVERITY.critical.badge;
       default:
-        return 'bg-muted text-muted-foreground';
+        return SEVERITY.neutral.badge;
     }
   };
 

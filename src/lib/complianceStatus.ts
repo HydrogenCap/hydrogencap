@@ -1,4 +1,5 @@
 // Compliance status types and utilities
+import { SEVERITY } from '@/lib/design-tokens';
 
 export type ComplianceStatus = 'ok' | 'due_soon' | 'overdue' | 'unknown';
 
@@ -57,14 +58,14 @@ export function getComplianceStatus(dueDate: string | null | undefined): Complia
 export function getComplianceStatusColor(status: ComplianceStatus): string {
   switch (status) {
     case 'overdue':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      return SEVERITY.critical.badge;
     case 'due_soon':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+      return SEVERITY.warning.badge;
     case 'ok':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      return SEVERITY.success.badge;
     case 'unknown':
     default:
-      return 'bg-muted text-muted-foreground';
+      return SEVERITY.neutral.badge;
   }
 }
 

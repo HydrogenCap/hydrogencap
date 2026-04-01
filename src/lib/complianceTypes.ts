@@ -1,4 +1,5 @@
 // Compliance types and constants
+import { SEVERITY } from '@/lib/design-tokens';
 
 export const COMPLIANCE_TYPES = [
   'Gas Safety Certificate (CP12)',
@@ -128,16 +129,16 @@ export function getComplianceStatusLabel(status: ComplianceStatus, expiryDate: s
 export function getComplianceStatusColor(status: ComplianceStatus): string {
   switch (status) {
     case 'expired':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      return SEVERITY.critical.badge;
     case 'expiring_soon':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+      return SEVERITY.warning.badge;
     case 'valid':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      return SEVERITY.success.badge;
     case 'not_required':
     case 'optional':
-      return 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
+      return SEVERITY.info.badge;
     case 'unknown':
     default:
-      return 'bg-muted text-muted-foreground';
+      return SEVERITY.neutral.badge;
   }
 }

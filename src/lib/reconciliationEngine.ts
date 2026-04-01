@@ -2,6 +2,7 @@
  * Reconciliation matching engine — pure functions, no side effects, fully testable.
  * Scores bank transactions against rent schedule items using a 0–100 confidence scale.
  */
+import { SEVERITY } from '@/lib/design-tokens';
 
 import type { RentScheduleItem } from '@/hooks/useRentCollection';
 
@@ -193,13 +194,13 @@ export function confidenceLabel(score: number): string {
 }
 
 export function confidenceColor(score: number): string {
-  if (score >= 80) return 'text-green-600 dark:text-green-400';
-  if (score >= 50) return 'text-amber-600 dark:text-amber-400';
-  return 'text-destructive';
+  if (score >= 80) return SEVERITY.success.text;
+  if (score >= 50) return SEVERITY.warning.text;
+  return SEVERITY.critical.text;
 }
 
 export function confidenceBadgeClass(score: number): string {
-  if (score >= 80) return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
-  if (score >= 50) return 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300';
-  return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
+  if (score >= 80) return SEVERITY.success.badge;
+  if (score >= 50) return SEVERITY.warning.badge;
+  return SEVERITY.critical.badge;
 }

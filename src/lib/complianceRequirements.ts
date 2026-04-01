@@ -3,6 +3,7 @@
 
 import type { ComplianceItem, ComplianceStatus } from './complianceTypes';
 import { getComplianceItemStatus } from './complianceTypes';
+import { SEVERITY } from '@/lib/design-tokens';
 
 // Property features that drive compliance requirements
 export interface PropertyComplianceFeatures {
@@ -287,15 +288,15 @@ export function getRequirementStatusColor(status: RequirementStatus): string {
   switch (status) {
     case 'missing':
     case 'expired':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      return SEVERITY.critical.badge;
     case 'expiring_soon':
-      return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+      return SEVERITY.warning.badge;
     case 'valid':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      return SEVERITY.success.badge;
     case 'not_required':
-      return 'bg-muted text-muted-foreground';
+      return SEVERITY.neutral.badge;
     default:
-      return 'bg-muted text-muted-foreground';
+      return SEVERITY.neutral.badge;
   }
 }
 

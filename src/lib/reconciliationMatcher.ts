@@ -3,6 +3,7 @@
  */
 
 import type { BankTransaction } from '@/hooks/useBankTransactions';
+import { SEVERITY } from '@/lib/design-tokens';
 import type { RentScheduleWithDetails } from '@/hooks/useRentCollection';
 
 export interface ReconciliationMatch {
@@ -132,7 +133,7 @@ export function findMatches(
 }
 
 export function getConfidenceLabel(confidence: number): { label: string; color: string } {
-  if (confidence >= 0.85) return { label: 'High Match', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' };
-  if (confidence >= 0.60) return { label: 'Possible Match', color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300' };
-  return { label: 'Low Confidence', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' };
+  if (confidence >= 0.85) return { label: 'High Match', color: SEVERITY.success.badge };
+  if (confidence >= 0.60) return { label: 'Possible Match', color: SEVERITY.warning.badge };
+  return { label: 'Low Confidence', color: SEVERITY.critical.badge };
 }

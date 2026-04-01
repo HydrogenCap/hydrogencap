@@ -25,6 +25,7 @@ import { useCompanies, type Company, type CompanyType, type CompanyStatus } from
 import { CreateCompanyDialog, ComplianceStatusBadge, ComplianceSummaryWidget } from '@/components/companies';
 import { getComplianceStatus } from '@/lib/complianceStatus';
 import { cn } from '@/lib/utils';
+import { SEVERITY } from '@/lib/design-tokens';
 
 const COMPANY_TYPE_OPTIONS: { value: CompanyType | 'ALL'; label: string }[] = [
   { value: 'ALL', label: 'All Types' },
@@ -61,10 +62,10 @@ const companyTypeLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  DORMANT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  SOLD: 'bg-muted text-muted-foreground',
-  CLOSED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  ACTIVE: SEVERITY.success.badge,
+  DORMANT: SEVERITY.warning.badge,
+  SOLD: SEVERITY.neutral.badge,
+  CLOSED: SEVERITY.critical.badge,
 };
 
 type SortField = 'name' | 'accounts_due' | 'cs_due';

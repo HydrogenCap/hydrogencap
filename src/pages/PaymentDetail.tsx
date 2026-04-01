@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format, differenceInDays, differenceInWeeks } from 'date-fns';
+import { SEVERITY } from '@/lib/design-tokens';
 import {
   ArrowLeft, PoundSterling, AlertTriangle, CheckCircle2, Clock,
   Send, Ban, Trash2, Copy, Calendar
@@ -25,12 +26,12 @@ import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  upcoming: { label: 'Upcoming', color: 'bg-gray-100 text-gray-800', icon: Clock },
-  due: { label: 'Due Today', color: 'bg-blue-100 text-blue-800', icon: Calendar },
-  paid: { label: 'Paid', color: 'bg-green-100 text-green-800', icon: CheckCircle2 },
-  partial: { label: 'Partial', color: 'bg-amber-100 text-amber-800', icon: AlertTriangle },
-  overdue: { label: 'Overdue', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
-  bad_debt: { label: 'Bad Debt', color: 'bg-red-200 text-red-900', icon: Ban },
+  upcoming: { label: 'Upcoming', color: SEVERITY.neutral.badge, icon: Clock },
+  due: { label: 'Due Today', color: SEVERITY.info.badge, icon: Calendar },
+  paid: { label: 'Paid', color: SEVERITY.success.badge, icon: CheckCircle2 },
+  partial: { label: 'Partial', color: SEVERITY.warning.badge, icon: AlertTriangle },
+  overdue: { label: 'Overdue', color: SEVERITY.critical.badge, icon: AlertTriangle },
+  bad_debt: { label: 'Bad Debt', color: SEVERITY.critical.badge, icon: Ban },
 };
 
 export default function PaymentDetail() {
