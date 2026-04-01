@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useDeferredValue, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import {
   AlertTriangle,
   Building2,
@@ -18,6 +19,11 @@ import {
   ShieldAlert,
   Clock,
   CheckCircle2,
+  UserPlus,
+  AlarmClock,
+  PlayCircle,
+  User,
+  Wrench,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,7 +40,22 @@ import {
 } from '@/components/ui/select';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { cn } from '@/lib/utils';
+import { SEVERITY } from '@/lib/design-tokens';
 import { usePortfolioRisks, RiskType, riskTypeLabels, type RiskItem } from '@/hooks/usePortfolioRisks';
+import {
+  useSnoozedActions,
+  useActionAssignments,
+  useUnsnoozeAction,
+  isSnoozed,
+  getAssignment,
+  type ActionSnooze,
+  type ActionAssignment,
+} from '@/hooks/useActionWorkflows';
+import { useOrgMembers, type OrgMember } from '@/hooks/useOrgMembers';
+import { useContractors, type Contractor } from '@/hooks/useContractors';
+import { ResolveActionDialog } from '@/components/actions/ResolveActionDialog';
+import { SnoozeActionDialog } from '@/components/actions/SnoozeActionDialog';
+import { AssignActionPopover } from '@/components/actions/AssignActionPopover';
 
 type RiskTypeFilter = 'all' | RiskType;
 type SeverityFilter = 'all' | 'critical' | 'warning';
@@ -61,29 +82,56 @@ function getPriorityLabel(priority: number): { label: string; className: string 
 }
 
 /* ─── Risk Row Component ─── */
-function RiskRow({ risk, onDismiss, isDismissed }: {
+function RiskRow({
+  risk,
+  snoozeData,
+  assignment,
+  memberMap,
+  contractorMap,
+  onResolve,
+  onSnooze,
+  onUnsnooze,
+}: {
   risk: RiskItem;
-  onDismiss: (id: string) => void;
-  isDismissed: boolean;
+  snoozeData?: ActionSnooze;
+  assignment?: ActionAssignment;
+  memberMap: Map<string, OrgMember>;
+  contractorMap: Map<string, Contractor>;
+  onResolve: (risk: RiskItem) => void;
+  onSnooze: (risk: RiskItem) => void;
+  onUnsnooze: (snoozeId: string) => void;
 }) {
   const navigate = useNavigate();
   const priorityInfo = getPriorityLabel(risk.priority);
+  const isSnoozedItem = !!snoozeData;
 
-  if (isDismissed) return null;
+  // Resolve assignee display
+  let assigneeName: string | null = null;
+  let assigneeIcon: React.ReactNode = null;
+  if (assignment?.assigned_to_user_id) {
+    const member = memberMap.get(assignment.assigned_to_user_id);
+    assigneeName = member?.full_name || member?.email || 'Team member';
+    assigneeIcon = <User className="h-3 w-3" />;
+  } else if (assignment?.assigned_to_contractor_id) {
+    const contractor = contractorMap.get(assignment.assigned_to_contractor_id);
+    assigneeName = contractor?.name || 'Contractor';
+    assigneeIcon = <Wrench className="h-3 w-3" />;
+  }
 
   return (
     <div
       className={cn(
-        'flex items-center gap-3 px-4 py-3 rounded-lg border transition-all cursor-pointer group',
-        'hover:bg-muted/40 hover:border-primary/30 hover:shadow-sm',
+        'flex items-center gap-3 px-4 py-3 rounded-lg border transition-all group',
+        isSnoozedItem && 'opacity-50',
         risk.severity === 'critical'
-          ? 'border-destructive/20 bg-destructive/5'
+          ? cn(SEVERITY.critical.border, SEVERITY.critical.bg)
           : 'border-border bg-card',
+        !isSnoozedItem && 'cursor-pointer hover:bg-muted/40 hover:border-primary/30 hover:shadow-sm',
       )}
-      onClick={() => navigate(risk.targetUrl)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') navigate(risk.targetUrl); }}
+      onClick={() => !isSnoozedItem && navigate(risk.targetUrl)}
+      role={isSnoozedItem ? undefined : 'button'}
+      tabIndex={isSnoozedItem ? undefined : 0}
+      onKeyDown={(e) => { if (e.key === 'Enter' && !isSnoozedItem) navigate(risk.targetUrl); }}
     >
       {/* Priority badge */}
       <Badge className={cn('text-[10px] px-1.5 py-0.5 shrink-0', priorityInfo.className)}>
@@ -110,42 +158,111 @@ function RiskRow({ risk, onDismiss, isDismissed }: {
       {/* Message */}
       <span className="text-sm text-foreground truncate flex-1">{risk.message}</span>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDismiss(risk.id);
-          }}
-          title="Dismiss"
-        >
-          <EyeOff className="h-3.5 w-3.5" />
-        </Button>
+      {/* Assignee badge */}
+      {assigneeName && (
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 gap-1 shrink-0">
+          {assigneeIcon}
+          {assigneeName}
+        </Badge>
+      )}
+
+      {/* Snooze info */}
+      {isSnoozedItem && (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 gap-1 shrink-0 border-muted-foreground/30">
+          <AlarmClock className="h-3 w-3" />
+          Until {format(new Date(snoozeData.snoozed_until), 'dd MMM')}
+        </Badge>
+      )}
+
+      {/* Action buttons */}
+      <div
+        className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+        onClick={e => e.stopPropagation()}
+      >
+        {isSnoozedItem ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onUnsnooze(snoozeData.id)}
+            title="Unsnooze"
+          >
+            <AlarmClock className="h-3.5 w-3.5" />
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+              onClick={() => onResolve(risk)}
+              title="Resolve"
+            >
+              <PlayCircle className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => onSnooze(risk)}
+              title="Snooze"
+            >
+              <AlarmClock className="h-3.5 w-3.5" />
+            </Button>
+            <AssignActionPopover
+              risk={risk}
+              assignment={assignment}
+              memberMap={memberMap}
+              contractorMap={contractorMap}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title="Assign"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+              </Button>
+            </AssignActionPopover>
+          </>
+        )}
       </div>
 
-      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      {!isSnoozedItem && <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
     </div>
   );
 }
 
 /* ─── Property Group Component ─── */
-function PropertyGroup({ address, propertyId, risks, onDismiss, dismissedIds }: {
+function PropertyGroup({
+  address,
+  propertyId,
+  risks,
+  snoozes,
+  assignments,
+  memberMap,
+  contractorMap,
+  onResolve,
+  onSnooze,
+  onUnsnooze,
+}: {
   address: string;
   propertyId: string;
   risks: RiskItem[];
-  onDismiss: (id: string) => void;
-  dismissedIds: Set<string>;
+  snoozes: ActionSnooze[];
+  assignments: ActionAssignment[];
+  memberMap: Map<string, OrgMember>;
+  contractorMap: Map<string, Contractor>;
+  onResolve: (risk: RiskItem) => void;
+  onSnooze: (risk: RiskItem) => void;
+  onUnsnooze: (snoozeId: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const visibleRisks = risks.filter(r => !dismissedIds.has(r.id));
-  const criticalCount = visibleRisks.filter(r => r.severity === 'critical').length;
-  const maxPriority = Math.max(...visibleRisks.map(r => r.priority), 0);
+  const criticalCount = risks.filter(r => r.severity === 'critical').length;
+  const maxPriority = Math.max(...risks.map(r => r.priority), 0);
   const priorityInfo = getPriorityLabel(maxPriority);
 
-  if (visibleRisks.length === 0) return null;
+  if (risks.length === 0) return null;
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -165,13 +282,23 @@ function PropertyGroup({ address, propertyId, risks, onDismiss, dismissedIds }: 
           </Badge>
         )}
         <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
-          {visibleRisks.length}
+          {risks.length}
         </Badge>
       </button>
       {expanded && (
         <div className="px-3 pb-3 space-y-1.5">
-          {visibleRisks.map(risk => (
-            <RiskRow key={risk.id} risk={risk} onDismiss={onDismiss} isDismissed={false} />
+          {risks.map(risk => (
+            <RiskRow
+              key={risk.id}
+              risk={risk}
+              snoozeData={isSnoozed(risk.id, snoozes)}
+              assignment={getAssignment(risk.id, assignments)}
+              memberMap={memberMap}
+              contractorMap={contractorMap}
+              onResolve={onResolve}
+              onSnooze={onSnooze}
+              onUnsnooze={onUnsnooze}
+            />
           ))}
         </div>
       )}
@@ -183,25 +310,52 @@ export default function ActionsPage() {
   const navigate = useNavigate();
   const { risks, criticalCount, warningCount, totalCount, isLoading } = usePortfolioRisks();
 
+  // Workflow data
+  const { data: snoozes = [] } = useSnoozedActions();
+  const { data: assignments = [] } = useActionAssignments();
+  const { data: members = [] } = useOrgMembers();
+  const { data: contractors = [] } = useContractors({ isActive: true });
+  const unsnoozeMutation = useUnsnoozeAction();
+
+  // Build lookup maps
+  const memberMap = useMemo(() => {
+    const map = new Map<string, OrgMember>();
+    members.forEach(m => map.set(m.user_id, m));
+    return map;
+  }, [members]);
+
+  const contractorMap = useMemo(() => {
+    const map = new Map<string, Contractor>();
+    contractors.forEach(c => map.set(c.id, c));
+    return map;
+  }, [contractors]);
+
+  // Snoozed risk IDs set for quick lookup
+  const snoozedRiskIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of snoozes) {
+      set.add(s.action_key);
+    }
+    return set;
+  }, [snoozes]);
+
+  // Filters
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [typeFilter, setTypeFilter] = useState<RiskTypeFilter>('all');
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
   const [groupMode, setGroupMode] = useState<GroupMode>('property');
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const [showDismissed, setShowDismissed] = useState(false);
+  const [showSnoozed, setShowSnoozed] = useState(false);
 
-  const handleDismiss = useCallback((id: string) => {
-    setDismissedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
+  // Dialog state
+  const [resolveRisk, setResolveRisk] = useState<RiskItem | null>(null);
+  const [snoozeRisk, setSnoozeRisk] = useState<RiskItem | null>(null);
 
-  const handleRestoreAll = useCallback(() => setDismissedIds(new Set()), []);
+  const handleResolve = useCallback((risk: RiskItem) => setResolveRisk(risk), []);
+  const handleSnooze = useCallback((risk: RiskItem) => setSnoozeRisk(risk), []);
+  const handleUnsnooze = useCallback((snoozeId: string) => unsnoozeMutation.mutate(snoozeId), [unsnoozeMutation]);
 
-  // Apply filters (priority sort comes from the hook)
+  // Apply filters
   const filteredRisks = useMemo(() => {
     let result = [...risks];
 
@@ -216,10 +370,13 @@ export default function ActionsPage() {
     if (typeFilter !== 'all') result = result.filter(r => r.type === typeFilter);
     if (severityFilter !== 'all') result = result.filter(r => r.severity === severityFilter);
 
-    if (!showDismissed) result = result.filter(r => !dismissedIds.has(r.id));
+    // Separate snoozed and active
+    if (!showSnoozed) {
+      result = result.filter(r => !snoozedRiskIds.has(r.id));
+    }
 
     return result;
-  }, [risks, deferredSearch, typeFilter, severityFilter, dismissedIds, showDismissed]);
+  }, [risks, deferredSearch, typeFilter, severityFilter, snoozedRiskIds, showSnoozed]);
 
   // Group by property
   const groupedRisks = useMemo(() => {
@@ -231,7 +388,6 @@ export default function ActionsPage() {
       }
       groups.get(key)!.risks.push(risk);
     }
-    // Sort groups by max priority
     return Array.from(groups.values()).sort((a, b) => {
       const maxA = Math.max(...a.risks.map(r => r.priority));
       const maxB = Math.max(...b.risks.map(r => r.priority));
@@ -239,9 +395,10 @@ export default function ActionsPage() {
     });
   }, [filteredRisks]);
 
-  const activeCount = risks.filter(r => !dismissedIds.has(r.id)).length;
-  const activeCritical = risks.filter(r => !dismissedIds.has(r.id) && r.severity === 'critical').length;
-  const activeWarning = risks.filter(r => !dismissedIds.has(r.id) && r.severity === 'warning').length;
+  const activeCount = risks.filter(r => !snoozedRiskIds.has(r.id)).length;
+  const activeCritical = risks.filter(r => !snoozedRiskIds.has(r.id) && r.severity === 'critical').length;
+  const activeWarning = risks.filter(r => !snoozedRiskIds.has(r.id) && r.severity === 'warning').length;
+  const snoozedCount = snoozes.length;
 
   if (isLoading) {
     return (
@@ -276,7 +433,7 @@ export default function ActionsPage() {
             icon={AlertTriangle}
             iconClassName="text-destructive"
             valueClassName="text-destructive"
-            className="border-destructive/30 bg-destructive/5"
+            className={cn(SEVERITY.critical.border, SEVERITY.critical.bg)}
             onClick={() => setSeverityFilter(severityFilter === 'critical' ? 'all' : 'critical')}
           />
           <KpiCard
@@ -285,7 +442,7 @@ export default function ActionsPage() {
             icon={AlertTriangle}
             iconClassName="text-warning"
             valueClassName="text-warning"
-            className="border-warning/30 bg-warning/5"
+            className={cn(SEVERITY.warning.border, SEVERITY.warning.bg)}
             onClick={() => setSeverityFilter(severityFilter === 'warning' ? 'all' : 'warning')}
           />
           <KpiCard
@@ -295,12 +452,12 @@ export default function ActionsPage() {
             subtitle={`${groupedRisks.length} properties affected`}
           />
           <KpiCard
-            label="Dismissed"
-            value={dismissedIds.size}
-            icon={EyeOff}
-            subtitle={dismissedIds.size > 0 ? 'Click to restore' : 'None dismissed'}
-            onClick={dismissedIds.size > 0 ? handleRestoreAll : undefined}
-            className={dismissedIds.size > 0 ? 'border-muted-foreground/20' : ''}
+            label="Snoozed"
+            value={snoozedCount}
+            icon={AlarmClock}
+            subtitle={snoozedCount > 0 ? 'Click to toggle' : 'None snoozed'}
+            onClick={snoozedCount > 0 ? () => setShowSnoozed(!showSnoozed) : undefined}
+            className={snoozedCount > 0 ? 'border-muted-foreground/20' : ''}
           />
         </div>
 
@@ -364,15 +521,15 @@ export default function ActionsPage() {
                 </button>
               </div>
 
-              {dismissedIds.size > 0 && (
+              {snoozedCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-xs"
-                  onClick={() => setShowDismissed(!showDismissed)}
+                  onClick={() => setShowSnoozed(!showSnoozed)}
                 >
-                  <Eye className="h-3.5 w-3.5 mr-1" />
-                  {showDismissed ? 'Hide' : 'Show'} dismissed ({dismissedIds.size})
+                  {showSnoozed ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
+                  {showSnoozed ? 'Hide' : 'Show'} snoozed ({snoozedCount})
                 </Button>
               )}
             </div>
@@ -392,8 +549,8 @@ export default function ActionsPage() {
                   <p className="text-sm text-muted-foreground">
                     {totalCount === 0
                       ? 'Your portfolio is healthy with no identified risks.'
-                      : dismissedIds.size > 0
-                        ? `${dismissedIds.size} issue${dismissedIds.size > 1 ? 's' : ''} dismissed. All other filters clear.`
+                      : snoozedCount > 0 && !showSnoozed
+                        ? `${snoozedCount} snoozed action${snoozedCount > 1 ? 's' : ''} hidden. All other filters clear.`
                         : 'No results match your current filters.'}
                   </p>
                 </div>
@@ -417,8 +574,13 @@ export default function ActionsPage() {
                 address={group.address}
                 propertyId={group.propertyId}
                 risks={group.risks}
-                onDismiss={handleDismiss}
-                dismissedIds={dismissedIds}
+                snoozes={snoozes}
+                assignments={assignments}
+                memberMap={memberMap}
+                contractorMap={contractorMap}
+                onResolve={handleResolve}
+                onSnooze={handleSnooze}
+                onUnsnooze={handleUnsnooze}
               />
             ))}
           </div>
@@ -428,13 +590,30 @@ export default function ActionsPage() {
               <RiskRow
                 key={risk.id}
                 risk={risk}
-                onDismiss={handleDismiss}
-                isDismissed={dismissedIds.has(risk.id)}
+                snoozeData={isSnoozed(risk.id, snoozes)}
+                assignment={getAssignment(risk.id, assignments)}
+                memberMap={memberMap}
+                contractorMap={contractorMap}
+                onResolve={handleResolve}
+                onSnooze={handleSnooze}
+                onUnsnooze={handleUnsnooze}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Dialogs */}
+      <ResolveActionDialog
+        open={!!resolveRisk}
+        onOpenChange={(open) => { if (!open) setResolveRisk(null); }}
+        risk={resolveRisk}
+      />
+      <SnoozeActionDialog
+        open={!!snoozeRisk}
+        onOpenChange={(open) => { if (!open) setSnoozeRisk(null); }}
+        risk={snoozeRisk}
+      />
     </AppLayout>
   );
 }
