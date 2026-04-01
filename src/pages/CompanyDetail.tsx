@@ -49,6 +49,7 @@ import { CompanyOwnershipSection } from '@/components/ownership';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDateUK, formatDateTimeUK } from '@/lib/calculations';
+import { SEVERITY } from '@/lib/design-tokens';
 
 const companyTypeLabels: Record<string, string> = {
   HOLDCO: 'Holding Co',
@@ -72,10 +73,10 @@ const COMPANY_STATUSES: { value: CompanyStatus; label: string }[] = [
 ];
 
 const statusColors: Record<string, string> = {
-  ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  DORMANT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  SOLD: 'bg-muted text-muted-foreground',
-  CLOSED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  ACTIVE: SEVERITY.success.badge,
+  DORMANT: SEVERITY.warning.badge,
+  SOLD: SEVERITY.neutral.badge,
+  CLOSED: SEVERITY.critical.badge,
 };
 
 export default function CompanyDetail() {

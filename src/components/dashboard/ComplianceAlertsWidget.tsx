@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
+import { SEVERITY } from '@/lib/design-tokens';
 
 export function ComplianceAlertsWidget() {
   const { data: complianceData, isLoading: loadingCompliance } = useAllCompliance();
@@ -62,13 +63,13 @@ export function ComplianceAlertsWidget() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-green-600" />
+            <Shield className={`h-5 w-5 ${SEVERITY.success.text}`} />
             Compliance Status
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3 text-green-600">
-            <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+          <div className={`flex items-center gap-3 ${SEVERITY.success.text}`}>
+            <div className={`h-10 w-10 rounded-full ${SEVERITY.success.bg} flex items-center justify-center`}>
               <Shield className="h-5 w-5" />
             </div>
             <div>
@@ -86,7 +87,7 @@ export function ComplianceAlertsWidget() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <AlertTriangle className={`h-5 w-5 ${SEVERITY.warning.text}`} />
             Compliance Alerts
           </span>
           <div className="flex items-center gap-2 text-sm font-normal">
@@ -94,7 +95,7 @@ export function ComplianceAlertsWidget() {
               <Badge variant="destructive">{expiredCount} Expired</Badge>
             )}
             {expiringCount > 0 && (
-              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+              <Badge className={SEVERITY.warning.badge}>
                 {expiringCount} Expiring
               </Badge>
             )}
