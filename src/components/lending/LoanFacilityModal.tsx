@@ -174,6 +174,7 @@ export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, de
       }
       onOpenChange(false);
     } catch (err: unknown) {
+      console.error('Failed to save loan facility:', err);
       toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };

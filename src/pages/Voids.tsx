@@ -117,7 +117,8 @@ function VoidChecklist({ voidId }: { voidId: string }) {
     try {
       const stored = localStorage.getItem(storageKey);
       return stored ? JSON.parse(stored) : CHECKLIST_ITEMS.map(() => false);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load void checklist from storage:', err);
       return CHECKLIST_ITEMS.map(() => false);
     }
   });

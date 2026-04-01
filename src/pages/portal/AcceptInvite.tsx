@@ -90,6 +90,7 @@ export default function AcceptInvite() {
       toast.success('Invitation accepted! Welcome to the portal.');
       navigate('/portal');
     } catch (error) {
+      console.error('Failed to accept shareholder invitation:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to accept invitation');
     }
   }, [navigate, token]);
@@ -120,6 +121,7 @@ export default function AcceptInvite() {
         // Auto-accept will trigger via useEffect
       }
     } catch (error) {
+      console.error('Failed to authenticate for invite:', error);
       toast.error(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setSubmitting(false);

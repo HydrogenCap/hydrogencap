@@ -144,7 +144,8 @@ export function generateStructuredFilename(params: StructuredFilenameParams): st
   try {
     const dateSource = documentDate || createdAt || new Date().toISOString();
     dateStr = format(new Date(dateSource), 'yyyy-MM-dd');
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse document date:', err);
     dateStr = format(new Date(), 'yyyy-MM-dd');
   }
 

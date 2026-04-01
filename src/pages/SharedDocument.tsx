@@ -110,7 +110,8 @@ function DownloadButton({ fileUrl, fileName }: { fileUrl: string; fileName: stri
       a.click();
       window.URL.revokeObjectURL(url);
       window.document.body.removeChild(a);
-    } catch {
+    } catch (err) {
+      console.error('Failed to download document:', err);
       window.open(fileUrl, '_blank');
     }
   };
@@ -188,7 +189,8 @@ export default function SharedDocument() {
           view_limit_reached: false,
           bucket_id: result.bucket_id || null,
         });
-      } catch {
+      } catch (err) {
+        console.error('Failed to load shared document:', err);
         setError('Failed to load document');
       } finally {
         setLoading(false);

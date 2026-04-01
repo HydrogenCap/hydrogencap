@@ -41,7 +41,8 @@ function formatMonthLabel(snapshotMonth: string): string {
   try {
     const d = parse(snapshotMonth, 'yyyy-MM-dd', new Date());
     return format(d, 'MMMM yyyy');
-  } catch {
+  } catch (err) {
+    console.error('Failed to format month label:', err);
     return snapshotMonth;
   }
 }
@@ -56,7 +57,8 @@ function formatDateForSystem(dateStr: string, system: AccountingSystem): string 
     if (system === 'xero') return format(d, 'dd/MM/yyyy');
     if (system === 'quickbooks') return format(d, 'MM/dd/yyyy');
     return format(d, 'yyyy-MM-dd');
-  } catch {
+  } catch (err) {
+    console.error('Failed to format date for accounting system:', err);
     return dateStr;
   }
 }

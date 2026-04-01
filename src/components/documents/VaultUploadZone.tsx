@@ -136,6 +136,7 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
       queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
       onUploadComplete?.();
     } catch (err) {
+      console.error('Failed to upload documents to vault:', err);
       toast({
         title: 'Upload failed',
         description: err instanceof Error ? err.message : 'Unknown error',

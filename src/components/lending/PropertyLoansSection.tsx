@@ -44,6 +44,7 @@ export function PropertyLoansSection({ propertyId, entityId, entities, propertyV
       await updateFacility.mutateAsync({ id, status: 'redeemed' });
       toast({ title: 'Loan marked as redeemed' });
     } catch (err: unknown) {
+      console.error('Failed to redeem loan:', err);
       toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };

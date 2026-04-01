@@ -70,6 +70,7 @@ export function ExtendableSelect({
       setDialogOpen(false);
       setNewName('');
     } catch (err) {
+      console.error('Failed to add new item:', err);
       setError(err instanceof Error ? err.message : 'Failed to add item');
     } finally {
       setIsAdding(false);

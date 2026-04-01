@@ -63,6 +63,7 @@ export function ShareLinkButton({
         toast.success('Link created and copied to clipboard');
       }
     } catch (err) {
+      console.error('Failed to create share link:', err);
       toast.error(err instanceof Error ? err.message : 'Failed to create share link');
     }
   };

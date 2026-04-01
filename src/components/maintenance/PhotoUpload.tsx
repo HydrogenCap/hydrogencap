@@ -37,6 +37,7 @@ export function PhotoUpload({ folder, onUpload, existingUrls = [], maxFiles = 5 
       setUrls(updated);
       onUpload(updated);
     } catch (err: unknown) {
+      console.error('Failed to upload photo:', err);
       toast({ title: 'Upload failed', description: getErrorMessage(err), variant: 'destructive' });
     } finally {
       setUploading(false);

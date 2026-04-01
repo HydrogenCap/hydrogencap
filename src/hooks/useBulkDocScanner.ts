@@ -159,6 +159,8 @@ export function useBulkDocScanner() {
         matchedPropertyId: matchedPropId,
       });
     } catch (error: unknown) {
+      console.error('Failed to classify document:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to classify document');
       // Still mark as ready with low confidence — user can manually classify
       updateDoc(idx, {
         status: 'ready',

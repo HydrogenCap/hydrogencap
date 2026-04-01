@@ -108,7 +108,7 @@ export default function Entities() {
       try {
         await syncEntity.mutateAsync({ entityId: spv.id, companyNumber: spv.company_number! });
         synced++;
-      } catch { /* continue */ }
+      } catch (err) { console.error('Failed to sync entity:', err); /* continue */ }
       await new Promise(r => setTimeout(r, 500));
     }
     setBulkSyncing(false);

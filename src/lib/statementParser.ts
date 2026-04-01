@@ -171,6 +171,7 @@ export function parseStatement(csvText: string): StatementParseResult {
 
       transactions.push(txn);
     } catch (e) {
+      console.error(`Failed to parse statement row ${i + 2}:`, e);
       warnings.push(`Row ${i + 2}: Parse error — ${(e as Error).message}`);
     }
   }

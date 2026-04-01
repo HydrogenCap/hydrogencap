@@ -136,9 +136,10 @@ export default function Settings() {
       setPropMapping(autoMapping);
       setPropCurrentStep(1);
     } catch (err) {
+      console.error('Failed to parse property CSV file:', err);
       toast({
         title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }
@@ -179,9 +180,10 @@ export default function Settings() {
         description: `Successfully imported ${result.success} properties`,
       });
     } catch (err) {
+      console.error('Failed to import properties:', err);
       toast({
         title: 'Import failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }
@@ -203,9 +205,10 @@ export default function Settings() {
       setPassMapping(autoMapping);
       setPassCurrentStep(1);
     } catch (err) {
+      console.error('Failed to parse passport CSV file:', err);
       toast({
         title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }
@@ -271,7 +274,8 @@ export default function Settings() {
           ...(row.data as PropertyPassportInsert),
         });
         success++;
-      } catch {
+      } catch (err) {
+        console.error('Failed to import passport row:', err);
         failed++;
       }
     }

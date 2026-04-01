@@ -222,7 +222,8 @@ export async function fetchUserOrgId(preferredOrgId?: string | null): Promise<st
 export async function fetchUserOrgIdOrNull(preferredOrgId?: string | null): Promise<string | null> {
   try {
     return await resolveUserOrgId(preferredOrgId);
-  } catch {
+  } catch (err) {
+    console.error('Failed to resolve user organization:', err);
     return null;
   }
 }

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export type GeocodeStatus = 'NOT_STARTED' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
 export type GeocodeSource = 'PLACES' | 'GEOCODE';
@@ -62,7 +63,8 @@ export function useGeocoding() {
         geocode_confidence: result.geocode_confidence,
       };
     } catch (err) {
-      console.error('Geocoding error:', err);
+      console.error('Failed to geocode address:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to geocode address');
       return null;
     }
   }, []);

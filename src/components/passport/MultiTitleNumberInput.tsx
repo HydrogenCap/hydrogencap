@@ -43,6 +43,7 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
         description: `${trimmed} has been added.`,
       });
     } catch (error) {
+      console.error('Failed to add title number:', error);
       toast({
         title: 'Error',
         description: 'Failed to add title number.',
@@ -59,6 +60,7 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
         description: `${titleNumber} has been removed.`,
       });
     } catch (error) {
+      console.error('Failed to remove title number:', error);
       toast({
         title: 'Error',
         description: 'Failed to remove title number.',

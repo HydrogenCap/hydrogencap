@@ -126,6 +126,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
       });
       toast.success('Computed payment saved');
     } catch (error) {
+      console.error('Failed to save computed payment:', error);
       toast.error('Failed to save payment');
     } finally {
       setIsSaving(false);

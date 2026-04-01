@@ -126,7 +126,8 @@ export default function CompanyDetail() {
           toast({ title: 'Auto-synced from Companies House', description: 'Compliance dates updated automatically' });
         }
       } catch (err) {
-        console.error('Auto-sync failed:', err);
+        console.error('Failed to auto-sync company from Companies House:', err);
+        toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to auto-sync from Companies House', variant: 'destructive' });
       }
     }
   }, [company, isLookingUp, lookupCompany, updateCompany, toast]);

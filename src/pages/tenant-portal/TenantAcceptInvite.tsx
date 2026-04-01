@@ -86,6 +86,7 @@ export default function TenantAcceptInvite() {
       toast.success('Welcome to the Tenant Portal!');
       navigate('/tenant-portal');
     } catch (error) {
+      console.error('Failed to accept tenant portal invitation:', error);
       toast.error('Failed to accept invite', { description: getErrorMessage(error) });
     }
   }, [navigate, token]);
@@ -117,6 +118,7 @@ export default function TenantAcceptInvite() {
         // Auth state change will trigger acceptInvite via useEffect
       }
     } catch (error) {
+      console.error('Failed to authenticate for tenant invite:', error);
       toast.error(getErrorMessage(error));
     } finally {
       setSubmitting(false);

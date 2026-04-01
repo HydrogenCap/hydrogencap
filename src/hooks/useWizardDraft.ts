@@ -4,6 +4,7 @@ import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import type { WizardDraft, WizardType, WizardPayload } from '@/lib/wizard/types';
+import { toast } from 'sonner';
 
 const AUTO_SAVE_INTERVAL_MS = 10_000;
 
@@ -45,6 +46,7 @@ export function useWizardDraft(wizardType: WizardType) {
         // Don't auto-create — let the page create on first interaction
       } catch (err) {
         console.error('Failed to load wizard draft:', err);
+        toast.error(err instanceof Error ? err.message : 'Failed to load wizard draft');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -68,7 +70,8 @@ export function useWizardDraft(wizardType: WizardType) {
       dirtyRef.current = false;
       setLastSaved(new Date());
     } catch (err) {
-      console.error('Draft save failed:', err);
+      console.error('Failed to save wizard draft:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to save draft');
     } finally {
       setIsSaving(false);
     }

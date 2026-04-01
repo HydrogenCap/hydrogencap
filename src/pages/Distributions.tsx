@@ -305,7 +305,8 @@ function CreateDistributionDialog() {
       allocations,
     });
     } catch (err) {
-      toast({ title: 'Failed to create distribution', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+      console.error('Failed to create distribution:', err);
+      toast({ title: 'Failed to create distribution', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
       return;
     }
     setOpen(false);

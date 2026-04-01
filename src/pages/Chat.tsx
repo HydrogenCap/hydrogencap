@@ -158,6 +158,7 @@ export default function Chat() {
     try {
       await streamChat(newMessages);
     } catch (error) {
+      console.error('Failed to send chat message:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
       toast({
         title: 'Chat Error',

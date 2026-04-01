@@ -116,6 +116,7 @@
        await deleteDocument.mutateAsync(deletingDocument.id);
        setDeletingDocument(null);
      } catch (err) {
+       console.error('Failed to delete document:', err);
        toast.error(err instanceof Error ? err.message : 'Failed to delete document');
      }
    };

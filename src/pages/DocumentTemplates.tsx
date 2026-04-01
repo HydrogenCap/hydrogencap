@@ -225,7 +225,8 @@ export default function DocumentTemplates() {
         toast({ title: 'Document generated', description: 'PDF has been downloaded.' });
       }
     } catch (err) {
-      toast({ title: 'Generation failed', description: String(err), variant: 'destructive' });
+      console.error('Failed to generate document:', err);
+      toast({ title: 'Generation failed', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 

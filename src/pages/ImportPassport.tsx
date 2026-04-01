@@ -55,9 +55,10 @@ export default function ImportPassport() {
       // Move to mapping step
       setCurrentStep(1);
     } catch (err) {
+      console.error('Failed to parse passport CSV file:', err);
       toast({
         title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }
@@ -134,6 +135,11 @@ export default function ImportPassport() {
         success++;
       } catch (err) {
         console.error('Failed to import passport row:', err);
+        toast({
+          title: 'Row import failed',
+          description: err instanceof Error ? err.message : 'Something went wrong',
+          variant: 'destructive',
+        });
         failed++;
       }
     }
