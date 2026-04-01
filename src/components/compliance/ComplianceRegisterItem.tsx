@@ -133,7 +133,8 @@ export function ComplianceRegisterItem({
         month: 'short',
         year: 'numeric',
       });
-    } catch {
+    } catch (error) {
+      console.error('Failed to format date:', error);
       return date;
     }
   };

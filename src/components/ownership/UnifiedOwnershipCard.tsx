@@ -116,8 +116,9 @@ export function UnifiedOwnershipCard({ propertyId, onAddOwner, onEditOwner }: Un
     try {
       await deleteLink.mutateAsync({ id, subjectType: 'PROPERTY', subjectId: propertyId });
       toast({ title: 'Beneficial owner removed' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to remove owner', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to remove beneficial owner:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove owner', variant: 'destructive' });
     }
   };
 

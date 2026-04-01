@@ -49,8 +49,9 @@ export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
       });
       toast({ title: 'Share capital updated' });
       setEditingClass(null);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to update share capital', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to update share capital:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to update share capital', variant: 'destructive' });
     }
   };
 

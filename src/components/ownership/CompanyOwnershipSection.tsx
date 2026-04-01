@@ -45,8 +45,9 @@ export function CompanyOwnershipSection({ companyId, companyName }: CompanyOwner
     try {
       await deleteLink.mutateAsync({ id, subjectType: 'COMPANY', subjectId: companyId });
       toast({ title: 'Shareholder removed' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to remove shareholder', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to remove shareholder:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove shareholder', variant: 'destructive' });
     }
   };
 

@@ -92,8 +92,9 @@ export function ShareholdingEditor({
       setSelectedEntityId(newEntity.id);
       setShowNewEntityForm(false);
       toast({ title: 'Entity created', description: `${newEntityName} has been created` });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to create entity', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to create entity:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create entity', variant: 'destructive' });
     }
   };
 
@@ -129,8 +130,9 @@ export function ShareholdingEditor({
         toast({ title: 'Shareholder added' });
       }
       onOpenChange(false);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save shareholding', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to save shareholding:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save shareholding', variant: 'destructive' });
     }
   };
 

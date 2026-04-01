@@ -116,8 +116,9 @@ export function BeneficialOwnersCard({ propertyId, onAddOwner, onEditOwner }: Be
     try {
       await deleteOwner.mutateAsync({ id, propertyId });
       toast({ title: 'Beneficial owner removed' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to remove owner', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to remove beneficial owner:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove owner', variant: 'destructive' });
     }
   };
 
