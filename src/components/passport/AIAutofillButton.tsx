@@ -45,6 +45,7 @@ export function AIAutofillButton({ propertyId, onComplete }: AIAutofillButtonPro
       setSelectedIds(autoSelect);
       toast.success('AI suggestions generated');
     } catch (error) {
+      console.error('Failed to generate AI suggestions:', error);
       toast.error('Failed to generate suggestions');
     }
   };
@@ -79,6 +80,7 @@ export function AIAutofillButton({ propertyId, onComplete }: AIAutofillButtonPro
       setSelectedIds(new Set());
       onComplete?.();
     } catch (error) {
+      console.error('Failed to apply AI suggestions:', error);
       toast.error('Failed to apply suggestions');
     }
   };

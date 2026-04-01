@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { extractStoragePath } from '@/lib/storagePaths';
+import { toast } from 'sonner';
 
 interface SignedUrlOptions {
   /** URL expiration time in seconds (default: 3600 = 1 hour) */
@@ -63,7 +64,8 @@ export function useSignedUrl(
         setSignedUrl(data.signedUrl);
       }
     } catch (err) {
-      console.error('Error getting signed URL:', err);
+      console.error('Failed to generate signed URL:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to generate signed URL');
       setSignedUrl(fileUrl);
       setError(err instanceof Error ? err.message : 'Failed to generate signed URL');
     } finally {
@@ -118,7 +120,8 @@ export function useDownloadFile(bucketName: string) {
       const blob = await response.blob();
       triggerDownload(blob, fileName);
     } catch (err) {
-      console.error('Download failed:', err);
+      console.error('Failed to download file:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to download file');
       // Fallback: open in new tab
       window.open(fileUrl, '_blank');
     } finally {

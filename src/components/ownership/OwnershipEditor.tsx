@@ -94,8 +94,9 @@ export function OwnershipEditor({
       setSelectedEntityId(entity.id);
       setShowNewEntity(false);
       toast({ title: 'Entity created', description: `${entity.name} added to your entities.` });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to create entity', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to create entity:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create entity', variant: 'destructive' });
     }
   };
 
@@ -129,8 +130,9 @@ export function OwnershipEditor({
         toast({ title: 'Ownership added' });
       }
       onOpenChange(false);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save ownership', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to save ownership:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save ownership', variant: 'destructive' });
     }
   };
 

@@ -50,6 +50,7 @@ export function LenderSelector({ value, onChange }: LenderSelectorProps) {
       setShowAdd(false);
       toast({ title: 'Lender created' });
     } catch (err: unknown) {
+      console.error('Failed to create lender:', err);
       toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
     }
   };

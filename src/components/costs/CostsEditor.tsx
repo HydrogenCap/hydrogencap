@@ -132,8 +132,9 @@ export function CostsEditor({
       });
       toast({ title: 'Costs saved', description: `Costs for ${year} have been updated` });
       onSave?.();
-    } catch {
-      toast({ title: 'Error', description: 'Failed to save costs', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to save costs:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save costs', variant: 'destructive' });
     }
   };
 

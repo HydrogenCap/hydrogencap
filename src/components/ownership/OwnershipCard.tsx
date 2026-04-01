@@ -40,8 +40,9 @@ export function OwnershipCard({ propertyId, onAddOwnership, onEditOwnership }: O
     try {
       await deleteOwnership.mutateAsync({ id, propertyId });
       toast({ title: 'Ownership removed' });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to remove ownership', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to remove ownership:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove ownership', variant: 'destructive' });
     }
   };
 

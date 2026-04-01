@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /**
  * Fetches a PDF and returns a blob: URL for rendering in an iframe.
@@ -69,8 +70,9 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
         setDataUrl(url);
       } catch (err) {
         if (!cancelled) {
-          console.error('PDF fetch error:', err);
+          console.error('Failed to load PDF:', err);
           setError(err instanceof Error ? err.message : 'Failed to load PDF');
+          toast.error(err instanceof Error ? err.message : 'Failed to load PDF');
         }
       } finally {
         if (!cancelled) {

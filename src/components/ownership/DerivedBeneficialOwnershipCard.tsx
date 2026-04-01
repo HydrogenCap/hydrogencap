@@ -22,6 +22,7 @@ import {
 } from '@/hooks/useOwnershipLinks';
 import { UnifiedOwnershipEditor } from './UnifiedOwnershipEditor';
 import { formatPercent } from '@/lib/calculations';
+import { useToast } from '@/hooks/use-toast';
 
 interface DerivedBeneficialOwnershipCardProps {
   propertyId: string;
@@ -61,6 +62,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
   );
   const { data: directOwners, isLoading: directOwnersLoading, refetch: refetchDirectOwners } = usePropertyBeneficialOwnership(propertyId);
   const deleteOwnership = useDeleteOwnershipLink();
+  const { toast } = useToast();
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<OwnershipLink | null>(null);
@@ -95,6 +97,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
       });
     } catch (err) {
       console.error('Failed to delete ownership:', err);
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 

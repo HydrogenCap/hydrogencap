@@ -65,7 +65,7 @@ const STORAGE_KEY_AWAAB = 'rrb_awaab_complaints';
 const STORAGE_KEY_DECENT = 'rrb_decent_homes';
 
 function loadAwaaab(): AwaaabComplaint[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY_AWAAB) || '[]'); } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY_AWAAB) || '[]'); } catch (err) { console.error('Failed to load Awaab complaints from storage:', err); return []; }
 }
 function saveAwaaab(items: AwaaabComplaint[]) {
   localStorage.setItem(STORAGE_KEY_AWAAB, JSON.stringify(items));
@@ -78,7 +78,8 @@ function loadDecent(): DecentHomesItem[] {
       confirmed: stored[t.key]?.confirmed ?? false,
       confirmed_date: stored[t.key]?.confirmed_date,
     }));
-  } catch {
+  } catch (err) {
+    console.error('Failed to load Decent Homes data from storage:', err);
     return DECENT_HOMES_TEMPLATE.map(t => ({ ...t, confirmed: false }));
   }
 }

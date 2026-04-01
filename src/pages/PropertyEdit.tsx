@@ -348,9 +348,10 @@ function PropertyEditPage() {
       
       navigate(`/properties/${id}`);
     } catch (error) {
+      console.error('Failed to update property:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update property. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to update property. Please try again.',
         variant: 'destructive',
       });
     } finally {

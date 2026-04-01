@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DEMO_ENTITIES,
   DEMO_PROPERTIES,
@@ -191,7 +192,8 @@ export async function seedDemoData(
 
     return { success: true };
   } catch (error: unknown) {
-    console.error('Demo data seed failed:', error);
+    console.error('Failed to seed demo data:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to seed demo data');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -264,7 +266,8 @@ export async function clearDemoData(orgId: string): Promise<{ success: boolean; 
 
     return { success: true };
   } catch (error: unknown) {
-    console.error('Demo data clear failed:', error);
+    console.error('Failed to clear demo data:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to clear demo data');
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

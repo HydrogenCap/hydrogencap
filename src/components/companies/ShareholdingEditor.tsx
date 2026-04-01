@@ -101,8 +101,9 @@ export function ShareholdingEditor({
       setSelectedPartyId(party.id);
       setShowNewPartyForm(false);
       toast({ title: 'Party created', description: `${newPartyName} has been added` });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to create party', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to create party:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create party', variant: 'destructive' });
     }
   };
 
@@ -146,6 +147,7 @@ export function ShareholdingEditor({
       }
       onOpenChange(false);
     } catch (err) {
+      console.error('Failed to save shareholding:', err);
       const message = err instanceof Error ? err.message : 'Failed to save shareholding';
       toast({
         title: 'Error',

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface ReportHistoryItem {
   name: string;
@@ -65,7 +66,8 @@ export function useReportHistory() {
             }
           }
         } catch (err) {
-          console.warn(`Failed to list reports for ${reportType}:`, err);
+          console.error(`Failed to list reports for ${reportType}:`, err);
+          toast.error(err instanceof Error ? err.message : `Failed to load ${reportType} reports`);
         }
       }
       

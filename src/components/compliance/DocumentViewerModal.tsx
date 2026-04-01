@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ShareLinkButton } from '@/components/documents/ShareLinkButton';
 import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
 import { extractStoragePath } from '@/lib/storagePaths';
+import { toast } from 'sonner';
 
 interface DocumentViewerModalProps {
   open: boolean;
@@ -104,7 +105,8 @@ export function DocumentViewerModal({
           setSignedUrl(data.signedUrl);
         }
       } catch (err) {
-        console.error('Error getting signed URL:', err);
+        console.error('Failed to generate signed URL:', err);
+        toast.error(err instanceof Error ? err.message : 'Something went wrong');
         setSignedUrl(document.file_url);
       } finally {
         setLoading(false);
@@ -134,6 +136,8 @@ export function DocumentViewerModal({
       window.URL.revokeObjectURL(url);
       window.document.body.removeChild(a);
     } catch (err) {
+      console.error('Failed to download document:', err);
+      toast.error(err instanceof Error ? err.message : 'Something went wrong');
       window.open(signedUrl, '_blank');
     }
   };

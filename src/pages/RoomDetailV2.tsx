@@ -148,6 +148,7 @@ export default function RoomDetailV2() {
       setEditingNotes(false);
       toast({ title: 'Notes saved' });
     } catch (err) {
+      console.error('Failed to save room notes:', err);
       const description = err instanceof Error ? err.message : 'Failed to save notes';
       toast({ title: 'Error', description, variant: 'destructive' });
     }

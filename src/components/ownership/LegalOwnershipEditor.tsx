@@ -173,8 +173,9 @@ export function LegalOwnershipEditor({
       setSelectedCompanyId(newCompany.id);
       setShowNewCompanyForm(false);
       toast({ title: 'Company created', description: `${newCompanyName} has been created` });
-    } catch {
-      toast({ title: 'Error', description: 'Failed to create company', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to create company:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create company', variant: 'destructive' });
     }
   };
 
@@ -191,8 +192,9 @@ export function LegalOwnershipEditor({
         });
         partyId = newPerson.id;
         partyName = newPerson.display_name;
-      } catch {
-        toast({ title: 'Error', description: 'Failed to create person', variant: 'destructive' });
+      } catch (error) {
+        console.error('Failed to create person:', error);
+        toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create person', variant: 'destructive' });
         return;
       }
     } else {
@@ -312,8 +314,9 @@ export function LegalOwnershipEditor({
       });
       toast({ title: 'Ownership cleared' });
       onOpenChange(false);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to clear ownership', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to clear ownership:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to clear ownership', variant: 'destructive' });
     }
   };
 

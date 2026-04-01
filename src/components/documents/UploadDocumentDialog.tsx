@@ -132,6 +132,7 @@
        });
        onOpenChange(false);
      } catch (err) {
+       console.error('Failed to upload document:', err);
        toast.error(err instanceof Error ? err.message : 'Failed to upload document');
      }
    };

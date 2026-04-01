@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export type SubscriptionTier = 'free' | 'solo' | 'portfolio' | 'pro';
 
@@ -180,6 +181,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       console.error('Failed to check subscription:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to check subscription status');
     }
   }, [user, queryClient]);
 

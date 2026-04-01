@@ -132,7 +132,8 @@ export default function ComplianceTasks() {
         description: `${result.tasks_created} tasks created, ${result.contractors_assigned} contractors assigned, ${result.priorities_updated} priorities updated.`,
       });
     } catch (err) {
-      toast({ title: 'Pipeline failed', description: String(err), variant: 'destructive' });
+      console.error('Failed to run compliance pipeline:', err);
+      toast({ title: 'Pipeline failed', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     } finally {
       setRunningPipeline(false);
     }

@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { BACKUP_TABLES, formatBytes, type TableExportConfig } from '@/lib/backupConfig';
+import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -78,8 +79,8 @@ function extractStoragePath(fileUrl: string, bucket: string): string | null {
       const match = url.match(pattern);
       if (match?.[1]) return decodeURIComponent(match[1]);
     }
-  } catch {
-    // URL parsing failed
+  } catch (err) {
+    console.error('Failed to parse storage path:', err);
   }
   return null;
 }
@@ -242,6 +243,7 @@ export function usePortfolioBackup() {
             }
           }
         } catch (error: unknown) {
+          console.error(`Failed to export ${cfg.table}:`, error);
           warnings.push(`Failed to export ${cfg.table}: ${getErrorMessage(error)}`);
         }
 
@@ -304,6 +306,7 @@ export function usePortfolioBackup() {
               totalFiles++;
             }
           } catch (error: unknown) {
+            console.error(`Failed to download file ${entry.bucket}/${shortName}:`, error);
             warnings.push(`${entry.bucket}/${shortName}: ${getErrorMessage(error)}`);
           }
 
@@ -379,12 +382,14 @@ export function usePortfolioBackup() {
           downloadFileName: fileName,
         });
       } catch (error: unknown) {
+        console.error('Failed to generate backup ZIP:', error);
         const message = getErrorMessage(error);
         patch({
           phase: 'error',
           currentStep: `ZIP generation failed: ${message}`,
           warnings: [...warnings, message],
         });
+        toast.error(error instanceof Error ? error.message : 'Failed to generate backup archive');
       }
     },
     [patch],

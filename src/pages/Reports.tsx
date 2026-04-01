@@ -134,6 +134,7 @@ export default function Reports() {
       toast.success(`${template.name} generated successfully!`);
       refetchHistory();
     } catch (error) {
+      console.error('Failed to generate report:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate report');
     }
   };
@@ -161,6 +162,7 @@ export default function Reports() {
       setTargetLTV('');
       setPreparedFor('');
     } catch (error) {
+      console.error('Failed to generate broker pack:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate report');
     }
   };
@@ -172,7 +174,8 @@ export default function Reports() {
       toast.success('Report deleted');
       refetchHistory();
     } catch (error) {
-      toast.error('Failed to delete report');
+      console.error('Failed to delete report:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete report');
     } finally {
       setDeletingPath(null);
     }

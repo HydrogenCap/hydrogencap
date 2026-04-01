@@ -164,8 +164,9 @@ export function ComplianceUploadDialog({
       setStep('results');
     } catch (error) {
       clearInterval(progressInterval);
-      console.error('AI analysis error:', error);
+      console.error('Failed to analyse compliance document:', error);
       captureError(error, 'ComplianceUploadDialog.aiAnalysis');
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
       
       // Fall back to manual entry with placeholder data
       setAnalysisResult({
@@ -256,7 +257,8 @@ export function ComplianceUploadDialog({
     if (!dateStr) return 'Not found';
     try {
       return new Date(dateStr).toLocaleDateString('en-GB');
-    } catch {
+    } catch (error) {
+      console.error('Failed to format date:', error);
       return dateStr;
     }
   };

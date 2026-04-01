@@ -104,6 +104,7 @@ export function AutofillSuggestionsModal({
         description: 'AI has analyzed your property data and generated suggestions.',
       });
     } catch (error) {
+      console.error('Failed to generate autofill suggestions:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to generate suggestions',
@@ -186,6 +187,7 @@ export function AutofillSuggestionsModal({
       });
       onOpenChange(false);
     } catch (error) {
+      console.error('Failed to apply autofill suggestions:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to apply suggestions',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface CHCompanySearchResult {
   company_number: string;
@@ -53,6 +54,7 @@ export function useCompaniesHouse() {
   const [searchResults, setSearchResults] = useState<CHCompanySearchResult[]>([]);
   const [lookupResult, setLookupResult] = useState<CHLookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const searchCompanies = async (query: string) => {
     if (!query || query.length < 2) {
@@ -74,8 +76,9 @@ export function useCompaniesHouse() {
       setSearchResults(data.companies || []);
       return data.companies || [];
     } catch (err) {
-      console.error('Companies House search error:', err);
+      console.error('Failed to search Companies House:', err);
       setError(err instanceof Error ? err.message : 'Failed to search Companies House');
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to search Companies House', variant: 'destructive' });
       setSearchResults([]);
       return [];
     } finally {
@@ -114,8 +117,9 @@ export function useCompaniesHouse() {
       setLookupResult(result);
       return result;
     } catch (err) {
-      console.error('Companies House lookup error:', err);
+      console.error('Failed to look up company:', err);
       setError(err instanceof Error ? err.message : 'Failed to lookup company');
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to look up company', variant: 'destructive' });
       setLookupResult(null);
       return null;
     } finally {

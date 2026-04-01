@@ -33,10 +33,11 @@ export function AddNoteForm({ propertyId }: AddNoteFormProps) {
       // Invalidate activity log queries to refresh the timeline
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
       queryClient.invalidateQueries({ queryKey: ['activity_log', propertyId] });
-    } catch {
+    } catch (error) {
+      console.error('Failed to add note:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add note. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to add note',
         variant: 'destructive',
       });
     } finally {

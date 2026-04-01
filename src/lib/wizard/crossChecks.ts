@@ -69,7 +69,8 @@ export function runCrossChecks(data: WizardPayload, rules: CrossCheckRule[] = PR
   return rules.filter((rule) => {
     try {
       return rule.check(data);
-    } catch {
+    } catch (err) {
+      console.error(`Failed to run cross-check rule ${rule.id}:`, err);
       return false;
     }
   });

@@ -49,9 +49,10 @@ export default function Import() {
       // Move to mapping step
       setCurrentStep(1);
     } catch (err) {
+      console.error('Failed to parse CSV file:', err);
       toast({
         title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }
@@ -98,9 +99,10 @@ export default function Import() {
         description: `Successfully imported ${result.success} properties`,
       });
     } catch (err) {
+      console.error('Failed to import properties:', err);
       toast({
         title: 'Import failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }

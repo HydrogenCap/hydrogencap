@@ -72,8 +72,9 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
       setShowOverrideInput(false);
       setOverrideReason('');
       onClose();
-    } catch {
-      toast.error('Failed to update requirement');
+    } catch (error) {
+      console.error('Failed to toggle compliance requirement:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update requirement');
     }
   };
 
@@ -129,8 +130,9 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
                     try {
                       const signedUrl = await createSignedStorageUrl('compliance', row.file_url!);
                       window.open(signedUrl, '_blank');
-                    } catch {
-                      toast.error('Failed to open document');
+                    } catch (error) {
+                      console.error('Failed to open compliance document:', error);
+                      toast.error(error instanceof Error ? error.message : 'Failed to open document');
                     }
                   }}
                   className="text-primary underline text-sm flex items-center gap-1 cursor-pointer"

@@ -108,6 +108,7 @@ export default function MigrationDashboard() {
       setStepResults(prev => ({ ...prev, [step.key]: result }));
       toast.success(`${step.title}: ${result.migrated} records migrated`);
     } catch (e) {
+      console.error('Failed to run migration step:', e);
       toast.error(`Migration failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
       setRunningStep(null);
@@ -125,6 +126,7 @@ export default function MigrationDashboard() {
       });
       toast.success(`Migration complete: ${totalMigrated} total records migrated`);
     } catch (e) {
+      console.error('Failed to run full migration:', e);
       toast.error(`Full migration failed: ${e instanceof Error ? e.message : 'Unknown error'}`);
     }
   };

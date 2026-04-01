@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
+import { toast } from 'sonner';
 
 // Types
 export interface CHSearchResult {
@@ -105,7 +106,8 @@ export function useCompaniesHouseV2() {
       if (data.error) throw new Error(data.error);
       return data.companies || [];
     } catch (err) {
-      console.error('CH search error:', err);
+      console.error('Failed to search Companies House:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to search Companies House');
       return [];
     } finally {
       setIsSearching(false);

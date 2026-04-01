@@ -336,6 +336,7 @@ export default function CreateTenancyDialog({ open, onOpenChange, tenantId, tena
     } catch (err) {
       console.error('Failed to create tenancy:', err);
       captureError(err, 'CreateTenancyDialog.create');
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 

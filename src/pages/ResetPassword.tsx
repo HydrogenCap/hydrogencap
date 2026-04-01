@@ -102,10 +102,11 @@ export default function ResetPassword() {
         title: 'Password updated',
         description: 'Your password has been successfully reset.',
       });
-    } catch {
+    } catch (error) {
+      console.error('Failed to reset password:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     } finally {

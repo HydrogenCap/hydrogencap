@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, AlertCircle, Check } from 'lucide-react';
 import { useGoogleMaps } from './GoogleMapsProvider';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
+import { toast } from 'sonner';
 
 declare global {
   interface Window {
@@ -178,7 +179,8 @@ export function AddressAutocomplete({
       onAddressSelect?.(addressData);
       setValidationStatus(result.geocode_confidence === 'exact' ? 'valid' : 'approximate');
     } catch (err) {
-      console.error('Address validation error:', err);
+      console.error('Failed to validate address:', err);
+      toast.error(err instanceof Error ? err.message : 'Something went wrong');
       setValidationStatus('invalid');
     } finally {
       setIsValidating(false);

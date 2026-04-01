@@ -213,7 +213,8 @@ function addPhotosPage(
         doc.setTextColor(150, 150, 150);
         doc.text('Photo available', xPos + photoWidth / 2 - 15, yPos + photoHeight / 2);
       }
-    } catch {
+    } catch (err) {
+      console.error('Failed to render property photo in presentation:', err);
       doc.setFillColor(240, 240, 240);
       doc.roundedRect(xPos, yPos, photoWidth, photoHeight, 3, 3, 'F');
     }

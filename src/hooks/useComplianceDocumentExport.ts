@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -67,7 +68,8 @@ function extractStoragePath(fileUrl: string): string | null {
     const url = new URL(fileUrl);
     const match = url.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/compliance\/(.+)/);
     return match ? decodeURIComponent(match[1]) : null;
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse storage URL:', err);
     return null;
   }
 }
@@ -243,6 +245,7 @@ export function useComplianceDocumentExport() {
           throw new Error('Empty response');
         }
       } catch (error) {
+        console.error(`Failed to download compliance document for ${entry.propertyAddress}:`, error);
         skipped++;
         errors.push(`${entry.propertyAddress} / ${entry.complianceType}: ${getErrorMessage(error)}`);
       }
@@ -295,6 +298,8 @@ export function useComplianceDocumentExport() {
         errors,
       });
     } catch (error) {
+      console.error('Failed to create compliance export ZIP:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create compliance export archive');
       patch({ phase: 'error', currentStep: `ZIP creation failed: ${getErrorMessage(error)}`, errors });
     }
   }, [patch]);

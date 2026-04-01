@@ -225,9 +225,10 @@ function PropertyNewPage() {
       
       navigate('/properties');
     } catch (error) {
+      console.error('Failed to add property:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add property. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to add property. Please try again.',
         variant: 'destructive',
       });
     } finally {

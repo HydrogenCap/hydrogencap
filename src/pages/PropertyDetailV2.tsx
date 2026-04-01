@@ -99,6 +99,7 @@ export default function PropertyDetailV2() {
       setEditingNotes(false);
       toast({ title: 'Notes saved' });
     } catch (err) {
+      console.error('Failed to save property notes:', err);
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to save notes', variant: 'destructive' });
     }
   };

@@ -180,8 +180,9 @@ export function OnboardingWizard() {
         return;
       }
       setStep(s => s + 1);
-    } catch {
-      toast({ title: 'Something went wrong', variant: 'destructive' });
+    } catch (error) {
+      console.error('Failed to save onboarding step:', error);
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 
@@ -463,8 +464,9 @@ export function OnboardingWizard() {
                     }
                     await completeOnboarding.mutateAsync();
                     navigate('/dashboard');
-                  } catch {
-                    toast({ title: 'Something went wrong', variant: 'destructive' });
+                  } catch (error) {
+                    console.error('Failed to seed demo data:', error);
+                    toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to load demo data', variant: 'destructive' });
                     setSeedingDemo(false);
                   }
                 }}
