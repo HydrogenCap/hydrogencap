@@ -291,8 +291,10 @@ export function useSubmitWorkOrder() {
         .update({ status: 'submitted', updated_at: new Date().toISOString() } satisfies WorkOrderUpdate)
         .eq('id', id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       toast({ title: 'Submitted for approval' });
@@ -321,8 +323,10 @@ export function useApproveWorkOrder() {
         .update(payload)
         .eq('id', id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       toast({ title: 'Work order approved' });
@@ -348,8 +352,10 @@ export function useRejectWorkOrder() {
         .update(payload)
         .eq('id', id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       toast({ title: 'Work order rejected' });
@@ -374,9 +380,22 @@ export function useUpdateWorkOrder() {
       if (error) throw error;
       return data as WorkOrderRow;
     },
-    onSuccess: (data) => {
+    onMutate: async (newData) => {
+      await qc.cancelQueries({ queryKey: ['work_order', newData.id] });
+      const previous = qc.getQueryData<WorkOrderWithDetails>(['work_order', newData.id]);
+      if (previous) {
+        qc.setQueryData(['work_order', newData.id], { ...previous, ...newData });
+      }
+      return { previous };
+    },
+    onError: (_err, newData, context) => {
+      if (context?.previous) {
+        qc.setQueryData(['work_order', newData.id], context.previous);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
+      qc.invalidateQueries({ queryKey: ['work_order', variables.id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
-      qc.invalidateQueries({ queryKey: ['work_order', data.id] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       toast({ title: 'Work order updated' });
     },
@@ -417,7 +436,8 @@ export function useCompleteWorkOrder() {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['work_order', variables.id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       toast({ title: 'Work order completed' });
@@ -492,9 +512,10 @@ export function useLinkJobToWorkOrder() {
         .eq('id', jobId);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['work_order', variables.workOrderId] });
+      qc.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
-      qc.invalidateQueries({ queryKey: ['contractor-jobs'] });
       toast({ title: 'Job linked to work order' });
     },
   });

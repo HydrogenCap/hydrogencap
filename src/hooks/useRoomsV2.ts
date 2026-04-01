@@ -102,8 +102,6 @@ export function useCreateRoom() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['rooms_v2', data.property_id] });
       qc.invalidateQueries({ queryKey: ['property_room_summary_v2'] });
-      qc.invalidateQueries({ queryKey: ['properties_v2'] });
-      qc.invalidateQueries({ queryKey: ['property_v2', data.property_id] });
     },
   });
 }
@@ -120,10 +118,8 @@ export function useBulkCreateRooms() {
       const propertyId = variables[0]?.property_id;
       if (propertyId) {
         qc.invalidateQueries({ queryKey: ['rooms_v2', propertyId] });
-        qc.invalidateQueries({ queryKey: ['property_v2', propertyId] });
       }
       qc.invalidateQueries({ queryKey: ['property_room_summary_v2'] });
-      qc.invalidateQueries({ queryKey: ['properties_v2'] });
     },
   });
 }
@@ -140,7 +136,6 @@ export function useUpdateRoom() {
       qc.invalidateQueries({ queryKey: ['rooms_v2', data.property_id] });
       qc.invalidateQueries({ queryKey: ['room_v2', data.id] });
       qc.invalidateQueries({ queryKey: ['property_room_summary_v2'] });
-      qc.invalidateQueries({ queryKey: ['properties_v2'] });
     },
   });
 }
@@ -156,8 +151,6 @@ export function useDeleteRoom() {
     onSuccess: (propertyId) => {
       qc.invalidateQueries({ queryKey: ['rooms_v2', propertyId] });
       qc.invalidateQueries({ queryKey: ['property_room_summary_v2'] });
-      qc.invalidateQueries({ queryKey: ['properties_v2'] });
-      qc.invalidateQueries({ queryKey: ['property_v2', propertyId] });
     },
   });
 }

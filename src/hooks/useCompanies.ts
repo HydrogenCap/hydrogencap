@@ -218,7 +218,6 @@ export function useCreateCompany() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      queryClient.invalidateQueries({ queryKey: ['parties'] });
     },
   });
 }
@@ -275,7 +274,6 @@ export function useDeleteCompany() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      queryClient.invalidateQueries({ queryKey: ['parties'] });
     },
   });
 }

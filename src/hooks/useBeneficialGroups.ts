@@ -220,9 +220,8 @@ export function useUpdatePropertyBeneficialOverride() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
-      queryClient.invalidateQueries({ queryKey: ['attributable_ownership'] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['attributable_ownership', variables.propertyId] });
     },
   });
 }

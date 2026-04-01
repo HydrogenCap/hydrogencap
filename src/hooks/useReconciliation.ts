@@ -381,7 +381,6 @@ export function useConfirmMatch() {
 
 export function useBulkConfirmMatches() {
   const qc = useQueryClient();
-  const confirmMatch = useConfirmMatch();
   const { toast } = useToast();
 
   return useMutation({
@@ -391,7 +390,63 @@ export function useBulkConfirmMatches() {
 
       for (const match of matches) {
         try {
-          await confirmMatch.mutateAsync(match);
+          const orgId = await fetchUserOrgId();
+          if (!orgId) throw new Error('No organization');
+          const { data: { user } } = await supabase.auth.getUser();
+
+          const { data: txn, error: txnErr } = await supabase
+            .from('bank_transactions')
+            .select('amount, transaction_date')
+            .eq('org_id', orgId)
+            .eq('id', match.transactionId)
+            .single();
+          if (txnErr || !txn) throw txnErr || new Error('Transaction not found');
+
+          const { data: sched, error: schedErr } = await supabase
+            .from('rent_schedule')
+            .select('tenancy_id, agreement_id, rent_amount, additional_charges, amount_paid')
+            .eq('org_id', orgId)
+            .eq('id', match.scheduleId)
+            .single();
+          if (schedErr || !sched) throw schedErr || new Error('Schedule item not found');
+
+          const { data: payment, error: payErr } = await supabase
+            .from('rent_payments')
+            .insert({
+              org_id: orgId,
+              tenancy_id: sched.tenancy_id,
+              agreement_id: sched.agreement_id,
+              rent_schedule_id: match.scheduleId,
+              amount: txn.amount,
+              payment_date: txn.transaction_date,
+              payment_method: 'bank_transfer',
+              is_reconciled: true,
+              recorded_by: user?.id || null,
+              notes: 'Auto-reconciled from bank statement',
+            } satisfies RentPaymentInsert)
+            .select()
+            .single();
+          if (payErr) throw payErr;
+
+          await supabase
+            .from('bank_transactions')
+            .update({
+              status: 'matched',
+              matched_schedule_id: match.scheduleId,
+              matched_payment_id: payment.id,
+              matched_at: new Date().toISOString(),
+              matched_by: user?.id || null,
+            } satisfies BankTransactionUpdate)
+            .eq('id', match.transactionId);
+
+          const totalPaid = (sched.amount_paid || 0) + txn.amount;
+          const expected = sched.rent_amount + (sched.additional_charges || 0);
+          await supabase.rpc('update_rent_schedule_item_status', {
+            p_id: match.scheduleId,
+            p_status: totalPaid >= expected ? 'paid' : 'partial',
+            p_amount_paid: totalPaid,
+          });
+
           success++;
         } catch {
           failed++;
@@ -402,6 +457,7 @@ export function useBulkConfirmMatches() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['bank_transactions'] });
       qc.invalidateQueries({ queryKey: ['rent_schedule'] });
+      qc.invalidateQueries({ queryKey: ['rent_payments'] });
       toast({
         title: `${result.success} matches confirmed`,
         description: result.failed > 0 ? `${result.failed} failed` : undefined,

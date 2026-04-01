@@ -192,9 +192,8 @@ interface RefinancingOpportunityUpdate {
      onSuccess: (data, propertyId) => {
        queryClient.invalidateQueries({ queryKey: ['property-valuations', propertyId] });
        queryClient.invalidateQueries({ queryKey: ['property-comparables', propertyId] });
-       queryClient.invalidateQueries({ queryKey: ['properties'] });
        queryClient.invalidateQueries({ queryKey: ['valuation-alerts'] });
-       
+
        toast({
          title: 'Valuation Complete',
          description: `Estimated value: £${data?.valuation?.estimated_value?.toLocaleString()} (${data?.valuation?.confidence} confidence)`,

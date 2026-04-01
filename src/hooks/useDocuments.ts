@@ -81,8 +81,11 @@ export function useCreateDocument() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      if (data.property_id) {
+        queryClient.invalidateQueries({ queryKey: ['documents', data.property_id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['documents', undefined] });
+      queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
       ActivityLoggers.documentUploaded(
         data.property_id,
         data.original_file_name,
@@ -121,9 +124,11 @@ export function useUpdateDocument() {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
+      if (data.review_status === 'accepted') {
+        queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
+      }
       showMutationSuccess('Document updated');
     },
     onError: (error) => {
@@ -170,7 +175,6 @@ export function useBulkAcceptDocuments() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      queryClient.invalidateQueries({ queryKey: ['activity_log'] });
       showMutationSuccess('Documents accepted');
     },
     onError: (error) => {

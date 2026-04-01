@@ -373,9 +373,7 @@ export function useAcceptComplianceDocument() {
       queryClient.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
       queryClient.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
       queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
-      queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_inbox'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
-      queryClient.invalidateQueries({ queryKey: ['insurance_policies'] });
 
       toast({
         title: 'Document accepted',

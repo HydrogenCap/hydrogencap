@@ -336,7 +336,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  export function useUpdateJob() {
    const queryClient = useQueryClient();
    const { toast } = useToast();
- 
+
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<ContractorJob> & { id: string }) => {
        const { data, error } = await supabase
@@ -345,14 +345,27 @@ export function useMatchingContractors(complianceType: string, postcode: string)
          .eq('id', id)
          .select()
          .single();
- 
+
        if (error) throw error;
-       return data;
+       return data as ContractorJob;
      },
-     onSuccess: (data) => {
+     onMutate: async (newData) => {
+       await queryClient.cancelQueries({ queryKey: ['contractor-job', newData.id] });
+       const previous = queryClient.getQueryData<ContractorJob>(['contractor-job', newData.id]);
+       if (previous) {
+         queryClient.setQueryData(['contractor-job', newData.id], { ...previous, ...newData });
+       }
+       return { previous };
+     },
+     onError: (_err, newData, context) => {
+       if (context?.previous) {
+         queryClient.setQueryData(['contractor-job', newData.id], context.previous);
+       }
+     },
+     onSettled: (_data, _err, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.id] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
-       queryClient.invalidateQueries({ queryKey: ['contractor-job', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job updated' });
      },
    });
@@ -371,9 +384,10 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        if (error) throw error;
        return data;
      },
-     onSuccess: (data) => {
+     onSuccess: (data, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({
          title: 'Request sent',
          description: `Job request sent to ${data.sentTo}`,
@@ -419,9 +433,10 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  
        if (error) throw error;
      },
-     onSuccess: () => {
+     onSuccess: (_, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job booked' });
      },
    });
@@ -454,9 +469,10 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  
        if (error) throw error;
      },
-     onSuccess: () => {
+     onSuccess: (_, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['job-counts'] });
+       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job marked as completed' });
      },
    });
@@ -506,7 +522,8 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  
        if (error) throw error;
      },
-     onSuccess: () => {
+     onSuccess: (_, variables) => {
+       queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
        toast({ title: 'Job cancelled' });
