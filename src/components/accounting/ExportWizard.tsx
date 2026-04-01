@@ -211,8 +211,9 @@ export function ExportWizard() {
         notes: null,
       });
       toast.success('Export downloaded and logged');
-    } catch {
-      // Download already succeeded, log failure is non-critical
+    } catch (error) {
+      console.error('Failed to log export record:', error);
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
     }
   };
 

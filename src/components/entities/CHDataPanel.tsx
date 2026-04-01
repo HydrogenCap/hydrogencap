@@ -117,6 +117,7 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
           imported++;
         } catch (err) {
           console.error('Failed to import officer:', officer.name, err);
+          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
         }
       }
     }

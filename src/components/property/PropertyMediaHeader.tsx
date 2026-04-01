@@ -90,6 +90,7 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
       setFloorplanVersionLabel('Current');
     } catch (err) {
       console.error('Failed to upload floorplan:', err);
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 

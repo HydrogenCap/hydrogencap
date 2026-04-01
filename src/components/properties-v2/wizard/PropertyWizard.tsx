@@ -160,7 +160,8 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
             }))
           );
         } catch (err) {
-          console.error('Room creation failed:', err);
+          console.error('Failed to create rooms:', err);
+          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
         }
       }
 

@@ -42,8 +42,13 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
         });
       }
     } catch (err) {
-      console.error('AI processing error:', err);
+      console.error('Failed to process document with AI:', err);
       captureError(err, 'DocumentUploadZone.aiProcess');
+      toast({
+        title: 'AI processing failed',
+        description: err instanceof Error ? err.message : 'Something went wrong',
+        variant: 'destructive',
+      });
     }
   }, [properties, toast]);
 

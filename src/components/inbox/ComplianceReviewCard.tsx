@@ -14,6 +14,7 @@ import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useAcceptComplianceDocument, useRejectComplianceDocument, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -35,6 +36,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
   const acceptDocument = useAcceptComplianceDocument();
   const rejectDocument = useRejectComplianceDocument();
   const { data: properties } = usePropertiesV2();
+  const { toast } = useToast();
 
   const isProcessed = document.extraction_status === 'completed';
   const isPending = document.extraction_status === 'pending' || document.extraction_status === 'processing';
@@ -73,7 +75,8 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
         });
       }
     } catch (err) {
-      console.error('Retry failed:', err);
+      console.error('Failed to retry document processing:', err);
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     } finally {
       setIsRetrying(false);
     }

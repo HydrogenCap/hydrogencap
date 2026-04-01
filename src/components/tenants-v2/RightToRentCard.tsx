@@ -46,8 +46,8 @@ function parseNotes(notes: string | null): ParsedRtrNotes {
   try {
     const parsed = JSON.parse(notes);
     if (typeof parsed === 'object' && parsed !== null) return parsed as ParsedRtrNotes;
-  } catch {
-    // legacy plain-text notes — return empty
+  } catch (error) {
+    console.error('Failed to parse Right to Rent notes:', error);
   }
   return {};
 }
