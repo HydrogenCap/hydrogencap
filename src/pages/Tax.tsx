@@ -16,6 +16,7 @@ import { getCurrentTaxYear, getRecentTaxYears } from '@/lib/accountingTypes';
 import { calculateSection24, generateSA105CSV, TAX_EXPENSE_CATEGORIES, type MarginalTaxRate } from '@/lib/propertyTax';
 import { useTaxSummary, useTaxExpenses, useAddTaxExpense, useDeleteTaxExpense, useTaxSettings, useUpdateTaxSettings } from '@/hooks/useTaxData';
 import { useOrganization } from '@/hooks/useOrganization';
+import { MtdItsaCard } from '@/components/tax/MtdItsaCard';
 
 const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
 const pct = (n: number) => `${n.toFixed(1)}%`;
@@ -152,6 +153,8 @@ export default function Tax() {
           </div>
         </CardContent>
       </Card>
+
+      <MtdItsaCard taxYear={taxYear} grossIncome={summary?.totalRentalIncome ?? 0} />
 
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Calculating…</div>
