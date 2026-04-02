@@ -28,7 +28,7 @@ export function ChartContainer({
   headerAction,
 }: ChartContainerProps) {
   return (
-    <Card className={cn('bg-card border-border', className)}>
+    <Card className={cn('bg-card border-border', className)} role="figure" aria-label={`Chart: ${title}${subtitle ? ` — ${subtitle}` : ''}`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
@@ -55,7 +55,7 @@ export function ChartContainer({
 
 function ChartSkeleton({ height }: { height: number }) {
   return (
-    <div className="space-y-3" style={{ height }}>
+    <div className="space-y-3" style={{ height }} aria-busy="true" aria-label="Loading chart">
       <div className="flex items-end gap-2 h-full">
         {Array.from({ length: 7 }).map((_, i) => (
           <Skeleton

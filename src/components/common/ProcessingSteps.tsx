@@ -12,7 +12,7 @@ interface ProcessingStepsProps {
 
 export function ProcessingSteps({ steps }: ProcessingStepsProps) {
   return (
-    <div className="flex items-center gap-1 flex-wrap">
+    <div className="flex items-center gap-1 flex-wrap" aria-live="polite" role="status">
       {steps.map((step, i) => (
         <div key={i} className="flex items-center gap-1">
           {i > 0 && (

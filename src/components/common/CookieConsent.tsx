@@ -25,7 +25,7 @@ export function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-50 p-4">
+    <div className="fixed bottom-0 inset-x-0 z-50 p-4" role="dialog" aria-label="Cookie consent">
       <div className="mx-auto max-w-xl rounded-lg border border-border bg-card p-4 shadow-lg flex flex-col sm:flex-row items-center gap-3">
         <p className="text-sm text-muted-foreground flex-1">
           We use essential cookies to keep you signed in. See our{' '}

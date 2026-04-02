@@ -58,7 +58,7 @@ export const TEXT = {
   cardTitle: 'text-base font-medium',
   body: 'text-sm',
   label: 'text-xs text-muted-foreground',
-  caption: 'text-xs text-muted-foreground/70',
+  caption: 'text-xs text-muted-foreground',
 } as const;
 
 // Compliance status mapping to severity

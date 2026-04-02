@@ -45,6 +45,7 @@ export function DualKpiCard({
           'hover:shadow-md hover:shadow-primary/5',
           'active:scale-[0.98]',
           'motion-reduce:transition-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         ],
         className
       )}
@@ -54,6 +55,7 @@ export function DualKpiCard({
       onKeyDown={isClickable ? (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); }
       } : undefined}
+      aria-label={isClickable ? `${label}: Gross ${grossValue}, ${groupParentName} ${attrValue}. Click for details` : undefined}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -70,7 +72,7 @@ export function DualKpiCard({
               {headerAction}
             </div>
           )}
-          {Icon && <Icon className={cn('h-4 w-4 text-muted-foreground', iconClassName)} />}
+          {Icon && <Icon className={cn('h-4 w-4 text-muted-foreground', iconClassName)} aria-hidden="true" />}
         </div>
       </div>
 

@@ -8,10 +8,10 @@ interface LoadingButtonProps extends React.ComponentProps<typeof Button> {
 
 export function LoadingButton({ loading, loadingText, children, disabled, ...props }: LoadingButtonProps) {
   return (
-    <Button disabled={disabled || loading} {...props}>
+    <Button disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
       {loading ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+          <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
           {loadingText || children}
         </>
       ) : children}
