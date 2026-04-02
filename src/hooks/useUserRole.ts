@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserOrg } from '@/hooks/useUserOrg';
 
-export type AppRole = 'owner' | 'admin' | 'viewer';
+export type AppRole = 'owner' | 'admin' | 'member' | 'accountant' | 'viewer';
 
 export function useUserRole() {
   const { user } = useAuth();

@@ -14,3 +14,4 @@ export { PageTransition } from './PageTransition';
 export { LoadingButton } from './LoadingButton';
 export { AnimatedNumber } from './AnimatedNumber';
 export { ProcessingSteps } from './ProcessingSteps';
+export { PermissionGate } from './PermissionGate';

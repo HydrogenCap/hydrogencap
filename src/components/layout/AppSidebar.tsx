@@ -180,6 +180,7 @@ const intelligenceItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
+  { title: 'Team', icon: Users, href: '/team' },
   {
     title: 'Import',
     icon: Upload,

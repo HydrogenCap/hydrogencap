@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { OrgProvider } from "@/contexts/OrgContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
@@ -123,6 +124,7 @@ const TenantPayments = lazy(() => import("./pages/tenant-portal/TenantPayments")
 const MaintenanceRequest = lazy(() => import("./pages/tenant-portal/MaintenanceRequest"));
 const TenantCertificates = lazy(() => import("./pages/tenant-portal/TenantCertificates"));
 const AcceptTeamInvite = lazy(() => import("./pages/AcceptTeamInvite"));
+const TeamManagement = lazy(() => import("./pages/TeamManagement"));
 
 // Marketing pages
 const MarketingHome = lazy(() => import("./pages/marketing/Home"));
@@ -195,6 +197,7 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <SubscriptionProvider>
+          <OrgProvider>
           <LifecycleFilterProvider>
             <GoogleMapsProvider>
               <Toaster />
@@ -675,6 +678,7 @@ const App = () => (
             <Route path="/rent/reconciliation" element={<ProtectedRoute><RouteBoundary><Reconciliation /></RouteBoundary></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><RouteBoundary><PaymentDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/documents" element={<ProtectedRoute><RouteBoundary><Documents /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/team" element={<ProtectedRoute><RouteBoundary><TeamManagement /></RouteBoundary></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
@@ -781,6 +785,7 @@ const App = () => (
               </BrowserRouter>
             </GoogleMapsProvider>
           </LifecycleFilterProvider>
+          </OrgProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </TooltipProvider>
