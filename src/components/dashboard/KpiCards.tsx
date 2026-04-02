@@ -68,7 +68,7 @@ export function KpiCards({
   return (
     <>
       {/* Top KPI row — Value / Equity / Cashflow */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
         <DualKpiCard
           label="Portfolio Value"
           grossValue={formatGBP(portfolioKPIs.gross.totalValue)}
@@ -114,7 +114,7 @@ export function KpiCards({
           onClick={() => onMetricClick('cashflow')}
           headerAction={
             <button
-              className="text-xs px-2 py-1 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground transition-colors font-medium"
+              className="text-xs px-2 py-1 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground transition-colors font-medium"
               onClick={(e) => { e.stopPropagation(); setCashflowPeriod(p => p === 'monthly' ? 'annual' : 'monthly'); }}
             >
               {cashflowPeriod === 'monthly' ? '/mo' : '/yr'}
@@ -124,7 +124,7 @@ export function KpiCards({
       </div>
 
       {/* Second KPI row — LTV / DSCR / Yield / Rent / Actions */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 lg:grid-cols-5">
         <DualKpiCard
           label="Weighted LTV"
           grossValue={formatPercent(portfolioKPIs.gross.weightedLTV)}
@@ -188,7 +188,7 @@ export function KpiCards({
       </div>
 
       {/* Rental KPI row */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 lg:grid-cols-6">
         <KpiCard
           label="Monthly Rent Roll"
           value={formatGBP(rentalStats.totalMonthlyRent)}
