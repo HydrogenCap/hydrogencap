@@ -30,6 +30,7 @@ import {
   ScrollText,
   FileSignature,
   ShieldCheck,
+  Megaphone,
   Receipt,
   Banknote,
   ChevronRight,
@@ -153,6 +154,7 @@ const operationsItems: NavItem[] = [
       { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
     ],
   },
+  { title: 'Comms', icon: Megaphone, href: '/communications' },
 ];
 
 const intelligenceItems: NavItem[] = [

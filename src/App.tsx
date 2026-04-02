@@ -32,6 +32,7 @@ const Entities = lazy(() => import("./pages/Entities"));
 const EntityDetail = lazy(() => import("./pages/EntityDetail"));
 const Ownership = lazy(() => import("./pages/Ownership"));
 const Inbox = lazy(() => import("./pages/Inbox"));
+const Communications = lazy(() => import("./pages/Communications"));
 const Import = lazy(() => import("./pages/Import"));
 const ImportPassport = lazy(() => import("./pages/ImportPassport"));
 const Insights = lazy(() => import("./pages/Insights"));
@@ -691,6 +692,7 @@ const App = () => (
             <Route path="/documents" element={<ProtectedRoute><RouteBoundary><Documents /></RouteBoundary></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute><RouteBoundary><TeamManagement /></RouteBoundary></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/communications" element={<ProtectedRoute><RouteBoundary><Communications /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />

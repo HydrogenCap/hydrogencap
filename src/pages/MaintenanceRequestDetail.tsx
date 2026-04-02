@@ -12,6 +12,8 @@ import { PhotoGallery } from '@/components/maintenance/PhotoGallery';
 import { QuoteComparisonSection } from '@/components/maintenance/QuoteComparisonSection';
 import { SuggestedContractors } from '@/components/maintenance/SuggestedContractors';
 import { LoadingState } from '@/components/common';
+import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
+import { LogCommunication } from '@/components/communications/LogCommunication';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +36,7 @@ export default function MaintenanceRequestDetail() {
 
   const [newComment, setNewComment] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const [showLogComm, setShowLogComm] = useState(false);
 
   if (isLoading) return <AppLayout><LoadingState text="Loading request..." /></AppLayout>;
   if (!request) return <AppLayout><div className="container py-6">Request not found</div></AppLayout>;
@@ -169,6 +172,14 @@ export default function MaintenanceRequestDetail() {
               invoiceReference={typedRequest.invoice_reference ?? null}
               costApprovedBy={typedRequest.cost_approved_by ?? null}
               costApprovedAt={typedRequest.cost_approved_at ?? null}
+            />
+
+            <CommunicationTimeline
+              propertyId={request.property_id}
+              relatedToType="maintenance_request"
+              relatedToId={requestId}
+              title="Communications"
+              compact
             />
 
             {!wo ? (
