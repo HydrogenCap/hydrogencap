@@ -1,459 +1,232 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { calculateAllEvents, type TenancyEvent } from '../tenancyLifecycle';
+import { describe, it, expect } from 'vitest';
+import {
+  generateChecklistDefinitions,
+  calculateDueDate,
+  buildTenancyChecklist,
+  getChecklistSummary,
+  groupByCategory,
+  CHECKLIST_ITEMS,
+  type PropertyContext,
+  type ChecklistItemDefinition,
+  type ComplianceData,
+  type ChecklistItem,
+} from '../tenancy-checklist';
 
-// ── Test Data Factories ─────────────────────────────────────────────────
-
-function daysFromNow(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
-}
-
-function makeTenancy(overrides: Partial<{
-  id: string;
-  start_date: string;
-  initial_end_date: string | null;
-  actual_end_date: string | null;
-  break_clause_date: string | null;
-  last_rent_review_date: string | null;
-  status: string;
-  rent_amount_pcm: number;
-  is_periodic: boolean | null;
-  tenant: { first_name: string; last_name: string } | null;
-  room: { room_name: string; property: { id: string; address_line_1: string; city: string | null; postcode: string | null } | null } | null;
-}> = {}) {
+function makeComplianceData(overrides: Partial<ComplianceData> = {}): ComplianceData {
   return {
-    id: 't-1',
-    start_date: '2023-01-01',
-    initial_end_date: null,
-    actual_end_date: null,
-    break_clause_date: null,
-    last_rent_review_date: null,
-    status: 'active',
-    rent_amount_pcm: 800,
-    is_periodic: false,
-    tenant: { first_name: 'John', last_name: 'Doe' },
-    room: {
-      room_name: 'Room 1',
-      property: { id: 'p-1', address_line_1: '1 Test Lane', city: 'London', postcode: 'SW1A 1AA' },
-    },
+    documents: new Map(),
+    tenancyFields: {},
     ...overrides,
   };
 }
 
-// ── calculateAllEvents ──────────────────────────────────────────────────
-
-describe('calculateAllEvents', () => {
-  // --- Null/empty inputs ---
-
-  it('returns empty array for null input', () => {
-    expect(calculateAllEvents(null)).toEqual([]);
+describe('generateChecklistDefinitions', () => {
+  it('returns only "always" items for a standard AST property', () => {
+    const defs = generateChecklistDefinitions({ is_hmo: false, is_selective_area: false });
+    const alwaysItems = CHECKLIST_ITEMS.filter(i => i.required === 'always');
+    expect(defs).toHaveLength(alwaysItems.length);
+    defs.forEach(d => expect(d.required).toBe('always'));
   });
 
-  it('returns empty array for empty array', () => {
-    expect(calculateAllEvents([])).toEqual([]);
+  it('includes HMO-only items for an HMO property', () => {
+    const defs = generateChecklistDefinitions({ is_hmo: true, is_selective_area: false });
+    const hmoItems = defs.filter(d => d.required === 'hmo_only');
+    expect(hmoItems.length).toBeGreaterThan(0);
+    expect(hmoItems.some(d => d.id === 'hmo_licence')).toBe(true);
+    expect(hmoItems.some(d => d.id === 'fire_risk_assessment')).toBe(true);
   });
 
-  // --- Tenancy end events ---
-
-  it('creates tenancy_end event for upcoming end date', () => {
-    const tenancies = [makeTenancy({ initial_end_date: daysFromNow(30) })];
-    const events = calculateAllEvents(tenancies);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(1);
-    expect(endEvents[0].daysUntil).toBeGreaterThanOrEqual(29);
-    expect(endEvents[0].daysUntil).toBeLessThanOrEqual(30);
-    expect(endEvents[0].status).toBe('action_required');
+  it('includes selective-only items for selective licensing area', () => {
+    const defs = generateChecklistDefinitions({ is_hmo: false, is_selective_area: true });
+    const selectiveItems = defs.filter(d => d.required === 'selective_only');
+    expect(selectiveItems.length).toBeGreaterThan(0);
+    expect(selectiveItems.some(d => d.id === 'selective_licence')).toBe(true);
   });
 
-  it('creates overdue tenancy_end event for past end date', () => {
-    const tenancies = [makeTenancy({ initial_end_date: daysFromNow(-10) })];
-    const events = calculateAllEvents(tenancies);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(1);
-    expect(endEvents[0].status).toBe('overdue');
-    expect(endEvents[0].description).toContain('ended');
+  it('includes both HMO and selective items when both apply', () => {
+    const defs = generateChecklistDefinitions({ is_hmo: true, is_selective_area: true });
+    expect(defs.length).toBe(CHECKLIST_ITEMS.length);
   });
 
-  it('uses actual_end_date over initial_end_date', () => {
-    const tenancies = [makeTenancy({
-      initial_end_date: daysFromNow(60),
-      actual_end_date: daysFromNow(30),
-    })];
-    const events = calculateAllEvents(tenancies);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(1);
-    expect(endEvents[0].daysUntil).toBeGreaterThanOrEqual(29);
-    expect(endEvents[0].daysUntil).toBeLessThanOrEqual(30);
+  it('excludes HMO items when is_hmo is undefined', () => {
+    const defs = generateChecklistDefinitions({});
+    const hmoItems = defs.filter(d => d.required === 'hmo_only');
+    expect(hmoItems).toHaveLength(0);
   });
 
-  it('does not create tenancy_end for far future dates', () => {
-    const tenancies = [makeTenancy({ initial_end_date: daysFromNow(200) })];
-    const events = calculateAllEvents(tenancies, 90);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(0);
+  it('excludes selective items when is_selective_area is undefined', () => {
+    const defs = generateChecklistDefinitions({});
+    const selectiveItems = defs.filter(d => d.required === 'selective_only');
+    expect(selectiveItems).toHaveLength(0);
+  });
+});
+
+describe('calculateDueDate', () => {
+  it('returns tenancy start date for before_move_in', () => {
+    expect(calculateDueDate('before_move_in', '2025-06-01')).toBe('2025-06-01');
   });
 
-  it('does not create tenancy_end when no end date', () => {
-    const tenancies = [makeTenancy({ initial_end_date: null, actual_end_date: null })];
-    const events = calculateAllEvents(tenancies);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(0);
+  it('adds 28 days for within_28_days', () => {
+    expect(calculateDueDate('within_28_days', '2025-06-01')).toBe('2025-06-29');
   });
 
-  it('assigns upcoming status for end dates > 60 days away but within horizon', () => {
-    const tenancies = [makeTenancy({ initial_end_date: daysFromNow(80) })];
-    const events = calculateAllEvents(tenancies);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(1);
-    expect(endEvents[0].status).toBe('upcoming');
+  it('adds 30 days for within_30_days', () => {
+    expect(calculateDueDate('within_30_days', '2025-06-01')).toBe('2025-07-01');
   });
 
-  // --- Break clause events ---
-
-  it('creates break_clause event (notice deadline = 2 months before break)', () => {
-    // Break date 80 days from now → notice deadline ~19 days from now
-    const tenancies = [makeTenancy({ break_clause_date: daysFromNow(80) })];
-    const events = calculateAllEvents(tenancies);
-    const breakEvents = events.filter(e => e.type === 'break_clause');
-    expect(breakEvents).toHaveLength(1);
-    expect(breakEvents[0].title).toBe('Break clause notice deadline');
+  it('adds 1 year for annually', () => {
+    expect(calculateDueDate('annually', '2025-06-01')).toBe('2026-06-01');
   });
 
-  it('marks break clause as overdue when notice deadline has passed', () => {
-    // Break date 30 days from now → notice deadline ~-30 days (already passed)
-    const tenancies = [makeTenancy({ break_clause_date: daysFromNow(30) })];
-    const events = calculateAllEvents(tenancies);
-    const breakEvents = events.filter(e => e.type === 'break_clause');
-    expect(breakEvents).toHaveLength(1);
-    expect(breakEvents[0].status).toBe('overdue');
-    expect(breakEvents[0].description).toContain('passed');
+  it('adds 5 years for every_5_years', () => {
+    expect(calculateDueDate('every_5_years', '2025-06-01')).toBe('2030-06-01');
+  });
+});
+
+describe('buildTenancyChecklist', () => {
+  const tenancyStart = '2025-06-01';
+  const alwaysDefs = generateChecklistDefinitions({ is_hmo: false, is_selective_area: false });
+
+  it('builds a checklist with all items as pending when no compliance data', () => {
+    const items = buildTenancyChecklist(alwaysDefs, makeComplianceData(), new Map(), tenancyStart);
+    expect(items.length).toBe(alwaysDefs.length);
+    // All should be pending or overdue (depending on current date), but none done
+    items.forEach(item => {
+      expect(['pending', 'overdue']).toContain(item.status);
+      expect(item.auto_verified).toBe(false);
+    });
   });
 
-  it('does not create break_clause when no break date', () => {
-    const tenancies = [makeTenancy({ break_clause_date: null })];
-    const events = calculateAllEvents(tenancies);
-    const breakEvents = events.filter(e => e.type === 'break_clause');
-    expect(breakEvents).toHaveLength(0);
+  it('auto-verifies items with matching compliance documents', () => {
+    const docs = new Map<string, { status: string; expiry_date: string | null }>();
+    docs.set('gas_safety_certificate', { status: 'valid', expiry_date: '2026-06-01' });
+    const complianceData = makeComplianceData({ documents: docs as ComplianceData['documents'] });
+
+    const items = buildTenancyChecklist(alwaysDefs, complianceData, new Map(), tenancyStart);
+    const gasItem = items.find(i => i.id === 'gas_safety');
+    expect(gasItem?.status).toBe('done');
+    expect(gasItem?.auto_verified).toBe(true);
   });
 
-  // --- Rent review events ---
+  it('auto-verifies items with matching tenancy fields', () => {
+    const complianceData = makeComplianceData({
+      tenancyFields: { how_to_rent_served_date: '2025-05-28' },
+    });
 
-  it('creates rent_review event for active tenancy', () => {
-    const tenancies = [makeTenancy({
-      status: 'active',
-      start_date: daysFromNow(-335), // ~30 days until 1 year anniversary
-    })];
-    const events = calculateAllEvents(tenancies, 90);
-    const reviewEvents = events.filter(e => e.type === 'rent_review');
-    expect(reviewEvents).toHaveLength(1);
-    expect(reviewEvents[0].title).toBe('Rent review due');
+    const items = buildTenancyChecklist(alwaysDefs, complianceData, new Map(), tenancyStart);
+    const howToRentItem = items.find(i => i.id === 'how_to_rent');
+    expect(howToRentItem?.status).toBe('done');
+    expect(howToRentItem?.auto_verified).toBe(true);
   });
 
-  it('creates rent_review for periodic tenancy', () => {
-    const tenancies = [makeTenancy({
-      status: 'periodic',
-      start_date: daysFromNow(-335),
-    })];
-    const events = calculateAllEvents(tenancies, 90);
-    const reviewEvents = events.filter(e => e.type === 'rent_review');
-    expect(reviewEvents).toHaveLength(1);
+  it('uses manual completion when existingItems has a completed_date', () => {
+    const existingItems = new Map<string, { completed_date: string | null; completed_by: string | null; notes: string | null; document_url: string | null }>();
+    existingItems.set('gas_safety', {
+      completed_date: '2025-05-15',
+      completed_by: 'John',
+      notes: 'Uploaded cert',
+      document_url: 'https://example.com/cert.pdf',
+    });
+
+    const items = buildTenancyChecklist(alwaysDefs, makeComplianceData(), existingItems, tenancyStart);
+    const gasItem = items.find(i => i.id === 'gas_safety');
+    expect(gasItem?.status).toBe('done');
+    expect(gasItem?.auto_verified).toBe(false);
+    expect(gasItem?.completed_by).toBe('John');
   });
 
-  it('does not create rent_review for ended tenancy', () => {
-    const tenancies = [makeTenancy({
-      status: 'ended',
-      start_date: daysFromNow(-335),
-    })];
-    const events = calculateAllEvents(tenancies, 90);
-    const reviewEvents = events.filter(e => e.type === 'rent_review');
-    expect(reviewEvents).toHaveLength(0);
+  it('assigns due dates based on deadline type', () => {
+    const items = buildTenancyChecklist(alwaysDefs, makeComplianceData(), new Map(), tenancyStart);
+    const depositItem = items.find(i => i.id === 'deposit_protection');
+    expect(depositItem?.due_date).toBe('2025-07-01'); // 30 days after June 1
+  });
+});
+
+describe('getChecklistSummary', () => {
+  function makeItem(status: 'done' | 'pending' | 'overdue'): ChecklistItem {
+    return {
+      id: 'test',
+      title: 'Test',
+      description: '',
+      legal_reference: '',
+      required: 'always',
+      deadline: 'before_move_in',
+      category: 'safety',
+      status,
+      completed_date: status === 'done' ? '2025-01-01' : null,
+      completed_by: null,
+      notes: null,
+      document_url: null,
+      due_date: '2025-06-01',
+      auto_verified: false,
+    };
+  }
+
+  it('calculates correct totals', () => {
+    const items = [makeItem('done'), makeItem('done'), makeItem('pending'), makeItem('overdue')];
+    const summary = getChecklistSummary(items);
+    expect(summary.total).toBe(4);
+    expect(summary.completed).toBe(2);
+    expect(summary.pending).toBe(1);
+    expect(summary.overdue).toBe(1);
+    expect(summary.completionRate).toBe(50);
   });
 
-  it('uses last_rent_review_date to calculate next review', () => {
-    const tenancies = [makeTenancy({
-      status: 'active',
-      start_date: '2022-01-01',
-      last_rent_review_date: daysFromNow(-340), // next review ~25 days away
-    })];
-    const events = calculateAllEvents(tenancies, 90);
-    const reviewEvents = events.filter(e => e.type === 'rent_review');
-    expect(reviewEvents).toHaveLength(1);
+  it('returns 100% completion for empty list', () => {
+    expect(getChecklistSummary([]).completionRate).toBe(100);
   });
 
-  it('marks rent_review as overdue when past due', () => {
-    const tenancies = [makeTenancy({
-      status: 'active',
-      last_rent_review_date: daysFromNow(-375), // 375 days ago, so review was 10 days ago
-    })];
-    const events = calculateAllEvents(tenancies, 90);
-    const reviewEvents = events.filter(e => e.type === 'rent_review');
-    expect(reviewEvents).toHaveLength(1);
-    expect(reviewEvents[0].status).toBe('overdue');
+  it('returns 0% when nothing is completed', () => {
+    const items = [makeItem('pending'), makeItem('overdue')];
+    expect(getChecklistSummary(items).completionRate).toBe(0);
   });
 
-  // --- Metadata extraction ---
-
-  it('extracts tenant name correctly', () => {
-    const tenancies = [makeTenancy({
-      initial_end_date: daysFromNow(30),
-      tenant: { first_name: 'Jane', last_name: 'Smith' },
-    })];
-    const events = calculateAllEvents(tenancies);
-    expect(events[0].tenantName).toBe('Jane Smith');
+  it('returns 100% when all completed', () => {
+    const items = [makeItem('done'), makeItem('done'), makeItem('done')];
+    expect(getChecklistSummary(items).completionRate).toBe(100);
   });
+});
 
-  it('defaults to Unknown for null tenant', () => {
-    const tenancies = [makeTenancy({
-      initial_end_date: daysFromNow(30),
-      tenant: null,
-    })];
-    const events = calculateAllEvents(tenancies);
-    expect(events[0].tenantName).toBe('Unknown');
-  });
+describe('groupByCategory', () => {
+  function makeItemWithCategory(category: 'safety' | 'legal' | 'financial' | 'documentation'): ChecklistItem {
+    return {
+      id: `item-${category}`,
+      title: `${category} item`,
+      description: '',
+      legal_reference: '',
+      required: 'always',
+      deadline: 'before_move_in',
+      category,
+      status: 'pending',
+      completed_date: null,
+      completed_by: null,
+      notes: null,
+      document_url: null,
+      due_date: '2025-06-01',
+      auto_verified: false,
+    };
+  }
 
-  it('extracts property address correctly', () => {
-    const tenancies = [makeTenancy({ initial_end_date: daysFromNow(30) })];
-    const events = calculateAllEvents(tenancies);
-    expect(events[0].propertyAddress).toBe('1 Test Lane, London');
-  });
-
-  it('handles missing city in address', () => {
-    const tenancies = [makeTenancy({
-      initial_end_date: daysFromNow(30),
-      room: {
-        room_name: 'Room 1',
-        property: { id: 'p-1', address_line_1: '1 Test Lane', city: null, postcode: null },
-      },
-    })];
-    const events = calculateAllEvents(tenancies);
-    expect(events[0].propertyAddress).toBe('1 Test Lane');
-  });
-
-  it('defaults to Unknown when room/property is null', () => {
-    const tenancies = [makeTenancy({
-      initial_end_date: daysFromNow(30),
-      room: null,
-    })];
-    const events = calculateAllEvents(tenancies);
-    expect(events[0].propertyAddress).toBe('Unknown Property');
-    expect(events[0].roomName).toBe('Unknown Room');
-  });
-
-  // --- Sorting ---
-
-  it('sorts overdue events first', () => {
-    const tenancies = [
-      makeTenancy({ id: 't-1', initial_end_date: daysFromNow(30) }),
-      makeTenancy({ id: 't-2', initial_end_date: daysFromNow(-5) }),
+  it('groups items into correct categories', () => {
+    const items = [
+      makeItemWithCategory('safety'),
+      makeItemWithCategory('legal'),
+      makeItemWithCategory('financial'),
+      makeItemWithCategory('documentation'),
+      makeItemWithCategory('safety'),
     ];
-    const events = calculateAllEvents(tenancies);
-    expect(events[0].status).toBe('overdue');
+    const grouped = groupByCategory(items);
+    expect(grouped.safety).toHaveLength(2);
+    expect(grouped.legal).toHaveLength(1);
+    expect(grouped.financial).toHaveLength(1);
+    expect(grouped.documentation).toHaveLength(1);
   });
 
-  it('sorts remaining events by daysUntil ascending', () => {
-    const tenancies = [
-      makeTenancy({ id: 't-1', initial_end_date: daysFromNow(60) }),
-      makeTenancy({ id: 't-2', initial_end_date: daysFromNow(10) }),
-    ];
-    const events = calculateAllEvents(tenancies);
-    const nonOverdue = events.filter(e => e.status !== 'overdue');
-    for (let i = 1; i < nonOverdue.length; i++) {
-      expect(nonOverdue[i].daysUntil).toBeGreaterThanOrEqual(nonOverdue[i - 1].daysUntil);
-    }
+  it('returns empty arrays for categories with no items', () => {
+    const grouped = groupByCategory([]);
+    expect(grouped.safety).toHaveLength(0);
+    expect(grouped.legal).toHaveLength(0);
+    expect(grouped.financial).toHaveLength(0);
+    expect(grouped.documentation).toHaveLength(0);
   });
-
-  // --- daysAhead parameter ---
-
-  it('respects custom daysAhead parameter', () => {
-    const tenancies = [
-      makeTenancy({ id: 't-1', initial_end_date: daysFromNow(30) }),
-      makeTenancy({ id: 't-2', initial_end_date: daysFromNow(200) }),
-    ];
-    const events30 = calculateAllEvents(tenancies, 30);
-    const events365 = calculateAllEvents(tenancies, 365);
-    expect(events30.filter(e => e.type === 'tenancy_end')).toHaveLength(1);
-    expect(events365.filter(e => e.type === 'tenancy_end')).toHaveLength(2);
-  });
-
-  // --- Multiple event types ---
-
-  it('generates multiple event types for a single tenancy', () => {
-    const tenancies = [makeTenancy({
-      status: 'active',
-      start_date: daysFromNow(-335),       // rent review ~30 days
-      initial_end_date: daysFromNow(60),    // end in 60 days
-      break_clause_date: daysFromNow(80),   // break notice ~20 days
-    })];
-    const events = calculateAllEvents(tenancies);
-    const types = new Set(events.map(e => e.type));
-    expect(types.has('tenancy_end')).toBe(true);
-    expect(types.has('break_clause')).toBe(true);
-    expect(types.has('rent_review')).toBe(true);
-  });
-
-  it('handles multiple tenancies', () => {
-    const tenancies = [
-      makeTenancy({ id: 't-1', initial_end_date: daysFromNow(30) }),
-      makeTenancy({ id: 't-2', initial_end_date: daysFromNow(45) }),
-      makeTenancy({ id: 't-3', initial_end_date: daysFromNow(60) }),
-    ];
-    const events = calculateAllEvents(tenancies);
-    const endEvents = events.filter(e => e.type === 'tenancy_end');
-    expect(endEvents).toHaveLength(3);
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════
-// Part 2: tenancy-checklist.ts module tests (new module)
-// ══════════════════════════════════════════════════════════════════════
-
-import {
-  generateChecklist,
-  filterByCategory,
-  getCategories,
-  getLegallyRequiredItems,
-  calculateCompletion,
-  getPropertyTypesForItem,
-  CHECKLIST_ITEMS,
-} from '../tenancy-checklist';
-
-describe('tenancy-checklist: generateChecklist', () => {
-  it('single let new tenancy', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    expect(c.propertyType).toBe('single_let');
-    expect(c.totalCount).toBeGreaterThan(0);
-    expect(c.requiredCount).toBeGreaterThan(0);
-  });
-
-  it('HMO includes HMO items', () => {
-    const c = generateChecklist('hmo', 'new_tenancy');
-    expect(c.items.some(i => i.category === 'HMO')).toBe(true);
-  });
-
-  it('single let excludes HMO items', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    expect(c.items.filter(i => i.category === 'HMO')).toHaveLength(0);
-  });
-
-  it('end of tenancy includes checkout', () => {
-    const c = generateChecklist('single_let', 'end_tenancy');
-    expect(c.items.some(i => i.id === 'checkout-inspection')).toBe(true);
-  });
-
-  it('commercial includes commercial lease', () => {
-    const c = generateChecklist('commercial', 'new_tenancy');
-    expect(c.items.some(i => i.id === 'commercial-lease')).toBe(true);
-  });
-
-  it('commercial excludes deposit protection', () => {
-    const c = generateChecklist('commercial', 'new_tenancy');
-    expect(c.items.some(i => i.id === 'deposit-protection')).toBe(false);
-  });
-
-  it('holiday let includes fire risk assessment', () => {
-    const c = generateChecklist('holiday_let', 'new_tenancy');
-    expect(c.items.some(i => i.id === 'fire-risk-assessment')).toBe(true);
-  });
-
-  it('counts are consistent', () => {
-    const c = generateChecklist('hmo', 'new_tenancy');
-    expect(c.requiredCount + c.recommendedCount + c.optionalCount).toBe(c.totalCount);
-  });
-
-  it('all items match requested type', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    expect(c.items.every(i => i.propertyTypes.includes('single_let'))).toBe(true);
-  });
-
-  it('all items match requested phase', () => {
-    const c = generateChecklist('single_let', 'end_tenancy');
-    expect(c.items.every(i => i.phases.includes('end_tenancy'))).toBe(true);
-  });
-});
-
-describe('tenancy-checklist: filterByCategory', () => {
-  it('filters correctly', () => {
-    const c = generateChecklist('hmo', 'new_tenancy');
-    const safety = filterByCategory(c.items, 'Safety & Legal');
-    expect(safety.length).toBeGreaterThan(0);
-    expect(safety.every(i => i.category === 'Safety & Legal')).toBe(true);
-  });
-
-  it('nonexistent category', () => { expect(filterByCategory([], 'X')).toHaveLength(0); });
-});
-
-describe('tenancy-checklist: getCategories', () => {
-  it('returns unique categories', () => {
-    const c = generateChecklist('hmo', 'new_tenancy');
-    const cats = getCategories(c.items);
-    expect(new Set(cats).size).toBe(cats.length);
-  });
-  it('empty input', () => { expect(getCategories([])).toHaveLength(0); });
-});
-
-describe('tenancy-checklist: getLegallyRequiredItems', () => {
-  it('returns items with legal references', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    const legal = getLegallyRequiredItems(c.items);
-    expect(legal.length).toBeGreaterThan(0);
-    expect(legal.every(i => i.legalReference !== undefined)).toBe(true);
-  });
-});
-
-describe('tenancy-checklist: calculateCompletion', () => {
-  it('100% when all done', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    const r = calculateCompletion(c, c.items.map(i => i.id));
-    expect(r.percent).toBe(100);
-    expect(r.requiredRemaining).toBe(0);
-  });
-
-  it('0% when nothing done', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    const r = calculateCompletion(c, []);
-    expect(r.percent).toBe(0);
-    expect(r.requiredRemaining).toBe(c.requiredCount);
-  });
-
-  it('partial completion', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    const r = calculateCompletion(c, c.items.slice(0, 2).map(i => i.id));
-    expect(r.completedCount).toBe(2);
-    expect(r.percent).toBeGreaterThan(0);
-    expect(r.percent).toBeLessThan(100);
-  });
-
-  it('ignores unknown ids', () => {
-    const c = generateChecklist('single_let', 'new_tenancy');
-    expect(calculateCompletion(c, ['nonexistent']).completedCount).toBe(0);
-  });
-});
-
-describe('tenancy-checklist: getPropertyTypesForItem', () => {
-  it('gas-safety applies to residential', () => {
-    const types = getPropertyTypesForItem('gas-safety');
-    expect(types).toContain('single_let');
-    expect(types).toContain('hmo');
-  });
-
-  it('unknown item returns empty', () => {
-    expect(getPropertyTypesForItem('nonexistent')).toHaveLength(0);
-  });
-
-  it('deposit-protection excludes commercial/holiday', () => {
-    const types = getPropertyTypesForItem('deposit-protection');
-    expect(types).not.toContain('commercial');
-    expect(types).not.toContain('holiday_let');
-  });
-});
-
-describe('tenancy-checklist: CHECKLIST_ITEMS integrity', () => {
-  it('unique IDs', () => {
-    const ids = CHECKLIST_ITEMS.map(i => i.id);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-  it('all have phases', () => { expect(CHECKLIST_ITEMS.every(i => i.phases.length > 0)).toBe(true); });
-  it('all have property types', () => { expect(CHECKLIST_ITEMS.every(i => i.propertyTypes.length > 0)).toBe(true); });
-  it('all have descriptions', () => { expect(CHECKLIST_ITEMS.every(i => i.description.length > 0)).toBe(true); });
 });

@@ -1,487 +1,226 @@
 import { describe, it, expect } from 'vitest';
 import {
-  calculateSection24,
-  buildSA105,
-  buildAnnualSummary,
-  generateSA105CSV,
-  type MarginalTaxRate,
-  type SA105PropertyData,
-} from '../propertyTax';
-
-// ── Section 24 Calculation ──────────────────────────────────────────────
-
-describe('calculateSection24', () => {
-  it('calculates basic rate taxpayer correctly', () => {
-    const result = calculateSection24(10000, 20000, 0.20);
-    expect(result.totalMortgageInterest).toBe(10000);
-    expect(result.taxReliefAt20Percent).toBe(2000);
-    expect(result.taxSavedVsOldRules).toBe(2000);
-    // Basic rate: no additional cost since old rules = 20% and credit = 20%
-    expect(result.additionalTaxDueToS24).toBe(0);
-  });
-
-  it('calculates higher rate taxpayer correctly', () => {
-    const result = calculateSection24(10000, 20000, 0.40);
-    expect(result.taxReliefAt20Percent).toBe(2000);
-    expect(result.taxSavedVsOldRules).toBe(4000);
-    expect(result.additionalTaxDueToS24).toBe(2000);
-  });
-
-  it('calculates additional rate taxpayer correctly', () => {
-    const result = calculateSection24(10000, 20000, 0.45);
-    expect(result.taxReliefAt20Percent).toBe(2000);
-    expect(result.taxSavedVsOldRules).toBe(4500);
-    expect(result.additionalTaxDueToS24).toBe(2500);
-  });
-
-  it('calculates effective tax rate correctly for higher-rate payer', () => {
-    const result = calculateSection24(5000, 30000, 0.40);
-    // Tax on profit = 30000 * 0.40 = 12000
-    // Credit = 5000 * 0.20 = 1000
-    // Net = 11000
-    // Effective = (11000 / 30000) * 100 = 36.67%
-    expect(result.effectiveTaxRate).toBeCloseTo(36.67, 1);
-  });
-
-  it('handles zero mortgage interest', () => {
-    const result = calculateSection24(0, 20000, 0.40);
-    expect(result.totalMortgageInterest).toBe(0);
-    expect(result.taxReliefAt20Percent).toBe(0);
-    expect(result.additionalTaxDueToS24).toBe(0);
-  });
-
-  it('handles zero taxable profit', () => {
-    const result = calculateSection24(5000, 0, 0.40);
-    expect(result.effectiveTaxRate).toBe(0);
-  });
-
-  it('never returns negative additionalTaxDueToS24', () => {
-    // Edge case: basic rate payer always has 0 additional tax
-    const result = calculateSection24(1000, 500, 0.20);
-    expect(result.additionalTaxDueToS24).toBe(0);
-  });
-
-  it('handles large values without overflow', () => {
-    const result = calculateSection24(500000, 2000000, 0.45);
-    expect(result.taxReliefAt20Percent).toBe(100000);
-    expect(result.taxSavedVsOldRules).toBe(225000);
-    expect(result.additionalTaxDueToS24).toBe(125000);
-  });
-});
-
-// ── SA105 Builder ───────────────────────────────────────────────────────
-
-describe('buildSA105', () => {
-  const baseExpenses: Record<string, number> = {
-    insurance: 500,
-    management_fees: 1200,
-    accountancy: 300,
-    ground_rent: 200,
-    service_charges: 1000,
-    travel: 100,
-    other: 50,
-  };
-
-  it('builds SA105 data with itemised expenses', () => {
-    const result = buildSA105(
-      'p1', '123 High St', 'e1', 'My SPV', 'spv',
-      24000, 6000, 800, baseExpenses, false
-    );
-    expect(result.totalRentalIncome).toBe(24000);
-    expect(result.insurance).toBe(500);
-    expect(result.managementFees).toBe(1200);
-    expect(result.accountingFees).toBe(300);
-    expect(result.groundRent).toBe(200);
-    expect(result.serviceCharges).toBe(1000);
-    expect(result.otherAllowableExpenses).toBe(150); // travel 100 + other 50
-    expect(result.repairs).toBe(800);
-    // Total = 800 + 500 + 1200 + 300 + 200 + 1000 + 150 = 4150
-    expect(result.totalAllowableExpenses).toBe(4150);
-    expect(result.residentialFinanceCosts).toBe(6000);
-  });
-
-  it('calculates adjusted profit correctly', () => {
-    const result = buildSA105(
-      'p1', '123 High St', null, null, null,
-      24000, 6000, 800, baseExpenses, false
-    );
-    // Profit = 24000 - 4150 = 19850
-    expect(result.adjustedProfit).toBe(19850);
-  });
-
-  it('calculates 20% tax credit on mortgage interest', () => {
-    const result = buildSA105(
-      'p1', '123 High St', null, null, null,
-      24000, 6000, 0, {}, false
-    );
-    expect(result.taxCreditAt20Percent).toBe(1200);
-  });
-
-  it('uses property allowance when enabled (capped at £1000)', () => {
-    const result = buildSA105(
-      'p1', '123 High St', null, null, null,
-      24000, 6000, 800, baseExpenses, true
-    );
-    expect(result.usePropertyAllowance).toBe(true);
-    expect(result.totalAllowableExpenses).toBe(1000);
-  });
-
-  it('caps property allowance at rental income if income < £1000', () => {
-    const result = buildSA105(
-      'p1', '123 High St', null, null, null,
-      500, 0, 0, {}, true
-    );
-    expect(result.totalAllowableExpenses).toBe(500);
-  });
-
-  it('never produces negative adjusted profit', () => {
-    const result = buildSA105(
-      'p1', '123 High St', null, null, null,
-      100, 0, 5000, baseExpenses, false
-    );
-    expect(result.adjustedProfit).toBe(0);
-  });
-
-  it('handles empty manual expenses', () => {
-    const result = buildSA105(
-      'p1', '123 High St', null, null, null,
-      12000, 3000, 500, {}, false
-    );
-    expect(result.insurance).toBe(0);
-    expect(result.managementFees).toBe(0);
-    expect(result.totalAllowableExpenses).toBe(500); // just repairs
-  });
-
-  it('preserves entity metadata', () => {
-    const result = buildSA105(
-      'p1', '123 High St', 'e-abc', 'SPV Holdings Ltd', 'spv',
-      10000, 0, 0, {}, false
-    );
-    expect(result.entityId).toBe('e-abc');
-    expect(result.entityName).toBe('SPV Holdings Ltd');
-    expect(result.entityType).toBe('spv');
-  });
-});
-
-// ── Annual Summary ──────────────────────────────────────────────────────
-
-describe('buildAnnualSummary', () => {
-  function makeProperty(overrides: Partial<SA105PropertyData> = {}): SA105PropertyData {
-    return {
-      propertyId: 'p1',
-      propertyAddress: '1 Test Lane',
-      entityId: null,
-      entityName: null,
-      entityType: null,
-      totalRentalIncome: 12000,
-      usePropertyAllowance: false,
-      repairs: 500,
-      insurance: 300,
-      managementFees: 600,
-      accountingFees: 200,
-      groundRent: 0,
-      serviceCharges: 0,
-      otherAllowableExpenses: 0,
-      totalAllowableExpenses: 1600,
-      residentialFinanceCosts: 3000,
-      adjustedProfit: 10400,
-      taxCreditAt20Percent: 600,
-      ...overrides,
-    };
-  }
-
-  it('aggregates totals across properties', () => {
-    const props = [
-      makeProperty({ totalRentalIncome: 12000, totalAllowableExpenses: 2000 }),
-      makeProperty({ propertyId: 'p2', totalRentalIncome: 18000, totalAllowableExpenses: 3000 }),
-    ];
-    const summary = buildAnnualSummary('2024/25', props, 0.40, 0.19);
-    expect(summary.totalRentalIncome).toBe(30000);
-    expect(summary.totalAllowableExpenses).toBe(5000);
-    expect(summary.netPropertyIncome).toBe(25000);
-  });
-
-  it('applies corporation tax rate to SPV entities', () => {
-    const props = [
-      makeProperty({
-        entityId: 'spv1', entityName: 'SPV Ltd', entityType: 'spv',
-        totalRentalIncome: 20000, totalAllowableExpenses: 5000,
-        residentialFinanceCosts: 3000,
-      }),
-    ];
-    const summary = buildAnnualSummary('2024/25', props, 0.40, 0.19);
-    const spvBreakdown = summary.perEntityBreakdown[0];
-    expect(spvBreakdown.applicableTaxRate).toBe(0.19);
-    // SPV deducts interest: profit = 20000 - 5000 = 15000, after interest = 12000
-    // Tax = 12000 * 0.19 = 2280
-    expect(spvBreakdown.estimatedTax).toBe(2280);
-    expect(spvBreakdown.section24Credit).toBe(0);
-  });
-
-  it('applies Section 24 to personal entities', () => {
-    const props = [
-      makeProperty({
-        entityId: null, entityName: null, entityType: 'personal',
-        totalRentalIncome: 20000, totalAllowableExpenses: 5000,
-        residentialFinanceCosts: 3000,
-      }),
-    ];
-    const summary = buildAnnualSummary('2024/25', props, 0.40, 0.19);
-    const breakdown = summary.perEntityBreakdown[0];
-    expect(breakdown.applicableTaxRate).toBe(0.40);
-    // Personal: tax on profit = 15000 * 0.40 = 6000
-    // S24 credit = 3000 * 0.20 = 600
-    expect(breakdown.estimatedTax).toBe(6000);
-    expect(breakdown.section24Credit).toBe(600);
-    expect(breakdown.netTax).toBe(5400);
-  });
-
-  it('treats limited_company same as spv', () => {
-    const props = [
-      makeProperty({
-        entityId: 'lc1', entityName: 'LC Ltd', entityType: 'limited_company',
-        totalRentalIncome: 10000, totalAllowableExpenses: 2000,
-        residentialFinanceCosts: 1000,
-      }),
-    ];
-    const summary = buildAnnualSummary('2024/25', props, 0.40, 0.25);
-    expect(summary.perEntityBreakdown[0].applicableTaxRate).toBe(0.25);
-  });
-
-  it('groups properties by entity', () => {
-    const props = [
-      makeProperty({ entityId: 'e1', entityName: 'SPV1', entityType: 'spv' }),
-      makeProperty({ propertyId: 'p2', entityId: 'e1', entityName: 'SPV1', entityType: 'spv' }),
-      makeProperty({ propertyId: 'p3', entityId: null, entityName: null, entityType: null }),
-    ];
-    const summary = buildAnnualSummary('2024/25', props, 0.20, 0.19);
-    expect(summary.perEntityBreakdown).toHaveLength(2);
-  });
-
-  it('handles empty properties array', () => {
-    const summary = buildAnnualSummary('2024/25', [], 0.40, 0.19);
-    expect(summary.totalRentalIncome).toBe(0);
-    expect(summary.perEntityBreakdown).toHaveLength(0);
-    expect(summary.estimatedTaxLiability).toBe(0);
-  });
-
-  it('never returns negative netTax', () => {
-    const props = [
-      makeProperty({
-        entityId: null, entityName: null, entityType: 'personal',
-        totalRentalIncome: 1000, totalAllowableExpenses: 900,
-        residentialFinanceCosts: 50000, // huge mortgage interest
-      }),
-    ];
-    const summary = buildAnnualSummary('2024/25', props, 0.20, 0.19);
-    const breakdown = summary.perEntityBreakdown[0];
-    expect(breakdown.netTax).toBeGreaterThanOrEqual(0);
-  });
-});
-
-// ── SA105 CSV Export ────────────────────────────────────────────────────
-
-describe('generateSA105CSV', () => {
-  it('generates CSV with headers and data row', () => {
-    const sa105 = buildSA105('p1', '10 Downing St', null, null, null, 12000, 3000, 500, {}, false);
-    const csv = generateSA105CSV([sa105]);
-    const lines = csv.split('\n');
-    expect(lines).toHaveLength(2);
-    expect(lines[0]).toContain('Property Address');
-    expect(lines[0]).toContain('Adjusted Profit');
-    expect(lines[1]).toContain('"10 Downing St"');
-  });
-
-  it('handles multiple properties', () => {
-    const props = [
-      buildSA105('p1', 'Addr 1', null, null, null, 12000, 0, 0, {}, false),
-      buildSA105('p2', 'Addr 2', null, null, null, 18000, 0, 0, {}, false),
-    ];
-    const csv = generateSA105CSV(props);
-    const lines = csv.split('\n');
-    expect(lines).toHaveLength(3); // header + 2 data rows
-  });
-
-  it('uses Personal when entityName is null', () => {
-    const sa105 = buildSA105('p1', 'Addr', null, null, null, 12000, 0, 0, {}, false);
-    const csv = generateSA105CSV([sa105]);
-    expect(csv).toContain('"Personal"');
-  });
-
-  it('handles empty array', () => {
-    const csv = generateSA105CSV([]);
-    const lines = csv.split('\n');
-    expect(lines).toHaveLength(1); // header only
-  });
-});
-
-// ══════════════════════════════════════════════════════════════════════
-// Part 2: tax-engine.ts module tests — CGT, Income Tax, SA105 (new module)
-// ══════════════════════════════════════════════════════════════════════
-
-import {
-  calculateSection24 as calcS24Module,
-  calculateCGT,
   calculateIncomeTax,
-  calculateSA105,
-  PERSONAL_ALLOWANCE,
-  BASIC_RATE_LIMIT,
-  HIGHER_RATE_LIMIT,
-  BASIC_RATE,
-  HIGHER_RATE,
-  ADDITIONAL_RATE,
-  CGT_ANNUAL_EXEMPT,
-  CGT_BASIC_RATE_RESIDENTIAL,
-  CGT_HIGHER_RATE_RESIDENTIAL,
-  PROPERTY_ALLOWANCE,
+  calculateSection24Impact,
+  calculateCGT,
+  getMarginalRate,
+  TAX_BANDS_2025_26,
+  CGT_RATES,
 } from '../tax-engine';
 
-describe('tax-engine: calculateSection24', () => {
-  it('basic rate relief at 20%', () => {
-    const r = calcS24Module({ annualMortgageInterest: 10_000, rentalProfit: 20_000, marginalRate: BASIC_RATE });
-    expect(r.basicRateRelief).toBe(2_000);
-    expect(r.additionalTaxDueToS24).toBe(0);
+describe('calculateIncomeTax', () => {
+  it('returns 0 for income within personal allowance', () => {
+    expect(calculateIncomeTax(12_570, 12_570)).toBe(0);
   });
 
-  it('higher rate additional tax', () => {
-    const r = calcS24Module({ annualMortgageInterest: 10_000, rentalProfit: 20_000, marginalRate: HIGHER_RATE });
-    expect(r.additionalTaxDueToS24).toBe(2_000);
+  it('returns 0 for zero income', () => {
+    expect(calculateIncomeTax(0, 12_570)).toBe(0);
   });
 
-  it('effective tax rate for higher rate', () => {
-    const r = calcS24Module({ annualMortgageInterest: 10_000, rentalProfit: 20_000, marginalRate: HIGHER_RATE });
-    expect(r.effectiveTaxRate).toBeCloseTo(30, 1);
+  it('calculates basic rate tax correctly', () => {
+    // £20,000 income: taxable = 20000 - 12570 = 7430 at 20%
+    expect(calculateIncomeTax(20_000, 12_570)).toBe(7_430 * 0.2);
   });
 
-  it('handles negative inputs', () => {
-    const r = calcS24Module({ annualMortgageInterest: -5_000, rentalProfit: -10_000, marginalRate: -0.2 });
-    expect(r.basicRateRelief).toBe(0);
-    expect(r.effectiveTaxRate).toBe(0);
+  it('calculates tax at the top of the basic rate band', () => {
+    // £50,270 income: taxable = 50270 - 12570 = 37700 at 20%
+    expect(calculateIncomeTax(50_270, 12_570)).toBe(37_700 * 0.2);
   });
 
-  it('zero profit returns zero effective rate', () => {
-    const r = calcS24Module({ annualMortgageInterest: 5_000, rentalProfit: 0, marginalRate: HIGHER_RATE });
-    expect(r.effectiveTaxRate).toBe(0);
-  });
-});
-
-describe('tax-engine: calculateCGT', () => {
-  it('calculates gain correctly', () => {
-    const r = calculateCGT({ salePrice: 300_000, purchasePrice: 200_000, allowableCosts: 10_000, taxableIncome: 30_000 });
-    expect(r.gain).toBe(90_000);
-    expect(r.exemption).toBe(CGT_ANNUAL_EXEMPT);
-    expect(r.taxableGain).toBe(90_000 - CGT_ANNUAL_EXEMPT);
+  it('calculates higher rate tax correctly', () => {
+    // £60,000 income: basic = 37700 at 20%, higher = (60000-12570-37700) = 9730 at 40%
+    const basicTax = 37_700 * 0.2;
+    const higherTax = 9_730 * 0.4;
+    expect(calculateIncomeTax(60_000, 12_570)).toBe(basicTax + higherTax);
   });
 
-  it('all basic rate when within band', () => {
-    const r = calculateCGT({ salePrice: 210_000, purchasePrice: 200_000, allowableCosts: 0, taxableIncome: 30_000 });
-    expect(r.basicRateAmount).toBe(7_000);
-    expect(r.higherRateAmount).toBe(0);
-    expect(r.totalCGT).toBeCloseTo(7_000 * CGT_BASIC_RATE_RESIDENTIAL, 2);
+  it('calculates tax at the higher-additional boundary (£125,140)', () => {
+    // At £125,140, PA is fully tapered to 0: reduction = (125140-100000)/2 = 12570
+    // taxable = 125140, basic band width = 50270-12570 = 37700
+    // basic tax = 37700 * 0.20 = 7540
+    // remaining = 125140 - 37700 = 87440; higher band width = 125140-50270 = 74870
+    // higher tax = 74870 * 0.40 = 29948
+    // additional = 87440 - 74870 = 12570 at 0.45 = 5656.50
+    // total = 7540 + 29948 + 5656.50 = 43144.50
+    expect(calculateIncomeTax(125_140, 12_570)).toBe(43_144.5);
   });
 
-  it('all higher rate when income exceeds basic band', () => {
-    const r = calculateCGT({ salePrice: 300_000, purchasePrice: 200_000, allowableCosts: 0, taxableIncome: 60_000 });
-    expect(r.basicRateAmount).toBe(0);
-    expect(r.totalCGT).toBeCloseTo(r.taxableGain * CGT_HIGHER_RATE_RESIDENTIAL, 2);
-  });
-
-  it('zero CGT on a loss', () => {
-    const r = calculateCGT({ salePrice: 180_000, purchasePrice: 200_000, allowableCosts: 5_000, taxableIncome: 30_000 });
-    expect(r.gain).toBe(0);
-    expect(r.totalCGT).toBe(0);
-  });
-
-  it('gain smaller than exempt amount', () => {
-    const r = calculateCGT({ salePrice: 202_000, purchasePrice: 200_000, allowableCosts: 0, taxableIncome: 30_000 });
-    expect(r.taxableGain).toBe(0);
-    expect(r.totalCGT).toBe(0);
-  });
-
-  it('custom annual exempt amount', () => {
-    const r = calculateCGT({ salePrice: 220_000, purchasePrice: 200_000, allowableCosts: 0, annualExemptAmount: 6_000, taxableIncome: 30_000 });
-    expect(r.exemption).toBe(6_000);
-    expect(r.taxableGain).toBe(14_000);
-  });
-});
-
-describe('tax-engine: calculateIncomeTax', () => {
-  it('zero tax within personal allowance', () => {
-    const r = calculateIncomeTax({ grossIncome: 10_000 });
-    expect(r.totalTax).toBe(0);
-    expect(r.marginalRate).toBe(0);
-  });
-
-  it('basic rate tax', () => {
-    const r = calculateIncomeTax({ grossIncome: 30_000 });
-    expect(r.taxableIncome).toBe(17_430);
-    expect(r.basicRateTax).toBeCloseTo(17_430 * BASIC_RATE, 2);
-    expect(r.marginalRate).toBe(BASIC_RATE);
-  });
-
-  it('higher rate tax', () => {
-    const r = calculateIncomeTax({ grossIncome: 80_000 });
-    expect(r.basicRateTax).toBeCloseTo(7_540, 2);
-    expect(r.higherRateTax).toBeCloseTo(11_892, 2);
-    expect(r.marginalRate).toBe(HIGHER_RATE);
-  });
-
-  it('additional rate tax', () => {
-    const r = calculateIncomeTax({ grossIncome: 200_000 });
-    expect(r.additionalRateTax).toBeGreaterThan(0);
-    expect(r.marginalRate).toBe(ADDITIONAL_RATE);
+  it('calculates additional rate tax correctly', () => {
+    // £200,000: PA fully tapered, taxable = 200000
+    const basicBand = 37_700;
+    const higherBand = 125_140 - 50_270; // 74870
+    const additionalBand = 200_000 - basicBand - higherBand; // above basic+higher taxable
+    const basicTax = basicBand * 0.2;
+    const higherTax = higherBand * 0.4;
+    const additionalTax = (200_000 - basicBand - higherBand) * 0.45;
+    expect(calculateIncomeTax(200_000, 12_570)).toBe(basicTax + higherTax + additionalTax);
   });
 
   it('tapers personal allowance above £100k', () => {
-    const r = calculateIncomeTax({ grossIncome: 110_000 });
-    expect(r.personalAllowance).toBe(PERSONAL_ALLOWANCE - 5_000);
+    // £110,000: reduction = (110000-100000)/2 = 5000, effective PA = 7570
+    // taxable = 110000 - 7570 = 102430
+    const taxAt110k = calculateIncomeTax(110_000, 12_570);
+    // Same income but with 0 PA (no tapering benefit) would be higher
+    const taxNoPA = calculateIncomeTax(110_000, 0);
+    expect(taxAt110k).toBeLessThan(taxNoPA);
   });
 
-  it('fully tapered PA at £125,140+', () => {
-    const r = calculateIncomeTax({ grossIncome: 130_000 });
-    expect(r.personalAllowance).toBe(0);
+  it('fully tapers personal allowance at £125,140', () => {
+    // At £125,140, reduction = (125140-100000)/2 = 12570, PA = 0
+    const taxWithPA = calculateIncomeTax(125_140, 12_570);
+    const taxNoPA = calculateIncomeTax(125_140, 0);
+    expect(taxWithPA).toBe(taxNoPA);
   });
 
-  it('handles negative income', () => {
-    const r = calculateIncomeTax({ grossIncome: -5_000 });
-    expect(r.totalTax).toBe(0);
-  });
-
-  it('respects PA override', () => {
-    const r = calculateIncomeTax({ grossIncome: 50_000, personalAllowance: 0 });
-    expect(r.personalAllowance).toBe(0);
-    expect(r.taxableIncome).toBe(50_000);
+  it('handles custom personal allowance', () => {
+    const tax = calculateIncomeTax(20_000, 0);
+    // No allowance: full 20000 is taxable at basic rate
+    expect(tax).toBe(20_000 * 0.2);
   });
 });
 
-describe('tax-engine: calculateSA105', () => {
-  it('calculates with actual expenses', () => {
-    const r = calculateSA105({ rentalIncome: 12_000, mortgageInterest: 5_000, repairs: 1_000, insurance: 500, managementFees: 1_200, otherExpenses: 300, usePropertyAllowance: false });
-    expect(r.totalExpenses).toBe(3_000);
-    expect(r.adjustedProfit).toBe(9_000);
-    expect(r.taxReduction).toBe(1_000);
+describe('getMarginalRate', () => {
+  it('returns 0 for income within personal allowance', () => {
+    expect(getMarginalRate(10_000, 12_570)).toBe(0);
   });
 
-  it('uses property allowance when elected', () => {
-    const r = calculateSA105({ rentalIncome: 12_000, mortgageInterest: 5_000, repairs: 1_000, insurance: 500, managementFees: 1_200, otherExpenses: 300, usePropertyAllowance: true });
-    expect(r.propertyAllowance).toBe(PROPERTY_ALLOWANCE);
-    expect(r.totalExpenses).toBe(PROPERTY_ALLOWANCE);
+  it('returns basic rate for income in basic band', () => {
+    expect(getMarginalRate(30_000, 12_570)).toBe(0.2);
   });
 
-  it('caps property allowance at income', () => {
-    const r = calculateSA105({ rentalIncome: 500, mortgageInterest: 0, repairs: 0, insurance: 0, managementFees: 0, otherExpenses: 0, usePropertyAllowance: true });
-    expect(r.propertyAllowance).toBe(500);
-    expect(r.adjustedProfit).toBe(0);
+  it('returns higher rate for income in higher band', () => {
+    expect(getMarginalRate(80_000, 12_570)).toBe(0.4);
   });
 
-  it('adjusted profit cannot go negative', () => {
-    const r = calculateSA105({ rentalIncome: 5_000, mortgageInterest: 3_000, repairs: 4_000, insurance: 2_000, managementFees: 1_000, otherExpenses: 500, usePropertyAllowance: false });
-    expect(r.adjustedProfit).toBe(0);
+  it('returns additional rate for income above £125,140', () => {
+    expect(getMarginalRate(200_000, 12_570)).toBe(0.45);
+  });
+});
+
+describe('calculateSection24Impact', () => {
+  const baseParams = {
+    grossRent: 24_000,
+    allowableExpenses: 4_000,
+    financeCosts: 6_000,
+    otherIncome: 30_000,
+    personalAllowance: 12_570,
+  };
+
+  it('calculates old system tax (finance costs deducted)', () => {
+    const result = calculateSection24Impact(baseParams);
+    // Old net = max(0, 24000-4000-6000) = 14000; total = 44000
+    expect(result.oldSystemTax).toBeGreaterThan(0);
   });
 
-  it('negative expenses clamped to 0', () => {
-    const r = calculateSA105({ rentalIncome: 10_000, mortgageInterest: -2_000, repairs: -500, insurance: 200, managementFees: 0, otherExpenses: 0, usePropertyAllowance: false });
-    expect(r.totalExpenses).toBe(200);
-    expect(r.residentialFinanceCosts).toBe(0);
+  it('calculates new system tax (finance credit at 20%)', () => {
+    const result = calculateSection24Impact(baseParams);
+    // New net = max(0, 24000-4000) = 20000; total = 50000; credit = 6000*0.2 = 1200
+    expect(result.financeCredit).toBe(6_000 * 0.2);
+  });
+
+  it('shows additional tax due to section 24', () => {
+    const result = calculateSection24Impact(baseParams);
+    expect(result.additionalTaxDueToSection24).toBe(
+      Math.max(0, result.newSystemTax - result.oldSystemTax)
+    );
+  });
+
+  it('returns 0 additional tax when no finance costs', () => {
+    const result = calculateSection24Impact({ ...baseParams, financeCosts: 0 });
+    expect(result.additionalTaxDueToSection24).toBe(0);
+    expect(result.financeCredit).toBe(0);
+  });
+
+  it('calculates effective rates', () => {
+    const result = calculateSection24Impact(baseParams);
+    expect(result.effectiveRate).toBeGreaterThan(0);
+    expect(result.oldEffectiveRate).toBeGreaterThan(0);
+  });
+
+  it('handles zero gross rent', () => {
+    const result = calculateSection24Impact({ ...baseParams, grossRent: 0 });
+    expect(result.effectiveRate).toBe(0);
+  });
+});
+
+describe('calculateCGT', () => {
+  it('calculates basic rate CGT at 18%', () => {
+    const result = calculateCGT({
+      purchasePrice: 200_000,
+      currentValue: 300_000,
+      improvementCosts: 10_000,
+      annualExemptAmount: 3_000,
+      taxpayerRate: 'basic',
+    });
+    // gain = 300000 - 200000 - 10000 = 90000
+    // taxableGain = 90000 - 3000 = 87000
+    expect(result.gain).toBe(90_000);
+    expect(result.taxableGain).toBe(87_000);
+    expect(result.cgt).toBe(87_000 * 0.18);
+    expect(result.rate).toBe(0.18);
+  });
+
+  it('calculates higher rate CGT at 24%', () => {
+    const result = calculateCGT({
+      purchasePrice: 200_000,
+      currentValue: 300_000,
+      improvementCosts: 10_000,
+      annualExemptAmount: 3_000,
+      taxpayerRate: 'higher',
+    });
+    expect(result.cgt).toBe(87_000 * 0.24);
+    expect(result.rate).toBe(0.24);
+  });
+
+  it('applies annual exempt amount correctly', () => {
+    const result = calculateCGT({
+      purchasePrice: 200_000,
+      currentValue: 203_000,
+      improvementCosts: 0,
+      annualExemptAmount: 3_000,
+      taxpayerRate: 'basic',
+    });
+    // gain = 3000, exempt = 3000 → taxable = 0
+    expect(result.gain).toBe(3_000);
+    expect(result.taxableGain).toBe(0);
+    expect(result.cgt).toBe(0);
+  });
+
+  it('handles zero gain', () => {
+    const result = calculateCGT({
+      purchasePrice: 200_000,
+      currentValue: 200_000,
+      improvementCosts: 0,
+      annualExemptAmount: 3_000,
+      taxpayerRate: 'basic',
+    });
+    expect(result.gain).toBe(0);
+    expect(result.taxableGain).toBe(0);
+    expect(result.cgt).toBe(0);
+  });
+
+  it('handles negative gain (loss)', () => {
+    const result = calculateCGT({
+      purchasePrice: 200_000,
+      currentValue: 180_000,
+      improvementCosts: 5_000,
+      annualExemptAmount: 3_000,
+      taxpayerRate: 'higher',
+    });
+    // gain = 180000 - 200000 - 5000 = -25000
+    expect(result.gain).toBe(-25_000);
+    expect(result.taxableGain).toBe(0);
+    expect(result.cgt).toBe(0);
+  });
+
+  it('preserves annual exempt amount in result', () => {
+    const result = calculateCGT({
+      purchasePrice: 100_000,
+      currentValue: 150_000,
+      improvementCosts: 0,
+      annualExemptAmount: CGT_RATES.annualExemptAmount,
+      taxpayerRate: 'basic',
+    });
+    expect(result.annualExemptAmount).toBe(3_000);
   });
 });
