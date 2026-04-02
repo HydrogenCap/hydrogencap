@@ -10,6 +10,7 @@ export interface LeaseholdDetails {
   ground_rent_annual: number | null;
   ground_rent_review_date: string | null;
   ground_rent_escalation: string | null;
+  ground_rent_escalation_detail: string | null;
   service_charge_annual: number | null;
   service_charge_review_date: string | null;
   managing_agent: string | null;
@@ -17,6 +18,17 @@ export interface LeaseholdDetails {
   managing_agent_email: string | null;
   lease_start_date: string | null;
   original_term_years: number | null;
+  original_lease_years: number | null;
+  remaining_years: number | null;
+  ground_rent: number | null;
+  ground_rent_frequency: string | null;
+  service_charge: number | null;
+  service_charge_frequency: string | null;
+  management_company: string | null;
+  freeholder_name: string | null;
+  freeholder_contact: string | null;
+  lease_extension_eligible: boolean | null;
+  estimated_extension_cost: number | null;
   next_review_date: string | null;
   section_20_notices_pending: boolean;
   notes: string | null;
@@ -45,7 +57,7 @@ export function useLeaseholdDetails(propertyId?: string) {
   });
 }
 
-export function useUpsertLeaseholdDetails() {
+export function useUpdateLeaseholdDetails() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -55,6 +67,7 @@ export function useUpsertLeaseholdDetails() {
       groundRentAnnual?: number;
       groundRentReviewDate?: string;
       groundRentEscalation?: string;
+      groundRentEscalationDetail?: string;
       serviceChargeAnnual?: number;
       serviceChargeReviewDate?: string;
       managingAgent?: string;
@@ -62,6 +75,17 @@ export function useUpsertLeaseholdDetails() {
       managingAgentEmail?: string;
       leaseStartDate?: string;
       originalTermYears?: number;
+      originalLeaseYears?: number;
+      remainingYears?: number;
+      groundRent?: number;
+      groundRentFrequency?: string;
+      serviceCharge?: number;
+      serviceChargeFrequency?: string;
+      managementCompany?: string;
+      freeholderName?: string;
+      freeholderContact?: string;
+      leaseExtensionEligible?: boolean;
+      estimatedExtensionCost?: number;
       nextReviewDate?: string;
       section20NoticesPending?: boolean;
       notes?: string;
@@ -75,6 +99,7 @@ export function useUpsertLeaseholdDetails() {
           ground_rent_annual: details.groundRentAnnual ?? null,
           ground_rent_review_date: details.groundRentReviewDate ?? null,
           ground_rent_escalation: details.groundRentEscalation ?? null,
+          ground_rent_escalation_detail: details.groundRentEscalationDetail ?? null,
           service_charge_annual: details.serviceChargeAnnual ?? null,
           service_charge_review_date: details.serviceChargeReviewDate ?? null,
           managing_agent: details.managingAgent ?? null,
@@ -82,6 +107,17 @@ export function useUpsertLeaseholdDetails() {
           managing_agent_email: details.managingAgentEmail ?? null,
           lease_start_date: details.leaseStartDate ?? null,
           original_term_years: details.originalTermYears ?? null,
+          original_lease_years: details.originalLeaseYears ?? null,
+          remaining_years: details.remainingYears ?? null,
+          ground_rent: details.groundRent ?? null,
+          ground_rent_frequency: details.groundRentFrequency ?? null,
+          service_charge: details.serviceCharge ?? null,
+          service_charge_frequency: details.serviceChargeFrequency ?? null,
+          management_company: details.managementCompany ?? null,
+          freeholder_name: details.freeholderName ?? null,
+          freeholder_contact: details.freeholderContact ?? null,
+          lease_extension_eligible: details.leaseExtensionEligible ?? null,
+          estimated_extension_cost: details.estimatedExtensionCost ?? null,
           next_review_date: details.nextReviewDate ?? null,
           section_20_notices_pending: details.section20NoticesPending ?? false,
           notes: details.notes ?? null,
@@ -93,8 +129,106 @@ export function useUpsertLeaseholdDetails() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['leasehold-details', data.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['leasehold-details'] });
       toast({ title: 'Leasehold details saved' });
     },
+  });
+}
+
+// Keep old name as alias for backwards compatibility with existing code
+export const useUpsertLeaseholdDetails = useUpdateLeaseholdDetails;
+
+export interface LeaseholdAlert {
+  propertyId: string;
+  addressLine1: string;
+  city: string;
+  remainingYears: number | null;
+  leaseYearsRemaining: number | null;
+  groundRentReviewDate: string | null;
+  groundRentEscalation: string | null;
+  alertType: 'short_lease' | 'ground_rent_review';
+}
+
+export function useLeaseholdAlerts() {
+  const { data: orgId } = useUserOrg();
+
+  return useQuery({
+    queryKey: ['leasehold-alerts', orgId],
+    queryFn: async () => {
+      if (!orgId) return [];
+
+      // Fetch all leasehold details for the org
+      const { data: leaseholds, error: lError } = await supabase
+        .from('leasehold_details')
+        .select('*')
+        .eq('org_id', orgId);
+
+      if (lError) throw lError;
+
+      // Fetch all properties to get addresses and lease_years_remaining
+      const { data: properties, error: pError } = await supabase
+        .from('properties_v2')
+        .select('id, address_line_1, city, org_id')
+        .eq('org_id', orgId);
+
+      if (pError) throw pError;
+
+      // Also check V1 properties for lease_years_remaining
+      const { data: v1Props, error: v1Error } = await supabase
+        .from('properties')
+        .select('id, lease_years_remaining')
+        .eq('org_id', orgId);
+
+      if (v1Error) throw v1Error;
+
+      const propMap = new Map(properties?.map(p => [p.id, p]) ?? []);
+      const v1Map = new Map(v1Props?.map(p => [p.id, p.lease_years_remaining]) ?? []);
+
+      const alerts: LeaseholdAlert[] = [];
+      const now = new Date();
+      const twelveMonths = new Date(now);
+      twelveMonths.setMonth(twelveMonths.getMonth() + 12);
+
+      for (const ld of (leaseholds ?? [])) {
+        const prop = propMap.get(ld.property_id);
+        if (!prop) continue;
+
+        const remainingYears = ld.remaining_years ?? v1Map.get(ld.property_id) ?? null;
+
+        // Short lease alert (below 80 years)
+        if (remainingYears !== null && remainingYears < 80) {
+          alerts.push({
+            propertyId: ld.property_id,
+            addressLine1: prop.address_line_1,
+            city: prop.city,
+            remainingYears,
+            leaseYearsRemaining: remainingYears,
+            groundRentReviewDate: ld.ground_rent_review_date,
+            groundRentEscalation: ld.ground_rent_escalation,
+            alertType: 'short_lease',
+          });
+        }
+
+        // Ground rent review in next 12 months
+        if (ld.ground_rent_review_date) {
+          const reviewDate = new Date(ld.ground_rent_review_date);
+          if (reviewDate >= now && reviewDate <= twelveMonths) {
+            alerts.push({
+              propertyId: ld.property_id,
+              addressLine1: prop.address_line_1,
+              city: prop.city,
+              remainingYears,
+              leaseYearsRemaining: remainingYears,
+              groundRentReviewDate: ld.ground_rent_review_date,
+              groundRentEscalation: ld.ground_rent_escalation,
+              alertType: 'ground_rent_review',
+            });
+          }
+        }
+      }
+
+      return alerts;
+    },
+    enabled: !!orgId,
   });
 }

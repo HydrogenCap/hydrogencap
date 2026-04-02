@@ -34,6 +34,7 @@ import { usePortfolioMonthlySummary } from '@/hooks/useFinancialSnapshots';
 import { useVoidRate } from '@/hooks/useVoidPeriods';
 import { useLoanAlerts } from '@/hooks/useLoanFacilities';
 import { useUpcomingComplianceEvents } from '@/hooks/useCalendarEvents';
+import { LeaseholdAlertWidget } from '@/components/dashboard/LeaseholdAlertWidget';
 
 import { formatGBP, formatPercent } from '@/lib/calculations';
 import { MetricKey, MetricBreakdown } from '@/lib/metricsConfig';
@@ -362,6 +363,9 @@ function DashboardPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Leasehold Alerts */}
+            <LeaseholdAlertWidget />
 
             {/* Zone 3 — Tabbed Detail */}
             <DashboardTabs
