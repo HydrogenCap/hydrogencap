@@ -20,6 +20,7 @@ import { RightToRentCard } from '@/components/tenants-v2/RightToRentCard';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { TenancyChecklist } from '@/components/lettings/TenancyChecklist';
+import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 
 const STATUS_BG: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700', prospective: 'bg-blue-100 text-blue-700',
@@ -263,6 +264,9 @@ export default function TenantDetailV2() {
             )}
           </CardContent>
         </Card>
+
+        {/* Communications */}
+        <CommunicationTimeline tenantId={id} title="Tenant Communications" />
 
         {/* Notes */}
         {tenant.notes && (

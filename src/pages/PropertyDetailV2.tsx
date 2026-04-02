@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
 import { SEVERITY } from '@/lib/design-tokens';
+import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 
 function fmtDate(d: string | null) {
   if (!d) return '—';
@@ -197,6 +198,7 @@ export default function PropertyDetailV2() {
               )}
             </TabsTrigger>
             <TabsTrigger value="lending">Lending</TabsTrigger>
+            <TabsTrigger value="comms">Comms</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
 
@@ -320,6 +322,11 @@ export default function PropertyDetailV2() {
               entities={entities}
               propertyValuation={property.current_valuation}
             />
+          </TabsContent>
+
+          {/* Communications Tab */}
+          <TabsContent value="comms" className="space-y-6">
+            <CommunicationTimeline propertyId={property.id} title="Property Communications" />
           </TabsContent>
 
           {/* Timeline Tab */}

@@ -12,6 +12,7 @@ import { PhotoGallery } from '@/components/maintenance/PhotoGallery';
 import { QuoteComparisonSection } from '@/components/maintenance/QuoteComparisonSection';
 import { SuggestedContractors } from '@/components/maintenance/SuggestedContractors';
 import { LoadingState } from '@/components/common';
+import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -169,6 +170,14 @@ export default function MaintenanceRequestDetail() {
               invoiceReference={typedRequest.invoice_reference ?? null}
               costApprovedBy={typedRequest.cost_approved_by ?? null}
               costApprovedAt={typedRequest.cost_approved_at ?? null}
+            />
+
+            <CommunicationTimeline
+              propertyId={request.property_id}
+              relatedToType="maintenance_request"
+              relatedToId={requestId}
+              title="Communications"
+              compact
             />
 
             {!wo ? (
