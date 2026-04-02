@@ -162,9 +162,9 @@ export function useUpdateAIReportSection() {
       const sections = [...(report.sections as unknown as ReportSection[])];
       sections[sectionIndex] = { ...sections[sectionIndex], ...updatedSection };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
-        .update({ sections } as any)
+        .update({ sections })
         .eq('id', reportId)
         .select()
         .single();

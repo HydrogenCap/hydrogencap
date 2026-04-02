@@ -157,6 +157,9 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
               target_rent_pcm: r.target_rent_pcm,
               occupancy_status: 'vacant' as const,
               notes: null,
+              size_sqm: null,
+              occupancy_type: null,
+              amenity_type: null,
             }))
           );
         } catch (err) {

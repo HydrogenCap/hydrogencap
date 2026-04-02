@@ -139,13 +139,14 @@ export function OnboardingWizard() {
           org_id: orgId,
           entity_id: resolvedEntityId,
           address_line_1: address.trim(),
+          city: '',
           postcode: postcode.trim().toUpperCase(),
           country: 'England',
           property_type: propertyType,
           lifecycle_stage: 'pipeline',
           total_lettable_rooms: parseInt(beds) || 0,
           current_valuation: parseInt(currentValue) || undefined,
-        });
+        } as any);
       if (error) throw error;
     },
   });

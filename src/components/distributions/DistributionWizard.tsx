@@ -168,9 +168,10 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
     const investorMap = new Map(investors?.map(i => [i.id, i]) || []);
 
     return shareholders.map(s => {
-      const inv = s.investor_id ? investorMap.get(s.investor_id) : null;
+      const investorId = (s as any).shareholder_entity_id;
+      const inv = investorId ? investorMap.get(investorId) : null;
       return {
-        investorId: s.investor_id || s.id,
+        investorId: investorId || s.id,
         investorName: inv?.investor_name || s.shareholder_name,
         entityId: entityId || null,
         entityName: entities?.find(e => e.id === entityId)?.entity_name || null,
