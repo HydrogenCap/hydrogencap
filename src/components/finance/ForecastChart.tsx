@@ -11,6 +11,13 @@ import {
   Tooltip,
 } from 'recharts';
 import { formatGBP } from '@/lib/calculations';
+import {
+  CHART_COLOURS,
+  CHART_SEMANTIC,
+  CHART_DEFAULTS,
+  CHART_TOOLTIP_STYLE,
+  CHART_AXIS_TICK,
+} from '@/lib/chart-tokens';
 import type { MonthlyProjection, ForecastScenarios } from '@/hooks/useFinancialForecasts';
 
 interface ForecastChartProps {
@@ -100,17 +107,22 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
         <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={360}>
-            <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <ComposedChart data={chartData} margin={CHART_DEFAULTS.margin}>
+              <CartesianGrid
+                strokeDasharray={CHART_DEFAULTS.gridStrokeDasharray}
+                stroke={CHART_DEFAULTS.gridStroke}
+              />
               <XAxis
                 dataKey="date"
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={CHART_AXIS_TICK}
+                tickLine={CHART_DEFAULTS.tickLine}
+                axisLine={CHART_DEFAULTS.axisLine}
                 interval="preserveStartEnd"
               />
               <YAxis
-                className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={CHART_AXIS_TICK}
+                tickLine={CHART_DEFAULTS.tickLine}
+                axisLine={CHART_DEFAULTS.axisLine}
                 tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
@@ -124,12 +136,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                   };
                   return [formatGBP(value), labels[name] || name];
                 }}
-                contentStyle={{
-                  background: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                {...CHART_TOOLTIP_STYLE}
               />
 
               {scenarios ? (
@@ -138,7 +145,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                   <Area
                     dataKey="optimistic"
                     stroke="none"
-                    fill="hsl(var(--chart-2))"
+                    fill={CHART_SEMANTIC.positive}
                     fillOpacity={0.1}
                     type="monotone"
                   />
@@ -152,7 +159,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                   {/* Lines on top */}
                   <Line
                     dataKey="optimistic"
-                    stroke="hsl(var(--chart-2))"
+                    stroke={CHART_SEMANTIC.positive}
                     strokeWidth={1.5}
                     strokeDasharray="4 2"
                     dot={false}
@@ -161,7 +168,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                   />
                   <Line
                     dataKey="pessimistic"
-                    stroke="hsl(var(--chart-5))"
+                    stroke={CHART_SEMANTIC.negative}
                     strokeWidth={1.5}
                     strokeDasharray="4 2"
                     dot={false}
@@ -170,7 +177,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                   />
                   <Line
                     dataKey="base"
-                    stroke="hsl(var(--chart-1))"
+                    stroke={CHART_COLOURS.primary}
                     strokeWidth={2.5}
                     dot={false}
                     name="base"
@@ -181,8 +188,8 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                 <>
                   <Area
                     dataKey="base"
-                    stroke="hsl(var(--chart-1))"
-                    fill="hsl(var(--chart-1))"
+                    stroke={CHART_COLOURS.primary}
+                    fill={CHART_COLOURS.primary}
                     fillOpacity={0.08}
                     strokeWidth={2}
                     dot={false}
@@ -191,7 +198,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                   />
                   <Line
                     dataKey="cumulative"
-                    stroke="hsl(var(--chart-3))"
+                    stroke={CHART_COLOURS.tertiary}
                     strokeWidth={2}
                     dot={false}
                     name="cumulative"
@@ -205,15 +212,15 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
           {scenarios && (
             <div className="flex items-center justify-center gap-6 mt-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-0.5 w-4 rounded" style={{ background: 'hsl(var(--chart-1))' }} />
+                <span className="inline-block h-0.5 w-4 rounded" style={{ background: CHART_COLOURS.primary }} />
                 Base Case
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-0.5 w-4 rounded border-b border-dashed" style={{ borderColor: 'hsl(var(--chart-2))' }} />
+                <span className="inline-block h-0.5 w-4 rounded border-b border-dashed" style={{ borderColor: CHART_SEMANTIC.positive }} />
                 Optimistic
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-0.5 w-4 rounded border-b border-dashed" style={{ borderColor: 'hsl(var(--chart-5))' }} />
+                <span className="inline-block h-0.5 w-4 rounded border-b border-dashed" style={{ borderColor: CHART_SEMANTIC.negative }} />
                 Pessimistic
               </span>
             </div>
