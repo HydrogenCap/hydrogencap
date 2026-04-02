@@ -18,6 +18,7 @@ import {
   IncomeSection,
   NotesSection,
 } from '@/components/property/PropertyEditFormSections';
+import { LeaseholdFormSection } from '@/components/property/LeaseholdFormSection';
 
 // Unified schema covering all fields used by both create and edit forms
 export const propertyFormSchema = z.object({
@@ -117,6 +118,9 @@ export function PropertyForm({
   const watchedPostcode = useWatch({ control: form.control, name: 'postcode' });
   const watchedAddress = useWatch({ control: form.control, name: 'address_line' });
   const watchedGeocodeStatus = useWatch({ control: form.control, name: 'geocode_status' });
+
+  // Watch tenure for leasehold form section
+  const watchedTenure = useWatch({ control: form.control, name: 'tenure' });
 
   // Watch fields for mortgage auto-calculation
   const watchedBalance = useWatch({ control: form.control, name: 'current_mortgage_balance_gbp' });
@@ -246,6 +250,8 @@ export function PropertyForm({
         />
 
         <LandRegistrySection form={form as any} propertyId={propertyId} />
+
+        <LeaseholdFormSection propertyId={propertyId} tenure={watchedTenure} />
 
         <ValuationSection form={form as any} />
 

@@ -21,6 +21,7 @@ import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { PropertyStatusBar } from '@/components/property-detail/PropertyStatusBar';
 import { PropertyHeader } from '@/components/property-detail/PropertyHeader';
 import { PropertyTimeline } from '@/components/property-detail/PropertyTimeline';
+import { LeaseholdHealthCard } from '@/components/property-detail/LeaseholdHealthCard';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useInsurancePolicies } from '@/hooks/useInsurance';
 import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
@@ -228,6 +229,9 @@ export default function PropertyDetailV2() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Leasehold Health */}
+            <LeaseholdHealthCard propertyId={property.id} />
 
             {/* Rooms */}
             <PropertyRoomsSection propertyId={property.id} />
