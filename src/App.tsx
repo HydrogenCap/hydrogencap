@@ -90,6 +90,7 @@ const FinancialForecast = lazy(() => import("./pages/FinancialForecast"));
 const Distributions = lazy(() => import("./pages/Distributions"));
 const DocumentTemplates = lazy(() => import("./pages/DocumentTemplates"));
 const BulkUpload = lazy(() => import("./pages/BulkUpload"));
+const BulkDocumentScanner = lazy(() => import("./pages/BulkDocumentScanner"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
@@ -635,7 +636,8 @@ const App = () => (
             <Route path="/financial-forecast" element={<ProtectedRoute><RouteBoundary><FinancialForecast /></RouteBoundary></ProtectedRoute>} />
             <Route path="/distributions" element={<ProtectedRoute><RouteBoundary><Distributions /></RouteBoundary></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><RouteBoundary><DocumentTemplates /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkDocumentScanner /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/bulk-upload-legacy" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
             <Route
               path="/contractors"
               element={
