@@ -19,7 +19,7 @@ export default function AddComplianceWizard() {
   const handleSubmit = async (payload: WizardPayload, draftId: string) => {
     const orgId = await fetchUserOrgId();
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('compliance_documents_v2')
       .insert({
         org_id: orgId,
@@ -38,7 +38,7 @@ export default function AddComplianceWizard() {
 
     if (error) throw error;
 
-    await supabase
+    await (supabase as any)
       .from('wizard_drafts')
       .update({ property_id: payload.property_id as string })
       .eq('id', draftId);

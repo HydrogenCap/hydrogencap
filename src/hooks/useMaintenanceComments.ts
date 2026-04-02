@@ -22,7 +22,7 @@ export function useMaintenanceComments(requestId: string | undefined) {
   return useQuery({
     queryKey: ['maintenance_comments', requestId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_comments')
         .select('*')
         .eq('maintenance_request_id', requestId!)
@@ -50,7 +50,7 @@ export function useAddMaintenanceComment() {
       if (!orgId) throw new Error('No organization found');
 
       const payload: MaintenanceCommentInsert = { ...comment, org_id: orgId };
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_comments')
         .insert(payload)
         .select()

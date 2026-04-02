@@ -34,7 +34,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
       if (!propertyId) return null;
 
       // 1. Get the property with its legal ownership links
-      const { data: property, error: propError } = await supabase
+      const { data: property, error: propError } = await (supabase as any)
         .from('properties_v2')
         .select('id, address_line_1, postcode')
         .eq('id', propertyId)
@@ -43,7 +43,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
       if (propError) throw propError;
 
       // 2. Get legal ownership from property_legal_ownership joined with companies
-      const { data: legalOwnership, error: loError } = await supabase
+      const { data: legalOwnership, error: loError } = await (supabase as any)
         .from('property_legal_ownership')
         .select(`
           id,
@@ -64,7 +64,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
         
         // If there's an owning_company_id, look up that company's shareholders
         if (owner.owning_company_id) {
-          const { data: company, error: compError } = await supabase
+          const { data: company, error: compError } = await (supabase as any)
             .from('companies')
             .select('id, legal_name')
             .eq('id', owner.owning_company_id)
@@ -79,12 +79,12 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
           });
 
           // Get share classes and shareholdings for this company
-          const { data: shareClasses } = await supabase
+          const { data: shareClasses } = await (supabase as any)
             .from('share_classes')
             .select('id, name, issued_shares')
             .eq('company_id', company.id);
 
-          const { data: shareholdings } = await supabase
+          const { data: shareholdings } = await (supabase as any)
             .from('shareholdings')
             .select(`
               id,
@@ -130,7 +130,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
           });
 
           // Check for old-style shareholdings
-          const { data: oldShareholdings } = await supabase
+          const { data: oldShareholdings } = await (supabase as any)
             .from('entity_shareholdings')
             .select(`
               id,

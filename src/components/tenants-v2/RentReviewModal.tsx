@@ -34,7 +34,7 @@ export function RentReviewModal({ open, onOpenChange, tenancyId }: RentReviewMod
     queryKey: ['tenancy-for-review', tenancyId],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .select(`
           id, rent_amount_pcm, rent_frequency, start_date, initial_end_date, status,
@@ -56,7 +56,7 @@ export function RentReviewModal({ open, onOpenChange, tenancyId }: RentReviewMod
     queryKey: ['area-average-rent', outwardCode],
     enabled: open && !!outwardCode,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rooms_v2')
         .select('current_rent_pcm, properties_v2!inner(postcode)')
         .ilike('properties_v2.postcode', `${outwardCode}%`)

@@ -50,7 +50,7 @@ export function InviteTenantPortalDialog({ open, onOpenChange, tenant, tenancies
   const { data: existingInvites } = useQuery({
     queryKey: ['tenant-portal-invites', tenant.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenant_portal_invites')
         .select('*')
         .eq('tenant_id', tenant.id)
@@ -65,7 +65,7 @@ export function InviteTenantPortalDialog({ open, onOpenChange, tenant, tenancies
   const { data: portalAccess } = useQuery({
     queryKey: ['tenant-portal-access-check', tenant.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenant_portal_access')
         .select('*')
         .eq('tenant_id', tenant.id)
@@ -85,7 +85,7 @@ export function InviteTenantPortalDialog({ open, onOpenChange, tenant, tenancies
 
       const { data: user } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenant_portal_invites')
         .insert({
           org_id: orgId,

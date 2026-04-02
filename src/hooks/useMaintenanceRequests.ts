@@ -76,7 +76,7 @@ export function useMaintenanceRequests(filters?: {
   return useQuery({
     queryKey: ['maintenance_requests', filters],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .order('created_at', { ascending: false });
@@ -97,7 +97,7 @@ export function useMaintenanceOverview() {
   return useQuery({
     queryKey: ['maintenance_overview'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_overview' as never)
         .select('*');
       if (error) throw error;
@@ -110,7 +110,7 @@ export function useOpenMaintenanceRequests() {
   return useQuery({
     queryKey: ['maintenance_requests', 'open'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .not('status', 'in', '("completed","verified","closed","cancelled")')
@@ -127,7 +127,7 @@ export function useMaintenanceRequest(requestId: string | undefined) {
   return useQuery({
     queryKey: ['maintenance_requests', requestId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .eq('id', requestId!)
@@ -170,7 +170,7 @@ export function useCreateMaintenanceRequest() {
         status: 'reported',
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .insert(requestPayload)
         .select()
@@ -222,7 +222,7 @@ export function useUpdateMaintenanceRequest() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: MaintenanceRequestUpdate & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .update(updates)
         .eq('id', id)

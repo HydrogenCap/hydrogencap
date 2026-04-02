@@ -12,7 +12,7 @@ export function useInvestorReports(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-reports', investorId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('investor_reports')
         .select('*')
         .eq('investor_id', investorId!)
@@ -64,7 +64,7 @@ export function useGenerateInvestorReport() {
       }
 
       // Save report record
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from('investor_reports')
         .insert({
           org_id: orgId!,

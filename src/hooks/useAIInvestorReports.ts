@@ -47,7 +47,7 @@ export function useAIInvestorReports() {
   return useQuery({
     queryKey: ['ai_investor_reports', org?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
         .select('*')
         .eq('org_id', org!.id)
@@ -65,7 +65,7 @@ export function useAIReportDetail(id: string | undefined) {
   return useQuery({
     queryKey: ['ai_investor_report', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
         .select('*')
         .eq('id', id!)
@@ -113,12 +113,12 @@ export function usePublishAIReport() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
         .update({
           status: 'published',
           published_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', id)
         .select()
         .single();
@@ -151,7 +151,7 @@ export function useUpdateAIReportSection() {
       updatedSection: Partial<ReportSection>;
     }) => {
       // Fetch current report to get all sections
-      const { data: report, error: fetchError } = await supabase
+      const { data: report, error: fetchError } = await (supabase as any)
         .from('ai_investor_reports')
         .select('sections')
         .eq('id', reportId)
@@ -162,9 +162,9 @@ export function useUpdateAIReportSection() {
       const sections = [...(report.sections as unknown as ReportSection[])];
       sections[sectionIndex] = { ...sections[sectionIndex], ...updatedSection };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
-        .update({ sections } as any)
+        .update({ sections })
         .eq('id', reportId)
         .select()
         .single();

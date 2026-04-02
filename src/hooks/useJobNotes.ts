@@ -16,7 +16,7 @@
      queryFn: async () => {
        if (!jobId) return [];
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('job_notes')
          .select('*')
          .eq('job_id', jobId)
@@ -37,7 +37,7 @@
      mutationFn: async ({ jobId, note }: { jobId: string; note: string }) => {
        const { data: { user } } = await supabase.auth.getUser();
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('job_notes')
          .insert({
            job_id: jobId,

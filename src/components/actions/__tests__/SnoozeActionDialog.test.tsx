@@ -22,6 +22,9 @@ const mockRisk = {
   severity: 'critical' as const,
   category: 'compliance',
   actionUrl: '/compliance',
+  type: 'ltv' as const,
+  targetUrl: '/compliance',
+  priority: 1,
 };
 
 describe('SnoozeActionDialog', () => {

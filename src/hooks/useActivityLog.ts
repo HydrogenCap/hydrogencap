@@ -28,7 +28,7 @@ export function useActivityLog(propertyId?: string, options?: { page?: number; p
   return useQuery({
     queryKey: ['activity_log', propertyId, page, pageSize],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('activity_log')
         .select('id, org_id, property_id, entry_type, title, body, metadata, created_at', { count: 'exact' })
         .order('created_at', { ascending: false });
@@ -63,7 +63,7 @@ export function useRecentActivity(limit = 10) {
   return useQuery({
     queryKey: ['activity_log', 'recent', limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('activity_log')
         .select('id, org_id, property_id, entry_type, title, body, metadata, created_at')
         .order('created_at', { ascending: false })
@@ -83,7 +83,7 @@ export function useCreateActivityLog() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('activity_log')
         .insert({ ...entry, org_id: orgId })
         .select()
@@ -114,7 +114,7 @@ export async function logActivity(entry: Omit<ActivityLogInsert, 'org_id'>): Pro
     throw new Error('No organization found');
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('activity_log')
     .insert({ ...entry, org_id: orgId })
     .select()

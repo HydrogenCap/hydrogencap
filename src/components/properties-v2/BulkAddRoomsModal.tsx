@@ -57,6 +57,9 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
         target_rent_pcm: rent ? parseFloat(rent) : null,
         occupancy_status: roomType === 'communal' ? 'unavailable' : 'vacant',
         notes: null,
+        size_sqm: null,
+        occupancy_type: null,
+        amenity_type: null,
       };
       if (unitId) room.unit_id = unitId;
       rooms.push(room);

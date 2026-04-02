@@ -54,7 +54,7 @@ export function useMaintenanceQuotes(requestId: string | undefined) {
   return useQuery({
     queryKey: ['maintenance_quotes', requestId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(MAINTENANCE_QUOTES_TABLE)
         .select(QUOTE_SELECT)
         .eq('maintenance_request_id', requestId!)
@@ -75,7 +75,7 @@ export function useCreateQuote() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(MAINTENANCE_QUOTES_TABLE)
         .insert([{ ...quote, org_id: orgId, status: 'pending' }])
         .select()
@@ -109,7 +109,7 @@ export function useUpdateQuoteStatus() {
       status: 'accepted' | 'rejected';
       amount?: number;
     }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from(MAINTENANCE_QUOTES_TABLE)
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', quoteId);
@@ -117,7 +117,7 @@ export function useUpdateQuoteStatus() {
 
       // If accepted: reject all others, update estimated cost, set status to approved
       if (status === 'accepted') {
-        await supabase
+        await (supabase as any)
           .from(MAINTENANCE_QUOTES_TABLE)
           .update({ status: 'rejected', updated_at: new Date().toISOString() })
           .eq('maintenance_request_id', requestId)
@@ -125,7 +125,7 @@ export function useUpdateQuoteStatus() {
 
         if (amount) {
           const updates: MaintenanceRequestApprovalUpdate = { estimated_cost: amount, status: 'approved' };
-          await supabase
+          await (supabase as any)
             .from('maintenance_requests')
             .update(updates)
             .eq('id', requestId);
@@ -152,7 +152,7 @@ export function useSuggestedContractors(category: string | undefined) {
       const orgId = await getUserOrgId();
       if (!orgId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_contractors_v2')
         .select('id, company_name, contact_name, phone, email, service_types, rating')
         .eq('org_id', orgId)

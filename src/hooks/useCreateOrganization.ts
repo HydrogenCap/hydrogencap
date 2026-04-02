@@ -13,7 +13,7 @@ export function useCreateOrganization() {
       if (!userData.user) throw new Error('Not authenticated');
 
       // Create the organization
-      const { data: org, error: orgError } = await supabase
+      const { data: org, error: orgError } = await (supabase as any)
         .from('organizations')
         .insert({ name })
         .select()
@@ -22,7 +22,7 @@ export function useCreateOrganization() {
       if (orgError) throw orgError;
 
       // Create owner membership
-      const { error: memberError } = await supabase
+      const { error: memberError } = await (supabase as any)
         .from('memberships')
         .insert({
           user_id: userData.user.id,

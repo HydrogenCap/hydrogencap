@@ -415,8 +415,9 @@ serve(async (req) => {
 
 // ─── Conversation management handlers ────────────────────────────────────────
 
+// deno-lint-ignore no-explicit-any
 async function handleListConversations(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   corsHeaders: Record<string, string>
 ) {
@@ -440,8 +441,9 @@ async function handleListConversations(
   });
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleDeleteConversation(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {
@@ -463,8 +465,9 @@ async function handleDeleteConversation(
   });
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleUpdateConversation(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   conversationId: string,
   body: { title?: string },
   corsHeaders: Record<string, string>
@@ -492,8 +495,9 @@ async function handleUpdateConversation(
   });
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleGetMessages(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {

@@ -12,7 +12,7 @@ export function useUserRole() {
   const { data: role, isLoading } = useQuery({
     queryKey: ['user-role', user?.id, orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('memberships')
         .select('role')
         .eq('user_id', user!.id)

@@ -217,7 +217,7 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return null;
 
-      const { data: company, error } = await supabase
+      const { data: company, error } = await (supabase as any)
         .from('companies')
         .select(`
           id,
@@ -234,7 +234,7 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
       if (error) throw error;
 
       // Get shareholdings
-      const { data: shareholdings } = await supabase
+      const { data: shareholdings } = await (supabase as any)
         .from('shareholdings')
         .select(`
           shares_held,

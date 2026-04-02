@@ -17,7 +17,7 @@ export default function TenantPortalHome() {
     queryKey: ['tenant-portal-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancies')
         .select(`
           *,
@@ -38,7 +38,7 @@ export default function TenantPortalHome() {
     queryKey: ['tenant-portal-recent-rent', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select('*')
         .eq('tenancy_id', tenancyId)
@@ -55,7 +55,7 @@ export default function TenantPortalHome() {
     queryKey: ['tenant-portal-open-maintenance', tenantId],
     queryFn: async () => {
       if (!tenantId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .select('*')
         .eq('tenant_id', tenantId)

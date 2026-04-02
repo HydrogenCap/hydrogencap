@@ -24,7 +24,7 @@ export function useEscalationRules() {
   return useQuery({
     queryKey: ['escalation-rules'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('escalation_rules')
         .select('*')
         .order('trigger_value', { ascending: true });

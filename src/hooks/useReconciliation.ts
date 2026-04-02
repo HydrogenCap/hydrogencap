@@ -77,7 +77,7 @@ export function useImportStatement() {
         const hash = await computeTransactionHash(txn.date, txn.amount, txn.description);
 
         // Check for existing (dedup)
-        const { data: existing } = await supabase
+        const { data: existing } = await (supabase as any)
           .from('bank_transactions')
           .select('id')
           .eq('import_hash', hash)
@@ -138,7 +138,7 @@ export function useUnmatchedTransactions(bankAccountId?: string) {
   return useQuery({
     queryKey: ['bank_transactions', orgId, 'unmatched', bankAccountId],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('bank_transactions')
         .select('*')
         .eq('org_id', orgId!)
@@ -167,7 +167,7 @@ export function useMatchedTransactions(bankAccountId?: string) {
   return useQuery({
     queryKey: ['bank_transactions', orgId, 'matched', bankAccountId],
     queryFn: async () => {
-      const query = supabase
+      const query = (supabase as any)
         .from('bank_transactions')
         .select('*')
         .eq('org_id', orgId!)
@@ -198,7 +198,7 @@ export function useRunAutoMatch() {
       const orgId = await fetchUserOrgId();
 
       // Fetch unmatched transactions
-      let txnQuery = supabase
+      let txnQuery = (supabase as any)
         .from('bank_transactions')
         .select('*')
         .eq('org_id', orgId)
@@ -220,7 +220,7 @@ export function useRunAutoMatch() {
         )
       `;
 
-      const { data: schedItems, error: schedErr } = await supabase
+      const { data: schedItems, error: schedErr } = await (supabase as any)
         .from('rent_schedule')
         .select(SCHEDULE_SELECT)
         .eq('org_id', orgId)
@@ -262,7 +262,7 @@ export function useRunAutoMatch() {
           status: 'suggested',
           matched_schedule_id: match.scheduleId,
         };
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('bank_transactions')
           .update(updatePayload)
           .eq('id', match.transactionId);
@@ -302,7 +302,7 @@ export function useConfirmMatch() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // 1. Get the transaction
-      const { data: txn, error: txnErr } = await supabase
+      const { data: txn, error: txnErr } = await (supabase as any)
         .from('bank_transactions')
         .select('amount, transaction_date')
         .eq('org_id', orgId)
@@ -311,7 +311,7 @@ export function useConfirmMatch() {
       if (txnErr || !txn) throw txnErr || new Error('Transaction not found');
 
       // 2. Get the schedule item
-      const { data: sched, error: schedErr } = await supabase
+      const { data: sched, error: schedErr } = await (supabase as any)
         .from('rent_schedule')
         .select('tenancy_id, agreement_id, rent_amount, additional_charges, amount_paid')
         .eq('org_id', orgId)
@@ -333,7 +333,7 @@ export function useConfirmMatch() {
         notes: 'Auto-reconciled from bank statement',
       };
 
-      const { data: payment, error: payErr } = await supabase
+      const { data: payment, error: payErr } = await (supabase as any)
         .from('rent_payments')
         .insert(paymentPayload)
         .select()
@@ -349,7 +349,7 @@ export function useConfirmMatch() {
         matched_by: user?.id || null,
       };
 
-      await supabase
+      await (supabase as any)
         .from('bank_transactions')
         .update(transactionUpdate)
         .eq('id', transactionId);
@@ -394,7 +394,7 @@ export function useBulkConfirmMatches() {
           if (!orgId) throw new Error('No organization');
           const { data: { user } } = await supabase.auth.getUser();
 
-          const { data: txn, error: txnErr } = await supabase
+          const { data: txn, error: txnErr } = await (supabase as any)
             .from('bank_transactions')
             .select('amount, transaction_date')
             .eq('org_id', orgId)
@@ -402,7 +402,7 @@ export function useBulkConfirmMatches() {
             .single();
           if (txnErr || !txn) throw txnErr || new Error('Transaction not found');
 
-          const { data: sched, error: schedErr } = await supabase
+          const { data: sched, error: schedErr } = await (supabase as any)
             .from('rent_schedule')
             .select('tenancy_id, agreement_id, rent_amount, additional_charges, amount_paid')
             .eq('org_id', orgId)
@@ -410,7 +410,7 @@ export function useBulkConfirmMatches() {
             .single();
           if (schedErr || !sched) throw schedErr || new Error('Schedule item not found');
 
-          const { data: payment, error: payErr } = await supabase
+          const { data: payment, error: payErr } = await (supabase as any)
             .from('rent_payments')
             .insert({
               org_id: orgId,
@@ -428,7 +428,7 @@ export function useBulkConfirmMatches() {
             .single();
           if (payErr) throw payErr;
 
-          await supabase
+          await (supabase as any)
             .from('bank_transactions')
             .update({
               status: 'matched',
@@ -477,7 +477,7 @@ export function useRejectMatch() {
         matched_schedule_id: null,
       };
 
-      await supabase
+      await (supabase as any)
         .from('bank_transactions')
         .update(updatePayload)
         .eq('id', transactionId);
@@ -492,7 +492,7 @@ export function useExcludeTransaction() {
     mutationFn: async ({ id, reason }: { id: string; reason: 'excluded' | 'non_rent' }) => {
       const updatePayload: BankTransactionUpdate = { status: reason };
 
-      await supabase
+      await (supabase as any)
         .from('bank_transactions')
         .update(updatePayload)
         .eq('id', id);
@@ -509,7 +509,7 @@ export function useReconciliationSummary(bankAccountId?: string) {
   return useQuery({
     queryKey: ['reconciliation_summary', orgId, bankAccountId],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('bank_transactions')
         .select('status, amount')
         .eq('org_id', orgId!)
@@ -552,7 +552,7 @@ export function useReconciledScheduleIds() {
   return useQuery({
     queryKey: ['reconciled_schedule_ids', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bank_transactions')
         .select('matched_schedule_id')
         .eq('org_id', orgId!)

@@ -83,7 +83,7 @@ export function DocumentChecklist({ propertyId, isHmo = false, hasGas = true, te
   const { data: insurancePolicy } = useQuery<InsurancePolicyRecord | null>({
     queryKey: ['insurance-policy', propertyId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('insurance_policies')
         .select('*')
         .eq('property_id', propertyId)

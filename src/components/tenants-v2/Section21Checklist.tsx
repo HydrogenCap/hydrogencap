@@ -34,7 +34,7 @@ export function Section21Checklist({ open, onOpenChange, tenancyId }: Section21C
     queryKey: ['tenancy-s21', tenancyId],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .select(`
           id, start_date, initial_end_date, actual_end_date, status, is_periodic,
@@ -59,7 +59,7 @@ export function Section21Checklist({ open, onOpenChange, tenancyId }: Section21C
     queryKey: ['s21-compliance', propertyId],
     enabled: open && !!propertyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_documents_v2')
         .select('document_type, expiry_date, issue_date, status, is_current')
         .eq('property_id', propertyId!)

@@ -22,7 +22,7 @@ export function useOwnershipData() {
       if (!org?.id) throw new Error('No org');
 
       // First get entity IDs for org
-      const { data: entityIds, error: eidError } = await supabase
+      const { data: entityIds, error: eidError } = await (supabase as any)
         .from('legal_entities')
         .select('id')
         .eq('org_id', org.id);
@@ -31,18 +31,18 @@ export function useOwnershipData() {
 
       // Fetch all three in parallel
       const [entitiesRes, classesRes, shareholdersRes] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('legal_entities')
           .select('id, entity_name, is_group_parent')
           .eq('org_id', org.id),
         ids.length > 0
-          ? supabase
+          ? (supabase as any)
               .from('share_classes_v2')
               .select('id, entity_id, class_name, issued_shares')
               .in('entity_id', ids)
           : Promise.resolve({ data: [], error: null }),
         ids.length > 0
-          ? supabase
+          ? (supabase as any)
               .from('entity_shareholders')
               .select('id, entity_id, shareholder_name, shareholder_entity_id, shareholder_type, share_class_id, shares_held, percentage, effective_date, effective_to')
               .in('entity_id', ids)

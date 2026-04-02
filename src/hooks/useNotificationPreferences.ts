@@ -29,7 +29,7 @@ export function useNotificationPreferences() {
     queryFn: async () => {
       if (!user || !orgId) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.id)
@@ -54,7 +54,7 @@ export function useNotificationPreferences() {
 
       const orgId = await fetchUserOrgId();
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('notification_preferences')
         .upsert({
           user_id: user.id,

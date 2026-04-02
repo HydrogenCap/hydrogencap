@@ -19,7 +19,7 @@ export function useOrgMembers() {
   return useQuery({
     queryKey: ['org-members', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('memberships')
         .select('id, user_id, role, created_at')
         .eq('org_id', orgId!);
@@ -27,12 +27,12 @@ export function useOrgMembers() {
 
       // Fetch profiles for display
       const userIds = data.map(m => m.user_id);
-      const { data: profiles } = await supabase
+      const { data: profiles } = await (supabase as any)
         .from('profiles')
         .select('user_id, email, full_name')
         .in('user_id', userIds);
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) ?? []);
+      const profileMap = new Map((profiles as any[])?.map((p: any) => [p.user_id, p]) ?? []);
 
       return data.map(m => ({
         ...m,
@@ -50,7 +50,7 @@ export function useUpdateMemberRole() {
 
   return useMutation({
     mutationFn: async ({ membershipId, role }: { membershipId: string; role: AppRole }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('memberships')
         .update({ role })
         .eq('id', membershipId);
@@ -72,7 +72,7 @@ export function useRemoveMember() {
 
   return useMutation({
     mutationFn: async (membershipId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('memberships')
         .delete()
         .eq('id', membershipId);

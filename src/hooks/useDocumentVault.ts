@@ -37,7 +37,7 @@ export function useDocumentCategorySummaries() {
   return useQuery({
     queryKey: ['document-vault-summaries'],
     queryFn: async () => {
-      const { data: documents, error } = await supabase
+      const { data: documents, error } = await (supabase as any)
         .from('documents')
         .select('id, category, created_at, expiry_date')
         .is('deleted_at', null);
@@ -95,7 +95,7 @@ export function useVaultDocuments(filters: VaultFilters) {
       let companyPropertyIds: string[] | null = null;
       if (filters.companyId) {
         // Get properties where this company is the legal owner
-        const { data: ownedProperties } = await supabase
+        const { data: ownedProperties } = await (supabase as any)
           .from('properties_v2')
           .select('id')
           .eq('legal_owner_company_id', filters.companyId);
@@ -103,7 +103,7 @@ export function useVaultDocuments(filters: VaultFilters) {
         companyPropertyIds = (ownedProperties || []).map(p => p.id);
       }
 
-      let query = supabase
+      let query = (supabase as any)
         .from('documents')
         .select(`
           *,

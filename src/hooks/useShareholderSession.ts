@@ -25,7 +25,7 @@ export function useShareholderSession() {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('shareholder_access')
         .select('*')
         .eq('user_id', user.id)

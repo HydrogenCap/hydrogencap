@@ -36,7 +36,7 @@ export function useExtractionReviewQueue() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('document_extractions')
         .select('*')
         .eq('org_id', orgId)
@@ -60,7 +60,7 @@ export function useDocumentExtractions(documentId?: string) {
     queryFn: async () => {
       if (!documentId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('document_extractions')
         .select('*')
         .eq('document_id', documentId)
@@ -137,7 +137,7 @@ export function useApproveExtraction() {
         updatePayload.extracted_fields = editedFields;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('document_extractions')
         .update(updatePayload)
         .eq('id', extractionId)
@@ -168,7 +168,7 @@ export function useRejectExtraction() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('document_extractions')
         .update({
           status: 'failed',

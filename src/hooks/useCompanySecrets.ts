@@ -23,7 +23,7 @@ export function useCompanySecretsMasked(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('company_secrets')
         .select('company_id, auth_code_last4, utr_last4, updated_at')
         .eq('company_id', companyId)

@@ -17,7 +17,7 @@ export function useDismissedDuplicates() {
   return useQuery({
     queryKey: ['dismissed_duplicates'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('dismissed_duplicates')
         .select('*');
 
@@ -48,7 +48,7 @@ export function useDismissDuplicate() {
       // Sort IDs to ensure consistent ordering (avoids duplicate dismissals)
       const [sortedId1, sortedId2] = [propertyId1, propertyId2].sort();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('dismissed_duplicates')
         .insert({
           org_id: orgId,
@@ -77,7 +77,7 @@ export function useUndismissDuplicate() {
       // Sort IDs to ensure consistent ordering
       const [sortedId1, sortedId2] = [propertyId1, propertyId2].sort();
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('dismissed_duplicates')
         .delete()
         .eq('property_id_1', sortedId1)

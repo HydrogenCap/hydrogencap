@@ -19,7 +19,7 @@ export function useAppSettings() {
     queryFn: async () => {
       if (!orgId) throw new Error('No org');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from(APP_SETTINGS_TABLE)
         .select('*')
         .eq('org_id', orgId);

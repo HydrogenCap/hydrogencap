@@ -12,6 +12,8 @@ import type { AppRole } from '@/hooks/useUserRole';
 const ROLE_META: Record<AppRole, { label: string; icon: typeof Crown; color: string }> = {
   owner: { label: 'Owner', icon: Crown, color: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
   admin: { label: 'Admin', icon: Shield, color: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+  member: { label: 'Member', icon: Users, color: 'bg-green-500/10 text-green-600 border-green-500/20' },
+  accountant: { label: 'Accountant', icon: Eye, color: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
   viewer: { label: 'Viewer', icon: Eye, color: 'bg-muted text-muted-foreground border-border' },
 };
 

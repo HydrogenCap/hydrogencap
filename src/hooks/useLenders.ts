@@ -33,7 +33,7 @@ export function useLenders() {
   return useQuery({
     queryKey: ['lenders', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lenders')
         .select('*')
         .eq('org_id', orgId!)
@@ -51,7 +51,7 @@ export function useCreateLender() {
   return useMutation({
     mutationFn: async (lender: Omit<Lender, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lenders')
         .insert({ ...lender, org_id: orgId })
         .select()
@@ -67,7 +67,7 @@ export function useUpdateLender() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Lender> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lenders')
         .update(updates)
         .eq('id', id)

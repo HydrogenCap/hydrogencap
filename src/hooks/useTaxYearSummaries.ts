@@ -8,7 +8,7 @@ export function useTaxYearSummaries(taxYear?: TaxYearLabel) {
   return useQuery({
     queryKey: ['tax_year_summaries', org?.id, taxYear],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('tax_year_summaries')
         .select('*')
         .eq('org_id', org!.id);
@@ -45,7 +45,7 @@ export function useLockTaxYear() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, lock }: { id: string; lock: boolean }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('tax_year_summaries')
         .update({ is_locked: lock })
         .eq('id', id);

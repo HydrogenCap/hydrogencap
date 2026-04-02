@@ -17,7 +17,7 @@ export default function TenantDocuments() {
     queryKey: ['tenant-portal-documents', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('documents')
         .select('*')
         .eq('tenancy_id', tenancyId)

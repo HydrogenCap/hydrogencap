@@ -18,7 +18,7 @@ export function usePropertyWithFeatures(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties_v2')
         .select(`
           id,
@@ -57,7 +57,7 @@ export function useAllPropertiesWithFeatures() {
   return useQuery({
     queryKey: ['all_property_features'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties_v2')
         .select(`
           id,

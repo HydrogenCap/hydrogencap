@@ -14,7 +14,7 @@ export function useLocalAuthorities() {
   return useQuery({
     queryKey: ['local_authorities'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('local_authorities')
         .select('*')
         .order('name');
@@ -32,7 +32,7 @@ export function useCreateLocalAuthority() {
   return useMutation({
     mutationFn: async (name: string) => {
       const orgId = await getUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('local_authorities')
         .insert({ name, org_id: orgId })
         .select()
@@ -57,7 +57,7 @@ export function useFindOrCreateLocalAuthority() {
       if (!trimmedName) throw new Error('Name is required');
 
       // First try to find existing (case-insensitive)
-      const { data: existing, error: findError } = await supabase
+      const { data: existing, error: findError } = await (supabase as any)
         .from('local_authorities')
         .select('*')
         .ilike('name', trimmedName)
@@ -68,7 +68,7 @@ export function useFindOrCreateLocalAuthority() {
 
       // Create new if not found
       const orgId = await getUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('local_authorities')
         .insert({ name: trimmedName, org_id: orgId })
         .select()

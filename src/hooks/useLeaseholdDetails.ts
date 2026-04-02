@@ -43,7 +43,7 @@ export function useLeaseholdDetails(propertyId?: string) {
     queryKey: ['leasehold-details', orgId, propertyId],
     queryFn: async () => {
       if (!propertyId || !orgId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('leasehold_details')
         .select('*')
         .eq('org_id', orgId)
@@ -91,7 +91,7 @@ export function useUpdateLeaseholdDetails() {
       notes?: string;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('leasehold_details')
         .upsert({
           property_id: details.propertyId,
@@ -158,7 +158,7 @@ export function useLeaseholdAlerts() {
       if (!orgId) return [];
 
       // Fetch all leasehold details for the org
-      const { data: leaseholds, error: lError } = await supabase
+      const { data: leaseholds, error: lError } = await (supabase as any)
         .from('leasehold_details')
         .select('*')
         .eq('org_id', orgId);
@@ -166,7 +166,7 @@ export function useLeaseholdAlerts() {
       if (lError) throw lError;
 
       // Fetch all properties to get addresses and lease_years_remaining
-      const { data: properties, error: pError } = await supabase
+      const { data: properties, error: pError } = await (supabase as any)
         .from('properties_v2')
         .select('id, address_line_1, city, org_id')
         .eq('org_id', orgId);
@@ -174,15 +174,15 @@ export function useLeaseholdAlerts() {
       if (pError) throw pError;
 
       // Also check V1 properties for lease_years_remaining
-      const { data: v1Props, error: v1Error } = await supabase
+      const { data: v1Props, error: v1Error } = await (supabase as any)
         .from('properties')
         .select('id, lease_years_remaining')
         .eq('org_id', orgId);
 
       if (v1Error) throw v1Error;
 
-      const propMap = new Map(properties?.map(p => [p.id, p]) ?? []);
-      const v1Map = new Map(v1Props?.map(p => [p.id, p.lease_years_remaining]) ?? []);
+      const propMap = new Map((properties as any[])?.map((p: any) => [p.id, p]) ?? []);
+      const v1Map = new Map((v1Props as any[])?.map((p: any) => [p.id, p.lease_years_remaining]) ?? []);
 
       const alerts: LeaseholdAlert[] = [];
       const now = new Date();

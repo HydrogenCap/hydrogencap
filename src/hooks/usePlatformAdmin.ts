@@ -9,7 +9,7 @@ export function usePlatformAdmin() {
     queryKey: ['platform-role', user?.id],
     queryFn: async () => {
       if (!user) return 'user';
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('profiles')
         .select('platform_role')
         .eq('user_id', user.id)

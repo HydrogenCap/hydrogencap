@@ -35,7 +35,7 @@ export function useTenancyChecklist(tenancyId: string | undefined): TenancyCheck
   const { data: agreementData, isLoading: agreementLoading, error: agreementError } = useQuery({
     queryKey: ['tenancy-checklist-agreement', tenancyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .select(`
           id, org_id, property_id, room_id, tenant_id, start_date,
@@ -56,7 +56,7 @@ export function useTenancyChecklist(tenancyId: string | undefined): TenancyCheck
   const { data: complianceDocs, isLoading: complianceLoading } = useQuery({
     queryKey: ['tenancy-checklist-compliance', propertyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_documents_v2')
         .select('document_type, status, expiry_date')
         .eq('property_id', propertyId!)
@@ -71,7 +71,7 @@ export function useTenancyChecklist(tenancyId: string | undefined): TenancyCheck
   const { data: existingItems, isLoading: itemsLoading } = useQuery({
     queryKey: ['tenancy-compliance', tenancyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_compliance_items')
         .select('*')
         .eq('tenancy_id', tenancyId!);
@@ -190,7 +190,7 @@ export function useMarkChecklistItem() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Check if existing item exists
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('tenancy_compliance_items')
         .select('id')
         .eq('tenancy_id', tenancyId)
@@ -200,7 +200,7 @@ export function useMarkChecklistItem() {
       const today = new Date().toISOString().split('T')[0];
 
       if (existing) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('tenancy_compliance_items')
           .update({
             completed_date: today,
@@ -212,7 +212,7 @@ export function useMarkChecklistItem() {
           .eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('tenancy_compliance_items')
           .insert({
             tenancy_id: tenancyId,
@@ -248,7 +248,7 @@ export function useUnmarkChecklistItem() {
 
   return useMutation({
     mutationFn: async ({ tenancyId, itemType }: { tenancyId: string; itemType: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('tenancy_compliance_items')
         .update({
           completed_date: null,
@@ -282,7 +282,7 @@ export function useTenancyChecklistStats() {
   return useQuery({
     queryKey: ['tenancy-checklist-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_compliance_items')
         .select('*')
         .eq('is_applicable', true)

@@ -131,21 +131,21 @@ export function useOwnershipFlowchartData() {
         { data: loans },
         { data: complianceMatrix },
       ] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('legal_entities')
           .select('id, entity_name, entity_type, company_number, incorporation_date, status, org_id, accounts_due_date, confirmation_statement_due_date')
           .eq('org_id', org.id)
           .order('entity_name'),
-        supabase
+        (supabase as any)
           .from('properties_v2')
           .select('id, address_line_1, postcode, property_type, lifecycle_stage, current_valuation, total_lettable_rooms, entity_id')
           .eq('org_id', org.id)
           .order('address_line_1'),
-        supabase
+        (supabase as any)
           .from('loan_facilities')
           .select('property_id, current_balance, status')
           .eq('status', 'active'),
-        supabase
+        (supabase as any)
           .from('compliance_matrix_v2')
           .select('property_id, calculated_status')
           .eq('org_id', org.id),
@@ -163,14 +163,14 @@ export function useOwnershipFlowchartData() {
         { data: entityLinks },
       ] = await Promise.all([
         entityIds.length > 0
-          ? supabase
+          ? (supabase as any)
               .from('entity_shareholders')
               .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type')
               .in('entity_id', entityIds)
               .is('effective_to', null)
           : Promise.resolve({ data: emptyShareholders, error: null }),
         entityIds.length > 0
-          ? supabase
+          ? (supabase as any)
               .from('entity_shareholdings')
               .select('parent_entity_id, shareholder_entity_id, shareholder_percent')
               .in('parent_entity_id', entityIds)

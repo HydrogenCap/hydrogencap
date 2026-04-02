@@ -30,7 +30,7 @@ export function useParties() {
   return useQuery({
     queryKey: ['parties'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('parties')
         .select('*')
         .order('display_name');
@@ -46,7 +46,7 @@ export function useParty(partyId: string | undefined) {
     queryKey: ['parties', partyId],
     queryFn: async () => {
       if (!partyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('parties')
         .select('*')
         .eq('id', partyId)
@@ -66,7 +66,7 @@ export function useCreateParty() {
     mutationFn: async (party: PartyInsert) => {
       const orgId = await getUserOrgId();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('parties')
         .insert({ ...party, org_id: orgId })
         .select()
@@ -86,7 +86,7 @@ export function useUpdateParty() {
   
   return useMutation({
     mutationFn: async ({ id, ...party }: Partial<Party> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('parties')
         .update(party)
         .eq('id', id)
@@ -107,7 +107,7 @@ export function useDeleteParty() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('parties')
         .delete()
         .eq('id', id);

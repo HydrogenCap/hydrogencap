@@ -109,7 +109,7 @@ export function LocationRegistryCard({
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('properties_v2')
         .update({ latitude: lat, longitude: lng })
         .eq('id', propertyId);

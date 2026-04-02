@@ -16,7 +16,7 @@ export function useOrganization() {
     queryFn: async () => {
       if (!orgId) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('organizations')
         .select('id, name')
         .eq('id', orgId)
@@ -35,7 +35,7 @@ export function useUpdateOrganization() {
 
   return useMutation({
     mutationFn: async ({ orgId, name }: { orgId: string; name: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('organizations')
         .update({
           name,

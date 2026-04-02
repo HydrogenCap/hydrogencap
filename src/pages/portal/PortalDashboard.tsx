@@ -55,7 +55,7 @@ export default function PortalDashboard() {
     queryKey: ['portal-distributions', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('distributions')
         .select(`
           *,
@@ -71,7 +71,7 @@ export default function PortalDashboard() {
       const distIds = (data || []).map(d => d.id);
       if (distIds.length === 0) return [];
 
-      const { data: allocs } = await supabase
+      const { data: allocs } = await (supabase as any)
         .from('distribution_allocations')
         .select('*')
         .in('distribution_id', distIds);

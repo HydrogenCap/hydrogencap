@@ -112,7 +112,7 @@ export function useActivationChecklist() {
 
   const dismiss = async () => {
     if (!user) return;
-    await supabase
+    await (supabase as any)
       .from('profiles')
       .update({ checklist_dismissed: true })
       .eq('user_id', user.id);

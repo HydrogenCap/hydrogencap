@@ -89,7 +89,7 @@ export function useCompanies() {
   return useQuery({
     queryKey: ['companies'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('companies')
         .select(`
           *,
@@ -109,7 +109,7 @@ export function useCompany(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return null;
       
-      const { data: company, error: companyError } = await supabase
+      const { data: company, error: companyError } = await (supabase as any)
         .from('companies')
         .select(`
           *,
@@ -121,7 +121,7 @@ export function useCompany(companyId: string | undefined) {
       if (companyError) throw companyError;
 
       // Get share classes
-      const { data: shareClasses, error: scError } = await supabase
+      const { data: shareClasses, error: scError } = await (supabase as any)
         .from('share_classes')
         .select('*')
         .eq('company_id', companyId)
@@ -130,7 +130,7 @@ export function useCompany(companyId: string | undefined) {
       if (scError) throw scError;
 
       // Get shareholdings with party details
-      const { data: shareholdings, error: shError } = await supabase
+      const { data: shareholdings, error: shError } = await (supabase as any)
         .from('shareholdings')
         .select(`
           *,
@@ -169,7 +169,7 @@ export function useCreateCompany() {
       const orgId = await getUserOrgId();
 
       // First create the party
-      const { data: party, error: partyError } = await supabase
+      const { data: party, error: partyError } = await (supabase as any)
         .from('parties')
         .insert({
           org_id: orgId,
@@ -184,7 +184,7 @@ export function useCreateCompany() {
       if (partyError) throw partyError;
 
       // Then create the company
-      const { data: company, error: companyError } = await supabase
+      const { data: company, error: companyError } = await (supabase as any)
         .from('companies')
         .insert({
           org_id: orgId,
@@ -203,7 +203,7 @@ export function useCreateCompany() {
       if (companyError) throw companyError;
 
       // Create default share class
-      const { error: scError } = await supabase
+      const { error: scError } = await (supabase as any)
         .from('share_classes')
         .insert({
           company_id: company.id,
@@ -227,7 +227,7 @@ export function useUpdateCompany() {
   
   return useMutation({
     mutationFn: async ({ id, ...company }: Partial<Company> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('companies')
         .update(company)
         .eq('id', id)
@@ -250,14 +250,14 @@ export function useDeleteCompany() {
   return useMutation({
     mutationFn: async (id: string) => {
       // Get the party_id first
-      const { data: company } = await supabase
+      const { data: company } = await (supabase as any)
         .from('companies')
         .select('party_id')
         .eq('id', id)
         .single();
 
       // Delete company (cascades to share_classes and shareholdings)
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('companies')
         .delete()
         .eq('id', id);
@@ -266,7 +266,7 @@ export function useDeleteCompany() {
 
       // Delete the party too
       if (company?.party_id) {
-        await supabase
+        await (supabase as any)
           .from('parties')
           .delete()
           .eq('id', company.party_id);
@@ -290,7 +290,7 @@ export function useCreateShareClass() {
       currency?: string;
       nominal_value?: number;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('share_classes')
         .insert(input)
         .select()
@@ -310,7 +310,7 @@ export function useUpdateShareClass() {
   
   return useMutation({
     mutationFn: async ({ id, ...shareClass }: Partial<ShareClass> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('share_classes')
         .update(shareClass)
         .eq('id', id)
@@ -331,7 +331,7 @@ export function useConfirmShareClass() {
   
   return useMutation({
     mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('share_classes')
         .update({ shares_confirmed: true })
         .eq('id', id)
@@ -360,7 +360,7 @@ export function useAddShareholding() {
       ownership_source?: 'MANUAL' | 'COMPANIES_HOUSE' | 'IMPORT';
       notes?: string;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('shareholdings')
         .insert({
           ...input,
@@ -387,7 +387,7 @@ export function useUpdateShareholding() {
   
   return useMutation({
     mutationFn: async ({ id, companyId, ...shareholding }: Partial<Shareholding> & { id: string; companyId: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('shareholdings')
         .update(shareholding)
         .eq('id', id)
@@ -408,7 +408,7 @@ export function useDeleteShareholding() {
   
   return useMutation({
     mutationFn: async ({ id, companyId }: { id: string; companyId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('shareholdings')
         .delete()
         .eq('id', id);

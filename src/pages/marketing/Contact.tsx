@@ -29,7 +29,7 @@ export default function MarketingContact() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('demo_requests')
         .insert({
           name: formData.name,

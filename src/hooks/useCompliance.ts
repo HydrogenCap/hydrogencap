@@ -29,7 +29,7 @@ export function usePropertyCompliance(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_items')
         .select(`
           id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
@@ -59,7 +59,7 @@ export function useAllCompliance(options?: { page?: number; pageSize?: number })
   return useQuery({
     queryKey: ['compliance', 'all', page, pageSize],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('compliance_items')
         .select(`
           id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
@@ -98,7 +98,7 @@ export function useAllComplianceWithProperties() {
   return useQuery({
     queryKey: ['compliance', 'all', 'with-properties'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_items')
         .select(`
           id, property_id, org_id, compliance_type, issue_date, expiry_date, is_required,
@@ -151,7 +151,7 @@ export function useCreateComplianceItem() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_items')
         .insert({
           ...item,
@@ -176,7 +176,7 @@ export function useUpdateComplianceItem() {
   
   return useMutation({
     mutationFn: async ({ id, ...item }: Partial<ComplianceItem> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_items')
         .update(item)
         .eq('id', id)
@@ -236,7 +236,7 @@ export function useDeleteComplianceItem() {
   
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('compliance_items')
         .delete()
         .eq('id', id);
@@ -324,7 +324,7 @@ export function useUploadComplianceDocument() {
       if (!user) throw new Error('Not authenticated');
 
       // Get current version number
-      const { data: existingDocs } = await supabase
+      const { data: existingDocs } = await (supabase as any)
         .from('compliance_documents')
         .select('version_number')
         .eq('compliance_item_id', complianceItemId)
@@ -355,14 +355,14 @@ export function useUploadComplianceDocument() {
       if (uploadError) throw uploadError;
 
       // Archive previous current documents
-      await supabase
+      await (supabase as any)
         .from('compliance_documents')
         .update({ is_current: false, archived_at: new Date().toISOString() })
         .eq('compliance_item_id', complianceItemId)
         .eq('is_current', true);
 
       // Create document record with structured filename
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_documents')
         .insert({
           compliance_item_id: complianceItemId,
@@ -408,7 +408,7 @@ export function useDeleteComplianceDocument() {
       }
 
       // Delete record
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('compliance_documents')
         .delete()
         .eq('id', id);

@@ -66,7 +66,7 @@ export function useFinancialForecasts() {
     queryFn: async () => {
       if (!orgId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('financial_forecasts' as any)
         .select('*')
         .eq('org_id', orgId)
@@ -85,7 +85,7 @@ export function useRunForecast() {
 
   return useMutation({
     mutationFn: (params: RunForecastParams) =>
-      invokeEdgeFunction<FinancialForecast>('financial-forecast', params),
+      invokeEdgeFunction<FinancialForecast>('financial-forecast', params as unknown as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial-forecasts'] });
       toast({ title: 'Forecast generated successfully' });
@@ -108,7 +108,7 @@ export function useForecastDetail(id: string | undefined) {
     queryFn: async () => {
       if (!id || !orgId) return null;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('financial_forecasts' as any)
         .select('*')
         .eq('id', id)

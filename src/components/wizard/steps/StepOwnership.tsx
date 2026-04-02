@@ -30,7 +30,7 @@ export function StepOwnership({ payload, updatePayload }: StepProps) {
   useEffect(() => {
     async function load() {
       const orgId = await fetchUserOrgId();
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('legal_entities')
         .select('id, entity_name, entity_type')
         .eq('org_id', orgId)

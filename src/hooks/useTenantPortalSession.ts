@@ -22,7 +22,7 @@ export function useTenantPortalSession() {
     queryKey: ['tenant-portal-access', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenant_portal_access')
         .select('*')
         .eq('user_id', user.id)

@@ -14,7 +14,7 @@ export function useManagementCompanies() {
   return useQuery({
     queryKey: ['management_companies'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('management_companies')
         .select('*')
         .order('name');
@@ -32,7 +32,7 @@ export function useCreateManagementCompany() {
   return useMutation({
     mutationFn: async (name: string) => {
       const orgId = await getUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('management_companies')
         .insert({ name, org_id: orgId })
         .select()
@@ -57,7 +57,7 @@ export function useFindOrCreateManagementCompany() {
       if (!trimmedName) throw new Error('Name is required');
 
       // First try to find existing (case-insensitive)
-      const { data: existing, error: findError } = await supabase
+      const { data: existing, error: findError } = await (supabase as any)
         .from('management_companies')
         .select('*')
         .ilike('name', trimmedName)
@@ -68,7 +68,7 @@ export function useFindOrCreateManagementCompany() {
 
       // Create new if not found
       const orgId = await getUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('management_companies')
         .insert({ name: trimmedName, org_id: orgId })
         .select()
@@ -92,7 +92,7 @@ export function useSeedDefaultManagementCompany() {
       const orgId = await getUserOrgId();
       
       // Check if any companies exist
-      const { data: existing, error: checkError } = await supabase
+      const { data: existing, error: checkError } = await (supabase as any)
         .from('management_companies')
         .select('id')
         .limit(1);
@@ -101,7 +101,7 @@ export function useSeedDefaultManagementCompany() {
       if (existing && existing.length > 0) return null; // Already seeded
 
       // Insert default
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('management_companies')
         .insert({ name: 'Tenure IQ', org_id: orgId })
         .select()

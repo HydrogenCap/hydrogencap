@@ -47,7 +47,7 @@ export function useBulkLoanUpdate() {
       }
 
       // Update all loans for selected properties
-      const { error, count } = await supabase
+      const { error, count } = await (supabase as any)
         .from('loans')
         .update(updates)
         .in('property_id', propertyIds);
@@ -93,7 +93,7 @@ export function useBulkPropertyUpdate() {
         throw new Error('No updates provided');
       }
 
-      const { error, count } = await supabase
+      const { error, count } = await (supabase as any)
         .from('properties_v2')
         .update(updates)
         .in('id', propertyIds);

@@ -21,11 +21,8 @@ import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { PropertyStatusBar } from '@/components/property-detail/PropertyStatusBar';
 import { PropertyHeader } from '@/components/property-detail/PropertyHeader';
 import { PropertyTimeline } from '@/components/property-detail/PropertyTimeline';
-<<<<<<< HEAD
 import { LeaseholdHealthCard } from '@/components/property-detail/LeaseholdHealthCard';
-=======
 import { HMOCompliancePanel } from '@/components/property-detail/HMOCompliancePanel';
->>>>>>> 7fdfb0a (feat: HMO room compliance checker with minimum sizes and amenity ratios)
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useInsurancePolicies } from '@/hooks/useInsurance';
 import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
@@ -66,7 +63,7 @@ export default function PropertyDetailV2() {
     queryKey: ['legal_entities_list'],
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('legal_entities')
         .select('id, entity_name')
         .eq('org_id', orgId)
@@ -86,7 +83,7 @@ export default function PropertyDetailV2() {
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
       // Get rent schedule entries for this property's tenancies via agreements
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select(`
           status,

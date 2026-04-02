@@ -29,7 +29,7 @@ export function usePrincipalParty() {
   return useQuery({
     queryKey: ['principal_party'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('parties')
         .select('id, display_name, party_type')
         .eq('is_principal', true)

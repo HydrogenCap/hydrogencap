@@ -21,7 +21,7 @@ export function StepComplianceType({ payload, updatePayload }: StepProps) {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('compliance_templates')
         .select('document_type, display_name')
         .eq('is_active', true)

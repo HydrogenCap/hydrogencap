@@ -18,7 +18,7 @@ export function useOwnershipEntities() {
   return useQuery({
     queryKey: ['ownership_entities'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ownership_entities')
         .select('*')
         .order('name');
@@ -36,7 +36,7 @@ export function usePropertyOwnership(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_ownership')
         .select(`
           *,
@@ -62,7 +62,7 @@ export function useCreateOwnershipEntity() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ownership_entities')
         .insert({ ...entity, org_id: orgId })
         .select()
@@ -87,7 +87,7 @@ export function useUpdateOwnershipEntity() {
   
   return useMutation({
     mutationFn: async ({ id, ...entity }: Partial<OwnershipEntity> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ownership_entities')
         .update(entity)
         .eq('id', id)
@@ -114,7 +114,7 @@ export function useDeleteOwnershipEntity() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('ownership_entities')
         .delete()
         .eq('id', id);
@@ -138,7 +138,7 @@ export function useAddPropertyOwnership() {
   
   return useMutation({
     mutationFn: async (ownership: PropertyOwnershipInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_ownership')
         .insert(ownership)
         .select(`
@@ -166,7 +166,7 @@ export function useUpdatePropertyOwnership() {
   
   return useMutation({
     mutationFn: async ({ id, ...ownership }: Partial<PropertyOwnership> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_ownership')
         .update(ownership)
         .eq('id', id)
@@ -195,7 +195,7 @@ export function useDeletePropertyOwnership() {
   
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('property_ownership')
         .delete()
         .eq('id', id);

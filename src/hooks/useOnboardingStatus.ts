@@ -8,7 +8,7 @@ export function useOnboardingStatus() {
   return useQuery({
     queryKey: ['onboarding-status', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('onboarding_completed')
         .eq('user_id', user!.id)

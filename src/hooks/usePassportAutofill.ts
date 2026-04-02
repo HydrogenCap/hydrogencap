@@ -62,7 +62,7 @@ export function usePendingSuggestions(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('passport_autofill_suggestions')
         .select('*')
         .eq('property_id', propertyId)

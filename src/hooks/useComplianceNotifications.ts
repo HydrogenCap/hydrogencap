@@ -10,7 +10,7 @@ export function useUnreadNotifications() {
     enabled: !!org?.id,
     refetchInterval: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('unread_notifications_v2')
         .select('*')
         .limit(50);

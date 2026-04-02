@@ -16,7 +16,7 @@ export interface UserOrganization {
 
 const CURRENT_ORG_STORAGE_KEY = 'tenureiq.current_org_id';
 const CURRENT_ORG_EVENT = 'tenureiq:current-org-changed';
-const ORG_ROLE_PRIORITY: Record<MembershipRow['role'], number> = {
+const ORG_ROLE_PRIORITY: Record<string, number> = {
   owner: 0,
   admin: 1,
   member: 2,
@@ -65,7 +65,7 @@ async function fetchMembershipsForCurrentUser() {
   if (authError) throw authError;
   if (!auth.user) return [] as MembershipRow[];
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('memberships')
     .select('id, user_id, org_id, role, created_at')
     .eq('user_id', auth.user.id);
@@ -79,7 +79,7 @@ export async function fetchUserOrganizations(): Promise<UserOrganization[]> {
   if (memberships.length === 0) return [];
 
   const orgIds = [...new Set(memberships.map((membership) => membership.org_id))];
-  const { data: organizations, error } = await supabase
+  const { data: organizations, error } = await (supabase as any)
     .from('organizations')
     .select('id, name')
     .in('id', orgIds);

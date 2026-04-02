@@ -32,7 +32,7 @@ export function StepSelectRoom({ payload, updatePayload }: StepProps) {
     }
 
     setLoading(true);
-    supabase
+    (supabase as any)
       .from('rooms_v2')
       .select('id, room_name, room_type')
       .eq('property_id', propertyId)

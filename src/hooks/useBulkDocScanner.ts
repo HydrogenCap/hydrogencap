@@ -88,7 +88,7 @@ export function useBulkDocScanner() {
 
     // 2. Create document record
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: docRecord, error: docErr } = await supabase
+    const { data: docRecord, error: docErr } = await (supabase as any)
       .from('documents')
       .insert({
         org_id: orgId,
@@ -133,7 +133,7 @@ export function useBulkDocScanner() {
       if (fnErr) throw fnErr;
 
       // 4. Re-fetch the document to get AI results
-      const { data: updated } = await supabase
+      const { data: updated } = await (supabase as any)
         .from('documents')
         .select('ai_suggested_doc_type, ai_doc_type_confidence, ai_suggested_property_id, ai_property_confidence, extracted_data, extracted_address_text, extracted_issue_date, extracted_reference_number, expiry_date')
         .eq('id', docRecord.id)
@@ -261,7 +261,7 @@ export function useBulkDocScanner() {
 
       try {
         // Create compliance_documents_v2 record
-        const { error: compErr } = await supabase
+        const { error: compErr } = await (supabase as any)
           .from('compliance_documents_v2')
           .insert({
             org_id: orgId,
@@ -285,7 +285,7 @@ export function useBulkDocScanner() {
 
         // Update document record
         if (doc.documentId) {
-          await supabase
+          await (supabase as any)
             .from('documents')
             .update({
               property_id: propId,

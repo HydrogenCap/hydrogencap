@@ -91,7 +91,7 @@ async function getTableCount(table: string, orgId: string): Promise<number> {
     // These tables link via property_id → properties.org_id
     // For rooms_v2, link via property_id → properties_v2.org_id
     if (table === 'rooms_v2') {
-      const { count, error } = await supabase
+      const { count, error } = await (supabase as any)
         .from('rooms_v2')
         .select('*, properties_v2!inner(org_id)', { count: 'exact', head: true })
         .eq('properties_v2.org_id', orgId);
@@ -99,14 +99,14 @@ async function getTableCount(table: string, orgId: string): Promise<number> {
       return count || 0;
     }
     // For income, loans, rooms — join via properties
-    const { count, error } = await supabase
+    const { count, error } = await (supabase as any)
       .from(table as never)
       .select('*, properties!inner(org_id)', { count: 'exact', head: true })
       .eq('properties.org_id', orgId);
     if (error) return 0;
     return count || 0;
   }
-  const { count, error } = await supabase
+  const { count, error } = await (supabase as any)
     .from(table as never)
     .select('*', { count: 'exact', head: true })
     .eq('org_id', orgId);
@@ -196,7 +196,7 @@ export function usePropertyGaps() {
   return useQuery({
     queryKey: ['property_gaps'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties_v2')
         .select('id, address_line_1, postcode, city, entity_id, has_gas_supply, current_valuation, purchase_price, property_type, year_built, total_lettable_rooms, total_floors, council_name, council_area')
         .order('address_line_1');
@@ -210,7 +210,7 @@ export function useRoomGaps() {
   return useQuery({
     queryKey: ['room_gaps'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rooms_v2')
         .select('id, room_name, property_id, room_type, current_rent_pcm, target_rent_pcm, has_ensuite, is_lettable, floor, properties_v2!inner(address_line_1)')
         .order('room_name');
@@ -228,7 +228,7 @@ export function useTenantGaps() {
   return useQuery({
     queryKey: ['tenant_gaps'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenants_v2')
         .select('id, first_name, last_name, email, phone, date_of_birth, national_insurance, emergency_contact_name, emergency_contact_phone')
         .order('last_name');
@@ -242,7 +242,7 @@ export function useTenancyGaps() {
   return useQuery({
     queryKey: ['tenancy_gaps'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .select('id, tenant_id, property_id, room_id, rent_amount_pcm, tenancy_type, deposit_amount, deposit_scheme, deposit_reference, deposit_protected_date, how_to_rent_served_date, prescribed_info_served_date, status')
         .eq('status', 'active')

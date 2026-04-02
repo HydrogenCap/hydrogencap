@@ -12,7 +12,7 @@ export function useAccountingExports(entityId?: string, limit = 20) {
   return useQuery({
     queryKey: ['accounting_exports', org?.id, entityId, limit],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('accounting_exports')
         .select('*')
         .eq('org_id', org!.id)
@@ -37,7 +37,7 @@ export function useCreateExportRecord() {
         ...record,
         generated_by: user?.id ?? null,
       };
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('accounting_exports')
         .insert(payload)
         .select()

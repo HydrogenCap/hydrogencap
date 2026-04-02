@@ -13,7 +13,7 @@ export function useUnitUsage() {
   const { data: totalUnits = 0, isLoading } = useQuery({
     queryKey: ['unit-usage-count'],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { count, error } = await (supabase as any)
         .from('rooms')
         .select('*', { count: 'exact', head: true });
 

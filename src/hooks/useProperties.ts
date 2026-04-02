@@ -28,7 +28,7 @@ export function useProperties() {
   return useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties')
         .select(`
           *,
@@ -51,7 +51,7 @@ export function useProperty(id: string | undefined) {
     queryFn: async () => {
       if (!id) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties')
         .select(`
           *,
@@ -78,7 +78,7 @@ export function useCreateProperty() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties')
         .insert({ ...property, org_id: orgId })
         .select()
@@ -103,7 +103,7 @@ export function useUpdateProperty() {
   
   return useMutation({
     mutationFn: async ({ id, previousValue, ...property }: PropertyUpdate & { id: string; previousValue?: number | null }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('properties')
         .update(property)
         .eq('id', id)
@@ -155,7 +155,7 @@ export function useDeleteProperty() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('properties')
         .delete()
         .eq('id', id);
@@ -179,7 +179,7 @@ export function useCreateLoan() {
   
   return useMutation({
     mutationFn: async (loan: Database['public']['Tables']['loans']['Insert']) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('loans')
         .insert(loan)
         .select()
@@ -211,7 +211,7 @@ export function useUpdateLoan() {
       id: string; 
       previousRate?: number | null 
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('loans')
         .update(loan)
         .eq('id', id)
@@ -255,7 +255,7 @@ export function useUpsertIncome() {
   
   return useMutation({
     mutationFn: async (income: Database['public']['Tables']['income']['Insert']) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('income')
         .upsert(income, { onConflict: 'property_id,year' })
         .select()
@@ -286,7 +286,7 @@ export function useUpsertCosts() {
   
   return useMutation({
     mutationFn: async (costs: Database['public']['Tables']['costs']['Insert']) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('costs')
         .upsert(costs, { onConflict: 'property_id,year' })
         .select()

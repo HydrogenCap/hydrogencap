@@ -51,17 +51,17 @@ export function useDashboardPropertiesV2() {
         { data: loans, error: loanErr },
         { data: agreements, error: agErr },
       ] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('properties_v2')
           .select('*, legal_entities!inner(entity_name, entity_type)')
           .eq('org_id', orgId)
           .order('created_at', { ascending: false }),
-        supabase
+        (supabase as any)
           .from('loan_facilities')
           .select('*, lenders!inner(lender_name)')
           .eq('org_id', orgId)
           .eq('status', 'active'),
-        supabase
+        (supabase as any)
           .from('tenancy_agreements')
           .select('id, status, rent_amount_pcm, start_date, initial_end_date, actual_end_date, property_id, room_id, tenant_id')
           .eq('org_id', orgId)
@@ -174,7 +174,7 @@ export function useDashboardTenanciesV2() {
   return useQuery({
     queryKey: ['dashboard_tenancies_v2', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .select(`
           id, status, rent_amount_pcm, start_date,
@@ -223,14 +223,14 @@ export function useDashboardRoomsV2() {
     queryKey: ['dashboard_rooms_v2', orgId],
     queryFn: async () => {
       // rooms_v2 has no org_id; filter via properties_v2 join
-      const { data: propIds } = await supabase
+      const { data: propIds } = await (supabase as any)
         .from('properties_v2')
         .select('id')
         .eq('org_id', orgId!);
       const propertyIds = (propIds || []).map((p) => p.id);
       if (propertyIds.length === 0) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rooms_v2')
         .select('id, property_id, room_name, occupancy_status, is_lettable')
         .in('property_id', propertyIds);

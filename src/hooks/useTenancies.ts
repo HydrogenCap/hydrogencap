@@ -58,7 +58,7 @@ export interface Tenancy {
    return useQuery({
      queryKey: ['tenancies', filters],
      queryFn: async () => {
-       let query = supabase
+       let query = (supabase as any)
          .from('tenancies')
          .select(`
            *,
@@ -89,7 +89,7 @@ export interface Tenancy {
    return useQuery({
      queryKey: ['tenancies', tenancyId],
      queryFn: async () => {
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('tenancies')
          .select(`
            *,
@@ -115,7 +115,7 @@ export interface Tenancy {
        const orgId = await getUserOrgId();
        if (!orgId) throw new Error('No organization found');
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('tenancies')
          .insert({ ...tenancy, org_id: orgId })
          .select()
@@ -143,7 +143,7 @@ export interface Tenancy {
  
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<Tenancy> & { id: string }) => {
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('tenancies')
          .update(updates)
          .eq('id', id)

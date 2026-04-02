@@ -50,7 +50,7 @@ export function ComplianceExportButton() {
       const batchSize = 1000;
       let hasMore = true;
       while (hasMore) {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('properties_v2')
           .select('id, address_line_1')
           .order('address_line_1')

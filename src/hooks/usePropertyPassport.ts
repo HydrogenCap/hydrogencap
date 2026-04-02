@@ -15,7 +15,7 @@ export function usePropertyPassport(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return null;
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_passport')
         .select('*')
         .eq('property_id', propertyId)
@@ -33,7 +33,7 @@ export function usePropertyPassports() {
   return useQuery({
     queryKey: ['property_passports'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_passport')
         .select('*');
 
@@ -49,14 +49,14 @@ export function usePassportsWithProperties() {
     queryKey: ['passports_with_properties'],
     queryFn: async () => {
       // Get all properties
-      const { data: properties, error: propError } = await supabase
+      const { data: properties, error: propError } = await (supabase as any)
         .from('properties_v2')
         .select('id, address_line_1, postcode, county');
       
       if (propError) throw propError;
 
       // Get all passports
-      const { data: passports, error: passError } = await supabase
+      const { data: passports, error: passError } = await (supabase as any)
         .from('property_passport')
         .select('*');
       
@@ -90,7 +90,7 @@ export function useUpsertPassport() {
         }
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_passport')
         .upsert(sanitized, { onConflict: 'property_id' })
         .select()
@@ -113,7 +113,7 @@ export function useUpdatePassport() {
   
   return useMutation({
     mutationFn: async ({ id, ...passport }: PropertyPassportUpdate & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_passport')
         .update(passport)
         .eq('id', id)

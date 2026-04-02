@@ -41,7 +41,7 @@ export function WorksOrderDetailForm({ worksOrder: wo }: Props) {
   const { data: contractors } = useQuery({
     queryKey: ['compliance_contractors_v2_list'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_contractors_v2')
         .select('id, company_name, rating, service_types')
         .order('company_name');

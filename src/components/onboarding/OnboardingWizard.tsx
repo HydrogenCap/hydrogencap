@@ -62,7 +62,7 @@ export function OnboardingWizard() {
 
   const completeOnboarding = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({ onboarding_completed: true })
         .eq('user_id', user!.id);
@@ -80,7 +80,7 @@ export function OnboardingWizard() {
       if (fullName.trim()) updates.full_name = fullName.trim();
       if (role) updates.role = role;
       if (Object.keys(updates).length === 0) return;
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update(updates)
         .eq('user_id', user!.id);
@@ -91,7 +91,7 @@ export function OnboardingWizard() {
   const saveGoals = useMutation({
     mutationFn: async () => {
       if (selectedGoals.length === 0) return;
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({ onboarding_goals: selectedGoals })
         .eq('user_id', user!.id);
@@ -106,7 +106,7 @@ export function OnboardingWizard() {
         updateOrg.mutate({ orgId: org.id, name: orgName.trim() });
       }
       if (portfolioSize) {
-        await supabase
+        await (supabase as any)
           .from('organizations')
           .update({ estimated_portfolio_size: portfolioSize })
           .eq('id', org.id);
@@ -118,14 +118,14 @@ export function OnboardingWizard() {
     mutationFn: async () => {
       if (!address.trim()) return;
       const orgId = await fetchUserOrgId();
-      const { data: entities } = await supabase
+      const { data: entities } = await (supabase as any)
         .from('legal_entities')
         .select('id')
         .eq('org_id', orgId)
         .limit(1);
       let resolvedEntityId = entities?.[0]?.id;
       if (!resolvedEntityId) {
-        const { data: newEntity, error: entErr } = await supabase
+        const { data: newEntity, error: entErr } = await (supabase as any)
           .from('legal_entities')
           .insert({ org_id: orgId, entity_name: orgName.trim() || 'My Company', entity_type: 'personal' })
           .select('id')
@@ -133,19 +133,20 @@ export function OnboardingWizard() {
         if (entErr) throw entErr;
         resolvedEntityId = newEntity.id;
       }
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('properties_v2')
         .insert({
           org_id: orgId,
           entity_id: resolvedEntityId,
           address_line_1: address.trim(),
+          city: '',
           postcode: postcode.trim().toUpperCase(),
           country: 'England',
           property_type: propertyType,
           lifecycle_stage: 'pipeline',
           total_lettable_rooms: parseInt(beds) || 0,
           current_valuation: parseInt(currentValue) || undefined,
-        });
+        } as any);
       if (error) throw error;
     },
   });

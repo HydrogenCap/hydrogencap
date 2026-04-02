@@ -65,7 +65,7 @@ export default function RoomDetailV2() {
 
   useEffect(() => {
     if (!id) return;
-    supabase
+    (supabase as any)
       .from('compliance_documents_v2')
       .select('*')
       .eq('room_id', id)
@@ -75,7 +75,7 @@ export default function RoomDetailV2() {
 
   useEffect(() => {
     if (!id) return;
-    supabase
+    (supabase as any)
       .from('maintenance_requests')
       .select('actual_cost')
       .eq('room_v2_id', id)

@@ -79,7 +79,7 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
     try {
       // === EPC CONSOLIDATION: Sync EPC rating to properties_v2 table ===
       if (complianceType === 'EPC' && formData.epc_rating) {
-        const { error: syncError } = await supabase
+        const { error: syncError } = await (supabase as any)
           .from('properties_v2')
           .update({ epc_rating: formData.epc_rating })
           .eq('id', propertyId);

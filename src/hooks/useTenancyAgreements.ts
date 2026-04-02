@@ -111,7 +111,7 @@ export function useTenancyAgreements(filters?: { tenantId?: string; roomId?: str
   return useQuery({
     queryKey: ['tenancy_agreements', filters],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('tenancy_agreements')
         .select(`
           *,
@@ -144,7 +144,7 @@ export function useTenancyComplianceChecks() {
   return useQuery({
     queryKey: ['tenancy_compliance_check_v2'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_compliance_check_v2')
         .select('*');
       if (error) throw error;
@@ -160,7 +160,7 @@ export function useCreateTenancyAgreement() {
   return useMutation({
     mutationFn: async (agreement: TenancyInsert) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .insert({ ...agreement, org_id: orgId })
         .select()
@@ -179,7 +179,7 @@ export function useUpdateTenancyAgreement() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<TenancyAgreement> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancy_agreements')
         .update(updates)
         .eq('id', id)
