@@ -21,11 +21,8 @@ import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { PropertyStatusBar } from '@/components/property-detail/PropertyStatusBar';
 import { PropertyHeader } from '@/components/property-detail/PropertyHeader';
 import { PropertyTimeline } from '@/components/property-detail/PropertyTimeline';
-<<<<<<< HEAD
 import { LeaseholdHealthCard } from '@/components/property-detail/LeaseholdHealthCard';
-=======
 import { HMOCompliancePanel } from '@/components/property-detail/HMOCompliancePanel';
->>>>>>> 7fdfb0a (feat: HMO room compliance checker with minimum sizes and amenity ratios)
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useInsurancePolicies } from '@/hooks/useInsurance';
 import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';

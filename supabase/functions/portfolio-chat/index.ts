@@ -495,8 +495,9 @@ async function handleUpdateConversation(
   });
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleGetMessages(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {
