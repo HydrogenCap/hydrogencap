@@ -31,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/common';
 import {
   Select,
   SelectContent,
@@ -538,34 +539,23 @@ export default function ActionsPage() {
 
         {/* Results */}
         {filteredRisks.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="p-4 rounded-full bg-success/10">
-                  <CheckCircle2 className="h-8 w-8 text-success" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">No Actions Required</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {totalCount === 0
-                      ? 'Your portfolio is healthy with no identified risks.'
-                      : snoozedCount > 0 && !showSnoozed
-                        ? `${snoozedCount} snoozed action${snoozedCount > 1 ? 's' : ''} hidden. All other filters clear.`
-                        : 'No results match your current filters.'}
-                  </p>
-                </div>
-                {(typeFilter !== 'all' || severityFilter !== 'all' || search) && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => { setTypeFilter('all'); setSeverityFilter('all'); setSearch(''); }}
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={CheckCircle2}
+            title="No actions required"
+            description={
+              totalCount === 0
+                ? 'When there are compliance expirations, overdue rent, or maintenance issues, they\'ll appear here.'
+                : snoozedCount > 0 && !showSnoozed
+                  ? `${snoozedCount} snoozed action${snoozedCount > 1 ? 's' : ''} hidden. All other filters clear.`
+                  : 'No results match your current filters.'
+            }
+            variant="success"
+            action={
+              (typeFilter !== 'all' || severityFilter !== 'all' || search)
+                ? { label: 'Clear Filters', onClick: () => { setTypeFilter('all'); setSeverityFilter('all'); setSearch(''); } }
+                : undefined
+            }
+          />
         ) : groupMode === 'property' ? (
           <div className="space-y-3">
             {groupedRisks.map(group => (

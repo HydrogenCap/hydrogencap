@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { FolderOpen, Sparkles, Loader2 } from 'lucide-react';
+import { FolderOpen, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/common';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { VaultUploadZone } from '@/components/documents/VaultUploadZone';
@@ -182,16 +183,20 @@ export default function Documents() {
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </div>
         ) : !sortedDocuments.length ? (
-          <Card>
-            <CardContent className="py-16 text-center">
-              <FolderOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
-              <h3 className="font-medium mb-1">No documents found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {hasActiveFilters ? 'Try adjusting your filters or search query.' : 'Upload your first document to get started.'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">Drag & drop files into the upload zone above to get started.</p>
-            </CardContent>
-          </Card>
+          hasActiveFilters ? (
+            <EmptyState
+              icon={FolderOpen}
+              title="No documents found"
+              description="Try adjusting your filters or search query."
+              action={{ label: 'Clear Filters', onClick: clearFilters }}
+            />
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="No documents uploaded"
+              description="Upload certificates, tenancy agreements, or financial documents. Our AI will classify and extract key details."
+            />
+          )
         ) : viewMode === 'list' ? (
           <DocumentListView
             currentDocuments={currentDocuments}

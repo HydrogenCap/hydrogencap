@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { EmptyState } from '@/components/common';
 import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES, type TenantWithCurrentTenancy, type TenantStatusV2, type TenantTypeV2 } from '@/hooks/useTenantsV2';
 import { useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
 import { AddTenantModal } from '@/components/tenants-v2/AddTenantModal';
@@ -186,6 +187,21 @@ export default function TenantsV2() {
         {/* Table */}
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+        ) : filtered.length === 0 ? (
+          tenants?.length ? (
+            <EmptyState
+              icon={Search}
+              title="No tenants match your filters"
+              description="Try adjusting your search or filter criteria."
+            />
+          ) : (
+            <EmptyState
+              icon={Users}
+              title="No tenants yet"
+              description="Add tenants to track tenancies, rent payments, and communications."
+              action={{ label: 'Add Tenant', onClick: () => setShowAdd(true) }}
+            />
+          )
         ) : (
           <div className="border rounded-lg overflow-x-auto -mx-4 md:mx-0">
             <Table>
@@ -202,10 +218,7 @@ export default function TenantsV2() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No tenants found</TableCell></TableRow>
-                ) : (
-                  filtered.map(t => {
+                {filtered.map(t => {
                     const c = complianceMap.get(t.id);
                     const depositOk = !c || c.deposit_compliance === 'compliant' || c.deposit_compliance === 'no_deposit';
                     return (
@@ -231,8 +244,7 @@ export default function TenantsV2() {
                         </TableCell>
                       </TableRow>
                     );
-                  })
-                )}
+                  })}
               </TableBody>
             </Table>
           </div>
