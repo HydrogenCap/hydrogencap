@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserOrgId } from './useUserOrg';
+import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -146,6 +146,7 @@ export function useInspection(id: string | undefined) {
 
 export function useCreateInspection() {
   const qc = useQueryClient();
+  const { data: org } = useOrganization();
   const { toast } = useToast();
 
   return useMutation({
@@ -158,10 +159,9 @@ export function useCreateInspection() {
       tenant_notified?: boolean;
       access_notes?: string | null;
     }) => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await (supabase as any)
         .from('property_inspections')
-        .insert({ ...inspection, org_id: orgId })
+        .insert({ ...inspection, org_id: org!.id })
         .select()
         .single();
       if (error) throw error;
@@ -316,14 +316,14 @@ export function useInspectionTemplates() {
 
 export function useCreateInspectionTemplate() {
   const qc = useQueryClient();
+  const { data: org } = useOrganization();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (template: { name: string; inspection_type: string; rooms: InspectionTemplateRoom[] }) => {
-      const orgId = await fetchUserOrgId();
       const { data, error } = await (supabase as any)
         .from('inspection_templates')
-        .insert({ ...template, org_id: orgId })
+        .insert({ ...template, org_id: org!.id })
         .select()
         .single();
       if (error) throw error;
