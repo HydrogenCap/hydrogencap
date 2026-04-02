@@ -16,6 +16,7 @@ import {
   MessageSquare,
   AlertCircle,
   ClipboardList,
+  ClipboardCheck,
   Construction,
   FolderOpen,
   History,
@@ -143,6 +144,7 @@ const operationsItems: NavItem[] = [
       { title: 'CapEx', icon: HardHat, href: '/capex', sectionKey: 'capex' },
     ],
   },
+  { title: 'Inspections', icon: ClipboardCheck, href: '/inspections' },
   {
     title: 'Documents',
     icon: FolderOpen,
