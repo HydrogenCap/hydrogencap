@@ -71,9 +71,9 @@ export function useActiveVoids() {
       const roomIds = [...new Set(voids.map(v => v.room_id).filter(Boolean))] as string[];
 
       const [propsRes, roomsRes] = await Promise.all([
-        supabase.from('properties_v2').select('id, address_line_1, city, postcode').in('id', propertyIds),
+        (supabase as any).from('properties_v2').select('id, address_line_1, city, postcode').in('id', propertyIds),
         roomIds.length > 0
-          ? supabase.from('rooms_v2').select('id, room_name, current_rent_pcm').in('id', roomIds)
+          ? (supabase as any).from('rooms_v2').select('id, room_name, current_rent_pcm').in('id', roomIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
