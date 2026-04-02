@@ -35,6 +35,7 @@ import {
   Wallet,
   BarChart3,
   Activity,
+  LineChart,
 } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
@@ -170,6 +171,7 @@ const intelligenceItems: NavItem[] = [
       { title: 'Tax', icon: Receipt, href: '/tax' },
     ],
   },
+  { title: 'Forecast', icon: LineChart, href: '/financial-forecast' },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
 ];
 
