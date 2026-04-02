@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/lib/maintenanceTypes';
+import { autoClassifyHazard, calculateDeadlines, type HazardCategory } from '@/hooks/useAwaabsLawCompliance';
 
 const CATEGORIES = [
   { value: 'plumbing', label: 'Plumbing' },
@@ -149,6 +150,15 @@ export default function MaintenanceRequest() {
 
       const photoUrls = await uploadPhotos();
 
+      // Awaab's Law: auto-classify hazard and calculate statutory deadlines
+      const now = new Date();
+      const hazardCategory = autoClassifyHazard(
+        category as any,
+        description,
+        urgency
+      );
+      const deadlines = calculateDeadlines(now, hazardCategory);
+
       const payload = {
         org_id: orgId,
         tenant_id: tenantId,
@@ -168,20 +178,47 @@ export default function MaintenanceRequest() {
         status: 'reported',
         is_emergency: urgency === 'emergency',
         tenant_user_id: user?.id,
+        // Awaab's Law fields — auto-populated on tenant report (Day 0)
+        awaabs_law_applies: true,
+        hazard_category: hazardCategory,
+        reported_at: now.toISOString(),
+        investigation_due_by: deadlines.investigationDue.toISOString(),
+        repair_due_by: deadlines.repairDue.toISOString(),
+        escalation_level: hazardCategory === 'emergency' ? 'critical' : 'normal',
       };
 
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
-        .insert(payload);
+        .insert(payload)
+        .select('id, org_id')
+        .single();
       if (error) throw error;
+
+      // Log Awaab's Law audit event
+      if (data?.id) {
+        await (supabase as any).from('awaabs_law_events').insert({
+          maintenance_request_id: data.id,
+          org_id: orgId,
+          event_type: 'hazard_reported',
+          event_data: {
+            hazard_category: hazardCategory,
+            reported_at: now.toISOString(),
+            investigation_due: deadlines.investigationDue.toISOString(),
+            repair_due: deadlines.repairDue.toISOString(),
+            auto_classified: true,
+          },
+          performed_by: user?.id ?? null,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-maintenance-requests'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-dashboard-maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['awaabs_law'] });
       setShowNewDialog(false);
       resetForm();
       toast.success('Maintenance request submitted', {
-        description: 'Your landlord has been notified.',
+        description: 'Your landlord has been notified. Awaab\'s Law tracking is active.',
       });
     },
     onError: (err) => {
