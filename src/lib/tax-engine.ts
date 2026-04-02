@@ -112,6 +112,8 @@ export interface TaxCalculationResult {
   cgtEstimates: Array<{
     propertyId: string;
     propertyAddress: string;
+    purchasePrice: number;
+    currentValue: number;
     result: CGTResult;
   }>;
   totalPropertyIncome: number;

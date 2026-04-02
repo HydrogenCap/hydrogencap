@@ -163,7 +163,7 @@ export function useTaxCalculation(taxYear: TaxYearLabel): {
       const loans = loansRes.data || [];
 
       const tenancyPropertyMap = new Map(tenancies.map((t) => [t.id, t.property_id]));
-      const entityMap = new Map(entities.map((e) => [e.id, e]));
+      const entityMap = new Map((entities as any[]).map((e: any) => [e.id, e]));
 
       // Build manual expenses lookup
       const manualMap = new Map<string, Record<string, number>>();
