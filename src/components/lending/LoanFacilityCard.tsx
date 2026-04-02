@@ -28,7 +28,7 @@ export function LoanFacilityCard({ facility, alerts = [], onEdit, onRedeem }: Lo
   const [expanded, setExpanded] = useState(false);
   const typeInfo = getFacilityTypeInfo(facility.facility_type);
   const borderColor = getFacilityBorderColor(facility.facility_type);
-  const statusColor = STATUS_COLORS[facility.status] || 'bg-gray-100 text-gray-700';
+  const statusColor = STATUS_COLORS[facility.status] || 'bg-muted text-muted-foreground';
 
   const facilityAlerts = alerts.filter(a => a.loan_id === facility.id);
   const alertBanners = getAlertBanners(facilityAlerts);

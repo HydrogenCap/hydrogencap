@@ -20,11 +20,11 @@ function fmtGBP(v: number) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-100 text-blue-700',
-  reviewed: 'bg-amber-100 text-amber-700',
-  completed: 'bg-emerald-100 text-emerald-700',
-  actioned: 'bg-emerald-100 text-emerald-700',
-  dismissed: 'bg-gray-100 text-gray-600',
+  new: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  reviewed: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  completed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  actioned: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  dismissed: 'bg-muted text-muted-foreground',
 };
 
 export default function RefinancingOpportunities() {

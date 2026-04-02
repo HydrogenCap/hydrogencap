@@ -22,7 +22,7 @@ function RequestCard({ request }: { request: MaintenanceRequestWithDetails }) {
 
   return (
     <Link to={`/maintenance/${request.id}`}>
-      <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${request.is_emergency ? 'border-red-300 bg-red-50/30' : ''}`}>
+      <Card className={`hover:bg-accent/50 transition-colors cursor-pointer ${request.is_emergency ? 'border-red-300 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20' : ''}`}>
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">

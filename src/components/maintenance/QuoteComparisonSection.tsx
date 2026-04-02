@@ -12,8 +12,8 @@ interface QuoteComparisonSectionProps {
 
 function QuoteStatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { label: string; className: string }> = {
-    pending: { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-    accepted: { label: 'Accepted', className: 'bg-green-100 text-green-800 border-green-200' },
+    pending: { label: 'Pending', className: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800' },
+    accepted: { label: 'Accepted', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' },
     rejected: { label: 'Rejected', className: 'bg-muted text-muted-foreground border-border' },
     expired: { label: 'Expired', className: 'bg-muted text-muted-foreground border-border' },
   };

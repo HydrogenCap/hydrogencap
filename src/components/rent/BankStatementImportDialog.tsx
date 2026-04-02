@@ -368,7 +368,7 @@ export function BankStatementImportDialog({ open, onOpenChange, onSuccess }: Ban
                           {txn.transaction_type}
                         </Badge>
                         {txn.is_duplicate && (
-                          <Badge className="ml-1 bg-amber-100 text-amber-800 text-xs">Dup?</Badge>
+                          <Badge className="ml-1 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 text-xs">Dup?</Badge>
                         )}
                       </TableCell>
                     </TableRow>

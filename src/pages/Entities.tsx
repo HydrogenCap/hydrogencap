@@ -121,8 +121,8 @@ export default function Entities() {
     if (entityType !== 'spv') return <span className="text-muted-foreground text-xs">N/A</span>;
     const v = verificationMap[entityId];
     if (!v || v.verification_status === 'not_synced') return <Badge variant="secondary" className="text-xs">Not Synced</Badge>;
-    if (v.verification_status === 'verified') return <span className="text-emerald-600 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Verified</span>;
-    return <span className="text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Mismatch</span>;
+    if (v.verification_status === 'verified') return <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Verified</span>;
+    return <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Mismatch</span>;
   };
 
   return (
