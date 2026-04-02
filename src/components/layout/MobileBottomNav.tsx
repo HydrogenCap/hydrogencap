@@ -45,18 +45,18 @@ function MobileNavItem({ icon: Icon, label, href, onClick, isActive }: MobileNav
 
   if (href) {
     return (
-      <Link to={href} className={classes}>
+      <Link to={href} className={classes} aria-current={isActive ? 'page' : undefined}>
         {indicator}
-        <Icon className="h-5 w-5" />
+        <Icon className="h-5 w-5" aria-hidden="true" />
         <span className="text-[10px] font-medium leading-tight">{label}</span>
       </Link>
     );
   }
 
   return (
-    <button onClick={onClick} className={classes}>
+    <button onClick={onClick} className={classes} aria-label={label}>
       {indicator}
-      <Icon className="h-5 w-5" />
+      <Icon className="h-5 w-5" aria-hidden="true" />
       <span className="text-[10px] font-medium leading-tight">{label}</span>
     </button>
   );
@@ -109,7 +109,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-bottom">
+      <nav aria-label="Mobile navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-bottom">
         <div className="flex items-center justify-around h-14">
           <MobileNavItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" isActive={isActive('/dashboard')} />
           <MobileNavItem icon={Building2} label="Properties" href="/properties-v2" isActive={isActive('/properties-v2')} />

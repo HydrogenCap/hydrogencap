@@ -301,6 +301,7 @@ export function AppSidebar() {
         <Badge
           variant={actionsCriticalCount > 0 ? "destructive" : "secondary"}
           className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${actionsCount} actions requiring attention`}
         >
           {actionsCount}
         </Badge>
@@ -311,6 +312,7 @@ export function AppSidebar() {
         <Badge
           variant={expiredCount > 0 ? "destructive" : "secondary"}
           className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${complianceAlertCount} compliance alerts`}
         >
           {complianceAlertCount}
         </Badge>
@@ -321,6 +323,7 @@ export function AppSidebar() {
         <Badge
           variant="secondary"
           className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${pendingCount} pending inbox items`}
         >
           {pendingCount}
         </Badge>
@@ -331,6 +334,7 @@ export function AppSidebar() {
         <Badge
           variant={jobCounts?.urgent ? "destructive" : "secondary"}
           className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${urgentJobsCount} urgent jobs`}
         >
           {urgentJobsCount}
         </Badge>
@@ -341,6 +345,7 @@ export function AppSidebar() {
         <Badge
           variant="destructive"
           className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${taskStats.overdueCount} overdue tasks`}
         >
           {taskStats.overdueCount}
         </Badge>
@@ -351,6 +356,7 @@ export function AppSidebar() {
         <Badge
           variant="destructive"
           className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${tenancyUrgentCount} urgent tenancy events`}
         >
           {tenancyUrgentCount}
         </Badge>
@@ -368,8 +374,8 @@ export function AppSidebar() {
       return (
         <SidebarMenuItem key={item.title}>
           <SidebarMenuButton asChild isActive={isActive(item.href)}>
-            <Link to={item.href} className="flex items-center gap-3">
-              <item.icon className="h-4 w-4" />
+            <Link to={item.href} className="flex items-center gap-3" aria-current={isActive(item.href) ? 'page' : undefined}>
+              <item.icon className="h-4 w-4" aria-hidden="true" />
               <span className="flex-1">{item.title}</span>
               {renderBadge(item)}
             </Link>
@@ -388,8 +394,8 @@ export function AppSidebar() {
       return (
         <SidebarMenuItem key={item.title}>
           <SidebarMenuButton asChild isActive={isActive(item.href)}>
-            <Link to={item.href} className="flex items-center gap-3">
-              <item.icon className="h-4 w-4" />
+            <Link to={item.href} className="flex items-center gap-3" aria-current={isActive(item.href) ? 'page' : undefined}>
+              <item.icon className="h-4 w-4" aria-hidden="true" />
               <span className="flex-1">{item.title}</span>
               {renderBadge(item)}
             </Link>
@@ -415,16 +421,17 @@ export function AppSidebar() {
               isActive={isActive(item.href)}
               className="flex-1"
             >
-              <Link to={item.href} className="flex items-center gap-3">
-                <item.icon className="h-4 w-4" />
+              <Link to={item.href} className="flex items-center gap-3" aria-current={isActive(item.href) ? 'page' : undefined}>
+                <item.icon className="h-4 w-4" aria-hidden="true" />
                 <span className="flex-1">{item.title}</span>
                 {renderBadge(item)}
               </Link>
             </SidebarMenuButton>
             <CollapsibleTrigger asChild>
               <button
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                aria-label={`Toggle ${item.title}`}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${item.title}`}
+                aria-expanded={isOpen}
               >
                 <ChevronRight
                   className={`h-4 w-4 transition-transform duration-200 ${
@@ -443,7 +450,7 @@ export function AppSidebar() {
                     isActive={isActive(child.href)}
                     size="sm"
                   >
-                    <Link to={child.href} className="flex items-center gap-2">
+                    <Link to={child.href} className="flex items-center gap-2" aria-current={isActive(child.href) ? 'page' : undefined}>
                       <span className="flex-1">{child.title}</span>
                       {renderBadge(child)}
                     </Link>
@@ -475,7 +482,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* PORTFOLIO */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground/70 text-xs uppercase tracking-wider">
+          <SidebarGroupLabel className="text-muted-foreground text-xs uppercase tracking-wider">
             Portfolio
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -487,7 +494,7 @@ export function AppSidebar() {
 
         {/* OPERATIONS */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground/70 text-xs uppercase tracking-wider">
+          <SidebarGroupLabel className="text-muted-foreground text-xs uppercase tracking-wider">
             Operations
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -499,7 +506,7 @@ export function AppSidebar() {
 
         {/* INTELLIGENCE */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground/70 text-xs uppercase tracking-wider">
+          <SidebarGroupLabel className="text-muted-foreground text-xs uppercase tracking-wider">
             Intelligence
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -511,7 +518,7 @@ export function AppSidebar() {
 
         {/* ADMIN */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground/70 text-xs uppercase tracking-wider">
+          <SidebarGroupLabel className="text-muted-foreground text-xs uppercase tracking-wider">
             Admin
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -524,23 +531,23 @@ export function AppSidebar() {
         {/* PLATFORM ADMIN (conditional) */}
         {isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-muted-foreground/70 text-xs uppercase tracking-wider">
+            <SidebarGroupLabel className="text-muted-foreground text-xs uppercase tracking-wider">
               Platform
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive('/admin')}>
-                    <Link to="/admin" className="flex items-center gap-3">
-                      <ShieldCheck className="h-4 w-4" />
+                    <Link to="/admin" className="flex items-center gap-3" aria-current={isActive('/admin') ? 'page' : undefined}>
+                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                       <span>Admin Panel</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={isActive('/migrate')}>
-                    <Link to="/migrate" className="flex items-center gap-3">
-                      <ArrowRight className="h-4 w-4" />
+                    <Link to="/migrate" className="flex items-center gap-3" aria-current={isActive('/migrate') ? 'page' : undefined}>
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       <span>Migration</span>
                     </Link>
                   </SidebarMenuButton>

@@ -37,10 +37,18 @@ export const LtvProgressBar = React.memo(function LtvProgressBar({
         <span className="font-medium text-foreground truncate">{name}</span>
         <span className={cn('font-medium', getTextColor())}>{ltv.toFixed(0)}%</span>
       </div>
-      <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+      <div
+        className="h-2 bg-muted/50 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={Math.round(ltv)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${name} LTV: ${ltv.toFixed(0)}%`}
+      >
         <div
           className={cn('h-full rounded-full transition-all duration-300', getBarColor())}
           style={{ width: `${Math.min(ltv, 100)}%` }}
+          aria-hidden="true"
         />
       </div>
       {value && (

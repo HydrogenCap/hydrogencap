@@ -67,6 +67,7 @@ export const KpiCard = React.memo(function KpiCard({
           'hover:shadow-md hover:shadow-primary/5',
           'active:scale-[0.98]',
           'motion-reduce:transition-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         ],
         className
       )}
@@ -79,6 +80,7 @@ export const KpiCard = React.memo(function KpiCard({
           onClick?.();
         }
       } : undefined}
+      aria-label={isClickable ? `${label}: ${typeof value === 'string' ? value : value}. Click for details` : undefined}
     >
       {/* Header row with label and optional icon/action */}
       <div className="flex items-center justify-between mb-2">
@@ -96,7 +98,7 @@ export const KpiCard = React.memo(function KpiCard({
             </div>
           )}
           {Icon && (
-            <Icon className={cn('h-4 w-4 text-muted-foreground', iconClassName)} />
+            <Icon className={cn('h-4 w-4 text-muted-foreground', iconClassName)} aria-hidden="true" />
           )}
         </div>
       </div>

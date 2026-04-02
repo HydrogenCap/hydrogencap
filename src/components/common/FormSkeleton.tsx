@@ -8,7 +8,7 @@ interface FormSkeletonProps {
 
 export function FormSkeleton({ fields = 4, className }: FormSkeletonProps) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-6', className)} aria-busy="true" aria-label="Loading form">
       {Array.from({ length: fields }).map((_, i) => (
         <div key={i} className="space-y-2">
           <Skeleton className="h-4 w-28" />

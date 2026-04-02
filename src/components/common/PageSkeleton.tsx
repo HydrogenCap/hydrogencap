@@ -8,7 +8,7 @@ interface PageSkeletonProps {
 
 export function PageSkeleton({ tabs, className }: PageSkeletonProps) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-6', className)} aria-busy="true" aria-label="Loading page">
       {/* Page title */}
       <Skeleton className="h-8 w-64" />
 

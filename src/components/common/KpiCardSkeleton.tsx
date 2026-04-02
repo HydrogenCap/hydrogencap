@@ -13,6 +13,8 @@ export function KpiCardSkeleton({ showDelta = true, className }: KpiCardSkeleton
         'rounded-xl border border-border bg-card p-4 shadow-sm space-y-2',
         className,
       )}
+      aria-busy="true"
+      aria-label="Loading metric"
     >
       <Skeleton className="h-3 w-20" />
       <Skeleton className="h-7 w-32" />

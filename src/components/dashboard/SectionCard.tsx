@@ -48,6 +48,7 @@ export function SectionCard({
           'transition-all duration-200',
           'hover:bg-muted/20 hover:border-primary/40',
           'hover:shadow-md hover:shadow-primary/5',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         ],
         className
       )}
@@ -60,13 +61,14 @@ export function SectionCard({
           onClick?.();
         }
       } : undefined}
+      aria-label={isClickable ? `${title}${subtitle ? `: ${subtitle}` : ''}` : undefined}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
         <div className="flex items-center gap-3">
           {Icon && (
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
-              <Icon className={cn('h-4 w-4 text-primary', iconClassName)} />
+              <Icon className={cn('h-4 w-4 text-primary', iconClassName)} aria-hidden="true" />
             </div>
           )}
           <div>
@@ -79,7 +81,7 @@ export function SectionCard({
         <div className="flex items-center gap-2">
           {headerAction}
           {showArrow && (
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           )}
         </div>
       </div>

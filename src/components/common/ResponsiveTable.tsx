@@ -56,8 +56,11 @@ export function ResponsiveTable<T>({
             return (
               <div
                 key={key}
+                role={onRowClick ? 'button' : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={onRowClick ? 'cursor-pointer' : undefined}
+                onKeyDown={onRowClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(row); } } : undefined}
+                className={onRowClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg' : undefined}
               >
                 {mobileCardRender(row)}
               </div>
@@ -69,8 +72,11 @@ export function ResponsiveTable<T>({
           return (
             <Card
               key={key}
-              className={cn(onRowClick && 'cursor-pointer hover:shadow-md transition-shadow')}
+              className={cn(onRowClick && 'cursor-pointer hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2')}
+              role={onRowClick ? 'button' : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
+              onKeyDown={onRowClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(row); } } : undefined}
             >
               <CardContent className="pt-4 pb-3 space-y-2">
                 {visibleColumns.map((col) => (

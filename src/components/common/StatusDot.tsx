@@ -16,6 +16,8 @@ export function StatusDot({ severity, className, pulse = false }: StatusDotProps
         pulse && 'animate-pulse',
         className
       )}
+      role="img"
+      aria-label={`Status: ${severity}`}
     />
   );
 }
