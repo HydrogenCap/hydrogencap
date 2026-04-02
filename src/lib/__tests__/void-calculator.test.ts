@@ -200,3 +200,107 @@ describe('detectVoidRooms', () => {
     expect(result).toHaveLength(0);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// Part 2: void-calculator.ts module tests (new module)
+// ══════════════════════════════════════════════════════════════════════
+
+import {
+  calculateVoidDays,
+  calculateVoidCost,
+  calculatePortfolioVoidRate,
+  calculatePortfolioVoidSummary,
+  estimateAnnualVoidCost,
+  type VoidPeriod,
+  type MonthlyHoldingCosts,
+} from '../void-calculator';
+
+describe('void-calculator: calculateVoidDays', () => {
+  it('days between two dates', () => { expect(calculateVoidDays('2024-01-01', '2024-01-31')).toBe(30); });
+  it('same date = 0', () => { expect(calculateVoidDays('2024-01-01', '2024-01-01')).toBe(0); });
+  it('null end uses reference date', () => { expect(calculateVoidDays('2024-01-01', null, '2024-02-01')).toBe(31); });
+  it('invalid start = 0', () => { expect(calculateVoidDays('not-a-date', '2024-01-31')).toBe(0); });
+  it('end before start = 0', () => { expect(calculateVoidDays('2024-02-01', '2024-01-01')).toBe(0); });
+  it('leap year', () => { expect(calculateVoidDays('2024-02-01', '2024-03-01')).toBe(29); });
+});
+
+describe('void-calculator: calculateVoidCost', () => {
+  const voidPeriod: VoidPeriod = { propertyId: 'p1', startDate: '2024-01-01', endDate: '2024-04-01', monthlyRent: 1_000 };
+
+  it('calculates lost rent', () => {
+    const r = calculateVoidCost(voidPeriod);
+    expect(r.lostRent).toBeGreaterThan(2_900);
+    expect(r.lostRent).toBeLessThan(3_100);
+  });
+
+  it('includes holding costs', () => {
+    const h: MonthlyHoldingCosts = { councilTax: 150, insurance: 50, mortgage: 800, utilities: 100, other: 0 };
+    const r = calculateVoidCost(voidPeriod, h);
+    expect(r.holdingCosts).toBeGreaterThan(0);
+    expect(r.totalCost).toBeGreaterThan(r.lostRent);
+  });
+
+  it('active void when endDate null', () => {
+    const r = calculateVoidCost({ ...voidPeriod, endDate: null }, undefined, '2024-04-01');
+    expect(r.isActive).toBe(true);
+  });
+
+  it('closed void when endDate exists', () => {
+    expect(calculateVoidCost(voidPeriod).isActive).toBe(false);
+  });
+
+  it('zero rent', () => {
+    expect(calculateVoidCost({ ...voidPeriod, monthlyRent: 0 }).lostRent).toBe(0);
+  });
+
+  it('negative rent clamped', () => {
+    expect(calculateVoidCost({ ...voidPeriod, monthlyRent: -500 }).lostRent).toBe(0);
+  });
+
+  it('includes roomId', () => {
+    const r = calculateVoidCost({ ...voidPeriod, roomId: 'room-3' });
+    expect(r.roomId).toBe('room-3');
+  });
+});
+
+describe('void-calculator: calculatePortfolioVoidRate', () => {
+  it('percentage', () => { expect(calculatePortfolioVoidRate(20, 4)).toBe(20); });
+  it('zero rooms = 0', () => { expect(calculatePortfolioVoidRate(0, 5)).toBe(0); });
+  it('zero void = 0', () => { expect(calculatePortfolioVoidRate(20, 0)).toBe(0); });
+  it('negative void = 0', () => { expect(calculatePortfolioVoidRate(20, -3)).toBe(0); });
+  it('all void = 100', () => { expect(calculatePortfolioVoidRate(10, 10)).toBe(100); });
+  it('rounds to 2dp', () => { expect(calculatePortfolioVoidRate(3, 1)).toBeCloseTo(33.33, 2); });
+});
+
+describe('void-calculator: calculatePortfolioVoidSummary', () => {
+  const vps: VoidPeriod[] = [
+    { propertyId: 'p1', startDate: '2024-01-01', endDate: null, monthlyRent: 1_000 },
+    { propertyId: 'p2', startDate: '2024-02-01', endDate: '2024-03-01', monthlyRent: 800 },
+    { propertyId: 'p1', roomId: 'r2', startDate: '2024-01-15', endDate: null, monthlyRent: 600 },
+  ];
+
+  it('unique properties', () => {
+    const s = calculatePortfolioVoidSummary(vps, 10, 20, undefined, '2024-04-01');
+    expect(s.propertiesWithVoids).toBe(2);
+  });
+
+  it('active void rooms', () => {
+    const s = calculatePortfolioVoidSummary(vps, 10, 20, undefined, '2024-04-01');
+    expect(s.voidRooms).toBe(2);
+  });
+
+  it('empty array', () => {
+    const s = calculatePortfolioVoidSummary([], 10, 20);
+    expect(s.totalVoidCost).toBe(0);
+    expect(s.averageVoidDays).toBe(0);
+  });
+});
+
+describe('void-calculator: estimateAnnualVoidCost', () => {
+  it('10% void rate, £1k/mo', () => { expect(estimateAnnualVoidCost(1_000, 10)).toBeCloseTo(1_200, 0); });
+  it('includes holding costs', () => { expect(estimateAnnualVoidCost(1_000, 10, 500)).toBeCloseTo(1_800, 0); });
+  it('zero void rate', () => { expect(estimateAnnualVoidCost(1_000, 0)).toBe(0); });
+  it('100% void rate', () => { expect(estimateAnnualVoidCost(1_000, 100)).toBe(12_000); });
+  it('clamps above 100%', () => { expect(estimateAnnualVoidCost(1_000, 150)).toBe(12_000); });
+  it('negative rent', () => { expect(estimateAnnualVoidCost(-500, 10)).toBe(0); });
+});

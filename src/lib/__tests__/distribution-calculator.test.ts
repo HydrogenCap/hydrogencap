@@ -481,3 +481,123 @@ describe('resolveOwnershipGraph', () => {
     expect(result.chains).toBeDefined();
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// Part 2: distribution-calculator.ts module tests (new module)
+// ══════════════════════════════════════════════════════════════════════
+
+import {
+  calculateRetention,
+  calculateSimpleDistribution,
+  calculateWaterfallDistribution,
+  calculateEffectiveYield,
+  type Investor,
+  type WaterfallConfig,
+} from '../distribution-calculator';
+
+describe('distribution-calculator: calculateRetention', () => {
+  it('10% retention', () => {
+    const r = calculateRetention(100_000, 10);
+    expect(r.retentionAmount).toBe(10_000);
+    expect(r.distributableProfit).toBe(90_000);
+  });
+  it('zero retention', () => { expect(calculateRetention(100_000, 0).retentionAmount).toBe(0); });
+  it('100% retention', () => { expect(calculateRetention(100_000, 100).distributableProfit).toBe(0); });
+  it('clamps above 100%', () => { expect(calculateRetention(100_000, 150).retentionAmount).toBe(100_000); });
+  it('negative profit', () => { expect(calculateRetention(-50_000, 10).retentionAmount).toBe(0); });
+  it('negative percent', () => { expect(calculateRetention(100_000, -10).retentionAmount).toBe(0); });
+});
+
+describe('distribution-calculator: calculateSimpleDistribution', () => {
+  const investors: Investor[] = [
+    { id: '1', name: 'Alice', capitalContributed: 50_000, ownershipPercent: 50, isGP: false },
+    { id: '2', name: 'Bob', capitalContributed: 30_000, ownershipPercent: 30, isGP: false },
+    { id: '3', name: 'Charlie', capitalContributed: 20_000, ownershipPercent: 20, isGP: false },
+  ];
+
+  it('distributes pro-rata', () => {
+    const r = calculateSimpleDistribution({ grossProfit: 100_000, investors, retentionPercent: 0 });
+    expect(r.allocations[0].amount).toBe(50_000);
+    expect(r.allocations[1].amount).toBe(30_000);
+    expect(r.allocations[2].amount).toBe(20_000);
+  });
+
+  it('applies retention', () => {
+    const r = calculateSimpleDistribution({ grossProfit: 100_000, investors, retentionPercent: 10 });
+    expect(r.retentionAmount).toBe(10_000);
+    expect(r.allocations[0].amount).toBe(45_000);
+  });
+
+  it('zero profit', () => {
+    const r = calculateSimpleDistribution({ grossProfit: 0, investors, retentionPercent: 0 });
+    expect(r.allocations).toHaveLength(0);
+  });
+
+  it('empty investors', () => {
+    const r = calculateSimpleDistribution({ grossProfit: 100_000, investors: [], retentionPercent: 0 });
+    expect(r.totalDistributed).toBe(0);
+  });
+
+  it('single investor gets everything', () => {
+    const r = calculateSimpleDistribution({ grossProfit: 100_000, investors: [{ id: '1', name: 'Solo', capitalContributed: 100_000, ownershipPercent: 100, isGP: false }], retentionPercent: 0 });
+    expect(r.allocations[0].amount).toBe(100_000);
+  });
+});
+
+describe('distribution-calculator: calculateWaterfallDistribution', () => {
+  const config: WaterfallConfig = { retentionPercent: 10, preferredReturnPercent: 8, gpCatchUpPercent: 50, gpCatchUpLimit: 20, residualGPShare: 20 };
+  const investors: Investor[] = [
+    { id: 'gp', name: 'Manager', capitalContributed: 10_000, ownershipPercent: 20, isGP: true },
+    { id: 'lp1', name: 'LP One', capitalContributed: 60_000, ownershipPercent: 50, isGP: false },
+    { id: 'lp2', name: 'LP Two', capitalContributed: 30_000, ownershipPercent: 30, isGP: false },
+  ];
+
+  it('applies retention first', () => {
+    const r = calculateWaterfallDistribution(100_000, investors, config);
+    expect(r.retentionAmount).toBe(10_000);
+  });
+
+  it('allocates preferred return to LPs', () => {
+    const r = calculateWaterfallDistribution(100_000, investors, config);
+    const lp1 = r.allocations.find(a => a.investorId === 'lp1')!;
+    expect(lp1.preferredReturn).toBeCloseTo(4_800, 0);
+  });
+
+  it('GP gets catch-up', () => {
+    const r = calculateWaterfallDistribution(100_000, investors, config);
+    const gp = r.allocations.find(a => a.investorId === 'gp')!;
+    expect(gp.catchUp).toBeGreaterThan(0);
+  });
+
+  it('distributes residual', () => {
+    const r = calculateWaterfallDistribution(100_000, investors, config);
+    const totalResidual = r.allocations.reduce((s, a) => s + a.residualShare, 0);
+    expect(totalResidual).toBeGreaterThan(0);
+  });
+
+  it('total does not exceed distributable', () => {
+    const r = calculateWaterfallDistribution(100_000, investors, config);
+    expect(r.totalDistributed).toBeLessThanOrEqual(r.distributableProfit + 1);
+  });
+
+  it('zero profit', () => {
+    const r = calculateWaterfallDistribution(0, investors, config);
+    expect(r.totalDistributed).toBe(0);
+  });
+
+  it('no GP in mix', () => {
+    const lpOnly: Investor[] = [
+      { id: 'lp1', name: 'LP One', capitalContributed: 60_000, ownershipPercent: 60, isGP: false },
+      { id: 'lp2', name: 'LP Two', capitalContributed: 40_000, ownershipPercent: 40, isGP: false },
+    ];
+    const r = calculateWaterfallDistribution(100_000, lpOnly, config);
+    expect(r.allocations.every(a => a.catchUp === 0)).toBe(true);
+  });
+});
+
+describe('distribution-calculator: calculateEffectiveYield', () => {
+  it('calculates yield', () => { expect(calculateEffectiveYield(8_000, 100_000)).toBe(8); });
+  it('zero capital', () => { expect(calculateEffectiveYield(8_000, 0)).toBe(0); });
+  it('negative capital', () => { expect(calculateEffectiveYield(8_000, -50_000)).toBe(0); });
+  it('zero distribution', () => { expect(calculateEffectiveYield(0, 100_000)).toBe(0); });
+});

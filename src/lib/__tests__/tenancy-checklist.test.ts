@@ -303,3 +303,157 @@ describe('calculateAllEvents', () => {
     expect(endEvents).toHaveLength(3);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// Part 2: tenancy-checklist.ts module tests (new module)
+// ══════════════════════════════════════════════════════════════════════
+
+import {
+  generateChecklist,
+  filterByCategory,
+  getCategories,
+  getLegallyRequiredItems,
+  calculateCompletion,
+  getPropertyTypesForItem,
+  CHECKLIST_ITEMS,
+} from '../tenancy-checklist';
+
+describe('tenancy-checklist: generateChecklist', () => {
+  it('single let new tenancy', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    expect(c.propertyType).toBe('single_let');
+    expect(c.totalCount).toBeGreaterThan(0);
+    expect(c.requiredCount).toBeGreaterThan(0);
+  });
+
+  it('HMO includes HMO items', () => {
+    const c = generateChecklist('hmo', 'new_tenancy');
+    expect(c.items.some(i => i.category === 'HMO')).toBe(true);
+  });
+
+  it('single let excludes HMO items', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    expect(c.items.filter(i => i.category === 'HMO')).toHaveLength(0);
+  });
+
+  it('end of tenancy includes checkout', () => {
+    const c = generateChecklist('single_let', 'end_tenancy');
+    expect(c.items.some(i => i.id === 'checkout-inspection')).toBe(true);
+  });
+
+  it('commercial includes commercial lease', () => {
+    const c = generateChecklist('commercial', 'new_tenancy');
+    expect(c.items.some(i => i.id === 'commercial-lease')).toBe(true);
+  });
+
+  it('commercial excludes deposit protection', () => {
+    const c = generateChecklist('commercial', 'new_tenancy');
+    expect(c.items.some(i => i.id === 'deposit-protection')).toBe(false);
+  });
+
+  it('holiday let includes fire risk assessment', () => {
+    const c = generateChecklist('holiday_let', 'new_tenancy');
+    expect(c.items.some(i => i.id === 'fire-risk-assessment')).toBe(true);
+  });
+
+  it('counts are consistent', () => {
+    const c = generateChecklist('hmo', 'new_tenancy');
+    expect(c.requiredCount + c.recommendedCount + c.optionalCount).toBe(c.totalCount);
+  });
+
+  it('all items match requested type', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    expect(c.items.every(i => i.propertyTypes.includes('single_let'))).toBe(true);
+  });
+
+  it('all items match requested phase', () => {
+    const c = generateChecklist('single_let', 'end_tenancy');
+    expect(c.items.every(i => i.phases.includes('end_tenancy'))).toBe(true);
+  });
+});
+
+describe('tenancy-checklist: filterByCategory', () => {
+  it('filters correctly', () => {
+    const c = generateChecklist('hmo', 'new_tenancy');
+    const safety = filterByCategory(c.items, 'Safety & Legal');
+    expect(safety.length).toBeGreaterThan(0);
+    expect(safety.every(i => i.category === 'Safety & Legal')).toBe(true);
+  });
+
+  it('nonexistent category', () => { expect(filterByCategory([], 'X')).toHaveLength(0); });
+});
+
+describe('tenancy-checklist: getCategories', () => {
+  it('returns unique categories', () => {
+    const c = generateChecklist('hmo', 'new_tenancy');
+    const cats = getCategories(c.items);
+    expect(new Set(cats).size).toBe(cats.length);
+  });
+  it('empty input', () => { expect(getCategories([])).toHaveLength(0); });
+});
+
+describe('tenancy-checklist: getLegallyRequiredItems', () => {
+  it('returns items with legal references', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    const legal = getLegallyRequiredItems(c.items);
+    expect(legal.length).toBeGreaterThan(0);
+    expect(legal.every(i => i.legalReference !== undefined)).toBe(true);
+  });
+});
+
+describe('tenancy-checklist: calculateCompletion', () => {
+  it('100% when all done', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    const r = calculateCompletion(c, c.items.map(i => i.id));
+    expect(r.percent).toBe(100);
+    expect(r.requiredRemaining).toBe(0);
+  });
+
+  it('0% when nothing done', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    const r = calculateCompletion(c, []);
+    expect(r.percent).toBe(0);
+    expect(r.requiredRemaining).toBe(c.requiredCount);
+  });
+
+  it('partial completion', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    const r = calculateCompletion(c, c.items.slice(0, 2).map(i => i.id));
+    expect(r.completedCount).toBe(2);
+    expect(r.percent).toBeGreaterThan(0);
+    expect(r.percent).toBeLessThan(100);
+  });
+
+  it('ignores unknown ids', () => {
+    const c = generateChecklist('single_let', 'new_tenancy');
+    expect(calculateCompletion(c, ['nonexistent']).completedCount).toBe(0);
+  });
+});
+
+describe('tenancy-checklist: getPropertyTypesForItem', () => {
+  it('gas-safety applies to residential', () => {
+    const types = getPropertyTypesForItem('gas-safety');
+    expect(types).toContain('single_let');
+    expect(types).toContain('hmo');
+  });
+
+  it('unknown item returns empty', () => {
+    expect(getPropertyTypesForItem('nonexistent')).toHaveLength(0);
+  });
+
+  it('deposit-protection excludes commercial/holiday', () => {
+    const types = getPropertyTypesForItem('deposit-protection');
+    expect(types).not.toContain('commercial');
+    expect(types).not.toContain('holiday_let');
+  });
+});
+
+describe('tenancy-checklist: CHECKLIST_ITEMS integrity', () => {
+  it('unique IDs', () => {
+    const ids = CHECKLIST_ITEMS.map(i => i.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+  it('all have phases', () => { expect(CHECKLIST_ITEMS.every(i => i.phases.length > 0)).toBe(true); });
+  it('all have property types', () => { expect(CHECKLIST_ITEMS.every(i => i.propertyTypes.length > 0)).toBe(true); });
+  it('all have descriptions', () => { expect(CHECKLIST_ITEMS.every(i => i.description.length > 0)).toBe(true); });
+});
