@@ -2,52 +2,42 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { HardHat, Shield } from 'lucide-react';
-import { useJobCounts } from '@/hooks/useContractorJobs';
+import { HardHat } from 'lucide-react';
+import { useJobCounts, useContractorJobs } from '@/hooks/useContractorJobs';
 import { useMaintenanceStats } from '@/hooks/useMaintenanceRequests';
 import { useWorkOrderCounts } from '@/hooks/useWorkOrders';
-import { useBreachRisk } from '@/hooks/useAwaabsLawCompliance';
 import JobsTab from '@/components/jobs-works/JobsTab';
 import MaintenanceTab from '@/components/jobs-works/MaintenanceTab';
 import WorkOrdersTab from '@/components/jobs-works/WorkOrdersTab';
-import AwaabsLawDashboard from '@/components/maintenance/AwaabsLawDashboard';
+import { SLATracker } from '@/components/jobs-works/SLATracker';
+import { QuoteComparison } from '@/components/jobs-works/QuoteComparison';
+import { JobEvidenceGallery } from '@/components/jobs-works/JobEvidenceGallery';
+import { RateContractorDialog } from '@/components/contractors/RateContractorDialog';
 
 export default function JobsAndWorks() {
   const [activeTab, setActiveTab] = useState('jobs');
   const { data: jobCounts } = useJobCounts();
   const maintenanceStats = useMaintenanceStats();
   const { data: woCounts } = useWorkOrderCounts();
-  const breachRisk = useBreachRisk();
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [ratingData, setRatingData] = useState<{
+    contractorId: string;
+    contractorName: string;
+    jobId: string;
+  } | null>(null);
+
+  // Fetch active jobs for the SLA tracker
+  const { data: activeJobsData } = useContractorJobs({
+    status: ['requested', 'quoted', 'accepted', 'booked', 'in_progress'],
+  });
 
   const activeJobCount = (jobCounts?.total || 0) - (jobCounts?.draft || 0);
   const openMaintenanceCount = maintenanceStats?.open || 0;
   const activeWOCount = (woCounts?.awaitingApproval || 0) + (woCounts?.inProgress || 0);
-  const awaabsAlertCount = (breachRisk?.overdue || 0) + (breachRisk?.next24h || 0);
 
   return (
     <AppLayout>
       <div className="container py-6 space-y-6">
-        {/* Awaab's Law breach banner — shown on any tab when deadlines are overdue */}
-        {breachRisk && breachRisk.overdue > 0 && activeTab !== 'awaabs-law' && (
-          <div
-            className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-red-100 transition-colors"
-            onClick={() => setActiveTab('awaabs-law')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') setActiveTab('awaabs-law'); }}
-          >
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-red-600 animate-pulse" />
-              <span className="text-sm font-medium text-red-800">
-                {breachRisk.overdue} Awaab's Law deadline{breachRisk.overdue !== 1 ? 's' : ''} overdue — click to view
-              </span>
-            </div>
-            <Badge variant="outline" className="bg-black text-white border-black animate-pulse">
-              Action Required
-            </Badge>
-          </div>
-        )}
-
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <HardHat className="h-6 w-6" />
@@ -58,57 +48,71 @@ export default function JobsAndWorks() {
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="jobs" className="gap-2">
-              Jobs
-              {activeJobCount > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
-                  {activeJobCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="maintenance" className="gap-2">
-              Maintenance
-              {openMaintenanceCount > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
-                  {openMaintenanceCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="work-orders" className="gap-2">
-              Work Orders
-              {activeWOCount > 0 && (
-                <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
-                  {activeWOCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="awaabs-law" className="gap-2">
-              <Shield className="h-3.5 w-3.5" />
-              Awaab's Law
-              {awaabsAlertCount > 0 && (
-                <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
-                  {awaabsAlertCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Main content */}
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="jobs" className="gap-2">
+                  Jobs
+                  {activeJobCount > 0 && (
+                    <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
+                      {activeJobCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="maintenance" className="gap-2">
+                  Maintenance
+                  {openMaintenanceCount > 0 && (
+                    <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
+                      {openMaintenanceCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="work-orders" className="gap-2">
+                  Work Orders
+                  {activeWOCount > 0 && (
+                    <Badge variant="secondary" className="h-5 min-w-5 px-1.5 text-xs">
+                      {activeWOCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="jobs" className="mt-6">
-            <JobsTab />
-          </TabsContent>
-          <TabsContent value="maintenance" className="mt-6">
-            <MaintenanceTab />
-          </TabsContent>
-          <TabsContent value="work-orders" className="mt-6">
-            <WorkOrdersTab />
-          </TabsContent>
-          <TabsContent value="awaabs-law" className="mt-6">
-            <AwaabsLawDashboard />
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="jobs" className="mt-6">
+                <JobsTab />
+              </TabsContent>
+              <TabsContent value="maintenance" className="mt-6">
+                <MaintenanceTab />
+              </TabsContent>
+              <TabsContent value="work-orders" className="mt-6">
+                <WorkOrdersTab />
+              </TabsContent>
+            </Tabs>
+
+            {/* Quote Comparison & Evidence for selected job */}
+            {selectedJobId && (
+              <div className="mt-6 space-y-6">
+                <QuoteComparison jobId={selectedJobId} />
+                <JobEvidenceGallery jobId={selectedJobId} />
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar - SLA Tracker */}
+          <div className="space-y-6">
+            <SLATracker jobs={activeJobsData?.items || []} />
+          </div>
+        </div>
       </div>
+
+      <RateContractorDialog
+        contractorId={ratingData?.contractorId ?? null}
+        contractorName={ratingData?.contractorName}
+        jobId={ratingData?.jobId ?? null}
+        open={!!ratingData}
+        onOpenChange={(open) => !open && setRatingData(null)}
+      />
     </AppLayout>
   );
 }

@@ -5,3 +5,5 @@
 export { ContractorDetailDrawer } from './ContractorDetailDrawer';
 export { AddReviewDialog } from './AddReviewDialog';
 export { EditContractorForm } from './EditContractorForm';
+export { ContractorProfileCard } from './ContractorProfileCard';
+export { RateContractorDialog } from './RateContractorDialog';
