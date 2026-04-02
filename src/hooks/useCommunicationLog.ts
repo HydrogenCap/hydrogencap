@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
+import { useToast } from '@/hooks/use-toast';
 
 export interface CommunicationAttachment {
   name: string;
@@ -103,6 +104,7 @@ export function useCommunications(filters?: CommunicationFilters) {
 
 export function useLogCommunication() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (input: LogCommunicationInput) => {
@@ -141,6 +143,10 @@ export function useLogCommunication() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communication_log'] });
+      toast({ title: 'Communication logged', description: 'This record is now immutable and cannot be edited.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to log communication', description: error.message, variant: 'destructive' });
     },
   });
 }
@@ -151,6 +157,26 @@ export function usePropertyCommunications(propertyId: string | undefined) {
 
 export function useTenantCommunications(tenantId: string | undefined) {
   return useCommunications(tenantId ? { tenantId } : undefined);
+}
+
+export function useRelatedCommunications(relatedToType: string | undefined, relatedToId: string | undefined) {
+  return useQuery({
+    queryKey: ['communication_log', 'related', relatedToType, relatedToId],
+    queryFn: async () => {
+      if (!relatedToType || !relatedToId) return [];
+      const orgId = await fetchUserOrgId();
+      const { data, error } = await (supabase as any)
+        .from('communication_log')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('related_to_type', relatedToType)
+        .eq('related_to_id', relatedToId)
+        .order('sent_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as CommunicationRecord[];
+    },
+    enabled: !!relatedToType && !!relatedToId,
+  });
 }
 
 export function useExportCommunications(filters?: CommunicationFilters) {
