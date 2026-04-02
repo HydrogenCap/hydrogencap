@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PageSkeleton } from '@/components/common';
 import { Textarea } from '@/components/ui/textarea';
 import { usePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { EpcRoadmapCard } from '@/components/property/EpcRoadmapCard';
@@ -83,7 +83,7 @@ export default function PropertyDetailV2() {
   });
 
   if (isLoading) {
-    return <AppLayout><div className="space-y-6"><Skeleton className="h-10 w-80" /><Skeleton className="h-64 w-full" /></div></AppLayout>;
+    return <AppLayout><PageSkeleton /></AppLayout>;
   }
   if (!property) {
     return <AppLayout><div className="text-center py-16 text-muted-foreground">Property not found.</div></AppLayout>;

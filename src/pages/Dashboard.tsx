@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { KpiCardSkeleton, PageSkeleton } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
@@ -248,9 +248,9 @@ function DashboardPage() {
     return (
       <AppLayout>
         <div className="space-y-6">
-          <Skeleton className="h-8 w-48" />
+          <PageSkeleton />
           <div className="grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-28" />)}
+            {[1, 2, 3].map(i => <KpiCardSkeleton key={i} />)}
           </div>
         </div>
       </AppLayout>
