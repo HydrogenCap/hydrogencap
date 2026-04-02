@@ -96,6 +96,7 @@ const BulkDocumentScanner = lazy(() => import("./pages/BulkDocumentScanner"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
+const Insurance = lazy(() => import("./pages/Insurance"));
 const CapExDetail = lazy(() => import("./pages/CapExDetail"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -692,6 +693,7 @@ const App = () => (
             <Route path="/team" element={<ProtectedRoute><RouteBoundary><TeamManagement /></RouteBoundary></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/insurance" element={<ProtectedRoute><RouteBoundary><Insurance /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />
