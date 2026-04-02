@@ -98,6 +98,7 @@ const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const Inspections = lazy(() => import("./pages/Inspections"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
+const Insurance = lazy(() => import("./pages/Insurance"));
 const CapExDetail = lazy(() => import("./pages/CapExDetail"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -695,6 +696,7 @@ const App = () => (
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
             <Route path="/communications" element={<ProtectedRoute><RouteBoundary><Communications /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/insurance" element={<ProtectedRoute><RouteBoundary><Insurance /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/inspections" element={<ProtectedRoute><RouteBoundary><Inspections /></RouteBoundary></ProtectedRoute>} />

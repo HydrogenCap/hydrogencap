@@ -133,6 +133,7 @@ const operationsItems: NavItem[] = [
       { title: 'Financials', icon: BarChart3, href: '/financials' },
       { title: 'Investors', icon: Briefcase, href: '/investors', sectionKey: 'investors' },
       { title: 'Distributions', icon: Banknote, href: '/distributions', sectionKey: 'distributions' },
+      { title: 'Insurance', icon: Shield, href: '/insurance' },
       { title: 'Accounting', icon: Receipt, href: '/accounting' },
     ],
   },
