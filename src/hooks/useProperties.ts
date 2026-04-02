@@ -10,8 +10,8 @@ import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 
 type Property = Database['public']['Tables']['properties']['Row'];
-type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
-type PropertyUpdate = Database['public']['Tables']['properties']['Update'];
+type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
+type PropertyV1Update = Database['public']['Tables']['properties']['Update'];
 type Loan = Database['public']['Tables']['loans']['Row'];
 type Income = Database['public']['Tables']['income']['Row'];
 type Costs = Database['public']['Tables']['costs']['Row'];
@@ -74,7 +74,7 @@ export function useCreateProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (property: Omit<PropertyInsert, 'org_id'>) => {
+    mutationFn: async (property: Omit<PropertyV1Insert, 'org_id'>) => {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
@@ -102,7 +102,7 @@ export function useUpdateProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, previousValue, ...property }: PropertyUpdate & { id: string; previousValue?: number | null }) => {
+    mutationFn: async ({ id, previousValue, ...property }: PropertyV1Update & { id: string; previousValue?: number | null }) => {
       const { data, error } = await (supabase as any)
         .from('properties')
         .update(property)

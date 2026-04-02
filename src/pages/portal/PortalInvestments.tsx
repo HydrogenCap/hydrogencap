@@ -29,41 +29,8 @@ const DIST_TYPE_LABEL: Record<string, string> = {
   other: 'Other',
 };
 
-interface PortalCommitment {
-  entity_name: string | null;
-  commitment_type: string | null;
-  committed_amount: number | null;
-  drawn_amount: number | null;
-  equity_percentage: number | null;
-  investors_share_valuation: number | null;
-  status: string | null;
-}
-
-interface PortalReturnMetric {
-  entity_name: string | null;
-  capital_invested: number | null;
-  total_distributions: number | null;
-  current_equity_value: number | null;
-  cash_on_cash_pct: number | null;
-  equity_multiple: number | null;
-  unrealised_gain_loss: number | null;
-}
-
-interface PortalDistribution {
-  distribution_date: string;
-  distribution_type: string | null;
-  amount: number | null;
-  tax_deducted: number | null;
-  net_amount: number | null;
-  payment_reference: string | null;
-  status: string;
-}
-
 export default function PortalInvestments() {
   const { commitments, distributions, returnMetrics, stats, isLoading } = usePortalInvestorData();
-  const typedCommitments = commitments as PortalCommitment[] | undefined;
-  const typedReturnMetrics = returnMetrics as PortalReturnMetric[] | undefined;
-  const typedDistributions = distributions as PortalDistribution[] | undefined;
 
   if (isLoading) {
     return (
@@ -154,7 +121,7 @@ export default function PortalInvestments() {
                   </tr>
                 </thead>
                 <tbody>
-                  {typedCommitments?.map((c, i: number) => (
+                  {commitments?.map((c, i: number) => (
                     <tr key={i} className="border-b last:border-0">
                       <td className="py-3 px-2 font-medium">{c.entity_name || '-'}</td>
                       <td className="py-3 px-2">
@@ -206,7 +173,7 @@ export default function PortalInvestments() {
                     </tr>
                   </thead>
                   <tbody>
-                  {typedReturnMetrics.map((m, i: number) => (
+                  {returnMetrics.map((m, i: number) => (
                       <tr key={i} className="border-b last:border-0">
                         <td className="py-3 px-2 font-medium">{m.entity_name || '-'}</td>
                         <td className="py-3 px-2 text-right">{fmt(m.capital_invested)}</td>
@@ -233,7 +200,7 @@ export default function PortalInvestments() {
         )}
 
         {/* Recent Distributions */}
-        {typedDistributions && typedDistributions.length > 0 && (
+        {distributions && distributions.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Distribution History</CardTitle>
@@ -254,7 +221,7 @@ export default function PortalInvestments() {
                     </tr>
                   </thead>
                   <tbody>
-                    {typedDistributions.map((d, i: number) => (
+                    {distributions.map((d, i: number) => (
                       <tr key={i} className="border-b last:border-0">
                         <td className="py-3 px-2">{format(new Date(d.distribution_date), 'dd MMM yyyy')}</td>
                         <td className="py-3 px-2">{DIST_TYPE_LABEL[d.distribution_type] || d.distribution_type}</td>

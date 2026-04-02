@@ -11,11 +11,11 @@ interface Props {
   data: PropertyFinancialSummary[];
 }
 
-type SortField = 'monthlyIncome' | 'monthlyCosts' | 'noi' | 'cashflow' | 'netYield';
+type LivePropertySortField = 'monthlyIncome' | 'monthlyCosts' | 'noi' | 'cashflow' | 'netYield';
 
 export function LivePropertyTable({ data }: Props) {
   const navigate = useNavigate();
-  const [sortField, setSortField] = useState<SortField>('netYield');
+  const [sortField, setLivePropertySortField] = useState<LivePropertySortField>('netYield');
   const [sortAsc, setSortAsc] = useState(false);
 
   const sorted = useMemo(() => {
@@ -26,12 +26,12 @@ export function LivePropertyTable({ data }: Props) {
     });
   }, [data, sortField, sortAsc]);
 
-  const toggleSort = (field: SortField) => {
+  const toggleSort = (field: LivePropertySortField) => {
     if (sortField === field) setSortAsc(!sortAsc);
-    else { setSortField(field); setSortAsc(false); }
+    else { setLivePropertySortField(field); setSortAsc(false); }
   };
 
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
+  const SortHeader = ({ field, label }: { field: LivePropertySortField; label: string }) => (
     <th
       className="px-3 py-2 text-left text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none whitespace-nowrap"
       onClick={() => toggleSort(field)}

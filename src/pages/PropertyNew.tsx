@@ -8,7 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreateProperty, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
 import { extractPostcodeArea } from '@/lib/calculations';
 import { useUnitUsage } from '@/hooks/useUnitUsage';
-import { PropertyForm, PropertyFormData } from '@/components/property/PropertyForm';
+import { PropertyForm } from '@/components/property/PropertyForm';
+import type { PropertyFormData } from '@/components/property/propertyFormSchema';
 import { AddressData } from '@/components/maps/AddressAutocomplete';
 
 function PropertyNewPage() {

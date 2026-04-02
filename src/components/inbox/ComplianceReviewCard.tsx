@@ -80,7 +80,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
     } finally {
       setIsRetrying(false);
     }
-  }, [document.id, document.file_url]);
+  }, [document.id, document.file_url, toast]);
 
   const docTypeConfidence = document.ai_doc_type_confidence || 0;
   const propertyConfidence = document.ai_property_confidence || 0;

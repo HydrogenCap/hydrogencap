@@ -3,14 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { FileText, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getComplianceStatus, type ComplianceStatus } from '@/lib/complianceStatus';
+import { getComplianceStatus } from '@/lib/complianceStatus';
 import { cn } from '@/lib/utils';
-
-interface Company {
-  id: string;
-  accounts_due_date: string | null;
-  confirmation_statement_due_date: string | null;
-}
+import type { Company } from '@/hooks/useCompanies';
 
 interface ComplianceSummaryWidgetProps {
   companies: Company[] | undefined;

@@ -4,7 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import type { ComplianceMatrixRow, PortfolioComplianceScore, ComplianceDocType } from '@/lib/complianceV2Types';
 import { extractStoragePath } from '@/lib/storagePaths';
 
-type ComplianceTaskUpdate = Pick<
+type ComplianceTaskResolutionUpdate = Pick<
   Database['public']['Tables']['compliance_tasks']['Update'],
   'status' | 'resolved_at' | 'resolved_by' | 'resolution_notes'
 >;
@@ -162,7 +162,7 @@ export function useCreateComplianceDocV2() {
 
         if (openTask) {
           const userId = (await supabase.auth.getUser()).data.user?.id;
-          const taskUpdate: ComplianceTaskUpdate = {
+          const taskUpdate: ComplianceTaskResolutionUpdate = {
             status: 'completed',
             resolved_at: new Date().toISOString(),
             resolved_by: userId,

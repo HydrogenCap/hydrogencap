@@ -108,12 +108,12 @@ export function useEntityPropertiesV2(entityId: string | undefined) {
   });
 }
 
-type PropertyInsert = Omit<PropertyV2, 'id' | 'created_at' | 'updated_at' | 'org_id' | 'epc_rating' | 'epc_expiry_date'>;
+type PropertyV2Insert = Omit<PropertyV2, 'id' | 'created_at' | 'updated_at' | 'org_id' | 'epc_rating' | 'epc_expiry_date'>;
 
 export function useCreatePropertyV2() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (property: PropertyInsert) => {
+    mutationFn: async (property: PropertyV2Insert) => {
       const orgId = await fetchUserOrgId();
       const { data, error } = await (supabase as any)
         .from('properties_v2')

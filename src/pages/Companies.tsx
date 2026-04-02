@@ -68,7 +68,7 @@ const statusColors: Record<string, string> = {
   CLOSED: SEVERITY.critical.badge,
 };
 
-type SortField = 'name' | 'accounts_due' | 'cs_due';
+type CompanySortField = 'name' | 'accounts_due' | 'cs_due';
 type SortDirection = 'asc' | 'desc';
 
 export default function Companies() {
@@ -84,7 +84,7 @@ export default function Companies() {
     (searchParams.get('compliance') as ComplianceFilter) || 'ALL'
   );
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortField, setCompanySortField] = useState<CompanySortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Handle compliance filter from URL
@@ -105,11 +105,11 @@ export default function Companies() {
     setSearchParams(searchParams);
   };
 
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: CompanySortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
+      setCompanySortField(field);
       setSortDirection('asc');
     }
   };

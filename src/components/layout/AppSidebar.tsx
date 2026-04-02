@@ -242,14 +242,15 @@ export function AppSidebar() {
   const complianceAlertCount = complianceStats.expired + complianceStats.expiring;
   const expiredCount = complianceStats.expired;
 
-  const isActive = (href: string) =>
+  const isActive = useCallback((href: string) =>
     location.pathname === href ||
-    (href !== '/dashboard' && location.pathname.startsWith(href));
+    (href !== '/dashboard' && location.pathname.startsWith(href)),
+  [location.pathname]);
 
   const hasActiveChild = useCallback((item: NavItem): boolean => {
     if (!item.children) return false;
     return item.children.some(child => isActive(child.href) || hasActiveChild(child));
-  }, [location.pathname]);
+  }, [isActive]);
 
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(() => {
     const stored = loadExpandedState();
@@ -273,18 +274,21 @@ export function AppSidebar() {
   // Auto-expand parent when navigating to a child route
   useEffect(() => {
     const allItems = [...portfolioItems, ...operationsItems, ...intelligenceItems, ...adminItems];
-    let changed = false;
-    const updated = { ...expandedItems };
-    for (const item of allItems) {
-      if (item.children && hasActiveChild(item) && !updated[item.title]) {
-        updated[item.title] = true;
-        changed = true;
+    setExpandedItems(prev => {
+      let changed = false;
+      const updated = { ...prev };
+      for (const item of allItems) {
+        if (item.children && hasActiveChild(item) && !updated[item.title]) {
+          updated[item.title] = true;
+          changed = true;
+        }
       }
-    }
-    if (changed) {
-      setExpandedItems(updated);
-      saveExpandedState(updated);
-    }
+      if (changed) {
+        saveExpandedState(updated);
+        return updated;
+      }
+      return prev;
+    });
   }, [location.pathname, hasActiveChild]);
 
   const toggleExpanded = (title: string) => {

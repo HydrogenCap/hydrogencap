@@ -3,11 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 
-type PortalInvestor = Database['public']['Tables']['investors']['Row'];
-type PortalCommitment = Database['public']['Views']['investor_commitment_detail']['Row'];
-type PortalDistribution = Database['public']['Tables']['investor_distributions']['Row'];
-type PortalReturnMetric = Database['public']['Views']['investor_return_metrics']['Row'];
-type PortalReport = Database['public']['Tables']['investor_reports']['Row'];
+export type PortalInvestor = Database['public']['Tables']['investors']['Row'];
+export type PortalCommitment = Database['public']['Views']['investor_commitment_detail']['Row'];
+export type PortalDistribution = Database['public']['Tables']['investor_distributions']['Row'];
+export type PortalReturnMetric = Database['public']['Views']['investor_return_metrics']['Row'];
+export type PortalReport = Database['public']['Tables']['investor_reports']['Row'];
 
 interface PortalInvestorDataResponse {
   investor: PortalInvestor | null;

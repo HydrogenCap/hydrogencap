@@ -27,7 +27,7 @@ import SendReminderDialog from '@/components/rent/SendReminderDialog';
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
 
-type SortField = 'property' | 'tenant' | 'room' | 'rent' | 'status' | 'lastPayment' | 'daysOutstanding';
+type RentSortField = 'property' | 'tenant' | 'room' | 'rent' | 'status' | 'lastPayment' | 'daysOutstanding';
 type SortDir = 'asc' | 'desc';
 
 const STATUS_CONFIG: Record<RentStatus, { label: string; severity: keyof typeof SEVERITY }> = {
@@ -56,21 +56,21 @@ interface RentRollTableProps {
 
 export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
   const { data, isLoading } = useRentSchedule({ month });
-  const items = data?.items || [];
+  const items = useMemo(() => data?.items || [], [data?.items]);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [sortField, setSortField] = useState<SortField>('property');
+  const [sortField, setRentSortField] = useState<RentSortField>('property');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [paymentItem, setPaymentItem] = useState<RentScheduleWithDetails | null>(null);
   const [reminderItem, setReminderItem] = useState<RentScheduleWithDetails | null>(null);
 
-  const toggleSort = (field: SortField) => {
+  const toggleSort = (field: RentSortField) => {
     if (sortField === field) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortField(field);
+      setRentSortField(field);
       setSortDir('asc');
     }
   };
@@ -166,7 +166,7 @@ export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
     }
   };
 
-  const SortHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+  const SortHeader = ({ field, children }: { field: RentSortField; children: React.ReactNode }) => (
     <TableHead
       className="cursor-pointer select-none hover:text-foreground transition-colors"
       onClick={() => toggleSort(field)}

@@ -14,7 +14,7 @@ import { CATEGORY_LABELS } from '@/lib/accountingTypes';
 
 // ── Transaction line generation ──
 
-interface PropertyInfo {
+interface AccountingPropertyInfo {
   id: string;
   address: string;
 }
@@ -65,7 +65,7 @@ function formatDateForSystem(dateStr: string, system: AccountingSystem): string 
 
 export function generateTransactionLines(
   snapshot: FinancialSnapshot,
-  property: PropertyInfo,
+  property: AccountingPropertyInfo,
   entity: EntityInfo,
   mappings: AccountingMapping[],
   system: AccountingSystem,

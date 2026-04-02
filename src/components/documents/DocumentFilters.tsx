@@ -20,17 +20,13 @@ import {
 } from '@/components/ui/select';
 import type { VaultFilters } from '@/hooks/useDocumentVault';
 import type { DocumentCategory } from '@/hooks/useDocumentManagement';
+import type { Company } from '@/hooks/useCompanies';
 
 // ─── Types ───────────────────────────────────────────────────────
 
 interface Property {
   id: string;
   address_line: string;
-}
-
-interface Company {
-  id: string;
-  legal_name: string;
 }
 
 interface DocumentFiltersProps {
