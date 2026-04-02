@@ -59,7 +59,7 @@ export default function TenantCertificates() {
     queryKey: ['tenant-certs-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancies')
         .select('property_id')
         .eq('id', tenancyId)
@@ -75,7 +75,7 @@ export default function TenantCertificates() {
     queryKey: ['tenant-certs-compliance', tenancy?.property_id],
     queryFn: async () => {
       if (!tenancy?.property_id) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_items')
         .select(`
           id,
@@ -100,7 +100,7 @@ export default function TenantCertificates() {
     queryKey: ['tenant-certs-docs', complianceItemIds],
     queryFn: async () => {
       if (complianceItemIds.length === 0) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_documents')
         .select('*')
         .in('compliance_item_id', complianceItemIds)

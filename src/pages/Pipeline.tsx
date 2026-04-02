@@ -27,7 +27,7 @@ function useAllGoLiveChecklists() {
   return useQuery({
     queryKey: ['go_live_checklists'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('go_live_checklists')
         .select('*');
       if (error) throw error;

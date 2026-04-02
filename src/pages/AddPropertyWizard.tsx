@@ -36,7 +36,7 @@ export default function AddPropertyWizard() {
     const orgId = await fetchUserOrgId();
 
     // 1. Create property
-    const { data: property, error: propErr } = await supabase
+    const { data: property, error: propErr } = await (supabase as any)
       .from('properties_v2')
       .insert({
         org_id: orgId,
@@ -99,7 +99,7 @@ export default function AddPropertyWizard() {
     // 4. Create loan facility if mortgage exists
     if (payload.has_mortgage && payload.lender_name) {
       // Upsert lender
-      const { data: lender } = await supabase
+      const { data: lender } = await (supabase as any)
         .from('lenders')
         .upsert(
           { org_id: orgId, lender_name: payload.lender_name as string, lender_type: 'bank' },
@@ -145,7 +145,7 @@ export default function AddPropertyWizard() {
     }
 
     // 6. Update draft with property ID
-    await supabase
+    await (supabase as any)
       .from('wizard_drafts')
       .update({ property_id: property.id, entity_id: payload.entity_id as string })
       .eq('id', draftId);

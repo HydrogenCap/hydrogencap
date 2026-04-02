@@ -63,7 +63,7 @@ export default function PropertyDetailV2() {
     queryKey: ['legal_entities_list'],
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('legal_entities')
         .select('id, entity_name')
         .eq('org_id', orgId)
@@ -83,7 +83,7 @@ export default function PropertyDetailV2() {
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
       // Get rent schedule entries for this property's tenancies via agreements
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select(`
           status,

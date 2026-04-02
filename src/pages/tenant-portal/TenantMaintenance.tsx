@@ -33,7 +33,7 @@ export default function TenantMaintenance() {
     queryKey: ['tenant-portal-tenancy-for-maintenance', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancies')
         .select('property_id')
         .eq('id', tenancyId)
@@ -48,7 +48,7 @@ export default function TenantMaintenance() {
     queryKey: ['tenant-portal-maintenance', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -74,7 +74,7 @@ export default function TenantMaintenance() {
         reported_by: 'tenant',
         status: 'reported',
       };
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('maintenance_requests')
         .insert(payload);
       if (error) throw error;

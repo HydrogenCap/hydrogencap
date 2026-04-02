@@ -22,7 +22,7 @@ export default function Inbox() {
   const { data: complianceMatrixRows } = useQuery({
     queryKey: ['compliance_matrix_v2_inbox'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_matrix_v2')
         .select('calculated_status');
       if (error) throw error;

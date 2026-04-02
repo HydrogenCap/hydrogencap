@@ -22,7 +22,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenancies')
         .select(`
           *,
@@ -43,7 +43,7 @@ export default function TenantDashboard() {
     queryFn: async () => {
       if (!tenancyId) return null;
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select('*')
         .eq('tenancy_id', tenancyId)
@@ -61,7 +61,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-arrears', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select('amount_outstanding')
         .eq('tenancy_id', tenancyId)
@@ -77,7 +77,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-maintenance', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .select('id, title, status, priority, created_at')
         .eq('tenant_id', tenantId)
@@ -94,7 +94,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-recent-payment', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_payments')
         .select('*')
         .eq('tenancy_id', tenancyId)

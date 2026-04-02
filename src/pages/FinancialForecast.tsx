@@ -169,7 +169,7 @@ function SavedForecastsTab() {
   const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('financial_forecasts' as any)
       .delete()
       .eq('id', id);

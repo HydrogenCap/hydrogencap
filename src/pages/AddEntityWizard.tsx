@@ -18,7 +18,7 @@ export default function AddEntityWizard() {
   const handleSubmit = async (payload: WizardPayload, draftId: string) => {
     const orgId = await fetchUserOrgId();
 
-    const { data: entity, error } = await supabase
+    const { data: entity, error } = await (supabase as any)
       .from('legal_entities')
       .insert({
         org_id: orgId,
@@ -34,7 +34,7 @@ export default function AddEntityWizard() {
 
     if (error) throw error;
 
-    await supabase
+    await (supabase as any)
       .from('wizard_drafts')
       .update({ entity_id: entity.id })
       .eq('id', draftId);

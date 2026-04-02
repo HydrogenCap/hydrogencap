@@ -25,7 +25,7 @@ export default function TenantRentHistory() {
     queryKey: ['tenant-portal-rent-history', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select('*')
         .eq('tenancy_id', tenancyId)
@@ -40,7 +40,7 @@ export default function TenantRentHistory() {
     queryKey: ['tenant-portal-payments', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_payments')
         .select('*')
         .eq('tenancy_id', tenancyId)

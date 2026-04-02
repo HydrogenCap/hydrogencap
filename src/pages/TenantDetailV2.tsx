@@ -87,7 +87,7 @@ export default function TenantDetailV2() {
   useEffect(() => {
     if (!id) return;
 
-    void supabase
+    void (supabase as any)
       .from('recurring_charges' as never)
       .select('*')
       .eq('tenant_id', id)
@@ -108,7 +108,7 @@ export default function TenantDetailV2() {
     const orgId = (tenant as { org_id?: string | null }).org_id ?? null;
     if (!orgId) return;
 
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from('recurring_charges' as never)
       .insert({
         org_id: orgId,
