@@ -171,6 +171,7 @@ const intelligenceItems: NavItem[] = [
     ],
   },
   { title: 'Chat', icon: MessageSquare, href: '/chat' },
+  { title: 'Acquisition', icon: Building2, href: '/acquisition-advisor' },
 ];
 
 const adminItems: NavItem[] = [

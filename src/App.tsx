@@ -44,6 +44,7 @@ const ComplianceCalendar = lazy(() => import("./pages/ComplianceCalendar"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Actions = lazy(() => import("./pages/Actions"));
 const Chat = lazy(() => import("./pages/Chat"));
+const AcquisitionAdvisor = lazy(() => import("./pages/AcquisitionAdvisor"));
 const Passport = lazy(() => import("./pages/Passport"));
 const Pipeline = lazy(() => import("./pages/Pipeline"));
 const SharedDocument = lazy(() => import("./pages/SharedDocument"));
@@ -448,6 +449,16 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <Chat />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acquisition-advisor"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <AcquisitionAdvisor />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
