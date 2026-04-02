@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianceStatuses } from '@/hooks/useComplianceV2';
+import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
 import { ComplianceMatrixGrid } from '@/components/compliance-v2/ComplianceMatrixGrid';
 import { ComplianceCalendarView } from '@/components/compliance-v2/ComplianceCalendarView';
 import { ComplianceDetailModal } from '@/components/compliance-v2/ComplianceDetailModal';
@@ -133,6 +134,9 @@ export default function ComplianceV2() {
             </>
           )}
         </div>
+
+        {/* Tenancy Checklist Summary */}
+        <TenancyChecklistSummaryCard />
 
         {/* Filters + View Toggle */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
