@@ -22,7 +22,7 @@ const mockRisk = {
   severity: 'critical' as const,
   category: 'compliance',
   actionUrl: '/compliance',
-  type: 'compliance_expiry' as const,
+  type: 'ltv' as const,
   targetUrl: '/compliance',
   priority: 1,
 };

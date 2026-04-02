@@ -18,7 +18,7 @@ export function CompanySearchInput({ onSelect, placeholder = 'Search Companies H
   const [isOpen, setIsOpen] = useState(false);
   const { searchCompanies, searchResults, isSearching } = useCompaniesHouse();
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<NodeJS.Timeout>(undefined);
 
   useEffect(() => {
     if (debounceRef.current) {
