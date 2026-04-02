@@ -123,7 +123,7 @@ export default function PropertyDetailV2() {
   const grossYield = useMemo(() => {
     if (!monthlyRent || !property?.current_valuation) return null;
     return ((monthlyRent * 12) / property.current_valuation) * 100;
-  }, [monthlyRent, property?.current_valuation]);
+  }, [monthlyRent, property]);
 
   // Compliance badge counts
   const complianceCounts = useMemo(() => {
