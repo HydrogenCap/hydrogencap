@@ -47,7 +47,7 @@ export function useAIInvestorReports() {
   return useQuery({
     queryKey: ['ai_investor_reports', org?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
         .select('*')
         .eq('org_id', org!.id)
