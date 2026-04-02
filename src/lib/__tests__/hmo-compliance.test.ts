@@ -626,3 +626,130 @@ describe('getComplianceIssues', () => {
     expect(getComplianceIssues(reqs)).toHaveLength(0);
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// Part 3: hmo-compliance.ts module tests (new module)
+// ══════════════════════════════════════════════════════════════════════
+
+import {
+  checkRoomSizes,
+  getMinimumRoomSize,
+  checkAmenityRatios,
+  checkFireSafety,
+  checkHMOCompliance,
+  MIN_SINGLE_ROOM_SIZE,
+  MIN_DOUBLE_ROOM_SIZE,
+  MIN_CHILD_ROOM_SIZE,
+} from '../hmo-compliance';
+
+describe('hmo-compliance: getMinimumRoomSize', () => {
+  it('returns 6.51m² for single', () => { expect(getMinimumRoomSize('single')).toBe(MIN_SINGLE_ROOM_SIZE); });
+  it('returns 10.22m² for double', () => { expect(getMinimumRoomSize('double')).toBe(MIN_DOUBLE_ROOM_SIZE); });
+  it('returns 4.64m² for child', () => { expect(getMinimumRoomSize('child')).toBe(MIN_CHILD_ROOM_SIZE); });
+  it('defaults to single for unknown', () => { expect(getMinimumRoomSize('unknown' as any)).toBe(MIN_SINGLE_ROOM_SIZE); });
+});
+
+describe('hmo-compliance: checkRoomSizes', () => {
+  it('compliant single room', () => {
+    const r = checkRoomSizes([{ roomName: 'R1', floorAreaM2: 8.0, occupancyType: 'single' }]);
+    expect(r[0].compliant).toBe(true);
+    expect(r[0].shortfallM2).toBe(0);
+  });
+
+  it('non-compliant single room', () => {
+    const r = checkRoomSizes([{ roomName: 'R1', floorAreaM2: 5.0, occupancyType: 'single' }]);
+    expect(r[0].compliant).toBe(false);
+    expect(r[0].shortfallM2).toBeCloseTo(1.51, 2);
+  });
+
+  it('exact minimum passes', () => {
+    const r = checkRoomSizes([{ roomName: 'R1', floorAreaM2: MIN_SINGLE_ROOM_SIZE, occupancyType: 'single' }]);
+    expect(r[0].compliant).toBe(true);
+  });
+
+  it('multiple rooms mixed results', () => {
+    const r = checkRoomSizes([
+      { roomName: 'R1', floorAreaM2: 8.0, occupancyType: 'single' },
+      { roomName: 'R2', floorAreaM2: 4.0, occupancyType: 'single' },
+      { roomName: 'R3', floorAreaM2: 12.0, occupancyType: 'double' },
+    ]);
+    expect(r.filter(x => x.compliant)).toHaveLength(2);
+  });
+
+  it('empty array', () => { expect(checkRoomSizes([])).toHaveLength(0); });
+  it('zero area', () => { expect(checkRoomSizes([{ roomName: 'R1', floorAreaM2: 0, occupancyType: 'single' }])[0].compliant).toBe(false); });
+});
+
+describe('hmo-compliance: checkAmenityRatios', () => {
+  it('5 occupants, 1 of each', () => {
+    const r = checkAmenityRatios({ totalOccupants: 5, kitchens: 1, bathrooms: 1, separateToilets: 0 });
+    expect(r.allCompliant).toBe(true);
+  });
+
+  it('6 occupants need 2 of each', () => {
+    const r = checkAmenityRatios({ totalOccupants: 6, kitchens: 1, bathrooms: 1, separateToilets: 0 });
+    expect(r.allCompliant).toBe(false);
+  });
+
+  it('separate toilets count', () => {
+    const r = checkAmenityRatios({ totalOccupants: 8, kitchens: 2, bathrooms: 1, separateToilets: 1 });
+    expect(r.toiletCompliant).toBe(true);
+    expect(r.bathroomCompliant).toBe(false);
+  });
+
+  it('zero occupants', () => {
+    const r = checkAmenityRatios({ totalOccupants: 0, kitchens: 0, bathrooms: 0, separateToilets: 0 });
+    expect(r.allCompliant).toBe(true);
+  });
+
+  it('negative occupants', () => {
+    const r = checkAmenityRatios({ totalOccupants: -3, kitchens: 0, bathrooms: 0, separateToilets: 0 });
+    expect(r.allCompliant).toBe(true);
+  });
+});
+
+describe('hmo-compliance: checkFireSafety', () => {
+  it('small HMO needs alarm + blanket only', () => {
+    const r = checkFireSafety({ totalOccupants: 3, storeys: 2, hasFireAlarmSystem: true, hasFireDoors: false, hasEmergencyLighting: false, hasFireExtinguishers: false, hasFireBlanketInKitchen: true });
+    expect(r.compliant).toBe(true);
+  });
+
+  it('5+ occupants needs full safety', () => {
+    const r = checkFireSafety({ totalOccupants: 5, storeys: 2, hasFireAlarmSystem: true, hasFireDoors: true, hasEmergencyLighting: true, hasFireExtinguishers: true, hasFireBlanketInKitchen: true });
+    expect(r.requiresFireDoors).toBe(true);
+    expect(r.compliant).toBe(true);
+  });
+
+  it('3+ storeys needs full safety', () => {
+    const r = checkFireSafety({ totalOccupants: 3, storeys: 3, hasFireAlarmSystem: false, hasFireDoors: false, hasEmergencyLighting: false, hasFireExtinguishers: false, hasFireBlanketInKitchen: false });
+    expect(r.compliant).toBe(false);
+    expect(r.issues.length).toBeGreaterThan(0);
+  });
+
+  it('lists all issues', () => {
+    const r = checkFireSafety({ totalOccupants: 6, storeys: 3, hasFireAlarmSystem: false, hasFireDoors: false, hasEmergencyLighting: false, hasFireExtinguishers: false, hasFireBlanketInKitchen: false });
+    expect(r.issues).toHaveLength(5);
+  });
+});
+
+describe('hmo-compliance: checkHMOCompliance', () => {
+  it('fully compliant', () => {
+    const r = checkHMOCompliance(
+      [{ roomName: 'R1', floorAreaM2: 8.0, occupancyType: 'single' }, { roomName: 'R2', floorAreaM2: 12.0, occupancyType: 'double' }],
+      { totalOccupants: 3, kitchens: 1, bathrooms: 1, separateToilets: 0 },
+      { totalOccupants: 3, storeys: 2, hasFireAlarmSystem: true, hasFireDoors: false, hasEmergencyLighting: false, hasFireExtinguishers: false, hasFireBlanketInKitchen: true },
+    );
+    expect(r.overallCompliant).toBe(true);
+    expect(r.issueCount).toBe(0);
+  });
+
+  it('collects all issues when non-compliant', () => {
+    const r = checkHMOCompliance(
+      [{ roomName: 'R1', floorAreaM2: 4.0, occupancyType: 'single' }],
+      { totalOccupants: 6, kitchens: 1, bathrooms: 1, separateToilets: 0 },
+      { totalOccupants: 6, storeys: 3, hasFireAlarmSystem: false, hasFireDoors: false, hasEmergencyLighting: false, hasFireExtinguishers: false, hasFireBlanketInKitchen: false },
+    );
+    expect(r.overallCompliant).toBe(false);
+    expect(r.issues.length).toBeGreaterThanOrEqual(5);
+  });
+});

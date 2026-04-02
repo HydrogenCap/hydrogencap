@@ -314,3 +314,174 @@ describe('generateSA105CSV', () => {
     expect(lines).toHaveLength(1); // header only
   });
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// Part 2: tax-engine.ts module tests — CGT, Income Tax, SA105 (new module)
+// ══════════════════════════════════════════════════════════════════════
+
+import {
+  calculateSection24 as calcS24Module,
+  calculateCGT,
+  calculateIncomeTax,
+  calculateSA105,
+  PERSONAL_ALLOWANCE,
+  BASIC_RATE_LIMIT,
+  HIGHER_RATE_LIMIT,
+  BASIC_RATE,
+  HIGHER_RATE,
+  ADDITIONAL_RATE,
+  CGT_ANNUAL_EXEMPT,
+  CGT_BASIC_RATE_RESIDENTIAL,
+  CGT_HIGHER_RATE_RESIDENTIAL,
+  PROPERTY_ALLOWANCE,
+} from '../tax-engine';
+
+describe('tax-engine: calculateSection24', () => {
+  it('basic rate relief at 20%', () => {
+    const r = calcS24Module({ annualMortgageInterest: 10_000, rentalProfit: 20_000, marginalRate: BASIC_RATE });
+    expect(r.basicRateRelief).toBe(2_000);
+    expect(r.additionalTaxDueToS24).toBe(0);
+  });
+
+  it('higher rate additional tax', () => {
+    const r = calcS24Module({ annualMortgageInterest: 10_000, rentalProfit: 20_000, marginalRate: HIGHER_RATE });
+    expect(r.additionalTaxDueToS24).toBe(2_000);
+  });
+
+  it('effective tax rate for higher rate', () => {
+    const r = calcS24Module({ annualMortgageInterest: 10_000, rentalProfit: 20_000, marginalRate: HIGHER_RATE });
+    expect(r.effectiveTaxRate).toBeCloseTo(30, 1);
+  });
+
+  it('handles negative inputs', () => {
+    const r = calcS24Module({ annualMortgageInterest: -5_000, rentalProfit: -10_000, marginalRate: -0.2 });
+    expect(r.basicRateRelief).toBe(0);
+    expect(r.effectiveTaxRate).toBe(0);
+  });
+
+  it('zero profit returns zero effective rate', () => {
+    const r = calcS24Module({ annualMortgageInterest: 5_000, rentalProfit: 0, marginalRate: HIGHER_RATE });
+    expect(r.effectiveTaxRate).toBe(0);
+  });
+});
+
+describe('tax-engine: calculateCGT', () => {
+  it('calculates gain correctly', () => {
+    const r = calculateCGT({ salePrice: 300_000, purchasePrice: 200_000, allowableCosts: 10_000, taxableIncome: 30_000 });
+    expect(r.gain).toBe(90_000);
+    expect(r.exemption).toBe(CGT_ANNUAL_EXEMPT);
+    expect(r.taxableGain).toBe(90_000 - CGT_ANNUAL_EXEMPT);
+  });
+
+  it('all basic rate when within band', () => {
+    const r = calculateCGT({ salePrice: 210_000, purchasePrice: 200_000, allowableCosts: 0, taxableIncome: 30_000 });
+    expect(r.basicRateAmount).toBe(7_000);
+    expect(r.higherRateAmount).toBe(0);
+    expect(r.totalCGT).toBeCloseTo(7_000 * CGT_BASIC_RATE_RESIDENTIAL, 2);
+  });
+
+  it('all higher rate when income exceeds basic band', () => {
+    const r = calculateCGT({ salePrice: 300_000, purchasePrice: 200_000, allowableCosts: 0, taxableIncome: 60_000 });
+    expect(r.basicRateAmount).toBe(0);
+    expect(r.totalCGT).toBeCloseTo(r.taxableGain * CGT_HIGHER_RATE_RESIDENTIAL, 2);
+  });
+
+  it('zero CGT on a loss', () => {
+    const r = calculateCGT({ salePrice: 180_000, purchasePrice: 200_000, allowableCosts: 5_000, taxableIncome: 30_000 });
+    expect(r.gain).toBe(0);
+    expect(r.totalCGT).toBe(0);
+  });
+
+  it('gain smaller than exempt amount', () => {
+    const r = calculateCGT({ salePrice: 202_000, purchasePrice: 200_000, allowableCosts: 0, taxableIncome: 30_000 });
+    expect(r.taxableGain).toBe(0);
+    expect(r.totalCGT).toBe(0);
+  });
+
+  it('custom annual exempt amount', () => {
+    const r = calculateCGT({ salePrice: 220_000, purchasePrice: 200_000, allowableCosts: 0, annualExemptAmount: 6_000, taxableIncome: 30_000 });
+    expect(r.exemption).toBe(6_000);
+    expect(r.taxableGain).toBe(14_000);
+  });
+});
+
+describe('tax-engine: calculateIncomeTax', () => {
+  it('zero tax within personal allowance', () => {
+    const r = calculateIncomeTax({ grossIncome: 10_000 });
+    expect(r.totalTax).toBe(0);
+    expect(r.marginalRate).toBe(0);
+  });
+
+  it('basic rate tax', () => {
+    const r = calculateIncomeTax({ grossIncome: 30_000 });
+    expect(r.taxableIncome).toBe(17_430);
+    expect(r.basicRateTax).toBeCloseTo(17_430 * BASIC_RATE, 2);
+    expect(r.marginalRate).toBe(BASIC_RATE);
+  });
+
+  it('higher rate tax', () => {
+    const r = calculateIncomeTax({ grossIncome: 80_000 });
+    expect(r.basicRateTax).toBeCloseTo(7_540, 2);
+    expect(r.higherRateTax).toBeCloseTo(11_892, 2);
+    expect(r.marginalRate).toBe(HIGHER_RATE);
+  });
+
+  it('additional rate tax', () => {
+    const r = calculateIncomeTax({ grossIncome: 200_000 });
+    expect(r.additionalRateTax).toBeGreaterThan(0);
+    expect(r.marginalRate).toBe(ADDITIONAL_RATE);
+  });
+
+  it('tapers personal allowance above £100k', () => {
+    const r = calculateIncomeTax({ grossIncome: 110_000 });
+    expect(r.personalAllowance).toBe(PERSONAL_ALLOWANCE - 5_000);
+  });
+
+  it('fully tapered PA at £125,140+', () => {
+    const r = calculateIncomeTax({ grossIncome: 130_000 });
+    expect(r.personalAllowance).toBe(0);
+  });
+
+  it('handles negative income', () => {
+    const r = calculateIncomeTax({ grossIncome: -5_000 });
+    expect(r.totalTax).toBe(0);
+  });
+
+  it('respects PA override', () => {
+    const r = calculateIncomeTax({ grossIncome: 50_000, personalAllowance: 0 });
+    expect(r.personalAllowance).toBe(0);
+    expect(r.taxableIncome).toBe(50_000);
+  });
+});
+
+describe('tax-engine: calculateSA105', () => {
+  it('calculates with actual expenses', () => {
+    const r = calculateSA105({ rentalIncome: 12_000, mortgageInterest: 5_000, repairs: 1_000, insurance: 500, managementFees: 1_200, otherExpenses: 300, usePropertyAllowance: false });
+    expect(r.totalExpenses).toBe(3_000);
+    expect(r.adjustedProfit).toBe(9_000);
+    expect(r.taxReduction).toBe(1_000);
+  });
+
+  it('uses property allowance when elected', () => {
+    const r = calculateSA105({ rentalIncome: 12_000, mortgageInterest: 5_000, repairs: 1_000, insurance: 500, managementFees: 1_200, otherExpenses: 300, usePropertyAllowance: true });
+    expect(r.propertyAllowance).toBe(PROPERTY_ALLOWANCE);
+    expect(r.totalExpenses).toBe(PROPERTY_ALLOWANCE);
+  });
+
+  it('caps property allowance at income', () => {
+    const r = calculateSA105({ rentalIncome: 500, mortgageInterest: 0, repairs: 0, insurance: 0, managementFees: 0, otherExpenses: 0, usePropertyAllowance: true });
+    expect(r.propertyAllowance).toBe(500);
+    expect(r.adjustedProfit).toBe(0);
+  });
+
+  it('adjusted profit cannot go negative', () => {
+    const r = calculateSA105({ rentalIncome: 5_000, mortgageInterest: 3_000, repairs: 4_000, insurance: 2_000, managementFees: 1_000, otherExpenses: 500, usePropertyAllowance: false });
+    expect(r.adjustedProfit).toBe(0);
+  });
+
+  it('negative expenses clamped to 0', () => {
+    const r = calculateSA105({ rentalIncome: 10_000, mortgageInterest: -2_000, repairs: -500, insurance: 200, managementFees: 0, otherExpenses: 0, usePropertyAllowance: false });
+    expect(r.totalExpenses).toBe(200);
+    expect(r.residentialFinanceCosts).toBe(0);
+  });
+});
