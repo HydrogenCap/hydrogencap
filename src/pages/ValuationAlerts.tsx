@@ -34,17 +34,17 @@ const ALERT_CONFIG: Record<
   value_increase: {
     label: 'Value Up',
     icon: TrendingUp,
-    color: 'bg-emerald-100 text-emerald-700',
+    color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   },
   value_decrease: {
     label: 'Value Down',
     icon: TrendingDown,
-    color: 'bg-red-100 text-red-700',
+    color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   },
   refinance_opportunity: {
     label: 'Refi Opportunity',
     icon: TrendingUp,
-    color: 'bg-blue-100 text-blue-700',
+    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   },
 };
 
@@ -106,7 +106,7 @@ export default function ValuationAlerts() {
               const config = ALERT_CONFIG[alert.alert_type] ?? {
                 label: alert.alert_type,
                 icon: AlertTriangle,
-                color: 'bg-gray-100 text-gray-700',
+                color: 'bg-muted text-muted-foreground',
               };
               const Icon = config.icon;
               return (

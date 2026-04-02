@@ -131,9 +131,9 @@ export default function Lending() {
           <Card>
             <CardHeader><CardTitle>Lending Alerts</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {criticalAlerts.length > 0 && <AlertSection title="Critical" alerts={criticalAlerts} icon={AlertCircle} color="text-red-600" bgColor="bg-red-50" />}
-              {warningAlerts.length > 0 && <AlertSection title="Warning" alerts={warningAlerts} icon={AlertTriangle} color="text-amber-600" bgColor="bg-amber-50" />}
-              {opportunityAlerts.length > 0 && <AlertSection title="Opportunities" alerts={opportunityAlerts} icon={TrendingUp} color="text-emerald-600" bgColor="bg-emerald-50" />}
+              {criticalAlerts.length > 0 && <AlertSection title="Critical" alerts={criticalAlerts} icon={AlertCircle} color="text-red-600 dark:text-red-400" bgColor="bg-red-50 dark:bg-red-950/20" />}
+              {warningAlerts.length > 0 && <AlertSection title="Warning" alerts={warningAlerts} icon={AlertTriangle} color="text-amber-600 dark:text-amber-400" bgColor="bg-amber-50 dark:bg-amber-950/20" />}
+              {opportunityAlerts.length > 0 && <AlertSection title="Opportunities" alerts={opportunityAlerts} icon={TrendingUp} color="text-emerald-600 dark:text-emerald-400" bgColor="bg-emerald-50 dark:bg-emerald-950/20" />}
             </CardContent>
           </Card>
         )}
@@ -211,12 +211,12 @@ export default function Lending() {
                       .map(f => {
                         const status = getCovenantStatus(f);
                         const statusConfig = {
-                          breach: { label: 'Breach', cls: 'bg-red-100 text-red-700' },
-                          warning: { label: 'Warning', cls: 'bg-amber-100 text-amber-700' },
-                          ok: { label: 'OK', cls: 'bg-emerald-100 text-emerald-700' },
-                          unknown: { label: '—', cls: 'bg-gray-100 text-gray-600' },
+                          breach: { label: 'Breach', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+                          warning: { label: 'Warning', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+                          ok: { label: 'OK', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+                          unknown: { label: '—', cls: 'bg-muted text-muted-foreground' },
                         }[status];
-                        const rowCls = status === 'breach' ? 'bg-red-50/40' : status === 'warning' ? 'bg-amber-50/40' : '';
+                        const rowCls = status === 'breach' ? 'bg-red-50/40 dark:bg-red-950/20' : status === 'warning' ? 'bg-amber-50/40 dark:bg-amber-950/20' : '';
                         return (
                           <tr key={f.id} className={`border-b last:border-0 ${rowCls}`}>
                             <td className="py-2">

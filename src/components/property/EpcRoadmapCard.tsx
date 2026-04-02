@@ -43,15 +43,15 @@ const EPC_BADGE: Record<string, string> = {
   A: 'bg-green-600 text-white',
   B: 'bg-green-500 text-white',
   C: 'bg-lime-500 text-white',
-  D: 'bg-yellow-400 text-gray-900',
+  D: 'bg-yellow-400 text-gray-900 dark:text-gray-900',
   E: 'bg-orange-400 text-white',
   F: 'bg-orange-600 text-white',
   G: 'bg-red-600 text-white',
 };
 
 const IMPACT_COLOR = {
-  high: 'text-emerald-600',
-  medium: 'text-amber-600',
+  high: 'text-emerald-600 dark:text-emerald-400',
+  medium: 'text-amber-600 dark:text-amber-400',
   low: 'text-muted-foreground',
 };
 
@@ -71,7 +71,7 @@ export function EpcRoadmapCard({ epcRating }: EpcRoadmapCardProps) {
         <CardTitle className="flex items-center gap-2 text-base">
           <Leaf className="h-4 w-4 text-emerald-600" />
           EPC Improvement Roadmap
-          <Badge className={EPC_BADGE[rating] ?? 'bg-gray-500 text-white'}>
+          <Badge className={EPC_BADGE[rating] ?? 'bg-muted text-muted-foreground'}>
             EPC {rating}
           </Badge>
           <span className="text-muted-foreground font-normal text-sm">→ target C</span>

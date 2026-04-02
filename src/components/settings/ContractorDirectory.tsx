@@ -211,7 +211,7 @@
                      id="is_preferred"
                      checked={formData.is_preferred}
                      onChange={(e) => setFormData(prev => ({ ...prev, is_preferred: e.target.checked }))}
-                     className="rounded border-gray-300"
+                     className="rounded border-border"
                    />
                    <Label htmlFor="is_preferred" className="cursor-pointer">Mark as preferred contractor</Label>
                  </div>
