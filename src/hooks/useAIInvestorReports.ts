@@ -113,12 +113,12 @@ export function usePublishAIReport() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ai_investor_reports')
         .update({
           status: 'published',
           published_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', id)
         .select()
         .single();
