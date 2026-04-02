@@ -20,6 +20,7 @@ import BulkAddNoteDialog from '@/components/rent/BulkAddNoteDialog';
 import BulkSendReminderDialog from '@/components/rent/BulkSendReminderDialog';
 import { exportRentRollCSV } from '@/lib/rentCsvExporter';
 import { BankStatementImportDialog } from '@/components/rent/BankStatementImportDialog';
+import { ArrearsRiskPanel } from '@/components/rent/ArrearsRiskPanel';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth } from 'date-fns';
 
@@ -309,6 +310,9 @@ export default function RentCollection() {
             </CardContent>
           </Card>
         )}
+
+        {/* Arrears Risk Assessment */}
+        <ArrearsRiskPanel />
 
         {/* Grouping Tabs */}
         <div className="flex items-center gap-1 border border-border rounded-lg overflow-hidden w-fit">
