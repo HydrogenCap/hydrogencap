@@ -85,7 +85,7 @@ export function useRunForecast() {
 
   return useMutation({
     mutationFn: (params: RunForecastParams) =>
-      invokeEdgeFunction<FinancialForecast>('financial-forecast', params),
+      invokeEdgeFunction<FinancialForecast>('financial-forecast', params as unknown as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial-forecasts'] });
       toast({ title: 'Forecast generated successfully' });
