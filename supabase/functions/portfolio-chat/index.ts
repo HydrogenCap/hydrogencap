@@ -4,6 +4,9 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { CHAT_TOOLS } from "./tools.ts";
+import { executeTool } from "./tool-executor.ts";
 
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
@@ -19,19 +22,41 @@ function getCorsHeaders(req: Request) {
     "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE, PATCH",
   };
 }
 
-interface ChatMessage {
-  role: "user" | "assistant";
+interface ToolCallResult {
+  tool_call_id: string;
+  name: string;
   content: string;
 }
+
+const SYSTEM_PROMPT = `You are TenureIQ AI, an intelligent assistant for UK property portfolio management.
+
+You have access to tools that let you query the user's real portfolio data, create tasks, generate reports, and set reminders. Always use tools to get current data — never guess.
+
+Guidelines:
+- Use British English and UK property terminology
+- Format currency as GBP (£), dates as DD/MM/YYYY
+- When the user asks about their portfolio, use search_properties or calculate_portfolio_metrics
+- When the user asks about a specific property, use get_property_details
+- When the user wants to create a task, use create_compliance_task — but ask for confirmation first
+- When the user wants a report, use generate_report
+- When the user wants a reminder, use schedule_reminder — but ask for confirmation first
+- Flag compliance issues proactively
+- Be concise but comprehensive
+- When presenting financial data, use tables where appropriate`;
+
+const MAX_TOOL_ROUNDS = 3;
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const log = createLogger("portfolio-chat", req);
 
   try {
     // Authenticate user
@@ -57,157 +82,286 @@ serve(async (req) => {
       });
     }
 
+    const userId = userData.user.id;
+    log.withUser(userId);
+
     // Subscription check
-    const subCheck = await requireActiveSubscription(userData.user.id, corsHeaders);
+    const subCheck = await requireActiveSubscription(userId, corsHeaders);
     if (!subCheck.allowed) return subCheck.response;
 
     // Rate limit check
-    const userId = userData.user.id;
-    const rateLimit = await checkRateLimit(userId, 'portfolio-chat', 30, 60);
+    const rateLimit = await checkRateLimit(userId, "portfolio-chat", 30, 60);
     if (!rateLimit.allowed) {
       return rateLimitResponse(corsHeaders, rateLimit.remaining, rateLimit.resetAt);
     }
 
+    // --- Route handling ---
+    const url = new URL(req.url);
+    const pathSegments = url.pathname.split("/").filter(Boolean);
+    // Paths: /portfolio-chat/conversations, /portfolio-chat/conversations/:id, /portfolio-chat/conversations/:id/messages, /portfolio-chat (chat)
+
+    // GET /conversations — list conversations
+    if (req.method === "GET" && pathSegments.at(-1) === "conversations") {
+      return handleListConversations(supabase, userId, corsHeaders);
+    }
+
+    // DELETE /conversations/:id
+    if (req.method === "DELETE" && pathSegments.at(-2) === "conversations") {
+      const convId = pathSegments.at(-1)!;
+      return handleDeleteConversation(supabase, convId, corsHeaders);
+    }
+
+    // PATCH /conversations/:id — update title
+    if (req.method === "PATCH" && pathSegments.at(-2) === "conversations") {
+      const convId = pathSegments.at(-1)!;
+      const body = await req.json();
+      return handleUpdateConversation(supabase, convId, body, corsHeaders);
+    }
+
+    // GET /conversations/:id/messages
+    if (req.method === "GET" && pathSegments.at(-1) === "messages") {
+      const convId = pathSegments.at(-2)!;
+      return handleGetMessages(supabase, convId, corsHeaders);
+    }
+
+    // POST — chat message (main flow)
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const ChatSchema = z.object({
-      messages: z.array(z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(10000),
-      })).min(1).max(50),
+      message: z.string().min(1).max(10000),
+      conversation_id: z.string().uuid().optional(),
     });
 
     const parsed = await validateBody(req, ChatSchema, corsHeaders);
     if ("error" in parsed) return parsed.error;
-    const validatedMessages = parsed.data.messages;
+    const { message, conversation_id } = parsed.data;
 
-    // Fetch portfolio data for context
-    const [
-      propertiesRes,
-      companiesRes,
-      loansRes,
-      complianceRes,
-      incomeRes,
-      costsRes,
-    ] = await Promise.all([
-      supabase.from("properties").select("*"),
-      supabase.from("companies").select("*"),
-      supabase.from("loans").select("*"),
-      supabase.from("compliance_items").select("*, compliance_documents(*)"),
-      supabase.from("income").select("*"),
-      supabase.from("costs").select("*"),
-    ]);
+    // Resolve org_id
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("org_id")
+      .eq("user_id", userId)
+      .limit(1)
+      .single();
 
-    const properties = propertiesRes.data || [];
-    const companies = companiesRes.data || [];
-    const loans = loansRes.data || [];
-    const complianceItems = complianceRes.data || [];
-    const incomeRecords = incomeRes.data || [];
-    const costRecords = costsRes.data || [];
-
-    // Build portfolio summary
-    const totalValue = properties.reduce((sum, p) => sum + (p.current_value_gbp || 0), 0);
-    const totalDebt = loans.reduce((sum, l) => sum + (l.current_mortgage_balance_gbp || 0), 0);
-    const totalEquity = totalValue - totalDebt;
-    const currentYear = new Date().getFullYear();
-    const annualRent = incomeRecords
-      .filter(i => i.year === currentYear)
-      .reduce((sum, i) => sum + (i.annual_rent_gbp || 0), 0);
-
-    const propertyDetails = properties.map(p => {
-      const propertyLoans = loans.filter(l => l.property_id === p.id);
-      const propertyIncome = incomeRecords.find(i => i.property_id === p.id && i.year === currentYear);
-      const propertyCosts = costRecords.find(c => c.property_id === p.id && c.year === currentYear);
-      const propertyCompliance = complianceItems.filter(c => c.property_id === p.id);
-      
-      const expiredCompliance = propertyCompliance.filter(c => {
-        if (!c.expiry_date) return false;
-        return new Date(c.expiry_date) < new Date();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "No organization found" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
 
-      return {
-        address: p.address_line,
-        postcode: p.postcode,
-        type: p.property_type,
-        beds: p.beds,
-        value: p.current_value_gbp,
-        epc: p.epc_rating,
-        lifecycle: p.lifecycle_type,
-        tenure: p.tenure,
-        lender: propertyLoans[0]?.lender,
-        mortgageBalance: propertyLoans[0]?.current_mortgage_balance_gbp,
-        interestRate: propertyLoans[0]?.interest_rate_percent,
-        annualRent: propertyIncome?.annual_rent_gbp,
-        expiredCertificates: expiredCompliance.map(c => c.compliance_type),
-      };
+    const orgId = membership.org_id;
+
+    // Get or create conversation
+    let conversationId = conversation_id;
+    if (!conversationId) {
+      const title = message.length > 60 ? message.slice(0, 57) + "..." : message;
+      const { data: conv, error: convError } = await supabase
+        .from("chat_conversations")
+        .insert({ org_id: orgId, user_id: userId, title })
+        .select("id")
+        .single();
+      if (convError) {
+        log.error("Failed to create conversation", { error: convError.message });
+        return new Response(JSON.stringify({ error: "Failed to create conversation" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      conversationId = conv.id;
+    }
+
+    // Load conversation history
+    const { data: historyRows } = await supabase
+      .from("chat_messages")
+      .select("role, content, tool_calls, tool_call_id")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+      .limit(50);
+
+    const history = (historyRows ?? []).map((row) => {
+      const msg: Record<string, unknown> = { role: row.role, content: row.content ?? "" };
+      if (row.tool_calls) msg.tool_calls = row.tool_calls;
+      if (row.tool_call_id) msg.tool_call_id = row.tool_call_id;
+      return msg;
     });
 
-    const companyDetails = companies.map(c => ({
-      name: c.legal_name,
-      companyNumber: c.company_number,
-      status: c.status,
-      accountsDueDate: c.accounts_due_date,
-      confirmationStatementDue: c.confirmation_statement_due_date,
-      incorporationDate: c.ch_incorporation_date,
-    }));
+    // Save user message
+    await supabase.from("chat_messages").insert({
+      conversation_id: conversationId,
+      role: "user",
+      content: message,
+    });
 
-    const portfolioContext = `
-PORTFOLIO DATA (as of ${new Date().toLocaleDateString('en-GB')}):
-
-SUMMARY:
-- Total Properties: ${properties.length}
-- Total Portfolio Value: £${totalValue.toLocaleString()}
-- Total Debt: £${totalDebt.toLocaleString()}
-- Total Equity: £${totalEquity.toLocaleString()}
-- LTV: ${totalValue > 0 ? ((totalDebt / totalValue) * 100).toFixed(1) : 0}%
-- Annual Rental Income: £${annualRent.toLocaleString()}
-- Companies: ${companies.length}
-
-PROPERTIES:
-${propertyDetails.map((p, i) => `
-${i + 1}. ${p.address}, ${p.postcode}
-   - Type: ${p.type || 'Not set'} | Beds: ${p.beds || 'N/A'} | Tenure: ${p.tenure || 'N/A'}
-   - Value: £${(p.value || 0).toLocaleString()} | EPC: ${p.epc || 'N/A'}
-   - Lifecycle: ${p.lifecycle || 'operational'}
-   - Lender: ${p.lender || 'None'} | Balance: £${(p.mortgageBalance || 0).toLocaleString()} | Rate: ${p.interestRate || 'N/A'}%
-   - Annual Rent: £${(p.annualRent || 0).toLocaleString()}
-   ${p.expiredCertificates.length > 0 ? `- ⚠️ EXPIRED: ${p.expiredCertificates.join(', ')}` : ''}
-`).join('')}
-
-COMPANIES:
-${companyDetails.map((c, i) => `
-${i + 1}. ${c.name} (${c.companyNumber || 'No number'})
-   - Status: ${c.status}
-   - Incorporated: ${c.incorporationDate || 'N/A'}
-   - Accounts Due: ${c.accountsDueDate || 'N/A'}
-   - Confirmation Statement Due: ${c.confirmationStatementDue || 'N/A'}
-`).join('')}
-`;
-
-    const systemPrompt = `You are a helpful AI assistant for a UK property portfolio management system called Tenure IQ. You have access to the user's complete portfolio data and can answer questions about their properties, companies, finances, and compliance status.
-
-${portfolioContext}
-
-GUIDELINES:
-- Answer questions about the portfolio data accurately and helpfully
-- Use British English and UK property terminology
-- Format currency as GBP (£)
-- Format dates as DD/MM/YYYY
-- Be concise but comprehensive
-- If asked about data you don't have, say so clearly
-- You can perform calculations based on the data (yields, LTV, etc.)
-- Flag any compliance issues or upcoming deadlines proactively
-- Keep responses conversational but professional`;
+    // Build messages array for AI
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...history,
+      { role: "user", content: message },
+    ];
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+      log.error("LOVABLE_API_KEY not configured");
       return new Response(JSON.stringify({ error: "AI service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Call Lovable AI Gateway
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Tool-call loop (non-streaming)
+    let toolRound = 0;
+    const toolCallsExecuted: { name: string; args: Record<string, unknown> }[] = [];
+
+    while (toolRound < MAX_TOOL_ROUNDS) {
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages,
+          tools: CHAT_TOOLS,
+          stream: false,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const status = aiResponse.status;
+        if (status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (status === 402) {
+          return new Response(
+            JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        const errorText = await aiResponse.text();
+        log.error("AI gateway error", { status, errorText });
+        return new Response(JSON.stringify({ error: "AI service unavailable" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const aiData = await aiResponse.json();
+      const choice = aiData.choices?.[0];
+      if (!choice) {
+        log.error("No choices in AI response");
+        break;
+      }
+
+      const assistantMessage = choice.message;
+
+      // Check for tool calls
+      if (assistantMessage.tool_calls?.length > 0) {
+        toolRound++;
+        log.info("Tool calls received", {
+          round: toolRound,
+          tools: assistantMessage.tool_calls.map((tc: { function: { name: string } }) => tc.function.name),
+        });
+
+        // Add assistant message with tool calls to conversation
+        messages.push({
+          role: "assistant",
+          content: assistantMessage.content ?? "",
+          tool_calls: assistantMessage.tool_calls,
+        } as Record<string, unknown>);
+
+        // Save assistant tool-call message to DB
+        await supabase.from("chat_messages").insert({
+          conversation_id: conversationId,
+          role: "assistant",
+          content: assistantMessage.content ?? null,
+          tool_calls: assistantMessage.tool_calls,
+        });
+
+        // Execute each tool call
+        const toolResults: ToolCallResult[] = [];
+        for (const tc of assistantMessage.tool_calls) {
+          const toolName = tc.function.name;
+          let toolArgs: Record<string, unknown> = {};
+          try {
+            toolArgs = typeof tc.function.arguments === "string"
+              ? JSON.parse(tc.function.arguments)
+              : tc.function.arguments;
+          } catch {
+            toolArgs = {};
+          }
+
+          toolCallsExecuted.push({ name: toolName, args: toolArgs });
+
+          const result = await executeTool(supabase, orgId, toolName, toolArgs);
+          toolResults.push({
+            tool_call_id: tc.id,
+            name: toolName,
+            content: result,
+          });
+        }
+
+        // Add tool results to messages and save to DB
+        for (const tr of toolResults) {
+          messages.push({
+            role: "tool",
+            content: tr.content,
+            tool_call_id: tr.tool_call_id,
+          } as Record<string, unknown>);
+
+          await supabase.from("chat_messages").insert({
+            conversation_id: conversationId,
+            role: "tool",
+            content: tr.content,
+            tool_call_id: tr.tool_call_id,
+          });
+        }
+
+        // Continue the loop for the next AI call
+        continue;
+      }
+
+      // No tool calls — we have the final response
+      const finalContent = assistantMessage.content ?? "";
+
+      // Save final assistant message
+      await supabase.from("chat_messages").insert({
+        conversation_id: conversationId,
+        role: "assistant",
+        content: finalContent,
+      });
+
+      // Return the final response with metadata
+      return new Response(
+        JSON.stringify({
+          conversation_id: conversationId,
+          content: finalContent,
+          tool_calls_executed: toolCallsExecuted,
+        }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "X-RateLimit-Remaining": String(rateLimit.remaining),
+          },
+        }
+      );
+    }
+
+    // If we exhausted tool rounds, do one final non-tool call
+    log.warn("Exhausted tool rounds, making final call without tools");
+    const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -215,41 +369,40 @@ GUIDELINES:
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...validatedMessages,
-        ],
-        stream: true,
+        messages,
+        stream: false,
       }),
     });
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errorText);
-      return new Response(JSON.stringify({ error: "AI service unavailable" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let finalContent = "I apologise, but I was unable to complete your request. Please try rephrasing your question.";
+    if (finalResponse.ok) {
+      const finalData = await finalResponse.json();
+      finalContent = finalData.choices?.[0]?.message?.content ?? finalContent;
     }
 
-    // Stream the response
-    return new Response(aiResponse.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-RateLimit-Remaining": String(rateLimit.remaining) },
+    await supabase.from("chat_messages").insert({
+      conversation_id: conversationId,
+      role: "assistant",
+      content: finalContent,
     });
+
+    return new Response(
+      JSON.stringify({
+        conversation_id: conversationId,
+        content: finalContent,
+        tool_calls_executed: toolCallsExecuted,
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "X-RateLimit-Remaining": String(rateLimit.remaining),
+        },
+      }
+    );
   } catch (error) {
-    console.error("Portfolio chat error:", error);
+    log.error("Portfolio chat error", { error: error instanceof Error ? error.message : String(error) });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       {
@@ -259,3 +412,106 @@ GUIDELINES:
     );
   }
 });
+
+// ─── Conversation management handlers ────────────────────────────────────────
+
+async function handleListConversations(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  corsHeaders: Record<string, string>
+) {
+  const { data, error } = await supabase
+    .from("chat_conversations")
+    .select("id, title, created_at, updated_at")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ conversations: data ?? [] }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function handleDeleteConversation(
+  supabase: ReturnType<typeof createClient>,
+  conversationId: string,
+  corsHeaders: Record<string, string>
+) {
+  const { error } = await supabase
+    .from("chat_conversations")
+    .delete()
+    .eq("id", conversationId);
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function handleUpdateConversation(
+  supabase: ReturnType<typeof createClient>,
+  conversationId: string,
+  body: { title?: string },
+  corsHeaders: Record<string, string>
+) {
+  const updates: Record<string, unknown> = {};
+  if (body.title) updates.title = body.title;
+
+  const { data, error } = await supabase
+    .from("chat_conversations")
+    .update(updates)
+    .eq("id", conversationId)
+    .select("id, title, updated_at")
+    .single();
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function handleGetMessages(
+  supabase: ReturnType<typeof createClient>,
+  conversationId: string,
+  corsHeaders: Record<string, string>
+) {
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select("id, role, content, tool_calls, tool_call_id, created_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ messages: data ?? [] }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
