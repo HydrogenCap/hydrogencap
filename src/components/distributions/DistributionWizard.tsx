@@ -80,7 +80,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
     queryFn: async () => {
       const { data } = await supabase
         .from('entity_shareholders')
-        .select('id, shareholder_name, percentage, investor_id')
+        .select('id, shareholder_name, percentage, shareholder_entity_id')
         .eq('entity_id', entityId)
         .is('effective_to', null);
       return data || [];
