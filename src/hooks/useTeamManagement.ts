@@ -86,7 +86,7 @@ export function useTeamMembers() {
       if (pError) throw pError;
 
       const profileMap = new Map(
-        (profiles || []).map(p => [p.user_id, p])
+        ((profiles || []) as any[]).map((p: any) => [p.user_id, p])
       );
 
       return memberships.map(m => {
