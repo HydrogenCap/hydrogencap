@@ -1,9 +1,10 @@
  import React, { useState, useDeferredValue } from 'react';
- import { Plus, Search, Star, Briefcase, Filter, HardHat } from 'lucide-react';
+ import { Plus, Search, Star, Briefcase, Filter, HardHat, Wrench } from 'lucide-react';
  import { AppLayout } from '@/components/layout/AppLayout';
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
  import { Card, CardContent } from '@/components/ui/card';
+ import { EmptyState } from '@/components/common';
  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
  import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
  import { useContractors } from '@/hooks/useContractors';
@@ -129,21 +130,20 @@ import { ContractorCard, AddContractorDialog, ContractorDetailDrawer } from '@/c
                    )}
  
                    {filteredContractors?.length === 0 && (
-                     <Card>
-                       <CardContent className="py-12 text-center">
-                         <HardHat className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
-                         <h3 className="font-medium mb-1">No contractors found</h3>
-                         <p className="text-sm text-muted-foreground mb-4">
-                           {searchTerm || complianceFilter !== 'all'
-                             ? 'Try adjusting your filters'
-                             : 'Add your first contractor to get started'}
-                         </p>
-                         <Button onClick={() => setShowAddDialog(true)}>
-                           <Plus className="h-4 w-4 mr-2" />
-                           Add Contractor
-                         </Button>
-                       </CardContent>
-                     </Card>
+                     searchTerm || complianceFilter !== 'all' ? (
+                       <EmptyState
+                         icon={Search}
+                         title="No contractors found"
+                         description="Try adjusting your search or filter criteria."
+                       />
+                     ) : (
+                       <EmptyState
+                         icon={Wrench}
+                         title="No contractors added"
+                         description="Add your contractors and tradespeople to assign maintenance jobs."
+                         action={{ label: 'Add Contractor', onClick: () => setShowAddDialog(true) }}
+                       />
+                     )
                    )}
                  </TabsContent>
  

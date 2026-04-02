@@ -16,9 +16,10 @@ import {
   type ComplianceTaskOverview, type TaskStatus, type TaskPriority,
 } from '@/lib/complianceTaskTypes';
 import {
-  ClipboardList, LayoutGrid, List, Play, Plus, AlertTriangle, Clock, CheckCircle2, XCircle,
+  ClipboardList, LayoutGrid, List, Play, Plus, AlertTriangle, Clock, CheckCircle2, ShieldCheck, XCircle,
   GitBranch, Upload, CalendarPlus, Ban, Send, Loader2,
 } from 'lucide-react';
+import { EmptyState } from '@/components/common';
 import { format, formatDistanceToNow, addDays } from 'date-fns';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 
@@ -339,6 +340,13 @@ export default function ComplianceTasks() {
 
         {isLoading ? (
           <p className="text-muted-foreground text-center py-12">Loading tasks...</p>
+        ) : filtered.length === 0 && !tasks?.length ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="All clear"
+            description="Upload your first certificate — we'll extract the details automatically."
+            variant="success"
+          />
         ) : view === 'pipeline' ? (
           renderPipelineView()
         ) : view === 'board' ? (

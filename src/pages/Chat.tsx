@@ -184,7 +184,7 @@ export default function Chat() {
           <ScrollArea className="flex-1 px-6" ref={scrollRef}>
             <div className="max-w-3xl mx-auto py-6 space-y-6">
               {displayMessages.length === 0 && !isLoading ? (
-                <EmptyState onSend={sendMessage} />
+                <ChatEmptyState onSend={sendMessage} />
               ) : (
                 <>
                   {displayMessages.map((message, idx) => (
@@ -262,16 +262,15 @@ export default function Chat() {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function EmptyState({ onSend }: { onSend: (msg: string) => void }) {
+function ChatEmptyState({ onSend }: { onSend: (msg: string) => void }) {
   return (
     <div className="text-center py-12">
       <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-        <Bot className="h-8 w-8 text-primary" />
+        <MessageSquare className="h-8 w-8 text-primary" />
       </div>
-      <h2 className="text-lg font-medium mb-2">Welcome to TenureIQ AI</h2>
+      <h2 className="text-lg font-medium mb-2">Start a conversation</h2>
       <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-        I can query your portfolio data, calculate metrics, generate reports, and create compliance tasks.
-        Ask me anything about your properties.
+        Ask TenureIQ AI about your portfolio — compliance status, financial metrics, or property details.
       </p>
     </div>
   );

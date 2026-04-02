@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Home, Zap } from 'lucide-react';
+import { Plus, Search, Home, Building2, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { PropertyCardSkeleton } from '@/components/common';
+import { PropertyCardSkeleton, EmptyState } from '@/components/common';
+import { useDemoData } from '@/hooks/useDemoData';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -89,6 +90,7 @@ export default function PropertiesV2() {
   const { data: entities } = useLegalEntities();
   const { data: photoMap } = usePropertyPhotosV2();
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
+  const { seed: seedDemo } = useDemoData();
   const navigate = useNavigate();
   const [showWizard, setShowWizard] = useState(false);
   const [search, setSearch] = useState('');
@@ -254,10 +256,21 @@ export default function PropertiesV2() {
             {[1, 2, 3].map(i => <PropertyCardSkeleton key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <Home className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-muted-foreground">{properties?.length ? 'No properties match your filters.' : 'No properties yet. Add your first property to get started.'}</p>
-          </div>
+          properties?.length ? (
+            <EmptyState
+              icon={Search}
+              title="No properties match your filters"
+              description="Try adjusting your search or filter criteria."
+            />
+          ) : (
+            <EmptyState
+              icon={Building2}
+              title="No properties yet"
+              description="Add your first property to start tracking compliance, rent, and portfolio performance."
+              action={{ label: 'Add Property', onClick: () => setShowWizard(true) }}
+              secondaryAction={{ label: 'Load Demo Data', onClick: () => seedDemo.mutate() }}
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(p => (

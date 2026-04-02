@@ -1,10 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { TrendingUp, TrendingDown, Users, BarChart3 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StressTestPanel } from '@/components/property/StressTestPanel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { usePropertyPassports } from '@/hooks/usePropertyPassport';
@@ -138,16 +139,13 @@ function InsightsPage() {
   if (!properties || properties.length === 0) {
     return (
       <AppLayout>
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <TrendingUp className="h-16 w-16 text-muted-foreground/50 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No Properties Yet</h2>
-          <p className="text-muted-foreground mb-4">
-            Add properties to your portfolio to see insights.
-          </p>
-          <Button asChild>
-            <Link to="/properties/new">Add First Property</Link>
-          </Button>
-        </div>
+        <EmptyState
+          icon={BarChart3}
+          title="Not enough data yet"
+          description="Add at least 2 properties with financial data to unlock portfolio insights."
+          action={{ label: 'Add Property', href: '/properties/new' }}
+          className="mt-8"
+        />
       </AppLayout>
     );
   }
