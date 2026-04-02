@@ -86,6 +86,7 @@ const Investors = lazy(() => import("./pages/Investors"));
 const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
 const Accounting = lazy(() => import("./pages/Accounting"));
 const Tax = lazy(() => import("./pages/Tax"));
+const TaxDashboard = lazy(() => import("./pages/TaxDashboard"));
 const FinancialForecast = lazy(() => import("./pages/FinancialForecast"));
 const Distributions = lazy(() => import("./pages/Distributions"));
 const DocumentTemplates = lazy(() => import("./pages/DocumentTemplates"));
@@ -629,6 +630,16 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <Tax />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tax-engine"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <TaxDashboard />
                   </RouteBoundary>
                 </ProtectedRoute>
               }

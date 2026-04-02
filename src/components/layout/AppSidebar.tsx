@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Building2,
   Briefcase,
+  Calculator,
   DoorOpen,
   Settings,
   LogOut,
@@ -171,6 +172,7 @@ const intelligenceItems: NavItem[] = [
     href: '/reports',
     children: [
       { title: 'Tax', icon: Receipt, href: '/tax' },
+      { title: 'Tax Engine', icon: Calculator, href: '/tax-engine' },
       { title: 'AI Reports', icon: FileText, href: '/investor-reports' },
     ],
   },
