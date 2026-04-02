@@ -245,7 +245,7 @@ export function useRentHistory(filters?: { propertyId?: string; tenantId?: strin
   return useQuery({
     queryKey: ['rent_history', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      const query = (supabase as any)
         .from('rent_payments')
         .select(`
           id, org_id, tenancy_id, agreement_id, rent_schedule_id,
