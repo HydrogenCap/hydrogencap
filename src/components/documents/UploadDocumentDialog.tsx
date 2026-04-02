@@ -1,7 +1,7 @@
  import { useState, useCallback } from 'react';
  import { toast } from 'sonner';
  import { useDropzone } from 'react-dropzone';
- import { Upload, File, X, Loader2 } from 'lucide-react';
+ import { Upload, File, X } from 'lucide-react';
  import {
    Dialog,
    DialogContent,
@@ -10,6 +10,7 @@
    DialogFooter,
  } from '@/components/ui/dialog';
  import { Button } from '@/components/ui/button';
+ import { LoadingButton } from '@/components/common/LoadingButton';
  import { Input } from '@/components/ui/input';
  import { Label } from '@/components/ui/label';
  import { Textarea } from '@/components/ui/textarea';
@@ -287,16 +288,14 @@
              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                Cancel
              </Button>
-             <Button
+             <LoadingButton
                type="submit"
-               disabled={!file || !formData.displayName || !formData.category || uploadDocument.isPending}
+               disabled={!file || !formData.displayName || !formData.category}
+               loading={uploadDocument.isPending}
+               loadingText="Uploading..."
              >
-               {uploadDocument.isPending ? (
-                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Uploading...</>
-               ) : (
-                 <><Upload className="h-4 w-4 mr-2" />Upload</>
-               )}
-             </Button>
+               <Upload className="h-4 w-4 mr-2" />Upload
+             </LoadingButton>
            </DialogFooter>
          </form>
        </DialogContent>

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -36,19 +37,16 @@ export function ValuationSummaryInline({ documentId, compact = false }: Props) {
   if (!isLoading && !summary) {
     return (
       <div className={compact ? 'px-3.5 pb-3' : 'mt-3'}>
-        <Button
+        <LoadingButton
           variant="outline"
           size="sm"
           className="gap-2 w-full justify-center"
           onClick={(e) => { e.stopPropagation(); trigger.mutate(documentId); }}
-          disabled={trigger.isPending}
+          loading={trigger.isPending}
+          loadingText="Analysing…"
         >
-          {trigger.isPending ? (
-            <><Loader2 className="h-4 w-4 animate-spin" />Analysing…</>
-          ) : (
-            <><Sparkles className="h-4 w-4 text-purple-500" />Generate AI Summary</>
-          )}
-        </Button>
+          <Sparkles className="h-4 w-4 text-purple-500" />Generate AI Summary
+        </LoadingButton>
       </div>
     );
   }

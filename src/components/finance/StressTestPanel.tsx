@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { formatGBP } from '@/lib/calculations';
 import { ForecastChart } from './ForecastChart';
 import { useRunForecast, type FinancialForecast } from '@/hooks/useFinancialForecasts';
@@ -141,13 +142,13 @@ export function StressTestPanel({ onForecastGenerated }: StressTestPanelProps) {
               ))}
             </div>
             <div className="flex-1" />
-            <Button
+            <LoadingButton
               onClick={handleRunStressTest}
-              disabled={runForecast.isPending}
+              loading={runForecast.isPending}
+              loadingText="Running..."
             >
-              {runForecast.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Run Stress Test
-            </Button>
+            </LoadingButton>
           </div>
         </CardContent>
       </Card>

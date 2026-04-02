@@ -192,6 +192,8 @@ export function KpiCards({
         <KpiCard
           label="Monthly Rent Roll"
           value={formatGBP(rentalStats.totalMonthlyRent)}
+          animatedValue={rentalStats.totalMonthlyRent}
+          animatedPrefix="£"
           subtitle={`${rentalStats.activeTenancies} active tenancies`}
           icon={Wallet}
           iconClassName="text-primary"
@@ -248,6 +250,8 @@ export function KpiCards({
         <KpiCard
           label="Monthly Cash Position"
           value={snapshotKPIs.monthlyCashPosition !== null ? formatGBP(snapshotKPIs.monthlyCashPosition) : '—'}
+          animatedValue={snapshotKPIs.monthlyCashPosition ?? undefined}
+          animatedPrefix="£"
           subtitle={snapshotKPIs.latestMonthLabel ? `As of ${snapshotKPIs.latestMonthLabel}` : 'No snapshot data yet'}
           icon={PoundSterling}
           iconClassName={snapshotKPIs.monthlyCashPosition !== null && snapshotKPIs.monthlyCashPosition >= 0 ? 'text-success' : 'text-destructive'}

@@ -15,7 +15,7 @@
    return (
      <Card
        className={cn(
-         "cursor-pointer transition-all hover:shadow-md",
+         "cursor-pointer transition-shadow duration-150 hover:shadow-md motion-reduce:transition-none",
          selected && "ring-2 ring-primary"
        )}
        onClick={onClick}

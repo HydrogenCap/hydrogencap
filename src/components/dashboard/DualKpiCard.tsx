@@ -40,10 +40,11 @@ export function DualKpiCard({
         'bg-gradient-to-br from-card to-card/80',
         'shadow-sm',
         isClickable && [
-          'cursor-pointer transition-all duration-200',
+          'cursor-pointer transition-all duration-150',
           'hover:bg-muted/30 hover:border-primary/40',
           'hover:shadow-md hover:shadow-primary/5',
           'active:scale-[0.98]',
+          'motion-reduce:transition-none',
         ],
         className
       )}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { MessageSquarePlus, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MessageSquarePlus } from 'lucide-react';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ActivityLoggers } from '@/hooks/useActivityLog';
@@ -55,18 +55,16 @@ export function AddNoteForm({ propertyId }: AddNoteFormProps) {
         disabled={isSubmitting}
       />
       <div className="flex justify-end">
-        <Button 
-          type="submit" 
-          size="sm" 
-          disabled={!note.trim() || isSubmitting}
+        <LoadingButton
+          type="submit"
+          size="sm"
+          disabled={!note.trim()}
+          loading={isSubmitting}
+          loadingText="Adding..."
         >
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <MessageSquarePlus className="h-4 w-4 mr-2" />
-          )}
+          <MessageSquarePlus className="h-4 w-4 mr-2" />
           Add Note
-        </Button>
+        </LoadingButton>
       </div>
     </form>
   );

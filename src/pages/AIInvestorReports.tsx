@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -201,22 +202,15 @@ function GenerateReportDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
+          <LoadingButton
             onClick={handleSubmit}
-            disabled={generateReport.isPending || !form.period_start || !form.period_end}
+            disabled={!form.period_start || !form.period_end}
+            loading={generateReport.isPending}
+            loadingText="Generating..."
           >
-            {generateReport.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Report
-              </>
-            )}
-          </Button>
+            <Sparkles className="h-4 w-4 mr-2" />
+            Generate Report
+          </LoadingButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>
