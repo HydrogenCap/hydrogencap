@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { EmptyState } from '@/components/common';
 import {
   useInsuranceClaims,
@@ -24,46 +32,55 @@ import {
   CLAIM_STATUSES,
   type InsuranceClaim,
 } from '@/hooks/useInsuranceTracker';
+import { formatGBP } from '@/lib/calculations';
+import { SEVERITY } from '@/lib/design-tokens';
+import { cn } from '@/lib/utils';
 
-const STATUS_COLORS: Record<string, string> = {
-  submitted: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  under_review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  approved: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  settled: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  withdrawn: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+const STATUS_SEVERITY: Record<string, keyof typeof SEVERITY> = {
+  submitted: 'info',
+  under_review: 'warning',
+  approved: 'success',
+  settled: 'success',
+  rejected: 'critical',
+  withdrawn: 'neutral',
 };
 
 const PIPELINE_STEPS = ['submitted', 'under_review', 'approved', 'settled'];
+
+function getStatusBadge(status: string) {
+  const severity = STATUS_SEVERITY[status] || 'neutral';
+  const label = CLAIM_STATUSES.find(s => s.value === status)?.label || status;
+  return <Badge className={cn('text-xs', SEVERITY[severity].badge)}>{label}</Badge>;
+}
 
 function ClaimStatusPipeline({ currentStatus }: { currentStatus: string }) {
   const currentIdx = PIPELINE_STEPS.indexOf(currentStatus);
   const isTerminal = ['rejected', 'withdrawn'].includes(currentStatus);
 
   if (isTerminal) {
-    return (
-      <Badge className={STATUS_COLORS[currentStatus]}>
-        {CLAIM_STATUSES.find(s => s.value === currentStatus)?.label || currentStatus}
-      </Badge>
-    );
+    return getStatusBadge(currentStatus);
   }
 
   return (
     <div className="flex items-center gap-1">
       {PIPELINE_STEPS.map((step, idx) => {
         const isCompleted = idx <= currentIdx;
+        const severity = STATUS_SEVERITY[step] || 'neutral';
         const label = CLAIM_STATUSES.find(s => s.value === step)?.label || step;
         return (
           <div key={step} className="flex items-center gap-1">
-            <div
-              className={`h-2 w-8 rounded-full ${
-                isCompleted ? 'bg-emerald-500' : 'bg-muted'
-              }`}
-              title={label}
-            />
-            {idx < PIPELINE_STEPS.length - 1 && (
-              <div className="h-px w-1 bg-muted" />
+            {idx > 0 && (
+              <ChevronRight className={cn('h-3 w-3', isCompleted ? 'text-green-500' : 'text-muted-foreground/30')} />
             )}
+            <span
+              className={cn(
+                'text-xs px-1.5 py-0.5 rounded',
+                isCompleted ? SEVERITY[severity].badge : 'bg-muted/50 text-muted-foreground/50'
+              )}
+              title={label}
+            >
+              {label}
+            </span>
           </div>
         );
       })}
@@ -295,9 +312,6 @@ export function ClaimsTracker() {
     statusFilter === 'all' || c.status === statusFilter
   );
 
-  const formatCurrency = (amount: number | null) =>
-    amount != null ? `\u00a3${amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}` : '—';
-
   return (
     <Card>
       <CardHeader>
@@ -337,48 +351,51 @@ export function ClaimsTracker() {
             description="No insurance claims have been filed yet."
           />
         ) : (
-          <div className="space-y-3">
-            {filteredClaims.map(claim => (
-              <div
-                key={claim.id}
-                className="border rounded-lg p-3 hover:bg-accent/50 cursor-pointer transition-colors"
-                onClick={() => setEditingClaim(claim)}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">
-                        {claim.claim_reference || 'No reference'}
-                      </span>
-                      <Badge className={STATUS_COLORS[claim.status] || ''}>
-                        {CLAIM_STATUSES.find(s => s.value === claim.status)?.label || claim.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1 truncate">
-                      {claim.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                      <span>{claim.property?.address_line || 'Unknown property'}</span>
-                      <span>{new Date(claim.claim_date).toLocaleDateString('en-GB')}</span>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-medium">
-                      {formatCurrency(claim.amount_claimed)}
-                    </div>
-                    {claim.amount_settled != null && (
-                      <div className="text-xs text-muted-foreground">
-                        Settled: {formatCurrency(claim.amount_settled)}
-                      </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Policy / Insurer</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">Claimed</TableHead>
+                <TableHead className="text-right">Settled</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClaims.map(claim => (
+                <TableRow key={claim.id} className="cursor-pointer" onClick={() => setEditingClaim(claim)}>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {new Date(claim.claim_date).toLocaleDateString('en-GB')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">{claim.policy?.insurer_name || '—'}</div>
+                    {claim.claim_reference && (
+                      <div className="text-xs text-muted-foreground">Ref: {claim.claim_reference}</div>
                     )}
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <ClaimStatusPipeline currentStatus={claim.status} />
-                </div>
-              </div>
-            ))}
-          </div>
+                  </TableCell>
+                  <TableCell className="text-sm max-w-[200px] truncate">
+                    {claim.description}
+                  </TableCell>
+                  <TableCell className="text-sm text-right">{formatGBP(claim.amount_claimed)}</TableCell>
+                  <TableCell className="text-sm text-right">{formatGBP(claim.amount_settled)}</TableCell>
+                  <TableCell>
+                    <ClaimStatusPipeline currentStatus={claim.status} />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); setEditingClaim(claim); }}
+                    >
+                      Update
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
 

@@ -16,6 +16,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { EmptyState } from '@/components/common';
 import {
   useInsurancePolicies,
@@ -23,21 +31,25 @@ import {
   useExpiringPolicies,
   useCreatePolicy,
   useUpdatePolicy,
+  useCoverageGaps,
   TRACKER_POLICY_TYPES,
   POLICY_STATUSES,
   type InsuranceTrackerPolicy,
 } from '@/hooks/useInsuranceTracker';
 import { InsurancePolicyForm, CoverageMatrix, ClaimsTracker } from '@/components/insurance';
+import { formatGBP } from '@/lib/calculations';
+import { SEVERITY, TEXT } from '@/lib/design-tokens';
+import { cn } from '@/lib/utils';
 
 function getExpiryBadge(endDate: string | null, status: string | null) {
   if (status === 'cancelled') {
-    return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">Cancelled</Badge>;
+    return <Badge className={cn('text-xs', SEVERITY.neutral.badge)}>Cancelled</Badge>;
   }
   if (status === 'expired' || (endDate && new Date(endDate) < new Date())) {
-    return <Badge variant="destructive" className="bg-black text-white">Expired</Badge>;
+    return <Badge className="text-xs bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">Expired</Badge>;
   }
   if (!endDate) {
-    return <Badge variant="outline">No expiry</Badge>;
+    return <Badge variant="outline" className="text-xs">No expiry</Badge>;
   }
 
   const now = new Date();
@@ -45,17 +57,12 @@ function getExpiryBadge(endDate: string | null, status: string | null) {
   const daysUntil = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
   if (daysUntil <= 30) {
-    return <Badge variant="destructive">{daysUntil}d left</Badge>;
+    return <Badge className={cn('text-xs', SEVERITY.critical.badge)}>{daysUntil}d left</Badge>;
   }
   if (daysUntil <= 90) {
-    return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{daysUntil}d left</Badge>;
+    return <Badge className={cn('text-xs', SEVERITY.warning.badge)}>{daysUntil}d left</Badge>;
   }
-  return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{daysUntil}d left</Badge>;
-}
-
-function formatCurrency(amount: number | null) {
-  if (amount == null) return '—';
-  return `\u00a3${amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`;
+  return <Badge className={cn('text-xs', SEVERITY.success.badge)}>{daysUntil}d left</Badge>;
 }
 
 function KPICards() {
@@ -64,7 +71,7 @@ function KPICards() {
   const cards = [
     {
       title: 'Total Annual Premiums',
-      value: isLoading ? '...' : formatCurrency(stats?.totalAnnualPremiums ?? 0),
+      value: isLoading ? '...' : formatGBP(stats?.totalAnnualPremiums ?? 0),
       icon: PoundSterling,
       color: 'text-primary',
     },
@@ -72,19 +79,19 @@ function KPICards() {
       title: 'Active Policies',
       value: isLoading ? '...' : (stats?.activePoliciesCount ?? 0).toString(),
       icon: Shield,
-      color: 'text-emerald-600',
+      color: SEVERITY.success.text,
     },
     {
       title: 'Expiring in 30 Days',
       value: isLoading ? '...' : (stats?.expiringIn30Count ?? 0).toString(),
       icon: AlertTriangle,
-      color: stats?.expiringIn30Count ? 'text-destructive' : 'text-amber-600',
+      color: stats?.expiringIn30Count ? SEVERITY.critical.text : SEVERITY.warning.text,
     },
     {
       title: 'Open Claims',
       value: isLoading ? '...' : (stats?.openClaimsCount ?? 0).toString(),
       icon: FileText,
-      color: 'text-blue-600',
+      color: SEVERITY.info.text,
     },
   ];
 
@@ -95,15 +102,42 @@ function KPICards() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{card.title}</p>
+                <p className={TEXT.label}>{card.title}</p>
                 <p className="text-2xl font-bold mt-1">{card.value}</p>
               </div>
-              <card.icon className={`h-8 w-8 ${card.color} opacity-80`} />
+              <card.icon className={cn('h-8 w-8 opacity-80', card.color)} />
             </div>
           </CardContent>
         </Card>
       ))}
     </div>
+  );
+}
+
+function CoverageGapAlert() {
+  const { data: gaps } = useCoverageGaps();
+  const propertiesWithGaps = gaps?.filter(g => g.hasGaps) || [];
+
+  if (propertiesWithGaps.length === 0) return null;
+
+  return (
+    <Card className={cn('border', SEVERITY.critical.border, SEVERITY.critical.bg)}>
+      <CardContent className="py-3 px-4">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className={cn('h-4 w-4 mt-0.5', SEVERITY.critical.text)} />
+          <div>
+            <p className={cn('text-sm font-medium', SEVERITY.critical.text)}>
+              Coverage gaps detected
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {propertiesWithGaps.length} {propertiesWithGaps.length === 1 ? 'property' : 'properties'} missing required insurance:{' '}
+              {propertiesWithGaps.slice(0, 3).map(g => g.address_line).join(', ')}
+              {propertiesWithGaps.length > 3 && ` and ${propertiesWithGaps.length - 3} more`}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -144,15 +178,27 @@ function RenewalCalendar() {
             const daysLeft = policy.end_date
               ? Math.ceil((new Date(policy.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
               : null;
+
+            const severity = daysLeft == null ? 'neutral'
+              : daysLeft <= 30 ? 'critical'
+              : daysLeft <= 90 ? 'warning'
+              : 'success';
+
             return (
               <div
                 key={policy.id}
-                className="flex items-center justify-between border rounded-lg p-3"
+                className={cn(
+                  'flex items-center justify-between rounded-lg p-3',
+                  SEVERITY[severity as keyof typeof SEVERITY].bg
+                )}
               >
-                <div>
-                  <div className="font-medium text-sm">{policy.property?.address_line || 'Unknown'}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {policy.insurer_name || 'Unknown insurer'} — {TRACKER_POLICY_TYPES.find(t => t.value === policy.policy_type)?.label || policy.policy_type}
+                <div className="flex items-center gap-3">
+                  <div className={cn('w-2 h-2 rounded-full', SEVERITY[severity as keyof typeof SEVERITY].dot)} />
+                  <div>
+                    <div className="font-medium text-sm">{policy.property?.address_line || 'Unknown'}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {policy.insurer_name || 'Unknown insurer'} — {TRACKER_POLICY_TYPES.find(t => t.value === policy.policy_type)?.label || policy.policy_type}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -219,7 +265,7 @@ function PoliciesTable() {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Policies</h2>
+        <h2 className={TEXT.sectionHeading}>Policies</h2>
         <Button onClick={() => { setEditingPolicy(null); setShowPolicyForm(true); }}>
           <Plus className="h-4 w-4 mr-2" />
           Add Policy
@@ -276,49 +322,51 @@ function PoliciesTable() {
         />
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 pr-4 font-medium">Property</th>
-                <th className="text-left py-3 px-2 font-medium">Type</th>
-                <th className="text-left py-3 px-2 font-medium">Insurer</th>
-                <th className="text-left py-3 px-2 font-medium">Policy No.</th>
-                <th className="text-right py-3 px-2 font-medium">Premium</th>
-                <th className="text-right py-3 px-2 font-medium">Cover</th>
-                <th className="text-left py-3 px-2 font-medium">Expiry</th>
-                <th className="text-left py-3 pl-2 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Property</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Insurer</TableHead>
+                <TableHead>Policy No.</TableHead>
+                <TableHead className="text-right">Premium</TableHead>
+                <TableHead className="text-right">Cover</TableHead>
+                <TableHead>Expiry</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredPolicies.map(policy => (
-                <tr
+                <TableRow
                   key={policy.id}
-                  className="border-b last:border-0 hover:bg-accent/50 cursor-pointer transition-colors"
+                  className="cursor-pointer"
                   onClick={() => { setEditingPolicy(policy); setShowPolicyForm(true); }}
                 >
-                  <td className="py-3 pr-4">
+                  <TableCell>
                     <div className="font-medium">{policy.property?.address_line || 'Unknown'}</div>
                     <div className="text-xs text-muted-foreground">{policy.property?.postcode}</div>
-                  </td>
-                  <td className="py-3 px-2">
-                    {TRACKER_POLICY_TYPES.find(t => t.value === policy.policy_type)?.label || policy.policy_type || '—'}
-                  </td>
-                  <td className="py-3 px-2">{policy.insurer_name || '—'}</td>
-                  <td className="py-3 px-2 font-mono text-xs">{policy.policy_number || '—'}</td>
-                  <td className="py-3 px-2 text-right">{formatCurrency(policy.premium_annual)}</td>
-                  <td className="py-3 px-2 text-right">{formatCurrency(policy.cover_amount)}</td>
-                  <td className="py-3 px-2">
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {TRACKER_POLICY_TYPES.find(t => t.value === policy.policy_type)?.label || policy.policy_type || '—'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{policy.insurer_name || '—'}</TableCell>
+                  <TableCell className="font-mono text-xs">{policy.policy_number || '—'}</TableCell>
+                  <TableCell className="text-right">{formatGBP(policy.premium_annual)}</TableCell>
+                  <TableCell className="text-right">{formatGBP(policy.cover_amount)}</TableCell>
+                  <TableCell>
                     {policy.end_date
                       ? new Date(policy.end_date).toLocaleDateString('en-GB')
                       : '—'}
-                  </td>
-                  <td className="py-3 pl-2">
+                  </TableCell>
+                  <TableCell>
                     {getExpiryBadge(policy.end_date, policy.status)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -339,15 +387,17 @@ function PoliciesTable() {
 export default function Insurance() {
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <div>
-          <h1 className="text-2xl font-bold">Insurance</h1>
-          <p className="text-muted-foreground">
+          <h1 className={TEXT.pageTitle}>Insurance</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             Manage your property insurance portfolio, track coverage gaps, and monitor claims
           </p>
         </div>
 
         <KPICards />
+
+        <CoverageGapAlert />
 
         <Tabs defaultValue="policies">
           <TabsList>

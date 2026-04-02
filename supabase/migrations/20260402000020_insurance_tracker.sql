@@ -32,3 +32,8 @@ CREATE TABLE IF NOT EXISTS insurance_claims (
 
 ALTER TABLE insurance_claims ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Org members manage claims" ON insurance_claims FOR ALL USING (org_id IN (SELECT org_id FROM memberships WHERE user_id = auth.uid()));
+
+-- Indexes for fast lookups
+CREATE INDEX IF NOT EXISTS idx_insurance_claims_org_id ON insurance_claims(org_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_claims_policy_id ON insurance_claims(policy_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_claims_status ON insurance_claims(status);
