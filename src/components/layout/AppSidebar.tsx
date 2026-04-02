@@ -169,6 +169,7 @@ const intelligenceItems: NavItem[] = [
     href: '/reports',
     children: [
       { title: 'Tax', icon: Receipt, href: '/tax' },
+      { title: 'AI Reports', icon: FileText, href: '/investor-reports' },
     ],
   },
   { title: 'Forecast', icon: LineChart, href: '/financial-forecast' },
