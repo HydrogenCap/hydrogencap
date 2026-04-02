@@ -151,7 +151,7 @@ export function useUpdateAIReportSection() {
       updatedSection: Partial<ReportSection>;
     }) => {
       // Fetch current report to get all sections
-      const { data: report, error: fetchError } = await supabase
+      const { data: report, error: fetchError } = await (supabase as any)
         .from('ai_investor_reports')
         .select('sections')
         .eq('id', reportId)
