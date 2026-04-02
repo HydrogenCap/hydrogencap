@@ -116,6 +116,11 @@ const TenantPortalHome = lazy(() => import("./pages/tenant-portal/TenantPortalHo
 const TenantRentHistory = lazy(() => import("./pages/tenant-portal/TenantRentHistory"));
 const TenantMaintenance = lazy(() => import("./pages/tenant-portal/TenantMaintenance"));
 const TenantDocuments = lazy(() => import("./pages/tenant-portal/TenantDocuments"));
+// Tenant portal V2 pages
+const TenantDashboard = lazy(() => import("./pages/tenant-portal/TenantDashboard"));
+const TenantPayments = lazy(() => import("./pages/tenant-portal/TenantPayments"));
+const MaintenanceRequest = lazy(() => import("./pages/tenant-portal/MaintenanceRequest"));
+const TenantCertificates = lazy(() => import("./pages/tenant-portal/TenantCertificates"));
 const AcceptTeamInvite = lazy(() => import("./pages/AcceptTeamInvite"));
 
 // Marketing pages
@@ -754,10 +759,13 @@ const App = () => (
             
             {/* Tenant portal routes */}
             <Route path="/tenant-portal/accept/:token" element={<TenantAcceptInvite />} />
-            <Route path="/tenant-portal" element={<TenantPortalProtectedRoute><TenantPortalHome /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/rent" element={<TenantPortalProtectedRoute requiredPermission="rent"><TenantRentHistory /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/maintenance" element={<TenantPortalProtectedRoute requiredPermission="maintenance"><TenantMaintenance /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/documents" element={<TenantPortalProtectedRoute requiredPermission="documents"><TenantDocuments /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal" element={<TenantPortalProtectedRoute><TenantDashboard /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/payments" element={<TenantPortalProtectedRoute requiredPermission="rent"><TenantPayments /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/maintenance" element={<TenantPortalProtectedRoute requiredPermission="maintenance"><MaintenanceRequest /></TenantPortalProtectedRoute>} />
+            <Route path="/tenant-portal/certificates" element={<TenantPortalProtectedRoute><TenantCertificates /></TenantPortalProtectedRoute>} />
+            {/* Legacy V1 tenant portal routes — redirect to V2 */}
+            <Route path="/tenant-portal/rent" element={<Navigate to="/tenant-portal/payments" replace />} />
+            <Route path="/tenant-portal/documents" element={<Navigate to="/tenant-portal/certificates" replace />} />
             
             {/* Team invite acceptance */}
             <Route path="/team/accept/:token" element={<AcceptTeamInvite />} />
