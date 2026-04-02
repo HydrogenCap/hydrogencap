@@ -6,7 +6,7 @@ import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 
 // ─── Types ───────────────────────────────────────────────────────
 
-export type AppRole = 'owner' | 'admin' | 'viewer';
+export type AppRole = 'owner' | 'admin' | 'member' | 'accountant' | 'viewer';
 
 export interface TeamMember {
   membershipId: string;

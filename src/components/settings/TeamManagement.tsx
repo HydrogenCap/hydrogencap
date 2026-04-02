@@ -67,6 +67,8 @@ import {
 const ROLE_CONFIG: Record<AppRole, { label: string; icon: typeof Crown; color: string }> = {
   owner: { label: 'Owner', icon: Crown, color: 'text-amber-600' },
   admin: { label: 'Admin', icon: ShieldCheck, color: 'text-primary' },
+  member: { label: 'Member', icon: Users, color: 'text-emerald-600' },
+  accountant: { label: 'Accountant', icon: Eye, color: 'text-violet-600' },
   viewer: { label: 'Viewer', icon: Eye, color: 'text-muted-foreground' },
 };
 
@@ -198,6 +200,18 @@ export function TeamManagement() {
                         <span className="flex items-center gap-2">
                           <ShieldCheck className="h-3.5 w-3.5 text-primary" />
                           Admin — Full access
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="member">
+                        <span className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-emerald-600" />
+                          Member — Read & write
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="accountant">
+                        <span className="flex items-center gap-2">
+                          <Eye className="h-3.5 w-3.5 text-violet-600" />
+                          Accountant — Financial access
                         </span>
                       </SelectItem>
                       <SelectItem value="viewer">
@@ -371,13 +385,25 @@ function MemberRow({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {canPromoteToAdmin && member.role === 'viewer' && (
+            {canPromoteToAdmin && member.role !== 'admin' && (
               <DropdownMenuItem onClick={() => onChangeRole('admin')}>
                 <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
                 Make Admin
               </DropdownMenuItem>
             )}
-            {member.role === 'admin' && (
+            {member.role !== 'member' && (
+              <DropdownMenuItem onClick={() => onChangeRole('member')}>
+                <Users className="h-4 w-4 mr-2 text-emerald-600" />
+                Make Member
+              </DropdownMenuItem>
+            )}
+            {member.role !== 'accountant' && (
+              <DropdownMenuItem onClick={() => onChangeRole('accountant')}>
+                <Eye className="h-4 w-4 mr-2 text-violet-600" />
+                Make Accountant
+              </DropdownMenuItem>
+            )}
+            {member.role !== 'viewer' && (
               <DropdownMenuItem onClick={() => onChangeRole('viewer')}>
                 <Eye className="h-4 w-4 mr-2" />
                 Make Viewer

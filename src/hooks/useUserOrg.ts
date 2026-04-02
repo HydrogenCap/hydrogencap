@@ -19,7 +19,9 @@ const CURRENT_ORG_EVENT = 'tenureiq:current-org-changed';
 const ORG_ROLE_PRIORITY: Record<MembershipRow['role'], number> = {
   owner: 0,
   admin: 1,
-  viewer: 2,
+  member: 2,
+  accountant: 3,
+  viewer: 4,
 };
 
 function isBrowser() {
