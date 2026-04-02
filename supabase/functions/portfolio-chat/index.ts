@@ -465,8 +465,9 @@ async function handleDeleteConversation(
   });
 }
 
+// deno-lint-ignore no-explicit-any
 async function handleUpdateConversation(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   conversationId: string,
   body: { title?: string },
   corsHeaders: Record<string, string>
