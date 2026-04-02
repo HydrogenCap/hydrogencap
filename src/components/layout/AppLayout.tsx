@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { PageTransition } from '@/components/common/PageTransition';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { MobileBottomNav } from './MobileBottomNav';
 
@@ -28,7 +29,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         </header>
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto p-3 md:p-6 pb-20 md:pb-6">
           <ErrorBoundary>
-            {children}
+            <PageTransition>
+              {children}
+            </PageTransition>
           </ErrorBoundary>
         </main>
       </SidebarInset>

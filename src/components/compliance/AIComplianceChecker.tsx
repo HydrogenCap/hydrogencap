@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -91,23 +92,26 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
             <CardTitle className="text-lg">AI Compliance Checker</CardTitle>
           </div>
           <div className="flex gap-2">
-            <Button
+            <LoadingButton
               variant="outline"
               size="sm"
               onClick={() => runAnalysis('quick')}
-              disabled={!canAnalyze || isAnalyzing}
+              disabled={!canAnalyze}
+              loading={isAnalyzing}
+              loadingText="Checking..."
             >
-              {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
               Quick Check
-            </Button>
-            <Button
+            </LoadingButton>
+            <LoadingButton
               size="sm"
               onClick={() => runAnalysis('analyze')}
-              disabled={!canAnalyze || isAnalyzing}
+              disabled={!canAnalyze}
+              loading={isAnalyzing}
+              loadingText="Analysing..."
             >
-              {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
+              <Sparkles className="h-4 w-4 mr-1" />
               Full Analysis
-            </Button>
+            </LoadingButton>
           </div>
         </div>
         <CardDescription>

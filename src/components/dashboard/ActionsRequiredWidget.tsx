@@ -42,9 +42,9 @@ function ActionItem({ item }: { item: RiskItem }) {
     <Link 
       to={item.targetUrl}
       className={cn(
-        "flex items-start gap-3 p-3 rounded-lg border transition-colors hover:bg-muted/50 group",
-        item.severity === 'critical' 
-          ? "border-destructive/30 bg-destructive/5" 
+        "flex items-start gap-3 p-3 rounded-lg border transition-all duration-150 hover:bg-muted/50 hover:scale-[1.01] motion-reduce:transition-none motion-reduce:hover:scale-100 group",
+        item.severity === 'critical'
+          ? "border-destructive/30 bg-destructive/5"
           : "border-warning/30 bg-warning/5"
       )}
     >

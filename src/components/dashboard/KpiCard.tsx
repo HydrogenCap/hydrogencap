@@ -1,5 +1,6 @@
 import React from 'react';
 import { LucideIcon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { AnimatedNumber } from '@/components/common/AnimatedNumber';
 import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
@@ -18,6 +19,10 @@ interface KpiCardProps {
   onClick?: () => void;
   headerAction?: React.ReactNode;
   className?: string;
+  /** When provided, value is animated from 0 to this number. prefix/suffix wrap it. */
+  animatedValue?: number;
+  animatedPrefix?: string;
+  animatedSuffix?: string;
 }
 
 /**
@@ -39,6 +44,9 @@ export const KpiCard = React.memo(function KpiCard({
   onClick,
   headerAction,
   className,
+  animatedValue,
+  animatedPrefix,
+  animatedSuffix,
 }: KpiCardProps) {
   const isClickable = !!onClick;
 
@@ -54,10 +62,11 @@ export const KpiCard = React.memo(function KpiCard({
         // Hover states for clickable cards
         isClickable && [
           'cursor-pointer',
-          'transition-all duration-200',
+          'transition-all duration-150',
           'hover:bg-muted/30 hover:border-primary/40',
           'hover:shadow-md hover:shadow-primary/5',
           'active:scale-[0.98]',
+          'motion-reduce:transition-none',
         ],
         className
       )}
@@ -95,7 +104,9 @@ export const KpiCard = React.memo(function KpiCard({
       {/* Value row */}
       <div className="flex items-baseline gap-2">
         <span className={cn('text-xl md:text-2xl font-bold tracking-tight', valueClassName)}>
-          {value}
+          {animatedValue !== undefined ? (
+            <AnimatedNumber value={animatedValue} prefix={animatedPrefix} suffix={animatedSuffix} />
+          ) : value}
         </span>
         {trend && (
           <span className={cn(
