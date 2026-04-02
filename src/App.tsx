@@ -80,6 +80,7 @@ const ValuationAlerts = lazy(() => import("./pages/ValuationAlerts"));
 const RentersRightsBill = lazy(() => import("./pages/RentersRightsBill"));
 const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
 const ComplianceTasks = lazy(() => import("./pages/ComplianceTasks"));
+const RegulatoryMonitor = lazy(() => import("./pages/RegulatoryMonitor"));
 const Financials = lazy(() => import("./pages/Financials"));
 const Investors = lazy(() => import("./pages/Investors"));
 const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
@@ -562,6 +563,16 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <ComplianceTasks />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/regulatory-monitor"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <RegulatoryMonitor />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
