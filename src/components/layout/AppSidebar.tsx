@@ -36,6 +36,7 @@ import {
   BarChart3,
   Activity,
   LineChart,
+  Scale,
 } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
@@ -106,6 +107,7 @@ const operationsItems: NavItem[] = [
       { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks', badgeType: 'tasks' },
       { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
       { title: "Renters' Rights", icon: ShieldCheck, href: '/renters-rights' },
+      { title: 'Reg. Monitor', icon: Scale, href: '/regulatory-monitor' },
     ],
   },
   {
