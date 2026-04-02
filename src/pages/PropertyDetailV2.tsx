@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Flame, Landmark, QrCode, Copy } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { Edit, Copy, QrCode } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { PageSkeleton } from '@/components/common';
 import { Textarea } from '@/components/ui/textarea';
-import { usePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
+import { usePropertyV2, useUpdatePropertyV2 } from '@/hooks/usePropertiesV2';
 import { EpcRoadmapCard } from '@/components/property/EpcRoadmapCard';
 import { ComparableSalesTable } from '@/components/valuations';
 import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
@@ -17,30 +18,19 @@ import { PropertyComplianceSection } from '@/components/compliance-v2/PropertyCo
 import { PropertyFinancialSection } from '@/components/financials/PropertyFinancialSection';
 import { PropertyPnLCard } from '@/components/financials/PropertyPnLCard';
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
+import { PropertyStatusBar } from '@/components/property-detail/PropertyStatusBar';
+import { PropertyHeader } from '@/components/property-detail/PropertyHeader';
+import { PropertyTimeline } from '@/components/property-detail/PropertyTimeline';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
+import { useInsurancePolicies } from '@/hooks/useInsurance';
+import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
-
-const ENTITY_TYPE_BG: Record<string, string> = {
-  spv: 'bg-blue-100 text-blue-700', personal: 'bg-emerald-100 text-emerald-700',
-  joint_venture: 'bg-purple-100 text-purple-700', trust: 'bg-amber-100 text-amber-700',
-};
-
-const PROPERTY_TYPE_BG: Record<string, string> = {
-  hmo_licensed: 'bg-indigo-100 text-indigo-700', hmo_mandatory: 'bg-indigo-100 text-indigo-700',
-  single_let: 'bg-teal-100 text-teal-700', multi_unit_freehold: 'bg-cyan-100 text-cyan-700',
-  commercial: 'bg-slate-100 text-slate-700', mixed_use: 'bg-slate-100 text-slate-700',
-};
-
-const LIFECYCLE_BG: Record<string, string> = {
-  pipeline: 'bg-blue-100 text-blue-700', acquisition: 'bg-sky-100 text-sky-700',
-  refurbishment: 'bg-orange-100 text-orange-700', letting: 'bg-purple-100 text-purple-700',
-  stabilised: 'bg-emerald-100 text-emerald-700', disposal: 'bg-red-100 text-red-700',
-};
+import { SEVERITY } from '@/lib/design-tokens';
 
 function fmtDate(d: string | null) {
   if (!d) return '—';
@@ -52,14 +42,8 @@ function fmtGBP(v: number | null) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 }).format(v);
 }
 
-function getLabel(arr: readonly { value: string; label: string }[], v: string) {
-  return arr.find(x => x.value === v)?.label || v;
-}
-
-
 export default function PropertyDetailV2() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: property, isLoading } = usePropertyV2(id);
   const updateProperty = useUpdatePropertyV2();
@@ -67,6 +51,11 @@ export default function PropertyDetailV2() {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
   const coverPhoto = usePropertyPhotoV2(id);
+
+  // Data for status bar
+  const { data: complianceRows } = usePropertyComplianceV2(id);
+  const { data: insurancePolicies } = useInsurancePolicies({ propertyId: id });
+  const { data: loans } = useLoanFacilitiesByProperty(id);
 
   const { data: entities = [] } = useQuery({
     queryKey: ['legal_entities_list'],
@@ -82,8 +71,69 @@ export default function PropertyDetailV2() {
     },
   });
 
+  // Compute rent status from rent schedule for this property
+  const { data: rentStatusData } = useQuery({
+    queryKey: ['property_rent_status', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      // Get rent schedule entries for this property's tenancies via agreements
+      const { data, error } = await supabase
+        .from('rent_schedule')
+        .select(`
+          status,
+          agreement:tenancy_agreements!agreement_id(
+            property:properties_v2!inner(id)
+          )
+        `)
+        .gte('due_date', monthStart)
+        .lte('due_date', monthEnd);
+
+      if (error) return null;
+      if (!data || data.length === 0) return 'void' as const;
+
+      // Filter to this property
+      const forProperty = data.filter((r: any) => r.agreement?.property?.id === id);
+      if (forProperty.length === 0) return 'void' as const;
+
+      const statuses = forProperty.map((r: any) => r.status);
+      if (statuses.every((s: string) => s === 'paid')) return 'paid' as const;
+      if (statuses.some((s: string) => s === 'overdue' || s === 'bad_debt')) return 'overdue' as const;
+      if (statuses.some((s: string) => s === 'partial')) return 'partial' as const;
+      return 'paid' as const;
+    },
+  });
+
+  // Compute derived stats for header
+  const monthlyRent = property?.whole_house_rent_pcm ?? null;
+  const currentLtv = useMemo(() => {
+    if (!loans || loans.length === 0 || !property?.current_valuation) return null;
+    const totalDebt = loans
+      .filter((l: any) => l.status === 'active')
+      .reduce((sum: number, l: any) => sum + (l.current_balance || 0), 0);
+    if (totalDebt === 0 || !property.current_valuation) return null;
+    return (totalDebt / property.current_valuation) * 100;
+  }, [loans, property?.current_valuation]);
+
+  const grossYield = useMemo(() => {
+    if (!monthlyRent || !property?.current_valuation) return null;
+    return ((monthlyRent * 12) / property.current_valuation) * 100;
+  }, [monthlyRent, property?.current_valuation]);
+
+  // Compliance badge counts
+  const complianceCounts = useMemo(() => {
+    if (!complianceRows) return { expired: 0, expiring: 0 };
+    const required = complianceRows.filter(r => r.is_required);
+    const expired = required.filter(r => r.calculated_status === 'expired' || r.calculated_status === 'missing').length;
+    const expiring = required.filter(r => r.calculated_status === 'expiring_soon' || r.calculated_status === 'critical').length;
+    return { expired, expiring };
+  }, [complianceRows]);
+
   if (isLoading) {
-    return <AppLayout><PageSkeleton /></AppLayout>;
+    return <AppLayout><PageSkeleton tabs={5} /></AppLayout>;
   }
   if (!property) {
     return <AppLayout><div className="text-center py-16 text-muted-foreground">Property not found.</div></AppLayout>;
@@ -107,154 +157,175 @@ export default function PropertyDetailV2() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Cover Photo */}
-        {coverPhoto && (
-          <div className="h-48 md:h-64 w-full rounded-lg overflow-hidden">
-            <img src={coverPhoto} alt={property.address_line_1} className="w-full h-full object-cover" />
-          </div>
-        )}
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/properties-v2')} className="mb-1">
-              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Properties
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">
-              {property.address_line_1}{property.address_line_2 ? `, ${property.address_line_2}` : ''}
-            </h1>
-            <p className="text-muted-foreground">{property.city}, {property.postcode}</p>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <Badge className={ENTITY_TYPE_BG[property.entity_type]}>{property.entity_name}</Badge>
-              <Badge className={PROPERTY_TYPE_BG[property.property_type]}>{getLabel(PROPERTY_TYPES, property.property_type)}</Badge>
-              <Badge className={LIFECYCLE_BG[property.lifecycle_stage]}>{getLabel(LIFECYCLE_STAGES, property.lifecycle_stage)}</Badge>
-              {property.listing_grade !== 'none' && (
-                <Badge className="bg-amber-100 text-amber-800">
-                  <Landmark className="h-3 w-3 mr-1" />{getLabel(LISTING_GRADES, property.listing_grade)} Listed
-                </Badge>
-              )}
-              {property.has_gas_supply === false && (
-                <Badge variant="secondary" className="text-muted-foreground">
-                  <Flame className="h-3 w-3 mr-1" /> No Gas
-                </Badge>
-              )}
-            </div>
-          </div>
-          <Button variant="outline" onClick={() => setShowEdit(true)}>
-            <Edit className="h-4 w-4 mr-2" /> Edit
-          </Button>
-        </div>
-
-        {/* Key Details */}
-        <Card>
-          <CardHeader><CardTitle>Key Details</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-              <div className="space-y-2">
-                <DetailRow label="Council" value={property.council_name || '—'} />
-                <DetailRow label="Council Area" value={property.council_area || '—'} />
-                <DetailRow label="Year Built" value={property.year_built?.toString() || '—'} />
-                <DetailRow label="Total Floors" value={property.total_floors?.toString() || '—'} />
-                <DetailRow label="Lettable Rooms" value={property.total_lettable_rooms?.toString() || '0'} />
-              </div>
-              <div className="space-y-2">
-                <DetailRow label="Purchase Date" value={fmtDate(property.purchase_date)} />
-                <DetailRow label="Purchase Price" value={fmtGBP(property.purchase_price)} />
-                <DetailRow label="Current Valuation" value={fmtGBP(property.current_valuation)} />
-                <DetailRow label="Valuation Date" value={fmtDate(property.valuation_date)} />
-                {capitalGrowth !== null && (
-                  <DetailRow label="Capital Growth" value={
-                    <span className={Number(capitalGrowth) >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                      {Number(capitalGrowth) >= 0 ? '+' : ''}{capitalGrowth}%
-                    </span>
-                  } />
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Rooms */}
-        <PropertyRoomsSection propertyId={property.id} />
-
-        {/* Live P&L */}
-        <PropertyPnLCard propertyId={property.id} />
-
-        {/* Manual Financial Snapshots */}
-        <PropertyFinancialSection propertyId={property.id} currentValuation={property.current_valuation} />
-
-        {/* Loans */}
-        <PropertyLoansSection
-          propertyId={property.id}
-          entityId={property.entity_id}
-          entities={entities}
-          propertyValuation={property.current_valuation}
+        {/* Status Bar */}
+        <PropertyStatusBar
+          complianceRows={complianceRows}
+          insurancePolicies={insurancePolicies}
+          loans={loans}
+          epcRating={property.epc_rating}
+          rentStatus={rentStatusData}
         />
 
-        {/* EPC Improvement Roadmap */}
-        <EpcRoadmapCard epcRating={property.epc_rating} />
+        {/* Enhanced Header */}
+        <PropertyHeader
+          property={property}
+          coverPhoto={coverPhoto}
+          monthlyRent={monthlyRent}
+          currentLtv={currentLtv}
+          grossYield={grossYield}
+          onEdit={() => setShowEdit(true)}
+        />
 
-        {/* Market Comparables */}
-        <ComparableSalesTable propertyId={property.id} />
+        {/* Tabbed Content */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="financials">Financials</TabsTrigger>
+            <TabsTrigger value="compliance" className="gap-1.5">
+              Compliance
+              {complianceCounts.expired > 0 && (
+                <span className={`ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${SEVERITY.critical.badge}`}>
+                  {complianceCounts.expired}
+                </span>
+              )}
+              {complianceCounts.expired === 0 && complianceCounts.expiring > 0 && (
+                <span className={`ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${SEVERITY.warning.badge}`}>
+                  {complianceCounts.expiring}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="lending">Lending</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          </TabsList>
 
-        {/* Compliance */}
-        <PropertyComplianceSectionWrapper propertyId={property.id} orgId={property.org_id} />
-
-        {/* Notes */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Notes</CardTitle>
-            {!editingNotes && (
-              <Button variant="ghost" size="sm" onClick={() => { setNotesValue(property.notes || ''); setEditingNotes(true); }}>
-                <Edit className="h-3 w-3 mr-1" /> Edit
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            {editingNotes ? (
-              <div className="space-y-2">
-                <Textarea value={notesValue} onChange={e => setNotesValue(e.target.value)} rows={4} />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" size="sm" onClick={() => setEditingNotes(false)}>Cancel</Button>
-                  <Button size="sm" onClick={handleSaveNotes} disabled={updateProperty.isPending}>Save</Button>
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Key Details */}
+            <Card>
+              <CardHeader><CardTitle>Key Details</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                  <div className="space-y-2">
+                    <DetailRow label="Council" value={property.council_name || '—'} />
+                    <DetailRow label="Council Area" value={property.council_area || '—'} />
+                    <DetailRow label="Year Built" value={property.year_built?.toString() || '—'} />
+                    <DetailRow label="Total Floors" value={property.total_floors?.toString() || '—'} />
+                    <DetailRow label="Lettable Rooms" value={property.total_lettable_rooms?.toString() || '0'} />
+                  </div>
+                  <div className="space-y-2">
+                    <DetailRow label="Purchase Date" value={fmtDate(property.purchase_date)} />
+                    <DetailRow label="Purchase Price" value={fmtGBP(property.purchase_price)} />
+                    <DetailRow label="Current Valuation" value={fmtGBP(property.current_valuation)} />
+                    <DetailRow label="Valuation Date" value={fmtDate(property.valuation_date)} />
+                    {capitalGrowth !== null && (
+                      <DetailRow label="Capital Growth" value={
+                        <span className={Number(capitalGrowth) >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                          {Number(capitalGrowth) >= 0 ? '+' : ''}{capitalGrowth}%
+                        </span>
+                      } />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className={property.notes ? 'text-foreground' : 'text-muted-foreground'}>{property.notes || 'No notes'}</p>
-            )}
-          </CardContent>
-        </Card>
-        {/* Maintenance QR Code */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              Maintenance QR Code
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center gap-6">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/tenant-portal/maintenance')}`}
-              alt="Maintenance QR code"
-              className="rounded border"
-              width={180}
-              height={180}
-            />
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">Tenants scan this to report a maintenance issue directly from their phone.</p>
-              <p className="text-xs font-mono bg-muted px-2 py-1 rounded">{window.location.origin}/tenant-portal/maintenance</p>
-              <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast({ title: 'Link copied!' }); }}>
-                <Copy className="h-3 w-3 mr-1" /> Copy link
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Change History */}
-        <Card>
-          <CardContent className="pt-4">
-            <InlineAuditHistory tableName="properties_v2" recordId={id} title="Property Change History" />
-          </CardContent>
-        </Card>
+            {/* Rooms */}
+            <PropertyRoomsSection propertyId={property.id} />
+
+            {/* EPC Improvement Roadmap */}
+            <EpcRoadmapCard epcRating={property.epc_rating} />
+
+            {/* Market Comparables */}
+            <ComparableSalesTable propertyId={property.id} />
+
+            {/* Notes */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Notes</CardTitle>
+                {!editingNotes && (
+                  <Button variant="ghost" size="sm" onClick={() => { setNotesValue(property.notes || ''); setEditingNotes(true); }}>
+                    <Edit className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent>
+                {editingNotes ? (
+                  <div className="space-y-2">
+                    <Textarea value={notesValue} onChange={e => setNotesValue(e.target.value)} rows={4} />
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" size="sm" onClick={() => setEditingNotes(false)}>Cancel</Button>
+                      <Button size="sm" onClick={handleSaveNotes} disabled={updateProperty.isPending}>Save</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={property.notes ? 'text-foreground' : 'text-muted-foreground'}>{property.notes || 'No notes'}</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Maintenance QR Code */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  Maintenance QR Code
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-6">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.origin + '/tenant-portal/maintenance')}`}
+                  alt="Maintenance QR code"
+                  className="rounded border"
+                  width={180}
+                  height={180}
+                />
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">Tenants scan this to report a maintenance issue directly from their phone.</p>
+                  <p className="text-xs font-mono bg-muted px-2 py-1 rounded">{window.location.origin}/tenant-portal/maintenance</p>
+                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast({ title: 'Link copied!' }); }}>
+                    <Copy className="h-3 w-3 mr-1" /> Copy link
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Financials Tab */}
+          <TabsContent value="financials" className="space-y-6">
+            {/* Live P&L */}
+            <PropertyPnLCard propertyId={property.id} />
+
+            {/* Manual Financial Snapshots */}
+            <PropertyFinancialSection propertyId={property.id} currentValuation={property.current_valuation} />
+          </TabsContent>
+
+          {/* Compliance Tab */}
+          <TabsContent value="compliance" className="space-y-6">
+            <PropertyComplianceSectionWrapper propertyId={property.id} orgId={property.org_id} />
+          </TabsContent>
+
+          {/* Lending Tab */}
+          <TabsContent value="lending" className="space-y-6">
+            <PropertyLoansSection
+              propertyId={property.id}
+              entityId={property.entity_id}
+              entities={entities}
+              propertyValuation={property.current_valuation}
+            />
+          </TabsContent>
+
+          {/* Timeline Tab */}
+          <TabsContent value="timeline" className="space-y-6">
+            <PropertyTimeline propertyId={property.id} />
+
+            {/* Change History */}
+            <Card>
+              <CardContent className="pt-4">
+                <InlineAuditHistory tableName="properties_v2" recordId={id} title="Property Change History" />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <PropertyFormModal open={showEdit} onOpenChange={setShowEdit} editingProperty={property} />
