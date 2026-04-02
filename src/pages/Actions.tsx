@@ -57,6 +57,7 @@ import { useContractors, type Contractor } from '@/hooks/useContractors';
 import { ResolveActionDialog } from '@/components/actions/ResolveActionDialog';
 import { SnoozeActionDialog } from '@/components/actions/SnoozeActionDialog';
 import { AssignActionPopover } from '@/components/actions/AssignActionPopover';
+import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
 
 type RiskTypeFilter = 'all' | RiskType;
 type SeverityFilter = 'all' | 'critical' | 'warning';
@@ -461,6 +462,9 @@ export default function ActionsPage() {
             className={snoozedCount > 0 ? 'border-muted-foreground/20' : ''}
           />
         </div>
+
+        {/* Tenancy Checklist Summary */}
+        <TenancyChecklistSummaryCard />
 
         {/* Filters Bar */}
         <Card>

@@ -19,6 +19,7 @@ import { DepositProtectionCard } from '@/components/tenants-v2/DepositProtection
 import { RightToRentCard } from '@/components/tenants-v2/RightToRentCard';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { TenancyChecklist } from '@/components/lettings/TenancyChecklist';
 
 const STATUS_BG: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700', prospective: 'bg-blue-100 text-blue-700',
@@ -198,6 +199,13 @@ export default function TenantDetailV2() {
 
         {activeAgreement && (
           <RightToRentCard tenancyId={activeAgreement.id} />
+        )}
+
+        {activeAgreement && (
+          <TenancyChecklist
+            tenancyId={activeAgreement.id}
+            orgId={activeAgreement.org_id}
+          />
         )}
 
         {/* Action Buttons */}
