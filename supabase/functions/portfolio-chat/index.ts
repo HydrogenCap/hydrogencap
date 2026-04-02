@@ -415,8 +415,9 @@ serve(async (req) => {
 
 // ─── Conversation management handlers ────────────────────────────────────────
 
+// deno-lint-ignore no-explicit-any
 async function handleListConversations(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   corsHeaders: Record<string, string>
 ) {
