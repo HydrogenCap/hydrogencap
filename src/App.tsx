@@ -84,6 +84,7 @@ const Investors = lazy(() => import("./pages/Investors"));
 const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
 const Accounting = lazy(() => import("./pages/Accounting"));
 const Tax = lazy(() => import("./pages/Tax"));
+const FinancialForecast = lazy(() => import("./pages/FinancialForecast"));
 const Distributions = lazy(() => import("./pages/Distributions"));
 const DocumentTemplates = lazy(() => import("./pages/DocumentTemplates"));
 const BulkUpload = lazy(() => import("./pages/BulkUpload"));
@@ -613,6 +614,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/financial-forecast" element={<ProtectedRoute><RouteBoundary><FinancialForecast /></RouteBoundary></ProtectedRoute>} />
             <Route path="/distributions" element={<ProtectedRoute><RouteBoundary><Distributions /></RouteBoundary></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><RouteBoundary><DocumentTemplates /></RouteBoundary></ProtectedRoute>} />
             <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
