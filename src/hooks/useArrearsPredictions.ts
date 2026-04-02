@@ -41,7 +41,7 @@ export function useArrearsPredictions(propertyId?: string) {
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
 
-      let query = supabase
+      let query = (supabase as any)
         .from('arrears_predictions')
         .select('*')
         .eq('org_id', orgId)
