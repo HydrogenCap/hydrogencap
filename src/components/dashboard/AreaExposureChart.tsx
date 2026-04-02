@@ -19,10 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { AlertTriangle, Bug, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bug, ChevronDown, ChevronUp } from 'lucide-react';
 import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { formatGBP } from '@/lib/calculations';
 import { Link } from 'react-router-dom';
+import { CHART_COLOURS, CHART_TOOLTIP_STYLE, CHART_AXIS_TICK } from '@/lib/chart-tokens';
 
 interface AreaExposureChartProps {
   properties: PropertyWithFinancials[];
@@ -246,7 +247,7 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
                     dataKey="name"
                     type="category"
                     width={110}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                    tick={CHART_AXIS_TICK}
                     tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + '…' : value}
                   />
                   <Tooltip
@@ -257,17 +258,11 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
                         `${payload?.propertyCount ?? 0} properties`,
                       ];
                     }}
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--popover))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                      color: 'hsl(var(--popover-foreground))',
-                    }}
-                    labelStyle={{ color: 'hsl(var(--popover-foreground))' }}
+                    {...CHART_TOOLTIP_STYLE}
                   />
-                  <Bar 
-                    dataKey="value" 
-                    fill="hsl(174, 72%, 45%)" 
+                  <Bar
+                    dataKey="value"
+                    fill={CHART_COLOURS.primary}
                     radius={[0, 4, 4, 0]}
                   />
                 </BarChart>
@@ -311,8 +306,9 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
             </div>
           </>
         ) : (
-          <div className="h-[220px] flex items-center justify-center text-muted-foreground">
-            <p>Add properties to see geographic distribution</p>
+          <div className="h-[220px] flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <BarChart3 className="h-8 w-8 text-muted-foreground/40" />
+            <p className="text-sm">Add properties to see geographic distribution</p>
           </div>
         )}
       </CardContent>

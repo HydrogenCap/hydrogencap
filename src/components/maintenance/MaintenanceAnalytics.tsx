@@ -2,15 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { LoadingState } from '@/components/common';
+import { DistributionChart, CompliancePieChart } from '@/components/charts';
+import { CHART_SEQUENCE } from '@/lib/chart-tokens';
 import { MAINTENANCE_CATEGORY_NAMES, type MaintenanceSpendByCategory, type ContractorPerformanceRow, type RecurringIssueRow } from '@/lib/maintenanceTypes';
-import { AlertTriangle, TrendingUp, Star, Repeat } from 'lucide-react';
-
-const CHART_COLORS = [
-  'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))', 'hsl(var(--chart-5))', 'hsl(var(--accent))',
-];
+import { AlertTriangle, Star, Repeat } from 'lucide-react';
 
 function useMaintenanceAnalytics() {
   const spendByCategory = useQuery({
@@ -91,49 +87,27 @@ export function MaintenanceAnalytics() {
 
       {/* Charts Row */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Spend by Category Bar Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" /> Spend by Category
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {categoryData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No spend data yet</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={categoryData} layout="vertical" margin={{ left: 80 }}>
-                  <XAxis type="number" tickFormatter={v => `£${v}`} />
-                  <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => [`£${v.toFixed(0)}`, 'Spend']} />
-                  <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+        <DistributionChart
+          data={categoryData.map(c => ({ label: c.name, value: c.spend }))}
+          title="Spend by Category"
+          height={250}
+          emptyMessage="No spend data yet"
+          formatValue={(v) => `£${v.toLocaleString('en-GB', { minimumFractionDigits: 0 })}`}
+          labelWidth={80}
+        />
 
-        {/* Category Pie Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Jobs by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {categoryData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No job data yet</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={categoryData} dataKey="jobs" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                    {categoryData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+        <CompliancePieChart
+          data={categoryData.map((c, i) => ({
+            name: c.name,
+            value: c.jobs,
+            colour: CHART_SEQUENCE[i % CHART_SEQUENCE.length],
+          }))}
+          title="Jobs by Category"
+          height={250}
+          emptyMessage="No job data yet"
+          innerRadius={0}
+          outerRadius={80}
+        />
       </div>
 
       {/* Contractor Performance */}
