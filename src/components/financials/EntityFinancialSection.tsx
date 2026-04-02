@@ -9,14 +9,14 @@ import { format } from 'date-fns';
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
 } from 'recharts';
-interface PropertyInfo {
+interface EntityPropertyInfo {
   id: string;
   address_line_1: string;
   postcode: string;
 }
 interface Props {
   entityId: string;
-  entityProperties?: PropertyInfo[];
+  entityProperties?: EntityPropertyInfo[];
 }
 
 export function EntityFinancialSection({ entityId, entityProperties }: Props) {

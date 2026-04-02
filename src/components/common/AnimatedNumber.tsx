@@ -15,7 +15,13 @@ export function AnimatedNumber({ value, prefix = '', suffix = '', duration = 600
   const [display, setDisplay] = useState(value);
   const rafRef = useRef<number>(0);
   const startRef = useRef<number | null>(null);
-  const fromRef = useRef(0);
+  const fromRef = useRef(value);
+  const displayRef = useRef(display);
+
+  // Keep displayRef in sync with display state
+  useEffect(() => {
+    displayRef.current = display;
+  }, [display]);
 
   useEffect(() => {
     // Respect reduced motion preference
@@ -25,7 +31,7 @@ export function AnimatedNumber({ value, prefix = '', suffix = '', duration = 600
       return;
     }
 
-    fromRef.current = display;
+    fromRef.current = displayRef.current;
     startRef.current = null;
 
     const animate = (timestamp: number) => {

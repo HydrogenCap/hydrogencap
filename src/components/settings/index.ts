@@ -19,3 +19,4 @@ export { DemoDataSection } from './DemoDataSection';
 export { SectionVisibilitySettings } from './SectionVisibilitySettings';
 export { PassportColumnMapper } from './PassportColumnMapper';
 export { PassportMatchPreview } from './PassportMatchPreview';
+export { TeamMembersSettings } from './TeamMembersSettings';

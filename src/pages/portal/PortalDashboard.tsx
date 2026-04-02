@@ -14,33 +14,7 @@ import { formatGBP, formatGBPDecimal, formatPercent } from '@/lib/calculations';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-interface PortalDistributionEntity {
-  id: string;
-  entity_name: string;
-}
-
-interface PortalDistributionAllocation {
-  distribution_id: string;
-  shareholder_name: string;
-  ownership_percent: number;
-  amount: number;
-  paid_at: string | null;
-}
-
-interface PortalDistribution {
-  id: string;
-  period_label: string;
-  total_rental_income: number;
-  total_expenses: number;
-  total_mortgage_costs: number;
-  net_distributable: number;
-  total_distributed: number;
-  status: string;
-  period_start: string;
-  entity?: PortalDistributionEntity | null;
-  allocations?: PortalDistributionAllocation[];
-}
+import type { PortalEntityDistribution } from '@/types/portal';
 
 export default function PortalDashboard() {
   const { canViewFinancials, orgId, isShareholderUser } = useShareholderSession();
@@ -51,7 +25,7 @@ export default function PortalDashboard() {
   });
 
   // Fetch recent distributions for portal
-  const { data: portalDistributions } = useQuery<PortalDistribution[]>({
+  const { data: portalDistributions } = useQuery<PortalEntityDistribution[]>({
     queryKey: ['portal-distributions', orgId],
     queryFn: async () => {
       if (!orgId) return [];
@@ -84,7 +58,7 @@ export default function PortalDashboard() {
     enabled: !!orgId && isShareholderUser && canViewFinancials,
   });
 
-  const generatePortalPdf = (dist: PortalDistribution) => {
+  const generatePortalPdf = (dist: PortalEntityDistribution) => {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text('Distribution Statement', 14, 20);

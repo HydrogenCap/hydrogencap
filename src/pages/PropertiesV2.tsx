@@ -82,7 +82,7 @@ function getLifecycleLabel(value: string) {
   return LIFECYCLE_STAGES.find(s => s.value === value)?.label || value;
 }
 
-type SortOption = 'address_asc' | 'purchase_date_desc' | 'purchase_date_asc' | 'valuation_desc' | 'valuation_asc';
+type PropertySortOption = 'address_asc' | 'purchase_date_desc' | 'purchase_date_asc' | 'valuation_desc' | 'valuation_asc';
 
 export default function PropertiesV2() {
   const { data: properties, isLoading } = usePropertiesV2();
@@ -98,7 +98,7 @@ export default function PropertiesV2() {
   const [filterType, setFilterType] = useState('all');
   const [filterStage, setFilterStage] = useState('all');
   const [filterListing, setFilterListing] = useState('all');
-  const [sort, setSort] = useState<SortOption>('address_asc');
+  const [sort, setSort] = useState<PropertySortOption>('address_asc');
 
   const filtered = useMemo(() => {
     if (!properties) return [];
@@ -238,7 +238,7 @@ export default function PropertiesV2() {
               {LISTING_GRADES.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={sort} onValueChange={v => setSort(v as SortOption)}>
+          <Select value={sort} onValueChange={v => setSort(v as PropertySortOption)}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Sort" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="address_asc">Address A–Z</SelectItem>

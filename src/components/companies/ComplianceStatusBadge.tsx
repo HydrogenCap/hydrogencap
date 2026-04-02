@@ -1,10 +1,9 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { 
-  getComplianceStatus, 
-  getComplianceStatusColor, 
+import {
+  getComplianceStatus,
+  getComplianceStatusColor,
   formatComplianceDate,
-  type ComplianceStatus 
 } from '@/lib/complianceStatus';
 import { cn } from '@/lib/utils';
 

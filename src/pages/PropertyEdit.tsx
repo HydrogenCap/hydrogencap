@@ -9,7 +9,8 @@ import { useProperty, useUpdateProperty, useUpdateLoan, useCreateLoan, useUpsert
 import { extractPostcodeArea } from '@/lib/calculations';
 import { calculateMortgagePaymentDetailed } from '@/lib/mortgageCalculations';
 import { notifyPropertyUpdated } from '@/components/dashboard';
-import { PropertyForm, PropertyFormData } from '@/components/property/PropertyForm';
+import { PropertyForm } from '@/components/property/PropertyForm';
+import type { PropertyFormData } from '@/components/property/propertyFormSchema';
 import { AddressData } from '@/components/maps/AddressAutocomplete';
 
 function PropertyEditPage() {

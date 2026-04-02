@@ -7,8 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { getComplianceStatus, type PropertyReportData, type ComplianceItemData } from './reportPdfGenerator';
-
-type Color = [number, number, number];
+import type { Color } from '@/types/pdf';
 
 // Branding colors
 const BRAND_PRIMARY: Color = [26, 58, 118];

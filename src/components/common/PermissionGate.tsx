@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { useOrg } from '@/contexts/OrgContext';
+import { useOrg } from '@/contexts/useOrg';
 
 interface PermissionGateProps {
   permission: string;

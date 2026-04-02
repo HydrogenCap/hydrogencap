@@ -35,7 +35,7 @@ import { MissingInfoPropertyRow } from '@/components/missing-info/MissingInfoPro
 
 type MissingTypeFilter = 'all' | 'property' | 'income' | 'finance' | 'insurance' | 'passport' | 'critical';
 type PriorityFilter = 'all' | 'most_missing' | 'renewal_soon' | 'hmo_expiring';
-type SortOption = 'most_missing' | 'postcode' | 'updated';
+type MissingInfoSortOption = 'most_missing' | 'postcode' | 'updated';
 
 export default function MissingInfoPage() {
   const { data, stats, lenders, insurers, isLoading } = useMissingInfo();
@@ -46,7 +46,7 @@ export default function MissingInfoPage() {
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [lenderFilter, setLenderFilter] = useState<string>('all');
   const [insurerFilter, setInsurerFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('most_missing');
+  const [sortBy, setSortBy] = useState<MissingInfoSortOption>('most_missing');
 
   // Apply filters and sort
   const filteredData = useMemo(() => {
@@ -420,7 +420,7 @@ export default function MissingInfoPage() {
               )}
 
               {/* Sort */}
-              <Select value={sortBy} onValueChange={v => setSortBy(v as SortOption)}>
+              <Select value={sortBy} onValueChange={v => setSortBy(v as MissingInfoSortOption)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>

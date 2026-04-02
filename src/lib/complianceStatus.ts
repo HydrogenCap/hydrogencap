@@ -1,10 +1,10 @@
 // Compliance status types and utilities
 import { SEVERITY } from '@/lib/design-tokens';
 
-export type ComplianceStatus = 'ok' | 'due_soon' | 'overdue' | 'unknown';
+export type FilingComplianceStatus = 'ok' | 'due_soon' | 'overdue' | 'unknown';
 
 export interface ComplianceStatusResult {
-  status: ComplianceStatus;
+  status: FilingComplianceStatus;
   daysUntilDue: number | null;
   label: string;
 }
@@ -55,7 +55,7 @@ export function getComplianceStatus(dueDate: string | null | undefined): Complia
 /**
  * Get the CSS class for a compliance status badge
  */
-export function getComplianceStatusColor(status: ComplianceStatus): string {
+export function getComplianceStatusColor(status: FilingComplianceStatus): string {
   switch (status) {
     case 'overdue':
       return SEVERITY.critical.badge;

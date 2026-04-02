@@ -27,7 +27,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-type PropertyUpdate = Database['public']['Tables']['properties_v2']['Update'];
+type PropertyV2Update = Database['public']['Tables']['properties_v2']['Update'];
 type RoomInsert = Database['public']['Tables']['rooms_v2']['Insert'];
 
 function getErrorMessage(error: unknown) {
@@ -138,7 +138,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.hmo_licence_number) {
         await (supabase as any)
           .from('properties_v2')
-          .update({ hmo_licence_number: data.hmo_licence_number } as PropertyUpdate)
+          .update({ hmo_licence_number: data.hmo_licence_number } as PropertyV2Update)
           .eq('id', property.id);
       }
 

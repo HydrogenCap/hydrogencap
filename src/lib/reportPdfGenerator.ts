@@ -2,8 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
-
-type Color = [number, number, number];
+import type { Color } from '@/types/pdf';
 
 // Branding colors (HSL to RGB)
 const BRAND_PRIMARY: Color = [26, 58, 118]; // Deep blue

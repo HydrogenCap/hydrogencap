@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { ComplianceTaskOverview, ComplianceScanResult, TaskStatus, TaskPriority } from '@/lib/complianceTaskTypes';
 
 type ComplianceTaskInsert = Database['public']['Tables']['compliance_tasks']['Insert'];
-type ComplianceTaskUpdate = Database['public']['Tables']['compliance_tasks']['Update'];
+type ComplianceTaskFullUpdate = Database['public']['Tables']['compliance_tasks']['Update'];
 
 export function useComplianceTasks() {
   const { data: org } = useOrganization();
@@ -42,7 +42,7 @@ export function useUpdateTaskStatus() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: TaskStatus; notes?: string }) => {
-      const updates: ComplianceTaskUpdate = { status };
+      const updates: ComplianceTaskFullUpdate = { status };
       if (status === 'completed') {
         updates.resolved_at = new Date().toISOString();
         if (notes) updates.resolution_notes = notes;
@@ -72,7 +72,7 @@ export function useUpdateTask() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: ComplianceTaskUpdate }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: ComplianceTaskFullUpdate }) => {
       const { error } = await supabase.from('compliance_tasks').update(updates).eq('id', id);
       if (error) throw error;
     },

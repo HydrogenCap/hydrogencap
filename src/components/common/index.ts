@@ -15,3 +15,8 @@ export { LoadingButton } from './LoadingButton';
 export { AnimatedNumber } from './AnimatedNumber';
 export { ProcessingSteps } from './ProcessingSteps';
 export { PermissionGate } from './PermissionGate';
+export { CookieConsent } from './CookieConsent';
+export { FeatureGate } from './FeatureGate';
+export { ResponsiveModal } from './ResponsiveModal';
+export { ResponsiveTable } from './ResponsiveTable';
+export type { ColumnConfig } from './ResponsiveTable';

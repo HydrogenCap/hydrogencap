@@ -12,7 +12,7 @@ interface Props {
   data: PropertyAnnualPerformance[];
 }
 
-type SortField = 'annual_noi' | 'annual_cash_flow' | 'net_yield_pct' | 'cash_on_cash_return_pct' | 'avg_occupancy' | 'avg_collection_rate' | 'annual_rent_received' | 'annual_costs';
+type PerformanceSortField = 'annual_noi' | 'annual_cash_flow' | 'net_yield_pct' | 'cash_on_cash_return_pct' | 'avg_occupancy' | 'avg_collection_rate' | 'annual_rent_received' | 'annual_costs';
 
 function colorValue(val: number | null, greenThresh: number, amberThresh: number) {
   if (val == null) return 'text-muted-foreground';
@@ -23,7 +23,7 @@ function colorValue(val: number | null, greenThresh: number, amberThresh: number
 
 export function PropertyPerformanceTable({ data }: Props) {
   const navigate = useNavigate();
-  const [sortField, setSortField] = useState<SortField>('annual_noi');
+  const [sortField, setPerformanceSortField] = useState<PerformanceSortField>('annual_noi');
   const [sortAsc, setSortAsc] = useState(false);
 
   const sorted = useMemo(() => {
@@ -34,12 +34,12 @@ export function PropertyPerformanceTable({ data }: Props) {
     });
   }, [data, sortField, sortAsc]);
 
-  const toggleSort = (field: SortField) => {
+  const toggleSort = (field: PerformanceSortField) => {
     if (sortField === field) setSortAsc(!sortAsc);
-    else { setSortField(field); setSortAsc(false); }
+    else { setPerformanceSortField(field); setSortAsc(false); }
   };
 
-  const SortHeader = ({ field, label }: { field: SortField; label: string }) => (
+  const SortHeader = ({ field, label }: { field: PerformanceSortField; label: string }) => (
     <th
       className="px-3 py-2 text-left text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none whitespace-nowrap"
       onClick={() => toggleSort(field)}
