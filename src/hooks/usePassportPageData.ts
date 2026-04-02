@@ -20,7 +20,7 @@ export function usePassportPageData() {
     queryKey: ['passport_page_data'],
     queryFn: async () => {
       // Fetch V2 properties
-      const { data: properties, error: propError } = await supabase
+      const { data: properties, error: propError } = await (supabase as any)
         .from('properties_v2')
         .select('*')
         .order('address_line_1');
@@ -28,7 +28,7 @@ export function usePassportPageData() {
       if (propError) throw propError;
 
       // Fetch all passports separately
-      const { data: passports, error: passError } = await supabase
+      const { data: passports, error: passError } = await (supabase as any)
         .from('property_passport')
         .select('*');
 
@@ -43,7 +43,7 @@ export function usePassportPageData() {
       // Also create a lookup by address for V1→V2 matching
       const passportByAddress = new Map<string, PropertyPassport>();
       // We'll need V1 properties to resolve the mapping
-      const { data: v1Props } = await supabase
+      const { data: v1Props } = await (supabase as any)
         .from('properties')
         .select('id, address_line, postcode');
 

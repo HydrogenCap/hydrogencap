@@ -26,7 +26,7 @@ export function useTaxExpenses(taxYear: TaxYearLabel) {
   return useQuery({
     queryKey: ['tax_expenses', org?.id, taxYear],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tax_expenses')
         .select('*')
         .eq('org_id', org!.id)
@@ -75,7 +75,7 @@ export function useTaxSettings() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('marginal_tax_rate, corporation_tax_rate, use_property_allowance')
         .eq('id', user.id)
@@ -100,7 +100,7 @@ export function useUpdateTaxSettings() {
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update(settings as ProfileTaxSettingsUpdate)
         .eq('id', user.id);

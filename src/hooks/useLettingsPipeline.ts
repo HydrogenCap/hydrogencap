@@ -75,7 +75,7 @@ export function useLettingsPipeline() {
   return useQuery({
     queryKey: ['lettings-pipeline'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lettings_pipeline')
         .select('*')
         .neq('stage', 'completed')
@@ -122,7 +122,7 @@ export function useCreateLetting() {
       listingDate?: string;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lettings_pipeline')
         .insert({
           org_id: orgId,
@@ -152,7 +152,7 @@ export function useAdvanceStage() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: LettingsPipelineUpdate }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('lettings_pipeline')
         .update(updates)
         .eq('id', id)
@@ -185,7 +185,7 @@ export function useCompleteLetting() {
       };
       if (tenancyId) updates.tenancy_id = tenancyId;
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('lettings_pipeline')
         .update(updates)
         .eq('id', id);
@@ -193,7 +193,7 @@ export function useCompleteLetting() {
 
       // Close linked void period
       if (voidPeriodId) {
-        await supabase
+        await (supabase as any)
           .from('void_periods')
           .update({ end_date: actualMoveIn || new Date().toISOString().slice(0, 10) })
           .eq('id', voidPeriodId);

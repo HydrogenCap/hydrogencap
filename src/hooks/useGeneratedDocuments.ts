@@ -24,7 +24,7 @@ export function useGeneratedDocuments() {
     queryFn: async () => {
       if (!orgId) return [];
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('generated_documents')
         .select('*')
         .eq('org_id', orgId)
@@ -49,7 +49,7 @@ export function useCreateGeneratedDocument() {
     }) => {
       const orgId = await fetchUserOrgId();
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('generated_documents')
         .insert([{
           org_id: orgId,

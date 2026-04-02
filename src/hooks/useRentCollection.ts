@@ -212,7 +212,7 @@ export function useRentSchedule(filters?: {
   return useQuery({
     queryKey: ['rent_schedule', filters],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('rent_schedule')
         .select(RENT_SCHEDULE_SELECT, { count: 'exact' })
         .order('due_date', { ascending: true });
@@ -252,7 +252,7 @@ export function useRentSchedule(filters?: {
    return useQuery({
      queryKey: ['rent_schedule', 'arrears'],
      queryFn: async () => {
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('rent_schedule')
          .select(RENT_SCHEDULE_SELECT)
          .in('status', ['overdue', 'partial'])
@@ -273,7 +273,7 @@ export function useRentSchedule(filters?: {
    return useQuery({
      queryKey: ['rent_payments', tenancyId],
      queryFn: async () => {
-        let query = supabase
+        let query = (supabase as any)
           .from('rent_payments')
           .select('id, org_id, tenancy_id, agreement_id, rent_schedule_id, amount, payment_date, payment_method, reference, is_reconciled, notes, recorded_by, created_at')
          .order('payment_date', { ascending: false });
@@ -300,7 +300,7 @@ export function useRentSchedule(filters?: {
  
        const { data: { user } } = await supabase.auth.getUser();
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('rent_payments')
          .insert({ 
            ...payment, 
@@ -329,7 +329,7 @@ export function useRentScheduleItem(id: string) {
   return useQuery({
     queryKey: ['rent_schedule', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select(RENT_SCHEDULE_SELECT)
         .eq('id', id)
@@ -379,7 +379,7 @@ export function usePaymentReminders(rentScheduleId: string) {
   return useQuery({
     queryKey: ['payment_reminders', rentScheduleId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('payment_reminders')
         .select('id, rent_schedule_id, reminder_type, sent_at, sent_via, status, recipient_email, recipient_name, error_message, resend_id, tenancy_id, org_id, created_at')
         .eq('rent_schedule_id', rentScheduleId)
@@ -493,7 +493,7 @@ export function useUpdateRentScheduleNotes() {
       if (notes !== undefined) updates.notes = notes;
       if (tags !== undefined) updates.tags = tags;
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .update(updates)
         .eq('id', id)
@@ -577,7 +577,7 @@ export function useArrearsAging() {
   return useQuery({
     queryKey: ['rent_schedule', 'arrears_aging'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select(RENT_SCHEDULE_SELECT)
         .in('status', ['overdue', 'partial', 'due'])
@@ -703,7 +703,7 @@ export function useTenancyLedger(params: string | { tenancyId?: string; agreemen
     queryKey: ['tenancy_ledger', tenancyId, agreementId],
     queryFn: async () => {
       // Build schedule query
-      let schedQuery = supabase
+      let schedQuery = (supabase as any)
         .from('rent_schedule')
         .select('*')
         .order('due_date', { ascending: true });
@@ -715,7 +715,7 @@ export function useTenancyLedger(params: string | { tenancyId?: string; agreemen
       }
 
       // Build payments query
-      let payQuery = supabase
+      let payQuery = (supabase as any)
         .from('rent_payments')
         .select('*')
         .order('payment_date', { ascending: true });
@@ -824,7 +824,7 @@ export function useBulkMarkPaid() {
             ? item.due_date
             : paymentDate;
 
-          const { error: payError } = await supabase
+          const { error: payError } = await (supabase as any)
             .from('rent_payments')
             .insert({
               org_id: orgId,
@@ -939,7 +939,7 @@ export function useBulkAddNote() {
             : note;
         }
 
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('rent_schedule')
           .update({ notes: newNotes })
           .eq('id', item.id);
@@ -1093,7 +1093,7 @@ export function useGenerateScheduleFromAgreement() {
       agreementId: string;
       months?: number;
     }) => {
-      const { data: agreement, error: agError } = await supabase
+      const { data: agreement, error: agError } = await (supabase as any)
         .from('tenancy_agreements')
         .select('id, org_id, rent_amount_pcm, start_date, initial_end_date, rent_frequency, status')
         .eq('id', agreementId)
@@ -1102,7 +1102,7 @@ export function useGenerateScheduleFromAgreement() {
       if (agError || !agreement) throw agError || new Error('Agreement not found');
 
       // Look up V1 tenancy_id for backward compat
-      const { data: existingSchedule } = await supabase
+      const { data: existingSchedule } = await (supabase as any)
         .from('rent_schedule')
         .select('tenancy_id')
         .eq('agreement_id', agreementId)
@@ -1126,7 +1126,7 @@ export function useGenerateScheduleFromAgreement() {
       const rentPCM = agreement.rent_amount_pcm;
       let count = 0;
 
-      const { data: lastEntry } = await supabase
+      const { data: lastEntry } = await (supabase as any)
         .from('rent_schedule')
         .select('period_end')
         .eq('agreement_id', agreementId)
@@ -1199,7 +1199,7 @@ export function useRentTrend(months = 12) {
       const cutoff = new Date();
       cutoff.setMonth(cutoff.getMonth() - months + 1);
       cutoff.setDate(1);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select('due_date, rent_amount, additional_charges, amount_paid, status')
         .eq('org_id', orgId!)

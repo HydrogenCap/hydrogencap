@@ -37,7 +37,7 @@ export function useShareholderInvites() {
   return useQuery({
     queryKey: ['shareholder-invites'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('shareholder_invites')
         .select('*')
         .is('revoked_at', null)
@@ -56,7 +56,7 @@ export function useShareholderAccessList() {
   return useQuery({
     queryKey: ['shareholder-access'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('shareholder_access')
         .select('*')
         .is('revoked_at', null)
@@ -78,7 +78,7 @@ export function useCreateShareholderInvite() {
       const normalizedEmail = email.toLowerCase().trim();
 
       // Get user's org_id
-      const { data: membership } = await supabase
+      const { data: membership } = await (supabase as any)
         .from('memberships')
         .select('org_id')
         .eq('user_id', user?.id)
@@ -86,14 +86,14 @@ export function useCreateShareholderInvite() {
 
       if (!membership) throw new Error('No organization found');
 
-      await supabase
+      await (supabase as any)
         .from('shareholder_invites')
         .delete()
         .eq('org_id', membership.org_id)
         .eq('email', normalizedEmail)
         .is('accepted_at', null);
 
-      const { data: invite, error } = await supabase
+      const { data: invite, error } = await (supabase as any)
         .from('shareholder_invites')
         .insert({
           org_id: membership.org_id,
@@ -146,7 +146,7 @@ export function useResendShareholderInvite() {
 
   return useMutation({
     mutationFn: async (inviteId: string) => {
-      const { data: invite, error } = await supabase
+      const { data: invite, error } = await (supabase as any)
         .from('shareholder_invites')
         .update({
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -194,7 +194,7 @@ export function useRevokeShareholderInvite() {
 
   return useMutation({
     mutationFn: async (inviteId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('shareholder_invites')
         .update({ revoked_at: new Date().toISOString() })
         .eq('id', inviteId);
@@ -216,7 +216,7 @@ export function useRevokeShareholderAccess() {
 
   return useMutation({
     mutationFn: async (accessId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('shareholder_access')
         .update({ revoked_at: new Date().toISOString() })
         .eq('id', accessId);
@@ -244,7 +244,7 @@ export function useUpdateShareholderPermissions() {
       accessId: string;
       permissions: Partial<Pick<ShareholderAccess, 'can_view_financials' | 'can_view_compliance' | 'can_view_documents'>>;
     }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('shareholder_access')
         .update({
           ...permissions,

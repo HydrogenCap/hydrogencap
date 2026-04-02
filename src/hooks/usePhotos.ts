@@ -12,7 +12,7 @@ export function usePropertyPhotos(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('photos')
         .select('*')
         .eq('property_id', propertyId)
@@ -48,13 +48,13 @@ export function useUploadPhoto() {
       if (uploadError) throw uploadError;
 
       // Check how many photos exist to set display order
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('photos')
         .select('*', { count: 'exact', head: true })
         .eq('property_id', propertyId);
 
       // Create photo record
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('photos')
         .insert({
           property_id: propertyId,
@@ -81,13 +81,13 @@ export function useSetCoverPhoto() {
   return useMutation({
     mutationFn: async ({ photoId, propertyId }: { photoId: string; propertyId: string }) => {
       // First, unset all cover photos for this property
-      await supabase
+      await (supabase as any)
         .from('photos')
         .update({ is_cover: false })
         .eq('property_id', propertyId);
 
       // Then set the new cover photo
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('photos')
         .update({ is_cover: true })
         .eq('id', photoId)
@@ -117,7 +117,7 @@ export function useDeletePhoto() {
       }
 
       // Delete record
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('photos')
         .delete()
         .eq('id', photoId);
@@ -138,7 +138,7 @@ export function useReorderPhotos() {
     mutationFn: async ({ photos, propertyId }: { photos: { id: string; display_order: number }[]; propertyId: string }) => {
       // Update each photo's display order
       const updates = photos.map(photo =>
-        supabase
+        (supabase as any)
           .from('photos')
           .update({ display_order: photo.display_order })
           .eq('id', photo.id)

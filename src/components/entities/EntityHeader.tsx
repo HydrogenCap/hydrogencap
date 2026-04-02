@@ -108,13 +108,13 @@ export function EntityHeader({
                 onCheckedChange={async (checked) => {
                   try {
                     if (checked) {
-                      await supabase
+                      await (supabase as any)
                         .from('legal_entities')
                         .update({ is_group_parent: false })
                         .eq('org_id', entity.org_id)
                         .eq('is_group_parent', true);
                     }
-                    await supabase
+                    await (supabase as any)
                       .from('legal_entities')
                       .update({ is_group_parent: checked })
                       .eq('id', entity.id);

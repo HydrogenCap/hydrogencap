@@ -31,7 +31,7 @@ export function useTasks(filters?: { status?: string; propertyId?: string; entit
   return useQuery({
     queryKey: ['tasks', orgId, filters],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('tasks')
         .select('*')
         .eq('org_id', orgId)
@@ -61,7 +61,7 @@ export function useTaskCounts() {
   return useQuery({
     queryKey: ['task-counts', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tasks')
         .select('status')
         .eq('org_id', orgId)
@@ -89,7 +89,7 @@ export function useUpdateTask() {
       taskId: string;
       updates: Partial<Pick<Task, 'status' | 'priority' | 'due_date' | 'dismissed_reason' | 'completed_at'>>;
     }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('tasks')
         .update(updates)
         .eq('id', taskId);

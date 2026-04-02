@@ -19,7 +19,7 @@ export function usePropertyUnits(propertyId: string | undefined) {
     queryKey: ['property_units', propertyId],
     queryFn: async () => {
       if (!propertyId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_units')
         .select('*')
         .eq('property_id', propertyId)

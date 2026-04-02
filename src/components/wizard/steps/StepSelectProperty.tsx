@@ -22,7 +22,7 @@ export function StepSelectProperty({ payload, updatePayload }: StepProps) {
   useEffect(() => {
     async function load() {
       const orgId = await fetchUserOrgId();
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('properties_v2')
         .select('id, address_line_1, postcode')
         .eq('org_id', orgId)

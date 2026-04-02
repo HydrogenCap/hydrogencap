@@ -61,7 +61,7 @@ export function useLegalEntities() {
   return useQuery({
     queryKey: ['legal_entities', org?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('legal_entities')
         .select('*')
         .eq('org_id', org!.id)
@@ -78,7 +78,7 @@ export function useLegalEntity(id: string | undefined) {
   return useQuery({
     queryKey: ['legal_entity', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('legal_entities')
         .select('*')
         .eq('id', id!)
@@ -94,7 +94,7 @@ export function useEntityDirectors(entityId: string | undefined) {
   return useQuery({
     queryKey: ['entity_directors', entityId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_directors')
         .select('*')
         .eq('entity_id', entityId!)
@@ -111,7 +111,7 @@ export function useEntityShareholders(entityId: string | undefined) {
   return useQuery({
     queryKey: ['entity_shareholders', entityId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_shareholders')
         .select('*')
         .eq('entity_id', entityId!)
@@ -127,7 +127,7 @@ export function useCreateLegalEntity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (entity: Omit<LegalEntity, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('legal_entities')
         .insert(entity)
         .select()
@@ -145,7 +145,7 @@ export function useUpdateLegalEntity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<LegalEntity> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('legal_entities')
         .update(updates)
         .eq('id', id)
@@ -178,7 +178,7 @@ export function useCreateDirector() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (director: Omit<EntityDirector, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_directors')
         .insert(director)
         .select()
@@ -196,7 +196,7 @@ export function useUpdateDirector() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<EntityDirector> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_directors')
         .update(updates)
         .eq('id', id)
@@ -229,7 +229,7 @@ export function useCreateShareholder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (shareholder: Omit<EntityShareholder, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_shareholders')
         .insert(shareholder)
         .select()
@@ -247,7 +247,7 @@ export function useUpdateShareholder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<EntityShareholder> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_shareholders')
         .update(updates)
         .eq('id', id)

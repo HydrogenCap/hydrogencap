@@ -51,7 +51,7 @@ export function useTenancyEvents(options?: UseTenancyEventsOptions) {
     queryFn: async (): Promise<TenancyEvent[]> => {
       const orgId = await fetchUserOrgId();
 
-      let query = supabase
+      let query = (supabase as any)
         .from('tenancy_agreements')
         .select(`
           id, start_date, initial_end_date, actual_end_date,

@@ -97,7 +97,7 @@ export function useComplianceDocumentExport() {
 
     patch({ ...INITIAL, phase: 'loading', currentStep: 'Loading compliance data…' });
 
-    let query = supabase
+    let query = (supabase as any)
       .from('compliance_items')
       .select(`
         id,

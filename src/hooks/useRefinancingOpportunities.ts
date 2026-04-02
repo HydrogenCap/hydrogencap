@@ -32,7 +32,7 @@ export function useRefinancingOpportunities() {
     queryKey: ['refinancing_opportunities', orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('refinancing_opportunities')
         .select('*, properties_v2!inner(address_line_1, postcode)')
         .eq('org_id', orgId!)
@@ -54,7 +54,7 @@ export function useUpdateRefinancingOpportunity() {
       const update: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
       if (status === 'reviewed') update.reviewed_at = new Date().toISOString();
       if (status === 'completed') update.completed_at = new Date().toISOString();
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('refinancing_opportunities')
         .update(update)
         .eq('id', id);

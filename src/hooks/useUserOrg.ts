@@ -65,7 +65,7 @@ async function fetchMembershipsForCurrentUser() {
   if (authError) throw authError;
   if (!auth.user) return [] as MembershipRow[];
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('memberships')
     .select('id, user_id, org_id, role, created_at')
     .eq('user_id', auth.user.id);
@@ -79,7 +79,7 @@ export async function fetchUserOrganizations(): Promise<UserOrganization[]> {
   if (memberships.length === 0) return [];
 
   const orgIds = [...new Set(memberships.map((membership) => membership.org_id))];
-  const { data: organizations, error } = await supabase
+  const { data: organizations, error } = await (supabase as any)
     .from('organizations')
     .select('id, name')
     .in('id', orgIds);

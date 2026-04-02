@@ -28,7 +28,7 @@ export function useRegulatoryAlerts() {
     queryKey: ['regulatory-alerts', org?.id],
     enabled: !!org?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('regulatory_alerts')
         .select('*')
         .eq('org_id', org!.id)
@@ -51,7 +51,7 @@ export function useAcknowledgeAlert() {
     mutationFn: async (alertId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('regulatory_alerts')
         .update({
           acknowledged_by: user.id,
@@ -74,7 +74,7 @@ export function useDismissAlert() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (alertId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('regulatory_alerts')
         .update({ dismissed: true })
         .eq('id', alertId);

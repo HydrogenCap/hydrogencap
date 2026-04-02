@@ -10,7 +10,7 @@ export function usePortfolioComplianceStats() {
   const { data: matrixRows, isLoading } = useQuery({
     queryKey: ['compliance_matrix_v2_stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_matrix_v2')
         .select('calculated_status');
       if (error) throw error;

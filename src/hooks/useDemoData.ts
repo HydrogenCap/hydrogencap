@@ -15,7 +15,7 @@ export function useDemoData() {
     queryKey: ['demo-data-check', org?.id],
     queryFn: async () => {
       if (!org?.id) return false;
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('properties_v2')
         .select('id', { count: 'exact', head: true })
         .eq('org_id', org.id)

@@ -26,7 +26,7 @@ export function useWizardDraft(wizardType: WizardType) {
       setIsLoading(true);
       try {
         // Check for existing in-progress draft
-        const { data: existing } = await supabase
+        const { data: existing } = await (supabase as any)
           .from('wizard_drafts')
           .select('*')
           .eq('user_id', user!.id)
@@ -60,7 +60,7 @@ export function useWizardDraft(wizardType: WizardType) {
     if (!draft?.id) return;
     setIsSaving(true);
     try {
-      await supabase
+      await (supabase as any)
         .from('wizard_drafts')
         .update({
           payload: payloadRef.current as unknown as Json,
@@ -101,7 +101,7 @@ export function useWizardDraft(wizardType: WizardType) {
   const createDraft = useCallback(async () => {
     if (!user) return null;
     const orgId = await fetchUserOrgId();
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('wizard_drafts')
       .insert({
         org_id: orgId,
@@ -137,7 +137,7 @@ export function useWizardDraft(wizardType: WizardType) {
       if (draft?.id) {
         setIsSaving(true);
         try {
-          await supabase
+          await (supabase as any)
             .from('wizard_drafts')
             .update({
               payload: payloadRef.current as unknown as Json,
@@ -156,7 +156,7 @@ export function useWizardDraft(wizardType: WizardType) {
 
   const discardDraft = useCallback(async () => {
     if (!draft?.id) return;
-    await supabase
+    await (supabase as any)
       .from('wizard_drafts')
       .update({ status: 'discarded' })
       .eq('id', draft.id);
@@ -167,7 +167,7 @@ export function useWizardDraft(wizardType: WizardType) {
     }
     if (draft.entity_id) {
       // Only delete if entity was created by this wizard (check if it has properties)
-      const { count } = await supabase
+      const { count } = await (supabase as any)
         .from('properties_v2')
         .select('id', { count: 'exact', head: true })
         .eq('entity_id', draft.entity_id);
@@ -182,7 +182,7 @@ export function useWizardDraft(wizardType: WizardType) {
 
   const markSubmitted = useCallback(async (propertyId?: string, entityId?: string) => {
     if (!draft?.id) return;
-    await supabase
+    await (supabase as any)
       .from('wizard_drafts')
       .update({
         status: 'submitted',

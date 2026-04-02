@@ -43,18 +43,18 @@ export function usePropertiesCompat() {
     queryFn: async (): Promise<PropertyCompatWithFinancials[]> => {
       // Parallel fetch all V2 data
       const [propsRes, loansRes, perfRes, agreementsRes] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('properties_v2')
           .select('*, legal_entities!inner(entity_name)')
           .order('created_at', { ascending: false }),
-        supabase
+        (supabase as any)
           .from('loan_facilities')
           .select('*')
           .in('status', ['active', 'drawdown']),
-        supabase
+        (supabase as any)
           .from('property_annual_performance')
           .select('*'),
-        supabase
+        (supabase as any)
           .from('tenancy_agreements')
           .select('id, property_id, tenant_id, room_id, status, rent_amount_pcm, start_date, initial_end_date')
           .in('status', ['active', 'pending', 'notice_period']),

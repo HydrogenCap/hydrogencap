@@ -18,7 +18,7 @@ export function useScheduledEmailRuns(limit = 12) {
   return useQuery({
     queryKey: ['scheduled_email_runs', limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('scheduled_email_runs')
         .select('*')
         .order('created_at', { ascending: false })

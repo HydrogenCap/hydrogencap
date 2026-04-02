@@ -32,7 +32,7 @@ export function useVoidPeriods(propertyId?: string) {
   return useQuery({
     queryKey: ['void-periods', propertyId],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('void_periods')
         .select('*')
         .order('start_date', { ascending: false });
@@ -57,7 +57,7 @@ export function useActiveVoids() {
   return useQuery({
     queryKey: ['void-periods', 'active'],
     queryFn: async () => {
-      const { data: voids, error } = await supabase
+      const { data: voids, error } = await (supabase as any)
         .from('void_periods')
         .select('*')
         .is('end_date', null)
@@ -199,7 +199,7 @@ export function useCreateVoidPeriod() {
       estimatedMonthlyCost?: number;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('void_periods')
         .insert({
           org_id: orgId,
@@ -230,7 +230,7 @@ export function useUpdateVoidPeriod() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<VoidPeriod> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('void_periods')
         .update(updates)
         .eq('id', id)
@@ -253,7 +253,7 @@ export function useEndVoidPeriod() {
 
   return useMutation({
     mutationFn: async ({ id, endDate }: { id: string; endDate: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('void_periods')
         .update({ end_date: endDate })
         .eq('id', id)

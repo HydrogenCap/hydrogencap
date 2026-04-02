@@ -95,7 +95,7 @@ export function useTenantsV2(status?: TenantStatusV2, options?: { page?: number;
   return useQuery({
     queryKey: ['tenants_v2', status, page, pageSize],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('tenants_v2')
         .select('id, org_id, first_name, last_name, email, phone, date_of_birth, national_insurance, referral_source, tenant_type, status, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at', { count: 'exact' })
         .order('last_name', { ascending: true });
@@ -125,13 +125,13 @@ export function useTenantsV2WithTenancy() {
   return useQuery({
     queryKey: ['tenants_v2', 'with-tenancy'],
     queryFn: async () => {
-      const { data: tenants, error: te } = await supabase
+      const { data: tenants, error: te } = await (supabase as any)
         .from('tenants_v2')
         .select('id, org_id, first_name, last_name, email, phone, date_of_birth, national_insurance, referral_source, tenant_type, status, emergency_contact_name, emergency_contact_phone, notes, created_at, updated_at')
         .order('last_name');
       if (te) throw te;
 
-      const { data: agreements, error: ae } = await supabase
+      const { data: agreements, error: ae } = await (supabase as any)
         .from('tenancy_agreements')
         .select(`
           id, tenant_id, property_id, room_id, rent_amount_pcm, start_date, tenancy_type, status,
@@ -172,7 +172,7 @@ export function useTenantV2(id: string | undefined) {
     queryKey: ['tenant_v2', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenants_v2')
         .select('*')
         .eq('id', id)
@@ -189,7 +189,7 @@ export function useCreateTenantV2() {
   return useMutation({
     mutationFn: async (tenant: Omit<TenantV2, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenants_v2')
         .insert({ ...tenant, org_id: orgId })
         .select()
@@ -207,7 +207,7 @@ export function useUpdateTenantV2() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<TenantV2> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tenants_v2')
         .update(updates)
         .eq('id', id)

@@ -31,7 +31,7 @@ export function useBankAccounts() {
   return useQuery({
     queryKey: ['bank_accounts'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bank_accounts')
         .select('*, entity:legal_entities(id, entity_name)')
         .order('account_name');
@@ -49,7 +49,7 @@ export function useCreateBankAccount() {
     mutationFn: async (account: Omit<BankAccount, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bank_accounts')
         .insert({ ...account, org_id: orgId })
         .select()
@@ -73,7 +73,7 @@ export function useUpdateBankAccount() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<BankAccount> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('bank_accounts')
         .update(updates)
         .eq('id', id)

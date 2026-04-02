@@ -13,7 +13,7 @@ export function useAllPropertyCoverPhotos() {
   return useQuery({
     queryKey: ['property_photos_covers_array'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('photos')
         .select('id, property_id, file_url, is_cover')
         .eq('is_cover', true)
@@ -40,7 +40,7 @@ export function useAllPropertyPhotos() {
   return useQuery({
     queryKey: ['property_photos_all'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('photos')
         .select('id, property_id, file_url, is_cover, display_order')
         .order('property_id')

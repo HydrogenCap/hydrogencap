@@ -65,7 +65,7 @@ export function PropertyFeaturesEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('properties_v2')
         .update({
           has_gas_supply: features.has_gas,

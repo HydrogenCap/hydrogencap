@@ -16,7 +16,7 @@ export function TenantMaintenancePanel({ tenantId }: Props) {
   const { data: requests, isLoading } = useQuery({
     queryKey: ['maintenance_requests', 'tenant', tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('maintenance_requests')
         .select('id, title, priority, status, created_at')
         .eq('tenant_id', tenantId)

@@ -33,7 +33,7 @@ export function useSectionVisibility() {
     queryKey: ['section-visibility', user?.id],
     queryFn: async () => {
       if (!user) return DEFAULT_SECTION_VISIBILITY;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('section_visibility')
         .eq('user_id', user.id)
@@ -51,7 +51,7 @@ export function useSectionVisibility() {
     mutationFn: async ({ key, value }: { key: SectionKey; value: boolean }) => {
       if (!user) throw new Error('Not authenticated');
       const updated = { ...settings, [key]: value };
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({ section_visibility: updated as ProfileSectionVisibility, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);

@@ -415,7 +415,7 @@ export function usePortfolioBackup() {
 const BATCH = 1000;
 
 async function queryTableRows(table: string, offset: number, orderByCreatedAt: boolean): Promise<FetchRowsResult> {
-  const query = supabase
+  const query = (supabase as any)
     .from(table as never)
     .select('*')
     .range(offset, offset + BATCH - 1);

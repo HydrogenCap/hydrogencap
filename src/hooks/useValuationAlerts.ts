@@ -29,7 +29,7 @@ export function useValuationAlerts(includeDismissed = false) {
     queryKey: ['valuation_alerts', orgId, includeDismissed],
     enabled: !!orgId,
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('valuation_alerts')
         .select('*, properties_v2!inner(address_line_1, postcode)')
         .eq('org_id', orgId!)
@@ -57,7 +57,7 @@ export function useDismissValuationAlert() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('valuation_alerts')
         .update({ is_dismissed: true, is_read: true })
         .eq('id', id);

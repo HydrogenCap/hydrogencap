@@ -104,7 +104,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
    return useQuery({
      queryKey: ['managed-documents', filters],
      queryFn: async () => {
-        let query = supabase
+        let query = (supabase as any)
           .from('documents')
           .select(`
             id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id,
@@ -164,7 +164,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
    return useQuery({
      queryKey: ['document-categories', entityType],
      queryFn: async () => {
-        let query = supabase
+        let query = (supabase as any)
           .from('document_categories')
           .select('id, org_id, name, slug, description, icon, color, entity_type, display_order, is_system')
          .order('display_order');
@@ -226,7 +226,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
          // Check if a document with same original filename & size already exists
          // for the same property (or same org if no property)
          {
-           let dupQuery = supabase
+           let dupQuery = (supabase as any)
              .from('documents')
              .select('id, display_name')
              .eq('org_id', orgId)
@@ -255,7 +255,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
         let tenantName: string | null = null;
 
         if (propertyId) {
-          const { data: prop } = await supabase
+          const { data: prop } = await (supabase as any)
             .from('properties_v2')
             .select('address_line_1')
             .eq('id', propertyId)
@@ -264,7 +264,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
         }
 
         if (!propertyAddress && companyId) {
-          const { data: comp } = await supabase
+          const { data: comp } = await (supabase as any)
             .from('companies')
             .select('legal_name')
             .eq('id', companyId)
@@ -273,7 +273,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
         }
 
         if (!propertyAddress && !companyName && tenantId) {
-          const { data: tenant } = await supabase
+          const { data: tenant } = await (supabase as any)
             .from('tenants')
             .select('first_name, last_name')
             .eq('id', tenantId)
@@ -285,7 +285,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
 
         // Fallback: resolve property from tenancy
         if (!propertyAddress && tenancyId) {
-          const { data: tenancy } = await supabase
+          const { data: tenancy } = await (supabase as any)
             .from('tenancies')
             .select('property_id, properties(address_line)')
             .eq('id', tenancyId)
@@ -298,7 +298,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
 
         // Fallback: resolve property from job
         if (!propertyAddress && jobId) {
-          const { data: job } = await supabase
+          const { data: job } = await (supabase as any)
             .from('contractor_jobs')
             .select('property_id, properties(address_line)')
             .eq('id', jobId)
@@ -332,7 +332,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
         if (uploadError) throw uploadError;
 
         // Create document record with structured filename
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('documents')
           .insert({
             org_id: orgId,
@@ -432,7 +432,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
        if (visibleToShareholders !== undefined) updateData.visible_to_shareholders = visibleToShareholders;
        if (visibleToTenants !== undefined) updateData.visible_to_tenants = visibleToTenants;
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('documents')
          .update(updateData)
          .eq('id', id)
@@ -522,7 +522,7 @@ export function useDownloadDocument() {
      queryFn: async () => {
        if (!documentId) return [];
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('document_activity')
          .select('*')
          .eq('document_id', documentId)

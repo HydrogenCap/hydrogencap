@@ -44,7 +44,7 @@
    return useQuery({
      queryKey: ['rooms', propertyId],
      queryFn: async () => {
-       let query = supabase
+       let query = (supabase as any)
          .from('rooms')
          .select('*')
          .order('floor', { ascending: true })
@@ -66,7 +66,7 @@
      queryKey: ['rooms', 'with-tenancy', propertyId],
      queryFn: async () => {
        // Get rooms
-       const { data: rooms, error: roomsError } = await supabase
+       const { data: rooms, error: roomsError } = await (supabase as any)
          .from('rooms')
          .select('*')
          .eq('property_id', propertyId)
@@ -77,7 +77,7 @@
  
        // Get active tenancies for these rooms
        const roomIds = rooms.map(r => r.id);
-       const { data: tenancies, error: tenanciesError } = await supabase
+       const { data: tenancies, error: tenanciesError } = await (supabase as any)
          .from('tenancies')
          .select(`
            id, room_id, rent_amount_pcm, start_date, end_date,
@@ -110,7 +110,7 @@
    return useQuery({
      queryKey: ['rooms', roomId],
      queryFn: async () => {
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('rooms')
          .select('*')
          .eq('id', roomId)
@@ -131,7 +131,7 @@
        const orgId = await getUserOrgId();
        if (!orgId) throw new Error('No organization found');
  
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('rooms')
          .insert({ ...room, org_id: orgId })
          .select()
@@ -157,7 +157,7 @@
  
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<Room> & { id: string }) => {
-       const { data, error } = await supabase
+       const { data, error } = await (supabase as any)
          .from('rooms')
          .update(updates)
          .eq('id', id)

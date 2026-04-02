@@ -31,7 +31,7 @@ export function useTaxProfile(taxYear: TaxYearLabel) {
   const query = useQuery({
     queryKey: ['tax_profile', org?.id, taxYear],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('tax_profiles')
         .select('*')
         .eq('org_id', org!.id)
@@ -60,7 +60,7 @@ export function useUpsertTaxProfile() {
       incomeTaxRate?: number;
     }) => {
       if (!org) throw new Error('No org');
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('tax_profiles')
         .select('id')
         .eq('org_id', org.id)
@@ -78,13 +78,13 @@ export function useUpsertTaxProfile() {
       };
 
       if (existing) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('tax_profiles')
           .update(row)
           .eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('tax_profiles')
           .insert(row);
         if (error) throw error;
@@ -128,28 +128,28 @@ export function useTaxCalculation(taxYear: TaxYearLabel): {
 
       const [propsRes, entitiesRes, rentRes, tenancyRes, maintenanceRes, loansRes] =
         await Promise.all([
-          supabase
+          (supabase as any)
             .from('properties_v2')
             .select('id, address_line_1, postcode, entity_id, purchase_price, current_valuation')
             .eq('org_id', org.id),
-          supabase
+          (supabase as any)
             .from('legal_entities')
             .select('id, entity_name, entity_type')
             .eq('org_id', org.id),
-          supabase
+          (supabase as any)
             .from('rent_payments')
             .select('tenancy_id, amount')
             .gte('payment_date', startISO)
             .lte('payment_date', endISO),
-          supabase
+          (supabase as any)
             .from('tenancy_agreements')
             .select('id, property_id')
             .eq('org_id', org.id),
-          supabase
+          (supabase as any)
             .from('maintenance_requests')
             .select('property_id, actual_cost')
             .eq('status', 'completed'),
-          supabase
+          (supabase as any)
             .from('loan_facilities')
             .select('property_id, interest_rate, current_balance, monthly_payment, status')
             .eq('status', 'active'),
@@ -260,7 +260,7 @@ export function useSaveTaxCalculation() {
       const { result, taxYear, taxProfileId } = params;
 
       // Delete previous calculations for this year
-      await supabase
+      await (supabase as any)
         .from('tax_calculations')
         .delete()
         .eq('org_id', org.id)
@@ -286,7 +286,7 @@ export function useSaveTaxCalculation() {
         },
         expense_breakdown: {},
       };
-      const { error: portfolioErr } = await supabase
+      const { error: portfolioErr } = await (supabase as any)
         .from('tax_calculations')
         .insert(portfolioRow);
       if (portfolioErr) throw portfolioErr;
@@ -317,7 +317,7 @@ export function useSaveTaxCalculation() {
       });
 
       if (propertyRows.length > 0) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('tax_calculations')
           .insert(propertyRows);
         if (error) throw error;

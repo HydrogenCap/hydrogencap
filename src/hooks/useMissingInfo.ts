@@ -264,7 +264,7 @@ export function useInsurancePolicies() {
   return useQuery({
     queryKey: ['insurance_policies'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('insurance_policies')
         .select('*');
       if (error) throw error;
@@ -279,7 +279,7 @@ export function useUpsertInsurancePolicy() {
   
   return useMutation({
     mutationFn: async (policy: Partial<InsurancePolicy> & { property_id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('insurance_policies')
         .upsert(policy, { onConflict: 'property_id' })
         .select()

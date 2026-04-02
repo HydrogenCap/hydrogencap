@@ -17,7 +17,7 @@ export function useDocuments(propertyId?: string, options?: { page?: number; pag
   return useQuery({
     queryKey: ['documents', propertyId, page, pageSize],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('documents')
         .select('id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id, file_url, original_file_name, display_name, final_file_name, doc_type, category, tags, file_type, file_size_bytes, mime_type, description, document_date, expiry_date, review_status, is_confidential, visible_to_shareholders, visible_to_tenants, version, is_current_version, uploaded_by, created_at, updated_at, deleted_at', { count: 'exact' })
         .order('created_at', { ascending: false });
@@ -50,7 +50,7 @@ export function useInboxDocuments() {
   return useQuery({
     queryKey: ['documents', 'inbox'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('documents')
         .select('id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id, file_url, original_file_name, display_name, final_file_name, doc_type, category, tags, file_type, file_size_bytes, mime_type, description, document_date, expiry_date, review_status, is_confidential, visible_to_shareholders, visible_to_tenants, version, is_current_version, uploaded_by, created_at, updated_at, deleted_at')
         .eq('review_status', 'pending')
@@ -71,7 +71,7 @@ export function useCreateDocument() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('documents')
         .insert({ ...document, org_id: orgId })
         .select()
@@ -104,7 +104,7 @@ export function useUpdateDocument() {
   
   return useMutation({
     mutationFn: async ({ id, wasAccepted, ...document }: DocumentUpdate & { id: string; wasAccepted?: boolean }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('documents')
         .update(document)
         .eq('id', id)
@@ -142,7 +142,7 @@ export function useDeleteDocument() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('documents')
         .delete()
         .eq('id', id);
@@ -164,7 +164,7 @@ export function useBulkAcceptDocuments() {
   
   return useMutation({
     mutationFn: async (documentIds: string[]) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('documents')
         .update({ 
           review_status: 'accepted',

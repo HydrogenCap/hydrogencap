@@ -55,7 +55,7 @@ export function useActiveVoids() {
   return useQuery({
     queryKey: ['void-tracking', 'active'],
     queryFn: async () => {
-      const { data: voids, error } = await supabase
+      const { data: voids, error } = await (supabase as any)
         .from('void_periods')
         .select('*')
         .is('end_date', null)
@@ -91,7 +91,7 @@ export function useVoidHistory(propertyId?: string) {
   return useQuery({
     queryKey: ['void-tracking', 'history', propertyId],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('void_periods')
         .select('*')
         .not('end_date', 'is', null)
@@ -123,7 +123,7 @@ export function useCreateVoid() {
       notes?: string;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('void_periods')
         .insert({
           org_id: orgId,
@@ -167,7 +167,7 @@ export function useEndVoid() {
         updates.actual_costs = actualCosts;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('void_periods')
         .update(updates as any)
         .eq('id', id)

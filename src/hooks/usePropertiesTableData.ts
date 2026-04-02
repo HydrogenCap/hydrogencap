@@ -14,7 +14,7 @@ export function usePropertyPhotos() {
   return useQuery({
     queryKey: ['property_photos_covers_map'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('photos')
         .select('property_id, file_url, is_cover')
         .eq('is_cover', true);
@@ -44,7 +44,7 @@ export function useLegalOwnerCompanies() {
     queryKey: ['property_legal_owner_companies'],
     queryFn: async () => {
       // Get all companies in a single query
-      const { data: companies, error } = await supabase
+      const { data: companies, error } = await (supabase as any)
         .from('companies')
         .select('id, legal_name');
       

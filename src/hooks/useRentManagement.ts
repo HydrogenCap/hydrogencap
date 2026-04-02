@@ -38,21 +38,21 @@ export function useRentKPIs() {
       const lastMonthStartStr = `${lastMonthStart.getFullYear()}-${String(lastMonthStart.getMonth() + 1).padStart(2, '0')}-01`;
 
       const [thisMonthRes, arrearsRes, paymentsThisMonth, paymentsLastMonth] = await Promise.all([
-        supabase
+        (supabase as any)
           .from('rent_schedule')
           .select('rent_amount, additional_charges, amount_paid, amount_outstanding, status, due_date')
           .gte('due_date', thisMonthStart)
           .lt('due_date', nextMonthStart),
-        supabase
+        (supabase as any)
           .from('rent_schedule')
           .select('amount_outstanding')
           .in('status', ['overdue', 'partial']),
-        supabase
+        (supabase as any)
           .from('rent_payments')
           .select('amount, payment_date, rent_schedule_id')
           .gte('payment_date', thisMonthStart)
           .lt('payment_date', nextMonthStart),
-        supabase
+        (supabase as any)
           .from('rent_payments')
           .select('amount, payment_date, rent_schedule_id')
           .gte('payment_date', lastMonthStartStr)
@@ -126,7 +126,7 @@ export function useRecordPaymentMutation() {
 
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_payments')
         .insert({
           ...payment,
@@ -178,7 +178,7 @@ export function useRentArrears() {
   return useQuery({
     queryKey: ['rent_arrears'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select(`
           id, org_id, tenancy_id, agreement_id, due_date, period_start, period_end,
@@ -245,7 +245,7 @@ export function useRentHistory(filters?: { propertyId?: string; tenantId?: strin
   return useQuery({
     queryKey: ['rent_history', filters],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('rent_payments')
         .select(`
           id, org_id, tenancy_id, agreement_id, rent_schedule_id,
@@ -286,7 +286,7 @@ export function useRentCalendar(month: string) {
       const [year, m] = month.split('-').map(Number);
       const endDate = new Date(year, m, 0);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('rent_schedule')
         .select(`
           id, org_id, tenancy_id, agreement_id, due_date, period_start, period_end,

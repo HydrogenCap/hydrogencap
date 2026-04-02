@@ -27,7 +27,7 @@ export function useDocumentShareLinks(documentId?: string, complianceDocumentId?
   return useQuery({
     queryKey: ['document-share-links', orgId, documentId, complianceDocumentId],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('document_share_links')
         .select('*')
         .eq('org_id', orgId!)
@@ -55,7 +55,7 @@ export function useAllDocumentShareLinks() {
   return useQuery({
     queryKey: ['document-share-links', orgId, 'all'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('document_share_links')
         .select('*')
         .eq('org_id', orgId!)
@@ -90,7 +90,7 @@ export function useCreateDocumentShareLink() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('document_share_links')
         .insert({
           org_id: orgId,
@@ -122,7 +122,7 @@ export function useDeactivateShareLink() {
 
   return useMutation({
     mutationFn: async (linkId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('document_share_links')
         .update({ is_active: false })
         .eq('id', linkId);

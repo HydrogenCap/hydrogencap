@@ -37,7 +37,7 @@ export function useOwnershipEntities() {
   return useQuery({
     queryKey: ['ownership_entities'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ownership_entities')
         .select('*')
         .order('name');
@@ -56,7 +56,7 @@ export function useCreateEntity() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ownership_entities')
         .insert({ ...entity, org_id: orgId })
         .select()
@@ -76,7 +76,7 @@ export function useUpdateEntity() {
   
   return useMutation({
     mutationFn: async ({ id, ...entity }: Partial<OwnershipEntity> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ownership_entities')
         .update(entity)
         .eq('id', id)
@@ -97,7 +97,7 @@ export function useDeleteEntity() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('ownership_entities')
         .delete()
         .eq('id', id);
@@ -120,7 +120,7 @@ export function useLegalOwnership(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_legal_ownership')
         .select(`
           *,
@@ -141,7 +141,7 @@ export function useAddLegalOwnership() {
   
   return useMutation({
     mutationFn: async (ownership: PropertyLegalOwnershipInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_legal_ownership')
         .insert(ownership)
         .select(`
@@ -165,7 +165,7 @@ export function useUpdateLegalOwnership() {
   
   return useMutation({
     mutationFn: async ({ id, propertyId, ...ownership }: Partial<PropertyLegalOwnership> & { id: string; propertyId: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('property_legal_ownership')
         .update(ownership)
         .eq('id', id)
@@ -190,7 +190,7 @@ export function useDeleteLegalOwnership() {
   
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('property_legal_ownership')
         .delete()
         .eq('id', id);
@@ -215,7 +215,7 @@ export function useEntityShareholdings(entityId: string | undefined) {
     queryFn: async () => {
       if (!entityId) return [];
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_shareholdings')
         .select(`
           *,
@@ -236,7 +236,7 @@ export function useAddShareholding() {
   
   return useMutation({
     mutationFn: async (shareholding: EntityShareholdingInsert) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_shareholdings')
         .insert(shareholding)
         .select(`
@@ -261,7 +261,7 @@ export function useUpdateShareholding() {
   
   return useMutation({
     mutationFn: async ({ id, parentEntityId, ...shareholding }: Partial<EntityShareholding> & { id: string; parentEntityId: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('entity_shareholdings')
         .update(shareholding)
         .eq('id', id)
@@ -286,7 +286,7 @@ export function useDeleteShareholding() {
   
   return useMutation({
     mutationFn: async ({ id, parentEntityId }: { id: string; parentEntityId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('entity_shareholdings')
         .delete()
         .eq('id', id);
@@ -316,7 +316,7 @@ export function useEffectiveOwnership(propertyId: string | undefined) {
       if (!propertyId) return [];
       
       // 1. Get legal owners of the property
-      const { data: legalOwners, error: legalError } = await supabase
+      const { data: legalOwners, error: legalError } = await (supabase as any)
         .from('property_legal_ownership')
         .select(`
           *,
@@ -328,7 +328,7 @@ export function useEffectiveOwnership(propertyId: string | undefined) {
       if (!legalOwners?.length) return [];
 
       // 2. Get all shareholdings (we'll need these for look-through)
-      const { data: allShareholdings, error: shareholdingError } = await supabase
+      const { data: allShareholdings, error: shareholdingError } = await (supabase as any)
         .from('entity_shareholdings')
         .select(`
           *,

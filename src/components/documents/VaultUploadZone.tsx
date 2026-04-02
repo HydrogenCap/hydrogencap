@@ -61,7 +61,7 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
 
       // Check for duplicates before uploading
       const fileNames = validFiles.map(f => f.name);
-      const { data: existingDocs } = await supabase
+      const { data: existingDocs } = await (supabase as any)
         .from('documents')
         .select('original_file_name, property_id')
         .eq('org_id', orgId!)

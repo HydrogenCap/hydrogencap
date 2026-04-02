@@ -14,7 +14,7 @@ export function useComplianceTasks() {
     queryKey: ['compliance-tasks', org?.id],
     enabled: !!org?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('compliance_task_overview')
         .select('*');
       if (error) throw error;

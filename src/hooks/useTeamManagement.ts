@@ -45,7 +45,7 @@ export function useCurrentUserRole() {
     queryKey: ['current-user-role', user?.id, orgId],
     queryFn: async () => {
       if (!user || !orgId) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('memberships')
         .select('role')
         .eq('user_id', user.id)
@@ -68,7 +68,7 @@ export function useTeamMembers() {
   return useQuery({
     queryKey: ['team-members', orgId],
     queryFn: async () => {
-      const { data: memberships, error: mError } = await supabase
+      const { data: memberships, error: mError } = await (supabase as any)
         .from('memberships')
         .select('id, user_id, role, created_at')
         .eq('org_id', orgId!)
@@ -78,7 +78,7 @@ export function useTeamMembers() {
       if (!memberships || memberships.length === 0) return [];
 
       const userIds = memberships.map(m => m.user_id);
-      const { data: profiles, error: pError } = await supabase
+      const { data: profiles, error: pError } = await (supabase as any)
         .from('profiles')
         .select('user_id, email, full_name')
         .in('user_id', userIds);
@@ -114,7 +114,7 @@ export function useTeamInvites() {
   return useQuery({
     queryKey: ['team-invites', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('team_invites')
         .select('*')
         .eq('org_id', orgId!)
@@ -123,7 +123,7 @@ export function useTeamInvites() {
       if (error) throw error;
 
       const inviterIds = [...new Set((data || []).map(i => i.invited_by))];
-      const { data: profiles } = await supabase
+      const { data: profiles } = await (supabase as any)
         .from('profiles')
         .select('user_id, full_name')
         .in('user_id', inviterIds);
@@ -162,14 +162,14 @@ export function useSendTeamInvite() {
       if (!userData.user) throw new Error('Not authenticated');
 
       // Delete any existing non-accepted invite for this email+org
-      await supabase
+      await (supabase as any)
         .from('team_invites')
         .delete()
         .eq('org_id', orgId!)
         .eq('email', email.toLowerCase().trim())
         .is('accepted_at', null);
 
-      const { data: invite, error } = await supabase
+      const { data: invite, error } = await (supabase as any)
         .from('team_invites')
         .insert({
           org_id: orgId!,
@@ -222,7 +222,7 @@ export function useResendTeamInvite() {
 
   return useMutation({
     mutationFn: async (inviteId: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('team_invites')
         .update({
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -262,7 +262,7 @@ export function useRevokeTeamInvite() {
 
   return useMutation({
     mutationFn: async (inviteId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('team_invites')
         .update({ revoked_at: new Date().toISOString() })
         .eq('id', inviteId);
@@ -293,7 +293,7 @@ export function useChangeTeamRole() {
     mutationFn: async ({ membershipId, newRole }: { membershipId: string; newRole: AppRole }) => {
       // RLS enforces that only admin/owner can update membership roles.
       // Non-admin callers will receive a permission error from the DB.
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('memberships')
         .update({ role: newRole })
         .eq('id', membershipId);
@@ -322,7 +322,7 @@ export function useRemoveTeamMember() {
 
   return useMutation({
     mutationFn: async (membershipId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('memberships')
         .delete()
         .eq('id', membershipId);

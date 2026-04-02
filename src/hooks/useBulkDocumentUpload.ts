@@ -122,7 +122,7 @@ export function useBulkDocumentUpload() {
 
     // Create document record
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: docRecord, error: docErr } = await supabase
+    const { data: docRecord, error: docErr } = await (supabase as any)
       .from('documents')
       .insert({
         org_id: orgId,
@@ -156,7 +156,7 @@ export function useBulkDocumentUpload() {
       if (catErr) throw catErr;
 
       // Fetch updated categorisation
-      const { data: catDoc } = await supabase
+      const { data: catDoc } = await (supabase as any)
         .from('documents')
         .select('ai_suggested_doc_type, ai_doc_type_confidence, category, display_name')
         .eq('id', docRecord.id)
@@ -194,7 +194,7 @@ export function useBulkDocumentUpload() {
       const matchedPropId = matchProperty(fields.address?.value);
 
       // Re-fetch document with all AI data
-      const { data: finalDoc } = await supabase
+      const { data: finalDoc } = await (supabase as any)
         .from('documents')
         .select('ai_suggested_doc_type, ai_doc_type_confidence, ai_suggested_property_id, category, extracted_address_text, extracted_issue_date, extracted_reference_number, expiry_date, extracted_data')
         .eq('id', docRecord.id)

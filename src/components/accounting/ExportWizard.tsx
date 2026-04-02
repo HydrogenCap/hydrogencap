@@ -121,7 +121,7 @@ export function ExportWizard() {
       const fromStr = format(dateFrom, 'yyyy-MM-dd');
       const toStr = format(dateTo, 'yyyy-MM-dd');
 
-      let query = supabase
+      let query = (supabase as any)
         .from('financial_snapshots')
         .select('*')
         .gte('snapshot_month', fromStr)
@@ -138,7 +138,7 @@ export function ExportWizard() {
       // Get property addresses
       const typedSnapshots = (snapshots || []) as FinancialSnapshot[];
       const propertyIds = [...new Set(typedSnapshots.map((snapshot) => snapshot.property_id))];
-      const { data: properties } = await supabase
+      const { data: properties } = await (supabase as any)
         .from('properties_v2')
         .select('id, address_line_1, postcode')
         .in('id', propertyIds);

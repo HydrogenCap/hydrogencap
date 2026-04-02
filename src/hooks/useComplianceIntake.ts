@@ -200,7 +200,7 @@ export function useAcceptComplianceDocument() {
       }
 
       // 1. Mark any existing current doc as superseded
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('compliance_documents_v2')
         .select('id')
         .eq('property_id', propertyId)
@@ -209,7 +209,7 @@ export function useAcceptComplianceDocument() {
         .maybeSingle();
 
       if (existing) {
-        await supabase
+        await (supabase as any)
           .from('compliance_documents_v2')
           .update({ is_current: false })
           .eq('id', existing.id);
@@ -246,7 +246,7 @@ export function useAcceptComplianceDocument() {
       }
 
       // 4. Create compliance_documents_v2 record
-      const { data: newDoc, error: insertError } = await supabase
+      const { data: newDoc, error: insertError } = await (supabase as any)
         .from('compliance_documents_v2')
         .insert({
           org_id: orgId,
@@ -274,7 +274,7 @@ export function useAcceptComplianceDocument() {
       if (insertError) throw insertError;
 
       // 5. Update the original documents record
-      await supabase
+      await (supabase as any)
         .from('documents')
         .update({
           review_status: 'accepted',
@@ -286,7 +286,7 @@ export function useAcceptComplianceDocument() {
         .eq('id', documentId);
 
       // 6. Enrich with AI-extracted certifier & reference data
-      const { data: docMeta } = await supabase
+      const { data: docMeta } = await (supabase as any)
         .from('documents')
         .select('extracted_certifier_name, extracted_certifier_company, extracted_reference_number')
         .eq('id', documentId)
@@ -301,7 +301,7 @@ export function useAcceptComplianceDocument() {
           updates.certificate_number = docMeta.extracted_reference_number;
         }
         if (Object.keys(updates).length > 0) {
-          await supabase
+          await (supabase as any)
             .from('compliance_documents_v2')
             .update(updates)
             .eq('id', newDoc.id);
@@ -310,7 +310,7 @@ export function useAcceptComplianceDocument() {
 
       // 7. Auto-populate insurance_policies if applicable
       if (docType === 'building_insurance' || docType === 'public_liability_insurance') {
-        const { data: docData } = await supabase
+        const { data: docData } = await (supabase as any)
           .from('documents')
           .select('extracted_certifier_company, extracted_reference_number, expiry_date, extracted_issue_date')
           .eq('id', documentId)
@@ -323,14 +323,14 @@ export function useAcceptComplianceDocument() {
           const startDate = issueDate || docData.extracted_issue_date || null;
 
           if (renewalDate) {
-            const { data: existingPolicy } = await supabase
+            const { data: existingPolicy } = await (supabase as any)
               .from('insurance_policies')
               .select('id')
               .eq('property_id', propertyId)
               .limit(1);
 
             if (existingPolicy && existingPolicy.length > 0) {
-              await supabase
+              await (supabase as any)
                 .from('insurance_policies')
                 .update({
                   insurer_name: insurerName,
@@ -343,7 +343,7 @@ export function useAcceptComplianceDocument() {
                 })
                 .eq('id', existingPolicy[0].id);
             } else {
-              await supabase
+              await (supabase as any)
                 .from('insurance_policies')
                 .insert({
                   org_id: orgId,
@@ -399,7 +399,7 @@ export function useRejectComplianceDocument() {
 
   return useMutation({
     mutationFn: async (documentId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('documents')
         .update({ review_status: 'rejected' })
         .eq('id', documentId);

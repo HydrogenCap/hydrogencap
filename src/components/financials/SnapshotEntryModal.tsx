@@ -104,7 +104,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const { data: roomSuggestions } = useQuery<RoomSuggestion[]>({
     queryKey: ['room_rent_suggestions'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('rooms_v2')
         .select('property_id, current_rent_pcm, is_lettable, occupancy_status, target_rent_pcm');
       return (data || []) as RoomSuggestion[];
@@ -114,7 +114,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const { data: loanSuggestions } = useQuery<LoanSuggestion[]>({
     queryKey: ['loan_payment_suggestions'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('loan_facilities')
         .select('property_id, monthly_payment, current_balance, status')
         .eq('status', 'active');
