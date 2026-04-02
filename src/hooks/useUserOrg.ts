@@ -16,7 +16,7 @@ export interface UserOrganization {
 
 const CURRENT_ORG_STORAGE_KEY = 'tenureiq.current_org_id';
 const CURRENT_ORG_EVENT = 'tenureiq:current-org-changed';
-const ORG_ROLE_PRIORITY: Record<MembershipRow['role'], number> = {
+const ORG_ROLE_PRIORITY: Record<string, number> = {
   owner: 0,
   admin: 1,
   member: 2,
