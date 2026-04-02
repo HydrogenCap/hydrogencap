@@ -60,7 +60,7 @@ export function useAcquisitionAnalyses() {
   return useQuery({
     queryKey: ['acquisition-analyses', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('acquisition_analyses')
         .select('*')
         .eq('org_id', orgId!)
@@ -79,7 +79,7 @@ export function useAcquisitionDetail(id: string | undefined) {
   return useQuery({
     queryKey: ['acquisition-analysis', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('acquisition_analyses')
         .select('*')
         .eq('id', id!)
@@ -98,7 +98,7 @@ export function useRunAcquisitionAnalysis() {
 
   return useMutation({
     mutationFn: async (input: AcquisitionInput) => {
-      const { data, error } = await supabase.functions.invoke('analyse-acquisition', {
+      const { data, error } = await (supabase as any).functions.invoke('analyse-acquisition', {
         body: input,
       });
 

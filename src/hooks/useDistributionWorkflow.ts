@@ -45,7 +45,7 @@ export function useDistributionRuns() {
   return useQuery({
     queryKey: ['distribution-runs', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('distribution_runs')
         .select('*')
         .eq('org_id', orgId!)
@@ -63,7 +63,7 @@ export function useDistributionLineItems(runId: string | null) {
     queryKey: ['distribution-line-items', runId],
     queryFn: async () => {
       if (!runId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('distribution_line_items')
         .select(`
           *,
@@ -96,7 +96,7 @@ export function useCreateDistributionRun() {
     }) => {
       const { allocations, ...runData } = payload;
 
-      const { data: run, error } = await supabase
+      const { data: run, error } = await (supabase as any)
         .from('distribution_runs')
         .insert({ ...runData, org_id: orgId!, status: 'draft' })
         .select()
@@ -117,7 +117,7 @@ export function useCreateDistributionRun() {
           payment_status: 'pending',
         }));
 
-        const { error: lineError } = await supabase
+        const { error: lineError } = await (supabase as any)
           .from('distribution_line_items')
           .insert(lineItems);
 
@@ -139,8 +139,8 @@ export function useApproveDistribution() {
 
   return useMutation({
     mutationFn: async (runId: string) => {
-      const { data: auth } = await supabase.auth.getUser();
-      const { error } = await supabase
+      const { data: auth } = await (supabase as any).auth.getUser();
+      const { error } = await (supabase as any)
         .from('distribution_runs')
         .update({
           status: 'approved',
@@ -172,7 +172,7 @@ export function useMarkPayment() {
       reference?: string;
       method?: string;
     }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('distribution_line_items')
         .update({
           payment_status: 'paid',
@@ -198,7 +198,7 @@ export function useMarkAllPayments() {
 
   return useMutation({
     mutationFn: async (runId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('distribution_line_items')
         .update({
           payment_status: 'paid',
@@ -210,7 +210,7 @@ export function useMarkAllPayments() {
       if (error) throw error;
 
       // Mark the run as completed
-      const { error: runError } = await supabase
+      const { error: runError } = await (supabase as any)
         .from('distribution_runs')
         .update({
           status: 'completed',
@@ -234,7 +234,7 @@ export function useCancelDistribution() {
 
   return useMutation({
     mutationFn: async (runId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('distribution_runs')
         .update({ status: 'cancelled' })
         .eq('id', runId);
@@ -257,12 +257,12 @@ export function useCalculateDistribution() {
     queryFn: async () => {
       // This hook provides entity/investor financial data for the wizard
       // The actual calculation is done client-side via distribution-calculator.ts
-      const { data: entities } = await supabase
+      const { data: entities } = await (supabase as any)
         .from('legal_entities')
         .select('id, entity_name')
         .eq('org_id', orgId!);
 
-      const { data: investors } = await supabase
+      const { data: investors } = await (supabase as any)
         .from('investors')
         .select('id, investor_name, email')
         .eq('org_id', orgId!);
