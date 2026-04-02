@@ -13,6 +13,9 @@ export interface RoomV2 {
   target_rent_pcm: number | null;
   occupancy_status: 'occupied' | 'vacant' | 'under_offer' | 'unavailable' | 'refurbishment';
   notes: string | null;
+  size_sqm: number | null;
+  occupancy_type: 'single' | 'double' | 'child' | null;
+  amenity_type: 'bedroom' | 'bathroom' | 'kitchen' | 'toilet' | 'common' | null;
   created_at: string;
   updated_at: string;
 }

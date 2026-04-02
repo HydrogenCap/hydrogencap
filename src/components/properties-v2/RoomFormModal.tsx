@@ -14,6 +14,20 @@ import { useCreateRoom, useUpdateRoom, ROOM_TYPES, OCCUPANCY_STATUSES } from '@/
 import { useToast } from '@/hooks/use-toast';
 import type { RoomV2 } from '@/hooks/useRoomsV2';
 
+const OCCUPANCY_TYPES = [
+  { value: 'single', label: 'Single Adult' },
+  { value: 'double', label: 'Double / Couple' },
+  { value: 'child', label: 'Child Under 10' },
+] as const;
+
+const AMENITY_TYPES = [
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'toilet', label: 'Toilet' },
+  { value: 'common', label: 'Common Area' },
+] as const;
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +46,9 @@ const initialForm = {
   target_rent_pcm: '',
   occupancy_status: 'vacant' as RoomV2['occupancy_status'],
   notes: '',
+  size_sqm: '',
+  occupancy_type: '' as string,
+  amenity_type: '' as string,
 };
 
 type RoomFormState = typeof initialForm;
@@ -62,6 +79,9 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
         target_rent_pcm: editingRoom.target_rent_pcm?.toString() || '',
         occupancy_status: editingRoom.occupancy_status,
         notes: editingRoom.notes || '',
+        size_sqm: editingRoom.size_sqm?.toString() || '',
+        occupancy_type: editingRoom.occupancy_type || '',
+        amenity_type: editingRoom.amenity_type || '',
       });
     } else {
       setForm(initialForm);
@@ -100,6 +120,9 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
       target_rent_pcm: form.target_rent_pcm ? parseFloat(form.target_rent_pcm) : null,
       occupancy_status: form.occupancy_status,
       notes: form.notes || null,
+      size_sqm: form.size_sqm ? parseFloat(form.size_sqm) : null,
+      occupancy_type: (form.occupancy_type || null) as RoomV2['occupancy_type'],
+      amenity_type: (form.amenity_type || null) as RoomV2['amenity_type'],
     };
     if (unitId) payload.unit_id = unitId;
     try {
@@ -159,6 +182,34 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{OCCUPANCY_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
+            </div>
+          )}
+          <div>
+            <Label>Room Size (m²)</Label>
+            <Input type="number" step="0.01" min="0" value={form.size_sqm} onChange={e => set('size_sqm', e.target.value)} placeholder="e.g. 12.5" />
+            <p className="text-xs text-muted-foreground mt-1">Required for HMO compliance checks</p>
+          </div>
+          <div>
+            <Label>Amenity Type</Label>
+            <Select value={form.amenity_type || '_none'} onValueChange={v => set('amenity_type', v === '_none' ? '' : v)}>
+              <SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">Not set</SelectItem>
+                {AMENITY_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {(form.amenity_type === 'bedroom' || form.amenity_type === '' || !form.amenity_type) && form.is_lettable && (
+            <div>
+              <Label>Occupancy Type (HMO)</Label>
+              <Select value={form.occupancy_type || '_none'} onValueChange={v => set('occupancy_type', v === '_none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Select occupancy..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Not set</SelectItem>
+                  {OCCUPANCY_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Used for HMO minimum room size calculations</p>
             </div>
           )}
           <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} /></div>
