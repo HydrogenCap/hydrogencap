@@ -1,5 +1,5 @@
 import { Component, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -13,12 +13,13 @@ interface State {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
+  eventId?: string;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
@@ -26,21 +27,32 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
 
-    // Report to Sentry if available
     if (typeof window !== 'undefined' && import.meta.env.PROD) {
       import('@sentry/react').then((Sentry) => {
-        Sentry.captureException(error, {
-          extra: {
-            componentStack: errorInfo.componentStack,
-          },
+        const eventId = Sentry.captureException(error, {
+          extra: { componentStack: errorInfo.componentStack },
         });
+        this.setState({ eventId });
+      }).catch(() => {
+        // Sentry not available
       });
     }
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined, eventId: undefined });
     this.props.onReset?.();
+  };
+
+  handleReportIssue = () => {
+    import('@sentry/react').then((Sentry) => {
+      if (this.state.eventId) {
+        Sentry.showReportDialog({ eventId: this.state.eventId });
+      }
+    }).catch(() => {
+      // Sentry not available — fall back to page reload
+      window.location.reload();
+    });
   };
 
   render() {
@@ -62,11 +74,17 @@ export class ErrorBoundary extends Component<Props, State> {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Try Again
               </Button>
-              <Button onClick={() => window.location.reload()}>
+              <Button onClick={() => window.location.reload()} variant="outline">
                 Refresh Page
               </Button>
+              {import.meta.env.PROD && this.state.eventId && (
+                <Button onClick={this.handleReportIssue}>
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Report Issue
+                </Button>
+              )}
             </div>
-            {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+            {import.meta.env.DEV && this.state.errorInfo && (
               <details className="mt-4 text-xs text-muted-foreground max-w-lg overflow-auto">
                 <summary className="cursor-pointer">Stack trace</summary>
                 <pre className="mt-2 p-2 bg-muted rounded text-left whitespace-pre-wrap">
