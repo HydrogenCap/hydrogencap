@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageSkeleton } from '@/components/common';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useLegalEntity,
   useEntityDirectors,
@@ -42,6 +43,10 @@ import { DirectorsSection } from '@/components/entities/DirectorsSection';
 import { ShareCapitalSection } from '@/components/entities/ShareCapitalSection';
 import { ShareholdersSection } from '@/components/entities/ShareholdersSection';
 import { EntityPropertiesCard } from '@/components/entities/EntityPropertiesCard';
+import { CompanyFilingDeadlines } from '@/components/entities/CompanyFilingDeadlines';
+import { DirectorRegister } from '@/components/entities/DirectorRegister';
+import { IntercompanyLoanTracker } from '@/components/entities/IntercompanyLoanTracker';
+import { EntityFinancialConsolidation } from '@/components/entities/EntityFinancialConsolidation';
 
 export default function EntityDetail() {
   const { id } = useParams<{ id: string }>();
@@ -139,105 +144,133 @@ export default function EntityDetail() {
 
         <EntityDetailsCard entity={entity} />
 
-        {entity.company_number && (
-          <ComplianceFilingsCard
-            data={{
-              accounts_due_date: entity.accounts_due_date,
-              accounts_period_end: entity.accounts_period_end,
-              accounts_last_filed_date: entity.accounts_last_filed_date,
-              confirmation_statement_due_date: entity.confirmation_statement_due_date,
-              confirmation_statement_last_made_up_to: entity.confirmation_statement_last_made_up_to,
-              confirmation_statement_last_filed_date: entity.confirmation_statement_last_filed_date,
-              ch_last_synced_at: entity.ch_last_synced_at,
-              company_number: entity.company_number,
-            }}
-            onUpdate={async (updates) => {
-              await updateEntity.mutateAsync({ id: entity.id, ...updates });
-              toast({ title: 'Filing dates updated' });
-            }}
-            onSyncFromCH={handleRefreshFromCH}
-            isSyncing={isLookingUp}
-            isUpdating={updateEntity.isPending}
-          />
-        )}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="filings">Filings</TabsTrigger>
+            <TabsTrigger value="officers">Officers</TabsTrigger>
+            <TabsTrigger value="loans">Loans</TabsTrigger>
+            <TabsTrigger value="financials">Financials</TabsTrigger>
+          </TabsList>
 
-        <DirectorsSection
-          directors={directors}
-          onAddDirector={() => { setEditingDirector(null); setShowAddDirector(true); }}
-          onEditDirector={(d) => { setEditingDirector(d); setShowAddDirector(true); }}
-          onDeleteDirector={async (d) => {
-            try {
-              await deleteDirector.mutateAsync({ id: d.id, entityId: d.entity_id });
-              toast({ title: 'Director removed' });
-            } catch (error: unknown) {
-              toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
-            }
-          }}
-        />
+          <TabsContent value="overview" className="space-y-6 mt-4">
+            {entity.company_number && (
+              <ComplianceFilingsCard
+                data={{
+                  accounts_due_date: entity.accounts_due_date,
+                  accounts_period_end: entity.accounts_period_end,
+                  accounts_last_filed_date: entity.accounts_last_filed_date,
+                  confirmation_statement_due_date: entity.confirmation_statement_due_date,
+                  confirmation_statement_last_made_up_to: entity.confirmation_statement_last_made_up_to,
+                  confirmation_statement_last_filed_date: entity.confirmation_statement_last_filed_date,
+                  ch_last_synced_at: entity.ch_last_synced_at,
+                  company_number: entity.company_number,
+                }}
+                onUpdate={async (updates) => {
+                  await updateEntity.mutateAsync({ id: entity.id, ...updates });
+                  toast({ title: 'Filing dates updated' });
+                }}
+                onSyncFromCH={handleRefreshFromCH}
+                isSyncing={isLookingUp}
+                isUpdating={updateEntity.isPending}
+              />
+            )}
 
-        {showShareCapital && (
-          <ShareCapitalSection
-            shareClassesWithAllocation={shareClassesWithAllocation}
-            integrityErrors={integrityErrors}
-            entityId={entity.id}
-            onAddShareClass={() => { setEditingShareClass(null); setShowAddShareClass(true); }}
-            onEditShareClass={(sc) => { setEditingShareClass(sc); setShowAddShareClass(true); }}
-            onDeleteShareClass={async (sc) => {
-              if (sc.allocated_shares > 0) {
-                toast({ title: 'Cannot delete', description: 'Remove all shareholders from this class first', variant: 'destructive' });
-                return;
-              }
-              try {
-                await deleteShareClassMutation.mutateAsync({ id: sc.id, entityId: entity.id });
-                toast({ title: 'Share class deleted' });
-              } catch (error: unknown) {
-                toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
-              }
-            }}
-          />
-        )}
+            <DirectorsSection
+              directors={directors}
+              onAddDirector={() => { setEditingDirector(null); setShowAddDirector(true); }}
+              onEditDirector={(d) => { setEditingDirector(d); setShowAddDirector(true); }}
+              onDeleteDirector={async (d) => {
+                try {
+                  await deleteDirector.mutateAsync({ id: d.id, entityId: d.entity_id });
+                  toast({ title: 'Director removed' });
+                } catch (error: unknown) {
+                  toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                }
+              }}
+            />
 
-        <ShareholdersSection
-          shareholders={shareholders}
-          showShareCapital={showShareCapital}
-          shareClassesWithAllocation={shareClassesWithAllocation}
-          onAddShareholder={() => { setEditingShareholder(null); setShowAddShareholder(true); }}
-          onEditShareholder={(sh) => { setEditingShareholder(sh); setShowAddShareholder(true); }}
-          onDeleteShareholder={async (sh) => {
-            try {
-              await deleteShareholder.mutateAsync({ id: sh.id, entityId: sh.entity_id });
-              toast({ title: 'Shareholder removed' });
-            } catch (error: unknown) {
-              toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
-            }
-          }}
-        />
+            {showShareCapital && (
+              <ShareCapitalSection
+                shareClassesWithAllocation={shareClassesWithAllocation}
+                integrityErrors={integrityErrors}
+                entityId={entity.id}
+                onAddShareClass={() => { setEditingShareClass(null); setShowAddShareClass(true); }}
+                onEditShareClass={(sc) => { setEditingShareClass(sc); setShowAddShareClass(true); }}
+                onDeleteShareClass={async (sc) => {
+                  if (sc.allocated_shares > 0) {
+                    toast({ title: 'Cannot delete', description: 'Remove all shareholders from this class first', variant: 'destructive' });
+                    return;
+                  }
+                  try {
+                    await deleteShareClassMutation.mutateAsync({ id: sc.id, entityId: entity.id });
+                    toast({ title: 'Share class deleted' });
+                  } catch (error: unknown) {
+                    toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                  }
+                }}
+              />
+            )}
 
-        <EntityOwnershipCard entityId={entity.id} entityName={entity.entity_name} />
+            <ShareholdersSection
+              shareholders={shareholders}
+              showShareCapital={showShareCapital}
+              shareClassesWithAllocation={shareClassesWithAllocation}
+              onAddShareholder={() => { setEditingShareholder(null); setShowAddShareholder(true); }}
+              onEditShareholder={(sh) => { setEditingShareholder(sh); setShowAddShareholder(true); }}
+              onDeleteShareholder={async (sh) => {
+                try {
+                  await deleteShareholder.mutateAsync({ id: sh.id, entityId: sh.entity_id });
+                  toast({ title: 'Shareholder removed' });
+                } catch (error: unknown) {
+                  toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                }
+              }}
+            />
 
-        {entity.entity_type === 'spv' && entity.company_number && (
-          <CHDataPanel
-            entityId={entity.id}
-            companyNumber={entity.company_number}
-            verification={verification ?? null}
-            localDirectors={directors || []}
-          />
-        )}
+            <EntityOwnershipCard entityId={entity.id} entityName={entity.entity_name} />
 
-        <EntityFinancialSection entityId={entity.id} entityProperties={entityProperties} />
-        <EntityAccountingSection entityId={entity.id} entityName={entity.entity_name} />
-        <EntityInvestorSection entityId={entity.id} />
+            {entity.entity_type === 'spv' && entity.company_number && (
+              <CHDataPanel
+                entityId={entity.id}
+                companyNumber={entity.company_number}
+                verification={verification ?? null}
+                localDirectors={directors || []}
+              />
+            )}
 
-        <Card>
-          <CardContent className="pt-4">
-            <InlineAuditHistory tableName="legal_entities" recordId={id} title="Entity Change History" />
-          </CardContent>
-        </Card>
+            <EntityFinancialSection entityId={entity.id} entityProperties={entityProperties} />
+            <EntityAccountingSection entityId={entity.id} entityName={entity.entity_name} />
+            <EntityInvestorSection entityId={entity.id} />
 
-        <EntityPropertiesCard
-          entityProperties={entityProperties}
-          onNavigateToProperty={(propertyId) => navigate(`/properties-v2/${propertyId}`)}
-        />
+            <Card>
+              <CardContent className="pt-4">
+                <InlineAuditHistory tableName="legal_entities" recordId={id} title="Entity Change History" />
+              </CardContent>
+            </Card>
+
+            <EntityPropertiesCard
+              entityProperties={entityProperties}
+              onNavigateToProperty={(propertyId) => navigate(`/properties-v2/${propertyId}`)}
+            />
+          </TabsContent>
+
+          <TabsContent value="filings" className="space-y-6 mt-4">
+            <CompanyFilingDeadlines entityId={entity.id} entity={entity} />
+          </TabsContent>
+
+          <TabsContent value="officers" className="space-y-6 mt-4">
+            <DirectorRegister entityId={entity.id} />
+          </TabsContent>
+
+          <TabsContent value="loans" className="space-y-6 mt-4">
+            <IntercompanyLoanTracker entityId={entity.id} />
+          </TabsContent>
+
+          <TabsContent value="financials" className="space-y-6 mt-4">
+            <EntityFinancialConsolidation entityId={entity.id} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <EntityFormModal open={showEditEntity} onOpenChange={setShowEditEntity} editingEntity={entity} />
