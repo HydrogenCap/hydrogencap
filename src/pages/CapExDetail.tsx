@@ -8,11 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HardHat, Plus, Trash2, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { HardHat, Plus, Trash2, ArrowLeft, CheckCircle, AlertTriangle, BarChart3, Clock, PoundSterling, Camera, FileText } from 'lucide-react';
 import { useCapexProject, useCompleteCapexProject } from '@/hooks/useCapexAll';
 import { useAddCapexLineItem, useUpdateCapexLineItem, useDeleteCapexLineItem, useUpdateCapexProject } from '@/hooks/useCapex';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { differenceInDays, format, isPast } from 'date-fns';
+import GanttTimeline from '@/components/capex/GanttTimeline';
+import CostVarianceTracker from '@/components/capex/CostVarianceTracker';
+import ContractorPaymentSchedule from '@/components/capex/ContractorPaymentSchedule';
+import PhotoJournal from '@/components/capex/PhotoJournal';
+import PlanningTracker from '@/components/capex/PlanningTracker';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 }).format(v);
@@ -46,7 +52,7 @@ export default function CapExDetail() {
   const [itemActual, setItemActual] = useState('');
   const [itemSupplier, setItemSupplier] = useState('');
 
-  if (isLoading) return <div className="container mx-auto p-6">Loading…</div>;
+  if (isLoading) return <div className="container mx-auto p-6">Loading...</div>;
   if (!project) return <div className="container mx-auto p-6">Project not found</div>;
 
   const items = project.line_items || [];
@@ -68,7 +74,7 @@ export default function CapExDetail() {
 
   // Chart data
   const barData = items.map(li => ({
-    name: li.description.length > 20 ? li.description.slice(0, 20) + '…' : li.description,
+    name: li.description.length > 20 ? li.description.slice(0, 20) + '...' : li.description,
     Budget: Number(li.budget_gbp),
     Actual: Number(li.actual_gbp),
   }));
@@ -174,96 +180,136 @@ export default function CapExDetail() {
         </Card>
       )}
 
-      {/* Line items table */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Line Items</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}>
-            <Plus className="h-3 w-3 mr-1" /> Add Item
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No line items yet</p>
-          ) : (
-            <div className="border rounded-md overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium">Item</th>
-                    <th className="text-left px-3 py-2 font-medium">Category</th>
-                    <th className="text-left px-3 py-2 font-medium">Supplier</th>
-                    <th className="text-right px-3 py-2 font-medium">Budget</th>
-                    <th className="text-right px-3 py-2 font-medium">Actual</th>
-                    <th className="px-2 py-2 w-8"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {items.map(item => (
-                    <tr key={item.id}>
-                      <td className="px-3 py-2">{item.description}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{item.category}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{item.supplier || '—'}</td>
-                      <td className="px-3 py-2 text-right">{fmt(Number(item.budget_gbp))}</td>
-                      <td className={`px-3 py-2 text-right ${Number(item.actual_gbp) > Number(item.budget_gbp) ? 'text-destructive' : ''}`}>
-                        {fmt(Number(item.actual_gbp))}
-                      </td>
-                      <td className="px-2 py-2">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLineItem.mutate(item.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="bg-muted/50 font-medium">
-                    <td className="px-3 py-2" colSpan={3}>Total</td>
-                    <td className="px-3 py-2 text-right">{fmt(lineBudget)}</td>
-                    <td className={`px-3 py-2 text-right ${isOver ? 'text-destructive' : ''}`}>{fmt(totalSpent)}</td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Tabbed content */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="overview" className="gap-1"><BarChart3 className="h-3 w-3" /> Overview</TabsTrigger>
+          <TabsTrigger value="timeline" className="gap-1"><Clock className="h-3 w-3" /> Timeline</TabsTrigger>
+          <TabsTrigger value="costs" className="gap-1"><PoundSterling className="h-3 w-3" /> Costs</TabsTrigger>
+          <TabsTrigger value="payments" className="gap-1"><PoundSterling className="h-3 w-3" /> Payments</TabsTrigger>
+          <TabsTrigger value="photos" className="gap-1"><Camera className="h-3 w-3" /> Photos</TabsTrigger>
+          <TabsTrigger value="planning" className="gap-1"><FileText className="h-3 w-3" /> Planning</TabsTrigger>
+        </TabsList>
 
-      {/* Charts */}
-      {items.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Overview Tab — existing content */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Line items table */}
           <Card>
-            <CardHeader><CardTitle className="text-base">Budget vs Actual</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Line Items</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)}>
+                <Plus className="h-3 w-3 mr-1" /> Add Item
+              </Button>
+            </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={barData} layout="vertical" margin={{ left: 80 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={v => fmt(v)} />
-                  <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => fmt(v)} />
-                  <Bar dataKey="Budget" fill="hsl(var(--muted-foreground))" opacity={0.3} />
-                  <Bar dataKey="Actual" fill="hsl(var(--primary))" />
-                </BarChart>
-              </ResponsiveContainer>
+              {items.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No line items yet</p>
+              ) : (
+                <div className="border rounded-md overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">Item</th>
+                        <th className="text-left px-3 py-2 font-medium">Category</th>
+                        <th className="text-left px-3 py-2 font-medium">Supplier</th>
+                        <th className="text-right px-3 py-2 font-medium">Budget</th>
+                        <th className="text-right px-3 py-2 font-medium">Actual</th>
+                        <th className="px-2 py-2 w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {items.map(item => (
+                        <tr key={item.id}>
+                          <td className="px-3 py-2">{item.description}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{item.category}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{item.supplier || '—'}</td>
+                          <td className="px-3 py-2 text-right">{fmt(Number(item.budget_gbp))}</td>
+                          <td className={`px-3 py-2 text-right ${Number(item.actual_gbp) > Number(item.budget_gbp) ? 'text-destructive' : ''}`}>
+                            {fmt(Number(item.actual_gbp))}
+                          </td>
+                          <td className="px-2 py-2">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLineItem.mutate(item.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-muted/50 font-medium">
+                        <td className="px-3 py-2" colSpan={3}>Total</td>
+                        <td className="px-3 py-2 text-right">{fmt(lineBudget)}</td>
+                        <td className={`px-3 py-2 text-right ${isOver ? 'text-destructive' : ''}`}>{fmt(totalSpent)}</td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {categoryData.length > 0 && (
-            <Card>
-              <CardHeader><CardTitle className="text-base">Cost by Category</CardTitle></CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${fmt(value)}`}>
-                      {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => fmt(v)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          {/* Charts */}
+          {items.length > 0 && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Budget vs Actual</CardTitle></CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={barData} layout="vertical" margin={{ left: 80 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" tickFormatter={v => fmt(v)} />
+                      <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Bar dataKey="Budget" fill="hsl(var(--muted-foreground))" opacity={0.3} />
+                      <Bar dataKey="Actual" fill="hsl(var(--primary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {categoryData.length > 0 && (
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Cost by Category</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie data={categoryData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${fmt(value)}`}>
+                          {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => fmt(v)} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
-        </div>
-      )}
+        </TabsContent>
+
+        {/* Timeline Tab — Gantt */}
+        <TabsContent value="timeline">
+          <GanttTimeline projectId={id!} />
+        </TabsContent>
+
+        {/* Costs Tab — Variance Tracker */}
+        <TabsContent value="costs">
+          <CostVarianceTracker items={items} totalBudget={totalBudget} />
+        </TabsContent>
+
+        {/* Payments Tab — Contractor Schedule */}
+        <TabsContent value="payments">
+          <ContractorPaymentSchedule projectId={id!} />
+        </TabsContent>
+
+        {/* Photos Tab — Photo Journal */}
+        <TabsContent value="photos">
+          <PhotoJournal projectId={id!} />
+        </TabsContent>
+
+        {/* Planning Tab — Planning Tracker */}
+        <TabsContent value="planning">
+          <PlanningTracker projectId={id!} propertyId={project.property_id} />
+        </TabsContent>
+      </Tabs>
 
       {/* Add Line Item Dialog */}
       <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
@@ -292,7 +338,7 @@ export default function CapExDetail() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddItem(false)}>Cancel</Button>
             <Button onClick={handleAddItem} disabled={!itemDesc || !itemBudget || addLineItem.isPending}>
-              {addLineItem.isPending ? 'Adding…' : 'Add Item'}
+              {addLineItem.isPending ? 'Adding...' : 'Add Item'}
             </Button>
           </DialogFooter>
         </DialogContent>
