@@ -16,3 +16,5 @@ export type { StatusType } from './ComplianceStatusCard';
  export { CalendarExportButton } from './CalendarExportButton';
  export { ComplianceCalendarContent } from './ComplianceCalendarContent';
  export { ComplianceExportButton } from './ComplianceExportButton';
+ export { RenewalWorkflowDialog } from './RenewalWorkflowDialog';
+ export { RenewalQueue } from './RenewalQueue';

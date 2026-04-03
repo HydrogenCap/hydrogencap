@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, differenceInDays } from 'date-fns';
-import { CalendarCheck, ChevronLeft, ChevronRight, AlertTriangle, FileCheck, Flame, Zap, Home, Shield, Building2, CheckCircle2, List, Wrench, Percent, Filter } from 'lucide-react';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, differenceInDays, isWithinInterval, parseISO } from 'date-fns';
+import { CalendarCheck, ChevronLeft, ChevronRight, AlertTriangle, FileCheck, Flame, Zap, Home, Shield, Building2, CheckCircle2, List, Wrench, Percent, Filter, RefreshCw, Clock } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
@@ -18,7 +19,10 @@ import { useCalendarEvents, type CalendarEvent, type CalendarEventType } from '@
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
 import { ComplianceStatusCard, type StatusType } from '@/components/compliance/ComplianceStatusCard';
 import { ComplianceItemDrawer } from '@/components/compliance/ComplianceItemDrawer';
- import { CalendarExportButton } from '@/components/compliance/CalendarExportButton';
+import { CalendarExportButton } from '@/components/compliance/CalendarExportButton';
+import { RenewalWorkflowDialog } from '@/components/compliance/RenewalWorkflowDialog';
+import { RenewalQueue } from '@/components/compliance/RenewalQueue';
+import { useUpcomingRenewals } from '@/hooks/useComplianceAutoSchedule';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface ComplianceEvent {
@@ -71,10 +75,21 @@ export default function ComplianceCalendar() {
   const [visibleEventTypes, setVisibleEventTypes] = useState<Set<CalendarEventType>>(
     new Set(['compliance', 'job', 'mortgage'])
   );
+  const [activeTab, setActiveTab] = useState<string>('calendar');
+  const [renewalDialogItem, setRenewalDialogItem] = useState<{
+    id: string;
+    property_id: string;
+    compliance_type: string;
+    expiry_date: string | null;
+    propertyAddress: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch unified calendar events
   const { events: allCalendarEvents, eventsByDate: unifiedEventsByDate, isLoading: calendarLoading } = useCalendarEvents();
+
+  // Auto-schedule renewal data
+  const { renewalWindowEvents, grouped: renewalGroups } = useUpcomingRenewals(180);
 
   const isLoading = complianceLoading || propertiesLoading || calendarLoading;
 
@@ -219,6 +234,37 @@ export default function ComplianceCalendar() {
     return COMPLIANCE_ICONS[type] || FileCheck;
   };
 
+  // Check if a day falls within any renewal window (for green shading)
+  const isInRenewalWindow = useCallback((day: Date) => {
+    return renewalWindowEvents.some(rw => {
+      const start = parseISO(rw.windowStart);
+      const end = parseISO(rw.windowEnd);
+      return isWithinInterval(day, { start, end });
+    });
+  }, [renewalWindowEvents]);
+
+  // Handle clicking a compliance expiry event to open renewal dialog
+  const handleExpiryClick = useCallback((event: CalendarEvent) => {
+    if (event.eventType !== 'compliance') return;
+    const item = complianceItems?.find(ci => `compliance-${ci.id}` === event.id);
+    if (!item) return;
+    setRenewalDialogItem({
+      id: item.id,
+      property_id: item.property_id,
+      compliance_type: item.compliance_type,
+      expiry_date: item.expiry_date,
+      propertyAddress: event.propertyAddress,
+    });
+  }, [complianceItems]);
+
+  const handleRenewalComplete = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+    queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
+    setRenewalDialogItem(null);
+  }, [queryClient]);
+
+  const renewalQueueCount = (renewalGroups?.overdue.length ?? 0) + (renewalGroups?.thisMonth.length ?? 0);
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -331,201 +377,290 @@ export default function ComplianceCalendar() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Calendar */}
-          <Card className="lg:col-span-3">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle>{format(currentMonth, 'MMMM yyyy')}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => navigateMonth(-1)}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
-                    Today
-                  </Button>
-                  <Button variant="outline" size="icon" aria-label="Next month" onClick={() => navigateMonth(1)}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Day headers */}
-              <div className="grid grid-cols-7 mb-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
-                    {day}
+        {/* Tab Navigation: Calendar / Renewal Queue */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="calendar" className="flex items-center gap-1.5">
+              <CalendarCheck className="h-4 w-4" />
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger value="renewals" className="flex items-center gap-1.5">
+              <RefreshCw className="h-4 w-4" />
+              Renewal Queue
+              {renewalQueueCount > 0 && (
+                <Badge variant="destructive" className="ml-1 text-[10px] h-5 min-w-[20px] px-1">
+                  {renewalQueueCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Calendar Tab */}
+          <TabsContent value="calendar" className="mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Calendar */}
+              <Card className="lg:col-span-3">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle>{format(currentMonth, 'MMMM yyyy')}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => navigateMonth(-1)}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+                        Today
+                      </Button>
+                      <Button variant="outline" size="icon" aria-label="Next month" onClick={() => navigateMonth(1)}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
-
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {paddedDays.map((day, idx) => {
-                  if (!day) {
-                    return <div key={`pad-${idx}`} className="h-24 bg-muted/20 rounded" />;
-                  }
-
-                  const dateKey = format(day, 'yyyy-MM-dd');
-                    const dayEvents = filteredEventsByDate.get(dateKey) || [];
-                  const isCurrentMonth = isSameMonth(day, currentMonth);
-                  const isCurrentDay = isToday(day);
-                    const hasOverdue = dayEvents.some(e => e.urgency === 'overdue');
-                    const hasUrgent = dayEvents.some(e => e.urgency === 'urgent');
-
-                  return (
-                    <div
-                      key={dateKey}
-                      className={cn(
-                          'h-24 p-1 rounded border transition-colors cursor-pointer hover:bg-muted/50',
-                        isCurrentMonth ? 'bg-card' : 'bg-muted/30',
-                          isCurrentDay && 'border-primary ring-1 ring-primary/30',
-                          hasOverdue && 'border-destructive/50 bg-destructive/5',
-                          !hasOverdue && hasUrgent && 'border-amber-500/50'
-                      )}
-                    >
-                      <div className={cn(
-                        'text-xs font-medium mb-1',
-                        isCurrentDay && 'text-primary',
-                        !isCurrentMonth && 'text-muted-foreground'
-                      )}>
-                        {format(day, 'd')}
+                </CardHeader>
+                <CardContent>
+                  {/* Day headers */}
+                  <div className="grid grid-cols-7 mb-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+                        {day}
                       </div>
+                    ))}
+                  </div>
 
-                      <div className="space-y-0.5 overflow-hidden">
-                        {dayEvents.slice(0, 2).map(event => {
+                  {/* Calendar grid */}
+                  <div className="grid grid-cols-7 gap-1">
+                    {paddedDays.map((day, idx) => {
+                      if (!day) {
+                        return <div key={`pad-${idx}`} className="h-24 bg-muted/20 rounded" />;
+                      }
+
+                      const dateKey = format(day, 'yyyy-MM-dd');
+                        const dayEvents = filteredEventsByDate.get(dateKey) || [];
+                      const isCurrentMonth = isSameMonth(day, currentMonth);
+                      const isCurrentDay = isToday(day);
+                        const hasOverdue = dayEvents.some(e => e.urgency === 'overdue');
+                        const hasUrgent = dayEvents.some(e => e.urgency === 'urgent');
+                        const inRenewalWindow = isInRenewalWindow(day);
+
+                      return (
+                        <div
+                          key={dateKey}
+                          className={cn(
+                              'h-24 p-1 rounded border transition-colors cursor-pointer hover:bg-muted/50',
+                            isCurrentMonth ? 'bg-card' : 'bg-muted/30',
+                              isCurrentDay && 'border-primary ring-1 ring-primary/30',
+                              hasOverdue && 'border-destructive/50 bg-destructive/5',
+                              !hasOverdue && hasUrgent && 'border-amber-500/50',
+                              !hasOverdue && !hasUrgent && inRenewalWindow && 'bg-green-50/50 dark:bg-green-950/20 border-green-200/50 dark:border-green-800/30'
+                          )}
+                        >
+                          <div className={cn(
+                            'text-xs font-medium mb-1 flex items-center gap-1',
+                            isCurrentDay && 'text-primary',
+                            !isCurrentMonth && 'text-muted-foreground'
+                          )}>
+                            {format(day, 'd')}
+                            {inRenewalWindow && !hasOverdue && !hasUrgent && (
+                              <RefreshCw className="h-2.5 w-2.5 text-green-500" />
+                            )}
+                          </div>
+
+                          <div className="space-y-0.5 overflow-hidden">
+                            {dayEvents.slice(0, 2).map(event => {
+                              const typeConfig = EVENT_TYPE_CONFIG[event.eventType];
+                              const Icon = event.complianceType ? getEventIcon(event.complianceType) : typeConfig.icon;
+                              const isComplianceEvent = event.eventType === 'compliance';
+                              return (
+                                <Tooltip key={event.id}>
+                                  <TooltipTrigger asChild>
+                                    {isComplianceEvent ? (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleExpiryClick(event); }}
+                                        className={cn(
+                                          'flex items-center gap-1 text-[10px] px-1 py-0.5 rounded truncate text-white w-full text-left',
+                                          getEventColor(event)
+                                        )}
+                                      >
+                                        <Icon className="h-2.5 w-2.5 shrink-0" />
+                                        <span className="truncate">{event.propertyAddress.split(',')[0]}</span>
+                                      </button>
+                                    ) : (
+                                      <Link
+                                        to={event.eventType === 'job' && event.relatedJobId
+                                          ? `/jobs/${event.relatedJobId}`
+                                          : `/properties/${event.propertyId}?tab=${event.eventType === 'mortgage' ? 'finance' : 'compliance'}`}
+                                        className={cn(
+                                          'flex items-center gap-1 text-[10px] px-1 py-0.5 rounded truncate text-white',
+                                          getEventColor(event)
+                                        )}
+                                      >
+                                        <Icon className="h-2.5 w-2.5 shrink-0" />
+                                        <span className="truncate">{event.propertyAddress.split(',')[0]}</span>
+                                      </Link>
+                                    )}
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div className="text-xs">
+                                      <p className="font-medium">{event.propertyAddress}</p>
+                                      <p>{event.title}</p>
+                                      <p className="text-muted-foreground">
+                                        {event.daysUntil < 0
+                                          ? `${Math.abs(event.daysUntil)} days overdue`
+                                          : event.daysUntil === 0
+                                            ? 'Today'
+                                            : `In ${event.daysUntil} days`}
+                                      </p>
+                                      {isComplianceEvent && (
+                                        <p className="text-primary font-medium mt-1">Click to start renewal</p>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                            {dayEvents.length > 2 && (
+                              <div className="text-[10px] text-muted-foreground px-1">
+                                +{dayEvents.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Upcoming Events List */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Upcoming Events</CardTitle>
+                  <CardDescription>Next 12 months (filtered)</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[450px]">
+                    <div className="space-y-2 p-4 pt-0">
+                      {upcomingEvents.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                          No upcoming events
+                        </p>
+                      ) : (
+                        upcomingEvents.map(event => {
                           const typeConfig = EVENT_TYPE_CONFIG[event.eventType];
                           const Icon = event.complianceType ? getEventIcon(event.complianceType) : typeConfig.icon;
-                          return (
-                            <Tooltip key={event.id}>
-                              <TooltipTrigger asChild>
-                                <Link
-                                  to={event.eventType === 'job' && event.relatedJobId 
-                                    ? `/jobs/${event.relatedJobId}` 
-                                    : `/properties/${event.propertyId}?tab=${event.eventType === 'mortgage' ? 'finance' : 'compliance'}`}
-                                  className={cn(
-                                    'flex items-center gap-1 text-[10px] px-1 py-0.5 rounded truncate text-white',
-                                    getEventColor(event)
-                                  )}
-                                >
-                                  <Icon className="h-2.5 w-2.5 shrink-0" />
-                                  <span className="truncate">{event.propertyAddress.split(',')[0]}</span>
-                                </Link>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="text-xs">
-                                  <p className="font-medium">{event.propertyAddress}</p>
-                                  <p>{event.title}</p>
-                                  <p className="text-muted-foreground">
-                                    {event.daysUntil < 0 
-                                      ? `${Math.abs(event.daysUntil)} days overdue` 
-                                      : event.daysUntil === 0 
-                                        ? 'Today' 
-                                        : `In ${event.daysUntil} days`}
-                                  </p>
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
-                        {dayEvents.length > 2 && (
-                          <div className="text-[10px] text-muted-foreground px-1">
-                            +{dayEvents.length - 2} more
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Events List */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Upcoming Events</CardTitle>
-              <CardDescription>Next 12 months (filtered)</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[450px]">
-                <div className="space-y-2 p-4 pt-0">
-                  {upcomingEvents.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      No upcoming events
-                    </p>
-                  ) : (
-                    upcomingEvents.map(event => {
-                      const typeConfig = EVENT_TYPE_CONFIG[event.eventType];
-                      const Icon = event.complianceType ? getEventIcon(event.complianceType) : typeConfig.icon;
-                      return (
-                        <Link
-                          key={event.id}
-                          to={event.eventType === 'job' && event.relatedJobId 
-                            ? `/jobs/${event.relatedJobId}` 
-                            : `/properties/${event.propertyId}?tab=${event.eventType === 'mortgage' ? 'finance' : 'compliance'}`}
-                          className="block p-3 rounded-lg border hover:bg-accent transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <div className={cn(
-                                'p-1.5 rounded',
-                                event.urgency === 'overdue' ? 'bg-destructive/10 text-destructive' :
-                                event.urgency === 'urgent' ? 'bg-amber-500/10 text-amber-600' :
-                                typeConfig.bgColor
-                              )}>
-                                <Icon className="h-3 w-3" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{event.propertyAddress.split(',')[0]}</p>
-                                <p className="text-xs text-muted-foreground">{event.title}</p>
-                              </div>
-                            </div>
-                            <Badge
-                              variant={event.urgency === 'overdue' ? 'destructive' : event.urgency === 'urgent' ? 'secondary' : 'outline'}
-                              className="shrink-0 text-[10px]"
+                          const isComplianceEvent = event.eventType === 'compliance';
+                          return isComplianceEvent ? (
+                            <button
+                              key={event.id}
+                              onClick={() => handleExpiryClick(event)}
+                              className="block w-full text-left p-3 rounded-lg border hover:bg-accent transition-colors"
                             >
-                              {event.daysUntil < 0
-                                ? `${Math.abs(event.daysUntil)}d overdue`
-                                : event.daysUntil === 0
-                                ? 'Today'
-                                : `${event.daysUntil}d`}
-                            </Badge>
-                          </div>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <div className={cn(
+                                    'p-1.5 rounded',
+                                    event.urgency === 'overdue' ? 'bg-destructive/10 text-destructive' :
+                                    event.urgency === 'urgent' ? 'bg-amber-500/10 text-amber-600' :
+                                    typeConfig.bgColor
+                                  )}>
+                                    <Icon className="h-3 w-3" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate">{event.propertyAddress.split(',')[0]}</p>
+                                    <p className="text-xs text-muted-foreground">{event.title}</p>
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant={event.urgency === 'overdue' ? 'destructive' : event.urgency === 'urgent' ? 'secondary' : 'outline'}
+                                  className="shrink-0 text-[10px]"
+                                >
+                                  {event.daysUntil < 0
+                                    ? `${Math.abs(event.daysUntil)}d overdue`
+                                    : event.daysUntil === 0
+                                    ? 'Today'
+                                    : `${event.daysUntil}d`}
+                                </Badge>
+                              </div>
+                              <div className="mt-2 text-xs text-muted-foreground">
+                                {format(event.date, 'dd MMM yyyy')}
+                              </div>
+                            </button>
+                          ) : (
+                            <Link
+                              key={event.id}
+                              to={event.eventType === 'job' && event.relatedJobId
+                                ? `/jobs/${event.relatedJobId}`
+                                : `/properties/${event.propertyId}?tab=${event.eventType === 'mortgage' ? 'finance' : 'compliance'}`}
+                              className="block p-3 rounded-lg border hover:bg-accent transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <div className={cn(
+                                    'p-1.5 rounded',
+                                    event.urgency === 'overdue' ? 'bg-destructive/10 text-destructive' :
+                                    event.urgency === 'urgent' ? 'bg-amber-500/10 text-amber-600' :
+                                    typeConfig.bgColor
+                                  )}>
+                                    <Icon className="h-3 w-3" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate">{event.propertyAddress.split(',')[0]}</p>
+                                    <p className="text-xs text-muted-foreground">{event.title}</p>
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant={event.urgency === 'overdue' ? 'destructive' : event.urgency === 'urgent' ? 'secondary' : 'outline'}
+                                  className="shrink-0 text-[10px]"
+                                >
+                                  {event.daysUntil < 0
+                                    ? `${Math.abs(event.daysUntil)}d overdue`
+                                    : event.daysUntil === 0
+                                    ? 'Today'
+                                    : `${event.daysUntil}d`}
+                                </Badge>
+                              </div>
+                              <div className="mt-2 text-xs text-muted-foreground">
+                                {format(event.date, 'dd MMM yyyy')}
+                              </div>
+                            </Link>
+                          );
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
 
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            {format(event.date, 'dd MMM yyyy')}
-                          </div>
-                        </Link>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Legend */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-muted-foreground mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-destructive" />
+                <span>Overdue</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-amber-500" />
+                <span>Urgent / Jobs</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-purple-500" />
+                <span>Mortgage</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-emerald-500" />
+                <span>Valid</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-green-200 dark:bg-green-900 border border-green-300 dark:border-green-700" />
+                <span>Renewal Window</span>
+              </div>
+            </div>
+          </TabsContent>
 
-        {/* Legend */}
-        <div className="flex items-center gap-6 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-destructive" />
-            <span>Overdue</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-amber-500" />
-            <span>Urgent / Jobs</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-purple-500" />
-            <span>Mortgage</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-emerald-500" />
-            <span>Valid</span>
-          </div>
-        </div>
+          {/* Renewal Queue Tab */}
+          <TabsContent value="renewals" className="mt-4">
+            <RenewalQueue />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Compliance Items Drawer */}
@@ -536,6 +671,17 @@ export default function ComplianceCalendar() {
         items={filteredItems}
         onItemUpdated={handleItemUpdated}
       />
+
+      {/* Renewal Workflow Dialog */}
+      {renewalDialogItem && (
+        <RenewalWorkflowDialog
+          open={!!renewalDialogItem}
+          onOpenChange={(open) => { if (!open) setRenewalDialogItem(null); }}
+          complianceItem={renewalDialogItem}
+          propertyAddress={renewalDialogItem.propertyAddress}
+          onComplete={handleRenewalComplete}
+        />
+      )}
     </AppLayout>
   );
 }
