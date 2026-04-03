@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,10 @@ import {
   type CostCategory,
   type WorkOrderWithDetails,
 } from '@/hooks/useWorkOrders';
+import { WorkOrderPipeline } from '@/components/works/WorkOrderPipeline';
+import { ApprovalWorkflow } from '@/components/works/ApprovalWorkflow';
+import { MaterialTracker } from '@/components/works/MaterialTracker';
+import { WarrantyTracker } from '@/components/works/WarrantyTracker';
 
 export default function WorkOrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -136,6 +141,22 @@ export default function WorkOrderDetail() {
           </div>
         </div>
 
+        {/* Pipeline */}
+        <Card>
+          <CardContent className="py-4">
+            <WorkOrderPipeline
+              wo={wo}
+              onApprove={wo.status === 'submitted' ? () => { setApprovedBudget(String(wo.estimated_cost || '')); setShowApprove(true); } : undefined}
+              onReject={wo.status === 'submitted' ? () => setShowReject(true) : undefined}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Approval section for pending work orders */}
+        {wo.status === 'submitted' && (
+          <ApprovalWorkflow defaultThreshold={(wo as any).approval_threshold || 500} />
+        )}
+
         {/* Action Bar */}
         <Card>
           <CardContent className="py-3 flex items-center gap-2 flex-wrap">
@@ -182,174 +203,199 @@ export default function WorkOrderDetail() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Budget Progress */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Budget vs Actual</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-xs text-muted-foreground">Estimated</p>
-                  <p className="text-lg font-bold">{formatGBP(wo.estimated_cost)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Approved</p>
-                  <p className="text-lg font-bold">{formatGBP(wo.approved_budget)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Actual</p>
-                  <p className={cn('text-lg font-bold', isOverBudget && 'text-destructive')}>
-                    {formatGBP(wo.actual_cost)}
-                  </p>
-                </div>
-              </div>
-              {wo.approved_budget && (
-                <div>
-                  <Progress value={Math.min(budgetProgress, 100)} className={cn('h-2', isOverBudget && '[&>div]:bg-destructive')} />
-                  {isOverBudget && (
-                    <p className="text-xs text-destructive mt-1 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      Over budget by {formatGBP((wo.actual_cost || 0) - wo.approved_budget)}
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Tabbed Content */}
+        <Tabs defaultValue="details" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="costs">Costs</TabsTrigger>
+            <TabsTrigger value="materials">Materials</TabsTrigger>
+            <TabsTrigger value="warranty">Warranty</TabsTrigger>
+          </TabsList>
 
-          {/* Details */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Category</span>
-                <span>{WO_CATEGORIES.find(c => c.value === wo.category)?.label}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Priority</span>
-                <span className="capitalize">{wo.priority}</span>
-              </div>
-              {wo.target_start_date && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Target Start</span>
-                  <span>{formatDateUK(wo.target_start_date)}</span>
-                </div>
-              )}
-              {wo.target_completion_date && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Target Completion</span>
-                  <span>{formatDateUK(wo.target_completion_date)}</span>
-                </div>
-              )}
-              {wo.actual_completion_date && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Completed</span>
-                  <span>{formatDateUK(wo.actual_completion_date)}</span>
-                </div>
-              )}
-              {wo.invoice_reference && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Invoice Ref</span>
-                  <span>{wo.invoice_reference}</span>
-                </div>
-              )}
-              {wo.description && (
-                <div className="pt-2 border-t">
-                  <p className="text-muted-foreground text-xs mb-1">Description</p>
-                  <p>{wo.description}</p>
-                </div>
-              )}
-              {wo.internal_notes && (
-                <div className="pt-2 border-t">
-                  <p className="text-muted-foreground text-xs mb-1">Internal Notes</p>
-                  <p>{wo.internal_notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Cost Items */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm">Cost Items ({wo.cost_items?.length || 0})</CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{formatGBP(costTotal)}</span>
-              <Button size="sm" variant="outline" onClick={() => setShowAddCost(true)}>
-                <Plus className="h-3 w-3 mr-1" /> Add
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {(wo.cost_items || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No cost items yet</p>
-            ) : (
-              <div className="space-y-2">
-                {wo.cost_items.map(item => (
-                  <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
+          {/* Details Tab */}
+          <TabsContent value="details" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Budget Progress */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Budget vs Actual</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <p className="text-sm font-medium">{item.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {COST_CATEGORIES.find(c => c.value === item.category)?.label}
-                        {item.is_estimated && ' • Estimated'}
+                      <p className="text-xs text-muted-foreground">Estimated</p>
+                      <p className="text-lg font-bold">{formatGBP(wo.estimated_cost)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Approved</p>
+                      <p className="text-lg font-bold">{formatGBP(wo.approved_budget)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Actual</p>
+                      <p className={cn('text-lg font-bold', isOverBudget && 'text-destructive')}>
+                        {formatGBP(wo.actual_cost)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{formatGBP(item.amount + (item.vat_amount || 0))}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteCost.mutate({ id: item.id, workOrderId: wo.id })}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
                   </div>
-                ))}
+                  {wo.approved_budget && (
+                    <div>
+                      <Progress value={Math.min(budgetProgress, 100)} className={cn('h-2', isOverBudget && '[&>div]:bg-destructive')} />
+                      {isOverBudget && (
+                        <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Over budget by {formatGBP((wo.actual_cost || 0) - wo.approved_budget)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Details */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Category</span>
+                    <span>{WO_CATEGORIES.find(c => c.value === wo.category)?.label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Priority</span>
+                    <span className="capitalize">{wo.priority}</span>
+                  </div>
+                  {wo.target_start_date && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Target Start</span>
+                      <span>{formatDateUK(wo.target_start_date)}</span>
+                    </div>
+                  )}
+                  {wo.target_completion_date && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Target Completion</span>
+                      <span>{formatDateUK(wo.target_completion_date)}</span>
+                    </div>
+                  )}
+                  {wo.actual_completion_date && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Completed</span>
+                      <span>{formatDateUK(wo.actual_completion_date)}</span>
+                    </div>
+                  )}
+                  {wo.invoice_reference && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Invoice Ref</span>
+                      <span>{wo.invoice_reference}</span>
+                    </div>
+                  )}
+                  {wo.description && (
+                    <div className="pt-2 border-t">
+                      <p className="text-muted-foreground text-xs mb-1">Description</p>
+                      <p>{wo.description}</p>
+                    </div>
+                  )}
+                  {wo.internal_notes && (
+                    <div className="pt-2 border-t">
+                      <p className="text-muted-foreground text-xs mb-1">Internal Notes</p>
+                      <p>{wo.internal_notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Linked Jobs */}
+            {(wo.jobs || []).length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Linked Jobs ({wo.jobs.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {wo.jobs.map(job => (
+                      <Link
+                        key={job.id}
+                        to={`/jobs/${job.id}`}
+                        className="flex items-center justify-between py-2 px-2 rounded hover:bg-accent/50 transition-colors"
+                      >
+                        <span className="text-sm">{job.id.slice(0, 8)}...</span>
+                        <div className="flex items-center gap-2">
+                          {job.final_amount_gbp && <span className="text-sm">{formatGBP(job.final_amount_gbp)}</span>}
+                          <Badge variant="outline" className="text-xs capitalize">{job.status}</Badge>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Maintenance Request Link */}
+            {wo.maintenance_request_id && (
+              <div className="text-sm">
+                <Link to={`/maintenance/${wo.maintenance_request_id}`} className="text-primary hover:underline">
+                  View linked maintenance request →
+                </Link>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {/* Linked Jobs */}
-        {(wo.jobs || []).length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Linked Jobs ({wo.jobs.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {wo.jobs.map(job => (
-                  <Link
-                    key={job.id}
-                    to={`/jobs/${job.id}`}
-                    className="flex items-center justify-between py-2 px-2 rounded hover:bg-accent/50 transition-colors"
-                  >
-                    <span className="text-sm">{job.id.slice(0, 8)}...</span>
-                    <div className="flex items-center gap-2">
-                      {job.final_amount_gbp && <span className="text-sm">{formatGBP(job.final_amount_gbp)}</span>}
-                      <Badge variant="outline" className="text-xs capitalize">{job.status}</Badge>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          {/* Costs Tab */}
+          <TabsContent value="costs" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm">Cost Items ({wo.cost_items?.length || 0})</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{formatGBP(costTotal)}</span>
+                  <Button size="sm" variant="outline" onClick={() => setShowAddCost(true)}>
+                    <Plus className="h-3 w-3 mr-1" /> Add
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {(wo.cost_items || []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No cost items yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {wo.cost_items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                        <div>
+                          <p className="text-sm font-medium">{item.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {COST_CATEGORIES.find(c => c.value === item.category)?.label}
+                            {item.is_estimated && ' - Estimated'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{formatGBP(item.amount + (item.vat_amount || 0))}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteCost.mutate({ id: item.id, workOrderId: wo.id })}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Maintenance Request Link */}
-        {wo.maintenance_request_id && (
-          <div className="text-sm">
-            <Link to={`/maintenance/${wo.maintenance_request_id}`} className="text-primary hover:underline">
-              View linked maintenance request →
-            </Link>
-          </div>
-        )}
+          {/* Materials Tab */}
+          <TabsContent value="materials" className="space-y-6">
+            <MaterialTracker workOrderId={wo.id} approvedBudget={wo.approved_budget} />
+          </TabsContent>
+
+          {/* Warranty Tab */}
+          <TabsContent value="warranty" className="space-y-6">
+            <WarrantyTracker workOrderId={wo.id} propertyId={wo.property_id} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Approve Dialog */}
