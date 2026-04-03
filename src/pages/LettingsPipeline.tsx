@@ -1,16 +1,18 @@
 import { useState, useMemo } from 'react';
 import { differenceInDays, format } from 'date-fns';
-import { Plus, ArrowRight, Home, Users, ClipboardCheck, Gift, Key } from 'lucide-react';
+import { ArrowRight, Home, Users, ClipboardCheck, Gift, Key, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
+import { ReferencingPanel } from '@/components/lettings/ReferencingPanel';
+import { TenancyAgreementGenerator } from '@/components/lettings/TenancyAgreementGenerator';
+import { MoveInChecklist } from '@/components/lettings/MoveInChecklist';
+import { ViewingScheduler } from '@/components/lettings/ViewingScheduler';
 import {
   useLettingsPipeline,
   useAdvanceStage,
@@ -20,8 +22,9 @@ import {
   STAGE_ORDER,
   type LettingsStage,
   type LettingsPipelineItem,
-  type LettingsPipelineUpdate,
 } from '@/hooks/useLettingsPipeline';
+import { useTenantReferences } from '@/hooks/useLettingsWorkflow';
+import { useToast } from '@/hooks/use-toast';
 
 const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   marketing: Home,
@@ -46,7 +49,13 @@ function DaysInStageBadge({ item }: { item: LettingsPipelineItem }) {
   );
 }
 
-function PipelineCard({ item, onAdvance }: { item: LettingsPipelineItem; onAdvance: (item: LettingsPipelineItem) => void }) {
+function PipelineCard({
+  item,
+  onClick,
+}: {
+  item: LettingsPipelineItem;
+  onClick: (item: LettingsPipelineItem) => void;
+}) {
   const roomLabel = item.room?.room_name || 'Room';
   const address = item.property ? `${item.property.address_line_1}` : '';
 
@@ -57,7 +66,7 @@ function PipelineCard({ item, onAdvance }: { item: LettingsPipelineItem; onAdvan
       case 'viewings':
         return `${item.total_viewings} viewing${item.total_viewings !== 1 ? 's' : ''}`;
       case 'referencing':
-        return item.reference_status === 'in_progress' ? 'In progress' : item.reference_status === 'passed' ? 'Passed ✓' : item.reference_status || null;
+        return item.reference_status === 'in_progress' ? 'In progress' : item.reference_status === 'passed' ? 'Passed' : item.reference_status || null;
       case 'offered':
         return item.offered_to_name || null;
       case 'move_in_prep':
@@ -67,10 +76,11 @@ function PipelineCard({ item, onAdvance }: { item: LettingsPipelineItem; onAdvan
     }
   };
 
-  const next = nextStage(item.stage);
-
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow">
+    <Card
+      className="mb-3 hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => onClick(item)}
+    >
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between">
           <div>
@@ -82,138 +92,191 @@ function PipelineCard({ item, onAdvance }: { item: LettingsPipelineItem; onAdvan
         {stageInfo() && (
           <p className="text-xs text-muted-foreground">{stageInfo()}</p>
         )}
-        {next && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full text-xs"
-            onClick={() => onAdvance(item)}
-          >
-            Advance <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        )}
       </CardContent>
     </Card>
   );
 }
 
-// Stage advance form fields
-function AdvanceForm({
+// Stage-specific default tab mapping
+function defaultTabForStage(stage: LettingsStage): string {
+  switch (stage) {
+    case 'marketing': return 'details';
+    case 'viewings': return 'viewings';
+    case 'referencing': return 'referencing';
+    case 'offered': return 'agreement';
+    case 'move_in_prep': return 'checklist';
+    default: return 'details';
+  }
+}
+
+// Advance validation
+function canAdvance(item: LettingsPipelineItem, refStatus: string | null): { allowed: boolean; reason?: string } {
+  const next = nextStage(item.stage);
+  if (!next) return { allowed: false, reason: 'Already at final stage' };
+
+  if (item.stage === 'referencing' && refStatus !== 'approved') {
+    return { allowed: false, reason: 'References must be approved before advancing' };
+  }
+
+  return { allowed: true };
+}
+
+function DetailSheet({
   item,
-  onSubmit,
-  isPending,
+  onClose,
 }: {
   item: LettingsPipelineItem;
-  onSubmit: (updates: LettingsPipelineUpdate) => void;
-  isPending: boolean;
+  onClose: () => void;
 }) {
+  const advanceStage = useAdvanceStage();
+  const completeLetting = useCompleteLetting();
+  const { data: ref } = useTenantReferences(item.id);
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState(defaultTabForStage(item.stage));
+
   const next = nextStage(item.stage);
-  const [formData, setFormData] = useState<LettingsPipelineUpdate>({});
+  const validation = canAdvance(item, ref?.overall_status ?? null);
 
-  const set = <K extends keyof LettingsPipelineUpdate>(key: K, value: LettingsPipelineUpdate[K]) =>
-    setFormData((prev) => ({ ...prev, [key]: value }));
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAdvance = () => {
     if (!next) return;
-    onSubmit({ ...formData, stage: next });
+    if (!validation.allowed) {
+      toast({ title: 'Cannot advance', description: validation.reason, variant: 'destructive' });
+      return;
+    }
+
+    if (next === 'completed') {
+      completeLetting.mutate({
+        id: item.id,
+        actualMoveIn: item.actual_move_in ?? undefined,
+        voidPeriodId: item.void_period_id,
+      }, { onSuccess: onClose });
+    } else {
+      advanceStage.mutate({
+        id: item.id,
+        updates: { stage: next },
+      }, { onSuccess: onClose });
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {item.stage === 'marketing' && (
-        <>
-          <div>
-            <Label>Total enquiries received</Label>
-            <Input type="number" min={0} onChange={e => set('total_enquiries', Number(e.target.value))} />
-          </div>
-        </>
-      )}
+    <>
+      <SheetHeader>
+        <SheetTitle className="flex items-center gap-2">
+          {item.room?.room_name || 'Room'} — {STAGE_LABELS[item.stage]}
+        </SheetTitle>
+        <SheetDescription>
+          {item.property?.address_line_1}
+          {item.offered_to_name ? ` — ${item.offered_to_name}` : ''}
+        </SheetDescription>
+      </SheetHeader>
 
-      {item.stage === 'viewings' && (
-        <>
-          <div>
-            <Label>Applicant name</Label>
-            <Input onChange={e => set('offered_to_name', e.target.value)} />
-          </div>
-          <div>
-            <Label>Applicant email</Label>
-            <Input type="email" onChange={e => set('offered_to_email', e.target.value)} />
-          </div>
-          <div>
-            <Label>Applicant phone</Label>
-            <Input onChange={e => set('offered_to_phone', e.target.value)} />
-          </div>
-          <div>
-            <Label>Offered rent (£/mo)</Label>
-            <Input type="number" min={0} onChange={e => set('offered_rent', Number(e.target.value))} />
-          </div>
-          <div>
-            <Label>Total viewings</Label>
-            <Input type="number" min={0} defaultValue={item.total_viewings} onChange={e => set('total_viewings', Number(e.target.value))} />
-          </div>
-        </>
-      )}
+      <div className="mt-4 flex-1 overflow-y-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full">
+            <TabsTrigger value="details" className="flex-1 text-xs">Details</TabsTrigger>
+            <TabsTrigger value="viewings" className="flex-1 text-xs">Viewings</TabsTrigger>
+            <TabsTrigger value="referencing" className="flex-1 text-xs">References</TabsTrigger>
+            <TabsTrigger value="agreement" className="flex-1 text-xs">Agreement</TabsTrigger>
+            <TabsTrigger value="checklist" className="flex-1 text-xs">Move-In</TabsTrigger>
+          </TabsList>
 
-      {item.stage === 'referencing' && (
-        <>
-          <div>
-            <Label>Reference provider</Label>
-            <Input onChange={e => set('reference_provider', e.target.value)} />
-          </div>
-          <div>
-            <Label>Reference status</Label>
-            <select
-              className="w-full border rounded-md p-2 bg-background"
-              onChange={e => set('reference_status', e.target.value)}
-              defaultValue="in_progress"
-            >
-              <option value="in_progress">In Progress</option>
-              <option value="passed">Passed</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div>
-            <Label>Offer date</Label>
-            <Input type="date" onChange={e => set('offer_date', e.target.value)} />
-          </div>
-        </>
-      )}
+          <TabsContent value="details" className="mt-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">Property</p>
+                <p className="font-medium">{item.property?.address_line_1}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Room</p>
+                <p className="font-medium">{item.room?.room_name || '—'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Advertised Rent</p>
+                <p className="font-medium">{item.advertised_rent ? formatGBP(item.advertised_rent) + '/mo' : '—'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Offered Rent</p>
+                <p className="font-medium">{item.offered_rent ? formatGBP(item.offered_rent) + '/mo' : '—'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Enquiries</p>
+                <p className="font-medium">{item.total_enquiries}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Viewings</p>
+                <p className="font-medium">{item.total_viewings}</p>
+              </div>
+              {item.offered_to_name && (
+                <>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Offered To</p>
+                    <p className="font-medium">{item.offered_to_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Email</p>
+                    <p className="font-medium">{item.offered_to_email || '—'}</p>
+                  </div>
+                </>
+              )}
+              {item.target_move_in && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Target Move-in</p>
+                  <p className="font-medium">{format(new Date(item.target_move_in), 'dd MMM yyyy')}</p>
+                </div>
+              )}
+              {item.notes && (
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">Notes</p>
+                  <p className="text-sm">{item.notes}</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
-      {item.stage === 'offered' && (
-        <>
-          <div>
-            <Label>Target move-in date</Label>
-            <Input type="date" onChange={e => set('target_move_in', e.target.value)} />
-          </div>
-          <div>
-            <Label>Notes</Label>
-            <Textarea onChange={e => set('notes', e.target.value)} />
-          </div>
-        </>
-      )}
+          <TabsContent value="viewings" className="mt-4">
+            <ViewingScheduler item={item} />
+          </TabsContent>
 
-      {item.stage === 'move_in_prep' && (
-        <>
-          <div>
-            <Label>Actual move-in date</Label>
-            <Input type="date" onChange={e => set('actual_move_in', e.target.value)} />
-          </div>
-        </>
-      )}
+          <TabsContent value="referencing" className="mt-4">
+            <ReferencingPanel item={item} />
+          </TabsContent>
 
-      <Button type="submit" disabled={isPending} className="w-full">
-        {next === 'completed' ? 'Complete Letting' : `Move to ${STAGE_LABELS[next!]}`}
-      </Button>
-    </form>
+          <TabsContent value="agreement" className="mt-4">
+            <TenancyAgreementGenerator item={item} />
+          </TabsContent>
+
+          <TabsContent value="checklist" className="mt-4">
+            <MoveInChecklist item={item} />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Advance button */}
+      {next && (
+        <div className="mt-4 pt-4 border-t space-y-2">
+          {!validation.allowed && (
+            <div className="flex items-center gap-2 text-sm text-orange-600 bg-orange-50 dark:bg-orange-950/20 rounded-lg p-2">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+              <span>{validation.reason}</span>
+            </div>
+          )}
+          <Button
+            className="w-full"
+            disabled={!validation.allowed || advanceStage.isPending || completeLetting.isPending}
+            onClick={handleAdvance}
+          >
+            {next === 'completed' ? 'Complete Letting' : `Advance to ${STAGE_LABELS[next]}`}
+            <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+    </>
   );
 }
 
 export default function LettingsPipeline() {
   const { data: items, isLoading } = useLettingsPipeline();
-  const advanceStage = useAdvanceStage();
-  const completeLetting = useCompleteLetting();
-  const [advancingItem, setAdvancingItem] = useState<LettingsPipelineItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<LettingsPipelineItem | null>(null);
 
   const grouped = useMemo(() => {
     const map: Record<LettingsStage, LettingsPipelineItem[]> = {
@@ -232,24 +295,6 @@ export default function LettingsPipeline() {
   }, [items]);
 
   const totalActive = (items || []).length;
-
-  const handleAdvanceSubmit = (updates: LettingsPipelineUpdate) => {
-    if (!advancingItem) return;
-
-    if (updates.stage === 'completed') {
-      completeLetting.mutate({
-        id: advancingItem.id,
-        actualMoveIn: updates.actual_move_in,
-        voidPeriodId: advancingItem.void_period_id,
-      }, {
-        onSuccess: () => setAdvancingItem(null),
-      });
-    } else {
-      advanceStage.mutate({ id: advancingItem.id, updates }, {
-        onSuccess: () => setAdvancingItem(null),
-      });
-    }
-  };
 
   return (
     <AppLayout>
@@ -293,7 +338,7 @@ export default function LettingsPipeline() {
                       <p className="text-xs text-muted-foreground">Empty</p>
                     ) : (
                       stageItems.map(item => (
-                        <PipelineCard key={item.id} item={item} onAdvance={setAdvancingItem} />
+                        <PipelineCard key={item.id} item={item} onClick={setSelectedItem} />
                       ))
                     )}
                   </div>
@@ -304,24 +349,10 @@ export default function LettingsPipeline() {
         )}
       </div>
 
-      <Sheet open={!!advancingItem} onOpenChange={open => !open && setAdvancingItem(null)}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>
-              Advance: {advancingItem?.room?.room_name || 'Room'}
-            </SheetTitle>
-            <SheetDescription>
-              {advancingItem?.property?.address_line_1} — Moving from {advancingItem ? STAGE_LABELS[advancingItem.stage] : ''} to {advancingItem ? STAGE_LABELS[nextStage(advancingItem.stage) || advancingItem.stage] : ''}
-            </SheetDescription>
-          </SheetHeader>
-          {advancingItem && (
-            <div className="mt-6">
-              <AdvanceForm
-                item={advancingItem}
-                onSubmit={handleAdvanceSubmit}
-                isPending={advanceStage.isPending || completeLetting.isPending}
-              />
-            </div>
+      <Sheet open={!!selectedItem} onOpenChange={open => !open && setSelectedItem(null)}>
+        <SheetContent className="sm:max-w-xl overflow-y-auto flex flex-col">
+          {selectedItem && (
+            <DetailSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
           )}
         </SheetContent>
       </Sheet>
