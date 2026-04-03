@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, addMonths } from 'date-fns';
-import { FileSignature, Download, AlertTriangle, ChevronRight, Clock, ArrowLeft } from 'lucide-react';
+import { FileSignature, Download, AlertTriangle, ChevronRight, Clock, ArrowLeft, Pencil, FileDown, History } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,10 @@ import {
   generateGuarantorPDF, generateInventoryPDF, generateHowToRentCoverPDF,
   generateReferenceRequestPDF,
 } from '@/lib/templatePdfGenerator';
+import { TemplateEditor } from '@/components/templates/TemplateEditor';
+import { DocumentGenerator } from '@/components/templates/DocumentGenerator';
+import { TemplateVersionHistory } from '@/components/templates/TemplateVersionHistory';
+import { useGeneratedDocumentsV2, useUpdateDocumentStatus, type GeneratedDocumentRow } from '@/hooks/useTemplateUpgrade';
 
 type WizardStep = 'browse' | 'select_context' | 'template_fields' | 'preview';
 
@@ -46,12 +50,22 @@ interface TemplateFields {
   previousAddress?: string;
 }
 
+const STATUS_BADGE: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
+  draft: { label: 'Draft', variant: 'secondary' },
+  final: { label: 'Final', variant: 'default' },
+  sent_for_signing: { label: 'Sent for Signing', variant: 'outline' },
+  signed: { label: 'Signed', variant: 'default' },
+};
+
 export default function DocumentTemplates() {
   const [step, setStep] = useState<WizardStep>('browse');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [selectedTenancyId, setSelectedTenancyId] = useState<string>('');
   const [templateFields, setTemplateFields] = useState<TemplateFields>({});
+  const [topTab, setTopTab] = useState<string>('wizard');
+  const [editorTemplateId, setEditorTemplateId] = useState<string | null>(null);
+  const [versionTemplateId, setVersionTemplateId] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { data: properties } = usePropertiesV2();
@@ -60,6 +74,8 @@ export default function DocumentTemplates() {
   const { data: recentDocs } = useGeneratedDocuments();
   const { data: complianceMatrix } = useComplianceMatrix();
   const createDoc = useCreateGeneratedDocument();
+  const { data: generatedDocsV2 } = useGeneratedDocumentsV2();
+  const updateDocStatus = useUpdateDocumentStatus();
 
   const selectedTemplate = DOCUMENT_TEMPLATES.find(t => t.id === selectedTemplateId);
   const selectedProperty = properties?.find(p => p.id === selectedPropertyId);
@@ -528,6 +544,156 @@ export default function DocumentTemplates() {
     );
   };
 
+  const renderGeneratedDocuments = () => {
+    const docs = generatedDocsV2 || [];
+    return (
+      <div className="space-y-4">
+        {docs.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-sm text-muted-foreground py-8">
+                <FileDown className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                <p>No generated documents yet.</p>
+                <p className="mt-1">Use the Document Generator to create your first document.</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {docs.map(d => {
+              const tmpl = DOCUMENT_TEMPLATES.find(t => t.id === d.template_id);
+              const badge = STATUS_BADGE[d.status] || STATUS_BADGE.draft;
+              return (
+                <Card key={d.id}>
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{d.title || tmpl?.name || d.template_id}</span>
+                          <Badge variant={badge.variant} className="text-xs">{badge.label}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(d.created_at), 'dd MMM yyyy HH:mm')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {d.status === 'draft' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateDocStatus.mutate({ id: d.id, status: 'final' })}
+                          >
+                            Finalise
+                          </Button>
+                        )}
+                        {d.status === 'final' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateDocStatus.mutate({ id: d.id, status: 'sent_for_signing' })}
+                          >
+                            Mark Sent
+                          </Button>
+                        )}
+                        {d.status === 'sent_for_signing' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateDocStatus.mutate({ id: d.id, status: 'signed', signed_at: new Date().toISOString() })}
+                          >
+                            Mark Signed
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTemplateEditorTab = () => {
+    if (editorTemplateId) {
+      const tmpl = DOCUMENT_TEMPLATES.find(t => t.id === editorTemplateId);
+      return (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={() => setEditorTemplateId(null)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to templates
+          </Button>
+          <TemplateEditor
+            templateId={editorTemplateId}
+            templateName={tmpl?.name || editorTemplateId}
+          />
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {DOCUMENT_TEMPLATES.map(t => (
+          <Card
+            key={t.id}
+            className="cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => setEditorTemplateId(t.id)}
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between">
+                <CardTitle className="text-sm font-semibold">{t.name}</CardTitle>
+                <Badge variant="outline" className="text-xs capitalize">{t.category}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">{t.description}</p>
+              <Button variant="outline" size="sm" className="w-full">
+                <Pencil className="h-4 w-4 mr-1" /> Edit Template
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const renderVersionHistoryTab = () => {
+    if (versionTemplateId) {
+      const tmpl = DOCUMENT_TEMPLATES.find(t => t.id === versionTemplateId);
+      return (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={() => setVersionTemplateId(null)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to templates
+          </Button>
+          <TemplateVersionHistory
+            templateId={versionTemplateId}
+            templateName={tmpl?.name || versionTemplateId}
+          />
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {DOCUMENT_TEMPLATES.map(t => (
+          <Card
+            key={t.id}
+            className="cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => setVersionTemplateId(t.id)}
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">{t.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" size="sm" className="w-full">
+                <History className="h-4 w-4 mr-1" /> View History
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -548,16 +714,44 @@ export default function DocumentTemplates() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-              <div>
-                {step === 'browse' && renderTemplateBrowser()}
-                {step === 'select_context' && renderContextSelection()}
-                {step === 'template_fields' && renderTemplateFields()}
-              </div>
-              <div className="space-y-4">
-                {renderRecentDocuments()}
-              </div>
-            </div>
+            <Tabs value={topTab} onValueChange={setTopTab}>
+              <TabsList>
+                <TabsTrigger value="wizard">Quick Generate</TabsTrigger>
+                <TabsTrigger value="editor">Template Editor</TabsTrigger>
+                <TabsTrigger value="generate">Document Generator</TabsTrigger>
+                <TabsTrigger value="generated">Generated Documents</TabsTrigger>
+                <TabsTrigger value="versions">Version History</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="wizard">
+                <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+                  <div>
+                    {step === 'browse' && renderTemplateBrowser()}
+                    {step === 'select_context' && renderContextSelection()}
+                    {step === 'template_fields' && renderTemplateFields()}
+                  </div>
+                  <div className="space-y-4">
+                    {renderRecentDocuments()}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="editor">
+                {renderTemplateEditorTab()}
+              </TabsContent>
+
+              <TabsContent value="generate">
+                <DocumentGenerator />
+              </TabsContent>
+
+              <TabsContent value="generated">
+                {renderGeneratedDocuments()}
+              </TabsContent>
+
+              <TabsContent value="versions">
+                {renderVersionHistoryTab()}
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>
