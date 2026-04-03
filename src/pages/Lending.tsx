@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   usePortfolioDebtSummary,
   useAllLoanFacilities,
@@ -19,11 +20,20 @@ import {
 import { LENDER_TYPES } from '@/hooks/useLenders';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, AlertTriangle, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { RateExpiryDashboard } from '@/components/lending/RateExpiryDashboard';
+import { ApplicationTracker } from '@/components/lending/ApplicationTracker';
+import { LoanStressTest } from '@/components/lending/LoanStressTest';
+import { RefinanceComparison } from '@/components/lending/RefinanceComparison';
+import { useMortgageApplications } from '@/hooks/useRefinanceWorkflow';
 
 export default function Lending() {
   const { data: debtSummary = [], isLoading: loadingSummary } = usePortfolioDebtSummary();
   const { data: facilities = [], isLoading: loadingFacilities } = useAllLoanFacilities();
   const { data: alerts = [], isLoading: loadingAlerts } = useLoanAlerts();
+  const { data: applications = [] } = useMortgageApplications();
+
+  const [activeTab, setActiveTab] = useState('portfolio');
+  const [refinanceFacilityId, setRefinanceFacilityId] = useState<string | null>(null);
 
   const activeFacilities = facilities.filter(f => f.status === 'active');
   const totalDebt = activeFacilities.reduce((s, f) => s + f.current_balance, 0);
@@ -53,6 +63,22 @@ export default function Lending() {
 
   const isLoading = loadingSummary || loadingFacilities || loadingAlerts;
 
+  const activeApplications = applications.filter(
+    (a) => a.status !== 'completed' && a.status !== 'withdrawn'
+  );
+  const completedApplications = applications.filter(
+    (a) => a.status === 'completed' || a.status === 'withdrawn'
+  );
+
+  const refinanceFacility = refinanceFacilityId
+    ? activeFacilities.find((f) => f.id === refinanceFacilityId) ?? null
+    : null;
+
+  const handleStartRefinance = (facilityId: string) => {
+    setRefinanceFacilityId(facilityId);
+    setActiveTab('portfolio');
+  };
+
   if (isLoading) {
     return <AppLayout><div className="space-y-6"><Skeleton className="h-10 w-64" /><Skeleton className="h-40 w-full" /></div></AppLayout>;
   }
@@ -79,200 +105,281 @@ export default function Lending() {
           </CardContent></Card>
         </div>
 
-        {/* Lender Exposure */}
-        <Card>
-          <CardHeader><CardTitle>Lender Exposure</CardTitle></CardHeader>
-          <CardContent>
-            {debtSummary.length === 0 ? (
-              <p className="text-muted-foreground text-center py-6">No lenders configured yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-muted-foreground text-left">
-                      <th className="pb-2 font-medium">Lender</th>
-                      <th className="pb-2 font-medium">Type</th>
-                      <th className="pb-2 font-medium text-right">Facilities</th>
-                      <th className="pb-2 font-medium text-right">Exposure</th>
-                      <th className="pb-2 font-medium text-right">% of Debt</th>
-                      <th className="pb-2 font-medium text-right">Avg Rate</th>
-                      <th className="pb-2 font-medium text-right">Rate Expiry</th>
-                      <th className="pb-2 font-medium text-right">Term End</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {debtSummary
-                      .sort((a, b) => Number(b.total_exposure) - Number(a.total_exposure))
-                      .map(row => {
-                        const pct = totalDebt > 0 ? (Number(row.total_exposure) / totalDebt * 100) : 0;
-                        const pctColor = pct >= 40 ? 'text-red-600 font-semibold' : pct >= 25 ? 'text-amber-600' : 'text-emerald-600';
-                        return (
-                          <tr key={row.lender_id} className="border-b last:border-0">
-                            <td className="py-2 font-medium text-foreground">{row.lender_name}</td>
-                            <td className="py-2"><Badge variant="outline">{LENDER_TYPES.find(t => t.value === row.lender_type)?.label || row.lender_type}</Badge></td>
-                            <td className="py-2 text-right">{row.facility_count}</td>
-                            <td className="py-2 text-right font-medium">{fmtGBP(Number(row.total_exposure))}</td>
-                            <td className={`py-2 text-right ${pctColor}`}>{pct.toFixed(1)}%</td>
-                            <td className="py-2 text-right">{Number(row.avg_interest_rate).toFixed(2)}%</td>
-                            <td className="py-2 text-right">{fmtDate(row.nearest_rate_expiry)}</td>
-                            <td className="py-2 text-right">{fmtDate(row.nearest_term_end)}</td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="portfolio">Portfolio Debt</TabsTrigger>
+            <TabsTrigger value="rate-expiries">
+              Rate Expiries
+            </TabsTrigger>
+            <TabsTrigger value="applications">
+              Applications
+              {activeApplications.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 text-xs px-1.5 py-0">
+                  {activeApplications.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="stress-test">Stress Test</TabsTrigger>
+          </TabsList>
+
+          {/* Portfolio Debt Tab */}
+          <TabsContent value="portfolio" className="space-y-6">
+            {/* Refinance Comparison (shown when a facility is selected) */}
+            {refinanceFacility && (
+              <RefinanceComparison
+                facility={refinanceFacility}
+                onApplicationCreated={() => {
+                  setRefinanceFacilityId(null);
+                  setActiveTab('applications');
+                }}
+              />
             )}
-          </CardContent>
-        </Card>
 
-        {/* Alerts */}
-        {(criticalAlerts.length > 0 || warningAlerts.length > 0 || opportunityAlerts.length > 0) && (
-          <Card>
-            <CardHeader><CardTitle>Lending Alerts</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              {criticalAlerts.length > 0 && <AlertSection title="Critical" alerts={criticalAlerts} icon={AlertCircle} color="text-red-600 dark:text-red-400" bgColor="bg-red-50 dark:bg-red-950/20" />}
-              {warningAlerts.length > 0 && <AlertSection title="Warning" alerts={warningAlerts} icon={AlertTriangle} color="text-amber-600 dark:text-amber-400" bgColor="bg-amber-50 dark:bg-amber-950/20" />}
-              {opportunityAlerts.length > 0 && <AlertSection title="Opportunities" alerts={opportunityAlerts} icon={TrendingUp} color="text-emerald-600 dark:text-emerald-400" bgColor="bg-emerald-50 dark:bg-emerald-950/20" />}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Refinance Timeline (table fallback) */}
-        {activeFacilities.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle>Refinance Timeline</CardTitle></CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-muted-foreground text-left">
-                      <th className="pb-2 font-medium">Property</th>
-                      <th className="pb-2 font-medium">Lender</th>
-                      <th className="pb-2 font-medium">Type</th>
-                      <th className="pb-2 font-medium text-right">Balance</th>
-                      <th className="pb-2 font-medium text-right">Rate</th>
-                      <th className="pb-2 font-medium text-right">Rate Expiry</th>
-                      <th className="pb-2 font-medium text-right">ERC End</th>
-                      <th className="pb-2 font-medium text-right">Term End</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeFacilities
-                      .sort((a, b) => new Date(a.term_end_date).getTime() - new Date(b.term_end_date).getTime())
-                      .map(f => (
-                        <tr key={f.id} className="border-b last:border-0">
-                          <td className="py-2">
-                            <Link to={`/properties-v2/${f.property_id}`} className="text-primary hover:underline">
-                              {f.property_address}
-                            </Link>
-                          </td>
-                          <td className="py-2">{f.lender_name}</td>
-                          <td className="py-2"><Badge className={getFacilityTypeInfo(f.facility_type).color}>{getFacilityTypeInfo(f.facility_type).label}</Badge></td>
-                          <td className="py-2 text-right font-medium">{fmtGBP(f.current_balance)}</td>
-                          <td className="py-2 text-right">{f.interest_rate.toFixed(2)}% <span className="text-xs text-muted-foreground capitalize">{f.rate_type}</span></td>
-                          <td className="py-2 text-right">{fmtDate(f.rate_expiry_date)}</td>
-                          <td className="py-2 text-right">{fmtDate(f.early_repayment_charge_until)}</td>
-                          <td className="py-2 text-right">{fmtDate(f.term_end_date)}</td>
+            {/* Lender Exposure */}
+            <Card>
+              <CardHeader><CardTitle>Lender Exposure</CardTitle></CardHeader>
+              <CardContent>
+                {debtSummary.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-6">No lenders configured yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-muted-foreground text-left">
+                          <th className="pb-2 font-medium">Lender</th>
+                          <th className="pb-2 font-medium">Type</th>
+                          <th className="pb-2 font-medium text-right">Facilities</th>
+                          <th className="pb-2 font-medium text-right">Exposure</th>
+                          <th className="pb-2 font-medium text-right">% of Debt</th>
+                          <th className="pb-2 font-medium text-right">Avg Rate</th>
+                          <th className="pb-2 font-medium text-right">Rate Expiry</th>
+                          <th className="pb-2 font-medium text-right">Term End</th>
                         </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                      </thead>
+                      <tbody>
+                        {debtSummary
+                          .sort((a, b) => Number(b.total_exposure) - Number(a.total_exposure))
+                          .map(row => {
+                            const pct = totalDebt > 0 ? (Number(row.total_exposure) / totalDebt * 100) : 0;
+                            const pctColor = pct >= 40 ? 'text-red-600 font-semibold' : pct >= 25 ? 'text-amber-600' : 'text-emerald-600';
+                            return (
+                              <tr key={row.lender_id} className="border-b last:border-0">
+                                <td className="py-2 font-medium text-foreground">{row.lender_name}</td>
+                                <td className="py-2"><Badge variant="outline">{LENDER_TYPES.find(t => t.value === row.lender_type)?.label || row.lender_type}</Badge></td>
+                                <td className="py-2 text-right">{row.facility_count}</td>
+                                <td className="py-2 text-right font-medium">{fmtGBP(Number(row.total_exposure))}</td>
+                                <td className={`py-2 text-right ${pctColor}`}>{pct.toFixed(1)}%</td>
+                                <td className="py-2 text-right">{Number(row.avg_interest_rate).toFixed(2)}%</td>
+                                <td className="py-2 text-right">{fmtDate(row.nearest_rate_expiry)}</td>
+                                <td className="py-2 text-right">{fmtDate(row.nearest_term_end)}</td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Covenant & ERC Monitor */}
-        {activeFacilities.some(f => f.covenant_ltv_max || f.covenant_icr_min || f.early_repayment_charge_until) && (
-          <Card>
-            <CardHeader><CardTitle>Covenant &amp; ERC Monitor</CardTitle></CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-muted-foreground text-left">
-                      <th className="pb-2 font-medium">Property</th>
-                      <th className="pb-2 font-medium">Lender</th>
-                      <th className="pb-2 font-medium text-right">Current LTV</th>
-                      <th className="pb-2 font-medium text-right">LTV Covenant</th>
-                      <th className="pb-2 font-medium text-right">ERC Until</th>
-                      <th className="pb-2 font-medium text-right">ERC %</th>
-                      <th className="pb-2 font-medium text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeFacilities
-                      .filter(f => f.covenant_ltv_max || f.covenant_icr_min || f.early_repayment_charge_until)
-                      .sort((a, b) => {
-                        const order = { breach: 0, warning: 1, ok: 2, unknown: 3 };
-                        return order[getCovenantStatus(a)] - order[getCovenantStatus(b)];
-                      })
-                      .map(f => {
-                        const status = getCovenantStatus(f);
-                        const statusConfig = {
-                          breach: { label: 'Breach', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-                          warning: { label: 'Warning', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-                          ok: { label: 'OK', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-                          unknown: { label: '—', cls: 'bg-muted text-muted-foreground' },
-                        }[status];
-                        const rowCls = status === 'breach' ? 'bg-red-50/40 dark:bg-red-950/20' : status === 'warning' ? 'bg-amber-50/40 dark:bg-amber-950/20' : '';
-                        return (
-                          <tr key={f.id} className={`border-b last:border-0 ${rowCls}`}>
-                            <td className="py-2">
-                              <Link to={`/properties-v2/${f.property_id}`} className="text-primary hover:underline">{f.property_address}</Link>
-                            </td>
-                            <td className="py-2">{f.lender_name}</td>
-                            <td className={`py-2 text-right font-medium ${getLtvColor(f.current_ltv)}`}>
-                              {f.current_ltv != null ? `${f.current_ltv.toFixed(1)}%` : '—'}
-                            </td>
-                            <td className="py-2 text-right">
-                              {f.covenant_ltv_max != null ? `${f.covenant_ltv_max}%` : '—'}
-                            </td>
-                            <td className="py-2 text-right">{fmtDate(f.early_repayment_charge_until)}</td>
-                            <td className="py-2 text-right">
-                              {f.erc_percentage != null ? `${f.erc_percentage}%` : '—'}
-                            </td>
-                            <td className="py-2 text-right">
-                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusConfig.cls}`}>
-                                {statusConfig.label}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            {/* Alerts */}
+            {(criticalAlerts.length > 0 || warningAlerts.length > 0 || opportunityAlerts.length > 0) && (
+              <Card>
+                <CardHeader><CardTitle>Lending Alerts</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                  {criticalAlerts.length > 0 && <AlertSection title="Critical" alerts={criticalAlerts} icon={AlertCircle} color="text-red-600 dark:text-red-400" bgColor="bg-red-50 dark:bg-red-950/20" />}
+                  {warningAlerts.length > 0 && <AlertSection title="Warning" alerts={warningAlerts} icon={AlertTriangle} color="text-amber-600 dark:text-amber-400" bgColor="bg-amber-50 dark:bg-amber-950/20" />}
+                  {opportunityAlerts.length > 0 && <AlertSection title="Opportunities" alerts={opportunityAlerts} icon={TrendingUp} color="text-emerald-600 dark:text-emerald-400" bgColor="bg-emerald-50 dark:bg-emerald-950/20" />}
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Rate Sensitivity */}
-        {variableFacilities.length > 0 && (
-          <Card>
-            <CardHeader><CardTitle>Rate Sensitivity Analysis</CardTitle></CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">Impact of rate changes on variable/tracker facilities ({fmtGBPCompact(variableTotal)} total variable debt)</p>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Current Monthly</p>
-                  <p className="text-lg font-semibold text-foreground">{fmtGBP(totalMonthly)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">If rates +1%</p>
-                  <p className="text-lg font-semibold text-foreground">{fmtGBP(totalMonthly + rateImpact1)}</p>
-                  <p className="text-sm text-red-600">+{fmtGBP(rateImpact1)} /mo</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">If rates +2%</p>
-                  <p className="text-lg font-semibold text-foreground">{fmtGBP(totalMonthly + rateImpact2)}</p>
-                  <p className="text-sm text-red-600">+{fmtGBP(rateImpact2)} /mo</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            {/* Refinance Timeline (table fallback) */}
+            {activeFacilities.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle>Refinance Timeline</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-muted-foreground text-left">
+                          <th className="pb-2 font-medium">Property</th>
+                          <th className="pb-2 font-medium">Lender</th>
+                          <th className="pb-2 font-medium">Type</th>
+                          <th className="pb-2 font-medium text-right">Balance</th>
+                          <th className="pb-2 font-medium text-right">Rate</th>
+                          <th className="pb-2 font-medium text-right">Rate Expiry</th>
+                          <th className="pb-2 font-medium text-right">ERC End</th>
+                          <th className="pb-2 font-medium text-right">Term End</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeFacilities
+                          .sort((a, b) => new Date(a.term_end_date).getTime() - new Date(b.term_end_date).getTime())
+                          .map(f => (
+                            <tr key={f.id} className="border-b last:border-0">
+                              <td className="py-2">
+                                <Link to={`/properties-v2/${f.property_id}`} className="text-primary hover:underline">
+                                  {f.property_address}
+                                </Link>
+                              </td>
+                              <td className="py-2">{f.lender_name}</td>
+                              <td className="py-2"><Badge className={getFacilityTypeInfo(f.facility_type).color}>{getFacilityTypeInfo(f.facility_type).label}</Badge></td>
+                              <td className="py-2 text-right font-medium">{fmtGBP(f.current_balance)}</td>
+                              <td className="py-2 text-right">{f.interest_rate.toFixed(2)}% <span className="text-xs text-muted-foreground capitalize">{f.rate_type}</span></td>
+                              <td className="py-2 text-right">{fmtDate(f.rate_expiry_date)}</td>
+                              <td className="py-2 text-right">{fmtDate(f.early_repayment_charge_until)}</td>
+                              <td className="py-2 text-right">{fmtDate(f.term_end_date)}</td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Covenant & ERC Monitor */}
+            {activeFacilities.some(f => f.covenant_ltv_max || f.covenant_icr_min || f.early_repayment_charge_until) && (
+              <Card>
+                <CardHeader><CardTitle>Covenant &amp; ERC Monitor</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-muted-foreground text-left">
+                          <th className="pb-2 font-medium">Property</th>
+                          <th className="pb-2 font-medium">Lender</th>
+                          <th className="pb-2 font-medium text-right">Current LTV</th>
+                          <th className="pb-2 font-medium text-right">LTV Covenant</th>
+                          <th className="pb-2 font-medium text-right">ERC Until</th>
+                          <th className="pb-2 font-medium text-right">ERC %</th>
+                          <th className="pb-2 font-medium text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeFacilities
+                          .filter(f => f.covenant_ltv_max || f.covenant_icr_min || f.early_repayment_charge_until)
+                          .sort((a, b) => {
+                            const order = { breach: 0, warning: 1, ok: 2, unknown: 3 };
+                            return order[getCovenantStatus(a)] - order[getCovenantStatus(b)];
+                          })
+                          .map(f => {
+                            const status = getCovenantStatus(f);
+                            const statusConfig = {
+                              breach: { label: 'Breach', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+                              warning: { label: 'Warning', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+                              ok: { label: 'OK', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+                              unknown: { label: '—', cls: 'bg-muted text-muted-foreground' },
+                            }[status];
+                            const rowCls = status === 'breach' ? 'bg-red-50/40 dark:bg-red-950/20' : status === 'warning' ? 'bg-amber-50/40 dark:bg-amber-950/20' : '';
+                            return (
+                              <tr key={f.id} className={`border-b last:border-0 ${rowCls}`}>
+                                <td className="py-2">
+                                  <Link to={`/properties-v2/${f.property_id}`} className="text-primary hover:underline">{f.property_address}</Link>
+                                </td>
+                                <td className="py-2">{f.lender_name}</td>
+                                <td className={`py-2 text-right font-medium ${getLtvColor(f.current_ltv)}`}>
+                                  {f.current_ltv != null ? `${f.current_ltv.toFixed(1)}%` : '—'}
+                                </td>
+                                <td className="py-2 text-right">
+                                  {f.covenant_ltv_max != null ? `${f.covenant_ltv_max}%` : '—'}
+                                </td>
+                                <td className="py-2 text-right">{fmtDate(f.early_repayment_charge_until)}</td>
+                                <td className="py-2 text-right">
+                                  {f.erc_percentage != null ? `${f.erc_percentage}%` : '—'}
+                                </td>
+                                <td className="py-2 text-right">
+                                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusConfig.cls}`}>
+                                    {statusConfig.label}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Rate Sensitivity */}
+            {variableFacilities.length > 0 && (
+              <Card>
+                <CardHeader><CardTitle>Rate Sensitivity Analysis</CardTitle></CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3">Impact of rate changes on variable/tracker facilities ({fmtGBPCompact(variableTotal)} total variable debt)</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Current Monthly</p>
+                      <p className="text-lg font-semibold text-foreground">{fmtGBP(totalMonthly)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">If rates +1%</p>
+                      <p className="text-lg font-semibold text-foreground">{fmtGBP(totalMonthly + rateImpact1)}</p>
+                      <p className="text-sm text-red-600">+{fmtGBP(rateImpact1)} /mo</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">If rates +2%</p>
+                      <p className="text-lg font-semibold text-foreground">{fmtGBP(totalMonthly + rateImpact2)}</p>
+                      <p className="text-sm text-red-600">+{fmtGBP(rateImpact2)} /mo</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Rate Expiries Tab */}
+          <TabsContent value="rate-expiries">
+            <RateExpiryDashboard onStartRefinance={handleStartRefinance} />
+          </TabsContent>
+
+          {/* Applications Tab */}
+          <TabsContent value="applications" className="space-y-4">
+            {activeApplications.length === 0 && completedApplications.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <ArrowUpRight className="h-10 w-10 text-muted-foreground mb-4" />
+                  <h3 className="font-semibold mb-1">No mortgage applications</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Start a refinance from the Rate Expiries tab or use the comparison tool.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {activeApplications.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-sm font-medium text-muted-foreground">
+                      Active Applications ({activeApplications.length})
+                    </h2>
+                    {activeApplications.map((app) => (
+                      <ApplicationTracker key={app.id} application={app} />
+                    ))}
+                  </div>
+                )}
+                {completedApplications.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-sm font-medium text-muted-foreground">
+                      Completed / Withdrawn ({completedApplications.length})
+                    </h2>
+                    {completedApplications.map((app) => (
+                      <ApplicationTracker key={app.id} application={app} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* Stress Test Tab */}
+          <TabsContent value="stress-test">
+            <LoanStressTest />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
