@@ -34,6 +34,10 @@ import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
 import { SEVERITY } from '@/lib/design-tokens';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
+import { ValuationHistoryChart } from '@/components/valuations/ValuationHistoryChart';
+import { ComparableEvidenceLog } from '@/components/valuations/ComparableEvidenceLog';
+import { RevaluationTrigger } from '@/components/valuations/RevaluationTrigger';
+import { ValuationRecordForm } from '@/components/valuations/ValuationRecordForm';
 
 function fmtDate(d: string | null) {
   if (!d) return '—';
@@ -51,6 +55,7 @@ export default function PropertyDetailV2() {
   const { data: property, isLoading } = usePropertyV2(id);
   const updateProperty = useUpdatePropertyV2();
   const [showEdit, setShowEdit] = useState(false);
+  const [showRecordValuation, setShowRecordValuation] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
   const coverPhoto = usePropertyPhotoV2(id);
@@ -197,6 +202,7 @@ export default function PropertyDetailV2() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="valuation">Valuation</TabsTrigger>
             <TabsTrigger value="lending">Lending</TabsTrigger>
             <TabsTrigger value="comms">Comms</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -314,6 +320,22 @@ export default function PropertyDetailV2() {
             <PropertyComplianceSectionWrapper propertyId={property.id} orgId={property.org_id} />
           </TabsContent>
 
+          {/* Valuation Tab */}
+          <TabsContent value="valuation" className="space-y-6">
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => setShowRecordValuation(true)}>
+                Record Valuation
+              </Button>
+            </div>
+            <ValuationHistoryChart
+              propertyId={property.id}
+              purchasePrice={property.purchase_price}
+              purchaseDate={property.purchase_date}
+            />
+            <ComparableEvidenceLog propertyId={property.id} />
+            <RevaluationTrigger propertyId={property.id} />
+          </TabsContent>
+
           {/* Lending Tab */}
           <TabsContent value="lending" className="space-y-6">
             <PropertyLoansSection
@@ -344,6 +366,7 @@ export default function PropertyDetailV2() {
       </div>
 
       <PropertyFormModal open={showEdit} onOpenChange={setShowEdit} editingProperty={property} />
+      <ValuationRecordForm propertyId={property.id} open={showRecordValuation} onOpenChange={setShowRecordValuation} />
     </AppLayout>
   );
 }
