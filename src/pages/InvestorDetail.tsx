@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -19,6 +20,9 @@ import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { CommitmentFormModal } from '@/components/investors/CommitmentFormModal';
 import { DistributionFormModal } from '@/components/investors/DistributionFormModal';
 import { InvestorReportModal } from '@/components/investors/InvestorReportModal';
+import { KYCOnboardingPanel } from '@/components/investors/KYCOnboardingPanel';
+import { CapitalCallManager } from '@/components/investors/CapitalCallManager';
+import { InvestorPortalView } from '@/components/investors/InvestorPortalView';
 
 const TYPE_BADGE: Record<string, { label: string; className: string }> = {
   individual: { label: 'Individual', className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
@@ -69,6 +73,7 @@ export default function InvestorDetail() {
   const { download: downloadInvestorReport, downloading: downloadingInvestorReport } = useDownloadFile('investor-reports');
   const sendPortalAccessEmail = useSendInvestorPortalAccessEmail();
 
+  const [activeTab, setActiveTab] = useState('overview');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCommitmentModal, setShowCommitmentModal] = useState(false);
   const [showDistributionModal, setShowDistributionModal] = useState(false);
@@ -199,232 +204,256 @@ export default function InvestorDetail() {
           ))}
         </div>
 
-        {/* Commitments Section */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Capital Commitments</CardTitle>
-            <Button size="sm" onClick={() => setShowCommitmentModal(true)}>
-              <Plus className="h-4 w-4 mr-1" />Add Commitment
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Entity</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Committed</TableHead>
-                    <TableHead className="text-right">Drawn</TableHead>
-                    <TableHead className="text-right">Undrawn</TableHead>
-                    <TableHead className="text-right">Equity %</TableHead>
-                    <TableHead className="text-right">Share of Value</TableHead>
-                    <TableHead className="text-center">Properties</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Maturity</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(!commitments || commitments.length === 0) ? (
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="kyc">KYC / AML</TabsTrigger>
+            <TabsTrigger value="capital-calls">Capital Calls</TabsTrigger>
+            <TabsTrigger value="portal">Portal Preview</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Commitments Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">Capital Commitments</CardTitle>
+                <Button size="sm" onClick={() => setShowCommitmentModal(true)}>
+                  <Plus className="h-4 w-4 mr-1" />Add Commitment
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Entity</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-right">Committed</TableHead>
+                        <TableHead className="text-right">Drawn</TableHead>
+                        <TableHead className="text-right">Undrawn</TableHead>
+                        <TableHead className="text-right">Equity %</TableHead>
+                        <TableHead className="text-right">Share of Value</TableHead>
+                        <TableHead className="text-center">Properties</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Maturity</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(!commitments || commitments.length === 0) ? (
+                        <TableRow>
+                          <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No commitments yet</TableCell>
+                        </TableRow>
+                      ) : commitments.map(c => {
+                        const statusConfig = STATUS_BADGE[c.status || 'active'] || STATUS_BADGE.active;
+                        return (
+                          <TableRow key={c.commitment_id}>
+                            <TableCell className="font-semibold">{c.entity_name}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {COMMITMENT_TYPE_LABEL[c.commitment_type || ''] || c.commitment_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmt(c.committed_amount)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmt(c.drawn_amount)}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmt(c.undrawn_amount)}</TableCell>
+                            <TableCell className="text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '-'}</TableCell>
+                            <TableCell className="text-right font-mono text-sm">{fmt(c.investors_share_valuation)}</TableCell>
+                            <TableCell className="text-center">{c.property_count || 0}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">{c.commitment_date ? format(new Date(c.commitment_date), 'dd MMM yyyy') : '-'}</TableCell>
+                            <TableCell className="text-sm">{c.maturity_date ? format(new Date(c.maturity_date), 'dd MMM yyyy') : '-'}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Distributions Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Distributions</CardTitle>
+                  <div className="flex gap-6 mt-2 text-sm text-muted-foreground">
+                    <span>All-time: <strong className="text-foreground">{fmt(distStats.allTime)}</strong></span>
+                    <span>This year: <strong className="text-foreground">{fmt(distStats.thisYear)}</strong></span>
+                    <span>Last year: <strong className="text-foreground">{fmt(distStats.lastYear)}</strong></span>
+                    <span>Yield: <strong className="text-foreground">{distStats.yield.toFixed(1)}%</strong></span>
+                  </div>
+                </div>
+                <Button size="sm" onClick={() => setShowDistributionModal(true)}>
+                  <Plus className="h-4 w-4 mr-1" />Record Distribution
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No commitments yet</TableCell>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Gross</TableHead>
+                      <TableHead className="text-right">Tax</TableHead>
+                      <TableHead className="text-right">Net</TableHead>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ) : commitments.map(c => {
-                    const statusConfig = STATUS_BADGE[c.status || 'active'] || STATUS_BADGE.active;
-                    return (
-                      <TableRow key={c.commitment_id}>
-                        <TableCell className="font-semibold">{c.entity_name}</TableCell>
+                  </TableHeader>
+                  <TableBody>
+                    {(!distributions || distributions.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No distributions recorded</TableCell>
+                      </TableRow>
+                    ) : distributions.map(d => (
+                      <TableRow key={d.id}>
+                        <TableCell className="text-sm">{format(new Date(d.distribution_date), 'dd MMM yyyy')}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="text-xs">
-                            {COMMITMENT_TYPE_LABEL[c.commitment_type || ''] || c.commitment_type}
+                          <Badge variant="secondary" className="text-xs">{DIST_TYPE_LABEL[d.distribution_type] || d.distribution_type}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">{fmt(d.amount)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm text-muted-foreground">{fmt(d.tax_deducted)}</TableCell>
+                        <TableCell className="text-right font-mono text-sm font-semibold">{fmt(d.net_amount)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {d.period_from && d.period_to
+                            ? `${format(new Date(d.period_from), 'MMM yy')} - ${format(new Date(d.period_to), 'MMM yy')}`
+                            : '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{d.payment_reference || '-'}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={d.status === 'paid' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : ''}>
+                            {d.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm">{fmt(c.committed_amount)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{fmt(c.drawn_amount)}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{fmt(c.undrawn_amount)}</TableCell>
-                        <TableCell className="text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '-'}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">{fmt(c.investors_share_valuation)}</TableCell>
-                        <TableCell className="text-center">{c.property_count || 0}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{c.commitment_date ? format(new Date(c.commitment_date), 'dd MMM yyyy') : '-'}</TableCell>
-                        <TableCell className="text-sm">{c.maturity_date ? format(new Date(c.maturity_date), 'dd MMM yyyy') : '-'}</TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
-        {/* Distributions Section */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">Distributions</CardTitle>
-              <div className="flex gap-6 mt-2 text-sm text-muted-foreground">
-                <span>All-time: <strong className="text-foreground">{fmt(distStats.allTime)}</strong></span>
-                <span>This year: <strong className="text-foreground">{fmt(distStats.thisYear)}</strong></span>
-                <span>Last year: <strong className="text-foreground">{fmt(distStats.lastYear)}</strong></span>
-                <span>Yield: <strong className="text-foreground">{distStats.yield.toFixed(1)}%</strong></span>
-              </div>
-            </div>
-            <Button size="sm" onClick={() => setShowDistributionModal(true)}>
-              <Plus className="h-4 w-4 mr-1" />Record Distribution
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Gross</TableHead>
-                  <TableHead className="text-right">Tax</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(!distributions || distributions.length === 0) ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No distributions recorded</TableCell>
-                  </TableRow>
-                ) : distributions.map(d => (
-                  <TableRow key={d.id}>
-                    <TableCell className="text-sm">{format(new Date(d.distribution_date), 'dd MMM yyyy')}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="text-xs">{DIST_TYPE_LABEL[d.distribution_type] || d.distribution_type}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(d.amount)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm text-muted-foreground">{fmt(d.tax_deducted)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm font-semibold">{fmt(d.net_amount)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {d.period_from && d.period_to
-                        ? `${format(new Date(d.period_from), 'MMM yy')} - ${format(new Date(d.period_to), 'MMM yy')}`
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{d.payment_reference || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={d.status === 'paid' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : ''}>
-                        {d.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Return Metrics Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Return Metrics</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Entity</TableHead>
-                  <TableHead className="text-right">Capital Invested</TableHead>
-                  <TableHead className="text-right">Total Distributions</TableHead>
-                  <TableHead className="text-right">Current Equity Value</TableHead>
-                  <TableHead className="text-right">Cash-on-Cash %</TableHead>
-                  <TableHead className="text-right">Equity Multiple</TableHead>
-                  <TableHead className="text-right">Unrealised Gain/Loss</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(!returnMetrics || returnMetrics.length === 0) ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No return data available</TableCell>
-                  </TableRow>
-                ) : returnMetrics.map(m => {
-                  const emColor = (m.equity_multiple || 0) >= 1.5 ? 'text-emerald-600' : (m.equity_multiple || 0) >= 1 ? 'text-amber-600' : 'text-destructive';
-                  const gainColor = (m.unrealised_gain_loss || 0) >= 0 ? 'text-emerald-600' : 'text-destructive';
-                  return (
-                    <TableRow key={m.commitment_id}>
-                      <TableCell className="font-semibold">{m.entity_name}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{fmt(m.capital_invested)}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{fmt(m.total_distributions)}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{fmt(m.current_equity_value)}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{(m.cash_on_cash_pct || 0).toFixed(1)}%</TableCell>
-                      <TableCell className={`text-right font-mono text-sm font-semibold ${emColor}`}>
-                        {(m.equity_multiple || 0).toFixed(2)}x
-                      </TableCell>
-                      <TableCell className={`text-right font-mono text-sm font-semibold ${gainColor}`}>
-                        {fmt(m.unrealised_gain_loss)}
-                      </TableCell>
+            {/* Return Metrics Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Return Metrics</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Entity</TableHead>
+                      <TableHead className="text-right">Capital Invested</TableHead>
+                      <TableHead className="text-right">Total Distributions</TableHead>
+                      <TableHead className="text-right">Current Equity Value</TableHead>
+                      <TableHead className="text-right">Cash-on-Cash %</TableHead>
+                      <TableHead className="text-right">Equity Multiple</TableHead>
+                      <TableHead className="text-right">Unrealised Gain/Loss</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {(!returnMetrics || returnMetrics.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No return data available</TableCell>
+                      </TableRow>
+                    ) : returnMetrics.map(m => {
+                      const emColor = (m.equity_multiple || 0) >= 1.5 ? 'text-emerald-600' : (m.equity_multiple || 0) >= 1 ? 'text-amber-600' : 'text-destructive';
+                      const gainColor = (m.unrealised_gain_loss || 0) >= 0 ? 'text-emerald-600' : 'text-destructive';
+                      return (
+                        <TableRow key={m.commitment_id}>
+                          <TableCell className="font-semibold">{m.entity_name}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmt(m.capital_invested)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmt(m.total_distributions)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{fmt(m.current_equity_value)}</TableCell>
+                          <TableCell className="text-right font-mono text-sm">{(m.cash_on_cash_pct || 0).toFixed(1)}%</TableCell>
+                          <TableCell className={`text-right font-mono text-sm font-semibold ${emColor}`}>
+                            {(m.equity_multiple || 0).toFixed(2)}x
+                          </TableCell>
+                          <TableCell className={`text-right font-mono text-sm font-semibold ${gainColor}`}>
+                            {fmt(m.unrealised_gain_loss)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
-        {/* Report History */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Report History</CardTitle>
-            <Button size="sm" variant="outline" onClick={() => setShowReportModal(true)}>
-              <FileText className="h-4 w-4 mr-1" />Generate Statement
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Generated</TableHead>
-                  <TableHead>Sent</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(!reports || reports.length === 0) ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No reports generated yet</TableCell>
-                  </TableRow>
-                ) : reports.map(r => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.title}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(r.report_period_from), 'MMM yyyy')} - {format(new Date(r.report_period_to), 'MMM yyyy')}
-                    </TableCell>
-                    <TableCell className="text-sm">{r.generated_at ? format(new Date(r.generated_at), 'dd MMM yyyy') : '-'}</TableCell>
-                    <TableCell>
-                      {r.sent_to_investor ? (
-                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Sent</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">Not sent</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {r.file_url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={downloadingInvestorReport}
-                          onClick={() => void downloadInvestorReport(r.file_url!, r.file_name || r.title)}
-                        >
-                            <Download className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+            {/* Report History */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-lg">Report History</CardTitle>
+                <Button size="sm" variant="outline" onClick={() => setShowReportModal(true)}>
+                  <FileText className="h-4 w-4 mr-1" />Generate Statement
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Generated</TableHead>
+                      <TableHead>Sent</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(!reports || reports.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No reports generated yet</TableCell>
+                      </TableRow>
+                    ) : reports.map(r => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{r.title}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(r.report_period_from), 'MMM yyyy')} - {format(new Date(r.report_period_to), 'MMM yyyy')}
+                        </TableCell>
+                        <TableCell className="text-sm">{r.generated_at ? format(new Date(r.generated_at), 'dd MMM yyyy') : '-'}</TableCell>
+                        <TableCell>
+                          {r.sent_to_investor ? (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Sent</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">Not sent</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {r.file_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={downloadingInvestorReport}
+                              onClick={() => void downloadInvestorReport(r.file_url!, r.file_name || r.title)}
+                            >
+                                <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="kyc" className="mt-6">
+            <KYCOnboardingPanel investorId={id!} />
+          </TabsContent>
+
+          <TabsContent value="capital-calls" className="mt-6">
+            <CapitalCallManager investorId={id} />
+          </TabsContent>
+
+          <TabsContent value="portal" className="mt-6">
+            <InvestorPortalView investorId={id!} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Modals */}
