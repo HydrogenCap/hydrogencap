@@ -56,6 +56,9 @@ export function useInsuranceDocScan() {
     const orgId = await fetchUserOrgId();
     if (!orgId) return;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id ?? null;
+
     // Register all files in state immediately so UI can show spinners
     const entries: InsuranceScanResult[] = files.map(f => ({
       id: crypto.randomUUID(),
@@ -90,6 +93,7 @@ export function useInsuranceDocScan() {
           .from('documents')
           .insert({
             org_id: orgId,
+            uploaded_by: userId,
             original_file_name: file.name,
             file_url: storagePath,
             doc_type: 'building_insurance',
