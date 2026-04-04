@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,8 @@ import {
   TRACKER_POLICY_TYPES,
   type InsuranceTrackerPolicy,
 } from '@/hooks/useInsuranceTracker';
+import { InsuranceDocScanner } from './InsuranceDocScanner';
+import type { ExtractedInsuranceFields } from '@/hooks/useInsuranceDocScan';
 
 interface PropertyOption {
   id: string;
@@ -144,6 +147,30 @@ export function InsurancePolicyForm({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* AI document scanner — only shown when adding a new policy */}
+          {!isEditing && (
+            <>
+              <InsuranceDocScanner
+                properties={(properties ?? []).map(p => ({
+                  id: p.id,
+                  address_line: p.address_line,
+                  postcode: p.postcode,
+                }))}
+                onExtracted={(fields: ExtractedInsuranceFields) =>
+                  setForm(f => ({
+                    ...f,
+                    ...(fields.insurer_name ? { insurer_name: fields.insurer_name } : {}),
+                    ...(fields.policy_number ? { policy_number: fields.policy_number } : {}),
+                    ...(fields.policy_type ? { policy_type: fields.policy_type } : {}),
+                    ...(fields.start_date ? { start_date: fields.start_date } : {}),
+                    ...(fields.end_date ? { end_date: fields.end_date } : {}),
+                  }))
+                }
+              />
+              <Separator />
+            </>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Label htmlFor="property_id">Property</Label>
