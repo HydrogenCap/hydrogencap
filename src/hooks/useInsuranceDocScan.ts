@@ -77,8 +77,9 @@ export function useInsuranceDocScan() {
 
       try {
         // 1 ── Upload file to Supabase Storage
+        // Path must start with orgId to satisfy the bucket RLS policy
         const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
-        const storagePath = `insurance/${orgId}/${scanId}.${ext}`;
+        const storagePath = `${orgId}/insurance/${scanId}.${ext}`;
 
         const { error: uploadErr } = await supabase.storage
           .from('compliance-documents')
@@ -86,7 +87,7 @@ export function useInsuranceDocScan() {
             contentType: file.type || 'application/octet-stream',
             upsert: false,
           });
-        if (uploadErr) throw new Error(`Upload failed: ${uploadErr.message}`);
+        if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
         // 2 ── Create a document record (edge fn validates ownership via this)
         const { data: docRow, error: docErr } = await (supabase as any)
