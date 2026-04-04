@@ -1,7 +1,8 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Building2, Users, FileSpreadsheet, Upload, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark, Database, ToggleRight } from 'lucide-react';
+import { User, Building2, Users, FileSpreadsheet, Upload, MapPin, Shield, Bell, CreditCard, HardDrive, Plug, Landmark, Database, ToggleRight, Webhook } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ProfileSettingsTab } from '@/components/settings/ProfileSettingsTab';
 import { OrganizationSettingsTab } from '@/components/settings/OrganizationSettingsTab';
 import { BeneficialGroupsSettings } from '@/components/settings/BeneficialGroupsSettings';
@@ -26,6 +27,7 @@ export default function Settings() {
   const urlParams = new URLSearchParams(window.location.search);
   const defaultTab = urlParams.get('tab') || 'profile';
 
+  const navigate = useNavigate();
   const { isLoading: profileLoading } = useProfile();
   const { isLoading: orgLoading } = useOrganization();
 
@@ -110,6 +112,10 @@ export default function Settings() {
             <TabsTrigger value="sections" className="gap-2">
               <ToggleRight className="h-4 w-4" />
               Sections
+            </TabsTrigger>
+            <TabsTrigger value="webhooks" className="gap-2" onClick={() => navigate('/settings/webhooks')}>
+              <Webhook className="h-4 w-4" />
+              Webhooks
             </TabsTrigger>
           </TabsList>
 

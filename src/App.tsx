@@ -99,6 +99,7 @@ const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
 const Inspections = lazy(() => import("./pages/Inspections"));
 const CapExPage = lazy(() => import("./pages/CapEx"));
 const Insurance = lazy(() => import("./pages/Insurance"));
+const WebhookSettings = lazy(() => import("./pages/WebhookSettings"));
 const CapExDetail = lazy(() => import("./pages/CapExDetail"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -379,6 +380,16 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <Settings />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/webhooks"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <WebhookSettings />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
