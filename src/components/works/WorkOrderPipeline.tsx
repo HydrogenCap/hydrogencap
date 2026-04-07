@@ -57,7 +57,7 @@ export function WorkOrderPipeline({ wo, onApprove, onReject }: WorkOrderPipeline
     if (nextIdx >= PIPELINE_STAGES.length) return null;
     // Skip pending_approval if not required
     const next = PIPELINE_STAGES[nextIdx];
-    if (next.value === 'pending_approval' && !wo.approval_required && !(wo.estimated_cost && wo.estimated_cost >= (wo.approval_threshold || 500))) {
+    if (next.value === 'pending_approval' && !(wo as any).approval_required && !(wo.estimated_cost && wo.estimated_cost >= ((wo as any).approval_threshold || 500))) {
       return PIPELINE_STAGES[nextIdx + 1]?.value || null;
     }
     return next.value;
