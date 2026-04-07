@@ -32,8 +32,8 @@ function getStageIndex(status: string): number {
 }
 
 function isStageCompleted(currentStatus: string, stageValue: string): boolean {
-  const currentIdx = STATUS_ORDER.indexOf(currentStatus);
-  const stageIdx = STATUS_ORDER.indexOf(stageValue);
+  const currentIdx = STATUS_ORDER.indexOf(currentStatus as any);
+  const stageIdx = STATUS_ORDER.indexOf(stageValue as any);
   return stageIdx >= 0 && currentIdx > stageIdx;
 }
 
@@ -55,7 +55,7 @@ export function ApplicationTracker({ application }: Props) {
 
   const nextStatus = (() => {
     if (isWithdrawn || isCompleted) return null;
-    const idx = STATUS_ORDER.indexOf(application.status);
+    const idx = STATUS_ORDER.indexOf(application.status as any);
     if (idx < 0 || idx >= STATUS_ORDER.length - 2) return null;
     return STATUS_ORDER[idx + 1];
   })();

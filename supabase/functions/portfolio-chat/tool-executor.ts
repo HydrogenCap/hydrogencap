@@ -61,7 +61,7 @@ async function getPropertyDetails(
     has_gas: property.has_gas,
   };
 
-  const fetches: Promise<void>[] = [];
+  const fetches: PromiseLike<void>[] = [];
 
   if (wantAll || include.includes("loans")) {
     fetches.push(

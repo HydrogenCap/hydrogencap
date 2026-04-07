@@ -63,8 +63,8 @@ export function useGlobalSearch() {
   const [grouped, setGrouped] = useState<GroupedResults>(groupResults([]));
   const [isLoading, setIsLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>(getRecentSearches);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const abortRef = useRef<AbortController>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const abortRef = useRef<AbortController>(undefined);
 
   const search = useCallback(
     async (searchQuery: string) => {

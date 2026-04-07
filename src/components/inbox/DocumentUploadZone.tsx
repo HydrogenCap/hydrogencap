@@ -86,11 +86,10 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     setUploadProgress(`Creating document record...`);
 
     const storagePath = filePath;
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     const document = await createDocument.mutateAsync({
       file_url: storagePath,
       original_file_name: file.name,
-      file_type: fileExt,
+      file_type: (fileExt || '').toLowerCase(),
       file_size_bytes: file.size,
       mime_type: file.type || null,
       extraction_status: 'pending',
