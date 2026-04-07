@@ -114,7 +114,7 @@ export function useBulkDocScanner() {
 
     // 3. Call process-document for AI classification
     try {
-      const signedUrl = await createSignedStorageUrl('documents', storagePath, 600);
+      const signedUrl = await createSignedStorageUrl('documents', storagePath, 3600);
       const propsForAI = (properties || []).map(p => ({
         id: p.id,
         address_line: p.address_line_1 || '',

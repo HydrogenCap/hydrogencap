@@ -71,9 +71,11 @@ export function useCreateDocument() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { data, error } = await (supabase as any)
         .from('documents')
-        .insert({ ...document, org_id: orgId })
+        .insert({ ...document, org_id: orgId, uploaded_by: document.uploaded_by ?? user?.id ?? null })
         .select()
         .single();
 

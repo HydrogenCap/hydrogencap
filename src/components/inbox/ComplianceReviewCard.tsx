@@ -57,7 +57,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
       const storagePath = document.file_url;
       const { data: urlData } = await supabase.storage
         .from('documents')
-        .createSignedUrl(storagePath, 600);
+        .createSignedUrl(storagePath, 3600);
 
       if (urlData?.signedUrl) {
         // Fetch properties for the AI
