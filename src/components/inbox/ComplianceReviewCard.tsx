@@ -35,12 +35,12 @@ interface ComplianceReviewCardProps {
   onSelectChange?: (selected: boolean) => void;
 }
 
-function ExtractionStatusBadge({ status, validationErrors }: { status: string; validationErrors?: string[] | null }) {
+function ExtractionStatusBadge({ status, docType, validationErrors }: { status: string; docType?: string | null; validationErrors?: string[] | null }) {
   switch (status) {
     case 'pending':
       return (
         <Badge variant="outline" className={SEVERITY.neutral.badge}>
-          <Clock className="h-3 w-3 mr-1" />
+          <span className={`inline-block h-2 w-2 rounded-full mr-1.5 ${SEVERITY.neutral.dot}`} />
           Queued
         </Badge>
       );
@@ -48,14 +48,14 @@ function ExtractionStatusBadge({ status, validationErrors }: { status: string; v
       return (
         <Badge variant="outline" className={SEVERITY.info.badge}>
           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          Processing...
+          Analysing...
         </Badge>
       );
     case 'completed':
       return (
         <Badge className={SEVERITY.success.badge}>
           <CheckCircle2 className="h-3 w-3 mr-1" />
-          Processed
+          {docType ? (COMPLIANCE_DOC_TYPE_LABELS[docType] || 'Classified') : 'Processed'}
         </Badge>
       );
     case 'failed': {
@@ -86,21 +86,21 @@ function ExtractionStatusBadge({ status, validationErrors }: { status: string; v
       return (
         <Badge className={SEVERITY.warning.badge}>
           <Clock className="h-3 w-3 mr-1" />
-          Rate Limited — retry in a few minutes
+          Rate limited — retry in a few minutes
         </Badge>
       );
     case 'credits_exhausted':
       return (
         <Badge className={SEVERITY.warning.badge}>
           <AlertCircle className="h-3 w-3 mr-1" />
-          Processing unavailable
+          AI processing unavailable
         </Badge>
       );
     case 'review_needed':
       return (
-        <Badge className={SEVERITY.info.badge}>
+        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
           <Edit2 className="h-3 w-3 mr-1" />
-          Needs Review
+          Needs manual review
         </Badge>
       );
     default:
@@ -184,6 +184,15 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
     selectedPropertyId !== document.ai_suggested_property_id ||
     issueDate !== (document.extracted_issue_date || '') ||
     expiryDate !== (document.expiry_date || '');
+
+  // Auto-retry rate-limited documents after 60 seconds
+  useEffect(() => {
+    if (!isRateLimited) return;
+    const timer = setTimeout(() => {
+      handleRetry();
+    }, 60_000);
+    return () => clearTimeout(timer);
+  }, [isRateLimited, handleRetry]);
 
   // Auto-expand if low confidence or needs manual classification
   useEffect(() => {
@@ -286,9 +295,21 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </p>
                 <ExtractionStatusBadge
                   status={document.extraction_status || 'pending'}
+                  docType={document.ai_suggested_doc_type}
                   validationErrors={document.validation_errors}
                 />
               </div>
+
+              {isPending && (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span>{document.original_file_name}</span>
+                  {document.created_at && (
+                    <span className="text-xs">
+                      Uploaded {format(new Date(document.created_at), 'dd MMM yyyy HH:mm')}
+                    </span>
+                  )}
+                </div>
+              )}
 
               {isProcessed && (
                 <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -322,6 +343,17 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                       <Edit2 className="h-3 w-3 mr-1" />
                       Edited
                     </Badge>
+                  )}
+                </div>
+              )}
+
+              {needsManualClassification && !isProcessed && (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span>{document.original_file_name}</span>
+                  {document.created_at && (
+                    <span className="text-xs">
+                      Uploaded {format(new Date(document.created_at), 'dd MMM yyyy HH:mm')}
+                    </span>
                   )}
                 </div>
               )}
