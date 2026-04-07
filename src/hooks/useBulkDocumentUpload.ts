@@ -181,10 +181,9 @@ export function useBulkDocumentUpload() {
 
       const { data: extResult, error: extErr } = await supabase.functions.invoke('process-document-v2', {
         body: {
-          documentUrl: signedUrl,
-          documentType: 'auto',
-          propertyAddress: '',
-          extractMode: 'full',
+          document_url: signedUrl,
+          document_id: docRecord.id,
+          org_id: orgId,
         },
       });
 
