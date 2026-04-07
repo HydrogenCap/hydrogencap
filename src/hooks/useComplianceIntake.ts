@@ -438,24 +438,32 @@ export function useAcceptAllHighConfidence() {
       extracted_epc_rating: string | null;
       property?: CompliancePropertySummary | null;
     }>) => {
-      const highConfidenceDocs = documents.filter(d => 
-        d.ai_suggested_doc_type && 
+      const highConfidenceDocs = documents.filter(d =>
+        d.ai_suggested_doc_type &&
         (d.ai_doc_type_confidence || 0) >= 0.7 &&
         d.ai_suggested_property_id &&
-        (d.ai_property_confidence || 0) >= 0.7 &&
-        d.property
+        (d.ai_property_confidence || 0) >= 0.7
       );
 
       if (highConfidenceDocs.length === 0) {
         throw new Error('No high-confidence documents to accept');
       }
 
+      // Fetch property addresses in one query for all distinct property IDs
+      const propertyIds = [...new Set(highConfidenceDocs.map(d => d.ai_suggested_property_id!))];
+      const { data: properties } = await (supabase as any)
+        .from('properties_v2')
+        .select('id, address_line_1, city')
+        .in('id', propertyIds);
+
+      const propertyMap: Record<string, string> = {};
+      for (const p of properties || []) {
+        propertyMap[p.id] = `${p.address_line_1}, ${p.city || ''}`.trim().replace(/,\s*$/, '');
+      }
+
       let accepted = 0;
       for (const doc of highConfidenceDocs) {
-        const prop = doc.property;
-        const propertyAddress = prop?.address_line_1
-          ? `${prop.address_line_1}, ${prop.city || ''}`
-          : prop?.address_line || 'Unknown';
+        const propertyAddress = propertyMap[doc.ai_suggested_property_id!] || 'Unknown';
 
         await acceptDocument.mutateAsync({
           documentId: doc.id,
