@@ -25,35 +25,29 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     try {
       const propertyList = (properties || []).map(p => ({
         id: p.id,
-        address_line: `${p.address_line_1}, ${p.city}`,
-        postcode: p.postcode,
+        address_line: `${p.address_line_1 || ''}, ${p.city || ''}`.trim().replace(/^,\s*/, ''),
+        postcode: p.postcode || null,
       }));
 
+      const propertiesForAI = propertyList.length > 0
+        ? propertyList
+        : [{ id: '00000000-0000-0000-0000-000000000000', address_line: 'No properties yet', postcode: null }];
+
       const response = await supabase.functions.invoke('process-document', {
-        body: { documentId, fileUrl, properties: propertyList },
+        body: { documentId, fileUrl, properties: propertiesForAI },
       });
 
       if (response.error) {
         console.error('AI processing error:', response.error);
         captureError(response.error, 'DocumentUploadZone.aiProcess');
         await updateDocument.mutateAsync({ id: documentId, extraction_status: 'failed' });
-        toast({
-          title: 'AI processing failed',
-          description: 'Document uploaded but AI analysis failed. You can manually classify it.',
-          variant: 'destructive',
-        });
       }
     } catch (err) {
       console.error('Failed to process document with AI:', err);
       captureError(err, 'DocumentUploadZone.aiProcess');
       await updateDocument.mutateAsync({ id: documentId, extraction_status: 'failed' }).catch(() => {});
-      toast({
-        title: 'AI processing failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
     }
-  }, [properties, toast, updateDocument]);
+  }, [properties, updateDocument]);
 
   const uploadFile = useCallback(async (file: File) => {
     const orgId = await getUserOrgId();
@@ -83,7 +77,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       throw new Error('Failed to generate signed URL for document');
     }
 
-    setUploadProgress(`Creating document record...`);
+    setUploadProgress('Creating document record...');
 
     const storagePath = filePath;
     const document = await createDocument.mutateAsync({
@@ -96,9 +90,12 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       review_status: 'pending',
     });
 
-    setUploadProgress(`Processing with AI...`);
+    setUploadProgress('Queued for AI analysis \u2713');
 
-    await processWithAI(document.id, urlData.signedUrl);
+    // Fire-and-forget — realtime subscription will update the UI
+    processWithAI(document.id, urlData.signedUrl).catch(err => {
+      console.error('Background AI processing failed:', err);
+    });
 
     return document;
   }, [createDocument, processWithAI]);
@@ -126,8 +123,8 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       }
 
       toast({
-        title: 'Upload complete',
-        description: `${validFiles.length} document(s) uploaded and queued for processing`,
+        title: 'Document uploaded',
+        description: 'AI is analysing your document in the background. The inbox will update automatically.',
       });
 
       onUploadComplete?.();

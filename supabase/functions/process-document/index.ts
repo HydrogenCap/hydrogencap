@@ -412,7 +412,7 @@ Deno.serve(async (req) => {
         address_line: z.string().min(1).max(500),
         postcode: z.string().max(20).nullable().optional(),
         title_number: z.string().max(50).nullable().optional(),
-      })).min(1).max(500),
+      })).min(0).max(500),
     });
 
     const parsed = await validateBody(req, DocumentSchema, corsHeaders);

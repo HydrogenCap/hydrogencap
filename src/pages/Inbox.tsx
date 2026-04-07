@@ -15,7 +15,7 @@ import { ComplianceReviewCard } from '@/components/inbox/ComplianceReviewCard';
 import { AIProcessingDashboard } from '@/components/inbox/AIProcessingDashboard';
 import { AISettingsPanel } from '@/components/inbox/AISettingsPanel';
 import { EmptyState } from '@/components/common/EmptyState';
-import { useInboxDocuments, useDeleteDocument } from '@/hooks/useDocuments';
+import { useInboxDocuments, useInboxRealtime, useDeleteDocument } from '@/hooks/useDocuments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Inbox() {
+  useInboxRealtime();
   const { data: documents, isLoading, refetch } = useInboxDocuments();
   const { data: complianceMatrixRows } = useQuery({
     queryKey: ['compliance_matrix_v2_inbox'],

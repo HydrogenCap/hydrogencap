@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -47,14 +47,20 @@ export function useDocuments(propertyId?: string, options?: { page?: number; pag
   });
 }
 
-export function useInboxDocuments() {
+export function useInboxRealtime() {
   const queryClient = useQueryClient();
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelNameRef = useRef(`inbox-${crypto.randomUUID()}`);
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     try {
-      channel = supabase
-        .channel('inbox-documents')
+      channelRef.current = supabase
+        .channel(channelNameRef.current)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
@@ -64,17 +70,19 @@ export function useInboxDocuments() {
         })
         .subscribe();
     } catch (err) {
-      console.error('Realtime subscription failed:', err);
-      // Continue without realtime — manual refresh still works
+      console.warn('Inbox realtime subscription failed — manual refresh still works:', err);
     }
 
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, [queryClient]);
+}
 
+export function useInboxDocuments() {
   return useQuery({
     queryKey: ['documents', 'inbox'],
     queryFn: async () => {
