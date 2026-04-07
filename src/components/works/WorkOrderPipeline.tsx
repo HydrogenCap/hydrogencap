@@ -47,7 +47,7 @@ export function WorkOrderPipeline({ wo, onApprove, onReject }: WorkOrderPipeline
   const currentIndex = getPipelineStageIndex(currentStage);
   const isCancelled = wo.status === 'cancelled';
   const isRejected = wo.status === 'rejected';
-  const needsApproval = (wo.approval_required || (wo.estimated_cost && wo.estimated_cost >= (wo.approval_threshold || 500)))
+  const needsApproval = ((wo as any).approval_required || (wo.estimated_cost && wo.estimated_cost >= ((wo as any).approval_threshold || 500)))
     && currentStage === 'pending_approval';
 
   const getNextStage = (): PipelineStage | null => {
