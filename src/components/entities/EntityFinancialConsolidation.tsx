@@ -33,7 +33,7 @@ export function EntityFinancialConsolidation({ entityId }: Props) {
       .sort((a, b) => a.snapshot_month.localeCompare(b.snapshot_month))
       .map(s => ({
         month: format(new Date(s.snapshot_month), 'MMM yy'),
-        income: s.total_gross_rent,
+        income: s.total_rent_received,
         costs: Math.abs(s.total_costs),
         noi: s.total_noi,
       }));

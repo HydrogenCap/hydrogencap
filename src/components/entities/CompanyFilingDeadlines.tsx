@@ -131,6 +131,7 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
           entity_id: entityId,
           org_id: org.id,
           ...formData,
+          status: formData.status as any,
           filed_date: formData.filed_date || null,
           reference: formData.reference || null,
           document_url: formData.document_url || null,

@@ -55,7 +55,7 @@ export function ApplicationTracker({ application }: Props) {
 
   const nextStatus = (() => {
     if (isWithdrawn || isCompleted) return null;
-    const idx = STATUS_ORDER.indexOf(application.status);
+    const idx = STATUS_ORDER.indexOf(application.status as any);
     if (idx < 0 || idx >= STATUS_ORDER.length - 2) return null;
     return STATUS_ORDER[idx + 1];
   })();
