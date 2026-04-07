@@ -32,8 +32,8 @@ function getStageIndex(status: string): number {
 }
 
 function isStageCompleted(currentStatus: string, stageValue: string): boolean {
-  const currentIdx = STATUS_ORDER.indexOf(currentStatus);
-  const stageIdx = STATUS_ORDER.indexOf(stageValue);
+  const currentIdx = STATUS_ORDER.indexOf(currentStatus as any);
+  const stageIdx = STATUS_ORDER.indexOf(stageValue as any);
   return stageIdx >= 0 && currentIdx > stageIdx;
 }
 
