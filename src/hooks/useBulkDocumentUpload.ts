@@ -177,7 +177,7 @@ export function useBulkDocumentUpload() {
     // Step 3: Call process-document-v2 edge function for extraction
     updateItem(item.id, { status: 'extracting' });
     try {
-      const signedUrl = await createSignedStorageUrl('documents', storagePath, 600);
+      const signedUrl = await createSignedStorageUrl('documents', storagePath, 3600);
 
       const { data: extResult, error: extErr } = await supabase.functions.invoke('process-document-v2', {
         body: {

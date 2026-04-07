@@ -3,7 +3,7 @@ import { captureError } from '@/lib/sentry';
 import { Upload, FileText, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { useCreateDocument } from '@/hooks/useDocuments';
+import { useCreateDocument, useUpdateDocument } from '@/hooks/useDocuments';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
@@ -17,6 +17,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const createDocument = useCreateDocument();
+  const updateDocument = useUpdateDocument();
   const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
 
@@ -35,6 +36,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       if (response.error) {
         console.error('AI processing error:', response.error);
         captureError(response.error, 'DocumentUploadZone.aiProcess');
+        await updateDocument.mutateAsync({ id: documentId, extraction_status: 'failed' });
         toast({
           title: 'AI processing failed',
           description: 'Document uploaded but AI analysis failed. You can manually classify it.',
@@ -44,13 +46,14 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     } catch (err) {
       console.error('Failed to process document with AI:', err);
       captureError(err, 'DocumentUploadZone.aiProcess');
+      await updateDocument.mutateAsync({ id: documentId, extraction_status: 'failed' }).catch(() => {});
       toast({
         title: 'AI processing failed',
         description: err instanceof Error ? err.message : 'Something went wrong',
         variant: 'destructive',
       });
     }
-  }, [properties, toast]);
+  }, [properties, toast, updateDocument]);
 
   const uploadFile = useCallback(async (file: File) => {
     const orgId = await getUserOrgId();
@@ -74,7 +77,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
 
     const { data: urlData, error: signedUrlError } = await supabase.storage
       .from('documents')
-      .createSignedUrl(filePath, 600);
+      .createSignedUrl(filePath, 3600);
 
     if (signedUrlError || !urlData?.signedUrl) {
       throw new Error('Failed to generate signed URL for document');
@@ -83,9 +86,13 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     setUploadProgress(`Creating document record...`);
 
     const storagePath = filePath;
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
     const document = await createDocument.mutateAsync({
       file_url: storagePath,
       original_file_name: file.name,
+      file_type: fileExt,
+      file_size_bytes: file.size,
+      mime_type: file.type || null,
       extraction_status: 'pending',
       review_status: 'pending',
     });
