@@ -4,8 +4,6 @@ import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-  };
-}
 
 // Compliance document types
 const COMPLIANCE_DOC_TYPES = [
