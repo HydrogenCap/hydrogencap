@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
-import { 
-  FileText, MapPin, Calendar, Check, X, ChevronDown, 
-  AlertCircle, Loader2, Shield, Building2, User, Edit2, RefreshCw 
+import {
+  FileText, MapPin, Calendar, Check, X, ChevronDown,
+  AlertCircle, Loader2, Shield, Building2, User, Edit2, RefreshCw, Trash2,
+  Clock, CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +11,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
+import { useDeleteDocument } from '@/hooks/useDocuments';
 import { useAcceptComplianceDocument, useRejectComplianceDocument, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
+import { SEVERITY } from '@/lib/design-tokens';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -21,49 +31,124 @@ type Document = Database['public']['Tables']['documents']['Row'];
 
 interface ComplianceReviewCardProps {
   document: Document;
+  selected?: boolean;
+  onSelectChange?: (selected: boolean) => void;
 }
 
-export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
+function ExtractionStatusBadge({ status, validationErrors }: { status: string; validationErrors?: string[] | null }) {
+  switch (status) {
+    case 'pending':
+      return (
+        <Badge variant="outline" className={SEVERITY.neutral.badge}>
+          <Clock className="h-3 w-3 mr-1" />
+          Queued
+        </Badge>
+      );
+    case 'processing':
+      return (
+        <Badge variant="outline" className={SEVERITY.info.badge}>
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          Processing...
+        </Badge>
+      );
+    case 'completed':
+      return (
+        <Badge className={SEVERITY.success.badge}>
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Processed
+        </Badge>
+      );
+    case 'failed': {
+      const errorMsg = validationErrors?.[0];
+      if (errorMsg) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge className={SEVERITY.critical.badge}>
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Failed
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent><p>{errorMsg}</p></TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+      return (
+        <Badge className={SEVERITY.critical.badge}>
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Failed
+        </Badge>
+      );
+    }
+    case 'rate_limited':
+      return (
+        <Badge className={SEVERITY.warning.badge}>
+          <Clock className="h-3 w-3 mr-1" />
+          Rate Limited — retry in a few minutes
+        </Badge>
+      );
+    case 'credits_exhausted':
+      return (
+        <Badge className={SEVERITY.warning.badge}>
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Processing unavailable
+        </Badge>
+      );
+    case 'review_needed':
+      return (
+        <Badge className={SEVERITY.info.badge}>
+          <Edit2 className="h-3 w-3 mr-1" />
+          Needs Review
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
+
+export function ComplianceReviewCard({ document, selected, onSelectChange }: ComplianceReviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  
+
   // Form state
   const [selectedDocType, setSelectedDocType] = useState(document.ai_suggested_doc_type || '');
   const [selectedPropertyId, setSelectedPropertyId] = useState(document.ai_suggested_property_id || '');
   const [issueDate, setIssueDate] = useState(document.extracted_issue_date || '');
   const [expiryDate, setExpiryDate] = useState(document.expiry_date || '');
-  
+
   const acceptDocument = useAcceptComplianceDocument();
   const rejectDocument = useRejectComplianceDocument();
+  const deleteDocument = useDeleteDocument();
   const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
 
   const isProcessed = document.extraction_status === 'completed';
   const isPending = document.extraction_status === 'pending' || document.extraction_status === 'processing';
   const isFailed = document.extraction_status === 'failed';
-  const isProcessing = acceptDocument.isPending || rejectDocument.isPending;
+  const isRateLimited = document.extraction_status === 'rate_limited';
+  const isCreditsExhausted = document.extraction_status === 'credits_exhausted';
+  const needsManualClassification = isFailed || isRateLimited || isCreditsExhausted;
+  const isProcessing = acceptDocument.isPending || rejectDocument.isPending || deleteDocument.isPending;
   const [isRetrying, setIsRetrying] = useState(false);
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
     try {
-      // Reset status to pending
-      await supabase.from('documents').update({ 
+      await supabase.from('documents').update({
         extraction_status: 'pending',
         validation_errors: null,
       }).eq('id', document.id);
 
-      // Get signed URL and re-invoke process-document
       const storagePath = document.file_url;
       const { data: urlData } = await supabase.storage
         .from('documents')
         .createSignedUrl(storagePath, 3600);
 
       if (urlData?.signedUrl) {
-        // Fetch properties for the AI
         const { data: props } = await supabase.from('properties_v2')
           .select('id, address_line_1, city, postcode');
-        
+
         const propertyList = (props || []).map(p => ({
           id: p.id,
           address_line: `${p.address_line_1}, ${p.city}`,
@@ -82,22 +167,32 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
     }
   }, [document.id, document.file_url, toast]);
 
+  const handleDelete = useCallback(async () => {
+    try {
+      await deleteDocument.mutateAsync(document.id);
+      toast({ title: 'Document deleted', variant: 'destructive' });
+    } catch {
+      // error toast handled by hook
+    }
+  }, [document.id, deleteDocument, toast]);
+
   const docTypeConfidence = document.ai_doc_type_confidence || 0;
   const propertyConfidence = document.ai_property_confidence || 0;
 
-  // Track if user has edited AI suggestions
-  const wasEdited = 
+  const wasEdited =
     selectedDocType !== document.ai_suggested_doc_type ||
     selectedPropertyId !== document.ai_suggested_property_id ||
     issueDate !== (document.extracted_issue_date || '') ||
     expiryDate !== (document.expiry_date || '');
 
-  // Auto-expand if low confidence
+  // Auto-expand if low confidence or needs manual classification
   useEffect(() => {
-    if (isProcessed && (docTypeConfidence < 0.7 || propertyConfidence < 0.7 || !document.ai_suggested_property_id)) {
+    if (needsManualClassification) {
+      setIsExpanded(true);
+    } else if (isProcessed && (docTypeConfidence < 0.7 || propertyConfidence < 0.7 || !document.ai_suggested_property_id)) {
       setIsExpanded(true);
     }
-  }, [isProcessed, docTypeConfidence, propertyConfidence, document.ai_suggested_property_id]);
+  }, [isProcessed, docTypeConfidence, propertyConfidence, document.ai_suggested_property_id, needsManualClassification]);
 
   const getConfidenceBadge = (confidence: number) => {
     if (confidence >= 0.8) return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">High</Badge>;
@@ -143,29 +238,40 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
 
   const suggestedProperty = properties?.find(p => p.id === document.ai_suggested_property_id);
   const selectedProperty = properties?.find(p => p.id === selectedPropertyId);
-  
-  // Calculate compliance status based on expiry
+
   const complianceStatus = expiryDate ? getComplianceItemStatus(expiryDate) : 'unknown';
 
-  // Check if ready for one-click confirm
-  const isReadyForConfirm = isProcessed && 
-    docTypeConfidence >= 0.7 && 
-    propertyConfidence >= 0.7 && 
+  const isReadyForConfirm = isProcessed &&
+    docTypeConfidence >= 0.7 &&
+    propertyConfidence >= 0.7 &&
     selectedPropertyId;
+
+  // For manual classification, allow accept if user has filled doc type + property
+  const canAcceptManually = needsManualClassification && selectedDocType && selectedPropertyId;
 
   return (
     <Card className={`bg-card border-border ${!selectedPropertyId && isProcessed ? 'border-amber-500/50' : ''}`}>
       <CardContent className="p-4">
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <div className="flex items-start gap-4">
+            {/* Selection checkbox */}
+            {onSelectChange && (
+              <input
+                type="checkbox"
+                checked={selected ?? false}
+                onChange={(e) => onSelectChange(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-border"
+              />
+            )}
+
             {/* Thumbnail */}
             <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
               {document.file_url && (document.original_file_name?.endsWith('.pdf') ? (
                 <FileText className="h-8 w-8 text-muted-foreground" />
               ) : (
-                <img 
-                  src={document.file_url} 
-                  alt="Document preview" 
+                <img
+                  src={document.file_url}
+                  alt="Document preview"
                   className="h-full w-full object-cover"
                 />
               ))}
@@ -178,18 +284,10 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                 <p className="font-medium text-foreground truncate">
                   {COMPLIANCE_DOC_TYPE_LABELS[selectedDocType] || document.original_file_name}
                 </p>
-                {isPending && (
-                  <Badge variant="outline" className="shrink-0">
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    Analysing
-                  </Badge>
-                )}
-                {isFailed && (
-                  <Badge variant="destructive" className="shrink-0">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Failed
-                  </Badge>
-                )}
+                <ExtractionStatusBadge
+                  status={document.extraction_status || 'pending'}
+                  validationErrors={document.validation_errors}
+                />
               </div>
 
               {isProcessed && (
@@ -212,7 +310,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                   {expiryDate && (
                     <Badge className={getComplianceStatusColor(complianceStatus)}>
                       <Calendar className="h-3 w-3 mr-1" />
-                      {complianceStatus === 'expired' 
+                      {complianceStatus === 'expired'
                         ? `Expired ${format(new Date(expiryDate), 'dd MMM yyyy')}`
                         : `Expires ${format(new Date(expiryDate), 'dd MMM yyyy')}`
                       }
@@ -236,9 +334,40 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                   <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </Button>
               </CollapsibleTrigger>
-              
-              {isFailed ? (
-                <Button 
+
+              {/* Delete button with confirmation */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-destructive"
+                    disabled={isProcessing}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this document?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {isFailed || isRateLimited ? (
+                <Button
                   variant="outline"
                   onClick={handleRetry}
                   disabled={isRetrying}
@@ -250,21 +379,23 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                   )}
                   Retry
                 </Button>
-              ) : (
+              ) : null}
+
+              {!isCreditsExhausted && (
                 <>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="text-destructive hover:text-destructive"
                     onClick={handleReject}
                     disabled={isProcessing}
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  
-                  <Button 
+
+                  <Button
                     onClick={handleAccept}
-                    disabled={isProcessing || !isProcessed || !selectedDocType}
+                    disabled={isProcessing || (!isProcessed && !canAcceptManually) || !selectedDocType}
                     className={isReadyForConfirm ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
                   >
                     {isProcessing ? (
@@ -272,7 +403,34 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                     ) : (
                       <>
                         <Check className="h-4 w-4 mr-1" />
-                        {isReadyForConfirm ? 'Confirm' : 'Review'}
+                        {canAcceptManually ? 'Accept manually' : isReadyForConfirm ? 'Confirm' : 'Review'}
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+
+              {isCreditsExhausted && (
+                <>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={handleReject}
+                    disabled={isProcessing}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={handleAccept}
+                    disabled={isProcessing || !selectedDocType || !selectedPropertyId}
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Accept manually
                       </>
                     )}
                   </Button>
@@ -282,6 +440,19 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
           </div>
 
           <CollapsibleContent className="mt-4 pt-4 border-t border-border">
+            {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
+            {needsManualClassification && (
+              <div className={`p-3 rounded-lg mb-4 ${SEVERITY.warning.bg} ${SEVERITY.warning.border} border`}>
+                <p className={`text-sm font-medium ${SEVERITY.warning.text}`}>
+                  Classify manually
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  AI processing {isFailed ? 'failed' : isRateLimited ? 'was rate limited' : 'is unavailable'}.
+                  Select the document type, property, and expiry date below, then click "Accept manually".
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Compliance Type Selection */}
               <div className="space-y-2">
@@ -300,7 +471,7 @@ export function ComplianceReviewCard({ document }: ComplianceReviewCardProps) {
                 </Select>
                 {document.ai_suggested_doc_type && (
                   <p className="text-xs text-muted-foreground">
-                    AI detected: {COMPLIANCE_DOC_TYPE_LABELS[document.ai_suggested_doc_type]} 
+                    AI detected: {COMPLIANCE_DOC_TYPE_LABELS[document.ai_suggested_doc_type]}
                     ({Math.round(docTypeConfidence * 100)}%)
                   </p>
                 )}
