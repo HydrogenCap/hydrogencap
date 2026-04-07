@@ -51,20 +51,27 @@ export function useInboxDocuments() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
-      .channel('inbox-documents')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'documents',
-        filter: 'review_status=eq.pending',
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
-      })
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel('inbox-documents')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'documents',
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
+        })
+        .subscribe();
+    } catch (err) {
+      console.error('Realtime subscription failed:', err);
+      // Continue without realtime — manual refresh still works
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [queryClient]);
 
