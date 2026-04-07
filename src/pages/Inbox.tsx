@@ -1,21 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2 } from 'lucide-react';
+import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { DocumentUploadZone } from '@/components/inbox/DocumentUploadZone';
 import { ComplianceReviewCard } from '@/components/inbox/ComplianceReviewCard';
 import { AIProcessingDashboard } from '@/components/inbox/AIProcessingDashboard';
 import { AISettingsPanel } from '@/components/inbox/AISettingsPanel';
-import { useInboxDocuments } from '@/hooks/useDocuments';
+import { EmptyState } from '@/components/common/EmptyState';
+import { useInboxDocuments, useDeleteDocument } from '@/hooks/useDocuments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Inbox() {
   const { data: documents, isLoading, refetch } = useInboxDocuments();
@@ -30,20 +36,28 @@ export default function Inbox() {
     },
   });
   const acceptAllHighConfidence = useAcceptAllHighConfidence();
+  const deleteDocument = useDeleteDocument();
+  const { toast } = useToast();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const pendingDocs = documents?.filter(d => d.review_status === 'pending') || [];
-  const processingDocs = documents?.filter(d => 
+  const processingDocs = documents?.filter(d =>
     d.extraction_status === 'pending' || d.extraction_status === 'processing'
   ) || [];
-  const failedDocs = documents?.filter(d => 
-    d.extraction_status === 'failed' && d.review_status === 'pending'
+  const failedDocs = documents?.filter(d =>
+    (d.extraction_status === 'failed' || d.extraction_status === 'rate_limited' || d.extraction_status === 'credits_exhausted') &&
+    d.review_status === 'pending'
   ) || [];
   const readyDocs = pendingDocs.filter(d => d.extraction_status === 'completed');
 
   // High confidence = both doc type and property match >= 70%
-  const highConfidenceDocs = readyDocs.filter(d => 
-    d.ai_suggested_doc_type && 
+  const highConfidenceDocs = readyDocs.filter(d =>
+    d.ai_suggested_doc_type &&
     (d.ai_doc_type_confidence || 0) >= 0.7 &&
     d.ai_suggested_property_id &&
     (d.ai_property_confidence || 0) >= 0.7
@@ -66,10 +80,61 @@ export default function Inbox() {
     setIsAcceptingAll(true);
     try {
       await acceptAllHighConfidence.mutateAsync(highConfidenceDocs);
+      setSelectedIds(new Set());
     } finally {
       setIsAcceptingAll(false);
     }
   };
+
+  const handleSelectChange = useCallback((docId: string, selected: boolean) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (selected) next.add(docId);
+      else next.delete(docId);
+      return next;
+    });
+  }, []);
+
+  const handleBulkAccept = async () => {
+    const selectedDocs = readyDocs.filter(d => selectedIds.has(d.id));
+    const highConfSelected = selectedDocs.filter(d =>
+      d.ai_suggested_doc_type &&
+      (d.ai_doc_type_confidence || 0) >= 0.7 &&
+      d.ai_suggested_property_id &&
+      (d.ai_property_confidence || 0) >= 0.7
+    );
+    if (highConfSelected.length === 0) {
+      toast({ title: 'No high-confidence documents selected', description: 'Only documents with high AI confidence can be bulk-accepted.', variant: 'destructive' });
+      return;
+    }
+    setIsAcceptingAll(true);
+    try {
+      await acceptAllHighConfidence.mutateAsync(highConfSelected);
+      setSelectedIds(new Set());
+    } finally {
+      setIsAcceptingAll(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      for (const id of selectedIds) {
+        await deleteDocument.mutateAsync(id);
+      }
+      toast({ title: `Deleted ${selectedIds.size} document(s)`, variant: 'destructive' });
+      setSelectedIds(new Set());
+    } catch {
+      // individual errors handled by hook
+    } finally {
+      setIsBulkDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleUploadComplete = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   return (
     <AppLayout>
@@ -92,15 +157,15 @@ export default function Inbox() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={() => refetch()}
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
             {highConfidenceDocs.length > 0 && (
-              <Button 
+              <Button
                 onClick={handleAcceptAll}
                 disabled={isAcceptingAll}
                 className="bg-emerald-600 hover:bg-emerald-700"
@@ -162,13 +227,66 @@ export default function Inbox() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <DocumentUploadZone onUploadComplete={() => refetch()} />
+            <DocumentUploadZone onUploadComplete={handleUploadComplete} />
             <p className="text-xs text-muted-foreground mt-2">
-              Upload certificates, licences, and compliance documents. AI will automatically classify, 
+              Upload certificates, licences, and compliance documents. AI will automatically classify,
               extract dates, and match to your properties.
             </p>
           </CardContent>
         </Card>
+
+        {/* Bulk Actions Bar */}
+        {selectedIds.size > 0 && (
+          <div className="sticky top-0 z-10 flex items-center gap-3 bg-background/95 backdrop-blur border rounded-lg p-3 shadow-sm">
+            <span className="text-sm font-medium">{selectedIds.size} selected</span>
+            <Button
+              size="sm"
+              onClick={handleBulkAccept}
+              disabled={isAcceptingAll}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <CheckCheck className="h-4 w-4 mr-1" />
+              Accept All
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isBulkDeleting}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete Selected
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {selectedIds.size} document(s)?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Document List */}
         <Tabs defaultValue="pending" className="space-y-4">
@@ -207,11 +325,12 @@ export default function Inbox() {
                 <Skeleton className="h-24" />
               </>
             ) : readyDocs.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="font-medium">All caught up!</p>
-                <p className="text-sm">No compliance documents pending review</p>
-              </div>
+              <EmptyState
+                icon={CheckCircle2}
+                title="Inbox clear"
+                description="No documents waiting for review. Drop files above to classify a new document."
+                variant="success"
+              />
             ) : (
               <>
                 {highConfidenceDocs.length > 0 && (
@@ -221,11 +340,16 @@ export default function Inbox() {
                       Ready to confirm ({highConfidenceDocs.length})
                     </p>
                     {highConfidenceDocs.map(doc => (
-                      <ComplianceReviewCard key={doc.id} document={doc} />
+                      <ComplianceReviewCard
+                        key={doc.id}
+                        document={doc}
+                        selected={selectedIds.has(doc.id)}
+                        onSelectChange={(sel) => handleSelectChange(doc.id, sel)}
+                      />
                     ))}
                   </div>
                 )}
-                
+
                 {readyDocs.filter(d => !highConfidenceDocs.includes(d)).length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -233,7 +357,12 @@ export default function Inbox() {
                       Needs review ({readyDocs.filter(d => !highConfidenceDocs.includes(d)).length})
                     </p>
                     {readyDocs.filter(d => !highConfidenceDocs.includes(d)).map(doc => (
-                      <ComplianceReviewCard key={doc.id} document={doc} />
+                      <ComplianceReviewCard
+                        key={doc.id}
+                        document={doc}
+                        selected={selectedIds.has(doc.id)}
+                        onSelectChange={(sel) => handleSelectChange(doc.id, sel)}
+                      />
                     ))}
                   </div>
                 )}
@@ -254,15 +383,25 @@ export default function Inbox() {
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-destructive flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4" />
-                      Failed ({failedDocs.length}) — click Retry to reprocess
+                      Needs attention ({failedDocs.length}) — retry or classify manually
                     </p>
                     {failedDocs.map(doc => (
-                      <ComplianceReviewCard key={doc.id} document={doc} />
+                      <ComplianceReviewCard
+                        key={doc.id}
+                        document={doc}
+                        selected={selectedIds.has(doc.id)}
+                        onSelectChange={(sel) => handleSelectChange(doc.id, sel)}
+                      />
                     ))}
                   </div>
                 )}
                 {processingDocs.map(doc => (
-                  <ComplianceReviewCard key={doc.id} document={doc} />
+                  <ComplianceReviewCard
+                    key={doc.id}
+                    document={doc}
+                    selected={selectedIds.has(doc.id)}
+                    onSelectChange={(sel) => handleSelectChange(doc.id, sel)}
+                  />
                 ))}
               </>
             )}
