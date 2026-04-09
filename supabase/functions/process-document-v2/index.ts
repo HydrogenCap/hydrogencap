@@ -363,6 +363,18 @@ Deno.serve(async (req) => {
       review_reasons: reviewReasons,
     }).eq("id", extractionId);
 
+    // Write back to documents table so the inbox reflects the result
+    await supabase.from("documents").update({
+      extraction_status: needsHumanReview ? 'needs_review' : 'completed',
+      ai_suggested_doc_type: result.doc_type,
+      ai_doc_type_confidence: result.doc_type_confidence,
+      ai_suggested_property_id: extractedFields.property_id_match ?? null,
+      extracted_address_text: extractedFields.address ?? null,
+      extracted_issue_date: extractedFields.issue_date ?? null,
+      extracted_reference_number: extractedFields.reference_number ?? null,
+      expiry_date: extractedFields.expiry_date ?? null,
+    }).eq("id", document_id);
+
     log.info('Extraction completed', {
       extractionId,
       status,
@@ -399,6 +411,13 @@ Deno.serve(async (req) => {
     log.error("Process document V2 error", {
       error: error instanceof Error ? error.message : String(error),
     });
+
+    // Mark document as failed so it doesn't stay stuck in pending/processing
+    if (typeof document_id === 'string') {
+      try {
+        await supabase.from("documents").update({ extraction_status: 'failed' }).eq("id", document_id);
+      } catch (_) { /* best-effort */ }
+    }
 
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
