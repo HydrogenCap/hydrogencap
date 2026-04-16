@@ -436,7 +436,7 @@
            <AlertDialogHeader>
              <AlertDialogTitle>Delete Document</AlertDialogTitle>
              <AlertDialogDescription>
-               Are you sure you want to delete "{deletingDocument?.display_name || deletingDocument?.original_file_name}"? This action can be undone.
+               Are you sure you want to delete "{deletingDocument?.display_name || deletingDocument?.original_file_name}"? This action cannot be undone.
              </AlertDialogDescription>
            </AlertDialogHeader>
            <AlertDialogFooter>

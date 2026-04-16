@@ -21,7 +21,11 @@ export function useAIProcessingStats() {
     queryFn: async (): Promise<AIProcessingStats> => {
       if (!orgId) throw new Error('No org');
 
-      const today = new Date().toISOString().split('T')[0];
+      // Local midnight as a UTC timestamp so "today" tracks the user's calendar day,
+      // not UTC's. (Avoids off-by-one when user's local time is in a different UTC date.)
+      const localMidnight = new Date();
+      localMidnight.setHours(0, 0, 0, 0);
+      const todayStart = localMidnight.toISOString();
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
       // Processed today
@@ -30,7 +34,7 @@ export function useAIProcessingStats() {
         .select('*', { count: 'exact', head: true })
         .eq('org_id', orgId)
         .eq('extraction_status', 'completed')
-        .gte('created_at', today);
+        .gte('created_at', todayStart);
 
       // Awaiting review
       const { count: awaitingReview } = await (supabase as any)

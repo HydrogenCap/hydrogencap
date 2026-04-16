@@ -88,7 +88,7 @@ export function useInboxDocuments() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('documents')
-        .select('id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id, file_url, original_file_name, display_name, final_file_name, doc_type, category, tags, file_type, file_size_bytes, mime_type, description, document_date, expiry_date, review_status, extraction_status, ai_suggested_doc_type, ai_doc_type_confidence, ai_suggested_property_id, ai_property_confidence, validation_errors, ai_extracted_data, is_confidential, visible_to_shareholders, visible_to_tenants, version, is_current_version, uploaded_by, created_at, updated_at, deleted_at')
+        .select('id, org_id, property_id, company_id, tenant_id, tenancy_id, compliance_item_id, contractor_job_id, file_url, original_file_name, display_name, final_file_name, doc_type, category, tags, file_type, file_size_bytes, mime_type, description, document_date, expiry_date, review_status, extraction_status, ai_suggested_doc_type, ai_doc_type_confidence, ai_suggested_property_id, ai_property_confidence, validation_errors, ai_extracted_data, extracted_issue_date, extracted_address_text, extracted_reference_number, extracted_epc_rating, extracted_certifier_name, extracted_certifier_company, auto_filed, processing_time_ms, ai_tokens_used, is_confidential, visible_to_shareholders, visible_to_tenants, version, is_current_version, uploaded_by, created_at, updated_at, deleted_at')
         .eq('review_status', 'pending')
         .order('created_at', { ascending: false })
         .limit(100);

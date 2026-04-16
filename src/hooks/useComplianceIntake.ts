@@ -438,46 +438,86 @@ export function useAcceptAllHighConfidence() {
       extracted_epc_rating: string | null;
       property?: CompliancePropertySummary | null;
     }>) => {
-      const highConfidenceDocs = documents.filter(d => 
-        d.ai_suggested_doc_type && 
+      const highConfidenceDocs = documents.filter(d =>
+        d.ai_suggested_doc_type &&
         (d.ai_doc_type_confidence || 0) >= 0.7 &&
         d.ai_suggested_property_id &&
-        (d.ai_property_confidence || 0) >= 0.7 &&
-        d.property
+        (d.ai_property_confidence || 0) >= 0.7
       );
 
       if (highConfidenceDocs.length === 0) {
         throw new Error('No high-confidence documents to accept');
       }
 
-      let accepted = 0;
-      for (const doc of highConfidenceDocs) {
-        const prop = doc.property;
-        const propertyAddress = prop?.address_line_1
-          ? `${prop.address_line_1}, ${prop.city || ''}`
-          : prop?.address_line || 'Unknown';
+      // Fetch property addresses in one query for all distinct property IDs
+      const propertyIds = [...new Set(highConfidenceDocs.map(d => d.ai_suggested_property_id!))];
+      const { data: properties } = await (supabase as any)
+        .from('properties_v2')
+        .select('id, address_line_1, city')
+        .in('id', propertyIds);
 
-        await acceptDocument.mutateAsync({
-          documentId: doc.id,
-          docType: doc.ai_suggested_doc_type!,
-          propertyId: doc.ai_suggested_property_id!,
-          propertyAddress,
-          issueDate: doc.extracted_issue_date,
-          expiryDate: doc.expiry_date,
-          originalFilename: doc.original_file_name,
-          fileUrl: doc.file_url,
-          epcRating: doc.extracted_epc_rating,
-          wasEdited: false,
-        });
-        accepted++;
+      const propertyMap: Record<string, string> = {};
+      for (const p of properties || []) {
+        propertyMap[p.id] = `${p.address_line_1}, ${p.city || ''}`.trim().replace(/,\s*$/, '');
       }
 
-      return { accepted };
+      const tasks = highConfidenceDocs.map(doc => {
+        const propertyAddress = propertyMap[doc.ai_suggested_property_id!];
+        if (!propertyAddress) {
+          return { kind: 'skipped' as const };
+        }
+        return {
+          kind: 'accept' as const,
+          promise: acceptDocument.mutateAsync({
+            documentId: doc.id,
+            docType: doc.ai_suggested_doc_type!,
+            propertyId: doc.ai_suggested_property_id!,
+            propertyAddress,
+            issueDate: doc.extracted_issue_date,
+            expiryDate: doc.expiry_date,
+            originalFilename: doc.original_file_name,
+            fileUrl: doc.file_url,
+            epcRating: doc.extracted_epc_rating,
+            wasEdited: false,
+          }),
+        };
+      });
+
+      const results = await Promise.allSettled(
+        tasks.map(t => (t.kind === 'accept' ? t.promise : Promise.resolve(null)))
+      );
+
+      let accepted = 0;
+      let skipped = 0;
+      let failed = 0;
+      results.forEach((r, i) => {
+        if (tasks[i].kind === 'skipped') {
+          skipped++;
+        } else if (r.status === 'fulfilled') {
+          accepted++;
+        } else {
+          console.error('Failed to accept document', highConfidenceDocs[i].id, r.reason);
+          failed++;
+        }
+      });
+
+      if (accepted === 0 && (skipped > 0 || failed > 0)) {
+        throw new Error(
+          skipped > 0 && failed === 0
+            ? 'Suggested properties no longer exist — please reclassify manually'
+            : 'All documents failed to process — please retry individually'
+        );
+      }
+
+      return { accepted, skipped, failed };
     },
     onSuccess: (data) => {
+      const parts = [`Accepted ${data.accepted} document${data.accepted === 1 ? '' : 's'}`];
+      if (data.skipped > 0) parts.push(`${data.skipped} skipped (property missing)`);
+      if (data.failed > 0) parts.push(`${data.failed} failed`);
       toast({
-        title: `Accepted ${data.accepted} documents`,
-        description: 'High-confidence AI suggestions applied to compliance records',
+        title: parts[0],
+        description: parts.length > 1 ? parts.slice(1).join(', ') : 'High-confidence AI suggestions applied to compliance records',
       });
     },
     onError: (error) => {

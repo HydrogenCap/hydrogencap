@@ -29,6 +29,14 @@ import type { Database } from '@/integrations/supabase/types';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 
+function isImageDocument(doc: Pick<Document, 'mime_type' | 'original_file_name'>): boolean {
+  if (doc.mime_type?.startsWith('image/')) return true;
+  if (doc.mime_type === 'application/pdf') return false;
+  // Fall back to extension when mime_type is missing
+  const ext = doc.original_file_name?.toLowerCase().match(/\.([^.]+)$/)?.[1];
+  return ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'webp' || ext === 'gif';
+}
+
 interface ComplianceReviewCardProps {
   document: Document;
   selected?: boolean;
@@ -185,12 +193,14 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
     issueDate !== (document.extracted_issue_date || '') ||
     expiryDate !== (document.expiry_date || '');
 
-  // Auto-retry rate-limited documents after 60 seconds
+  // Auto-retry rate-limited documents after ~60s with jitter to avoid all
+  // cards retrying simultaneously and re-triggering the same rate limit.
   useEffect(() => {
     if (!isRateLimited) return;
+    const delay = 60_000 + Math.floor(Math.random() * 30_000);
     const timer = setTimeout(() => {
       handleRetry();
-    }, 60_000);
+    }, delay);
     return () => clearTimeout(timer);
   }, [isRateLimited, handleRetry]);
 
@@ -275,14 +285,17 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
 
             {/* Thumbnail */}
             <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-              {document.file_url && (document.original_file_name?.endsWith('.pdf') ? (
-                <FileText className="h-8 w-8 text-muted-foreground" />
-              ) : (
+              {document.file_url && (isImageDocument(document) ? (
                 <img
                   src={document.file_url}
                   alt="Document preview"
                   className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  }}
                 />
+              ) : (
+                <FileText className="h-8 w-8 text-muted-foreground" />
               ))}
             </div>
 

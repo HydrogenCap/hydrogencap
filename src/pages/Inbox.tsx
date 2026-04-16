@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { useInboxDocuments, useInboxRealtime, useDeleteDocument } from '@/hooks/useDocuments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
+import { useAcceptAllHighConfidence } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -120,13 +120,16 @@ export default function Inbox() {
   const handleBulkDelete = async () => {
     setIsBulkDeleting(true);
     try {
-      for (const id of selectedIds) {
-        await deleteDocument.mutateAsync(id);
-      }
-      toast({ title: `Deleted ${selectedIds.size} document(s)`, variant: 'destructive' });
+      const results = await Promise.allSettled(
+        Array.from(selectedIds).map(id => deleteDocument.mutateAsync(id))
+      );
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.length - succeeded;
+      toast({
+        title: `Deleted ${succeeded} document(s)${failed > 0 ? ` — ${failed} failed` : ''}`,
+        variant: failed > 0 ? 'destructive' : 'default',
+      });
       setSelectedIds(new Set());
-    } catch {
-      // individual errors handled by hook
     } finally {
       setIsBulkDeleting(false);
       setShowDeleteConfirm(false);
