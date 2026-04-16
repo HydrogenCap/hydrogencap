@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { useInboxDocuments, useInboxRealtime, useDeleteDocument } from '@/hooks/useDocuments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAcceptAllHighConfidence, COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
+import { useAcceptAllHighConfidence } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
