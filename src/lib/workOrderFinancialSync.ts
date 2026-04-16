@@ -1,18 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
-import type { WOStatus } from '@/hooks/useWorkOrders';
 
 /**
  * Statuses at which a work order's actual_cost is considered final enough
- * to post to financial_snapshots.maintenance_costs.
+ * to post to financial_snapshots.maintenance_costs. Kept as plain strings so
+ * this module has no dependency on the WO hook graph (lets it live under the
+ * strict typecheck project).
  */
-export const TERMINAL_WO_STATUSES: readonly WOStatus[] = [
-  'completed',
-  'invoiced',
-  'closed',
-] as const;
+export const TERMINAL_WO_STATUSES = ['completed', 'invoiced', 'closed'] as const;
 
-export function isTerminalStatus(status: WOStatus): boolean {
+export type TerminalWorkOrderStatus = (typeof TERMINAL_WO_STATUSES)[number];
+
+export function isTerminalStatus(status: string): status is TerminalWorkOrderStatus {
   return (TERMINAL_WO_STATUSES as readonly string[]).includes(status);
 }
 

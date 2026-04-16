@@ -9,6 +9,7 @@
     "build:analyze": "VITE_ANALYZE=true vite build",
     "build:dev": "vite build --mode development",
     "check:edge": "node scripts/check-edge-functions.mjs",
+    "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "lint": "eslint src e2e scripts playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.ts eslint.config.js",
     "preview": "vite preview",
     "test": "vitest run",
@@ -16,7 +17,7 @@
     "e2e": "playwright test",
     "e2e:smoke": "playwright test e2e/smoke.spec.ts e2e/route-guards.spec.ts e2e/invite-pages.spec.ts e2e/shared-document.spec.ts",
     "e2e:ui": "playwright test --ui",
-    "verify": "npm run lint && npm test && npm run build && npm run check:edge"
+    "verify": "npm run lint && npm run typecheck:strict && npm test && npm run build && npm run check:edge"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
