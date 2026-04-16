@@ -461,19 +461,14 @@ export function useAcceptAllHighConfidence() {
         propertyMap[p.id] = `${p.address_line_1}, ${p.city || ''}`.trim().replace(/,\s*$/, '');
       }
 
-      let accepted = 0;
-      let skipped = 0;
-      let failed = 0;
-      for (const doc of highConfidenceDocs) {
+      const tasks = highConfidenceDocs.map(doc => {
         const propertyAddress = propertyMap[doc.ai_suggested_property_id!];
         if (!propertyAddress) {
-          // Property no longer exists (deleted/stale id) — skip rather than fail the whole batch on FK violation
-          skipped++;
-          continue;
+          return { kind: 'skipped' as const };
         }
-
-        try {
-          await acceptDocument.mutateAsync({
+        return {
+          kind: 'accept' as const,
+          promise: acceptDocument.mutateAsync({
             documentId: doc.id,
             docType: doc.ai_suggested_doc_type!,
             propertyId: doc.ai_suggested_property_id!,
@@ -484,13 +479,27 @@ export function useAcceptAllHighConfidence() {
             fileUrl: doc.file_url,
             epcRating: doc.extracted_epc_rating,
             wasEdited: false,
-          });
+          }),
+        };
+      });
+
+      const results = await Promise.allSettled(
+        tasks.map(t => (t.kind === 'accept' ? t.promise : Promise.resolve(null)))
+      );
+
+      let accepted = 0;
+      let skipped = 0;
+      let failed = 0;
+      results.forEach((r, i) => {
+        if (tasks[i].kind === 'skipped') {
+          skipped++;
+        } else if (r.status === 'fulfilled') {
           accepted++;
-        } catch (err) {
-          console.error('Failed to accept document', doc.id, err);
+        } else {
+          console.error('Failed to accept document', highConfidenceDocs[i].id, r.reason);
           failed++;
         }
-      }
+      });
 
       if (accepted === 0 && (skipped > 0 || failed > 0)) {
         throw new Error(
