@@ -462,30 +462,53 @@ export function useAcceptAllHighConfidence() {
       }
 
       let accepted = 0;
+      let skipped = 0;
+      let failed = 0;
       for (const doc of highConfidenceDocs) {
-        const propertyAddress = propertyMap[doc.ai_suggested_property_id!] || 'Unknown';
+        const propertyAddress = propertyMap[doc.ai_suggested_property_id!];
+        if (!propertyAddress) {
+          // Property no longer exists (deleted/stale id) — skip rather than fail the whole batch on FK violation
+          skipped++;
+          continue;
+        }
 
-        await acceptDocument.mutateAsync({
-          documentId: doc.id,
-          docType: doc.ai_suggested_doc_type!,
-          propertyId: doc.ai_suggested_property_id!,
-          propertyAddress,
-          issueDate: doc.extracted_issue_date,
-          expiryDate: doc.expiry_date,
-          originalFilename: doc.original_file_name,
-          fileUrl: doc.file_url,
-          epcRating: doc.extracted_epc_rating,
-          wasEdited: false,
-        });
-        accepted++;
+        try {
+          await acceptDocument.mutateAsync({
+            documentId: doc.id,
+            docType: doc.ai_suggested_doc_type!,
+            propertyId: doc.ai_suggested_property_id!,
+            propertyAddress,
+            issueDate: doc.extracted_issue_date,
+            expiryDate: doc.expiry_date,
+            originalFilename: doc.original_file_name,
+            fileUrl: doc.file_url,
+            epcRating: doc.extracted_epc_rating,
+            wasEdited: false,
+          });
+          accepted++;
+        } catch (err) {
+          console.error('Failed to accept document', doc.id, err);
+          failed++;
+        }
       }
 
-      return { accepted };
+      if (accepted === 0 && (skipped > 0 || failed > 0)) {
+        throw new Error(
+          skipped > 0 && failed === 0
+            ? 'Suggested properties no longer exist — please reclassify manually'
+            : 'All documents failed to process — please retry individually'
+        );
+      }
+
+      return { accepted, skipped, failed };
     },
     onSuccess: (data) => {
+      const parts = [`Accepted ${data.accepted} document${data.accepted === 1 ? '' : 's'}`];
+      if (data.skipped > 0) parts.push(`${data.skipped} skipped (property missing)`);
+      if (data.failed > 0) parts.push(`${data.failed} failed`);
       toast({
-        title: `Accepted ${data.accepted} documents`,
-        description: 'High-confidence AI suggestions applied to compliance records',
+        title: parts[0],
+        description: parts.length > 1 ? parts.slice(1).join(', ') : 'High-confidence AI suggestions applied to compliance records',
       });
     },
     onError: (error) => {
