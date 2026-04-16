@@ -730,6 +730,15 @@ Return ONLY a JSON array: [{"index": 1, "name": "NewName.pdf"}]`;
     }
 
     // Apply updates
+    //
+    // Previously every DB update was silently swallowed with a console.error and
+    // the response still returned success counts that included those failures.
+    // Callers had no way to know a run had partially failed. Now we track
+    // failed_category_updates / failed_renames and return them, and log the
+    // specific ids so operators can find and retry the affected documents.
+    let failedCategoryUpdates = 0;
+    let failedRenames = 0;
+
     if (!dryRun) {
       // Category updates
       if (catResults.length > 0) {
@@ -744,7 +753,10 @@ Return ONLY a JSON array: [{"index": 1, "name": "NewName.pdf"}]`;
             .from("documents")
             .update({ category })
             .in("id", ids);
-          if (updateErr) console.error(`Failed to update category ${category}:`, updateErr);
+          if (updateErr) {
+            failedCategoryUpdates += ids.length;
+            console.error(`Failed to update category '${category}' for ${ids.length} docs [${ids.join(",")}]:`, updateErr);
+          }
         }
       }
 
@@ -767,15 +779,20 @@ Return ONLY a JSON array: [{"index": 1, "name": "NewName.pdf"}]`;
             renamed_at: new Date().toISOString(),
           })
           .eq("id", r.id);
-        if (renameErr) console.error(`Failed to rename doc ${r.id}:`, renameErr);
+        if (renameErr) {
+          failedRenames++;
+          console.error(`Failed to rename doc ${r.id}:`, renameErr);
+        }
       }
     }
 
     return new Response(
       JSON.stringify({
-        categorised: catResults.length,
-        renamed: renameResults.length,
+        categorised: catResults.length - failedCategoryUpdates,
+        renamed: renameResults.length - failedRenames,
         unchanged: unchanged.length,
+        failed_category_updates: failedCategoryUpdates,
+        failed_renames: failedRenames,
         dryRun,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json", "X-RateLimit-Remaining": String(rateLimit.remaining) } }

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ComplianceItem, ComplianceDocument } from '@/lib/complianceTypes';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
+import { toast } from '@/hooks/use-toast';
 
 async function resolveComplianceDocuments<T extends { file_url: string }>(documents: T[]): Promise<T[]> {
   return Promise.all(
@@ -233,7 +234,7 @@ export function useUpdateComplianceItem() {
 // Delete compliance item
 export function useDeleteComplianceItem() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
       const { error } = await (supabase as any)
@@ -247,6 +248,17 @@ export function useDeleteComplianceItem() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
       queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
+      toast({ title: 'Compliance item deleted' });
+    },
+    onError: (error) => {
+      // Previously this hook had no onError handler, so deletes that failed
+      // (RLS denial, FK constraints, etc.) appeared to succeed until the next
+      // page refresh. Surface the real error to the user.
+      toast({
+        title: 'Failed to delete compliance item',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
     },
   });
 }
@@ -390,21 +402,34 @@ export function useUploadComplianceDocument() {
 // Delete compliance document
 export function useDeleteComplianceDocument() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      id, 
+    mutationFn: async ({
+      id,
       propertyId,
-      fileUrl 
-    }: { 
-      id: string; 
+      fileUrl
+    }: {
+      id: string;
       propertyId: string;
       fileUrl: string;
     }) => {
-      // Delete from storage
+      // Delete from storage first. If the storage delete fails we DON'T want
+      // to silently continue and delete the DB record — that produces an
+      // orphan file with no way for the UI to surface it. Log and continue
+      // only when the file simply doesn't exist (404-ish), otherwise bail.
       const path = extractStoragePath('compliance', fileUrl);
       if (path) {
-        await supabase.storage.from('compliance').remove([path]);
+        const { error: storageErr } = await supabase.storage.from('compliance').remove([path]);
+        if (storageErr) {
+          // "Not found" is acceptable — means the file was already gone.
+          const message = storageErr.message || '';
+          const alreadyGone = /not.?found/i.test(message) || /404/.test(message);
+          if (!alreadyGone) {
+            throw new Error(`Failed to remove file from storage: ${message}`);
+          }
+          // eslint-disable-next-line no-console
+          console.warn(`Compliance doc storage object ${path} was already missing; deleting DB record.`);
+        }
       }
 
       // Delete record
@@ -418,6 +443,14 @@ export function useDeleteComplianceDocument() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['compliance', result.propertyId] });
+      toast({ title: 'Document deleted' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete document',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
     },
   });
 }

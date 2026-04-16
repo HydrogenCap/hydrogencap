@@ -685,21 +685,22 @@ const App = () => (
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/inspections" element={<ProtectedRoute><RouteBoundary><Inspections /></RouteBoundary></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><RouteBoundary><AdminDashboard /></RouteBoundary></AdminProtectedRoute></ProtectedRoute>} />
 
-            {/* Wizard routes */}
+            {/* Wizard routes — each wrapped in RouteBoundary so a render error
+                in one wizard step doesn't crash the whole app shell. */}
             <Route path="/wizards" element={<ProtectedRoute><RouteBoundary><Wizards /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/wizards/add-property" element={<ProtectedRoute><AddPropertyWizard /></ProtectedRoute>} />
-            <Route path="/wizards/add-entity" element={<ProtectedRoute><AddEntityWizard /></ProtectedRoute>} />
-            <Route path="/wizards/add-compliance" element={<ProtectedRoute><AddComplianceWizard /></ProtectedRoute>} />
+            <Route path="/wizards/add-property" element={<ProtectedRoute><RouteBoundary><AddPropertyWizard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/wizards/add-entity" element={<ProtectedRoute><RouteBoundary><AddEntityWizard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/wizards/add-compliance" element={<ProtectedRoute><RouteBoundary><AddComplianceWizard /></RouteBoundary></ProtectedRoute>} />
 
             <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/:id" element={<ProtectedRoute><PropertyV1Redirect /></ProtectedRoute>} />
+            <Route path="/properties/:id" element={<ProtectedRoute><RouteBoundary><PropertyV1Redirect /></RouteBoundary></ProtectedRoute>} />
 
             <Route path="/companies" element={<Navigate to="/entities" replace />} />
             <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
             <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
-            <Route path="/tenants/:tenantId" element={<ProtectedRoute><TenantV1Redirect /></ProtectedRoute>} />
+            <Route path="/tenants/:tenantId" element={<ProtectedRoute><RouteBoundary><TenantV1Redirect /></RouteBoundary></ProtectedRoute>} />
             <Route path="/compliance" element={<Navigate to="/compliance-v2" replace />} />
 
             {/* Marketing pages (public) */}
