@@ -11,6 +11,19 @@
   },
   "include": [
     "src/lib/calculations.ts",
-    "src/lib/workOrderFinancialSync.ts"
+    "src/lib/workOrderFinancialSync.ts",
+    "src/lib/bankCsvParser.ts",
+    "src/lib/chart-tokens.ts",
+    "src/lib/complianceRequirements.ts",
+    "src/lib/complianceStatus.ts",
+    "src/lib/complianceTypes.ts",
+    "src/lib/csvParser.ts",
+    "src/lib/design-tokens.ts",
+    "src/lib/distribution-calculator.ts",
+    "src/lib/documentNaming.ts",
+    "src/lib/healthScore.ts",
+    "src/lib/passwordSchema.ts",
+    "src/lib/sanitizeHtml.ts",
+    "src/lib/utils.ts"
   ]
 }
