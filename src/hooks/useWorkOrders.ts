@@ -3,6 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+import {
+  syncWorkOrderToFinancialSnapshot,
+  isTerminalStatus,
+  type WorkOrderSyncOutcome,
+} from '@/lib/workOrderFinancialSync';
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -378,7 +383,18 @@ export function useUpdateWorkOrder() {
         .select()
         .single();
       if (error) throw error;
-      return data as WorkOrderRow;
+
+      const row = data as WorkOrderRow;
+      if (isTerminalStatus(row.status as WOStatus)) {
+        await syncWorkOrderToFinancialSnapshot(supabase, {
+          workOrderId: row.id,
+          orgId: row.org_id,
+          propertyId: row.property_id,
+          entityId: row.entity_id,
+          actualCompletionDate: row.actual_completion_date,
+        });
+      }
+      return row;
     },
     onMutate: async (newData) => {
       await qc.cancelQueries({ queryKey: ['work_order', newData.id] });
@@ -397,6 +413,7 @@ export function useUpdateWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', variables.id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
+      invalidateFinancialSnapshots(qc);
       toast({ title: 'Work order updated' });
     },
   });
@@ -421,28 +438,69 @@ export function useCompleteWorkOrder() {
         cost = ((items || []) as WorkOrderCostSummary[]).reduce((s, i) => s + i.amount + (i.vat_amount || 0), 0);
       }
 
-      // TODO: When WO is closed, sync actual_cost to financial_snapshots.maintenance_costs
-      // for the property's entity + month. This will be automated in a future section.
-
+      const completionDate = new Date().toISOString().split('T')[0];
       const payload: WorkOrderUpdate = {
         status: 'completed',
         actual_cost: cost,
-        actual_completion_date: new Date().toISOString().split('T')[0],
+        actual_completion_date: completionDate,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { data: updated, error } = await (supabase as any)
         .from('work_orders')
         .update(payload)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id, org_id, property_id, entity_id, actual_completion_date')
+        .single();
       if (error) throw error;
+
+      const row = updated as Pick<WorkOrderRow, 'id' | 'org_id' | 'property_id' | 'entity_id' | 'actual_completion_date'>;
+      const sync = await syncWorkOrderToFinancialSnapshot(supabase, {
+        workOrderId: row.id,
+        orgId: row.org_id,
+        propertyId: row.property_id,
+        entityId: row.entity_id,
+        actualCompletionDate: row.actual_completion_date,
+      });
+      return { sync };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       qc.invalidateQueries({ queryKey: ['work_order', variables.id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: 'Work order completed' });
+      invalidateFinancialSnapshots(qc);
+      toast(toastForCompletion(result.sync));
     },
   });
+}
+
+function invalidateFinancialSnapshots(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['financial_snapshots'] });
+  qc.invalidateQueries({ queryKey: ['financial_snapshots_month'] });
+  qc.invalidateQueries({ queryKey: ['portfolio_monthly_summary'] });
+  qc.invalidateQueries({ queryKey: ['entity_financial_summary'] });
+  qc.invalidateQueries({ queryKey: ['property_annual_performance'] });
+  qc.invalidateQueries({ queryKey: ['entity_property_breakdown'] });
+}
+
+function toastForCompletion(outcome: WorkOrderSyncOutcome): { title: string; description?: string; variant?: 'destructive' } {
+  switch (outcome.status) {
+    case 'synced':
+      return { title: 'Work order completed' };
+    case 'skipped_snapshot_locked':
+      return {
+        title: 'Work order completed',
+        description: 'Financial snapshot for that month is locked — cost not posted.',
+      };
+    case 'skipped_no_property':
+    case 'skipped_no_completion_date':
+      return { title: 'Work order completed' };
+    case 'error':
+      return {
+        title: 'Work order completed',
+        description: `Financials not updated: ${outcome.message}`,
+        variant: 'destructive',
+      };
+  }
 }
 
 // ─── Cost Line Items ─────────────────────────────────────────────────
