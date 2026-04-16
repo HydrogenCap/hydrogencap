@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { format } from 'date-fns';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -403,7 +404,7 @@ export function TenancyAgreementGenerator({ item }: TenancyAgreementGeneratorPro
             <div
               ref={previewRef}
               className="border rounded-lg p-4 bg-white text-black overflow-auto max-h-[600px]"
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
             />
           </CardContent>
         </Card>

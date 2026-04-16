@@ -25,7 +25,16 @@ export function useAuditLog(filters: AuditLogFilters) {
         query = query.lte('changed_at', filters.dateTo + 'T23:59:59');
       }
       if (filters.search) {
-        query = query.or(`old_values.cs.{"${filters.search}"},new_values.cs.{"${filters.search}"}`);
+        // Escape characters that have special meaning in PostgREST's .or() DSL to
+        // prevent filter injection via user-supplied search terms. The original
+        // implementation concatenated `filters.search` raw, which meant a user
+        // could break out of the quoted string with `"`, `,` or `)` and alter
+        // predicates or leak rows outside their RLS scope.
+        const escaped = String(filters.search)
+          .replace(/\\/g, '\\\\')
+          .replace(/"/g, '\\"')
+          .replace(/[(),]/g, (ch) => `\\${ch}`);
+        query = query.or(`old_values.cs.{"${escaped}"},new_values.cs.{"${escaped}"}`);
       }
 
       const from = (filters.page - 1) * filters.pageSize;

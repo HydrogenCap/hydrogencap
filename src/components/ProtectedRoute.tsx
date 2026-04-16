@@ -28,6 +28,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  // Fire the "section hidden" toast from an effect rather than during render.
+  // Calling `toast()` inside render causes React 19 StrictMode to double-fire
+  // and is a side-effect that React explicitly forbids.
+  const hidden = !loading && !!user && isRouteHidden(location.pathname);
+  useEffect(() => {
+    if (hidden) {
+      toast({
+        title: 'Section hidden',
+        description: 'This section is currently hidden. You can enable it in Settings → Sections.',
+      });
+    }
+  }, [hidden, toast]);
+
   const handleResendVerification = useCallback(async () => {
     if (!user?.email || resendCooldown > 0) return;
     try {
@@ -92,12 +105,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <OnboardingWizard />;
   }
 
-  // Redirect if section is hidden
+  // Redirect if section is hidden (toast is fired by the effect above)
   if (isRouteHidden(location.pathname)) {
-    toast({
-      title: 'Section hidden',
-      description: 'This section is currently hidden. You can enable it in Settings → Sections.',
-    });
     return <Navigate to="/dashboard" replace />;
   }
 

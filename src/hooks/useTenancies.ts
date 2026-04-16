@@ -157,6 +157,11 @@ export interface Tenancy {
        queryClient.invalidateQueries({ queryKey: ['tenancies'] });
        queryClient.invalidateQueries({ queryKey: ['rooms'] });
        queryClient.invalidateQueries({ queryKey: ['tenants'] });
+       // Rent schedule is derived from tenancy state (amount, end date, status),
+       // so any tenancy update must also invalidate it — otherwise the rent
+       // collection UI shows stale entries after editing a tenancy.
+       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
+       queryClient.invalidateQueries({ queryKey: ['rent-schedule'] });
        toast({ title: 'Tenancy updated' });
      },
      onError: (error) => {
@@ -164,7 +169,7 @@ export interface Tenancy {
      },
    });
  }
- 
+
  export function useActivateTenancy() {
    const updateTenancy = useUpdateTenancy();
  

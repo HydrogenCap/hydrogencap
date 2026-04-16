@@ -10,7 +10,10 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: sessionStorage,
+    // localStorage so sessions persist across tab closes and are shared between tabs.
+    // Previous config used sessionStorage + persistSession which contradicted each other
+    // and caused users to be logged out on every new tab/window.
+    storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
   }

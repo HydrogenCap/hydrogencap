@@ -54,7 +54,6 @@ const SharedDocument = lazy(() => import("./pages/SharedDocument"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Contractors = lazy(() => import("./pages/Contractors"));
-const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
 const JobsAndWorks = lazy(() => import("./pages/JobsAndWorks"));
 
@@ -65,9 +64,7 @@ const RentCollection = lazy(() => import("./pages/RentCollection"));
 const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
-const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
 const MaintenanceRequestDetail = lazy(() => import("./pages/MaintenanceRequestDetail"));
-const WorkOrders = lazy(() => import("./pages/WorkOrders"));
 const WorkOrderDetail = lazy(() => import("./pages/WorkOrderDetail"));
 const Documents = lazy(() => import("./pages/Documents"));
 const PropertiesV2 = lazy(() => import("./pages/PropertiesV2"));
@@ -119,10 +116,6 @@ const PortalStatements = lazy(() => import("./pages/portal/PortalStatements"));
 
 // Tenant portal pages
 const TenantAcceptInvite = lazy(() => import("./pages/tenant-portal/TenantAcceptInvite"));
-const TenantPortalHome = lazy(() => import("./pages/tenant-portal/TenantPortalHome"));
-const TenantRentHistory = lazy(() => import("./pages/tenant-portal/TenantRentHistory"));
-const TenantMaintenance = lazy(() => import("./pages/tenant-portal/TenantMaintenance"));
-const TenantDocuments = lazy(() => import("./pages/tenant-portal/TenantDocuments"));
 // Tenant portal V2 pages
 const TenantDashboard = lazy(() => import("./pages/tenant-portal/TenantDashboard"));
 const TenantPayments = lazy(() => import("./pages/tenant-portal/TenantPayments"));
@@ -527,26 +520,6 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <Lending />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/refinancing-opportunities"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <RefinancingOpportunities />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/valuation-alerts"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ValuationAlerts />
                   </RouteBoundary>
                 </ProtectedRoute>
               }

@@ -322,7 +322,7 @@ Keep your response to 3-4 paragraphs. Use GBP figures. Be specific about numbers
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -495,7 +495,7 @@ serve(async (req) => {
         results,
         scenarios,
         ai_commentary: aiCommentary,
-        model_used: "google/gemini-3-flash-preview",
+        model_used: "google/gemini-2.5-flash",
       })
       .select()
       .single();

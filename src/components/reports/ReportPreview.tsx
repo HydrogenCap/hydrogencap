@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitizeHtml';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -112,8 +113,14 @@ function SectionEditor({
           <div className="prose prose-sm dark:prose-invert max-w-none">
             {section.content.split('\n').map((paragraph, i) => {
               if (!paragraph.trim()) return null;
-              // Handle markdown bold
-              const formatted = paragraph.replace(
+              // Escape first, then re-introduce the only formatting we want
+              // (markdown bold). This prevents HTML injection via AI-generated
+              // or user-editable report content.
+              const escaped = paragraph
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+              const formatted = escaped.replace(
                 /\*\*(.*?)\*\*/g,
                 '<strong>$1</strong>'
               );
@@ -121,7 +128,7 @@ function SectionEditor({
                 <p
                   key={i}
                   className="text-sm text-muted-foreground leading-relaxed mb-2"
-                  dangerouslySetInnerHTML={{ __html: formatted }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(formatted) }}
                 />
               );
             })}

@@ -33,6 +33,23 @@ serve(async (req: Request) => {
       );
     }
 
+    // Verify the caller is a member of the org whose webhooks they're dispatching.
+    // Without this, any authenticated user could dispatch webhooks for any org and
+    // leak data / forge signed events to third-party systems.
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("role")
+      .eq("org_id", org_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this org" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Find active endpoints subscribed to this event
     const { data: endpoints, error: epError } = await supabase
       .from("webhook_endpoints")

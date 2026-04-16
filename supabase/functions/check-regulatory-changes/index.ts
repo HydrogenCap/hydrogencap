@@ -202,7 +202,7 @@ Focus on changes from the last 6 months and upcoming deadlines in the next 12 mo
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
