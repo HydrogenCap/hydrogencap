@@ -6,9 +6,11 @@ import { Separator } from '@/components/ui/separator';
 import { Download, Printer } from 'lucide-react';
 import { formatGBPDecimal, formatDateShort } from '@/lib/calculations';
 import type { DistributionRun, DistributionLineItem } from '@/hooks/useDistributionWorkflow';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import { format } from 'date-fns';
+
+// jspdf + jspdf-autotable are loaded dynamically inside handleDownloadPdf to
+// keep ~448kB of PDF machinery out of the initial page chunk.
 
 type AutoTableJsPdf = jsPDF & {
   lastAutoTable?: { finalY: number };
@@ -58,7 +60,11 @@ export function InvestorStatement({
     window.print();
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
     const doc = new jsPDF();
 
     // Header

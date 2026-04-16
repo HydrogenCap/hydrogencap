@@ -9,7 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { TrendingUp, Download, CheckCircle } from 'lucide-react';
-import jsPDF from 'jspdf';
+// jspdf is loaded dynamically inside generatePDF to keep ~448kB of PDF
+// machinery out of the initial page chunk.
 import { format, addMonths } from 'date-fns';
 
 const fmt = (v: number) =>
@@ -107,7 +108,8 @@ export function RentReviewModal({ open, onOpenChange, tenancyId }: RentReviewMod
       }),
   });
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     const tenant = tenancy?.tenants_v2;
     const property = tenancy?.rooms_v2?.properties_v2;
