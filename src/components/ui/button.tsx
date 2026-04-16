@@ -57,7 +57,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         (c) => typeof c === "string" && c.trim().length > 0,
       );
       if (!hasTextChild) {
-        // eslint-disable-next-line no-console
+         
         console.warn(
           "[a11y] Icon-only <Button size=\"icon\"> is missing an accessible name. Add aria-label, aria-labelledby, or a title prop.",
         );

@@ -72,6 +72,23 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
     return (entities || []).filter(e => e.id !== entityId);
   }, [entities, entityId]);
 
+  const summary = useMemo(() => {
+    if (!loans) return { totalLent: 0, totalBorrowed: 0, netPosition: 0, totalInterest: 0 };
+    let totalLent = 0;
+    let totalBorrowed = 0;
+    let totalInterest = 0;
+    loans.filter(l => l.status === 'active').forEach(l => {
+      if (l.lender_entity_id === entityId) {
+        totalLent += l.outstanding_balance;
+        totalInterest += calculateAccruedInterest(l);
+      } else {
+        totalBorrowed += l.outstanding_balance;
+        totalInterest -= calculateAccruedInterest(l);
+      }
+    });
+    return { totalLent, totalBorrowed, netPosition: totalLent - totalBorrowed, totalInterest };
+  }, [loans, entityId]);
+
   const openCreate = () => {
     setEditing(null);
     setFormData({
@@ -133,23 +150,6 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
   };
 
   if (isLoading) return <Skeleton className="h-48" />;
-
-  const summary = useMemo(() => {
-    if (!loans) return { totalLent: 0, totalBorrowed: 0, netPosition: 0, totalInterest: 0 };
-    let totalLent = 0;
-    let totalBorrowed = 0;
-    let totalInterest = 0;
-    loans.filter(l => l.status === 'active').forEach(l => {
-      if (l.lender_entity_id === entityId) {
-        totalLent += l.outstanding_balance;
-        totalInterest += calculateAccruedInterest(l);
-      } else {
-        totalBorrowed += l.outstanding_balance;
-        totalInterest -= calculateAccruedInterest(l);
-      }
-    });
-    return { totalLent, totalBorrowed, netPosition: totalLent - totalBorrowed, totalInterest };
-  }, [loans, entityId]);
 
   return (
     <>

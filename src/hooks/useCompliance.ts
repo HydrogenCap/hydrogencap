@@ -427,7 +427,7 @@ export function useDeleteComplianceDocument() {
           if (!alreadyGone) {
             throw new Error(`Failed to remove file from storage: ${message}`);
           }
-          // eslint-disable-next-line no-console
+           
           console.warn(`Compliance doc storage object ${path} was already missing; deleting DB record.`);
         }
       }
