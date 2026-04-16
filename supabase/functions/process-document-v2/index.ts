@@ -3,7 +3,6 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
-import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 // Compliance document types (matches V1)
@@ -189,12 +188,6 @@ Deno.serve(async (req) => {
 
     log.withUser(claimsData.user.id);
 
-    // Subscription check
-    const subCheck = await requireActiveSubscription(claimsData.user.id, corsHeaders);
-    if (!subCheck.allowed) {
-      return subCheck.response;
-    }
-
     // Rate limit: 20 requests per 60 minutes
     const rateLimit = await checkRateLimit(claimsData.user.id, 'process-document-v2', 20, 60);
     if (!rateLimit.allowed) {
@@ -232,7 +225,7 @@ Deno.serve(async (req) => {
         org_id,
         extraction_version: 2,
         status: 'processing',
-        model_used: 'google/gemini-3-flash-preview',
+        model_used: 'google/gemini-2.5-flash',
       })
       .select()
       .single();
@@ -243,6 +236,9 @@ Deno.serve(async (req) => {
 
     const extractionId = extraction.id;
     log.info('Extraction started', { extractionId, document_id });
+
+    // Mark document as processing so it doesn't appear stuck in pending
+    await supabase.from("documents").update({ extraction_status: "processing" }).eq("id", document_id);
 
     // Fetch the document file
     const { base64, mimeType } = await fetchFileAsBase64(document_url);
@@ -283,7 +279,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: buildExtractionPrompt() },
           { role: "user", content: [
@@ -363,6 +359,19 @@ Deno.serve(async (req) => {
       review_reasons: reviewReasons,
     }).eq("id", extractionId);
 
+    // Sync extraction results back to the parent documents row
+    await supabase.from("documents").update({
+      extraction_status: status,
+      ai_suggested_doc_type: result.doc_type,
+      ai_doc_type_confidence: result.doc_type_confidence,
+      ai_suggested_property_id: extractedFields.property_id_match ?? null,
+      extracted_address_text: extractedFields.address ?? null,
+      extracted_issue_date: extractedFields.issue_date ?? null,
+      extracted_reference_number: extractedFields.reference_number ?? null,
+      expiry_date: extractedFields.expiry_date ?? null,
+      ai_model: 'google/gemini-2.5-flash',
+    }).eq("id", document_id);
+
     log.info('Extraction completed', {
       extractionId,
       status,
@@ -399,6 +408,19 @@ Deno.serve(async (req) => {
     log.error("Process document V2 error", {
       error: error instanceof Error ? error.message : String(error),
     });
+
+    // Best-effort: reset document status so it doesn't stay stuck at pending/processing
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+      const body = await req.clone().json().catch(() => ({}));
+      if (body?.document_id) {
+        await adminClient.from("documents").update({ extraction_status: "failed" }).eq("id", body.document_id);
+      }
+    } catch {
+      // ignore — primary error takes precedence
+    }
 
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),

@@ -53,6 +53,13 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Tracked so the catch-all can mark the summaries row as failed if anything
+  // between the initial upsert and the successful completion throws — otherwise
+  // the row is stuck in "processing" forever (same bug class as the original
+  // documents-stuck-in-pending issue).
+  let summaryId: string | null = null;
+  let adminSupabase: ReturnType<typeof createClient> | null = null;
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -112,6 +119,7 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    adminSupabase = supabase;
 
     // Upsert processing record
     const { data: summary, error: upsertError } = await supabase
@@ -131,6 +139,7 @@ serve(async (req) => {
       .single();
 
     if (upsertError) throw upsertError;
+    summaryId = summary.id;
 
     // Fetch properties for matching
     const { data: properties } = await supabase
@@ -296,6 +305,22 @@ Extract the following. Respond with valid JSON only — no markdown, no code fen
     );
   } catch (error: any) {
     console.error("summarize-valuation-document error:", error);
+    // Catch-all: if we created a processing row, make sure it's marked failed
+    // so the UI stops spinning. Best-effort — swallow any secondary error here.
+    if (summaryId && adminSupabase) {
+      try {
+        await adminSupabase
+          .from("document_summaries")
+          .update({
+            status: "failed",
+            error_message: (error?.message ?? "Unknown error").slice(0, 500),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", summaryId);
+      } catch (resetErr) {
+        console.error("Failed to reset summary status:", resetErr);
+      }
+    }
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

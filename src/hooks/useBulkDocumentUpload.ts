@@ -229,6 +229,8 @@ export function useBulkDocumentUpload() {
       });
     } catch (extError) {
       console.error('Extraction failed:', extError);
+      // Mark document as failed in the DB so it doesn't stay stuck
+      await (supabase as any).from('documents').update({ extraction_status: 'failed' }).eq('id', docRecord.id);
       updateItem(item.id, {
         status: 'error',
         error: `Extraction failed: ${extError instanceof Error ? extError.message : 'Unknown error'}`,

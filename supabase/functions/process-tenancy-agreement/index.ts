@@ -10,6 +10,21 @@ interface ProcessTenancyRequest {
   propertyAddress: string;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Parse a Supabase Storage URL (or a bare `{org}/…` path) and return the
+ * storage path IF it is well-formed and safe to hand to the admin client.
+ *
+ * Safety rules:
+ *   - reject anything containing a `..` segment (path traversal, which HTTP
+ *     URL normalisation would collapse when we build the download URL)
+ *   - require the first segment to be a UUID (the org id). The caller then
+ *     checks the auth user is a member of that org — without the UUID check
+ *     an attacker could pass `anything/../{victim}/file` and split("/")[0]
+ *     would be "anything" (which they are a member of), bypassing the
+ *     membership check.
+ */
 function extractDocumentsStoragePath(fileUrl: string): string | null {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
@@ -17,35 +32,51 @@ function extractDocumentsStoragePath(fileUrl: string): string | null {
     return null;
   }
 
+  let rawPath: string | null = null;
+
   if (!fileUrl.startsWith("http")) {
-    return fileUrl;
-  }
-
-  if (!fileUrl.startsWith(supabaseUrl)) {
-    return null;
-  }
-
-  try {
-    const url = new URL(fileUrl);
-    const path = url.pathname;
-    const patterns = [
-      "/storage/v1/object/sign/documents/",
-      "/storage/v1/object/signed/documents/",
-      "/storage/v1/object/public/documents/",
-      "/storage/v1/object/documents/",
-    ];
-
-    for (const pattern of patterns) {
-      const index = path.indexOf(pattern);
-      if (index >= 0) {
-        return decodeURIComponent(path.slice(index + pattern.length));
-      }
+    rawPath = fileUrl;
+  } else {
+    if (!fileUrl.startsWith(supabaseUrl)) {
+      return null;
     }
-  } catch {
-    return null;
+
+    try {
+      const url = new URL(fileUrl);
+      const path = url.pathname;
+      const patterns = [
+        "/storage/v1/object/sign/documents/",
+        "/storage/v1/object/signed/documents/",
+        "/storage/v1/object/public/documents/",
+        "/storage/v1/object/documents/",
+      ];
+
+      for (const pattern of patterns) {
+        const index = path.indexOf(pattern);
+        if (index >= 0) {
+          rawPath = decodeURIComponent(path.slice(index + pattern.length));
+          break;
+        }
+      }
+    } catch {
+      return null;
+    }
   }
 
-  return null;
+  if (!rawPath) return null;
+
+  // Strip any leading slashes, then reject absolute paths, traversal segments,
+  // embedded nulls, or backslash tricks. Also reject empty segments.
+  const cleaned = rawPath.replace(/^\/+/, "");
+  if (!cleaned) return null;
+  if (cleaned.includes("\\") || cleaned.includes("\0")) return null;
+  const segments = cleaned.split("/");
+  if (segments.some((s) => s === "" || s === "." || s === "..")) return null;
+
+  // First segment MUST be the org UUID — this is what membership is checked on.
+  if (!UUID_REGEX.test(segments[0])) return null;
+
+  return cleaned;
 }
 
 async function fetchFileAsDataUrl(

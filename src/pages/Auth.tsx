@@ -23,6 +23,23 @@ const authSchema = z.object({
 
 type AuthFormData = z.infer<typeof authSchema>;
 
+/**
+ * Guard against open-redirect attacks via the `returnTo` query param.
+ * Rejects:
+ *  - null / empty
+ *  - anything not starting with '/'
+ *  - protocol-relative URLs like `//evil.com/path` or `/\evil.com`
+ *  - URLs containing control characters
+ */
+function isSafeInternalPath(value: string | null): value is string {
+  if (!value) return false;
+  if (!value.startsWith('/')) return false;
+  if (value.length > 1 && (value[1] === '/' || value[1] === '\\')) return false;
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f]/.test(value)) return false;
+  return true;
+}
+
 function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,13 +57,15 @@ function AuthPage() {
     },
   });
 
-  // Redirect if already logged in
+  // Redirect if already logged in. Guard against open-redirect: protocol-relative
+  // URLs like `//evil.com/…` pass a naive `startsWith('/')` check, so we also
+  // require the second character to not be '/' or '\'.
   useEffect(() => {
     if (user) {
       const searchParams = new URLSearchParams(window.location.search);
       const returnTo = searchParams.get('returnTo');
-      if (returnTo && returnTo.startsWith('/')) {
-        navigate(returnTo, { replace: true });
+      if (isSafeInternalPath(returnTo)) {
+        navigate(returnTo as string, { replace: true });
       } else {
         navigate('/dashboard');
       }
@@ -81,7 +100,7 @@ function AuthPage() {
         });
         const searchParams = new URLSearchParams(window.location.search);
         const returnTo = searchParams.get('returnTo');
-        navigate(returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard');
+        navigate(isSafeInternalPath(returnTo) ? (returnTo as string) : '/dashboard');
       } else {
         const { error } = await signUp(data.email, data.password, data.fullName);
         if (error) {

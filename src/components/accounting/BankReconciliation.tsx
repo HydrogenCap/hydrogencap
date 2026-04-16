@@ -122,8 +122,8 @@ export function BankReconciliation() {
   const unmatch = useUnmatchBankEntry();
   const ignore = useIgnoreBankEntry();
 
-  const entries = allEntries || [];
-  const transactions = allTransactions || [];
+  const entries = useMemo(() => allEntries || [], [allEntries]);
+  const transactions = useMemo(() => allTransactions || [], [allTransactions]);
 
   const unmatchedEntries = useMemo(() => entries.filter(e => e.status === 'unmatched'), [entries]);
   const matchedEntries = useMemo(() => entries.filter(e => e.status === 'matched'), [entries]);

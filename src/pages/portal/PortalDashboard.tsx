@@ -12,9 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP, formatGBPDecimal, formatPercent } from '@/lib/calculations';
 import { format } from 'date-fns';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type jsPDF from 'jspdf';
 import type { PortalEntityDistribution } from '@/types/portal';
+
+// jspdf + jspdf-autotable are loaded dynamically inside generatePortalPdf to
+// keep ~448kB of PDF machinery out of the initial page chunk.
 
 export default function PortalDashboard() {
   const { canViewFinancials, orgId, isShareholderUser } = useShareholderSession();
@@ -58,7 +60,11 @@ export default function PortalDashboard() {
     enabled: !!orgId && isShareholderUser && canViewFinancials,
   });
 
-  const generatePortalPdf = (dist: PortalEntityDistribution) => {
+  const generatePortalPdf = async (dist: PortalEntityDistribution) => {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text('Distribution Statement', 14, 20);

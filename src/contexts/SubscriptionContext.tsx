@@ -126,17 +126,59 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Primary: read from subscriptions table (set by webhook)
+  // Primary: read from subscriptions table (set by webhook).
+  //
+  // The table is keyed by user_id — typically the ORG OWNER who paid Stripe.
+  // Team members (members/admins/accountants/viewers added via invite) do not
+  // have their own subscription row. Without peer lookup, every non-owner
+  // teammate falls back to `tier='free'` and gets locked out of paid features
+  // they should inherit from the org they belong to.
   const { data: subscription, isLoading } = useQuery({
     queryKey: ['subscription', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. The user's own subscription row (org owners)
+      const { data: ownSub, error: ownErr } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user!.id)
         .maybeSingle();
-      if (error) throw error;
-      return data;
+      if (ownErr) throw ownErr;
+      if (ownSub && (ownSub.status === 'active' || ownSub.status === 'trialing')) {
+        return ownSub;
+      }
+
+      // 2. Peer lookup — find any active subscription in any org the user is
+      //    a member of. If a teammate (typically the owner) has an active
+      //    plan, inherit its tier.
+      const { data: memberships } = await supabase
+        .from('memberships')
+        .select('org_id')
+        .eq('user_id', user!.id);
+
+      const orgIds = (memberships ?? []).map((m: { org_id: string }) => m.org_id);
+      if (orgIds.length === 0) return ownSub ?? null;
+
+      const { data: peers } = await supabase
+        .from('memberships')
+        .select('user_id')
+        .in('org_id', orgIds);
+
+      const peerIds = Array.from(
+        new Set((peers ?? []).map((p: { user_id: string }) => p.user_id))
+      ).filter((id) => id !== user!.id);
+
+      if (peerIds.length === 0) return ownSub ?? null;
+
+      const { data: peerSub } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .in('user_id', peerIds)
+        .in('status', ['active', 'trialing'])
+        .order('current_period_end', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return peerSub ?? ownSub ?? null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,

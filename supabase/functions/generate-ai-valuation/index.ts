@@ -80,7 +80,7 @@ import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
          "Content-Type": "application/json",
        },
        body: JSON.stringify({
-         model: "google/gemini-3-flash-preview",
+         model: "google/gemini-2.5-flash",
          messages: [
            { role: "system", content: "You are a UK property valuation expert. Always respond with valid JSON only." },
            { role: "user", content: prompt },

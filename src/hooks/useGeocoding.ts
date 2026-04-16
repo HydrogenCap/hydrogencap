@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -165,9 +165,42 @@ export function useBackfillGeocoding() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState<BackfillProgress | null>(null);
 
+  // AbortController so the backfill loop stops cleanly when:
+  //   - the hook unmounts (navigate away mid-run)
+  //   - the user explicitly clicks Cancel
+  // Previously the loop kept running, making HTTP calls and calling setState
+  // on an unmounted component — producing React warnings and wasting geocode
+  // API quota.
+  const abortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  const cancelBackfill = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
   const startBackfill = useCallback(async (batchSize: number = 10) => {
+    // Cancel any prior run before starting a new one.
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+
     setIsRunning(true);
-    setProgress({ total: 0, processed: 0, succeeded: 0, failed: 0, failures: [] });
+    // Track progress in a local ref so we can read a consistent snapshot at
+    // the end without the setState-promise race the previous version used.
+    let localProgress: BackfillProgress = {
+      total: 0, processed: 0, succeeded: 0, failed: 0, failures: [],
+    };
+    const updateProgress = (next: BackfillProgress) => {
+      localProgress = next;
+      if (mountedRef.current) setProgress(next);
+    };
+    updateProgress(localProgress);
 
     // Import toast dynamically to avoid hook rules violation
     const { toast } = await import('@/hooks/use-toast');
@@ -180,9 +213,10 @@ export function useBackfillGeocoding() {
         .or('geocode_status.eq.NOT_STARTED,geocode_status.eq.FAILED,latitude.is.null');
 
       if (error) throw error;
+      if (ac.signal.aborted) return;
       if (!properties?.length) {
-        setProgress(p => p ? { ...p, total: 0 } : null);
-        setIsRunning(false);
+        updateProgress({ ...localProgress, total: 0 });
+        if (mountedRef.current) setIsRunning(false);
         toast({
           title: 'No properties to geocode',
           description: 'All properties already have location data',
@@ -190,7 +224,7 @@ export function useBackfillGeocoding() {
         return;
       }
 
-      setProgress(p => p ? { ...p, total: properties.length } : null);
+      updateProgress({ ...localProgress, total: properties.length });
 
       toast({
         title: 'Geocoding started',
@@ -198,71 +232,73 @@ export function useBackfillGeocoding() {
       });
 
       // Process in batches
-      for (let i = 0; i < properties.length; i += batchSize) {
+      outer: for (let i = 0; i < properties.length; i += batchSize) {
         const batch = properties.slice(i, i + batchSize);
-        
-        // Process batch with delays to respect rate limits
+
         for (const property of batch) {
-          const success = await geocodeProperty(property);
-          
-          setProgress(p => {
-            if (!p) return null;
-            const newProgress = {
-              ...p,
-              processed: p.processed + 1,
-              succeeded: success ? p.succeeded + 1 : p.succeeded,
-              failed: success ? p.failed : p.failed + 1,
-              failures: success ? p.failures : [
-                ...p.failures,
-                {
-                  propertyId: property.id,
-                  address: property.address_line_1,
-                  error: 'Geocoding failed',
-                },
-              ],
-            };
-            return newProgress;
+          if (ac.signal.aborted) break outer;
+
+          let success = false;
+          let failureMessage = 'Geocoding failed';
+          try {
+            success = await geocodeProperty(property);
+          } catch (err) {
+            // Previously thrown errors from markGeocodeFailed or updatePropertyGeocode
+            // would abort the whole loop. Swallow per-property so the batch continues.
+            failureMessage = err instanceof Error ? err.message : String(err);
+            console.error(`Geocode failed for ${property.id}:`, err);
+          }
+
+          if (ac.signal.aborted) break outer;
+
+          updateProgress({
+            ...localProgress,
+            processed: localProgress.processed + 1,
+            succeeded: success ? localProgress.succeeded + 1 : localProgress.succeeded,
+            failed: success ? localProgress.failed : localProgress.failed + 1,
+            failures: success ? localProgress.failures : [
+              ...localProgress.failures,
+              { propertyId: property.id, address: property.address_line_1, error: failureMessage },
+            ],
           });
 
-          // Rate limit: wait 200ms between requests
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Rate limit: wait 200ms between requests (abortable)
+          await new Promise<void>((resolve) => {
+            const t = setTimeout(resolve, 200);
+            ac.signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+          });
         }
       }
 
       // Refresh property list after backfill
       queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
 
-      // Get final progress for toast
-      const finalProgress = await new Promise<BackfillProgress | null>(resolve => {
-        setProgress(p => {
-          resolve(p);
-          return p;
+      if (ac.signal.aborted) {
+        toast({
+          title: 'Geocoding cancelled',
+          description: `Stopped after ${localProgress.processed} of ${localProgress.total} properties`,
         });
-      });
-
-      if (finalProgress) {
-        if (finalProgress.failed === 0) {
-          toast({
-            title: 'Geocoding complete',
-            description: `Successfully geocoded ${finalProgress.succeeded} properties`,
-          });
-        } else {
-          toast({
-            title: 'Geocoding complete with errors',
-            description: `${finalProgress.succeeded} succeeded, ${finalProgress.failed} failed`,
-            variant: 'destructive',
-          });
-        }
+      } else if (localProgress.failed === 0) {
+        toast({
+          title: 'Geocoding complete',
+          description: `Successfully geocoded ${localProgress.succeeded} properties`,
+        });
+      } else {
+        toast({
+          title: 'Geocoding complete with errors',
+          description: `${localProgress.succeeded} succeeded, ${localProgress.failed} failed`,
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       console.error('Backfill error:', err);
       toast({
         title: 'Geocoding failed',
-        description: 'An error occurred while geocoding properties',
+        description: err instanceof Error ? err.message : 'An error occurred while geocoding properties',
         variant: 'destructive',
       });
     } finally {
-      setIsRunning(false);
+      if (mountedRef.current) setIsRunning(false);
     }
   }, [geocodeProperty, queryClient]);
 
@@ -274,6 +310,7 @@ export function useBackfillGeocoding() {
     isRunning,
     progress,
     startBackfill,
+    cancelBackfill,
     resetProgress,
   };
 }

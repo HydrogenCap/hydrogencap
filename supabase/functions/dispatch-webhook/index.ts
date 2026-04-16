@@ -33,6 +33,34 @@ serve(async (req: Request) => {
       );
     }
 
+    // Verify the caller is a member of the org whose webhooks they're dispatching.
+    // Without this, any authenticated user could dispatch webhooks for any org and
+    // leak data / forge signed events to third-party systems.
+    // Also restrict to roles that should be allowed to fire webhooks — viewers
+    // and accountants shouldn't be able to ship arbitrary payloads to any
+    // configured third-party endpoint.
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("role")
+      .eq("org_id", org_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: not a member of this org" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const WEBHOOK_DISPATCH_ROLES = new Set(["owner", "admin", "member"]);
+    if (!WEBHOOK_DISPATCH_ROLES.has(membership.role)) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: insufficient role to dispatch webhooks" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Find active endpoints subscribed to this event
     const { data: endpoints, error: epError } = await supabase
       .from("webhook_endpoints")

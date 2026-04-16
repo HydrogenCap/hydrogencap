@@ -189,6 +189,8 @@
                size="icon"
                className="h-9 w-9 rounded-r-none"
                onClick={() => setViewMode('grid')}
+               aria-label="Grid view"
+               aria-pressed={viewMode === 'grid'}
              >
                <Grid className="h-4 w-4" />
              </Button>
@@ -197,6 +199,8 @@
                size="icon"
                className="h-9 w-9 rounded-l-none"
                onClick={() => setViewMode('list')}
+               aria-label="List view"
+               aria-pressed={viewMode === 'list'}
              >
                <List className="h-4 w-4" />
              </Button>

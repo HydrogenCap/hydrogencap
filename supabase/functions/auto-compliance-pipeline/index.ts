@@ -87,6 +87,12 @@ serve(async (req) => {
 
     console.log("Starting auto-compliance-pipeline scan");
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    // Concurrency safety: this function races with itself under load (cron
+    // overlap, manual trigger while cron is running). The "no existing open
+    // task" check below is NOT atomic — both callers can pass it and then
+    // both insert. A companion migration adds a partial unique index on
+    // compliance_tasks (property_id, document_type) WHERE status is open,
+    // so the second insert raises 23505 which we treat as "already created".
 
     // 1. Fetch all active compliance templates (for lead_time_days + display_name)
     const { data: templates, error: tplErr } = await supabase
@@ -182,7 +188,13 @@ serve(async (req) => {
         .single();
 
       if (taskErr) {
-        console.error("Error creating task:", taskErr);
+        // 23505 = unique_violation — another concurrent run beat us to it.
+        // That's fine, skip silently. Everything else is a real error.
+        if ((taskErr as any).code === "23505") {
+          console.log(`Task for ${doc.property_id}/${doc.document_type} already created by concurrent run`);
+        } else {
+          console.error("Error creating task:", taskErr);
+        }
         continue;
       }
 

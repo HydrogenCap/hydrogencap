@@ -7,7 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, AlertTriangle, XCircle, Download, Shield } from 'lucide-react';
 import { format, addMonths, isAfter, isBefore } from 'date-fns';
-import jsPDF from 'jspdf';
+// jspdf is loaded dynamically inside generateForm6A to keep ~448kB of PDF
+// machinery out of the initial page chunk.
 
 interface Section21ChecklistProps {
   open: boolean;
@@ -157,7 +158,8 @@ export function Section21Checklist({ open, onOpenChange, tenancyId }: Section21C
     return twoMonthsNotice;
   }, [tenancy, today]);
 
-  const generateForm6A = () => {
+  const generateForm6A = async () => {
+    const { default: jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     const tenant = tenancy?.tenants_v2;
     const property = tenancy?.rooms_v2?.properties_v2;

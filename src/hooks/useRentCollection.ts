@@ -368,9 +368,14 @@ export function useUpdateRentScheduleStatus() {
       }
       toast({ title: 'Failed to update status', description: _err.message, variant: 'destructive' });
     },
+    // Success toast belongs in onSuccess — the previous onSettled implementation
+    // fired "Status updated" even on error, showing both a destructive error
+    // toast and a success toast for the same failed update.
+    onSuccess: () => {
+      toast({ title: 'Status updated' });
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: 'Status updated' });
     },
   });
 }

@@ -40,6 +40,30 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+
+    // Dev-only a11y warning: icon-sized buttons are almost always icon-only
+    // (a single lucide icon as child). Without aria-label / aria-labelledby /
+    // a visible text child a screen reader has nothing to announce. We log
+    // once per render in development so the team can systematically fix
+    // these as they're touched, without blocking production.
+    if (
+      import.meta.env.DEV &&
+      size === "icon" &&
+      !props["aria-label"] &&
+      !props["aria-labelledby"] &&
+      !(props as { title?: string }).title
+    ) {
+      const hasTextChild = React.Children.toArray(props.children).some(
+        (c) => typeof c === "string" && c.trim().length > 0,
+      );
+      if (!hasTextChild) {
+         
+        console.warn(
+          "[a11y] Icon-only <Button size=\"icon\"> is missing an accessible name. Add aria-label, aria-labelledby, or a title prop.",
+        );
+      }
+    }
+
     return <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
   },
 );

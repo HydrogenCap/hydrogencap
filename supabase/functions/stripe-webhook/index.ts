@@ -104,31 +104,61 @@ async function syncSubscriptionByEmail(
   email: string,
   overrideStatus?: string
 ) {
-  // Try profiles table first
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .eq("email", email)
-    .limit(1);
-
   let userId: string | undefined;
 
-  const typedProfiles = (profiles || []) as Array<{ user_id: string | null }>;
-
-  if (typedProfiles.length && typedProfiles[0].user_id) {
-    userId = typedProfiles[0].user_id;
-  } else {
-    const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
-    const authUser = listData?.users.find((candidate: { email?: string | null }) => candidate.email === email);
-    if (listError || !authUser) {
-      console.error(`[STRIPE-WEBHOOK] No user found for email: ${email}`);
-      return;
+  // 1. Try an existing subscriptions row keyed by the Stripe customer id.
+  //    This is the fastest and scales to unlimited users.
+  try {
+    const customers = await stripe.customers.list({ email, limit: 1 });
+    const stripeCustomerId = customers.data[0]?.id;
+    if (stripeCustomerId) {
+      const { data: existing } = await supabase
+        .from("subscriptions")
+        .select("user_id")
+        .eq("stripe_customer_id", stripeCustomerId)
+        .limit(1)
+        .maybeSingle();
+      if (existing?.user_id) userId = existing.user_id;
     }
-    userId = authUser.id;
+  } catch (err) {
+    console.warn("[STRIPE-WEBHOOK] stripe_customer_id lookup failed:", err);
+  }
+
+  // 2. Fall back to the profiles table (keyed by email).
+  if (!userId) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("email", email)
+      .limit(1);
+
+    const typedProfiles = (profiles || []) as Array<{ user_id: string | null }>;
+    if (typedProfiles.length && typedProfiles[0].user_id) {
+      userId = typedProfiles[0].user_id;
+    }
+  }
+
+  // 3. Last resort — page through auth.users. listUsers() defaults to the
+  //    first 50 and caps at 1000 per page, so a naive call silently fails
+  //    once the workspace grows past that. Page until we find the email or
+  //    exhaust all users.
+  if (!userId) {
+    const PAGE_SIZE = 1000;
+    for (let page = 1; page <= 50; page++) {
+      const { data: listData, error: listError } = await supabase.auth.admin.listUsers({ page, perPage: PAGE_SIZE });
+      if (listError) {
+        console.error("[STRIPE-WEBHOOK] listUsers error:", listError);
+        break;
+      }
+      const users = listData?.users ?? [];
+      const match = users.find((u: { email?: string | null }) => u.email === email);
+      if (match) { userId = match.id; break; }
+      if (users.length < PAGE_SIZE) break; // last page
+    }
   }
 
   if (!userId) {
-    console.error(`[STRIPE-WEBHOOK] Unable to resolve user for email: ${email}`);
+    console.error(`[STRIPE-WEBHOOK] No user found for email: ${email}`);
     return;
   }
 

@@ -54,7 +54,6 @@ const SharedDocument = lazy(() => import("./pages/SharedDocument"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Install = lazy(() => import("./pages/Install"));
 const Contractors = lazy(() => import("./pages/Contractors"));
-const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
 const JobsAndWorks = lazy(() => import("./pages/JobsAndWorks"));
 
@@ -65,9 +64,7 @@ const RentCollection = lazy(() => import("./pages/RentCollection"));
 const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
 const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
 const Reconciliation = lazy(() => import("./pages/Reconciliation"));
-const MaintenanceRequests = lazy(() => import("./pages/MaintenanceRequests"));
 const MaintenanceRequestDetail = lazy(() => import("./pages/MaintenanceRequestDetail"));
-const WorkOrders = lazy(() => import("./pages/WorkOrders"));
 const WorkOrderDetail = lazy(() => import("./pages/WorkOrderDetail"));
 const Documents = lazy(() => import("./pages/Documents"));
 const PropertiesV2 = lazy(() => import("./pages/PropertiesV2"));
@@ -119,10 +116,6 @@ const PortalStatements = lazy(() => import("./pages/portal/PortalStatements"));
 
 // Tenant portal pages
 const TenantAcceptInvite = lazy(() => import("./pages/tenant-portal/TenantAcceptInvite"));
-const TenantPortalHome = lazy(() => import("./pages/tenant-portal/TenantPortalHome"));
-const TenantRentHistory = lazy(() => import("./pages/tenant-portal/TenantRentHistory"));
-const TenantMaintenance = lazy(() => import("./pages/tenant-portal/TenantMaintenance"));
-const TenantDocuments = lazy(() => import("./pages/tenant-portal/TenantDocuments"));
 // Tenant portal V2 pages
 const TenantDashboard = lazy(() => import("./pages/tenant-portal/TenantDashboard"));
 const TenantPayments = lazy(() => import("./pages/tenant-portal/TenantPayments"));
@@ -532,26 +525,6 @@ const App = () => (
               }
             />
             <Route
-              path="/refinancing-opportunities"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <RefinancingOpportunities />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/valuation-alerts"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ValuationAlerts />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/portfolio-timeline"
               element={
                 <ProtectedRoute>
@@ -712,21 +685,22 @@ const App = () => (
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/inspections" element={<ProtectedRoute><RouteBoundary><Inspections /></RouteBoundary></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><RouteBoundary><AdminDashboard /></RouteBoundary></AdminProtectedRoute></ProtectedRoute>} />
 
-            {/* Wizard routes */}
+            {/* Wizard routes — each wrapped in RouteBoundary so a render error
+                in one wizard step doesn't crash the whole app shell. */}
             <Route path="/wizards" element={<ProtectedRoute><RouteBoundary><Wizards /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/wizards/add-property" element={<ProtectedRoute><AddPropertyWizard /></ProtectedRoute>} />
-            <Route path="/wizards/add-entity" element={<ProtectedRoute><AddEntityWizard /></ProtectedRoute>} />
-            <Route path="/wizards/add-compliance" element={<ProtectedRoute><AddComplianceWizard /></ProtectedRoute>} />
+            <Route path="/wizards/add-property" element={<ProtectedRoute><RouteBoundary><AddPropertyWizard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/wizards/add-entity" element={<ProtectedRoute><RouteBoundary><AddEntityWizard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/wizards/add-compliance" element={<ProtectedRoute><RouteBoundary><AddComplianceWizard /></RouteBoundary></ProtectedRoute>} />
 
             <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/:id" element={<ProtectedRoute><PropertyV1Redirect /></ProtectedRoute>} />
+            <Route path="/properties/:id" element={<ProtectedRoute><RouteBoundary><PropertyV1Redirect /></RouteBoundary></ProtectedRoute>} />
 
             <Route path="/companies" element={<Navigate to="/entities" replace />} />
             <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
             <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
-            <Route path="/tenants/:tenantId" element={<ProtectedRoute><TenantV1Redirect /></ProtectedRoute>} />
+            <Route path="/tenants/:tenantId" element={<ProtectedRoute><RouteBoundary><TenantV1Redirect /></RouteBoundary></ProtectedRoute>} />
             <Route path="/compliance" element={<Navigate to="/compliance-v2" replace />} />
 
             {/* Marketing pages (public) */}

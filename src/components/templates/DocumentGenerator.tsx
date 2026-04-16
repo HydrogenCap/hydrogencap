@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
 import { FileDown, Eye, EyeOff, Send, Check, Loader2, ArrowLeft } from 'lucide-react';
-import jsPDF from 'jspdf';
+// jspdf is loaded dynamically inside handleGeneratePdf to keep ~448kB of PDF
+// machinery out of the initial page chunk.
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -141,10 +142,11 @@ export function DocumentGenerator({ onBack }: DocumentGeneratorProps) {
     }
   };
 
-  const handleGeneratePdf = useCallback(() => {
+  const handleGeneratePdf = useCallback(async () => {
     const content = editedContent ?? mergedContent;
     if (!content) return;
 
+    const { default: jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     const title = selectedTemplate?.name || 'Document';
 

@@ -1,14 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 /**
- * Simple per-user rate limiter using the rate_limits table.
- * Fails closed — if the check itself errors, the request is denied (503).
+ * Rate limiter using the rate_limits table.
+ *
+ * Supports per-user and per-org limits. When an `orgId` is supplied we also
+ * enforce an org-wide cap — otherwise a 50-seat team hits the per-user limit
+ * 50x in parallel and exhausts AI credits / external API quotas.
+ *
+ * Fails closed — if the check itself errors, the request is denied.
  */
 export async function checkRateLimit(
   userId: string,
   functionName: string,
   maxRequests: number = 20,
-  windowMinutes: number = 60
+  windowMinutes: number = 60,
+  options?: { orgId?: string | null; orgMax?: number }
 ): Promise<{ allowed: boolean; remaining: number; resetAt: string }> {
   try {
     const supabase = createClient(
@@ -18,6 +24,7 @@ export async function checkRateLimit(
 
     const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
 
+    // Per-user check
     const { count, error } = await supabase
       .from("rate_limits")
       .select("id", { count: "exact", head: true })
@@ -38,10 +45,32 @@ export async function checkRateLimit(
       return { allowed: false, remaining: 0, resetAt };
     }
 
+    // Per-org check (only if caller supplied an org id and an org-level cap).
+    // Defaults to 10x the per-user cap if no explicit orgMax is provided.
+    if (options?.orgId) {
+      const orgMax = options.orgMax ?? maxRequests * 10;
+      const { count: orgCount, error: orgErr } = await supabase
+        .from("rate_limits")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", options.orgId)
+        .eq("function_name", functionName)
+        .gte("created_at", windowStart);
+
+      if (orgErr) {
+        console.error("Rate limit org check failed:", orgErr);
+        return { allowed: false, remaining: 0, resetAt: new Date(Date.now() + 60_000).toISOString() };
+      }
+
+      if ((orgCount ?? 0) >= orgMax) {
+        const resetAt = new Date(Date.now() + windowMinutes * 60 * 1000).toISOString();
+        return { allowed: false, remaining: 0, resetAt };
+      }
+    }
+
     // Record this request
     await supabase
       .from("rate_limits")
-      .insert({ user_id: userId, function_name: functionName });
+      .insert({ user_id: userId, function_name: functionName, org_id: options?.orgId ?? null });
 
     return { allowed: true, remaining: remaining - 1, resetAt: "" };
   } catch (err) {

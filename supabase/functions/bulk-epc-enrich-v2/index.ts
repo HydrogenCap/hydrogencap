@@ -100,19 +100,39 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { data: membership } = await supabase
-      .from('memberships').select('org_id').eq('user_id', user.id).limit(1).maybeSingle();
+    // Accept `org_id` from the body so multi-org users can pick which portfolio
+    // to enrich. If omitted we fall back to every org the user is a member of —
+    // previously this silently picked only the FIRST org via .limit(1) and left
+    // the other portfolios un-enriched.
+    const body = await req.json().catch(() => ({}));
+    const requestedOrgId: string | null = body?.org_id ?? null;
+    const mode: string | undefined = body?.mode;
 
-    if (!membership?.org_id) {
+    const { data: memberships } = await supabase
+      .from('memberships').select('org_id').eq('user_id', user.id);
+
+    const allowedOrgIds = (memberships ?? [])
+      .map((m: { org_id: string }) => m.org_id);
+
+    if (allowedOrgIds.length === 0) {
       return new Response(JSON.stringify({ error: 'No organization' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { mode } = await req.json();
+    let targetOrgIds: string[];
+    if (requestedOrgId) {
+      if (!allowedOrgIds.includes(requestedOrgId)) {
+        return new Response(JSON.stringify({ error: 'Forbidden: not a member of this org' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      targetOrgIds = [requestedOrgId];
+    } else {
+      targetOrgIds = allowedOrgIds;
+    }
 
     let query = supabase
       .from('properties_v2')
-      .select('id, address_line_1, postcode, epc_rating')
-      .eq('org_id', membership.org_id)
+      .select('id, address_line_1, postcode, epc_rating, org_id')
+      .in('org_id', targetOrgIds)
       .not('postcode', 'is', null);
 
     if (mode === 'missing-only') {
@@ -155,11 +175,12 @@ Deno.serve(async (req) => {
           .eq('document_type', 'epc')
           .eq('is_current', true);
 
-        // Insert compliance document for the EPC
+        // Insert compliance document for the EPC — use the property's own
+        // org_id since we may be processing multiple orgs in one run.
         await supabase
           .from('compliance_documents_v2')
           .insert({
-            org_id: membership.org_id,
+            org_id: p.org_id,
             property_id: p.id,
             document_type: 'epc',
             issue_date: lodgementDate,
