@@ -7,19 +7,23 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vite/client", "vitest/globals"]
   },
   "include": [
     "src/lib/accountingTypes.ts",
     "src/lib/auditLogTypes.ts",
+    "src/lib/backupConfig.ts",
     "src/lib/bankCsvParser.ts",
     "src/lib/calculations.ts",
     "src/lib/chart-tokens.ts",
+    "src/lib/complianceItemsWithMissing.ts",
     "src/lib/complianceRequirements.ts",
     "src/lib/complianceStatus.ts",
     "src/lib/complianceTaskTypes.ts",
     "src/lib/complianceTypes.ts",
     "src/lib/complianceV2Types.ts",
+    "src/lib/createNotification.ts",
     "src/lib/csvParser.ts",
     "src/lib/design-tokens.ts",
     "src/lib/distribution-calculator.ts",
@@ -33,7 +37,10 @@
     "src/lib/schemas/loan.ts",
     "src/lib/schemas/property.ts",
     "src/lib/tax-engine.ts",
+    "src/lib/tenancyLifecycle.ts",
     "src/lib/utils.ts",
+    "src/lib/voidDetection.ts",
+    "src/lib/void-calculator.ts",
     "src/lib/workOrderFinancialSync.ts"
   ]
 }
