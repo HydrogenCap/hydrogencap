@@ -404,12 +404,68 @@ export function useUpdateWorkOrder() {
 
 // ─── Complete Work Order ─────────────────────────────────────────────
 
+// Add the completed work order's cost into financial_snapshots.maintenance_costs
+// for the property + entity + month. Upsert semantics: if a snapshot exists for
+// that (property_id, snapshot_month), increment; otherwise insert a new row.
+// Non-atomic — acceptable because snapshot rows are only written by manual
+// upserts, monthly aggregation jobs, and this sync path, which never race.
+export async function syncMaintenanceCostToSnapshot({
+  orgId,
+  entityId,
+  propertyId,
+  completionDate,
+  cost,
+}: {
+  orgId: string;
+  entityId: string;
+  propertyId: string;
+  completionDate: string;
+  cost: number;
+}) {
+  const month = `${completionDate.slice(0, 7)}-01`;
+  const { data: existing } = await supabase
+    .from('financial_snapshots')
+    .select('id, maintenance_costs')
+    .eq('property_id', propertyId)
+    .eq('snapshot_month', month)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from('financial_snapshots')
+      .update({
+        maintenance_costs: (existing.maintenance_costs || 0) + cost,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id);
+  } else {
+    await supabase
+      .from('financial_snapshots')
+      .insert({
+        org_id: orgId,
+        entity_id: entityId,
+        property_id: propertyId,
+        snapshot_month: month,
+        maintenance_costs: cost,
+      });
+  }
+}
+
 export function useCompleteWorkOrder() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, actualCost }: { id: string; actualCost?: number }) => {
+      // Read the work order up front so we can (a) detect an already-completed
+      // WO and skip the snapshot sync to avoid double-counting on repeated
+      // calls, and (b) pull org/entity/property for the snapshot write.
+      const { data: wo } = await supabase
+        .from('work_orders')
+        .select('org_id, entity_id, property_id, status')
+        .eq('id', id)
+        .maybeSingle();
+
       let cost = actualCost;
       if (cost === undefined) {
         const { data: items } = await (supabase as any)
@@ -421,13 +477,11 @@ export function useCompleteWorkOrder() {
         cost = ((items || []) as WorkOrderCostSummary[]).reduce((s, i) => s + i.amount + (i.vat_amount || 0), 0);
       }
 
-      // TODO: When WO is closed, sync actual_cost to financial_snapshots.maintenance_costs
-      // for the property's entity + month. This will be automated in a future section.
-
+      const completionDate = new Date().toISOString().split('T')[0];
       const payload: WorkOrderUpdate = {
         status: 'completed',
         actual_cost: cost,
-        actual_completion_date: new Date().toISOString().split('T')[0],
+        actual_completion_date: completionDate,
         updated_at: new Date().toISOString(),
       };
       const { error } = await (supabase as any)
@@ -435,11 +489,27 @@ export function useCompleteWorkOrder() {
         .update(payload)
         .eq('id', id);
       if (error) throw error;
+
+      const alreadyCompleted = wo?.status === 'completed';
+      if (!alreadyCompleted && wo?.property_id && cost && cost > 0) {
+        await syncMaintenanceCostToSnapshot({
+          orgId: wo.org_id,
+          entityId: wo.entity_id,
+          propertyId: wo.property_id,
+          completionDate,
+          cost,
+        });
+      }
     },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['work_order', variables.id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
+      qc.invalidateQueries({ queryKey: ['financial_snapshots'] });
+      qc.invalidateQueries({ queryKey: ['financial_snapshots_month'] });
+      qc.invalidateQueries({ queryKey: ['portfolio_monthly_summary'] });
+      qc.invalidateQueries({ queryKey: ['entity_financial_summary'] });
+      qc.invalidateQueries({ queryKey: ['property_annual_performance'] });
       toast({ title: 'Work order completed' });
     },
   });
