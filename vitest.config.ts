@@ -9,6 +9,26 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "json-summary"],
+      include: ["src/**"],
+      exclude: [
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/__tests__/**",
+        "src/test/**",
+        "src/integrations/supabase/types.ts",
+      ],
+      // Ratchet: thresholds set just below current baseline so coverage can
+      // only go up. Raise these numbers as new tests land.
+      thresholds: {
+        statements: 4.5,
+        branches: 40,
+        functions: 17,
+        lines: 4.5,
+      },
+    },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },

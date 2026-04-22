@@ -20,7 +20,15 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+      // Surfaced as warnings (ratcheted via --max-warnings in the lint script)
+      // so existing debt is tolerated but no new violations can land.
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        ignoreRestSiblings: true,
+      }],
+      "@typescript-eslint/no-explicit-any": "warn",
       // react-hooks v7 added several strict rules that flag valid patterns
       // throughout the codebase. Disabling to keep CI green without refactoring.
       "react-hooks/set-state-in-effect": "off",
@@ -33,8 +41,6 @@ export default tseslint.config(
       "react-hooks/incompatible-library": "off",
       // these produce false positives in complex conditional flows
       "no-useless-assignment": "off",
-      // too broad for a codebase with many legitimate any usages
-      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 );
