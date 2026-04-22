@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,6 +78,9 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Quick Add Rooms</DialogTitle>
+          <DialogDescription>
+            Bulk-create multiple rooms for this property using a shared configuration.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><Label>Number of rooms (1–20)</Label><Input type="number" min="1" max="20" value={count} onChange={e => setCount(e.target.value)} /></div>

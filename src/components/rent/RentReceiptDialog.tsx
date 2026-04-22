@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { format } from 'date-fns';
 import { Download, Mail, Receipt } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -142,6 +142,9 @@ export function RentReceiptDialog({ data, open, onOpenChange }: RentReceiptDialo
             <Receipt className="h-5 w-5" />
             Rent Receipt
           </DialogTitle>
+          <DialogDescription>
+            Download or email a rent payment receipt to your tenant.
+          </DialogDescription>
         </DialogHeader>
 
         <div ref={receiptRef} className="space-y-4 py-2">

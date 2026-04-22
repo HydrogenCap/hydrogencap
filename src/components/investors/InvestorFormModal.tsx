@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
@@ -136,6 +136,9 @@ export function InvestorFormModal({ open, onOpenChange, investor }: Props) {
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Investor' : 'Add Investor'}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update the investor record details.' : 'Record a new investor in your portfolio.'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
