@@ -2,79 +2,26 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, isAllowedOrigin } from "../_shared/cors.ts";
+import { handleCustomerPortal } from "./handler.ts";
 
 const DEFAULT_BILLING_ORIGIN = "https://tenureiq.com";
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+  if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
-  try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } },
+  );
+  const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
-    const user = userData.user;
-    if (!user?.email) {
-      return new Response(JSON.stringify({ error: "User not authenticated or email not available" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 401,
-      });
-    }
-
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string;
-    if (customers.data.length === 0) {
-      const newCustomer = await stripe.customers.create({
-        email: user.email,
-        metadata: { supabase_uid: user.id },
-      });
-      customerId = newCustomer.id;
-    } else {
-      customerId = customers.data[0].id;
-    }
-
-    const originHeader = req.headers.get("origin") || "";
-    const origin = isAllowedOrigin(originHeader) ? originHeader : DEFAULT_BILLING_ORIGIN;
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${origin}/settings?tab=billing`,
-    });
-
-    return new Response(JSON.stringify({ url: portalSession.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("customer-portal error:", error);
-    return new Response(JSON.stringify({ error: message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
-  }
+  return handleCustomerPortal(req, {
+    supabase,
+    stripe,
+    corsHeaders: getCorsHeaders(req),
+    isAllowedOrigin,
+    defaultBillingOrigin: DEFAULT_BILLING_ORIGIN,
+  });
 });
