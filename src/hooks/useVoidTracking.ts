@@ -4,7 +4,6 @@ import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import {
   calculateVoidDays,
-  calculateLostRent,
   calculateAverageTurnaround,
   calculatePortfolioVoidRate,
 } from '@/lib/void-calculator';

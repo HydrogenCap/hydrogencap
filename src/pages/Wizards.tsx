@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { MapPin, Building, Shield, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 

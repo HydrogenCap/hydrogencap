@@ -5,7 +5,7 @@ import type JSZip from 'jszip';
 
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { BACKUP_TABLES, formatBytes, type TableExportConfig } from '@/lib/backupConfig';
+import { BACKUP_TABLES, formatBytes } from '@/lib/backupConfig';
 import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────

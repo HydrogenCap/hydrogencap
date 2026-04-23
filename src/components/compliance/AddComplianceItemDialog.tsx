@@ -112,7 +112,7 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
         notes: '',
         epc_rating: '',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({ 
         title: 'Failed to add compliance item', 
         variant: 'destructive' 

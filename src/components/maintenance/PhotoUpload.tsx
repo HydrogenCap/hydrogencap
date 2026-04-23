@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Camera, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, FileWarning, Check, X, AlertTriangle, Plus, Bell, DoorOpen, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Edit, FileWarning, Check, X, Plus, Bell, DoorOpen, RefreshCw } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';

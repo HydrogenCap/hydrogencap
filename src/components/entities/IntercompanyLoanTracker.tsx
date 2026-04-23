@@ -16,7 +16,7 @@ import {
   type IntercompanyLoan,
   type LoanStatus,
 } from '@/hooks/useEntityCompliance';
-import { useLegalEntities, type LegalEntity } from '@/hooks/useLegalEntities';
+import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useOrganization } from '@/hooks/useOrganization';
 import { formatGBPDecimal } from '@/lib/calculations';
 import { format, differenceInDays } from 'date-fns';

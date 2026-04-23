@@ -1,14 +1,12 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { PortfolioStats } from '@/lib/portfolioStats';
-import { formatGBP, formatGBPDecimal } from '@/lib/calculations';
+import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import { 
   TrendingUp, 
   TrendingDown, 
-  Minus, 
   Wallet, 
-  PiggyBank, 
   Percent, 
   Building2,
   Scale,

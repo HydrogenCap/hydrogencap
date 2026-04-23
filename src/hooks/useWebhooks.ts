@@ -148,7 +148,7 @@ export function useTestWebhook() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (endpointId: string) => {
+    mutationFn: async (_endpointId: string) => {
       if (!orgId) throw new Error('No organization');
 
       const { data, error } = await supabase.functions.invoke('dispatch-webhook', {

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { format, isPast, isBefore, addDays } from 'date-fns';
 import { ShieldCheck, Download, AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';

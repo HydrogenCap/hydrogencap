@@ -20,7 +20,7 @@ import {
 
 export async function seedDemoData(
   orgId: string,
-  userId: string
+  _userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // 1. Create legal entities

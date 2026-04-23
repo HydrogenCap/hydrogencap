@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
-import { detectVoidRooms, type DetectedVoid } from '@/lib/voidDetection';
+import { detectVoidRooms } from '@/lib/voidDetection';
 
 export type VoidReason = 'between_tenants' | 'refurbishment' | 'sale_preparation' | 'legal_dispute' | 'other';
 

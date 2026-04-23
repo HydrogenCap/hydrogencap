@@ -1,6 +1,5 @@
  import { useState } from 'react';
  import { toast } from 'sonner';
- import { Link } from 'react-router-dom';
  import { format } from 'date-fns';
  import { 
    FileText, Upload, Search, Grid, List, 
@@ -46,9 +45,8 @@
  import { UploadDocumentDialog } from './UploadDocumentDialog';
  import { EditDocumentDialog } from './EditDocumentDialog';
  import { DocumentViewer } from './DocumentViewer';
- import { cn } from '@/lib/utils';
  
- interface DocumentsPanelProps {
+interface DocumentsPanelProps {
    propertyId?: string;
    companyId?: string;
    tenantId?: string;

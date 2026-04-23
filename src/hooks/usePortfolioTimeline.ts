@@ -2,13 +2,9 @@ import { useMemo } from 'react';
 import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { useActivityLog } from './useActivityLog';
 import { usePropertyPassports, type PropertyPassport } from './usePropertyPassport';
-import { usePortfolioAttributableMetrics } from './useBeneficialGroups';
 import {
   formatGBP,
-  calculateLTV,
-  calculateEquity,
   getEffectiveCosts,
-  calculateMonthlyCashflowAfterDebt,
   calculateMonthlyMortgagePayment,
   calculateROCE,
   calculateNetRent,

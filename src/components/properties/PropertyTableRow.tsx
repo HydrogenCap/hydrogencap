@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
 import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import type { PropertyPassport } from '@/hooks/usePropertyPassport';
-import { getPropertyMetrics, calculatePropertyRisk, type PropertyMetrics } from '@/lib/propertyMetrics';
+import { getPropertyMetrics, calculatePropertyRisk } from '@/lib/propertyMetrics';
 import { formatGBPDecimal, formatPercent, formatDateUK } from '@/lib/calculations';
 import {
   ExpiryBadge,

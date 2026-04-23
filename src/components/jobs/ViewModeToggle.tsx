@@ -1,4 +1,4 @@
-import { LayoutGrid, List, Kanban } from 'lucide-react';
+import { LayoutGrid, Kanban } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, addMonths } from 'date-fns';
 import { FileSignature, Download, AlertTriangle, ChevronRight, Clock, ArrowLeft, Pencil, FileDown, History } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ import {
 import { TemplateEditor } from '@/components/templates/TemplateEditor';
 import { DocumentGenerator } from '@/components/templates/DocumentGenerator';
 import { TemplateVersionHistory } from '@/components/templates/TemplateVersionHistory';
-import { useGeneratedDocumentsV2, useUpdateDocumentStatus, type GeneratedDocumentRow } from '@/hooks/useTemplateUpgrade';
+import { useGeneratedDocumentsV2, useUpdateDocumentStatus } from '@/hooks/useTemplateUpgrade';
 
 type WizardStep = 'browse' | 'select_context' | 'template_fields' | 'preview';
 

@@ -10,8 +10,7 @@ import { Upload, FileSpreadsheet, ArrowRight, AlertTriangle, CheckCircle2, Loade
 import { useBankAccounts } from '@/hooks/useBankAccounts';
 import { useImportBankTransactions } from '@/hooks/useBankTransactions';
 import {
-  parseCSVContent, detectBankFormat, autoDetectMapping, transformRows,
-  BANK_PRESETS, type CSVColumnMapping, type ParsedTransaction,
+  parseCSVContent, detectBankFormat, autoDetectMapping, transformRows, type CSVColumnMapping, type ParsedTransaction,
 } from '@/lib/bankCsvParser';
 import { useDropzone } from 'react-dropzone';
 

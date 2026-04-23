@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, parseISO, isAfter, isBefore, startOfDay } from 'date-fns';
+import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Calendar, Plus, Clock, User, Phone, Mail, MessageSquare } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import {
   useViewings,
   useCreateViewing,

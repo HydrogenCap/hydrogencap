@@ -2,14 +2,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   useOwnershipFlowchartData,
   type FlowchartCompany,
   type FlowchartProperty,
   type FlowchartPerson,
-  type FlowchartEdge,
   type FlowchartData,
 } from '@/hooks/useOwnershipFlowchartData';
 

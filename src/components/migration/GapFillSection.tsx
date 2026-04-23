@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,7 @@ import {
   type TenantGap,
   type TenancyGap,
 } from '@/hooks/useMigration';
-import { PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
+import { PROPERTY_TYPES } from '@/hooks/usePropertiesV2';
 import { ROOM_TYPES } from '@/hooks/useRoomsV2';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';

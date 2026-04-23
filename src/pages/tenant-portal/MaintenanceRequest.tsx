@@ -3,13 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useDropzone } from 'react-dropzone';
 import {
-  Wrench, Plus, Upload, X, CheckCircle2, Image as ImageIcon,
+  Wrench, Plus, Upload, X, Image as ImageIcon,
   AlertTriangle, Clock,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/lib/maintenanceTypes';
-import { autoClassifyHazard, calculateDeadlines, type HazardCategory } from '@/hooks/useAwaabsLawCompliance';
+import { autoClassifyHazard, calculateDeadlines } from '@/hooks/useAwaabsLawCompliance';
 
 const CATEGORIES = [
   { value: 'plumbing', label: 'Plumbing' },

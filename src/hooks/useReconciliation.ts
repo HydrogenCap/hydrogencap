@@ -8,7 +8,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { parseStatement, computeTransactionHash } from '@/lib/statementParser';
-import { findMatches, type MatchCandidate } from '@/lib/reconciliationEngine';
+import { findMatches } from '@/lib/reconciliationEngine';
 import type { RentScheduleItem } from './useRentCollection';
 
 type BankTransactionRow = Database['public']['Tables']['bank_transactions']['Row'];

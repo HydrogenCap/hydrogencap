@@ -132,7 +132,7 @@ export function useAddCapexLineItem() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['capex-projects'] });
       toast({ title: 'Line item added' });
     },

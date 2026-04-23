@@ -49,7 +49,7 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
         });
         toast({ title: 'Synced from Companies House', description: 'Company data updated.' });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({ title: 'Sync failed', description: 'Could not fetch data from Companies House.', variant: 'destructive' });
     }
   };

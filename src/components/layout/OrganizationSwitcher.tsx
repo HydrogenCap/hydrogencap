@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCurrentOrgSelection, type UserOrganization } from '@/hooks/useUserOrg';
+import { useCurrentOrgSelection } from '@/hooks/useUserOrg';
 import { useCreateOrganization } from '@/hooks/useCreateOrganization';
 
 const ROLE_ICONS: Record<string, typeof Crown> = {

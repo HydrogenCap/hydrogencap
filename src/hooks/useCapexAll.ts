@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
-import type { CapexProject, CapexLineItem } from './useCapex';
+import type { CapexProject } from './useCapex';
 
 export interface CapexProjectWithProperty extends CapexProject {
   properties?: { id: string; address_line_1: string; city: string | null; postcode: string | null };

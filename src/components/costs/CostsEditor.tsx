@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { formatGBP, formatPercent, calculateCostRules, getEffectiveCosts, type CostsData } from '@/lib/calculations';
+import { formatGBP, calculateCostRules, getEffectiveCosts, type CostsData } from '@/lib/calculations';
 import { useUpsertCosts } from '@/hooks/useProperties';
 import { useToast } from '@/hooks/use-toast';
 

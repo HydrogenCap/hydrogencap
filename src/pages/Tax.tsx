@@ -10,10 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { getCurrentTaxYear, getRecentTaxYears } from '@/lib/accountingTypes';
-import { calculateSection24, generateSA105CSV, TAX_EXPENSE_CATEGORIES, type MarginalTaxRate } from '@/lib/propertyTax';
+import { calculateSection24, generateSA105CSV, TAX_EXPENSE_CATEGORIES } from '@/lib/propertyTax';
 import { useTaxSummary, useTaxExpenses, useAddTaxExpense, useDeleteTaxExpense, useTaxSettings, useUpdateTaxSettings } from '@/hooks/useTaxData';
 import { useOrganization } from '@/hooks/useOrganization';
 import { MtdItsaCard } from '@/components/tax/MtdItsaCard';

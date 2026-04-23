@@ -12,8 +12,6 @@ import {
   Edit2,
   X,
   Check,
-  Calendar,
-  User,
   Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -125,7 +123,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
       });
       setIsEditing(false);
       toast({ title: 'Compliance item updated' });
-    } catch (error) {
+    } catch (_error) {
       toast({ 
         title: 'Update failed', 
         variant: 'destructive' 
@@ -137,7 +135,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
     try {
       await deleteItem.mutateAsync({ id: item.id, propertyId });
       toast({ title: 'Compliance item deleted' });
-    } catch (error) {
+    } catch (_error) {
       toast({ 
         title: 'Delete failed', 
         variant: 'destructive' 
@@ -407,7 +405,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
                       Document History
                     </h5>
                     <div className="border rounded-lg divide-y">
-                      {archivedDocs.map((doc, index) => (
+                      {archivedDocs.map((doc, _index) => (
                         <div 
                           key={doc.id} 
                           className="p-3 flex items-center justify-between hover:bg-muted/30 transition-colors"

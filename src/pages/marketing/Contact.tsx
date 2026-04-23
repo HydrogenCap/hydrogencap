@@ -1,8 +1,8 @@
 import { SEO } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Calendar, CheckCircle, Send } from 'lucide-react';
-import { MarketingLayout, SectionHeading } from '@/components/marketing';
+import { Mail, MapPin, Calendar, CheckCircle, Send } from 'lucide-react';
+import { MarketingLayout } from '@/components/marketing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

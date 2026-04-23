@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { format, parseISO, differenceInMonths } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import {
   ClipboardCheck, Calendar, FileText, LayoutTemplate,
   AlertTriangle, CheckCircle2, Clock, TrendingUp,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, Home } from 'lucide-react';
-import { useRooms, type Room } from '@/hooks/useRooms';
+import { useRooms } from '@/hooks/useRooms';
 
 // Housing Act 2004 minimum room sizes (m²)
 const MIN_SIZES = {

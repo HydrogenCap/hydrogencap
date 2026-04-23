@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import { format } from 'date-fns';
-import { Printer, Mail, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Printer, Mail, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

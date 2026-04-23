@@ -24,7 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ChartContainer } from '@/components/charts/ChartContainer';
 import { getCurrentTaxYear, getRecentTaxYears } from '@/lib/accountingTypes';
 import { useTaxCalculation, useTaxProfile, useUpsertTaxProfile } from '@/hooks/useTaxEngine';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
 
 const fmt = (n: number) =>

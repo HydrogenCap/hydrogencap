@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- provider, hook, and helpers are intentionally co-located */
 import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
-import { PropertyWithFinancials } from '@/hooks/useProperties';
 
 export type LifecycleFilter = 'core_rental' | 'development' | 'all';
 export type LifecycleType = 'core_rental' | 'development';

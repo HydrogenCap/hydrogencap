@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { useInvestors, useSendInvestorPortalAccessEmail, Investor } from '@/hooks/useInvestors';
+import { useInvestors, useSendInvestorPortalAccessEmail } from '@/hooks/useInvestors';
 import { useInvestorCommitments, useInvestorDistributions, useInvestorReturnMetrics } from '@/hooks/useInvestorDetail';
 import { useInvestorReports } from '@/hooks/useInvestorReports';
 import { useDownloadFile } from '@/hooks/useSignedUrl';

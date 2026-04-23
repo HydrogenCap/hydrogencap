@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Building2, Search, User, Trash2 } from 'lucide-react';
+import { Plus, Building2, User, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useCompanies, useCreateCompany, type CompanyType } from '@/hooks/useCompanies';
-import { useParties, useCreateParty, type Party } from '@/hooks/useParties';
+import { useParties, useCreateParty } from '@/hooks/useParties';
 import { useProperty, useUpdateProperty } from '@/hooks/useProperties';
 import {
   usePropertyBeneficialOwnership,

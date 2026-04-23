@@ -9,7 +9,6 @@ import {
   formatGBP,
   formatPercent,
   calculateLTV,
-  calculateEquity,
   getEffectiveCosts,
   calculateMonthlyCashflowAfterDebt,
   calculateMonthlyMortgagePayment,

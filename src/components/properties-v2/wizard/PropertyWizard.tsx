@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreatePropertyV2 } from '@/hooks/usePropertiesV2';
 import { useBulkCreateRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
-import { useLenders, useCreateLender } from '@/hooks/useLenders';
+import { useCreateLender } from '@/hooks/useLenders';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';

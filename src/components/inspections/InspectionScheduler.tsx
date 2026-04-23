@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, isToday } from 'date-fns';
-import { CalendarDays, Plus, ChevronLeft, ChevronRight, AlertTriangle, Bell, Clock } from 'lucide-react';
+import { CalendarDays, Plus, ChevronLeft, ChevronRight, AlertTriangle, Bell } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,6 @@ import {
   useInspections,
   useCreateInspection,
   INSPECTION_TYPES,
-  type InspectionWithProperty,
   type InspectionType,
 } from '@/hooks/useInspections';
 import { usePropertiesV2, type PropertyWithEntity } from '@/hooks/usePropertiesV2';

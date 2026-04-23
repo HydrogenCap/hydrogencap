@@ -9,7 +9,6 @@ import { format, startOfYear, endOfYear, startOfQuarter, endOfQuarter, startOfMo
 import { cn } from '@/lib/utils';
 import {
   useProfitAndLoss,
-  CATEGORY_LABEL_MAP,
   type ProfitAndLossPeriod,
 } from '@/hooks/useAccounting';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';

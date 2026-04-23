@@ -6,8 +6,6 @@ import {
   getChecklistSummary,
   groupByCategory,
   CHECKLIST_ITEMS,
-  type PropertyContext,
-  type ChecklistItemDefinition,
   type ComplianceData,
   type ChecklistItem,
 } from '../tenancy-checklist';

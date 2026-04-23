@@ -123,7 +123,7 @@ export function LocationRegistryCard({
         title: 'Coordinates saved',
         description: `Location set to ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to save coordinates.',
@@ -163,7 +163,7 @@ export function LocationRegistryCard({
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Geocoding error',
         description: 'Failed to search for address.',

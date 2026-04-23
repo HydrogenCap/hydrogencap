@@ -2,7 +2,6 @@ import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import {
   Building2,
-  Users,
   Inbox,
   AlertTriangle,
   RefreshCw,
@@ -11,8 +10,6 @@ import {
   ArrowRight,
   BarChart3,
   Shield,
-  TrendingUp,
-  Calendar,
   Bell,
   Zap,
 } from 'lucide-react';

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
-  Plus, AlertTriangle, CheckCircle2, Clock, Banknote, Calendar,
+  Plus, AlertTriangle, Banknote, Calendar,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';

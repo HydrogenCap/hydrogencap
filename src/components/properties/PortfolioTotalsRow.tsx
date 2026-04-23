@@ -1,7 +1,7 @@
 import React from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { PortfolioStats } from '@/lib/portfolioStats';
-import { formatGBP, formatGBPDecimal, formatPercent } from '@/lib/calculations';
+import { formatGBPDecimal } from '@/lib/calculations';
 import { ColumnKey } from '@/lib/propertiesTableConfig';
 import { cn } from '@/lib/utils';
 import { BarChart3 } from 'lucide-react';

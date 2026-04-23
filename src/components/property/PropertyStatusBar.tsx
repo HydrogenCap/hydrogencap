@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
-import { Shield, Home, AlertTriangle, BarChart3, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Shield, Home, AlertTriangle, BarChart3, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePropertyCompliance } from '@/hooks/useCompliance';
 import { usePropertyPassport, calculatePassportCompleteness } from '@/hooks/usePropertyPassport';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useTenancies } from '@/hooks/useTenancies';
 import { getExpiryStatus } from '@/lib/calculations';
-import { getComplianceStatus } from '@/lib/complianceStatus';
 
 interface PropertyStatusBarProps {
   propertyId: string;

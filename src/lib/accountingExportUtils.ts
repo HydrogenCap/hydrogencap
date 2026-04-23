@@ -8,7 +8,6 @@ import type {
   TransactionLine,
   HydrogencapCategory,
   TaxYearSummary,
-  EXPENSE_CATEGORIES,
 } from '@/lib/accountingTypes';
 import { CATEGORY_LABELS } from '@/lib/accountingTypes';
 

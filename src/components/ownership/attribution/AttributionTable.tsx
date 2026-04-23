@@ -2,12 +2,11 @@ import React from 'react';
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatGBP, formatPercent } from '@/lib/calculations';
+import { formatGBP } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import { OwnerRow } from './OwnerRow';
 import { AttributionOwner, AttributionTotals } from './types';

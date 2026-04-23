@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import {
-  Shield, AlertTriangle, Clock, CheckCircle2, Siren, TrendingUp,
-  ChevronDown, ChevronUp, Search, FileText, Play, Wrench,
+  Shield, CheckCircle2, Siren, Search, Wrench,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,18 +22,14 @@ import {
   useStartInvestigation,
   useStartRepair,
   useCompleteRepair,
-  useHazardDeadlines,
   getTrackingStatus,
   AWAABS_STATUS_CONFIG,
   type AwaabsLawFields,
-  type HazardCategory,
-  type AwaabsTrackingStatus,
 } from '@/hooks/useAwaabsLawCompliance';
 import {
   formatCountdown,
   getDeadlineSeverity,
   DEADLINE_SEVERITY_STYLES,
-  type DeadlineSeverity,
 } from '@/lib/working-days';
 import HazardClassifier from './HazardClassifier';
 import WrittenSummaryForm from './WrittenSummaryForm';

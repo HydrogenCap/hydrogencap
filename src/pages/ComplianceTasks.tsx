@@ -15,9 +15,8 @@ import {
   BOARD_COLUMNS, PIPELINE_COLUMNS, TASK_STATUS_NAMES, PRIORITY_NAMES, TASK_TYPE_NAMES,
   type ComplianceTaskOverview, type TaskStatus, type TaskPriority,
 } from '@/lib/complianceTaskTypes';
-import {
-  ClipboardList, LayoutGrid, List, Play, Plus, AlertTriangle, Clock, CheckCircle2, ShieldCheck, XCircle,
-  GitBranch, Upload, CalendarPlus, Ban, Send, Loader2,
+import { LayoutGrid, List, Play, Plus, CheckCircle2, ShieldCheck,
+  GitBranch, CalendarPlus, Ban, Loader2,
 } from 'lucide-react';
 import { EmptyState } from '@/components/common';
 import { format, formatDistanceToNow, addDays } from 'date-fns';

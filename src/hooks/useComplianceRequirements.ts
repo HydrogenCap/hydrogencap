@@ -2,11 +2,9 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePropertyCompliance, useAllCompliance } from './useCompliance';
-import { useProperties, useProperty } from './useProperties';
 import { 
   calculateComplianceRequirements, 
   type PropertyComplianceFeatures,
-  type PropertyComplianceSummary,
   type ComplianceRequirement,
   getComplianceIssues,
 } from '@/lib/complianceRequirements';

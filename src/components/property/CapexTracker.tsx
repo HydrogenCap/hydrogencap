@@ -8,9 +8,9 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { HardHat, Plus, TrendingUp, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { HardHat, Plus, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useCapexProjects, useCreateCapexProject, useAddCapexLineItem, useUpdateCapexProject, useDeleteCapexLineItem, type CapexProject } from '@/hooks/useCapex';
+import { useCapexProjects, useCreateCapexProject, useAddCapexLineItem, useUpdateCapexProject, useDeleteCapexLineItem } from '@/hooks/useCapex';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0 }).format(v);

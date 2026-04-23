@@ -6,13 +6,10 @@ import {
   TrendingUp, 
   Wallet, 
   Home,
-  Building2,
   Users,
 } from 'lucide-react';
 import { usePropertyAttribution } from '@/hooks/useOwnershipAttribution';
 import { useProperty } from '@/hooks/useProperties';
-import { formatGBP } from '@/lib/calculations';
-import { cn } from '@/lib/utils';
 import { ViewModeToggle } from './ViewModeToggle';
 import { AttributionKPICard } from './AttributionKPICard';
 import { AttributionTable } from './AttributionTable';

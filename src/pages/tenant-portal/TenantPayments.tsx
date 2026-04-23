@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
-  PoundSterling, Download, AlertCircle, CheckCircle2, Clock, Receipt,
+  PoundSterling, AlertCircle, CheckCircle2, Clock, Receipt,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';

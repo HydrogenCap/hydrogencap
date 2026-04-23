@@ -1,5 +1,5 @@
  import { Link } from 'react-router-dom';
- import { format, differenceInDays } from 'date-fns';
+ import { format } from 'date-fns';
  import { Shield, ChevronRight } from 'lucide-react';
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';

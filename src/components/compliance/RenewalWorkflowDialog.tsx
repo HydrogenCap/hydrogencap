@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { format, addYears, addMonths } from 'date-fns';
 import {
   Calendar, User, Upload, FileCheck, Loader2, CheckCircle,
-  ChevronRight, ChevronLeft, Clock, MessageSquare, Sparkles,
+  ChevronRight, ChevronLeft,
   AlertTriangle, Building2,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';

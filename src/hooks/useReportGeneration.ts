@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProperties } from './useProperties';
 import { useAllCompliance } from './useCompliance';
 import { usePropertyPassports } from './usePropertyPassport';
-import { useCompanies, useCompany, type CompanyWithDetails } from './useCompanies';
+import { useCompanies } from './useCompanies';
 import { logActivity } from './useActivityLog';
 import type {
   ReportFilters,

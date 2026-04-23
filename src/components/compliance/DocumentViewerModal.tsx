@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Download, ExternalLink, X, FileText, Loader2, AlertCircle, Link2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, ExternalLink, FileText, Loader2, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

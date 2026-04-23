@@ -2,7 +2,7 @@
  * Tenancy Lifecycle Event Engine (AA4a)
  * Calculates actionable events from tenancy data: end dates, break clauses, rent reviews, voids.
  */
-import { differenceInDays, addMonths, addYears, isBefore, isAfter } from 'date-fns';
+import { differenceInDays, addMonths, addYears, isBefore } from 'date-fns';
 
 export interface TenancyEvent {
   tenancyId: string;

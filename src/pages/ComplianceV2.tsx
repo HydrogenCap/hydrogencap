@@ -3,9 +3,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, AlertTriangle, Clock, Search, Grid3X3, CalendarDays } from 'lucide-react';
+import { ShieldCheck, Search, Grid3X3, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -17,7 +16,6 @@ import { ComplianceDetailModal } from '@/components/compliance-v2/ComplianceDeta
 import { UploadComplianceDocModal } from '@/components/compliance-v2/UploadComplianceDocModal';
 import type { ComplianceMatrixRow, ComplianceDocType } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
-import { format } from 'date-fns';
 
 export default function ComplianceV2() {
   const { data: matrix, isLoading } = useComplianceMatrix();

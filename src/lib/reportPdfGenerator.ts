@@ -1,7 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import type { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import type { Color } from '@/types/pdf';
 
 // Branding colors (HSL to RGB)

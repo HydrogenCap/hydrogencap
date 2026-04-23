@@ -4,16 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Construction,
   MapPin,
-  PoundSterling,
   TrendingUp,
   Calendar,
   ArrowRight,
   Plus,
-  CheckCircle2,
-  Clock,
   Handshake,
   ClipboardCheck,
-  Home,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

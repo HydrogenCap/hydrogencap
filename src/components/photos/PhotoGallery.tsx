@@ -101,7 +101,7 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
         title: 'Cover photo updated',
         description: 'This photo is now the cover image',
       });
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: 'Error',
         description: 'Failed to set cover photo',
@@ -124,7 +124,7 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
         description: 'The photo has been removed',
       });
       setPhotoToDelete(null);
-    } catch (err) {
+    } catch (_err) {
       toast({
         title: 'Error',
         description: 'Failed to delete photo',

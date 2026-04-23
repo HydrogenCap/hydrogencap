@@ -15,7 +15,6 @@ import {
   useRunForecast,
   type FinancialForecast as ForecastType,
 } from '@/hooks/useFinancialForecasts';
-import { formatGBP } from '@/lib/calculations';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';

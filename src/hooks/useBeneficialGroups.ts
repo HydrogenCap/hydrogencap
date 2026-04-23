@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import type { Database } from '@/integrations/supabase/types';
-import { useOwnershipEntities } from './useOwnershipLookthrough';
 import type { PropertyWithFinancials } from './useProperties';
 
 // Types from database

@@ -1,6 +1,6 @@
 import { CheckCircle, AlertTriangle, Info, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { EntityVerification, VerificationStatus } from '@/hooks/useCompaniesHouseV2';
+import { EntityVerification } from '@/hooks/useCompaniesHouseV2';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Props {

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import {
-  FileText, MapPin, Calendar, Check, X, ChevronDown,
-  AlertCircle, Loader2, Shield, Building2, User, Edit2, RefreshCw, Trash2,
+  FileText, Calendar, Check, X, ChevronDown,
+  AlertCircle, Loader2, Shield, Building2, Edit2, RefreshCw, Trash2,
   Clock, CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

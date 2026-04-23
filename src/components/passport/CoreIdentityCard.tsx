@@ -31,7 +31,6 @@ import {
   CONSTRUCTION_TYPES,
   LISTED_STATUSES,
   isValidUKPostcode,
-  type CoreIdentityData,
 } from '@/hooks/useCoreIdentity';
 import { useProperty } from '@/hooks/useProperties';
 import { usePropertyPassport, useUpsertPassport } from '@/hooks/usePropertyPassport';

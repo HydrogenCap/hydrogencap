@@ -107,7 +107,7 @@ export function useCreateCapexPhase() {
       if (error) throw error;
       return data as CapexPhase;
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       qc.invalidateQueries({ queryKey: ['capex-phases'] });
       toast({ title: 'Phase added' });
     },

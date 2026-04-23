@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { captureError } from '@/lib/sentry';
-import { Upload, FileText, X, Loader2 } from 'lucide-react';
+import { Upload, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateDocument, useUpdateDocument } from '@/hooks/useDocuments';

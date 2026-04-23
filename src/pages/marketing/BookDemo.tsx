@@ -1,8 +1,8 @@
 import { SEO } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, CheckCircle, ArrowRight, Building2, Shield, BarChart3 } from 'lucide-react';
-import { MarketingLayout, SectionHeading } from '@/components/marketing';
+import { Send, CheckCircle, Building2, Shield, BarChart3 } from 'lucide-react';
+import { MarketingLayout } from '@/components/marketing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

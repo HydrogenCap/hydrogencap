@@ -18,7 +18,6 @@ import {
   useWorkOrderMaterials,
   useAddMaterial,
   useDeleteMaterial,
-  type WorkOrderMaterial,
 } from '@/hooks/useWorkOrderLifecycle';
 
 interface MaterialTrackerProps {

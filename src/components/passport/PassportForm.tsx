@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { captureError } from '@/lib/sentry';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Save, Loader2, ChevronDown, ChevronRight, Settings2, Sparkles, Wand2 } from 'lucide-react';
@@ -13,8 +13,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } fr
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePropertyPassport, useUpsertPassport, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateUK } from '@/lib/calculations';
-import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
 import { AutofillSuggestionsModal } from './AutofillSuggestionsModal';

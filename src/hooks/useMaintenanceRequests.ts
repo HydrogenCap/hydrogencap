@@ -231,7 +231,7 @@ export function useUpdateMaintenanceRequest() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (_, _vars) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
       toast({ title: 'Request updated' });

@@ -9,7 +9,6 @@
  import { useMatchingContractors, type MatchingContractor } from '@/hooks/useContractorJobs';
  import { useContractors, type Contractor } from '@/hooks/useContractors';
  import { useCreateJob, useSendJobRequest } from '@/hooks/useContractorJobs';
- import { cn } from '@/lib/utils';
  import { useToast } from '@/hooks/use-toast';
  import { formatDateUK } from '@/lib/calculations';
  

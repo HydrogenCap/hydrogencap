@@ -128,7 +128,7 @@ export function useUpdateLeaseholdDetails() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: ['leasehold-details'] });
       toast({ title: 'Leasehold details saved' });
     },

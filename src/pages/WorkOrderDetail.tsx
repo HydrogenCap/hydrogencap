@@ -33,7 +33,6 @@ import {
   WO_CATEGORIES,
   COST_CATEGORIES,
   type CostCategory,
-  type WorkOrderWithDetails,
 } from '@/hooks/useWorkOrders';
 import { WorkOrderPipeline } from '@/components/works/WorkOrderPipeline';
 import { ApprovalWorkflow } from '@/components/works/ApprovalWorkflow';

@@ -1,7 +1,7 @@
 // Compliance Requirements Engine
 // Determines which compliance items are required based on property features
 
-import type { ComplianceItem, ComplianceStatus } from './complianceTypes';
+import type { ComplianceItem } from './complianceTypes';
 import { getComplianceItemStatus } from './complianceTypes';
 import { SEVERITY } from '@/lib/design-tokens';
 

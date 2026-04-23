@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SEVERITY } from '@/lib/design-tokens';
 import { useHMOCompliance } from '@/hooks/useHMOCompliance';
 import { HMO_ROOM_MINIMUMS, HMO_AMENITY_RATIOS } from '@/lib/hmo-compliance';
-import type { RoomComplianceResult, AmenityResult } from '@/lib/hmo-compliance';
+import type { RoomComplianceResult } from '@/lib/hmo-compliance';
 
 interface Props {
   propertyId: string;

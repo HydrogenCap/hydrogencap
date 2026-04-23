@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Company, CompanyWithDetails, Shareholding } from './useCompanies';
 
 export interface EffectiveOwnershipNew {
   partyId: string;

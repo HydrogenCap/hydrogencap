@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCSV, autoDetectMapping, validateAndTransformRows } from './csvParser';
+import { parseCSV, autoDetectMapping } from './csvParser';
 
 describe('parseCSV', () => {
   it('parses a simple CSV', () => {

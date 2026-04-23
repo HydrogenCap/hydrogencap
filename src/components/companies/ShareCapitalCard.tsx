@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Coins, Pencil, Check, X, Plus } from 'lucide-react';
+import { Coins, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ArrowRight, CheckCircle2, Circle, AlertCircle, MinusCircle, Play, Loader2, Download } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, CheckCircle2, Circle, AlertCircle, MinusCircle, Play, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';

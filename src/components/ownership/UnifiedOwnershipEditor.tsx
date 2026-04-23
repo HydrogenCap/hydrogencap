@@ -40,7 +40,7 @@ import {
   type OwnershipLink,
   type SubjectType,
 } from '@/hooks/useOwnershipLinks';
-import { useParties, useCreateParty, type Party } from '@/hooks/useParties';
+import { useParties, useCreateParty } from '@/hooks/useParties';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 

@@ -3,9 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, Circle, ArrowRight, Calendar, FileText, X } from 'lucide-react';
+import { Check, Circle, ArrowRight, FileText, X } from 'lucide-react';
 import {
   type MortgageApplicationWithProperty,
   useUpdateApplicationStatus,

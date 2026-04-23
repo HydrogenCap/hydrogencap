@@ -14,14 +14,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatDateUK } from '@/lib/calculations';
-import { cn } from '@/lib/utils';
 import {
   useWorkOrderWarranties,
   useCreateWarranty,
   useDeleteWarranty,
   useExpiringWarranties,
   useAllActiveWarranties,
-  type WorkOrderWarranty,
 } from '@/hooks/useWorkOrderLifecycle';
 
 // ─── Single WO Warranty Section ─────────────────────────────────────

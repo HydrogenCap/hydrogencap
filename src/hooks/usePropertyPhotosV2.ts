@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 /**
  * Fetches cover photos for V2 properties by matching them to V1 properties 

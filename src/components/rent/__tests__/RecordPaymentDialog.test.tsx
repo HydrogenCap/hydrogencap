@@ -5,7 +5,7 @@ import RecordPaymentDialog from '../RecordPaymentDialog';
 const mockMutate = vi.fn();
 vi.mock('@/hooks/useRentCollection', () => ({
   useRecordPayment: () => ({ mutate: mockMutate, isPending: false }),
-  normalizeRentItem: (item: any) => ({
+  normalizeRentItem: (_item: any) => ({
     tenantName: 'Jane Smith',
     tenantEmail: 'jane@test.com',
     propertyAddress: '5 Oak Lane',

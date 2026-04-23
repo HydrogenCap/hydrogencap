@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Users, BarChart3 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StressTestPanel } from '@/components/property/StressTestPanel';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

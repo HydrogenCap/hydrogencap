@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { detectVoidRooms, type DetectedVoid } from '../voidDetection';
+import { detectVoidRooms } from '../voidDetection';
 
 // Fix today to a known date for deterministic tests
 const TODAY = '2025-06-15';

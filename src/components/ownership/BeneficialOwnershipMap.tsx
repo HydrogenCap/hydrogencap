@@ -13,9 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   useBeneficialOwnersPSC,
   useAddBeneficialOwnerPSC,
-  useUpdateBeneficialOwnerPSC,
   useDeleteBeneficialOwnerPSC,
-  type BeneficialOwner,
 } from '@/hooks/useShareRegister';
 
 const NATURE_OF_CONTROL_OPTIONS = [

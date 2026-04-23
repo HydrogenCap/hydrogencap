@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, differenceInDays } from 'date-fns';
-import { CalendarCheck, ChevronLeft, ChevronRight, AlertTriangle, FileCheck, Flame, Zap, Home, Shield, Building2, CheckCircle2, List, Wrench, Percent, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertTriangle, FileCheck, Flame, Zap, Home, Shield, Building2, CheckCircle2, List, Wrench, Percent, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

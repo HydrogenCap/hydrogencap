@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { formatGBPDecimal, formatPercent } from '@/lib/calculations';
+import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import type { PropertyFinancialSummary } from '@/hooks/usePortfolioFinancials';
 

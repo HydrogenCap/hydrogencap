@@ -3,7 +3,7 @@
  * Replaces the 60-line portfolioStats useMemo in Dashboard.tsx.
  */
 import { useMemo } from 'react';
-import { usePropertiesV2, type PropertyWithEntity } from './usePropertiesV2';
+import { usePropertiesV2 } from './usePropertiesV2';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useOwnershipData } from './useOwnershipData';

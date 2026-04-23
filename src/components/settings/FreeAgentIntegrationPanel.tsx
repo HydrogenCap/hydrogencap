@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
-  RefreshCw, Unlink, CheckCircle2, XCircle, Clock, Zap, Building2,
+  RefreshCw, Unlink, CheckCircle2, XCircle, Clock, Zap,
   ArrowRight, Loader2, ExternalLink, FlaskConical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

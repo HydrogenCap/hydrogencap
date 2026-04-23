@@ -15,7 +15,6 @@ import {
   useAddShareClass,
   useShareholdings,
   useAddShareholding,
-  useShareTransfers,
   useAddShareTransfer,
   calculateStampDuty,
   formatCurrency,

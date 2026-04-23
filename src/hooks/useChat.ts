@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { ChatMessage, ToolCall } from './useChatMessages';
+import type { ChatMessage } from './useChatMessages';
 
 export interface ToolCallExecution {
   name: string;

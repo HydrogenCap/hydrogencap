@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useOrganization } from '@/hooks/useOrganization';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -222,7 +221,7 @@ export function useCreateIntercompanyLoan() {
       if (error) throw error;
       return data as IntercompanyLoan;
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: ['intercompany_loans'] });
     },
   });

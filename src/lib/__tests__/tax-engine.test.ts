@@ -4,7 +4,6 @@ import {
   calculateSection24Impact,
   calculateCGT,
   getMarginalRate,
-  TAX_BANDS_2025_26,
   CGT_RATES,
 } from '../tax-engine';
 

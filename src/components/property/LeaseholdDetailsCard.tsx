@@ -12,11 +12,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Building, Edit2, AlertTriangle } from 'lucide-react';
 import { formatGBP } from '@/lib/calculations';
-import { format } from 'date-fns';
 import { useLeaseholdDetails, useUpsertLeaseholdDetails } from '@/hooks/useLeaseholdDetails';
 
 interface LeaseholdDetailsCardProps {

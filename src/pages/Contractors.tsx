@@ -1,5 +1,5 @@
 import React, { useState, useDeferredValue } from 'react';
-import { Plus, Search, Star, Filter, Wrench, MapPin, SlidersHorizontal } from 'lucide-react';
+import { Plus, Search, Star, Filter, Wrench, MapPin } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/common';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { useContractors, useUpdateContractor } from '@/hooks/useContractors';
 import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
 import {

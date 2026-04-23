@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  ShieldCheck, FileText, MapPin, Wallet, AlertTriangle, CheckCircle2, Clock, XCircle, Upload,
+  ShieldCheck, FileText, MapPin, Wallet, AlertTriangle, CheckCircle2, Clock, XCircle,
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';

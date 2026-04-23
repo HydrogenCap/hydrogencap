@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Check, X, FileText, AlertTriangle, Loader2, FolderUp } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';

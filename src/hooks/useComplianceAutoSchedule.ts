@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { differenceInDays, addMonths, addYears, format } from 'date-fns';
+import { differenceInDays, addMonths, format } from 'date-fns';
 import { useAllCompliance } from '@/hooks/useCompliance';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 

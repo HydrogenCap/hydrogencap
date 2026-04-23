@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Send, CheckCircle2, Clock, ExternalLink } from 'lucide-react';
+import { Copy, Send, CheckCircle2, Clock } from 'lucide-react';
 import type { Tenant } from '@/hooks/useTenants';
 import type { TenancyWithDetails } from '@/hooks/useTenancies';
 
@@ -100,7 +100,7 @@ export function InviteTenantPortalDialog({ open, onOpenChange, tenant, tenancies
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: ['tenant-portal-invites', tenant.id] });
       toast({
         title: 'Invite created',

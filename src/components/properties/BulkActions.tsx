@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronDown, X, Percent, Calendar, Building2, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { ChevronDown, X, Percent, Building2, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { useBulkLoanUpdate, useBulkPropertyUpdate } from '@/hooks/useBulkPropertyUpdate';
 import { useCompanies } from '@/hooks/useCompanies';
 

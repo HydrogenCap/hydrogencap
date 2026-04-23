@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { differenceInDays, format, parseISO, isAfter, isBefore } from 'date-fns';
+import { differenceInDays, format, parseISO, isAfter } from 'date-fns';
 import { useCapexPhases, useCreateCapexPhase, type CapexPhase } from '@/hooks/useCapexUpgrade';
 
 const fmt = (v: number) =>
