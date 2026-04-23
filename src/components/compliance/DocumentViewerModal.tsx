@@ -3,6 +3,7 @@ import { Download, ExternalLink, X, FileText, Loader2, AlertCircle, Link2 } from
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -170,9 +171,9 @@ export function DocumentViewerModal({
               </Button>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription className="text-sm">
             Version {document.version_number} • {document.original_file_name}
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden rounded-lg border bg-muted/30 relative">

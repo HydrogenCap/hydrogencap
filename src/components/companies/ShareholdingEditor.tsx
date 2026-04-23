@@ -3,6 +3,7 @@ import { Plus, User, Building2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -169,6 +170,9 @@ export function ShareholdingEditor({
           <DialogTitle>
             {isEditing ? 'Edit Shareholder' : 'Add Shareholder'}
           </DialogTitle>
+          <DialogDescription>
+            Record or update a shareholder's stake in this entity.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
