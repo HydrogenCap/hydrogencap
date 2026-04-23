@@ -309,7 +309,6 @@ function PropertyGroup({
 }
 
 export default function ActionsPage() {
-  const navigate = useNavigate();
   const { risks, criticalCount, warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   // Workflow data

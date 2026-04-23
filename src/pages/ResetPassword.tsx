@@ -28,7 +28,6 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const form = useForm<ResetPasswordFormData>({

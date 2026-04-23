@@ -60,7 +60,6 @@ export default function CapExDetail() {
   const lineBudget = items.reduce((s, li) => s + Number(li.budget_gbp), 0);
   const pct = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
   const isOver = totalSpent > totalBudget;
-  const statusInfo = STATUS_LABELS[project.status] || STATUS_LABELS.planned;
 
   // Timeline
   const overdueDays = project.target_end_date && isPast(new Date(project.target_end_date))

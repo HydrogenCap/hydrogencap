@@ -82,7 +82,6 @@ export function PropertyPnLCard({ propertyId }: Props) {
   const avgMonthlyIncome = pnl.annualGrossIncome / 12;
   const avgMonthlyCosts = pnl.annualCosts / 12;
   const avgMonthlyNOI = pnl.annualNOI / 12;
-  const avgMonthlyCashflow = pnl.annualCashflow / 12;
 
   return (
     <Card>

@@ -34,8 +34,6 @@ const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secon
   withdrawn: { label: 'Withdrawn', variant: 'secondary' },
 };
 
-const PLANNING_EXPIRY_YEARS = 3;
-
 export default function PlanningTracker({ projectId, propertyId }: { projectId: string; propertyId: string }) {
   const { data: apps = [], isLoading } = usePlanningApplications(projectId);
   const updateApp = useUpdatePlanningApplication();

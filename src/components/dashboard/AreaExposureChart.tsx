@@ -75,7 +75,6 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
     const bucketMap: Record<string, { value: number; count: number }> = {};
     const debug: PropertyDebugInfo[] = [];
     let missing = 0;
-    let total = 0;
 
     properties.forEach(property => {
       // Get raw field based on groupBy
@@ -104,7 +103,6 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
 
       // Get property value
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
-      total += value;
 
       // Add to bucket
       if (!bucketMap[bucketName]) {

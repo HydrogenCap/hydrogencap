@@ -28,7 +28,6 @@ interface Props {
 }
 
 type PropertyV2Update = Database['public']['Tables']['properties_v2']['Update'];
-type RoomInsert = Database['public']['Tables']['rooms_v2']['Insert'];
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown error';

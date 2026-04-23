@@ -27,7 +27,6 @@ interface PropertyScore {
 }
 
 export function PortfolioHealthWidget({ properties, onClick }: PortfolioHealthWidgetProps) {
-  const navigate = useNavigate();
   const propertyScores = useMemo<PropertyScore[]>(() => {
     const currentYear = new Date().getFullYear();
     

@@ -35,8 +35,6 @@ export function StressTestPanel() {
 
       // Base
       const baseEquity = value - mortgage;
-      const baseLtv = value > 0 ? (mortgage / value) * 100 : 0;
-      const baseNetRent = annualRent - effectiveCosts.total;
       const baseMonthlyCf = calculateMonthlyCashflowAfterDebt(annualRent, effectiveCosts.total, mortgagePayment);
 
       basePortfolio.totalValue += value;

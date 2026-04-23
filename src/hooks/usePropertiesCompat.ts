@@ -10,10 +10,6 @@ type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
 type LoanFacilityRow = Database['public']['Tables']['loan_facilities']['Row'];
 type PropertyAnnualPerformanceRow = Database['public']['Views']['property_annual_performance']['Row'];
 type TenancyAgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
-type V1Loan = PropertyWithFinancials['loans'][number];
-type V1Income = PropertyWithFinancials['income'][number];
-type V1Costs = PropertyWithFinancials['costs'][number];
-type V1Tenancy = PropertyWithFinancials['tenancies'][number];
 
 type PropertyV2WithEntity = PropertyV2Row & {
   legal_entities?: { entity_name: string | null } | Array<{ entity_name: string | null }> | null;

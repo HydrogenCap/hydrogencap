@@ -6,7 +6,6 @@ import type { PropertyWithFinancials } from './useProperties';
 
 // Types from database
 type BeneficialGroup = Database['public']['Tables']['beneficial_groups']['Row'];
-type BeneficialGroupInsert = Database['public']['Tables']['beneficial_groups']['Insert'];
 type EntityBeneficialMapping = Database['public']['Tables']['entity_beneficial_mapping']['Row'];
 type EntityBeneficialMappingInsert = Database['public']['Tables']['entity_beneficial_mapping']['Insert'];
 

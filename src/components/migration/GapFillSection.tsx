@@ -23,7 +23,6 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 type EditableValue = string | number | boolean | null | undefined;
-type EditableRecord = { id: string; [key: string]: EditableValue };
 type EditMap = Record<string, Record<string, EditableValue>>;
 type GapFillSuggestion = { id: string; [key: string]: EditableValue };
 

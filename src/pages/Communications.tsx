@@ -51,7 +51,6 @@ const CHANNEL_LABELS: Record<CommunicationChannel, string> = {
 
 export default function Communications() {
   const [showLog, setShowLog] = useState(false);
-  const [search, setSearch] = useState('');
   const [dirFilter, setDirFilter] = useState<CommunicationDirection | 'all'>('all');
   const [channelFilter, setChannelFilter] = useState<CommunicationChannel | 'all'>('all');
 

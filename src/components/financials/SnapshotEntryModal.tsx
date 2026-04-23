@@ -458,7 +458,6 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
   const saveAll = () => {
     const promises = properties.map(p => {
       const r = rows[p.id];
-      const totalCosts = r.management_fees + r.maintenance_costs + r.insurance_costs + r.utilities + r.council_tax + r.other_costs;
       const suggestions = getAutoSuggestions(p.id);
       return onSave.mutateAsync({
         org_id: p.org_id,
