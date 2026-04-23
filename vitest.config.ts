@@ -23,10 +23,10 @@ export default defineConfig({
       // Ratchet: thresholds set just below current baseline so coverage can
       // only go up. Raise these numbers as new tests land.
       thresholds: {
-        statements: 7.55,
-        branches: 55,
-        functions: 23.4,
-        lines: 7.55,
+        statements: 7.8,
+        branches: 55.5,
+        functions: 23.6,
+        lines: 7.8,
       },
     },
   },
