@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, FileText } from 'lucide-react';
@@ -219,6 +219,9 @@ function DeclareDividendDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Declare Dividend</DialogTitle>
+          <DialogDescription>
+            Declare a dividend payment for this entity and its shareholders.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -294,6 +297,9 @@ function TaxVoucherDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Tax Voucher — {dividend.declaration_date}</DialogTitle>
+          <DialogDescription>
+            Preview and download the HMRC-format tax voucher for this dividend.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">

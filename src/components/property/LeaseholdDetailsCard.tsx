@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -170,6 +171,9 @@ export function LeaseholdDetailsCard({ propertyId, leaseYearsRemaining, tenure }
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Leasehold Details</DialogTitle>
+              <DialogDescription>
+                Record or update the ground rent, service charge, and lease term for this property.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">

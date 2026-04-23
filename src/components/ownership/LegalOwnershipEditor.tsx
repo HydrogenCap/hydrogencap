@@ -3,6 +3,7 @@ import { Plus, Building2, Search, User, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -329,6 +330,9 @@ export function LegalOwnershipEditor({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Set Legal Ownership</DialogTitle>
+          <DialogDescription>
+            Record who holds legal title to this property — an entity or an individual.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

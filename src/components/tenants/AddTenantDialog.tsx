@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { sanitizeText } from '@/lib/utils';
 import { Building2, User, Loader2, CheckCircle2, Search } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -263,6 +263,9 @@ export function AddTenantDialog({ open, onOpenChange }: AddTenantDialogProps) {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Tenant</DialogTitle>
+          <DialogDescription>
+            Add a new tenant to your portfolio — you can link them to a tenancy afterward.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Type Toggle */}
