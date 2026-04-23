@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import JSZip from 'jszip';
+// JSZip is dynamic-imported inside the export flow so its ~100 kB chunk
+// only loads when a user actually downloads documents.
+import type JSZip from 'jszip';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -180,7 +182,8 @@ export function useComplianceDocumentExport() {
       percent: 0,
     });
 
-    const zip = new JSZip();
+    const { default: JSZipCtor } = await import('jszip');
+    const zip: JSZip = new JSZipCtor();
     const dateStr = new Date().toISOString().split('T')[0];
     const rootFolder = `compliance-documents-${dateStr}`;
 

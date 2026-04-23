@@ -4,7 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { InvestorStatementReport, type InvestorReportData } from '@/lib/investorReportGenerator';
+import type { InvestorReportData } from '@/lib/investorReportGenerator';
 
 type InvestorReportInsert = Database['public']['Tables']['investor_reports']['Insert'];
 
@@ -39,7 +39,9 @@ export function useGenerateInvestorReport() {
       reportType: string;
       investorId: string;
     }) => {
-      // Generate PDF
+      // Generate PDF. The generator module is lazy-loaded so jspdf and its
+      // ~450 kB chunk only ships to users who actually export a statement.
+      const { InvestorStatementReport } = await import('@/lib/investorReportGenerator');
       const report = new InvestorStatementReport(reportData);
       report.generate();
       const blob = report.getBlob();

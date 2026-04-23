@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
-import JSZip from 'jszip';
+// JSZip is ~100 kB gzipped — dynamic-imported inside the backup flow so it
+// only loads for users who actually run a portfolio backup.
+import type JSZip from 'jszip';
 
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -172,7 +174,8 @@ export function usePortfolioBackup() {
       abortRef.current = false;
 
       const warnings: string[] = [];
-      const zip = new JSZip();
+      const { default: JSZipCtor } = await import('jszip');
+      const zip: JSZip = new JSZipCtor();
       const dateStr = format(new Date(), 'yyyy-MM-dd-HHmm');
       const root = `tenureiq-backup-${dateStr}`;
 
