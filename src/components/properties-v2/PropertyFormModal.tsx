@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -211,6 +211,9 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
+          <DialogDescription className="sr-only">
+            {editingProperty ? 'Update this property\'s details.' : 'Add a new property to your portfolio.'}
+          </DialogDescription>
           <div className="flex items-center justify-between">
             <DialogTitle>{editingProperty ? 'Edit Property' : 'Add Property'}</DialogTitle>
             <Button

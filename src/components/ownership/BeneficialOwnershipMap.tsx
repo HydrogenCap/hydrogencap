@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Plus, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
@@ -217,6 +217,9 @@ function AddBeneficialOwnerDialog({
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Person with Significant Control</DialogTitle>
+          <DialogDescription>
+            Record a PSC entry for Companies House disclosures on this entity.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -231,6 +231,9 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New Distribution Run</DialogTitle>
+          <DialogDescription>
+            Build a new distribution run step-by-step: pick the entity, period, amount, and review allocations before approval.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Stepper */}

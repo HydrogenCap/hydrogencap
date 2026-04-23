@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -340,6 +340,9 @@ export function TransactionLedger() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Transaction</DialogTitle>
+            <DialogDescription>
+              Manually record a new accounting transaction in the ledger.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -425,6 +428,9 @@ export function TransactionLedger() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Import Transactions from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV export from your bank or accountant to bulk-import transactions.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -147,6 +147,9 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{editingRoom ? 'Edit Room' : 'Add Room'}</DialogTitle>
+          <DialogDescription>
+            {editingRoom ? 'Update this room\'s details and rent.' : 'Add a new lettable room to this property.'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><Label>Room Name *</Label><Input value={form.room_name} onChange={e => set('room_name', e.target.value)} placeholder="e.g. Room 1, Ground Floor Studio" required /></div>

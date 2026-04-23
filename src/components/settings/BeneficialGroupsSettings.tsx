@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -188,6 +189,9 @@ export function BeneficialGroupsSettings() {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Add Entity to "{group.name}"</DialogTitle>
+                          <DialogDescription>
+                            Assign another legal entity to this beneficial ownership group.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                           <Select value={selectedEntityForAdd} onValueChange={setSelectedEntityForAdd}>

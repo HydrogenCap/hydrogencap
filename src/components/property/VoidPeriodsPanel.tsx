@@ -15,6 +15,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -96,6 +97,9 @@ export function VoidPeriodsPanel({ propertyId }: VoidPeriodsPanelProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Record Void Period</DialogTitle>
+              <DialogDescription>
+                Log a period when the property or room was unoccupied and accrued a rental loss.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
