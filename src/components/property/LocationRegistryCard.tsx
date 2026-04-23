@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -249,6 +250,9 @@ export function LocationRegistryCard({
               <MapPin className="h-5 w-5" />
               Set Location
             </DialogTitle>
+            <DialogDescription>
+              Adjust the exact latitude/longitude of this property by dragging the pin or searching.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

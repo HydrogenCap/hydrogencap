@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -162,7 +162,10 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Record Monthly Figures</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Record Monthly Figures</DialogTitle>
+            <DialogDescription>Loading snapshot data…</DialogDescription>
+          </DialogHeader>
           <Skeleton className="h-64" />
         </DialogContent>
       </Dialog>
@@ -174,6 +177,9 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Record Monthly Figures</DialogTitle>
+          <DialogDescription>
+            Record the month-end financial snapshot for this property or portfolio.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

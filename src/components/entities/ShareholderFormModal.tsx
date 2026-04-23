@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -153,6 +154,9 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Shareholder' : 'Add Shareholder'}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update this shareholder\'s details.' : 'Record a new shareholder against this entity.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

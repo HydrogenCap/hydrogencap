@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -127,6 +128,9 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Approve Work Order</DialogTitle>
+            <DialogDescription>
+              Approve this work order to release it for scheduling and billing.
+            </DialogDescription>
           </DialogHeader>
           {selectedWO && (
             <div className="space-y-4">
@@ -166,6 +170,9 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Work Order</DialogTitle>
+            <DialogDescription>
+              Reject this work order and return it to the raiser with a reason.
+            </DialogDescription>
           </DialogHeader>
           {selectedWO && (
             <div className="space-y-4">

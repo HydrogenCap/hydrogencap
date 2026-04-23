@@ -9,7 +9,7 @@
     "build:analyze": "VITE_ANALYZE=true vite build",
     "build:dev": "vite build --mode development",
     "check:edge": "node scripts/check-edge-functions.mjs",
-    "test:edge": "deno test supabase/functions/_shared --allow-env",
+    "test:edge": "deno test supabase/functions --allow-env",
     "lint": "eslint --max-warnings 1743 src e2e scripts playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.ts eslint.config.js",
     "preview": "vite preview",
     "test": "vitest run",

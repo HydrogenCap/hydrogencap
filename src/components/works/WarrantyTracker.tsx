@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -156,6 +157,9 @@ export function WarrantyTracker({ workOrderId, propertyId }: WarrantyTrackerProp
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Record Warranty</DialogTitle>
+            <DialogDescription>
+              Log a product or workmanship warranty attached to this work order.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,6 +90,9 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Share Class' : 'Add Share Class'}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update the details of this share class.' : 'Define a new share class — ordinary, preference, or custom.'}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">

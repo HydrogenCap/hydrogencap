@@ -3,6 +3,7 @@ import { Building2, User, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -190,6 +191,9 @@ export function UnifiedOwnershipEditor({
           <DialogTitle>
             {editingLink ? 'Edit Ownership' : 'Add Beneficial Owner'}
           </DialogTitle>
+          <DialogDescription>
+            Record a beneficial ownership link — individual or parent entity — for this property.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -4,7 +4,7 @@ import { CalendarDays, Plus, ChevronLeft, ChevronRight, AlertTriangle, Bell, Clo
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -236,6 +236,9 @@ export function InspectionScheduler() {
               <CalendarDays className="h-5 w-5" />
               Schedule Inspection
             </DialogTitle>
+            <DialogDescription>
+              Book an upcoming property inspection and assign it to the right team member.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
