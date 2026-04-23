@@ -519,7 +519,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
 
 function PaymentTrackingStep({
   lineItems,
-  runId,
+  runId: _runId,
   onMarkPaid,
   onMarkAllPaid,
   isPending,

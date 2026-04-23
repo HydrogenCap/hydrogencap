@@ -43,7 +43,7 @@ function EscalationDots({ level }: { level: number }) {
   );
 }
 
-function TaskCard({ task, onStatusChange, onClick }: {
+function TaskCard({ task, onStatusChange: _onStatusChange, onClick }: {
   task: ComplianceTaskOverview;
   onStatusChange: (id: string, status: TaskStatus) => void;
   onClick: (task: ComplianceTaskOverview) => void;

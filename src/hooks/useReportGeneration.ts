@@ -321,7 +321,7 @@ export function useGenerateReport() {
       reportType,
       filters,
       properties,
-      brokerNotes,
+      brokerNotes: _brokerNotes,
       brokerPackData,
     }: {
       reportType: ReportType;

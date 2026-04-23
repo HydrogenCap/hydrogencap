@@ -130,7 +130,7 @@ function MapBoundsUpdater({ properties }: { properties: PropertyWithFinancials[]
 export const PropertyMap = forwardRef<HTMLDivElement, PropertyMapProps>(function PropertyMap({ 
   properties, 
   filters,
-  onPropertyClick,
+  onPropertyClick: _onPropertyClick,
   className = 'h-[600px]',
 }, ref) {
   // Apply filters

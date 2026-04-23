@@ -21,8 +21,8 @@ interface AssignActionPopoverProps {
 export function AssignActionPopover({
   risk,
   assignment,
-  memberMap,
-  contractorMap,
+  memberMap: _memberMap,
+  contractorMap: _contractorMap,
   children,
 }: AssignActionPopoverProps) {
   const [open, setOpen] = useState(false);

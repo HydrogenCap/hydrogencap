@@ -225,7 +225,7 @@
    email,
    phone,
    rating,
-   totalJobs,
+   totalJobs: _totalJobs,
    typicalCost,
    matchScore,
    isPreferred,

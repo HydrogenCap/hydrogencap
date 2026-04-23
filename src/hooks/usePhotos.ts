@@ -108,7 +108,7 @@ export function useDeletePhoto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ photoId, propertyId, fileUrl }: { photoId: string; propertyId: string; fileUrl: string }) => {
+    mutationFn: async ({ photoId, propertyId: _propertyId, fileUrl }: { photoId: string; propertyId: string; fileUrl: string }) => {
       const filePath = extractStoragePath('photos', fileUrl);
 
       // Delete from storage
@@ -135,7 +135,7 @@ export function useReorderPhotos() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ photos, propertyId }: { photos: { id: string; display_order: number }[]; propertyId: string }) => {
+    mutationFn: async ({ photos, propertyId: _propertyId }: { photos: { id: string; display_order: number }[]; propertyId: string }) => {
       // Update each photo's display order
       const updates = photos.map(photo =>
         (supabase as any)

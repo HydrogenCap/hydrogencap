@@ -131,7 +131,7 @@ export function useConfirmAppointment() {
     mutationFn: async ({
       complianceItemId,
       appointmentDate,
-      tenantNotified,
+      tenantNotified: _tenantNotified,
       tenantAccessInstructions,
     }: {
       complianceItemId: string;
@@ -168,8 +168,8 @@ export function useUploadRenewalCert() {
       complianceItemId,
       propertyId,
       file,
-      complianceType,
-      propertyAddress,
+      complianceType: _complianceType,
+      propertyAddress: _propertyAddress,
       newIssueDate,
       newExpiryDate,
       certificateReference,

@@ -15,7 +15,7 @@ interface Props {
   entityName: string;
 }
 
-export function EntityAccountingSection({ entityId, entityName }: Props) {
+export function EntityAccountingSection({ entityId, entityName: _entityName }: Props) {
   const navigate = useNavigate();
   const { data: exports, isLoading: exportsLoading } = useAccountingExports(entityId, 5);
   const { data: taxSummaries, isLoading: taxLoading } = useTaxYearSummaries(entityId);

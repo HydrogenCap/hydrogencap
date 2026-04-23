@@ -262,7 +262,7 @@ export default function Chat() {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function ChatEmptyState({ onSend }: { onSend: (msg: string) => void }) {
+function ChatEmptyState({ onSend: _onSend }: { onSend: (msg: string) => void }) {
   return (
     <div className="text-center py-12">
       <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">

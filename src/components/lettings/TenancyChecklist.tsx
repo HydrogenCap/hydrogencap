@@ -140,8 +140,8 @@ function MarkCompleteDialog({
 
 function ChecklistItemRow({
   item,
-  tenancyId,
-  orgId,
+  tenancyId: _tenancyId,
+  orgId: _orgId,
   onMarkComplete,
   onUnmark,
 }: {

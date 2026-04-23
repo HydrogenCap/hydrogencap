@@ -169,7 +169,7 @@ export function LocationAnalysisCard({
   locationLoading,
   onGenerate,
   onRefresh,
-  hasGenerated,
+  hasGenerated: _hasGenerated,
 }: LocationAnalysisCardProps) {
   return (
     <Card>

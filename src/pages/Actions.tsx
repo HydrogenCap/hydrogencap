@@ -238,7 +238,7 @@ function RiskRow({
 /* ─── Property Group Component ─── */
 function PropertyGroup({
   address,
-  propertyId,
+  propertyId: _propertyId,
   risks,
   snoozes,
   assignments,

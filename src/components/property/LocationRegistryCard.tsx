@@ -70,11 +70,11 @@ export function LocationRegistryCard({
   propertyId,
   latitude,
   longitude,
-  titleNumber,
-  tenure,
-  leaseYearsRemaining,
-  uprn,
-  landRegistryLink,
+  titleNumber: _titleNumber,
+  tenure: _tenure,
+  leaseYearsRemaining: _leaseYearsRemaining,
+  uprn: _uprn,
+  landRegistryLink: _landRegistryLink,
   address,
 }: LocationRegistryCardProps) {
   const [coordDialogOpen, setCoordDialogOpen] = useState(false);

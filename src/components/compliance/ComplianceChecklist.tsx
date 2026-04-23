@@ -63,8 +63,8 @@ function StatusIcon({ status }: { status: RequirementStatus }) {
 function RequirementRow({ 
   requirement, 
   propertyId, 
-  propertyAddress,
-  onUploadClick 
+  propertyAddress: _propertyAddress,
+  onUploadClick: _onUploadClick 
 }: { 
   requirement: ComplianceRequirement;
   propertyId: string;

@@ -32,7 +32,7 @@ interface CompanyOwnershipSectionProps {
   companyName: string;
 }
 
-export function CompanyOwnershipSection({ companyId, companyName }: CompanyOwnershipSectionProps) {
+export function CompanyOwnershipSection({ companyId, companyName: _companyName }: CompanyOwnershipSectionProps) {
   const { data: links, isLoading } = useCompanyOwnership(companyId);
   const deleteLink = useDeleteOwnershipLink();
   const { toast } = useToast();

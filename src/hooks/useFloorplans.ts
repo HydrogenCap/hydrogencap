@@ -212,7 +212,7 @@ export function useSetPrimaryFloorplan() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
+    mutationFn: async ({ id, propertyId: _propertyId }: { id: string; propertyId: string }) => {
       const { data, error } = await (supabase as any)
         .from('floorplans')
         .update({ is_primary: true })

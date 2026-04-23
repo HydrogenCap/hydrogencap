@@ -226,7 +226,7 @@ export function useDeleteEvidence() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, jobId }: { id: string; jobId: string }) => {
+    mutationFn: async ({ id, jobId: _jobId }: { id: string; jobId: string }) => {
       const { error } = await (supabase as any)
         .from('job_evidence')
         .delete()

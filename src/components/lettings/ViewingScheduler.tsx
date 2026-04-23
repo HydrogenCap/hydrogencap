@@ -222,7 +222,7 @@ export function ViewingScheduler({ item }: ViewingSchedulerProps) {
 
 function ViewingCard({
   viewing,
-  lettingId,
+  lettingId: _lettingId,
   expanded,
   onToggle,
   onStatusChange,
