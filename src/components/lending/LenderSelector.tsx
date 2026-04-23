@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -80,7 +80,12 @@ export function LenderSelector({ value, onChange }: LenderSelectorProps) {
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Add New Lender</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Add New Lender</DialogTitle>
+            <DialogDescription>
+              Register a new lender that you can attach future loan facilities to.
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Lender Name *</Label>

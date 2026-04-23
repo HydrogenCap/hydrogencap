@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -81,7 +81,12 @@ export function EndTenancyModal({ open, onOpenChange, tenancyId, tenantId }: Pro
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>End Tenancy</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>End Tenancy</DialogTitle>
+          <DialogDescription>
+            Record the tenancy's end date, reason, and any final balance or deposit return.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
           <div><Label>End Date *</Label><Input type="date" {...form.register('actual_end_date')} /></div>
           <div>

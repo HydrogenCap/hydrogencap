@@ -3,6 +3,7 @@
  import {
    Dialog,
    DialogContent,
+   DialogDescription,
    DialogHeader,
    DialogTitle,
    DialogFooter,
@@ -80,6 +81,9 @@
          <form onSubmit={handleSubmit}>
            <DialogHeader>
              <DialogTitle>Edit Document</DialogTitle>
+             <DialogDescription>
+               Update this document's name, category, or tags.
+             </DialogDescription>
            </DialogHeader>
  
            <div className="space-y-4 py-4">

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -198,6 +199,9 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Area Exposure Debug View</DialogTitle>
+                  <DialogDescription>
+                    Inspect the raw per-property breakdown that drives the area exposure chart.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-auto">
                   <Table>

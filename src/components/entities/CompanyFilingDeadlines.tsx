@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -244,6 +244,9 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Filing Deadline' : 'Add Filing Deadline'}</DialogTitle>
+            <DialogDescription>
+              Track a Companies House, HMRC, or custom filing deadline for this entity.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

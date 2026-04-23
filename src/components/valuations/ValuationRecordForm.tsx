@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -71,6 +71,9 @@ export function ValuationRecordForm({ propertyId, open, onOpenChange }: Valuatio
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Record Valuation</DialogTitle>
+          <DialogDescription>
+            Log a new valuation for this property — source, date, and amount.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-2 gap-4">

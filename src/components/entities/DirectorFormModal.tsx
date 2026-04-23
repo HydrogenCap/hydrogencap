@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -88,6 +89,9 @@ export function DirectorFormModal({ open, onOpenChange, entityId, editingDirecto
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Director' : 'Add Director'}</DialogTitle>
+          <DialogDescription>
+            Record this company's director details and appointment dates.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
