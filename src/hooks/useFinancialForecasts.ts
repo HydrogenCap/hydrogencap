@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -66,7 +66,7 @@ export function useFinancialForecasts() {
     queryFn: async () => {
       if (!orgId) return [];
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_forecasts' as any)
         .select('*')
         .eq('org_id', orgId)
@@ -108,7 +108,7 @@ export function useForecastDetail(id: string | undefined) {
     queryFn: async () => {
       if (!id || !orgId) return null;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_forecasts' as any)
         .select('*')
         .eq('id', id)

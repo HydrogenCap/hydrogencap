@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 export default function MarketingContact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +29,7 @@ export default function MarketingContact() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('demo_requests')
         .insert({
           name: formData.name,

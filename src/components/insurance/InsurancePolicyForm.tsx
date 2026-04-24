@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -35,7 +35,7 @@ function usePropertyOptions() {
   return useQuery({
     queryKey: ['property-options', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties')
         .select('id, address_line, postcode')
         .eq('org_id', orgId!)

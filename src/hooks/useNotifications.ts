@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 export interface Notification {
   id: string;
@@ -24,7 +24,7 @@ export function useNotifications(filter?: { category?: string; unreadOnly?: bool
   return useQuery({
     queryKey: ['notifications', filter],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('notifications')
         .select('*')
         .is('dismissed_at', null)
@@ -49,7 +49,7 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
-      const { count, error } = await (supabase as any)
+      const { count, error } = await supabaseAny
         .from('notifications')
         .select('id', { count: 'exact', head: true })
         .is('read_at', null)
@@ -65,7 +65,7 @@ export function useMarkAsRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
         .eq('id', id);
@@ -81,7 +81,7 @@ export function useMarkAllRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
         .is('read_at', null);
@@ -97,7 +97,7 @@ export function useDismissNotification() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('notifications')
         .update({ dismissed_at: new Date().toISOString() })
         .eq('id', id);
@@ -113,7 +113,7 @@ export function useDismissAllRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('notifications')
         .update({ dismissed_at: new Date().toISOString() })
         .not('read_at', 'is', null);

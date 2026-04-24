@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 
 export interface PropertyV2 {
@@ -52,7 +52,7 @@ export function usePropertiesV2() {
   return useQuery({
     queryKey: ['properties_v2'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .select('*, legal_entities!inner(entity_name, entity_type)')
         .order('created_at', { ascending: false });
@@ -72,7 +72,7 @@ export function usePropertyV2(id: string | undefined) {
     queryKey: ['property_v2', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .select('*, legal_entities!inner(entity_name, entity_type)')
         .eq('id', id)
@@ -96,7 +96,7 @@ export function useEntityPropertiesV2(entityId: string | undefined) {
     queryKey: ['properties_v2_by_entity', entityId],
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .select('*')
         .eq('entity_id', entityId)
@@ -115,7 +115,7 @@ export function useCreatePropertyV2() {
   return useMutation({
     mutationFn: async (property: PropertyV2Insert) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .insert({ ...property, org_id: orgId })
         .select()
@@ -133,7 +133,7 @@ export function useUpdatePropertyV2() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...property }: Partial<PropertyV2> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .update(property)
         .eq('id', id)

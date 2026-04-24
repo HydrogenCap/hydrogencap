@@ -3,7 +3,7 @@
  * Fetches tenancies and calculates lifecycle events.
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { calculateAllEvents, type TenancyEvent } from '@/lib/tenancyLifecycle';
 
@@ -51,7 +51,7 @@ export function useTenancyEvents(options?: UseTenancyEventsOptions) {
     queryFn: async (): Promise<TenancyEvent[]> => {
       const orgId = await fetchUserOrgId();
 
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('tenancy_agreements')
         .select(`
           id, start_date, initial_end_date, actual_end_date,

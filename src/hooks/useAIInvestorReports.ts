@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from 'sonner';
 
@@ -47,7 +47,7 @@ export function useAIInvestorReports() {
   return useQuery({
     queryKey: ['ai_investor_reports', org?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ai_investor_reports')
         .select('*')
         .eq('org_id', org!.id)
@@ -65,7 +65,7 @@ export function useAIReportDetail(id: string | undefined) {
   return useQuery({
     queryKey: ['ai_investor_report', id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ai_investor_reports')
         .select('*')
         .eq('id', id!)
@@ -113,7 +113,7 @@ export function usePublishAIReport() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ai_investor_reports')
         .update({
           status: 'published',
@@ -151,7 +151,7 @@ export function useUpdateAIReportSection() {
       updatedSection: Partial<ReportSection>;
     }) => {
       // Fetch current report to get all sections
-      const { data: report, error: fetchError } = await (supabase as any)
+      const { data: report, error: fetchError } = await supabaseAny
         .from('ai_investor_reports')
         .select('sections')
         .eq('id', reportId)
@@ -162,7 +162,7 @@ export function useUpdateAIReportSection() {
       const sections = [...(report.sections as unknown as ReportSection[])];
       sections[sectionIndex] = { ...sections[sectionIndex], ...updatedSection };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ai_investor_reports')
         .update({ sections })
         .eq('id', reportId)

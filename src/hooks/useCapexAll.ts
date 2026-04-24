@@ -2,7 +2,7 @@
  * Portfolio-wide CapEx hooks for list page and detail page.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import type { CapexProject } from './useCapex';
@@ -17,7 +17,7 @@ export function useAllCapexProjects() {
   return useQuery({
     queryKey: ['capex-all-projects', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_projects')
         .select('*, capex_line_items(*), properties(id, address_line_1, city, postcode)')
         .eq('org_id', orgId)
@@ -35,7 +35,7 @@ export function useCapexProject(projectId: string) {
   return useQuery({
     queryKey: ['capex-project', orgId, projectId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_projects')
         .select('*, capex_line_items(*), properties(id, address_line_1, city, postcode)')
         .eq('org_id', orgId!)
@@ -62,7 +62,7 @@ export function useCreateCapexProjectFull() {
       target_end_date?: string;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_projects')
         .insert({ ...project, org_id: orgId })
         .select()

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface InboundEmail {
@@ -64,7 +64,7 @@ export function useInboundEmails(filters?: {
   return useQuery({
     queryKey: ['inbound-emails', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('inbound_emails')
         .select(`
           *,
@@ -130,7 +130,7 @@ export function useUpdateInboundEmail() {
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('inbound_emails')
         .update({
           ...updates,
@@ -158,7 +158,7 @@ export function useReprocessEmail() {
     mutationFn: async (emailId: string) => {
       // This would call an edge function to reprocess
       // For now, just mark as pending
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('inbound_emails')
         .update({ 
           processing_status: 'pending',

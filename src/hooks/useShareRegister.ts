@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ export function useShareClasses(entityId: string | undefined) {
     queryKey: shareRegisterKeys.classes(entityId || ''),
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('share_classes')
         .select('*')
         .eq('entity_id', entityId)
@@ -128,7 +128,7 @@ export function useAddShareClass() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<ShareClass, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('share_classes')
         .insert(input)
         .select()
@@ -146,7 +146,7 @@ export function useUpdateShareClass() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ShareClass> & { id: string; entity_id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('share_classes')
         .update(updates)
         .eq('id', id)
@@ -165,7 +165,7 @@ export function useDeleteShareClass() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, entityId }: { id: string; entityId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('share_classes')
         .delete()
         .eq('id', id);
@@ -187,7 +187,7 @@ export function useShareholdings(entityId: string | undefined) {
     queryKey: shareRegisterKeys.shareholdings(entityId || ''),
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('shareholdings')
         .select('*, share_class:share_classes(*)')
         .eq('entity_id', entityId)
@@ -216,7 +216,7 @@ export function useAddShareholding() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<Shareholding, 'id' | 'created_at' | 'updated_at' | 'share_class'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('shareholdings')
         .insert(input)
         .select('*, share_class:share_classes(*)')
@@ -235,7 +235,7 @@ export function useUpdateShareholding() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Shareholding> & { id: string; entity_id: string }) => {
       const { share_class, ...rest } = updates as any;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('shareholdings')
         .update(rest)
         .eq('id', id)
@@ -254,7 +254,7 @@ export function useDeleteShareholding() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, entityId }: { id: string; entityId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('shareholdings')
         .delete()
         .eq('id', id);
@@ -276,7 +276,7 @@ export function useShareTransfers(entityId: string | undefined) {
     queryKey: shareRegisterKeys.transfers(entityId || ''),
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('share_transfers')
         .select('*, share_class:share_classes(*)')
         .eq('entity_id', entityId)
@@ -305,7 +305,7 @@ export function useAddShareTransfer() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<ShareTransfer, 'id' | 'created_at' | 'share_class'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('share_transfers')
         .insert(input)
         .select('*, share_class:share_classes(*)')
@@ -329,7 +329,7 @@ export function useBeneficialOwnersPSC(entityId: string | undefined) {
     queryKey: shareRegisterKeys.beneficialOwners(entityId || ''),
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('beneficial_owners')
         .select('*')
         .eq('entity_id', entityId)
@@ -358,7 +358,7 @@ export function useAddBeneficialOwnerPSC() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<BeneficialOwner, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('beneficial_owners')
         .insert(input)
         .select()
@@ -376,7 +376,7 @@ export function useUpdateBeneficialOwnerPSC() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<BeneficialOwner> & { id: string; entity_id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('beneficial_owners')
         .update(updates)
         .eq('id', id)
@@ -395,7 +395,7 @@ export function useDeleteBeneficialOwnerPSC() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, entityId }: { id: string; entityId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('beneficial_owners')
         .delete()
         .eq('id', id);
@@ -417,7 +417,7 @@ export function useEntityDividends(entityId: string | undefined) {
     queryKey: shareRegisterKeys.dividends(entityId || ''),
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('entity_dividends')
         .select('*, share_class:share_classes(*)')
         .eq('entity_id', entityId)
@@ -446,7 +446,7 @@ export function useAddEntityDividend() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<EntityDividend, 'id' | 'created_at' | 'share_class'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('entity_dividends')
         .insert(input)
         .select('*, share_class:share_classes(*)')
@@ -465,7 +465,7 @@ export function useUpdateEntityDividend() {
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<EntityDividend> & { id: string; entity_id: string }) => {
       const { share_class, ...rest } = updates as any;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('entity_dividends')
         .update(rest)
         .eq('id', id)

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useUserOrg } from '@/hooks/useUserOrg';
 
@@ -43,7 +43,7 @@ export function useDistributions() {
   return useQuery({
     queryKey: ['distributions', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('distributions')
         .select(`
           *,
@@ -64,7 +64,7 @@ export function useDistributionAllocations(distributionId: string | null) {
     queryKey: ['distribution-allocations', distributionId],
     queryFn: async () => {
       if (!distributionId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('distribution_allocations')
         .select('*')
         .eq('distribution_id', distributionId)
@@ -102,7 +102,7 @@ export function useCreateDistribution() {
       }>;
     }) => {
       const { allocations, ...distData } = payload;
-      const { data: dist, error } = await (supabase as any)
+      const { data: dist, error } = await supabaseAny
         .from('distributions')
         .insert(distData)
         .select()
@@ -111,7 +111,7 @@ export function useCreateDistribution() {
       if (error) throw error;
 
       if (allocations.length > 0) {
-        const { error: allocError } = await (supabase as any)
+        const { error: allocError } = await supabaseAny
           .from('distribution_allocations')
           .insert(allocations.map(a => ({ ...a, distribution_id: dist.id })));
         if (allocError) throw allocError;
@@ -131,7 +131,7 @@ export function useApproveDistribution() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('distributions')
         .update({ status: 'approved', approved_at: new Date().toISOString() })
         .eq('id', id);
@@ -148,7 +148,7 @@ export function useMarkAllocationPaid() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, reference }: { id: string; reference?: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('distribution_allocations')
         .update({ paid_at: new Date().toISOString(), payment_reference: reference || null })
         .eq('id', id);

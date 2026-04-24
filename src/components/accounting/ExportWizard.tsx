@@ -16,7 +16,7 @@ import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useAccountingMappings } from '@/hooks/useAccountingMappings';
 import { useCreateExportRecord } from '@/hooks/useAccountingExports';
 import { useOrganization } from '@/hooks/useOrganization';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import {
   generateTransactionLines,
   formatCsvForSystem,
@@ -121,7 +121,7 @@ export function ExportWizard() {
       const fromStr = format(dateFrom, 'yyyy-MM-dd');
       const toStr = format(dateTo, 'yyyy-MM-dd');
 
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('financial_snapshots')
         .select('*')
         .gte('snapshot_month', fromStr)
@@ -138,7 +138,7 @@ export function ExportWizard() {
       // Get property addresses
       const typedSnapshots = (snapshots || []) as FinancialSnapshot[];
       const propertyIds = [...new Set(typedSnapshots.map((snapshot) => snapshot.property_id))];
-      const { data: properties } = await (supabase as any)
+      const { data: properties } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, postcode')
         .in('id', propertyIds);

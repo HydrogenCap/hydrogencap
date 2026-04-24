@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { WizardShell } from '@/components/wizard/WizardShell';
 import { ENTITY_STEPS, ENTITY_CROSS_CHECKS } from '@/lib/wizard/entitySteps';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import type { WizardPayload } from '@/lib/wizard/types';
 
@@ -18,7 +18,7 @@ export default function AddEntityWizard() {
   const handleSubmit = async (payload: WizardPayload, draftId: string) => {
     const orgId = await fetchUserOrgId();
 
-    const { data: entity, error } = await (supabase as any)
+    const { data: entity, error } = await supabaseAny
       .from('legal_entities')
       .insert({
         org_id: orgId,
@@ -34,7 +34,7 @@ export default function AddEntityWizard() {
 
     if (error) throw error;
 
-    await (supabase as any)
+    await supabaseAny
       .from('wizard_drafts')
       .update({ entity_id: entity.id })
       .eq('id', draftId);

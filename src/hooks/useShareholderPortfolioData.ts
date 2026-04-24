@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useShareholderSession } from './useShareholderSession';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 
@@ -89,7 +89,7 @@ export function useShareholderPortfolioData(options?: UseShareholderPortfolioDat
     queryKey: ['shareholder-properties-v2', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .select(`
           id, address_line_1, address_line_2, city, postcode,
@@ -113,7 +113,7 @@ export function useShareholderPortfolioData(options?: UseShareholderPortfolioDat
     queryKey: ['shareholder-loans-v2', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_facilities')
         .select(`
           id, property_id, entity_id, current_balance,
@@ -136,7 +136,7 @@ export function useShareholderPortfolioData(options?: UseShareholderPortfolioDat
     queryKey: ['shareholder-performance-v2', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(PROPERTY_ANNUAL_PERFORMANCE_TABLE)
         .select('*')
         .eq('org_id', orgId);
@@ -151,7 +151,7 @@ export function useShareholderPortfolioData(options?: UseShareholderPortfolioDat
     queryKey: ['shareholder-compliance-v2', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(COMPLIANCE_MATRIX_V2_TABLE)
         .select('property_id, property_address, document_type, calculated_status, expiry_date, issue_date, is_required, days_remaining')
         .eq('org_id', orgId);
@@ -167,7 +167,7 @@ export function useShareholderPortfolioData(options?: UseShareholderPortfolioDat
     queryKey: ['shareholder-cover-photos', orgId, propertyIds],
     queryFn: async () => {
       if (!orgId || propertyIds.length === 0) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('photos')
         .select('id, property_id, file_url, is_cover')
         .eq('is_cover', true)

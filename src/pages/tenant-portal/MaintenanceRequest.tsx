@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/lib/maintenanceTypes';
@@ -71,7 +71,7 @@ export default function MaintenanceRequest() {
     queryKey: ['tenant-maintenance-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancies')
         .select('property_id')
         .eq('id', tenancyId)
@@ -86,7 +86,7 @@ export default function MaintenanceRequest() {
     queryKey: ['tenant-maintenance-requests', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -186,7 +186,7 @@ export default function MaintenanceRequest() {
         escalation_level: hazardCategory === 'emergency' ? 'critical' : 'normal',
       };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .insert(payload)
         .select('id, org_id')
@@ -195,7 +195,7 @@ export default function MaintenanceRequest() {
 
       // Log Awaab's Law audit event
       if (data?.id) {
-        await (supabase as any).from('awaabs_law_events').insert({
+        await supabaseAny.from('awaabs_law_events').insert({
           maintenance_request_id: data.id,
           org_id: orgId,
           event_type: 'hazard_reported',

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -150,7 +150,7 @@ export function useWorkOrders(filters?: {
   return useQuery({
     queryKey: ['work_orders', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('work_orders')
         .select(WORK_ORDER_SELECT)
         .order('created_at', { ascending: false });
@@ -173,7 +173,7 @@ export function useWorkOrder(id: string | undefined) {
     queryKey: ['work_order', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .select(WORK_ORDER_SELECT)
         .eq('id', id)
@@ -189,7 +189,7 @@ export function useWorkOrderCounts() {
   return useQuery({
     queryKey: ['work_order_counts'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .select('status, priority, estimated_cost, actual_cost');
       if (error) throw error;
@@ -260,7 +260,7 @@ export function useCreateWorkOrder() {
           status: 'draft',
         };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .insert(payload)
         .select()
@@ -286,7 +286,7 @@ export function useSubmitWorkOrder() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update({ status: 'submitted', updated_at: new Date().toISOString() } satisfies WorkOrderUpdate)
         .eq('id', id);
@@ -318,7 +318,7 @@ export function useApproveWorkOrder() {
         approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update(payload)
         .eq('id', id);
@@ -347,7 +347,7 @@ export function useRejectWorkOrder() {
         rejected_reason: reason,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update(payload)
         .eq('id', id);
@@ -371,7 +371,7 @@ export function useUpdateWorkOrder() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<WorkOrderUpdate> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
@@ -468,7 +468,7 @@ export function useCompleteWorkOrder() {
 
       let cost = actualCost;
       if (cost === undefined) {
-        const { data: items } = await (supabase as any)
+        const { data: items } = await supabaseAny
           .from('work_order_costs')
           .select('amount, vat_amount')
           .eq('work_order_id', id)
@@ -484,7 +484,7 @@ export function useCompleteWorkOrder() {
         actual_completion_date: completionDate,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update(payload)
         .eq('id', id);
@@ -535,7 +535,7 @@ export function useAddCostItem() {
       if (!orgId) throw new Error('No org');
 
       const payload: WorkOrderCostInsert = { ...input, org_id: orgId };
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_costs')
         .insert(payload)
         .select()
@@ -554,7 +554,7 @@ export function useDeleteCostItem() {
 
   return useMutation({
     mutationFn: async ({ id, workOrderId }: { id: string; workOrderId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_order_costs')
         .delete()
         .eq('id', id);
@@ -576,7 +576,7 @@ export function useLinkJobToWorkOrder() {
   return useMutation({
     mutationFn: async ({ jobId, workOrderId }: { jobId: string; workOrderId: string }) => {
       const payload: ContractorJobUpdate = { work_order_id: workOrderId };
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('contractor_jobs')
         .update(payload)
         .eq('id', jobId);
@@ -598,7 +598,7 @@ export function useCreateWOFromMaintenance() {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
-      const { data: req, error } = await (supabase as any)
+      const { data: req, error } = await supabaseAny
         .from('maintenance_requests')
         .select(`
           *,

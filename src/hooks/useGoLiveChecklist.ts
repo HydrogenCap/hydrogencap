@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { ActivityLoggers } from './useActivityLog';
 import type { PropertyWithFinancials } from './useProperties';
 
@@ -404,7 +404,7 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return null;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('go_live_checklists')
         .select('*')
         .eq('property_id', propertyId)
@@ -420,14 +420,14 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
     mutationFn: async (updates: Partial<GoLiveChecklistData>) => {
       if (!propertyId) throw new Error('No property ID');
 
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await supabaseAny
         .from('go_live_checklists')
         .select('id')
         .eq('property_id', propertyId)
         .maybeSingle();
 
       if (existing) {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabaseAny
           .from('go_live_checklists')
           .update(updates)
           .eq('property_id', propertyId)
@@ -436,7 +436,7 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
         if (error) throw error;
         return data;
       } else {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabaseAny
           .from('go_live_checklists')
           .insert({ property_id: propertyId, ...updates })
           .select()
@@ -458,7 +458,7 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
       if (!user) throw new Error('Not authenticated');
 
       // Update checklist with approval
-      const { error: checklistError } = await (supabase as any)
+      const { error: checklistError } = await supabaseAny
         .from('go_live_checklists')
         .update({
           go_live_approved_at: new Date().toISOString(),
@@ -469,7 +469,7 @@ export function useGoLiveChecklist(propertyId: string | undefined) {
       if (checklistError) throw checklistError;
 
       // Update property lifecycle
-      const { error: propertyError } = await (supabase as any)
+      const { error: propertyError } = await supabaseAny
         .from('properties_v2')
         .update({
           lifecycle_stage: 'operational',

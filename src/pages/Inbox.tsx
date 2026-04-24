@@ -17,7 +17,7 @@ import { AISettingsPanel } from '@/components/inbox/AISettingsPanel';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useInboxDocuments, useInboxRealtime, useDeleteDocument } from '@/hooks/useDocuments';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAcceptAllHighConfidence } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ export default function Inbox() {
   const { data: complianceMatrixRows } = useQuery({
     queryKey: ['compliance_matrix_v2_inbox'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_matrix_v2')
         .select('calculated_status');
       if (error) throw error;

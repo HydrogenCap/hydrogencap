@@ -1,5 +1,5 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
+ import { supabase, supabaseAny } from '@/integrations/supabase/client';
  import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
  
@@ -76,7 +76,7 @@ export interface TenantWithProperty extends Tenant {
    return useQuery({
      queryKey: ['tenants', status],
      queryFn: async () => {
-        let query = (supabase as any)
+        let query = supabaseAny
           .from('tenants')
           .select('id, org_id, tenant_type, first_name, last_name, email, phone, company_name, company_number, status, notes, created_at, updated_at')
           .order('created_at', { ascending: false });
@@ -97,7 +97,7 @@ export interface TenantWithProperty extends Tenant {
      queryKey: ['tenants', 'with-property'],
      queryFn: async () => {
        // Get all tenants
-        const { data: tenants, error: tenantsError } = await (supabase as any)
+        const { data: tenants, error: tenantsError } = await supabaseAny
           .from('tenants')
           .select('*')
           .order('created_at', { ascending: false });
@@ -105,7 +105,7 @@ export interface TenantWithProperty extends Tenant {
        if (tenantsError) throw tenantsError;
  
        // Get active tenancies with property and room info
-      const { data: tenancies, error: tenanciesError } = await (supabase as any)
+      const { data: tenancies, error: tenanciesError } = await supabaseAny
         .from('tenancies')
         .select(`
           id, tenant_id, property_id, room_id, start_date, end_date, rent_amount_pcm, status,
@@ -140,7 +140,7 @@ export interface TenantWithProperty extends Tenant {
    return useQuery({
      queryKey: ['tenants', tenantId],
      queryFn: async () => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('tenants')
          .select('*')
          .eq('id', tenantId)
@@ -161,7 +161,7 @@ export interface TenantWithProperty extends Tenant {
        const orgId = await getUserOrgId();
        if (!orgId) throw new Error('No organization found');
  
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('tenants')
          .insert({ ...tenant, org_id: orgId })
          .select()
@@ -189,7 +189,7 @@ export interface TenantWithProperty extends Tenant {
  
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<Tenant> & { id: string }) => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('tenants')
          .update(updates)
          .eq('id', id)

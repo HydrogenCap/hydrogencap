@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 export type RenewalStep = 'book' | 'confirm' | 'upload' | 'verify';
@@ -62,7 +62,7 @@ export function useStartRenewal(complianceItemId: string | undefined) {
     queryFn: async () => {
       if (!complianceItemId) return null;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_items')
         .select(`
           id, property_id, compliance_type, expiry_date, renewal_status,
@@ -102,7 +102,7 @@ export function useBookContractor() {
       preferredDate: string;
       notes?: string;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_items')
         .update({
           renewal_status: 'booked',
@@ -139,7 +139,7 @@ export function useConfirmAppointment() {
       tenantNotified?: boolean;
       tenantAccessInstructions?: string;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_items')
         .update({
           renewal_status: 'confirmed',
@@ -190,7 +190,7 @@ export function useUploadRenewalCert() {
       if (!orgId) throw new Error('No organization found');
 
       // Get current version number
-      const { data: existingDocs } = await (supabase as any)
+      const { data: existingDocs } = await supabaseAny
         .from('compliance_documents')
         .select('version_number')
         .eq('compliance_item_id', complianceItemId)
@@ -212,14 +212,14 @@ export function useUploadRenewalCert() {
       if (uploadError) throw uploadError;
 
       // Archive previous current documents
-      await (supabase as any)
+      await supabaseAny
         .from('compliance_documents')
         .update({ is_current: false, archived_at: new Date().toISOString() })
         .eq('compliance_item_id', complianceItemId)
         .eq('is_current', true);
 
       // Create document record
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_documents')
         .insert({
           compliance_item_id: complianceItemId,
@@ -237,7 +237,7 @@ export function useUploadRenewalCert() {
       if (error) throw error;
 
       // Update compliance item dates
-      await (supabase as any)
+      await supabaseAny
         .from('compliance_items')
         .update({
           issue_date: newIssueDate,
@@ -268,7 +268,7 @@ export function useCompleteRenewal() {
       newIssueDate: string;
       newExpiryDate: string;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_items')
         .update({
           issue_date: newIssueDate,
@@ -283,7 +283,7 @@ export function useCompleteRenewal() {
 
       // Auto-close any matching open compliance task
       try {
-        const { data: openTask } = await (supabase as any)
+        const { data: openTask } = await supabaseAny
           .from('compliance_tasks')
           .select('id')
           .eq('property_id', data.property_id)
@@ -322,7 +322,7 @@ export function useRenewalHistory(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_items')
         .select(`
           id, compliance_type, issue_date, expiry_date,

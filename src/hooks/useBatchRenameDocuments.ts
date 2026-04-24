@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { generateStructuredFilename } from '@/lib/documentNaming';
 
 export type RenamePhase = 'idle' | 'scanning' | 'renaming' | 'complete' | 'error';
@@ -42,7 +42,7 @@ export function useBatchRenameDocuments() {
     // Phase 1: Scan
     patch({ ...INITIAL, phase: 'scanning', currentStep: 'Scanning documents…' });
 
-    let query = (supabase as any)
+    let query = supabaseAny
       .from('documents')
       .select(`
         id,
@@ -89,7 +89,7 @@ export function useBatchRenameDocuments() {
     const propertyIds = [...new Set(documents.map(d => d.property_id).filter(Boolean))] as string[];
     const propertyMap = new Map<string, string>();
     if (propertyIds.length > 0) {
-      const { data: props } = await (supabase as any)
+      const { data: props } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1')
         .in('id', propertyIds);
@@ -99,7 +99,7 @@ export function useBatchRenameDocuments() {
     const companyIds = [...new Set(documents.map(d => d.company_id).filter(Boolean))] as string[];
     const companyMap = new Map<string, string>();
     if (companyIds.length > 0) {
-      const { data: comps } = await (supabase as any)
+      const { data: comps } = await supabaseAny
         .from('companies')
         .select('id, legal_name')
         .in('id', companyIds);
@@ -109,7 +109,7 @@ export function useBatchRenameDocuments() {
     const tenantIds = [...new Set(documents.map(d => d.tenant_id).filter(Boolean))] as string[];
     const tenantMap = new Map<string, string>();
     if (tenantIds.length > 0) {
-      const { data: tenants } = await (supabase as any)
+      const { data: tenants } = await supabaseAny
         .from('tenants')
         .select('id, first_name, last_name')
         .in('id', tenantIds);
@@ -126,7 +126,7 @@ export function useBatchRenameDocuments() {
       .filter(Boolean) as string[];
     const tenancyPropertyMap = new Map<string, string>();
     if (tenancyIds.length > 0) {
-      const { data: tenancies } = await (supabase as any)
+      const { data: tenancies } = await supabaseAny
         .from('tenancies')
         .select('id, property_id')
         .in('id', [...new Set(tenancyIds)]);
@@ -145,7 +145,7 @@ export function useBatchRenameDocuments() {
       .filter(Boolean) as string[];
     const jobPropertyMap = new Map<string, string>();
     if (jobIds.length > 0) {
-      const { data: jobs } = await (supabase as any)
+      const { data: jobs } = await supabaseAny
         .from('contractor_jobs')
         .select('id, property_id')
         .in('id', [...new Set(jobIds)]);
@@ -212,7 +212,7 @@ export function useBatchRenameDocuments() {
 
       for (const update of updates) {
         try {
-          await (supabase as any)
+          await supabaseAny
             .from('documents')
             .update({
               final_file_name: update.final_file_name,

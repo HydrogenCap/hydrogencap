@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { ValidatedRow } from '@/lib/csvParser';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
@@ -53,7 +53,7 @@ export function useBatchImport() {
           
           if (isUpdate) {
             // Update existing property
-            const { data: updatedProperty, error: updateError } = await (supabase as any)
+            const { data: updatedProperty, error: updateError } = await supabaseAny
               .from('properties_v2')
               .update(propertyData)
               .eq('id', propertyId)
@@ -70,7 +70,7 @@ export function useBatchImport() {
               throw new Error('entity_id is required for new properties in V2');
             }
 
-            const { data: newProperty, error: propError } = await (supabase as any)
+            const { data: newProperty, error: propError } = await supabaseAny
               .from('properties_v2')
               .insert({ ...propertyData, org_id: orgId, entity_id: entityId })
               .select()
@@ -87,7 +87,7 @@ export function useBatchImport() {
           
           if (hasLoanData) {
             // Check if loan exists
-            const { data: existingLoans } = await (supabase as any)
+            const { data: existingLoans } = await supabaseAny
               .from('loans')
               .select('id')
               .eq('property_id', property.id)
@@ -103,7 +103,7 @@ export function useBatchImport() {
             };
 
             if (existingLoans && existingLoans.length > 0) {
-              const { error: loanError } = await (supabase as any)
+              const { error: loanError } = await supabaseAny
                 .from('loans')
                 .update(loanData)
                 .eq('id', existingLoans[0].id);
@@ -112,7 +112,7 @@ export function useBatchImport() {
                 console.warn('Failed to update loan:', loanError);
               }
             } else if (mortgageBalance !== null && mortgageBalance > 0) {
-              const { error: loanError } = await (supabase as any)
+              const { error: loanError } = await supabaseAny
                 .from('loans')
                 .insert(loanData);
 
@@ -131,7 +131,7 @@ export function useBatchImport() {
               annual_rent_gbp: annualRent,
             };
 
-            const { error: incomeError } = await (supabase as any)
+            const { error: incomeError } = await supabaseAny
               .from('income')
               .upsert(incomeData, { onConflict: 'property_id,year' });
 

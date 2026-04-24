@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 
@@ -67,12 +67,12 @@ export function useOwnershipFlowchartData() {
         { data: entities },
         { data: properties },
       ] = await Promise.all([
-        (supabase as any)
+        supabaseAny
           .from('legal_entities')
           .select('id, entity_name, entity_type, company_number, org_id')
           .eq('org_id', org.id)
           .order('entity_name'),
-        (supabase as any)
+        supabaseAny
           .from('properties_v2')
           .select('id, address_line_1, postcode, property_type, current_valuation, total_lettable_rooms, entity_id')
           .eq('org_id', org.id)
@@ -88,14 +88,14 @@ export function useOwnershipFlowchartData() {
         { data: entityLinks },
       ] = await Promise.all([
         entityIds.length > 0
-          ? (supabase as any)
+          ? supabaseAny
               .from('entity_shareholders')
               .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type')
               .in('entity_id', entityIds)
               .is('effective_to', null)
           : Promise.resolve({ data: [] as EntityShareholderRow[], error: null }),
         entityIds.length > 0
-          ? (supabase as any)
+          ? supabaseAny
               .from('entity_shareholdings')
               .select('parent_entity_id, shareholder_entity_id, shareholder_percent')
               .in('parent_entity_id', entityIds)

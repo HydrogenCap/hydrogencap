@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,7 @@ export function useInvestorReports(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-reports', investorId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investor_reports')
         .select('*')
         .eq('investor_id', investorId!)
@@ -66,7 +66,7 @@ export function useGenerateInvestorReport() {
       }
 
       // Save report record
-      const { error: insertError } = await (supabase as any)
+      const { error: insertError } = await supabaseAny
         .from('investor_reports')
         .insert({
           org_id: orgId!,

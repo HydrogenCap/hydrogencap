@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import {
   resolveManagedDocumentUrls,
   useDocumentCategories,
@@ -37,7 +37,7 @@ export function useDocumentCategorySummaries() {
   return useQuery({
     queryKey: ['document-vault-summaries'],
     queryFn: async () => {
-      const { data: documents, error } = await (supabase as any)
+      const { data: documents, error } = await supabaseAny
         .from('documents')
         .select('id, category, created_at, expiry_date')
         .is('deleted_at', null);
@@ -95,7 +95,7 @@ export function useVaultDocuments(filters: VaultFilters) {
       let companyPropertyIds: string[] | null = null;
       if (filters.companyId) {
         // Get properties where this company is the legal owner
-        const { data: ownedProperties } = await (supabase as any)
+        const { data: ownedProperties } = await supabaseAny
           .from('properties_v2')
           .select('id')
           .eq('legal_owner_company_id', filters.companyId);
@@ -103,7 +103,7 @@ export function useVaultDocuments(filters: VaultFilters) {
         companyPropertyIds = (ownedProperties || []).map(p => p.id);
       }
 
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('documents')
         .select(`
           *,

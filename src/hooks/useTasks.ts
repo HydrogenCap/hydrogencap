@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -31,7 +31,7 @@ export function useTasks(filters?: { status?: string; propertyId?: string; entit
   return useQuery({
     queryKey: ['tasks', orgId, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('tasks')
         .select('*')
         .eq('org_id', orgId)
@@ -61,7 +61,7 @@ export function useTaskCounts() {
   return useQuery({
     queryKey: ['task-counts', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tasks')
         .select('status')
         .eq('org_id', orgId)
@@ -89,7 +89,7 @@ export function useUpdateTask() {
       taskId: string;
       updates: Partial<Pick<Task, 'status' | 'priority' | 'due_date' | 'dismissed_reason' | 'completed_at'>>;
     }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('tasks')
         .update(updates)
         .eq('id', taskId);

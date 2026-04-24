@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useOnboardingStatus() {
@@ -8,7 +8,7 @@ export function useOnboardingStatus() {
   return useQuery({
     queryKey: ['onboarding-status', user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('profiles')
         .select('onboarding_completed')
         .eq('user_id', user!.id)

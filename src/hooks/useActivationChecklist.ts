@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -112,7 +112,7 @@ export function useActivationChecklist() {
 
   const dismiss = async () => {
     if (!user) return;
-    await (supabase as any)
+    await supabaseAny
       .from('profiles')
       .update({ checklist_dismissed: true })
       .eq('user_id', user.id);

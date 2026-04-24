@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 
 /**
  * Fetches cover photos for V2 properties by matching them to V1 properties 
@@ -11,19 +11,19 @@ export function usePropertyPhotosV2() {
     queryKey: ['property_photos_v2_map'],
     queryFn: async () => {
       // 1. Get all V2 properties (just id + address for matching)
-      const { data: v2Props, error: v2Err } = await (supabase as any)
+      const { data: v2Props, error: v2Err } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, postcode');
       if (v2Err) throw v2Err;
 
       // 2. Get all V1 properties (id + address for matching — still needed for photo lookup)
-      const { data: v1Props, error: v1Err } = await (supabase as any)
+      const { data: v1Props, error: v1Err } = await supabaseAny
         .from('properties')
         .select('id, address_line, postcode');
       if (v1Err) throw v1Err;
 
       // 3. Get all cover photos
-      const { data: photos, error: photoErr } = await (supabase as any)
+      const { data: photos, error: photoErr } = await supabaseAny
         .from('photos')
         .select('property_id, file_url, is_cover')
         .eq('is_cover', true);

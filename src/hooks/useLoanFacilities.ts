@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
@@ -157,7 +157,7 @@ export function useLoanFacilitiesByProperty(propertyId: string | undefined) {
     queryKey: ['loan_facilities', 'property', propertyId],
     enabled: !!propertyId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_facilities')
         .select(`
           *,
@@ -185,7 +185,7 @@ export function useAllLoanFacilities() {
   return useQuery({
     queryKey: ['loan_facilities', 'all', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_facilities')
         .select(`
           *,
@@ -214,7 +214,7 @@ export function useLoanAlerts() {
   return useQuery({
     queryKey: ['loan_alerts', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_alerts')
         .select('*')
         .eq('org_id', orgId!);
@@ -231,7 +231,7 @@ export function usePortfolioDebtSummary() {
   return useQuery({
     queryKey: ['portfolio_debt_summary', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('portfolio_debt_summary')
         .select('*')
         .eq('org_id', orgId!);
@@ -247,7 +247,7 @@ export function useCreateLoanFacility() {
   return useMutation({
     mutationFn: async (facility: Omit<LoanFacility, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_facilities')
         .insert({ ...facility, org_id: orgId })
         .select()
@@ -270,7 +270,7 @@ export function useUpdateLoanFacility() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<LoanFacility> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_facilities')
         .update(updates)
         .eq('id', id)

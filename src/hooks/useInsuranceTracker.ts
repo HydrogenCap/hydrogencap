@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 
@@ -95,7 +95,7 @@ export function useInsurancePolicies(filters?: {
   return useQuery({
     queryKey: ['insurance-tracker-policies', orgId, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('insurance_policies')
         .select(`
           *,
@@ -138,7 +138,7 @@ export function useCreatePolicy() {
       notes?: string;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_policies')
         .insert({
           org_id: orgId,
@@ -166,7 +166,7 @@ export function useUpdatePolicy() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Record<string, unknown>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_policies')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
@@ -193,7 +193,7 @@ export function useInsuranceClaims(filters?: { policyId?: string; status?: strin
   return useQuery({
     queryKey: ['insurance-claims', orgId, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('insurance_claims')
         .select(`
           *,
@@ -228,7 +228,7 @@ export function useCreateClaim() {
       amount_claimed?: number;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_claims')
         .insert({
           org_id: orgId,
@@ -255,7 +255,7 @@ export function useUpdateClaim() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Record<string, unknown>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_claims')
         .update(updates)
         .eq('id', id)
@@ -282,11 +282,11 @@ export function useInsuranceStats() {
     queryKey: ['insurance-tracker-stats', orgId],
     queryFn: async () => {
       const [policiesRes, claimsRes] = await Promise.all([
-        (supabase as any)
+        supabaseAny
           .from('insurance_policies')
           .select('id, premium_annual, status, end_date')
           .eq('org_id', orgId!),
-        (supabase as any)
+        supabaseAny
           .from('insurance_claims')
           .select('id, status')
           .eq('org_id', orgId!),
@@ -341,7 +341,7 @@ export function useExpiringPolicies(days: number = 30) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + days);
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_policies')
         .select(`
           *,
@@ -367,11 +367,11 @@ export function useCoverageGaps() {
     queryKey: ['insurance-coverage-gaps', orgId],
     queryFn: async () => {
       const [propertiesRes, policiesRes] = await Promise.all([
-        (supabase as any)
+        supabaseAny
           .from('properties')
           .select('id, address_line, postcode')
           .eq('org_id', orgId!),
-        (supabase as any)
+        supabaseAny
           .from('insurance_policies')
           .select('property_id, policy_type, status')
           .eq('org_id', orgId!)

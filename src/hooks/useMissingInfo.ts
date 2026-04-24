@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { usePropertiesCompat as useProperties, PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { usePropertyPassports, type PropertyPassport } from '@/hooks/usePropertyPassport';
 import { toast } from 'sonner';
@@ -264,7 +264,7 @@ export function useInsurancePolicies() {
   return useQuery({
     queryKey: ['insurance_policies'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_policies')
         .select('*');
       if (error) throw error;
@@ -279,7 +279,7 @@ export function useUpsertInsurancePolicy() {
   
   return useMutation({
     mutationFn: async (policy: Partial<InsurancePolicy> & { property_id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('insurance_policies')
         .upsert(policy, { onConflict: 'property_id' })
         .select()

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP } from '@/lib/calculations';
 
@@ -28,7 +28,7 @@ export default function TenantPayments() {
     queryKey: ['tenant-payments-schedule', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_schedule')
         .select('*')
         .eq('tenancy_id', tenancyId)
@@ -44,7 +44,7 @@ export default function TenantPayments() {
     queryKey: ['tenant-payments-history', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_payments')
         .select('*')
         .eq('tenancy_id', tenancyId)

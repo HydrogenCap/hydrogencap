@@ -14,7 +14,7 @@ import { RoomFormModal } from '@/components/properties-v2/RoomFormModal';
 import { CreateTenancyAgreementModal } from '@/components/tenants-v2/CreateTenancyAgreementModal';
 import { useToast } from '@/hooks/use-toast';
 import { format, differenceInDays } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 const ROOM_TYPE_BG: Record<string, string> = {
   single: 'bg-slate-100 text-slate-700', double: 'bg-blue-100 text-blue-700',
@@ -65,7 +65,7 @@ export default function RoomDetailV2() {
 
   useEffect(() => {
     if (!id) return;
-    (supabase as any)
+    supabaseAny
       .from('compliance_documents_v2')
       .select('*')
       .eq('room_id', id)
@@ -75,7 +75,7 @@ export default function RoomDetailV2() {
 
   useEffect(() => {
     if (!id) return;
-    (supabase as any)
+    supabaseAny
       .from('maintenance_requests')
       .select('actual_cost')
       .eq('room_v2_id', id)

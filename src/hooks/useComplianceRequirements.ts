@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { usePropertyCompliance, useAllCompliance } from './useCompliance';
 import { 
   calculateComplianceRequirements, 
@@ -16,7 +16,7 @@ export function usePropertyWithFeatures(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return null;
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .select(`
           id,
@@ -55,7 +55,7 @@ export function useAllPropertiesWithFeatures() {
   return useQuery({
     queryKey: ['all_property_features'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('properties_v2')
         .select(`
           id,

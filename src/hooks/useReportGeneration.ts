@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useProperties } from './useProperties';
 import { useAllCompliance } from './useCompliance';
 import { usePropertyPassports } from './usePropertyPassport';
@@ -217,7 +217,7 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return null;
 
-      const { data: company, error } = await (supabase as any)
+      const { data: company, error } = await supabaseAny
         .from('companies')
         .select(`
           id,
@@ -234,7 +234,7 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
       if (error) throw error;
 
       // Get shareholdings
-      const { data: shareholdings } = await (supabase as any)
+      const { data: shareholdings } = await supabaseAny
         .from('shareholdings')
         .select(`
           shares_held,

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Upload, FileText, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useUploadManagedDocument } from '@/hooks/useDocumentManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -61,7 +61,7 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
 
       // Check for duplicates before uploading
       const fileNames = validFiles.map(f => f.name);
-      const { data: existingDocs } = await (supabase as any)
+      const { data: existingDocs } = await supabaseAny
         .from('documents')
         .select('original_file_name, property_id')
         .eq('org_id', orgId!)

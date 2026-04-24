@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import type JSZip from 'jszip';
 
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { BACKUP_TABLES, formatBytes } from '@/lib/backupConfig';
 import { toast } from 'sonner';
 
@@ -418,7 +418,7 @@ export function usePortfolioBackup() {
 const BATCH = 1000;
 
 async function queryTableRows(table: string, offset: number, orderByCreatedAt: boolean): Promise<FetchRowsResult> {
-  const query = (supabase as any)
+  const query = supabaseAny
     .from(table as never)
     .select('*')
     .range(offset, offset + BATCH - 1);

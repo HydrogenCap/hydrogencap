@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import type {
@@ -21,7 +21,7 @@ export function usePortfolioMonthlySummary(months = 12) {
   return useQuery({
     queryKey: ['portfolio_monthly_summary', orgId, months],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(PORTFOLIO_MONTHLY_SUMMARY_VIEW)
         .select('snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate')
         .order('snapshot_month', { ascending: false })
@@ -59,7 +59,7 @@ export function useEntityMonthlySnapshots(entityId: string | undefined, months =
     queryKey: ['entity_financial_summary_monthly', orgId, entityId, months],
     queryFn: async () => {
       if (!entityId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(ENTITY_FINANCIAL_SUMMARY_VIEW)
         .select('entity_id, entity_name, snapshot_month, total_gross_rent, total_costs, total_noi, total_cash_flow, total_mortgage_payments, property_count, avg_collection_rate')
         .eq('entity_id', entityId)
@@ -80,7 +80,7 @@ export function useEntityPropertyBreakdown(entityId: string | undefined, month?:
     queryKey: ['entity_property_breakdown', orgId, entityId, month],
     queryFn: async () => {
       if (!entityId || !month) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_snapshots')
         .select('property_id, gross_rent_received, total_costs, net_operating_income, net_cash_flow, mortgage_payments')
         .eq('org_id', orgId!)
@@ -100,7 +100,7 @@ export function usePropertyAnnualPerformance() {
   return useQuery({
     queryKey: ['property_annual_performance', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(PROPERTY_ANNUAL_PERFORMANCE_VIEW)
         .select('property_id, property_address, entity_id, entity_name, total_gross_rent, total_costs, total_noi, total_cash_flow, avg_collection_rate, months_active');
       if (error) throw error;
@@ -118,7 +118,7 @@ export function usePropertySnapshots(propertyId: string | undefined, months = 12
     queryKey: ['financial_snapshots', orgId, propertyId, months],
     queryFn: async () => {
       if (!propertyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_snapshots')
         .select('id, org_id, property_id, entity_id, snapshot_month, gross_rent_due, gross_rent_received, other_income, management_fees, maintenance_costs, insurance_costs, utilities, council_tax, licensing_costs, professional_fees, other_costs, mortgage_payments, total_costs, net_operating_income, net_cash_flow, rent_collection_rate, is_locked, locked_at, locked_by, created_at, updated_at')
         .eq('org_id', orgId!)
@@ -140,7 +140,7 @@ export function useMonthSnapshots(month: string | undefined) {
     queryKey: ['financial_snapshots_month', orgId, month],
     queryFn: async () => {
       if (!month) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_snapshots')
         .select('id, org_id, property_id, entity_id, snapshot_month, gross_rent_due, gross_rent_received, other_income, management_fees, maintenance_costs, insurance_costs, utilities, council_tax, licensing_costs, professional_fees, other_costs, mortgage_payments, total_costs, net_operating_income, net_cash_flow, rent_collection_rate, is_locked, locked_at, locked_by, created_at, updated_at')
         .eq('org_id', orgId!)
@@ -158,7 +158,7 @@ export function useUpsertSnapshot() {
   return useMutation({
     mutationFn: async (snapshot: Omit<FinancialSnapshot, 'id' | 'total_costs' | 'net_operating_income' | 'net_cash_flow' | 'rent_collection_rate' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_snapshots')
         .upsert(
           { ...snapshot, org_id: orgId },
@@ -186,7 +186,7 @@ export function usePortfolioValueTimeline(months = 24) {
   return useQuery({
     queryKey: ['portfolio_value_timeline', orgId, months],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(PORTFOLIO_MONTHLY_SUMMARY_VIEW)
         .select('snapshot_month, total_valuation, total_debt, total_equity, portfolio_ltv, total_rent_received, total_noi, total_cash_flow, property_count')
         .order('snapshot_month', { ascending: true })
@@ -224,7 +224,7 @@ export function useLockMonth() {
         updates.locked_at = null;
         updates.locked_by = null;
       }
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('financial_snapshots')
         .update(updates)
         .eq('snapshot_month', month)

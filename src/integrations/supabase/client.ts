@@ -18,3 +18,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Loosely-typed handle for tables/RPCs not yet in the generated Database types,
+// or queries whose column shape can't be inferred. Prefer `supabase` where
+// types are available; reach for this only when you'd otherwise write
+// `(supabase as any)`.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const supabaseAny: any = supabase;

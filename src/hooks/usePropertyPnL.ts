@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { format, subMonths } from 'date-fns';
 import { calculatePropertyPnL, type PropertyFinancials } from '@/lib/propertyPnL';
 
@@ -36,33 +36,33 @@ export function usePropertyPnL(propertyId: string | undefined) {
       // Parallel fetch all data sources
       const [propertyRes, roomsRes, agreementsRes, loansRes, maintenanceRes, capexRes] = await Promise.all([
         // 1. Property valuation
-        (supabase as any)
+        supabaseAny
           .from('properties_v2')
           .select('current_valuation')
           .eq('id', propertyId)
           .single(),
 
         // 2. Rooms for expected rent
-        (supabase as any)
+        supabaseAny
           .from('rooms_v2')
           .select('current_rent_pcm, is_lettable')
           .eq('property_id', propertyId),
 
         // 3. Tenancy agreements for this property (to get rent payments)
-        (supabase as any)
+        supabaseAny
           .from('tenancy_agreements')
           .select('id')
           .eq('property_id', propertyId),
 
         // 4. Active loans
-        (supabase as any)
+        supabaseAny
           .from('loan_facilities')
           .select('current_balance, interest_rate, monthly_payment')
           .eq('property_id', propertyId)
           .eq('status', 'active'),
 
         // 5. Maintenance costs from work_orders
-        (supabase as any)
+        supabaseAny
           .from('work_orders')
           .select('paid_amount, paid_date')
           .eq('property_id', propertyId)
@@ -70,7 +70,7 @@ export function usePropertyPnL(propertyId: string | undefined) {
           .gte('paid_date', twelveMonthsAgo),
 
         // 6. CapEx line items via capex_projects
-        (supabase as any)
+        supabaseAny
           .from('capex_projects')
           .select('capex_line_items(actual_gbp, paid_date, created_at)')
           .eq('property_id', propertyId),
@@ -81,7 +81,7 @@ export function usePropertyPnL(propertyId: string | undefined) {
       let rentPayments: { amount: number; payment_date: string }[] = [];
 
       if (agreementIds.length > 0) {
-        const { data: payments } = await (supabase as any)
+        const { data: payments } = await supabaseAny
           .from('rent_payments')
           .select('amount, payment_date')
           .in('agreement_id', agreementIds)
@@ -91,14 +91,14 @@ export function usePropertyPnL(propertyId: string | undefined) {
 
       // Also try V1 tenancies path as fallback
       if (rentPayments.length === 0) {
-        const { data: tenancies } = await (supabase as any)
+        const { data: tenancies } = await supabaseAny
           .from('tenancies')
           .select('id')
           .eq('property_id', propertyId);
 
         const tenancyIds = (tenancies || []).map(t => t.id);
         if (tenancyIds.length > 0) {
-          const { data: v1Payments } = await (supabase as any)
+          const { data: v1Payments } = await supabaseAny
             .from('rent_payments')
             .select('amount, payment_date')
             .in('tenancy_id', tenancyIds)

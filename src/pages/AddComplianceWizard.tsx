@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { WizardShell } from '@/components/wizard/WizardShell';
 import { COMPLIANCE_STEPS, COMPLIANCE_CROSS_CHECKS } from '@/lib/wizard/complianceSteps';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import type { WizardPayload } from '@/lib/wizard/types';
 
@@ -19,7 +19,7 @@ export default function AddComplianceWizard() {
   const handleSubmit = async (payload: WizardPayload, draftId: string) => {
     const orgId = await fetchUserOrgId();
 
-    const { error } = await (supabase as any)
+    const { error } = await supabaseAny
       .from('compliance_documents_v2')
       .insert({
         org_id: orgId,
@@ -38,7 +38,7 @@ export default function AddComplianceWizard() {
 
     if (error) throw error;
 
-    await (supabase as any)
+    await supabaseAny
       .from('wizard_drafts')
       .update({ property_id: payload.property_id as string })
       .eq('id', draftId);

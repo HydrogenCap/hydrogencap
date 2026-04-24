@@ -24,7 +24,7 @@ import { TenantLifecyclePanel } from '@/components/tenants/TenantLifecyclePanel'
 import { NoticeComposer } from '@/components/tenants/NoticeComposer';
 import { AffordabilityMonitor } from '@/components/tenants/AffordabilityMonitor';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { TenancyChecklist } from '@/components/lettings/TenancyChecklist';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 
@@ -122,7 +122,7 @@ export default function TenantDetailV2() {
   useEffect(() => {
     if (!id) return;
 
-    void (supabase as any)
+    void supabaseAny
       .from('recurring_charges' as never)
       .select('*')
       .eq('tenant_id', id)
@@ -143,7 +143,7 @@ export default function TenantDetailV2() {
     const orgId = (tenant as { org_id?: string | null }).org_id ?? null;
     if (!orgId) return;
 
-    const { data } = await (supabase as any)
+    const { data } = await supabaseAny
       .from('recurring_charges' as never)
       .insert({
         org_id: orgId,

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,7 @@ export function useAccountingExports(entityId?: string, limit = 20) {
   return useQuery({
     queryKey: ['accounting_exports', org?.id, entityId, limit],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('accounting_exports')
         .select('*')
         .eq('org_id', org!.id)
@@ -37,7 +37,7 @@ export function useCreateExportRecord() {
         ...record,
         generated_by: user?.id ?? null,
       };
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('accounting_exports')
         .insert(payload)
         .select()

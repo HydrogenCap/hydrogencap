@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface ShareholderAccess {
@@ -25,7 +25,7 @@ export function useShareholderSession() {
     queryFn: async () => {
       if (!user?.id) return null;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('shareholder_access')
         .select('*')
         .eq('user_id', user.id)

@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useOwnershipData } from './useOwnershipData';
 import { getGroupParentOwnership } from '@/lib/ownershipEngine';
 
@@ -61,7 +61,7 @@ function useLoanFacilities() {
   return useQuery({
     queryKey: ['loan_facilities_all'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('loan_facilities')
         .select('id, property_id, entity_id, current_balance, monthly_payment, interest_rate, lender_id, status')
         .in('status', ['active', 'drawdown']);
@@ -75,7 +75,7 @@ function useAnnualPerformanceV2() {
   return useQuery({
     queryKey: ['property_annual_performance_v2'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_annual_performance')
         .select('*');
       if (error) throw error;

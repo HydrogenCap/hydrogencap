@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 
 export interface RoomV2 {
   id: string;
@@ -50,7 +50,7 @@ export function usePropertyRooms(propertyId: string | undefined) {
     queryKey: ['rooms_v2', propertyId],
     queryFn: async () => {
       if (!propertyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rooms_v2')
         .select('*')
         .eq('property_id', propertyId)
@@ -67,7 +67,7 @@ export function useRoom(id: string | undefined) {
     queryKey: ['room_v2', id],
     queryFn: async () => {
       if (!id) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rooms_v2')
         .select('*, properties_v2!inner(address_line_1, city, postcode)')
         .eq('id', id)
@@ -83,7 +83,7 @@ export function usePropertyRoomSummaries() {
   return useQuery({
     queryKey: ['property_room_summary_v2'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_room_summary_v2')
         .select('*');
       if (error) throw error;

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from './useUserOrg';
 
 export interface AIProcessingStats {
@@ -25,7 +25,7 @@ export function useAIProcessingStats() {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
       // Processed today
-      const { count: processedToday } = await (supabase as any)
+      const { count: processedToday } = await supabaseAny
         .from('documents')
         .select('*', { count: 'exact', head: true })
         .eq('org_id', orgId)
@@ -33,7 +33,7 @@ export function useAIProcessingStats() {
         .gte('created_at', today);
 
       // Awaiting review
-      const { count: awaitingReview } = await (supabase as any)
+      const { count: awaitingReview } = await supabaseAny
         .from('documents')
         .select('*', { count: 'exact', head: true })
         .eq('org_id', orgId)
@@ -41,7 +41,7 @@ export function useAIProcessingStats() {
         .eq('review_status', 'pending');
 
       // 30-day stats
-      const { data: docs30d } = await (supabase as any)
+      const { data: docs30d } = await supabaseAny
         .from('documents')
         .select('auto_filed, processing_time_ms, ai_tokens_used, review_status, ai_suggested_doc_type, doc_type')
         .eq('org_id', orgId)
@@ -88,7 +88,7 @@ export function useProcessingHistory(limit = 50) {
     queryFn: async () => {
       if (!orgId) throw new Error('No org');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('documents')
         .select(`
           id, original_file_name, ai_suggested_doc_type, ai_doc_type_confidence,

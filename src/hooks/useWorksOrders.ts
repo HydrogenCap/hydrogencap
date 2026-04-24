@@ -5,7 +5,7 @@
  * @see useWorkOrders for the formal work order system.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import type { WorksOrderStatus } from '@/lib/maintenanceTypes';
@@ -88,7 +88,7 @@ export function useWorksOrdersForRequest(requestId: string | undefined) {
   return useQuery({
     queryKey: ['works_orders', 'request', requestId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .select(`
           *,
@@ -107,7 +107,7 @@ export function useWorksOrder(orderId: string | undefined) {
   return useQuery({
     queryKey: ['works_orders', orderId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .select(`
           *,
@@ -134,7 +134,7 @@ export function useCreateWorksOrder() {
       // Generate order number
       const { data: orderNumber } = await supabase.rpc('generate_works_order_number');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .insert([{
           ...order,
@@ -148,7 +148,7 @@ export function useCreateWorksOrder() {
       if (error) throw error;
 
       // Update request status to triaged
-      await (supabase as any)
+      await supabaseAny
         .from('maintenance_requests')
         .update({ status: 'triaged' })
         .eq('id', order.maintenance_request_id);
@@ -186,7 +186,7 @@ export function useUpdateWorksOrder() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & WorksOrderUpdate) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .update(updates)
         .eq('id', id)

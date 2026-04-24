@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +41,7 @@ export function useArrearsPredictions(propertyId?: string) {
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
 
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('arrears_predictions')
         .select('*')
         .eq('org_id', orgId)
@@ -77,7 +77,7 @@ export function useRunArrearsPrediction() {
       const body: Record<string, unknown> = {};
       if (propertyId) body.property_id = propertyId;
 
-      const { data, error } = await (supabase as any).functions.invoke('predict-arrears', { body });
+      const { data, error } = await supabaseAny.functions.invoke('predict-arrears', { body });
       if (error) throw error;
       return data;
     },
@@ -104,7 +104,7 @@ export function useArrearsRiskSummary() {
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('arrears_predictions')
         .select('risk_score, risk_level, created_at')
         .eq('org_id', orgId);

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
@@ -122,7 +122,7 @@ export function useBulkDocumentUpload() {
 
     // Create document record
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: docRecord, error: docErr } = await (supabase as any)
+    const { data: docRecord, error: docErr } = await supabaseAny
       .from('documents')
       .insert({
         org_id: orgId,
@@ -156,7 +156,7 @@ export function useBulkDocumentUpload() {
       if (catErr) throw catErr;
 
       // Fetch updated categorisation
-      const { data: catDoc } = await (supabase as any)
+      const { data: catDoc } = await supabaseAny
         .from('documents')
         .select('ai_suggested_doc_type, ai_doc_type_confidence, category, display_name')
         .eq('id', docRecord.id)
@@ -193,7 +193,7 @@ export function useBulkDocumentUpload() {
       const matchedPropId = matchProperty(fields.address?.value);
 
       // Re-fetch document with all AI data
-      const { data: finalDoc } = await (supabase as any)
+      const { data: finalDoc } = await supabaseAny
         .from('documents')
         .select('ai_suggested_doc_type, ai_doc_type_confidence, ai_suggested_property_id, category, extracted_address_text, extracted_issue_date, extracted_reference_number, expiry_date, extracted_data')
         .eq('id', docRecord.id)
@@ -230,7 +230,7 @@ export function useBulkDocumentUpload() {
     } catch (extError) {
       console.error('Extraction failed:', extError);
       // Mark document as failed in the DB so it doesn't stay stuck
-      await (supabase as any).from('documents').update({ extraction_status: 'failed' }).eq('id', docRecord.id);
+      await supabaseAny.from('documents').update({ extraction_status: 'failed' }).eq('id', docRecord.id);
       updateItem(item.id, {
         status: 'error',
         error: `Extraction failed: ${extError instanceof Error ? extError.message : 'Unknown error'}`,

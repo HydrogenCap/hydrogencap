@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,7 +18,7 @@ export function useAppSettings() {
     queryFn: async () => {
       if (!orgId) throw new Error('No org');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from(APP_SETTINGS_TABLE)
         .select('*')
         .eq('org_id', orgId);

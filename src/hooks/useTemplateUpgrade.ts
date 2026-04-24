@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { resolveMergeData } from '@/lib/template-merge';
 import type { Json } from '@/integrations/supabase/types';
@@ -46,7 +46,7 @@ export function useTemplateVersions(templateId: string | null) {
     queryKey: ['template_versions', orgId, templateId],
     queryFn: async () => {
       if (!orgId || !templateId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('template_versions')
         .select('*')
         .eq('org_id', orgId)
@@ -66,7 +66,7 @@ export function useLatestTemplateVersion(templateId: string | null) {
     queryKey: ['template_version_latest', orgId, templateId],
     queryFn: async () => {
       if (!orgId || !templateId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('template_versions')
         .select('*')
         .eq('org_id', orgId)
@@ -93,7 +93,7 @@ export function useSaveTemplateVersion() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Get next version number
-      const { data: latest } = await (supabase as any)
+      const { data: latest } = await supabaseAny
         .from('template_versions')
         .select('version_number')
         .eq('org_id', orgId)
@@ -104,7 +104,7 @@ export function useSaveTemplateVersion() {
 
       const nextVersion = (latest?.version_number ?? 0) + 1;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('template_versions')
         .insert([{
           org_id: orgId,
@@ -138,7 +138,7 @@ export function useRestoreTemplateVersion() {
       const orgId = await fetchUserOrgId();
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data: latest } = await (supabase as any)
+      const { data: latest } = await supabaseAny
         .from('template_versions')
         .select('version_number')
         .eq('org_id', orgId)
@@ -149,7 +149,7 @@ export function useRestoreTemplateVersion() {
 
       const nextVersion = (latest?.version_number ?? 0) + 1;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('template_versions')
         .insert([{
           org_id: orgId,
@@ -181,7 +181,7 @@ export function useGeneratedDocumentsV2() {
     queryKey: ['generated_documents_v2', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('generated_documents')
         .select('*')
         .eq('org_id', orgId)
@@ -210,7 +210,7 @@ export function useCreateDocument() {
     }) => {
       const orgId = await fetchUserOrgId();
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('generated_documents')
         .insert([{
           org_id: orgId,
@@ -245,7 +245,7 @@ export function useUpdateDocumentStatus() {
       if (payload.document_url !== undefined) update.document_url = payload.document_url;
       if (payload.signed_at !== undefined) update.signed_at = payload.signed_at;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('generated_documents')
         .update(update)
         .eq('id', payload.id)

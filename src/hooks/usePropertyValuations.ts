@@ -1,5 +1,5 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
+ import { supabase, supabaseAny } from '@/integrations/supabase/client';
  import { useToast } from '@/hooks/use-toast';
  
  export interface PropertyValuation {
@@ -74,7 +74,7 @@ interface RefinancingOpportunityUpdate {
      queryFn: async () => {
        if (!propertyId) return [];
        
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('property_valuations')
          .select('*')
          .eq('property_id', propertyId)
@@ -94,7 +94,7 @@ interface RefinancingOpportunityUpdate {
      queryFn: async () => {
        if (!propertyId) return [];
        
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('comparable_sales')
          .select('*')
          .eq('source_property_id', propertyId)
@@ -113,7 +113,7 @@ interface RefinancingOpportunityUpdate {
    return useQuery({
      queryKey: ['valuation-alerts'],
      queryFn: async () => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('valuation_alerts')
          .select(`
            *,
@@ -134,7 +134,7 @@ interface RefinancingOpportunityUpdate {
    return useQuery({
      queryKey: ['valuation-alerts-unread-count'],
      queryFn: async () => {
-       const { count, error } = await (supabase as any)
+       const { count, error } = await supabaseAny
          .from('valuation_alerts')
          .select('*', { count: 'exact', head: true })
          .eq('is_read', false)
@@ -151,7 +151,7 @@ interface RefinancingOpportunityUpdate {
    return useQuery({
      queryKey: ['refinancing-opportunities'],
      queryFn: async () => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('refinancing_opportunities')
          .select(`
            *,
@@ -215,7 +215,7 @@ interface RefinancingOpportunityUpdate {
  
    return useMutation({
      mutationFn: async (alertId: string) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('valuation_alerts')
          .update({ is_read: true })
          .eq('id', alertId);
@@ -235,7 +235,7 @@ interface RefinancingOpportunityUpdate {
  
    return useMutation({
      mutationFn: async (alertId: string) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('valuation_alerts')
          .update({ is_dismissed: true })
          .eq('id', alertId);
@@ -261,7 +261,7 @@ interface RefinancingOpportunityUpdate {
       if (status === 'completed') updates.completed_at = new Date().toISOString();
       if (notes) updates.notes = notes;
  
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('refinancing_opportunities')
          .update(updates)
          .eq('id', id);

@@ -35,9 +35,10 @@ vi.mock('@/hooks/useUserOrg', () => ({
   fetchUserOrgId: vi.fn(async () => 'org-1'),
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }) }) },
-}));
+vi.mock('@/integrations/supabase/client', () => {
+  const client = { from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: [], error: null }) }) }) }) };
+  return { supabase: client, supabaseAny: client };
+});
 
 import CapExPage from '../CapEx';
 

@@ -30,8 +30,8 @@ vi.mock('@/hooks/useShareholderPortfolioData', () => ({
 // Skip the real supabase client — PortalDashboard does a direct
 // useQuery(...) for distributions. Returning undefined from the hook path is
 // fine because we don't mount the TanStack Query provider with any data.
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
+vi.mock('@/integrations/supabase/client', () => {
+  const client = {
     from: () => ({
       select: () => ({
         eq: () => ({
@@ -43,8 +43,9 @@ vi.mock('@/integrations/supabase/client', () => ({
         }),
       }),
     }),
-  },
-}));
+  };
+  return { supabase: client, supabaseAny: client };
+});
 
 vi.mock('@/components/portal/PortalLayout', () => ({
   PortalLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="portal-layout">{children}</div>,

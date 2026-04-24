@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -77,7 +77,7 @@ export function useGeocoding() {
   ) => {
     const status: GeocodeStatus = geocodeData.geocode_confidence === 'exact' ? 'SUCCESS' : 'PARTIAL';
     
-    const { error } = await (supabase as any)
+    const { error } = await supabaseAny
       .from('properties_v2')
       .update({
         place_id: geocodeData.place_id,
@@ -105,7 +105,7 @@ export function useGeocoding() {
     propertyId: string,
     errorMessage: string
   ) => {
-    const { error } = await (supabase as any)
+    const { error } = await supabaseAny
       .from('properties_v2')
       .update({
         geocode_status: 'FAILED' as GeocodeStatus,
@@ -207,7 +207,7 @@ export function useBackfillGeocoding() {
 
     try {
       // Fetch all properties needing geocoding
-      const { data: properties, error } = await (supabase as any)
+      const { data: properties, error } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, address_line_2, city, postcode, country')
         .or('geocode_status.eq.NOT_STARTED,geocode_status.eq.FAILED,latitude.is.null');

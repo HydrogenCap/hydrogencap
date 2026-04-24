@@ -16,6 +16,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   get supabase() {
     return mock;
   },
+  get supabaseAny() { return mock; },
 }));
 
 vi.mock('@/hooks/useUserOrg', () => ({

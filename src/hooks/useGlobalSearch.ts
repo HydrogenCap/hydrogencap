@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 
 export interface SearchResult {
@@ -81,7 +81,7 @@ export function useGlobalSearch() {
 
       setIsLoading(true);
       try {
-        const { data, error } = await (supabase as any).rpc('global_search', {
+        const { data, error } = await supabaseAny.rpc('global_search', {
           search_query: searchQuery.trim(),
           p_org_id: orgId,
         });

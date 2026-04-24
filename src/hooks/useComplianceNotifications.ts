@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
 import type { ComplianceNotification } from '@/lib/complianceTaskTypes';
 
@@ -10,7 +10,7 @@ export function useUnreadNotifications() {
     enabled: !!org?.id,
     refetchInterval: 60_000,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('unread_notifications_v2')
         .select('*')
         .limit(50);

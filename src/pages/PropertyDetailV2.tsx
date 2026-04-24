@@ -29,7 +29,7 @@ import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
 import { SEVERITY } from '@/lib/design-tokens';
@@ -69,7 +69,7 @@ export default function PropertyDetailV2() {
     queryKey: ['legal_entities_list'],
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('legal_entities')
         .select('id, entity_name')
         .eq('org_id', orgId)
@@ -89,7 +89,7 @@ export default function PropertyDetailV2() {
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
       // Get rent schedule entries for this property's tenancies via agreements
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_schedule')
         .select(`
           status,

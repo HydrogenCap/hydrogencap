@@ -5,7 +5,7 @@
  * for UK private rented sector hazard compliance (effective 1 May 2026).
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
@@ -176,7 +176,7 @@ export function useActiveHazards() {
   return useQuery({
     queryKey: ['awaabs_law', 'active_hazards'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select(AWAABS_SELECT)
         .eq('awaabs_law_applies', true)
@@ -233,7 +233,7 @@ export function useAwaabsLawEvents(requestId: string | undefined) {
   return useQuery({
     queryKey: ['awaabs_law', 'events', requestId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('awaabs_law_events')
         .select('*')
         .eq('maintenance_request_id', requestId!)
@@ -254,7 +254,7 @@ async function logAwaabsEvent(
   eventData: Record<string, unknown> = {}
 ) {
   const { data: auth } = await supabase.auth.getUser();
-  const { error } = await (supabase as any)
+  const { error } = await supabaseAny
     .from('awaabs_law_events')
     .insert({
       maintenance_request_id: maintenanceRequestId,
@@ -277,7 +277,7 @@ export function useStartInvestigation() {
       const now = new Date();
 
       // Get current request to calculate deadlines
-      const { data: _request, error: fetchErr } = await (supabase as any)
+      const { data: _request, error: fetchErr } = await supabaseAny
         .from('maintenance_requests')
         .select('reported_at, hazard_category')
         .eq('id', requestId)
@@ -286,7 +286,7 @@ export function useStartInvestigation() {
 
       const writtenSummaryDue = addWorkingDays(now, 3);
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           investigation_started_at: now.toISOString(),
@@ -324,7 +324,7 @@ export function useSendWrittenSummary() {
       const orgId = await fetchUserOrgId();
       const now = new Date();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           written_summary_sent_at: now.toISOString(),
@@ -361,7 +361,7 @@ export function useStartRepair() {
       const orgId = await fetchUserOrgId();
       const now = new Date();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           repair_started_at: now.toISOString(),
@@ -397,7 +397,7 @@ export function useCompleteRepair() {
       const orgId = await fetchUserOrgId();
       const now = new Date();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           repair_completed_at: now.toISOString(),
@@ -452,7 +452,7 @@ export function useClassifyHazard() {
       const orgId = await fetchUserOrgId();
 
       // Get the request to recalculate deadlines
-      const { data: request, error: fetchErr } = await (supabase as any)
+      const { data: request, error: fetchErr } = await supabaseAny
         .from('maintenance_requests')
         .select('reported_at, investigation_started_at')
         .eq('id', requestId)
@@ -466,7 +466,7 @@ export function useClassifyHazard() {
 
       const deadlines = calculateDeadlines(reportedAt, hazardCategory, investigationStartedAt);
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           hazard_category: hazardCategory,
@@ -580,7 +580,7 @@ export function useComplianceStats() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       // Fetch all hazards this month
-      const { data: monthly, error: mErr } = await (supabase as any)
+      const { data: monthly, error: mErr } = await supabaseAny
         .from('maintenance_requests')
         .select('id, reported_at, investigation_started_at, repair_completed_at, escalation_level')
         .eq('awaabs_law_applies', true)

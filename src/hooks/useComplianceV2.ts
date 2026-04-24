@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { ComplianceMatrixRow, PortfolioComplianceScore, ComplianceDocType } from '@/lib/complianceV2Types';
 import { extractStoragePath } from '@/lib/storagePaths';
@@ -41,7 +41,7 @@ export function useComplianceMatrix() {
   return useQuery({
     queryKey: ['compliance-matrix-v2'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_matrix_v2')
         .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url')
         .order('urgency_score', { ascending: true });
@@ -59,7 +59,7 @@ export function usePortfolioComplianceScoreV2() {
   return useQuery({
     queryKey: ['portfolio-compliance-score-v2'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('portfolio_compliance_score_v2')
         .select('total_required, total_valid, total_expired, total_expiring_soon, total_missing, total_critical, compliance_score_pct')
         .single();
@@ -121,7 +121,7 @@ export function useCreateComplianceDocV2() {
       }
 
       // Mark any existing current doc as superseded
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await supabaseAny
         .from('compliance_documents_v2')
         .select('id')
         .eq('property_id', input.property_id)
@@ -130,13 +130,13 @@ export function useCreateComplianceDocV2() {
         .maybeSingle();
 
       if (existing) {
-        await (supabase as any)
+        await supabaseAny
           .from('compliance_documents_v2')
           .update({ is_current: false })
           .eq('id', existing.id);
       }
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_documents_v2')
         .insert({
           ...input,
@@ -152,7 +152,7 @@ export function useCreateComplianceDocV2() {
 
       // Auto-close any matching open compliance task
       try {
-        const { data: openTask } = await (supabase as any)
+        const { data: openTask } = await supabaseAny
           .from('compliance_tasks')
           .select('id')
           .eq('property_id', input.property_id)
@@ -202,7 +202,7 @@ export function useToggleRequirementV2() {
       isRequired: boolean;
       overrideReason?: string;
     }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('compliance_requirements_v2')
         .update({
           is_required: isRequired,
@@ -239,7 +239,7 @@ export function usePropertyComplianceV2(propertyId: string | undefined) {
   return useQuery({
     queryKey: ['compliance-matrix-v2', 'property', propertyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_matrix_v2')
         .select('org_id, property_id, property_address, document_type, requirement_id, document_id, is_required, override_reason, issue_date, expiry_date, days_remaining, calculated_status, urgency_score, issuer_name, certificate_number, file_url')
         .eq('property_id', propertyId!)

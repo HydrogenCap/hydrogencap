@@ -3,7 +3,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { WizardPayload, ComplianceItem } from '@/lib/wizard/types';
 
 interface StepProps {
@@ -26,7 +26,7 @@ export function StepCompliance({ payload, updatePayload }: StepProps) {
 
   useEffect(() => {
     async function load() {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('compliance_templates')
         .select('*')
         .eq('is_active', true)

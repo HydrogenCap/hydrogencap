@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { format } from 'date-fns';
@@ -137,7 +137,7 @@ export function useTransactions(filters?: TransactionFilters) {
   return useQuery({
     queryKey: ['financial_transactions', org?.id, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('financial_transactions')
         .select('*')
         .eq('org_id', org!.id)
@@ -163,7 +163,7 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: async (input: CreateTransactionInput) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_transactions')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -183,7 +183,7 @@ export function useDeleteTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('financial_transactions')
         .delete()
         .eq('id', id);
@@ -207,7 +207,7 @@ export function useBulkImportTransactions() {
       let total = 0;
       for (let i = 0; i < payload.length; i += 100) {
         const chunk = payload.slice(i, i + 100);
-        const { error } = await (supabase as any)
+        const { error } = await supabaseAny
           .from('financial_transactions')
           .insert(chunk);
         if (error) throw error;
@@ -230,7 +230,7 @@ export function useBankStatements(statusFilter?: 'unmatched' | 'matched' | 'igno
   return useQuery({
     queryKey: ['bank_statement_entries', org?.id, statusFilter],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('bank_statement_entries')
         .select('*')
         .eq('org_id', org!.id)
@@ -268,7 +268,7 @@ export function useImportBankStatement() {
       }));
       for (let i = 0; i < payload.length; i += 100) {
         const chunk = payload.slice(i, i + 100);
-        const { error } = await (supabase as any)
+        const { error } = await supabaseAny
           .from('bank_statement_entries')
           .insert(chunk);
         if (error) throw error;
@@ -294,14 +294,14 @@ export function useReconcileTransaction() {
       transactionId: string;
     }) => {
       // Link the bank entry to the transaction
-      const { error: entryError } = await (supabase as any)
+      const { error: entryError } = await supabaseAny
         .from('bank_statement_entries')
         .update({ matched_transaction_id: transactionId, status: 'matched' })
         .eq('id', bankEntryId);
       if (entryError) throw entryError;
 
       // Mark the transaction as reconciled
-      const { error: txnError } = await (supabase as any)
+      const { error: txnError } = await supabaseAny
         .from('financial_transactions')
         .update({ reconciled: true, reconciled_at: new Date().toISOString() })
         .eq('id', transactionId);
@@ -321,7 +321,7 @@ export function useUnmatchBankEntry() {
   return useMutation({
     mutationFn: async (bankEntryId: string) => {
       // Get current matched transaction
-      const { data: entry, error: fetchError } = await (supabase as any)
+      const { data: entry, error: fetchError } = await supabaseAny
         .from('bank_statement_entries')
         .select('matched_transaction_id')
         .eq('id', bankEntryId)
@@ -329,14 +329,14 @@ export function useUnmatchBankEntry() {
       if (fetchError) throw fetchError;
 
       // Unlink
-      const { error: entryError } = await (supabase as any)
+      const { error: entryError } = await supabaseAny
         .from('bank_statement_entries')
         .update({ matched_transaction_id: null, status: 'unmatched' })
         .eq('id', bankEntryId);
       if (entryError) throw entryError;
 
       if (entry?.matched_transaction_id) {
-        const { error: txnError } = await (supabase as any)
+        const { error: txnError } = await supabaseAny
           .from('financial_transactions')
           .update({ reconciled: false, reconciled_at: null })
           .eq('id', entry.matched_transaction_id);
@@ -356,7 +356,7 @@ export function useIgnoreBankEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (bankEntryId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('bank_statement_entries')
         .update({ status: 'ignored' })
         .eq('id', bankEntryId);
@@ -407,7 +407,7 @@ export function useProfitAndLoss(
   return useQuery({
     queryKey: ['profit_and_loss', org?.id, period, dateFrom, dateTo, propertyId, entityId],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('financial_transactions')
         .select('*')
         .eq('org_id', org!.id)
@@ -476,7 +476,7 @@ export function useExportAccounting() {
       dateTo: string;
       orgId: string;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('financial_transactions')
         .select('*')
         .eq('org_id', orgId)

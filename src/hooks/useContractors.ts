@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
  
@@ -50,7 +50,7 @@ export function useContractors(filters?: {
   return useQuery({
     queryKey: ['contractors', orgId, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
           .from('contractors')
           .select('id, org_id, name, company_name, email, phone, website, compliance_types, service_areas, notes, is_preferred, is_active, average_rating, total_jobs, avg_response_hours, hourly_rate_gbp, call_out_fee_gbp, typical_costs, availability_notes, last_used_at')
           .eq('org_id', orgId!)
@@ -83,7 +83,7 @@ export function useContractors(filters?: {
      queryFn: async () => {
        if (!contractorId) return null;
  
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('contractors')
          .select('*')
          .eq('id', contractorId)
@@ -102,7 +102,7 @@ export function useContractors(filters?: {
      queryFn: async () => {
        if (!contractorId) return [];
  
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('contractor_reviews')
          .select('*')
          .eq('contractor_id', contractorId)
@@ -121,7 +121,7 @@ export function useContractors(filters?: {
      queryFn: async () => {
        if (!contractorId) return [];
  
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('contractor_jobs')
          .select(`
            id,
@@ -152,7 +152,7 @@ export function useContractors(filters?: {
     mutationFn: async (contractor: Omit<Contractor, 'id' | 'org_id' | 'average_rating' | 'total_jobs' | 'last_used_at'>) => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractors')
         .insert({ ...contractor, org_id: orgId })
         .select()
@@ -177,7 +177,7 @@ export function useContractors(filters?: {
  
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<Contractor> & { id: string }) => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('contractors')
          .update(updates)
          .eq('id', id)
@@ -217,7 +217,7 @@ export function useContractors(filters?: {
 
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractor_reviews')
         .insert({
           org_id: orgId,
@@ -254,7 +254,7 @@ export function useContractors(filters?: {
  
    return useMutation({
      mutationFn: async (id: string) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('contractors')
          .delete()
          .eq('id', id);

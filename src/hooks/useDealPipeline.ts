@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -187,7 +187,7 @@ export function useDeals(filters?: DealFilters) {
   return useQuery({
     queryKey: ['deal-pipeline', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('deal_pipeline')
         .select('*')
         .order('created_at', { ascending: true });
@@ -222,7 +222,7 @@ export function useCreateDeal() {
   return useMutation({
     mutationFn: async (input: DealPipelineInsert) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('deal_pipeline')
         .insert({
           org_id: orgId,
@@ -262,7 +262,7 @@ export function useUpdateDeal() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: DealPipelineUpdate }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('deal_pipeline')
         .update(updates)
         .eq('id', id)
@@ -288,7 +288,7 @@ export function useUpdateDealStage() {
       stage: DealStage;
       updates?: DealPipelineUpdate;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('deal_pipeline')
         .update({ stage, ...updates })
         .eq('id', id)
@@ -298,7 +298,7 @@ export function useUpdateDealStage() {
 
       // Auto-create DD items when entering due_diligence
       if (stage === 'due_diligence') {
-        const { data: existing } = await (supabase as any)
+        const { data: existing } = await supabaseAny
           .from('due_diligence_items')
           .select('id')
           .eq('deal_id', id)
@@ -312,7 +312,7 @@ export function useUpdateDealStage() {
             sort_order: t.sort_order,
             status: 'pending',
           }));
-          await (supabase as any).from('due_diligence_items').insert(items);
+          await supabaseAny.from('due_diligence_items').insert(items);
         }
       }
 
@@ -331,7 +331,7 @@ export function useDueDiligenceItems(dealId: string | null) {
     queryKey: ['due-diligence', dealId],
     enabled: !!dealId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('due_diligence_items')
         .select('*')
         .eq('deal_id', dealId)
@@ -352,7 +352,7 @@ export function useUpdateDDItem() {
       if (updates.status === 'passed' || updates.status === 'failed') {
         finalUpdates.completed_at = new Date().toISOString();
       }
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('due_diligence_items')
         .update(finalUpdates)
         .eq('id', id)
@@ -374,7 +374,7 @@ export function useCompleteDeal() {
 
   return useMutation({
     mutationFn: async ({ id, completionDate }: { id: string; completionDate?: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('deal_pipeline')
         .update({
           stage: 'completed',

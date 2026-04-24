@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth, subMonths } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 import type { FinancialSnapshot } from '@/lib/financialSnapshotTypes';
@@ -104,7 +104,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const { data: roomSuggestions } = useQuery<RoomSuggestion[]>({
     queryKey: ['room_rent_suggestions'],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('rooms_v2')
         .select('property_id, current_rent_pcm, is_lettable, occupancy_status, target_rent_pcm');
       return (data || []) as RoomSuggestion[];
@@ -114,7 +114,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const { data: loanSuggestions } = useQuery<LoanSuggestion[]>({
     queryKey: ['loan_payment_suggestions'],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('loan_facilities')
         .select('property_id, monthly_payment, current_balance, status')
         .eq('status', 'active');

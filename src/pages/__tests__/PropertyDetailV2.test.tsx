@@ -36,16 +36,17 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
+vi.mock('@/integrations/supabase/client', () => {
+  const client = {
     from: () => ({
       select: () => ({
         eq: () => ({ order: async () => ({ data: [], error: null }) }),
         gte: () => ({ lte: async () => ({ data: [], error: null }) }),
       }),
     }),
-  },
-}));
+  };
+  return { supabase: client, supabaseAny: client };
+});
 
 // Shell components — stub to keep the test focused on page-level wiring.
 vi.mock('@/components/layout/AppLayout', () => ({

@@ -4,7 +4,7 @@ import { PROPERTY_STEPS } from '@/lib/wizard/propertySteps';
 import { PROPERTY_CROSS_CHECKS } from '@/lib/wizard/crossChecks';
 import { generatePropertyTasks } from '@/lib/wizard/taskGenerator';
 import { useCreateTasks } from '@/hooks/useTasks';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import type { WizardPayload, WizardRoom, ComplianceItem } from '@/lib/wizard/types';
 
@@ -36,7 +36,7 @@ export default function AddPropertyWizard() {
     const orgId = await fetchUserOrgId();
 
     // 1. Create property
-    const { data: property, error: propErr } = await (supabase as any)
+    const { data: property, error: propErr } = await supabaseAny
       .from('properties_v2')
       .insert({
         org_id: orgId,
@@ -99,7 +99,7 @@ export default function AddPropertyWizard() {
     // 4. Create loan facility if mortgage exists
     if (payload.has_mortgage && payload.lender_name) {
       // Upsert lender
-      const { data: lender } = await (supabase as any)
+      const { data: lender } = await supabaseAny
         .from('lenders')
         .upsert(
           { org_id: orgId, lender_name: payload.lender_name as string, lender_type: 'bank' },
@@ -145,7 +145,7 @@ export default function AddPropertyWizard() {
     }
 
     // 6. Update draft with property ID
-    await (supabase as any)
+    await supabaseAny
       .from('wizard_drafts')
       .update({ property_id: property.id, entity_id: payload.entity_id as string })
       .eq('id', draftId);

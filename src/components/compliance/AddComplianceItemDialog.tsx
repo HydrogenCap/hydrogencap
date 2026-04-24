@@ -27,7 +27,7 @@ import {
 } from '@/lib/complianceTypes';
 import { useCreateComplianceItem } from '@/hooks/useCompliance';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 const EPC_RATINGS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
@@ -79,7 +79,7 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
     try {
       // === EPC CONSOLIDATION: Sync EPC rating to properties_v2 table ===
       if (complianceType === 'EPC' && formData.epc_rating) {
-        const { error: syncError } = await (supabase as any)
+        const { error: syncError } = await supabaseAny
           .from('properties_v2')
           .update({ epc_rating: formData.epc_rating })
           .eq('id', propertyId);

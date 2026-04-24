@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import type { AppRole } from '@/hooks/useUserRole';
@@ -19,7 +19,7 @@ export function useOrgMembers() {
   return useQuery({
     queryKey: ['org-members', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('memberships')
         .select('id, user_id, role, created_at')
         .eq('org_id', orgId!);
@@ -27,7 +27,7 @@ export function useOrgMembers() {
 
       // Fetch profiles for display
       const userIds = data.map(m => m.user_id);
-      const { data: profiles } = await (supabase as any)
+      const { data: profiles } = await supabaseAny
         .from('profiles')
         .select('user_id, email, full_name')
         .in('user_id', userIds);
@@ -50,7 +50,7 @@ export function useUpdateMemberRole() {
 
   return useMutation({
     mutationFn: async ({ membershipId, role }: { membershipId: string; role: AppRole }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('memberships')
         .update({ role })
         .eq('id', membershipId);
@@ -72,7 +72,7 @@ export function useRemoveMember() {
 
   return useMutation({
     mutationFn: async (membershipId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('memberships')
         .delete()
         .eq('id', membershipId);

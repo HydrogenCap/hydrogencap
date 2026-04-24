@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
@@ -29,7 +29,7 @@ export function useNotificationPreferences() {
     queryFn: async () => {
       if (!user || !orgId) return null;
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.id)
@@ -54,7 +54,7 @@ export function useNotificationPreferences() {
 
       const orgId = await fetchUserOrgId();
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('notification_preferences')
         .upsert({
           user_id: user.id,

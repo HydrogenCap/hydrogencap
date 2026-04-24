@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserOrg } from '@/hooks/useUserOrg';
@@ -86,7 +86,7 @@ export function useFreeAgentConnections() {
   return useQuery({
     queryKey: ['freeagent-connections', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('freeagent_connections')
         .select('*')
         .eq('org_id', orgId!)
@@ -102,7 +102,7 @@ export function useFreeAgentConnectionForEntity(entityId: string) {
   return useQuery({
     queryKey: ['freeagent-connections', entityId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('freeagent_connections')
         .select('*')
         .eq('entity_id', entityId)
@@ -119,7 +119,7 @@ export function useFreeAgentConnectionForCompany(companyId: string) {
   return useQuery({
     queryKey: ['freeagent-connections', companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('freeagent_connections')
         .select('*')
         .eq('company_id', companyId)
@@ -151,7 +151,7 @@ export function useDisconnectFreeAgent() {
 
   return useMutation({
     mutationFn: async (connectionId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('freeagent_connections')
         .delete()
         .eq('id', connectionId);
@@ -169,7 +169,7 @@ export function useUpdateFreeAgentSettings() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: FreeAgentConnectionUpdate & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('freeagent_connections')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)

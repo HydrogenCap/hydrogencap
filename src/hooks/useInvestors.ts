@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -55,7 +55,7 @@ export function useInvestors() {
   return useQuery({
     queryKey: ['investors', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investors')
         .select('*')
         .eq('org_id', orgId!)
@@ -73,7 +73,7 @@ export function useInvestorPortfolioSummaries() {
   return useQuery({
     queryKey: ['investor-portfolio-summaries', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investor_portfolio_summary')
         .select('*')
         .eq('org_id', orgId!);
@@ -92,7 +92,7 @@ export function useCreateInvestor() {
   return useMutation({
     mutationFn: async (data: Partial<InvestorFormData>) => {
       const payload = { ...data, org_id: orgId! } as InvestorInsert;
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('investors')
         .insert([payload])
         .select()
@@ -117,7 +117,7 @@ export function useUpdateInvestor() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InvestorFormData> }) => {
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('investors')
         .update(data)
         .eq('id', id)

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,7 +34,7 @@ export function useWebhookEndpoints() {
   return useQuery({
     queryKey: ['webhook-endpoints', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('webhook_endpoints')
         .select('*')
         .eq('org_id', orgId)
@@ -56,7 +56,7 @@ export function useCreateEndpoint() {
     mutationFn: async (input: { url: string; description?: string; events: string[] }) => {
       if (!orgId) throw new Error('No organization');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('webhook_endpoints')
         .insert({ org_id: orgId, ...input })
         .select()
@@ -81,7 +81,7 @@ export function useUpdateEndpoint() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<WebhookEndpoint> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('webhook_endpoints')
         .update(updates)
         .eq('id', id)
@@ -107,7 +107,7 @@ export function useDeleteEndpoint() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('webhook_endpoints')
         .delete()
         .eq('id', id);
@@ -128,7 +128,7 @@ export function useWebhookDeliveries(endpointId: string | undefined) {
   return useQuery({
     queryKey: ['webhook-deliveries', endpointId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('webhook_deliveries')
         .select('*')
         .eq('endpoint_id', endpointId)

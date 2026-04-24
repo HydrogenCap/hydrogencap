@@ -19,7 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface PropertyFeaturesEditorProps {
@@ -64,7 +64,7 @@ export function PropertyFeaturesEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('properties_v2')
         .update({
           has_gas_supply: features.has_gas,

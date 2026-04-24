@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
@@ -88,7 +88,7 @@ export function useBulkDocScanner() {
 
     // 2. Create document record
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: docRecord, error: docErr } = await (supabase as any)
+    const { data: docRecord, error: docErr } = await supabaseAny
       .from('documents')
       .insert({
         org_id: orgId,
@@ -133,7 +133,7 @@ export function useBulkDocScanner() {
       if (fnErr) throw fnErr;
 
       // 4. Re-fetch the document to get AI results
-      const { data: updated } = await (supabase as any)
+      const { data: updated } = await supabaseAny
         .from('documents')
         .select('ai_suggested_doc_type, ai_doc_type_confidence, ai_suggested_property_id, ai_property_confidence, extracted_data, extracted_address_text, extracted_issue_date, extracted_reference_number, expiry_date')
         .eq('id', docRecord.id)
@@ -261,7 +261,7 @@ export function useBulkDocScanner() {
 
       try {
         // Create compliance_documents_v2 record
-        const { error: compErr } = await (supabase as any)
+        const { error: compErr } = await supabaseAny
           .from('compliance_documents_v2')
           .insert({
             org_id: orgId,
@@ -285,7 +285,7 @@ export function useBulkDocScanner() {
 
         // Update document record
         if (doc.documentId) {
-          await (supabase as any)
+          await supabaseAny
             .from('documents')
             .update({
               property_id: propId,

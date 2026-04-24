@@ -26,7 +26,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { formatGBP, formatDateUK } from '@/lib/calculations';
 import { DealPipelineBoard } from '@/components/pipeline/DealPipelineBoard';
 import { DealSourcingForm } from '@/components/pipeline/DealSourcingForm';
@@ -40,7 +40,7 @@ function useAllGoLiveChecklists() {
   return useQuery({
     queryKey: ['go_live_checklists'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('go_live_checklists')
         .select('*');
       if (error) throw error;

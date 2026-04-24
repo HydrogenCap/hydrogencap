@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import type { AccountingMapping, AccountingSystem } from '@/lib/accountingTypes';
@@ -12,7 +12,7 @@ export function useAccountingMappings(system?: AccountingSystem, entityId?: stri
   return useQuery({
     queryKey: ['accounting_mappings', org?.id, system, entityId],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('accounting_mappings')
         .select('*')
         .eq('is_active', true);
@@ -46,7 +46,7 @@ export function useUpsertMapping() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (mapping: AccountingMappingInsert) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('accounting_mappings')
         .upsert(mapping, { onConflict: 'accounting_system,entity_id,hydrogencap_category' })
         .select()
@@ -64,7 +64,7 @@ export function useUpdateMapping() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: AccountingMappingUpdate & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('accounting_mappings')
         .update(updates)
         .eq('id', id)

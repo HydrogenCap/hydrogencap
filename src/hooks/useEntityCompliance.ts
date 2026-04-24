@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ export function useFilingDeadlines(entityId: string | undefined) {
   return useQuery({
     queryKey: ['filing_deadlines', entityId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('company_filing_deadlines')
         .select('*')
         .eq('entity_id', entityId!)
@@ -76,7 +76,7 @@ export function useCreateFilingDeadline() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (filing: Omit<CompanyFilingDeadline, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('company_filing_deadlines')
         .insert(filing)
         .select()
@@ -94,7 +94,7 @@ export function useUpdateFilingDeadline() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CompanyFilingDeadline> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('company_filing_deadlines')
         .update(updates)
         .eq('id', id)
@@ -129,7 +129,7 @@ export function useDirectorAppointments(entityId: string | undefined) {
   return useQuery({
     queryKey: ['director_appointments', entityId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('director_appointments')
         .select('*')
         .eq('entity_id', entityId!)
@@ -145,7 +145,7 @@ export function useCreateDirectorAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (appointment: Omit<DirectorAppointment, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('director_appointments')
         .insert(appointment)
         .select()
@@ -163,7 +163,7 @@ export function useUpdateDirectorAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DirectorAppointment> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('director_appointments')
         .update(updates)
         .eq('id', id)
@@ -198,7 +198,7 @@ export function useIntercompanyLoans(entityId: string | undefined) {
   return useQuery({
     queryKey: ['intercompany_loans', entityId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('intercompany_loans')
         .select('*')
         .or(`lender_entity_id.eq.${entityId!},borrower_entity_id.eq.${entityId!}`);
@@ -213,7 +213,7 @@ export function useCreateIntercompanyLoan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (loan: Omit<IntercompanyLoan, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('intercompany_loans')
         .insert(loan)
         .select()
@@ -231,7 +231,7 @@ export function useUpdateIntercompanyLoan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<IntercompanyLoan> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('intercompany_loans')
         .update(updates)
         .eq('id', id)

@@ -15,7 +15,7 @@ import {
   Check, ChevronLeft, ChevronRight, Calendar, Calculator, ClipboardCheck, CreditCard,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useCreateDistributionRun, useMarkPayment, useMarkAllPayments, useDistributionLineItems } from '@/hooks/useDistributionWorkflow';
 import {
@@ -65,7 +65,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
   const { data: entities } = useQuery({
     queryKey: ['entities-for-dist-wizard', orgId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('legal_entities')
         .select('id, entity_name')
         .eq('org_id', orgId!);
@@ -78,7 +78,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
   const { data: shareholders } = useQuery({
     queryKey: ['entity-shareholders-wizard', entityId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('entity_shareholders')
         .select('id, shareholder_name, percentage, shareholder_entity_id')
         .eq('entity_id', entityId)
@@ -92,7 +92,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
   const { data: investors } = useQuery({
     queryKey: ['investors-for-dist-wizard', orgId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('investors')
         .select('id, investor_name, email')
         .eq('org_id', orgId!);
@@ -107,7 +107,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
     queryFn: async () => {
       if (!entityId || !orgId) return { grossRent: 0, expenses: 0, mortgagePayments: 0, managementFees: 0, otherDeductions: 0 };
 
-      const { data: props } = await (supabase as any)
+      const { data: props } = await supabaseAny
         .from('properties_v2')
         .select('id')
         .eq('entity_id', entityId)
@@ -117,14 +117,14 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
       if (propertyIds.length === 0) return { grossRent: 0, expenses: 0, mortgagePayments: 0, managementFees: 0, otherDeductions: 0 };
 
       // Rent income
-      const { data: agreements } = await (supabase as any)
+      const { data: agreements } = await supabaseAny
         .from('tenancy_agreements')
         .select('id')
         .in('property_id', propertyIds);
 
       let grossRent = 0;
       if (agreements && agreements.length > 0) {
-        const { data: payments } = await (supabase as any)
+        const { data: payments } = await supabaseAny
           .from('rent_payments')
           .select('amount')
           .in('tenancy_id', agreements.map(a => a.id))
@@ -134,7 +134,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
       }
 
       // Expenses
-      const { data: maintenance } = await (supabase as any)
+      const { data: maintenance } = await supabaseAny
         .from('maintenance_requests')
         .select('actual_cost')
         .in('property_id', propertyIds)
@@ -143,7 +143,7 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
       const expenses = (maintenance || []).reduce((sum, m) => sum + (m.actual_cost || 0), 0);
 
       // Mortgage costs
-      const { data: loans } = await (supabase as any)
+      const { data: loans } = await supabaseAny
         .from('loan_facilities')
         .select('monthly_payment')
         .in('property_id', propertyIds)

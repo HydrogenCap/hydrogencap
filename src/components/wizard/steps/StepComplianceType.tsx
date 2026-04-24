@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { WizardPayload } from '@/lib/wizard/types';
 
 interface StepProps {
@@ -21,7 +21,7 @@ export function StepComplianceType({ payload, updatePayload }: StepProps) {
 
   useEffect(() => {
     async function load() {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('compliance_templates')
         .select('document_type, display_name')
         .eq('is_active', true)

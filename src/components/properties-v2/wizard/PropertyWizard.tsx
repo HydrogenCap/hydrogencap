@@ -10,7 +10,7 @@ import { useCreatePropertyV2 } from '@/hooks/usePropertiesV2';
 import { useBulkCreateRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
 import { useCreateLender } from '@/hooks/useLenders';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
@@ -135,7 +135,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
 
       // Update HMO licence number if provided (column added via migration)
       if (data.hmo_licence_number) {
-        await (supabase as any)
+        await supabaseAny
           .from('properties_v2')
           .update({ hmo_licence_number: data.hmo_licence_number } as PropertyV2Update)
           .eq('id', property.id);
@@ -171,7 +171,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.has_mortgage && data.lender_name && data.original_amount) {
         try {
           // Upsert lender
-          const { data: lenderData } = await (supabase as any)
+          const { data: lenderData } = await supabaseAny
             .from('lenders')
             .upsert(
               { org_id: orgId, lender_name: data.lender_name, lender_type: 'specialist_btl' },

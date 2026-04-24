@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import type { Database } from '@/integrations/supabase/types';
 import type { PropertyWithFinancials } from './useProperties';
@@ -70,7 +70,7 @@ export function useBeneficialGroups() {
   return useQuery({
     queryKey: ['beneficial_groups'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('beneficial_groups')
         .select(`
           *,
@@ -95,7 +95,7 @@ export function useCreateBeneficialGroup() {
       const orgId = await getUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('beneficial_groups')
         .insert({ name: data.name, org_id: orgId })
         .select()
@@ -115,7 +115,7 @@ export function useDeleteBeneficialGroup() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('beneficial_groups')
         .delete()
         .eq('id', id);
@@ -138,7 +138,7 @@ export function useEntityMappings(entityId: string | undefined) {
     queryFn: async () => {
       if (!entityId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('entity_beneficial_mapping')
         .select(`
           *,
@@ -158,7 +158,7 @@ export function useAddEntityMapping() {
 
   return useMutation({
     mutationFn: async (data: Omit<EntityBeneficialMappingInsert, 'id' | 'created_at'>) => {
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('entity_beneficial_mapping')
         .insert(data)
         .select()
@@ -180,7 +180,7 @@ export function useRemoveEntityMapping() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('entity_beneficial_mapping')
         .delete()
         .eq('id', id);
@@ -208,7 +208,7 @@ export function useUpdatePropertyBeneficialOverride() {
       overridePercent: number | null;
       notes: string | null;
     }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('properties_v2')
         .update({
           beneficial_override_percent: overridePercent,
@@ -238,7 +238,7 @@ export function usePropertyAttributableOwnership(propertyId: string | undefined)
       if (!propertyId) return null;
 
       // 1. Fetch property with override
-      const { data: property, error: propError } = await (supabase as any)
+      const { data: property, error: propError } = await supabaseAny
         .from('properties_v2')
         .select('id, beneficial_override_percent, beneficial_override_notes')
         .eq('id', propertyId)
@@ -247,7 +247,7 @@ export function usePropertyAttributableOwnership(propertyId: string | undefined)
       if (propError) throw propError;
 
       // 2. Get legal owners
-      const { data: legalOwners, error: legalError } = await (supabase as any)
+      const { data: legalOwners, error: legalError } = await supabaseAny
         .from('property_legal_ownership')
         .select(`*, ownership_entities(*)`)
         .eq('property_id', propertyId);
@@ -255,14 +255,14 @@ export function usePropertyAttributableOwnership(propertyId: string | undefined)
       if (legalError) throw legalError;
 
       // 3. Get all shareholdings
-      const { data: allShareholdings, error: shError } = await (supabase as any)
+      const { data: allShareholdings, error: shError } = await supabaseAny
         .from('entity_shareholdings')
         .select(`*, shareholder_entity:ownership_entities!entity_shareholdings_shareholder_entity_id_fkey(*)`);
 
       if (shError) throw shError;
 
       // 4. Get beneficial groups with mappings
-      const { data: groups, error: groupError } = await (supabase as any)
+      const { data: groups, error: groupError } = await supabaseAny
         .from('beneficial_groups')
         .select(`*, entity_beneficial_mapping(entity_id)`);
 
@@ -417,17 +417,17 @@ export async function calculatePortfolioAttributableMetrics(
   properties: PropertyWithFinancials[]
 ): Promise<PortfolioAttributableMetrics> {
   // Fetch all beneficial groups and mappings
-  const { data: groups } = await (supabase as any)
+  const { data: groups } = await supabaseAny
     .from('beneficial_groups')
     .select(`*, entity_beneficial_mapping(entity_id)`);
 
   // Fetch all legal ownership
-  const { data: allLegalOwnership } = await (supabase as any)
+  const { data: allLegalOwnership } = await supabaseAny
     .from('property_legal_ownership')
     .select(`*, ownership_entities(*)`);
 
   // Fetch all shareholdings
-  const { data: allShareholdings } = await (supabase as any)
+  const { data: allShareholdings } = await supabaseAny
     .from('entity_shareholdings')
     .select(`*, shareholder_entity:ownership_entities!entity_shareholdings_shareholder_entity_id_fkey(*)`);
 
@@ -597,7 +597,7 @@ export function useSeedDefaultBeneficialGroup() {
       if (!orgId) throw new Error('No organization found');
 
       // Check if ANY group already exists for this org (not just by name)
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await supabaseAny
         .from('beneficial_groups')
         .select('id')
         .eq('org_id', orgId)
@@ -610,7 +610,7 @@ export function useSeedDefaultBeneficialGroup() {
       }
 
       // Create the default group
-      const { data: group, error } = await (supabase as any)
+      const { data: group, error } = await supabaseAny
         .from('beneficial_groups')
         .insert({ name: 'Default Group', org_id: orgId })
         .select()
@@ -619,7 +619,7 @@ export function useSeedDefaultBeneficialGroup() {
       if (error) throw error;
 
       // Find "David O'Neill" and "Tenure IQ Ltd" entities
-      const { data: entities } = await (supabase as any)
+      const { data: entities } = await supabaseAny
         .from('ownership_entities')
         .select('id, name')
         .in('name', ['David O\'Neill', 'Tenure IQ Ltd']);

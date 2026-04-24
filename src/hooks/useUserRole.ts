@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserOrg } from '@/hooks/useUserOrg';
 
@@ -12,7 +12,7 @@ export function useUserRole() {
   const { data: role, isLoading } = useQuery({
     queryKey: ['user-role', user?.id, orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('memberships')
         .select('role')
         .eq('user_id', user!.id)

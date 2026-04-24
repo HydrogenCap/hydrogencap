@@ -2,7 +2,7 @@
  * CRUD hooks for CapEx upgrade: phases, payments, photos, planning applications.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg, fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -80,7 +80,7 @@ export function useCapexPhases(projectId: string) {
   return useQuery({
     queryKey: ['capex-phases', orgId, projectId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_phases')
         .select('*')
         .eq('project_id', projectId)
@@ -99,7 +99,7 @@ export function useCreateCapexPhase() {
   return useMutation({
     mutationFn: async (phase: Omit<CapexPhase, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_phases')
         .insert({ ...phase, org_id: orgId })
         .select()
@@ -120,7 +120,7 @@ export function useUpdateCapexPhase() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexPhase> & { id: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('capex_phases')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
@@ -137,7 +137,7 @@ export function useDeleteCapexPhase() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('capex_phases').delete().eq('id', id);
+      const { error } = await supabaseAny.from('capex_phases').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['capex-phases'] }),
@@ -151,7 +151,7 @@ export function useCapexPayments(projectId: string) {
   return useQuery({
     queryKey: ['capex-payments', orgId, projectId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_payments')
         .select('*')
         .eq('project_id', projectId)
@@ -170,7 +170,7 @@ export function useCreateCapexPayment() {
   return useMutation({
     mutationFn: async (payment: Omit<CapexPayment, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_payments')
         .insert({ ...payment, org_id: orgId })
         .select()
@@ -191,7 +191,7 @@ export function useUpdateCapexPayment() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexPayment> & { id: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('capex_payments')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
@@ -208,7 +208,7 @@ export function useDeleteCapexPayment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('capex_payments').delete().eq('id', id);
+      const { error } = await supabaseAny.from('capex_payments').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['capex-payments'] }),
@@ -222,7 +222,7 @@ export function useCapexPhotos(projectId: string) {
   return useQuery({
     queryKey: ['capex-photos', orgId, projectId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_photos')
         .select('*')
         .eq('project_id', projectId)
@@ -241,7 +241,7 @@ export function useCreateCapexPhoto() {
   return useMutation({
     mutationFn: async (photo: Omit<CapexPhoto, 'id' | 'org_id' | 'created_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_photos')
         .insert({ ...photo, org_id: orgId })
         .select()
@@ -261,7 +261,7 @@ export function useDeleteCapexPhoto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('capex_photos').delete().eq('id', id);
+      const { error } = await supabaseAny.from('capex_photos').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['capex-photos'] }),
@@ -275,7 +275,7 @@ export function usePlanningApplications(projectId: string) {
   return useQuery({
     queryKey: ['planning-applications', orgId, projectId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('planning_applications')
         .select('*')
         .eq('project_id', projectId)
@@ -294,7 +294,7 @@ export function useCreatePlanningApplication() {
   return useMutation({
     mutationFn: async (app: Omit<PlanningApplication, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('planning_applications')
         .insert({ ...app, org_id: orgId })
         .select()
@@ -315,7 +315,7 @@ export function useUpdatePlanningApplication() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<PlanningApplication> & { id: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('planning_applications')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
@@ -332,7 +332,7 @@ export function useDeletePlanningApplication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from('planning_applications').delete().eq('id', id);
+      const { error } = await supabaseAny.from('planning_applications').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['planning-applications'] }),

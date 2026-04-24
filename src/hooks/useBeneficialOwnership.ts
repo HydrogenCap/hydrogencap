@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 // Types for beneficial ownership
 export interface BeneficialOwner {
@@ -57,7 +57,7 @@ export function useBeneficialOwners(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_beneficial_owners')
         .select(`
           *,
@@ -81,7 +81,7 @@ export function useActiveBeneficialOwners(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_beneficial_owners')
         .select(`
           *,
@@ -105,7 +105,7 @@ export function useAddBeneficialOwner() {
   
   return useMutation({
     mutationFn: async (owner: BeneficialOwnerInsert) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_beneficial_owners')
         .insert(owner)
         .select(`
@@ -131,7 +131,7 @@ export function useUpdateBeneficialOwner() {
   
   return useMutation({
     mutationFn: async ({ id, property_id, ...updates }: BeneficialOwnerUpdate) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_beneficial_owners')
         .update(updates)
         .eq('id', id)
@@ -158,7 +158,7 @@ export function useDeleteBeneficialOwner() {
   
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('property_beneficial_owners')
         .delete()
         .eq('id', id);

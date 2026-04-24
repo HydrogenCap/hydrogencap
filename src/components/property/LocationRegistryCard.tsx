@@ -15,7 +15,7 @@ import {
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
@@ -110,7 +110,7 @@ export function LocationRegistryCard({
 
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('properties_v2')
         .update({ latitude: lat, longitude: lng })
         .eq('id', propertyId);
