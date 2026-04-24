@@ -15,7 +15,7 @@ interface MetricValueProps {
  */
 export function MetricValue({
   value,
-  type = 'text',
+  type: _type = 'text',
   colorize = false,
   size = 'md',
   className,

@@ -46,8 +46,7 @@ import { DocumentViewerModal } from './DocumentViewerModal';
 import { 
   RESPONSIBLE_PARTIES, 
   type ComplianceItem, 
-  type ComplianceDocument,
-  getComplianceItemStatus 
+  type ComplianceDocument 
 } from '@/lib/complianceTypes';
 import { 
   useUpdateComplianceItem, 
@@ -85,8 +84,6 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
   const currentDoc = item.documents?.find(d => d.is_current);
   const archivedDocs = (item.documents?.filter(d => !d.is_current) || [])
     .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
-  
-  const status = getComplianceItemStatus(item.expiry_date);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

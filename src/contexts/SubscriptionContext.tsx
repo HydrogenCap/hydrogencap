@@ -212,7 +212,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       // If the edge function returns data, also write to cache so UI updates immediately
       if (data) {
-        const tier = productIdToTier(data?.product_id);
         queryClient.setQueryData(['subscription', user.id], {
           user_id: user.id,
           status: data?.subscribed ? 'active' : 'inactive',

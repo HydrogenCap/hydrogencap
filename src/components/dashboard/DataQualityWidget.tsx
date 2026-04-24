@@ -493,7 +493,7 @@ function DataQualityIssueRow({
 
 export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+  const [, setLastUpdateTime] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { data: companies } = useCompanies();
   

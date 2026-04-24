@@ -320,8 +320,6 @@ export default function PortalDashboard() {
                     <AccordionContent>
                       <div className="pt-2 space-y-2">
                         {group.properties.map((property) => {
-                          const propertyLoans = loansByProperty.get(property.id) || [];
-                          const debt = propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
                           const perf = performanceByProperty.get(property.id);
                           return (
                             <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">

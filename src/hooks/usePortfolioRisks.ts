@@ -101,7 +101,7 @@ export function calculatePortfolioRisks(
   passportMap: Map<string, PropertyPassport>,
   complianceMatrix: ComplianceMatrixRow[],
   tenancyComplianceOverdue: TenancyComplianceItemWithDetails[] = [],
-  insurancePolicies: InsurancePolicy[] = [],
+  _insurancePolicies: InsurancePolicy[] = [],
   tenancies: TenancyRiskRecord[] = []
 ): RiskItem[] {
   const riskItems: RiskItem[] = [];

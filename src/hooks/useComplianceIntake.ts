@@ -173,7 +173,6 @@ export function useAcceptComplianceDocument() {
         originalFilename,
         fileUrl,
         notes,
-        epcRating,
         wasEdited,
         originalAiSuggestions,
       } = params;

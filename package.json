@@ -10,7 +10,7 @@
     "build:dev": "vite build --mode development",
     "check:edge": "node scripts/check-edge-functions.mjs",
     "test:edge": "deno test supabase/functions --allow-env",
-    "lint": "eslint --max-warnings 1149 src e2e scripts playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.ts eslint.config.js",
+    "lint": "eslint --max-warnings 1139 src e2e scripts playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.ts eslint.config.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

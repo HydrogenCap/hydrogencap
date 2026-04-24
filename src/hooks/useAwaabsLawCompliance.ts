@@ -277,7 +277,7 @@ export function useStartInvestigation() {
       const now = new Date();
 
       // Get current request to calculate deadlines
-      const { data: request, error: fetchErr } = await (supabase as any)
+      const { data: _request, error: fetchErr } = await (supabase as any)
         .from('maintenance_requests')
         .select('reported_at, hazard_category')
         .eq('id', requestId)

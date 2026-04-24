@@ -21,7 +21,7 @@ interface Template {
 }
 
 export function StepCompliance({ payload, updatePayload }: StepProps) {
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [, setTemplates] = useState<Template[]>([]);
   const items = (payload.compliance_items as ComplianceItem[]) || [];
 
   useEffect(() => {
