@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -185,7 +185,7 @@ export function PropertyForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <PropertyDetailsSection
-          form={form as any}
+          form={form as unknown as UseFormReturn<Record<string, unknown>>}
           watchedPostcode={watchedPostcode}
           watchedAddress={watchedAddress}
           watchedGeocodeStatus={watchedGeocodeStatus}
@@ -194,21 +194,21 @@ export function PropertyForm({
           onAutoPopulate={handleAutoPopulate}
         />
 
-        <LandRegistrySection form={form as any} propertyId={propertyId} />
+        <LandRegistrySection form={form as unknown as UseFormReturn<Record<string, unknown>>} propertyId={propertyId} />
 
         <LeaseholdFormSection propertyId={propertyId} tenure={watchedTenure} />
 
-        <ValuationSection form={form as any} />
+        <ValuationSection form={form as unknown as UseFormReturn<Record<string, unknown>>} />
 
         <MortgageSection
-          form={form as any}
+          form={form as unknown as UseFormReturn<Record<string, unknown>>}
           watchedCapitalOrInterest={watchedCapitalOrInterest}
           mortgageCalc={mortgageCalc}
         />
 
-        <IncomeSection form={form as any} />
+        <IncomeSection form={form as unknown as UseFormReturn<Record<string, unknown>>} />
 
-        <NotesSection form={form as any} />
+        <NotesSection form={form as unknown as UseFormReturn<Record<string, unknown>>} />
 
         {/* Actions */}
         <div className="flex gap-4">

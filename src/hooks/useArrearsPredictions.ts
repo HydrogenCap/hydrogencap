@@ -54,14 +54,19 @@ export function useArrearsPredictions(propertyId?: string) {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data ?? []).map((row: any) => ({
+      type Row = Omit<ArrearsPrediction, 'risk_score' | 'contributing_factors' | 'recommended_actions'> & {
+        risk_score: number | string;
+        contributing_factors: unknown;
+        recommended_actions: unknown;
+      };
+      return ((data ?? []) as Row[]).map((row) => ({
         ...row,
         risk_score: Number(row.risk_score),
         contributing_factors: Array.isArray(row.contributing_factors)
-          ? row.contributing_factors
+          ? (row.contributing_factors as ContributingFactor[])
           : [],
         recommended_actions: Array.isArray(row.recommended_actions)
-          ? row.recommended_actions
+          ? (row.recommended_actions as string[])
           : [],
       })) as ArrearsPrediction[];
     },
@@ -125,17 +130,19 @@ export function useArrearsRiskSummary() {
         } satisfies ArrearsRiskSummary;
       }
 
-      const scores = predictions.map((p: any) => Number(p.risk_score));
-      const avgRiskScore = scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
+      type SummaryRow = { risk_score: number | string; risk_level: string; created_at: string };
+      const rows = predictions as SummaryRow[];
+      const scores = rows.map((p) => Number(p.risk_score));
+      const avgRiskScore = scores.reduce((a, b) => a + b, 0) / scores.length;
 
       return {
-        total: predictions.length,
-        critical: predictions.filter((p: any) => p.risk_level === 'critical').length,
-        high: predictions.filter((p: any) => p.risk_level === 'high').length,
-        medium: predictions.filter((p: any) => p.risk_level === 'medium').length,
-        low: predictions.filter((p: any) => p.risk_level === 'low').length,
+        total: rows.length,
+        critical: rows.filter((p) => p.risk_level === 'critical').length,
+        high: rows.filter((p) => p.risk_level === 'high').length,
+        medium: rows.filter((p) => p.risk_level === 'medium').length,
+        low: rows.filter((p) => p.risk_level === 'low').length,
         avgRiskScore: Math.round(avgRiskScore * 100) / 100,
-        lastRunAt: predictions[0]?.created_at ?? null,
+        lastRunAt: rows[0]?.created_at ?? null,
       } satisfies ArrearsRiskSummary;
     },
   });
