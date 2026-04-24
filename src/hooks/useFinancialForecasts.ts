@@ -67,7 +67,7 @@ export function useFinancialForecasts() {
       if (!orgId) return [];
 
       const { data, error } = await supabaseAny
-        .from('financial_forecasts' as any)
+        .from('financial_forecasts')
         .select('*')
         .eq('org_id', orgId)
         .order('created_at', { ascending: false });
@@ -109,7 +109,7 @@ export function useForecastDetail(id: string | undefined) {
       if (!id || !orgId) return null;
 
       const { data, error } = await supabaseAny
-        .from('financial_forecasts' as any)
+        .from('financial_forecasts')
         .select('*')
         .eq('id', id)
         .eq('org_id', orgId)

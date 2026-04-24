@@ -70,7 +70,7 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
   const { data: entities } = useLegalEntities();
 
   const form = useForm<FormInput, unknown, FormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as unknown as import('react-hook-form').Resolver<FormInput, unknown, FormValues>,
     defaultValues: {
       entity_id: '',
       commitment_type: 'equity' as const,

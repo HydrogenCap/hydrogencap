@@ -89,10 +89,10 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  any
->(
+// Recharts tooltip prop shape varies across chart types; the component is a
+// thin passthrough over Recharts internals.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, any>(
   (
     {
       active,
@@ -223,7 +223,7 @@ const ChartLegend = RechartsPrimitive.Legend;
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "verticalAlign"> & { payload?: any[]; } & {
+    Pick<RechartsPrimitive.LegendProps, "verticalAlign"> & { payload?: Array<{ value?: string; color?: string; dataKey?: string; payload?: { fill?: string } }>; } & {
       hideIcon?: boolean;
       nameKey?: string;
     }

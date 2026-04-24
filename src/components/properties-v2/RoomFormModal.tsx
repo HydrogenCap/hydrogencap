@@ -155,7 +155,7 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
           <div><Label>Room Name *</Label><Input value={form.room_name} onChange={e => set('room_name', e.target.value)} placeholder="e.g. Room 1, Ground Floor Studio" required /></div>
           <div>
             <Label>Room Type *</Label>
-            <Select value={form.room_type} onValueChange={v => set('room_type', v as any)}>
+            <Select value={form.room_type} onValueChange={v => set('room_type', v as RoomV2['room_type'])}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{ROOM_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
             </Select>
@@ -181,7 +181,7 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
           {form.is_lettable && (
             <div>
               <Label>Occupancy Status *</Label>
-              <Select value={form.occupancy_status} onValueChange={v => set('occupancy_status', v as any)}>
+              <Select value={form.occupancy_status} onValueChange={v => set('occupancy_status', v as RoomV2['occupancy_status'])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{OCCUPANCY_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>

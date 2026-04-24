@@ -192,7 +192,18 @@ export function usePortfolioValueTimeline(months = 24) {
         .order('snapshot_month', { ascending: true })
         .limit(months);
       if (error) throw error;
-      return (data || []).map((row: any) => ({
+      type SummaryRow = {
+        snapshot_month: string | null;
+        total_valuation: number | null;
+        total_debt: number | null;
+        total_equity: number | null;
+        portfolio_ltv: number | null;
+        total_rent_received: number | null;
+        total_noi: number | null;
+        total_cash_flow: number | null;
+        property_count: number | null;
+      };
+      return ((data || []) as SummaryRow[]).map((row) => ({
         month: row.snapshot_month?.slice(0, 7) ?? '',
         label: new Date((row.snapshot_month ?? '').slice(0, 7) + '-01').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
         totalValuation: row.total_valuation ?? 0,

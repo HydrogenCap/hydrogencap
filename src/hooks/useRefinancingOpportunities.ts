@@ -38,7 +38,10 @@ export function useRefinancingOpportunities() {
         .eq('org_id', orgId!)
         .order('potential_release_gbp', { ascending: false });
       if (error) throw error;
-      return ((data || []) as any[]).map((d) => ({
+      type WithNested = RefinancingOpportunity & {
+        properties_v2?: { address_line_1?: string; postcode?: string } | null;
+      };
+      return ((data || []) as WithNested[]).map((d) => ({
         ...d,
         property_address: `${d.properties_v2?.address_line_1}, ${d.properties_v2?.postcode}`,
       })) as RefinancingOpportunityWithAddress[];

@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { useMigrationStatus, useRunMigrationStep, useRunFullMigration } from '@/hooks/useMigration';
+import { useMigrationStatus, useRunMigrationStep, useRunFullMigration, type MigrationFunctionName } from '@/hooks/useMigration';
 import { GapFillSection } from '@/components/migration/GapFillSection';
 import type { MigrationStep, MigrationResult } from '@/lib/migrationTypes';
 import { getStatusColor, getStatusLabel } from '@/lib/migrationTypes';
@@ -104,7 +104,7 @@ export default function MigrationDashboard() {
   const handleRunStep = async (step: MigrationStep) => {
     setRunningStep(step.key);
     try {
-      const result = await runStep.mutateAsync(step.functionName as any);
+      const result = await runStep.mutateAsync(step.functionName as MigrationFunctionName);
       setStepResults(prev => ({ ...prev, [step.key]: result }));
       toast.success(`${step.title}: ${result.migrated} records migrated`);
     } catch (e) {

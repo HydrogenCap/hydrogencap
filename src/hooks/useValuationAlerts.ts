@@ -39,7 +39,10 @@ export function useValuationAlerts(includeDismissed = false) {
       }
       const { data, error } = await query;
       if (error) throw error;
-      return ((data || []) as any[]).map((d) => ({
+      type WithNested = ValuationAlert & {
+        properties_v2?: { address_line_1?: string; postcode?: string } | null;
+      };
+      return ((data || []) as WithNested[]).map((d) => ({
         ...d,
         property_address: `${d.properties_v2?.address_line_1}, ${d.properties_v2?.postcode}`,
       })) as ValuationAlertWithAddress[];

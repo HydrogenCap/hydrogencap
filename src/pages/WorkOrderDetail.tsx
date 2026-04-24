@@ -153,7 +153,7 @@ export default function WorkOrderDetail() {
 
         {/* Approval section for pending work orders */}
         {wo.status === 'submitted' && (
-          <ApprovalWorkflow defaultThreshold={(wo as any).approval_threshold || 500} />
+          <ApprovalWorkflow defaultThreshold={(wo as { approval_threshold?: number }).approval_threshold || 500} />
         )}
 
         {/* Action Bar */}

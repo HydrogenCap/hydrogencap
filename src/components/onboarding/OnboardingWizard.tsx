@@ -146,7 +146,7 @@ export function OnboardingWizard() {
           lifecycle_stage: 'pipeline',
           total_lettable_rooms: parseInt(beds) || 0,
           current_valuation: parseInt(currentValue) || undefined,
-        } as any);
+        });
       if (error) throw error;
     },
   });

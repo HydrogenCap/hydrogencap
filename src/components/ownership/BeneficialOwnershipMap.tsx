@@ -45,8 +45,8 @@ export function BeneficialOwnershipMap({ entityId, orgId }: BeneficialOwnershipM
     try {
       await deleteBeneficialOwner.mutateAsync({ id, entityId });
       toast({ title: 'Beneficial owner removed' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -205,8 +205,8 @@ function AddBeneficialOwnerDialog({
       setNationality('');
       setCountryOfResidence('');
       setServiceAddress('');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 

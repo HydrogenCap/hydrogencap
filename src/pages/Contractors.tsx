@@ -7,7 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/common';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useContractors, useUpdateContractor } from '@/hooks/useContractors';
+import { useContractors, useUpdateContractor, type Contractor } from '@/hooks/useContractors';
+
+// Legacy optional fields some contractor records may still have
+type ContractorWithLegacyFields = Contractor & {
+  coverage_areas?: string[] | null;
+  avg_rating?: number | null;
+};
 import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
 import {
   AddContractorDialog,
@@ -44,7 +50,7 @@ export default function Contractors() {
   // Collect unique coverage areas for the area filter
   const allAreas = Array.from(
     new Set(
-      contractors?.flatMap((c) => (c as any).coverage_areas || c.service_areas || []) || []
+      contractors?.flatMap((c) => (c as ContractorWithLegacyFields).coverage_areas || c.service_areas || []) || []
     )
   ).sort();
 
@@ -61,13 +67,13 @@ export default function Contractors() {
     // Rating filter
     if (ratingFilter !== 'all') {
       const minRating = parseFloat(ratingFilter);
-      const rating = (c as any).avg_rating ?? c.average_rating ?? 0;
+      const rating = (c as ContractorWithLegacyFields).avg_rating ?? c.average_rating ?? 0;
       if (rating < minRating) return false;
     }
 
     // Area filter
     if (areaFilter !== 'all') {
-      const areas = (c as any).coverage_areas || c.service_areas || [];
+      const areas = (c as ContractorWithLegacyFields).coverage_areas || c.service_areas || [];
       if (!areas.includes(areaFilter)) return false;
     }
 
@@ -198,7 +204,7 @@ export default function Contractors() {
                         {preferredContractors.map((contractor) => (
                           <ContractorProfileCard
                             key={contractor.id}
-                            contractor={contractor as any}
+                            contractor={contractor as ContractorWithLegacyFields}
                             onClick={() => setSelectedContractorId(contractor.id)}
                             onTogglePreferred={handleTogglePreferred}
                           />
@@ -216,7 +222,7 @@ export default function Contractors() {
                         {otherContractors.map((contractor) => (
                           <ContractorProfileCard
                             key={contractor.id}
-                            contractor={contractor as any}
+                            contractor={contractor as ContractorWithLegacyFields}
                             onClick={() => setSelectedContractorId(contractor.id)}
                             onTogglePreferred={handleTogglePreferred}
                           />
@@ -248,7 +254,7 @@ export default function Contractors() {
                     {preferredContractors.map((contractor) => (
                       <ContractorProfileCard
                         key={contractor.id}
-                        contractor={contractor as any}
+                        contractor={contractor as ContractorWithLegacyFields}
                         onClick={() => setSelectedContractorId(contractor.id)}
                         onTogglePreferred={handleTogglePreferred}
                       />

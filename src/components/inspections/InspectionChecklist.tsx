@@ -111,7 +111,7 @@ export function InspectionChecklist({ inspectionId }: InspectionChecklistProps) 
     updateItem.mutate({
       id: item.id,
       inspection_id: item.inspection_id,
-      photos: newPhotos as any,
+      photos: newPhotos,
     });
 
     setActivePhotoItemId(null);

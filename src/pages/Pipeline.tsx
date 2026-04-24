@@ -75,7 +75,8 @@ function GoLiveTab() {
   }, [developmentProperties]);
 
   const getChecklistProgress = (propertyId: string) => {
-    const checklist = checklists?.find((c: any) => c.property_id === propertyId);
+    const checklist = (checklists as Array<{ property_id: string } & Record<string, unknown>> | undefined)
+      ?.find((c) => c.property_id === propertyId);
     if (!checklist) return 0;
     const fields = Object.entries(checklist).filter(([key]) =>
       key.startsWith('setup_') ||

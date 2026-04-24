@@ -219,7 +219,7 @@ function OfficerRow({
         <div>
           <div className="font-medium">{a.person_name}</div>
           <div className="text-sm text-muted-foreground">
-            <Badge variant={roleConfig.color as any} className="mr-2 text-xs">{roleConfig.label}</Badge>
+            <Badge variant={roleConfig.color as 'default' | 'secondary' | 'destructive' | 'outline'} className="mr-2 text-xs">{roleConfig.label}</Badge>
             Appointed: {format(new Date(a.appointed_date), 'dd MMM yyyy')}
             {a.resigned_date && <> &middot; Resigned: {format(new Date(a.resigned_date), 'dd MMM yyyy')}</>}
             {a.companies_house_id && <> &middot; CH: {a.companies_house_id}</>}

@@ -44,8 +44,8 @@ export function DividendTracker({ entityId, orgId }: DividendTrackerProps) {
         payment_date: new Date().toISOString().split('T')[0],
       });
       toast({ title: 'Dividend marked as paid' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -209,8 +209,8 @@ function DeclareDividendDialog({
       setAmountPerShare('');
       setPaymentDate('');
       setNotes('');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 

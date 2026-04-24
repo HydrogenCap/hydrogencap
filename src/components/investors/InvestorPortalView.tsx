@@ -13,6 +13,48 @@ import { useInvestorCapitalCallItems } from '@/hooks/useInvestorOnboarding';
 import { useInvestorReports } from '@/hooks/useInvestorReports';
 import { formatGBP } from '@/lib/calculations';
 
+interface CommitmentRow {
+  commitment_id: string;
+  entity_name?: string;
+  commitment_type?: string;
+  drawn_amount?: number;
+  equity_percentage?: number | null;
+  status?: string;
+}
+
+interface ReturnMetricRow {
+  commitment_id: string;
+  current_equity_value?: number;
+}
+
+interface DistributionRow {
+  id: string;
+  distribution_date: string;
+  distribution_type: string;
+  amount: number;
+  tax_deducted?: number;
+  net_amount: number;
+  period_from?: string | null;
+  period_to?: string | null;
+  status: string;
+}
+
+interface CapitalCallItemRow {
+  id: string;
+  amount: number;
+  paid_amount?: number;
+  status: string;
+  capital_calls?: { title?: string; due_date?: string } | null;
+}
+
+interface ReportRow {
+  id: string;
+  title: string;
+  report_period_from: string;
+  report_period_to: string;
+  generated_at?: string | null;
+}
+
 const DIST_TYPE_LABEL: Record<string, string> = {
   dividend: 'Dividend',
   interest: 'Interest',
@@ -111,8 +153,8 @@ export function InvestorPortalView({ investorId }: { investorId: string }) {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No investments</TableCell>
                 </TableRow>
-              ) : commitments.map((c: any) => {
-                const metrics = returnMetrics?.find((m: any) => m.commitment_id === c.commitment_id);
+              ) : (commitments as CommitmentRow[]).map((c) => {
+                const metrics = (returnMetrics as ReturnMetricRow[] | undefined)?.find((m) => m.commitment_id === c.commitment_id);
                 const gain = (metrics?.current_equity_value || 0) - (c.drawn_amount || 0);
                 return (
                   <TableRow key={c.commitment_id}>
@@ -170,7 +212,7 @@ export function InvestorPortalView({ investorId }: { investorId: string }) {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No distributions yet</TableCell>
                 </TableRow>
-              ) : distributions.map((d: any) => (
+              ) : (distributions as DistributionRow[]).map((d) => (
                 <TableRow key={d.id}>
                   <TableCell className="text-sm">{format(new Date(d.distribution_date), 'dd MMM yyyy')}</TableCell>
                   <TableCell>
@@ -218,7 +260,7 @@ export function InvestorPortalView({ investorId }: { investorId: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingCalls.map((item: any) => {
+                {(pendingCalls as CapitalCallItemRow[]).map((item) => {
                   const outstanding = item.amount - (item.paid_amount || 0);
                   const isOverdue = item.capital_calls?.due_date && new Date(item.capital_calls.due_date) < new Date();
                   return (
@@ -270,7 +312,7 @@ export function InvestorPortalView({ investorId }: { investorId: string }) {
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">No reports available</TableCell>
                 </TableRow>
-              ) : reports.map((r: any) => (
+              ) : (reports as ReportRow[]).map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">

@@ -200,8 +200,8 @@ function AddShareClassDialog({
       setTotalIssued('100');
       setVotingRights(true);
       setDividendRights(true);
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -293,8 +293,8 @@ function AddShareholderDialog({
       setSharesHeld('');
       setPercentage('');
       setAllotmentDate('');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -315,7 +315,7 @@ function AddShareholderDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Holder Type</Label>
-              <Select value={holderType} onValueChange={(v: any) => setHolderType(v)}>
+              <Select value={holderType} onValueChange={(v) => setHolderType(v as typeof holderType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">Individual</SelectItem>
@@ -415,8 +415,8 @@ function RecordTransferDialog({
       setToHolder('');
       setSharesTransferred('');
       setConsideration('0');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 

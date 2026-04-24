@@ -438,11 +438,11 @@ export default function DocumentTemplates() {
             </div>
             <div>
               <Label>Current Rent (£/month)</Label>
-              <Input type="number" value={templateFields.currentRent || ''} onChange={e => updateField('currentRent', e.target.value as any)} />
+              <Input type="number" value={templateFields.currentRent || ''} onChange={e => updateField('currentRent', e.target.value === '' ? undefined : Number(e.target.value))} />
             </div>
             <div>
               <Label>New Rent (£/month)</Label>
-              <Input type="number" value={templateFields.newRent || ''} onChange={e => updateField('newRent', e.target.value as any)} />
+              <Input type="number" value={templateFields.newRent || ''} onChange={e => updateField('newRent', e.target.value === '' ? undefined : Number(e.target.value))} />
             </div>
             {templateFields.currentRent > 0 && templateFields.newRent > 0 && (
               <p className="text-sm text-muted-foreground">
@@ -468,7 +468,7 @@ export default function DocumentTemplates() {
             </div>
             <div>
               <Label>Guaranteed Amount (£)</Label>
-              <Input type="number" value={templateFields.guaranteedAmount || ''} onChange={e => updateField('guaranteedAmount', e.target.value as any)} />
+              <Input type="number" value={templateFields.guaranteedAmount || ''} onChange={e => updateField('guaranteedAmount', e.target.value === '' ? undefined : Number(e.target.value))} />
             </div>
           </div>
         )}

@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTenantV2, TENANT_TYPES, TENANT_STATUSES, useUpdateTenantV2 } from '@/hooks/useTenantsV2';
+import { useTenantV2, TENANT_TYPES, TENANT_STATUSES, useUpdateTenantV2, type TenantStatusV2 } from '@/hooks/useTenantsV2';
 import { useTenancyAgreements, useTenancyComplianceChecks, TENANCY_TYPES } from '@/hooks/useTenancyAgreements';
 import { useTenantPaymentScore } from '@/hooks/useTenantLifecycle';
 import { getPaymentScoreRating } from '@/lib/tenant-scoring';
@@ -171,7 +171,7 @@ export default function TenantDetailV2() {
   const handleStatusTransition = (newStatus: string) => {
     if (!id) return;
     updateTenant.mutate(
-      { id, status: newStatus as any },
+      { id, status: newStatus as TenantStatusV2 },
       {
         onSuccess: () => {
           toast({ title: 'Status updated', description: `Tenant status changed to ${newStatus}.` });

@@ -13,6 +13,7 @@ import {
   usePlanningApplications,
   useCreatePlanningApplication,
   useUpdatePlanningApplication,
+  type PlanningApplication,
 } from '@/hooks/useCapexUpgrade';
 
 const APP_TYPE_LABELS: Record<string, string> = {
@@ -146,7 +147,7 @@ export default function PlanningTracker({ projectId, propertyId }: { projectId: 
                                   onCheckedChange={(checked) => {
                                     const updated = [...conditions];
                                     updated[i] = { ...cond, discharged: !!checked };
-                                    updateApp.mutate({ id: app.id, conditions: updated as any });
+                                    updateApp.mutate({ id: app.id, conditions: updated });
                                   }}
                                 />
                                 <span className={cond.discharged ? 'line-through text-muted-foreground' : ''}>
@@ -186,7 +187,7 @@ export default function PlanningTracker({ projectId, propertyId }: { projectId: 
                       {/* Update status */}
                       <div>
                         <Label className="text-xs">Update Status</Label>
-                        <Select value={app.status} onValueChange={(val) => updateApp.mutate({ id: app.id, status: val as any })}>
+                        <Select value={app.status} onValueChange={(val) => updateApp.mutate({ id: app.id, status: val as PlanningApplication['status'] })}>
                           <SelectTrigger className="w-48 mt-1"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {STATUS_PIPELINE.map(s => (
@@ -225,7 +226,7 @@ function AddApplicationDialog({ open, onOpenChange, projectId, propertyId }: {
     create.mutate({
       property_id: propertyId,
       project_id: projectId,
-      application_type: appType as any,
+      application_type: appType as PlanningApplication['application_type'],
       reference_number: refNumber || null,
       submitted_date: submittedDate || null,
       authority_name: authority || null,

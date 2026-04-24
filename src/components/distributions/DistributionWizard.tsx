@@ -165,10 +165,13 @@ export function DistributionWizard({ open, onOpenChange, existingRunId }: Distri
   // Build ownership list from shareholders
   const ownerships: EntityOwnership[] = useMemo(() => {
     if (!shareholders?.length) return [];
-    const investorMap = new Map((investors as any[])?.map((i: any) => [i.id, i]) || []);
+    type InvestorRow = { id: string; [key: string]: unknown };
+    type ShareholderRow = { id: string; shareholder_entity_id?: string | null };
+    const investorRows = (investors as InvestorRow[] | undefined) ?? [];
+    const investorMap = new Map(investorRows.map((i) => [i.id, i]));
 
-    return shareholders.map(s => {
-      const investorId = (s as any).shareholder_entity_id;
+    return (shareholders as ShareholderRow[]).map(s => {
+      const investorId = s.shareholder_entity_id;
       const inv = investorId ? investorMap.get(investorId) : null;
       return {
         investorId: investorId || s.id,

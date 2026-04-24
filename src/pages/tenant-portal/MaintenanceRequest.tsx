@@ -21,6 +21,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/lib/maintenanceTypes';
 import { autoClassifyHazard, calculateDeadlines } from '@/hooks/useAwaabsLawCompliance';
+import type { MaintenanceCategory } from '@/lib/maintenanceTypes';
 
 const CATEGORIES = [
   { value: 'plumbing', label: 'Plumbing' },
@@ -152,7 +153,7 @@ export default function MaintenanceRequest() {
       // Awaab's Law: auto-classify hazard and calculate statutory deadlines
       const now = new Date();
       const hazardCategory = autoClassifyHazard(
-        category as any,
+        category as MaintenanceCategory,
         description,
         urgency
       );

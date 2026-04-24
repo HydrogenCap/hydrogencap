@@ -131,7 +131,7 @@ export function useCreateVoid() {
           start_date: input.startDate,
           reason: input.reason || null,
           estimated_monthly_cost: input.estimatedMonthlyCost || null,
-        } as any)
+        })
         .select()
         .single();
 
@@ -168,7 +168,7 @@ export function useEndVoid() {
 
       const { data, error } = await supabaseAny
         .from('void_periods')
-        .update(updates as any)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();

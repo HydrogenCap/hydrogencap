@@ -32,7 +32,8 @@ export function useOrgMembers() {
         .select('user_id, email, full_name')
         .in('user_id', userIds);
 
-      const profileMap = new Map((profiles as any[])?.map((p: any) => [p.user_id, p]) ?? []);
+      type ProfileRow = { user_id: string; email?: string; full_name?: string };
+      const profileMap = new Map(((profiles ?? []) as ProfileRow[]).map((p) => [p.user_id, p]));
 
       return data.map(m => ({
         ...m,

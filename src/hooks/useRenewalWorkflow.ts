@@ -293,12 +293,12 @@ export function useCompleteRenewal() {
 
         if (openTask) {
           const userId = (await supabase.auth.getUser()).data.user?.id;
-          await supabase.from('compliance_tasks').update({
+          await supabaseAny.from('compliance_tasks').update({
             status: 'completed',
             resolved_at: new Date().toISOString(),
             resolved_by: userId,
             resolution_notes: `Renewal completed for ${data.compliance_type}`,
-          } as any).eq('id', openTask.id);
+          }).eq('id', openTask.id);
         }
       } catch (e) {
         console.warn('Failed to auto-close compliance task:', e);

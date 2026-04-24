@@ -96,7 +96,10 @@ export function useMortgageApplications(propertyId?: string) {
 
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
-      return ((data || []) as any[]).map((d: any) => ({
+      type AppWithNested = MortgageApplication & {
+        properties_v2?: { address_line_1?: string; postcode?: string } | null;
+      };
+      return ((data || []) as AppWithNested[]).map((d) => ({
         ...d,
         property_address: `${d.properties_v2?.address_line_1}, ${d.properties_v2?.postcode}`,
         properties_v2: undefined,

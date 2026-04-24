@@ -14,6 +14,7 @@ import {
   useUpdateFilingDeadline,
   useDeleteFilingDeadline,
   type CompanyFilingDeadline,
+  type FilingStatus,
   type FilingType,
 } from '@/hooks/useEntityCompliance';
 import { useOrganization } from '@/hooks/useOrganization';
@@ -120,7 +121,7 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
         await updateFiling.mutateAsync({
           id: editing.id,
           ...formData,
-          status: formData.status as any,
+          status: formData.status as FilingStatus,
           filed_date: formData.filed_date || null,
           reference: formData.reference || null,
           document_url: formData.document_url || null,
@@ -131,7 +132,7 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
           entity_id: entityId,
           org_id: org.id,
           ...formData,
-          status: formData.status as any,
+          status: formData.status as FilingStatus,
           filed_date: formData.filed_date || null,
           reference: formData.reference || null,
           document_url: formData.document_url || null,

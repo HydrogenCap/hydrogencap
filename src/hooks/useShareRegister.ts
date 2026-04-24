@@ -234,7 +234,7 @@ export function useUpdateShareholding() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Shareholding> & { id: string; entity_id: string }) => {
-      const { share_class, ...rest } = updates as any;
+      const { share_class: _share_class, ...rest } = updates as Partial<Shareholding> & { share_class?: unknown };
       const { data, error } = await supabaseAny
         .from('shareholdings')
         .update(rest)
@@ -464,7 +464,7 @@ export function useUpdateEntityDividend() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<EntityDividend> & { id: string; entity_id: string }) => {
-      const { share_class, ...rest } = updates as any;
+      const { share_class: _share_class, ...rest } = updates as Partial<Shareholding> & { share_class?: unknown };
       const { data, error } = await supabaseAny
         .from('entity_dividends')
         .update(rest)

@@ -290,7 +290,7 @@ export function ComparableEvidenceLog({ propertyId }: ComparableEvidenceLogProps
             </div>
             <div className="grid gap-2">
               <Label>Source</Label>
-              <Select value={form.source} onValueChange={(v) => setForm((f) => ({ ...f, source: v as any }))}>
+              <Select value={form.source} onValueChange={(v) => setForm((f) => ({ ...f, source: v as NonNullable<ValuationComparableInsert['source']> }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="land_registry">Land Registry</SelectItem>

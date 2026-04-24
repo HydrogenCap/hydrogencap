@@ -20,7 +20,13 @@ import {
   useDeleteWarranty,
   useExpiringWarranties,
   useAllActiveWarranties,
+  type WorkOrderWarranty,
 } from '@/hooks/useWorkOrderLifecycle';
+
+type WarrantyWithJoins = WorkOrderWarranty & {
+  work_order?: { id: string; wo_number: string; title: string } | null;
+  property?: { id: string; address_line_1: string; city: string } | null;
+};
 
 // ─── Single WO Warranty Section ─────────────────────────────────────
 
@@ -231,7 +237,7 @@ export function WarrantyDashboard() {
   const { data: activeWarranties, isLoading: loadingActive } = useAllActiveWarranties();
   const { data: expiringWarranties, isLoading: _loadingExpiring } = useExpiringWarranties(90);
 
-  const expiringSoon = (expiringWarranties || []).filter((w: any) => getDaysUntilExpiry(w.warranty_end) <= 90);
+  const expiringSoon = ((expiringWarranties || []) as WarrantyWithJoins[]).filter((w) => getDaysUntilExpiry(w.warranty_end) <= 90);
 
   return (
     <div className="space-y-6">
@@ -246,7 +252,7 @@ export function WarrantyDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {expiringSoon.map((w: any) => (
+              {expiringSoon.map((w) => (
                 <div key={w.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{w.description}</p>
@@ -281,7 +287,7 @@ export function WarrantyDashboard() {
             <p className="text-sm text-muted-foreground text-center py-4">No active warranties</p>
           ) : (
             <div className="space-y-2">
-              {activeWarranties!.map((w: any) => (
+              {(activeWarranties as WarrantyWithJoins[]).map((w) => (
                 <div key={w.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{w.description}</p>

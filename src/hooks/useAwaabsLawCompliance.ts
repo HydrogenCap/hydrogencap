@@ -184,7 +184,7 @@ export function useActiveHazards() {
         .order('reported_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as any[];
+      return (data || []) as unknown[];
     },
     refetchInterval: 60_000, // Poll every minute for deadline accuracy
   });
@@ -587,24 +587,31 @@ export function useComplianceStats() {
         .gte('reported_at', monthStart);
       if (mErr) throw mErr;
 
-      const requests = (monthly || []) as any[];
+      type HazardRow = {
+        id: string;
+        reported_at: string | null;
+        investigation_started_at: string | null;
+        repair_completed_at: string | null;
+        escalation_level: EscalationLevel;
+      };
+      const requests = (monthly || []) as HazardRow[];
       const totalHazards = requests.length;
 
       // Avg response time (reported → investigation started)
       const responseTimes = requests
-        .filter((r: any) => r.investigation_started_at && r.reported_at)
-        .map((r: any) => {
-          const reported = new Date(r.reported_at).getTime();
-          const investigated = new Date(r.investigation_started_at).getTime();
+        .filter((r) => r.investigation_started_at && r.reported_at)
+        .map((r) => {
+          const reported = new Date(r.reported_at!).getTime();
+          const investigated = new Date(r.investigation_started_at!).getTime();
           return (investigated - reported) / (1000 * 60 * 60);
         });
 
       const avgResponseTime = responseTimes.length > 0
-        ? responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length
+        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
         : null;
 
       // Breach count
-      const breachCount = requests.filter((r: any) => r.escalation_level === 'breach').length;
+      const breachCount = requests.filter((r) => r.escalation_level === 'breach').length;
 
       // Compliance rate
       const complianceRate = totalHazards > 0

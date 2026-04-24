@@ -99,7 +99,7 @@ export function ValuationRecordForm({ propertyId, open, onOpenChange }: Valuatio
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label>Basis of Value</Label>
-              <Select value={form.basis_of_value} onValueChange={(v) => setForm((f) => ({ ...f, basis_of_value: v as any }))}>
+              <Select value={form.basis_of_value} onValueChange={(v) => setForm((f) => ({ ...f, basis_of_value: v as NonNullable<ValuationHistoryInsert['basis_of_value']> }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {BASIS_OPTIONS.map((o) => (
@@ -110,7 +110,7 @@ export function ValuationRecordForm({ propertyId, open, onOpenChange }: Valuatio
             </div>
             <div className="grid gap-2">
               <Label>Valuation Type</Label>
-              <Select value={form.valuation_type} onValueChange={(v) => setForm((f) => ({ ...f, valuation_type: v as any }))}>
+              <Select value={form.valuation_type} onValueChange={(v) => setForm((f) => ({ ...f, valuation_type: v as NonNullable<ValuationHistoryInsert['valuation_type']> }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TYPE_OPTIONS.map((o) => (

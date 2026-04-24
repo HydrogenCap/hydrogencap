@@ -206,7 +206,7 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={statusConfig.variant as any}>{statusConfig.label}</Badge>
+                      <Badge variant={statusConfig.variant as 'default' | 'secondary' | 'destructive' | 'outline'}>{statusConfig.label}</Badge>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(loan)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>

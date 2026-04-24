@@ -181,8 +181,10 @@ export function useLeaseholdAlerts() {
 
       if (v1Error) throw v1Error;
 
-      const propMap = new Map((properties as any[])?.map((p: any) => [p.id, p]) ?? []);
-      const v1Map = new Map((v1Props as any[])?.map((p: any) => [p.id, p.lease_years_remaining]) ?? []);
+      type PropertyV2Row = { id: string; address_line_1: string; city: string; org_id: string };
+      type V1PropertyRow = { id: string; lease_years_remaining: number | null };
+      const propMap = new Map(((properties ?? []) as PropertyV2Row[]).map((p) => [p.id, p]));
+      const v1Map = new Map(((v1Props ?? []) as V1PropertyRow[]).map((p) => [p.id, p.lease_years_remaining]));
 
       const alerts: LeaseholdAlert[] = [];
       const now = new Date();

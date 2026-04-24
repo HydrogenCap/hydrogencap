@@ -93,7 +93,7 @@ export function useAdvanceWorkOrder() {
       const stageConfig = PIPELINE_STAGES.find(s => s.value === targetStage);
       if (!stageConfig) throw new Error('Invalid stage');
 
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         status: stageConfig.statusMap,
         updated_at: new Date().toISOString(),
       };
@@ -131,7 +131,7 @@ export function useApproveWorkOrderLifecycle() {
   return useMutation({
     mutationFn: async ({ id, approvedBudget }: { id: string; approvedBudget: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         status: 'approved',
         approval_status: 'approved',
         approved_budget: approvedBudget,
@@ -165,7 +165,7 @@ export function useRejectWorkOrderLifecycle() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         status: 'rejected',
         approval_status: 'rejected',
         rejected_reason: reason,

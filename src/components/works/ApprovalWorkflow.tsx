@@ -34,7 +34,16 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
   const [approvedBudget, setApprovedBudget] = useState('');
   const [rejectReason, setRejectReason] = useState('');
 
-  const selectedWO = (pendingWOs || []).find((w: any) => w.id === selectedId);
+  type PendingWO = {
+    id: string;
+    wo_number?: string;
+    title?: string;
+    estimated_cost?: number | null;
+    requested_date?: string | null;
+    entity?: { entity_name?: string } | null;
+    property?: { address_line_1?: string } | null;
+  };
+  const selectedWO = ((pendingWOs || []) as PendingWO[]).find((w) => w.id === selectedId);
 
   const handleApprove = async () => {
     if (!selectedId || !approvedBudget) return;
@@ -68,7 +77,7 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {pendingWOs.map((wo: any) => {
+          {(pendingWOs as PendingWO[]).map((wo) => {
             const overThreshold = wo.estimated_cost && wo.estimated_cost >= defaultThreshold;
             return (
               <div

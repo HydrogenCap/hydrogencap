@@ -89,7 +89,15 @@
        if (tenanciesError) throw tenanciesError;
  
        // Map tenancies to rooms
-       const tenancyMap = new Map((tenancies as any[]).map((t: any) => [t.room_id, t]));
+       type TenancyRow = {
+         id: string;
+         room_id: string;
+         rent_amount_pcm: number;
+         start_date: string;
+         end_date: string | null;
+         tenant: { id: string; first_name: string; last_name: string } | null;
+       };
+       const tenancyMap = new Map(((tenancies ?? []) as TenancyRow[]).map((t) => [t.room_id, t]));
  
        return rooms.map(room => ({
          ...room,

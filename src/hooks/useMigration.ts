@@ -139,7 +139,7 @@ export function useMigrationStatus() {
   });
 }
 
-type MigrationFunctionName =
+export type MigrationFunctionName =
   | 'migrate_companies_to_entities'
   | 'migrate_properties_to_v2'
   | 'migrate_rooms_to_v2'

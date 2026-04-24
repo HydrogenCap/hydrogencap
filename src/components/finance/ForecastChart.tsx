@@ -107,7 +107,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
         <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={360}>
-            <ComposedChart data={chartData as any[]} margin={CHART_DEFAULTS.margin}>
+            <ComposedChart data={chartData} margin={CHART_DEFAULTS.margin}>
               <CartesianGrid
                 strokeDasharray={CHART_DEFAULTS.gridStrokeDasharray}
                 stroke={CHART_DEFAULTS.gridStroke}

@@ -16,7 +16,7 @@ vi.mock('@/hooks/useDashboardDataV2', () => ({
   useDashboardPropertiesV2: () => ({ data: null }),
 }));
 vi.mock('@/contexts/LifecycleFilterContext', () => ({
-  useLifecycleFilter: () => ({ lifecycleFilter: 'all', filterProperties: (p: any) => p }),
+  useLifecycleFilter: () => ({ lifecycleFilter: 'all', filterProperties: <T,>(p: T) => p }),
 }));
 vi.mock('@/hooks/useRentCollection', () => ({
   useRentSchedule: () => ({ data: null }),

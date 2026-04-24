@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { 
@@ -261,7 +261,7 @@ export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <h4 className="font-medium">Full Address</h4>
               </div>
-              <AddressEditor form={form as any} />
+              <AddressEditor form={form as unknown as UseFormReturn<Record<string, unknown>>} />
             </div>
 
             <Separator />

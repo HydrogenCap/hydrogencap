@@ -169,7 +169,7 @@ function SavedForecastsTab() {
 
   const handleDelete = async (id: string) => {
     const { error } = await supabaseAny
-      .from('financial_forecasts' as any)
+      .from('financial_forecasts')
       .delete()
       .eq('id', id);
 

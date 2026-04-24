@@ -254,7 +254,7 @@ function PoliciesTable() {
         }
       );
     } else {
-      createPolicy.mutate(data as any, {
+      createPolicy.mutate(data as unknown as Parameters<typeof createPolicy.mutate>[0], {
         onSuccess: () => {
           setShowPolicyForm(false);
         },
