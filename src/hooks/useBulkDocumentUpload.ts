@@ -149,7 +149,7 @@ export function useBulkDocumentUpload() {
     // Step 2: Call categorise-documents edge function
     updateItem(item.id, { status: 'classifying' });
     try {
-      const { data: catResult, error: catErr } = await supabase.functions.invoke('categorise-documents', {
+      const { data: _catResult, error: catErr } = await supabase.functions.invoke('categorise-documents', {
         body: { dryRun: false, documentIds: [docRecord.id] },
       });
 

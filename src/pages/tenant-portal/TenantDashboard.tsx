@@ -16,7 +16,7 @@ import { formatGBP } from '@/lib/calculations';
 import { STATUS_CONFIG } from '@/lib/maintenanceTypes';
 
 export default function TenantDashboard() {
-  const { tenancyId, tenantId, orgId, canViewRent, canSubmitMaintenance } = useTenantPortalSession();
+  const { tenancyId, tenantId, orgId: _orgId, canViewRent, canSubmitMaintenance } = useTenantPortalSession();
 
   const { data: tenancy, isLoading: tenancyLoading } = useQuery({
     queryKey: ['tenant-dashboard-tenancy', tenancyId],

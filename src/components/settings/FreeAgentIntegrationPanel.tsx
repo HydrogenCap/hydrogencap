@@ -115,7 +115,7 @@ function CategoryMapping({ connection }: { connection: FreeAgentConnection }) {
 
 export function FreeAgentIntegrationPanel() {
   const [searchParams] = useSearchParams();
-  const { data: entities, isLoading: entitiesLoading } = useLegalEntities();
+  const { data: entities, isLoading: _entitiesLoading } = useLegalEntities();
   const { data: orgId } = useUserOrg();
   const { data: connections, isLoading: connectionsLoading } = useFreeAgentConnections();
   const disconnect = useDisconnectFreeAgent();

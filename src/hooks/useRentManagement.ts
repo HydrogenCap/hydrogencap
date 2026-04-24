@@ -28,7 +28,7 @@ export function useRentKPIs() {
     queryKey: ['rent_kpis', orgId],
     queryFn: async () => {
       const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
+      const _todayStr = today.toISOString().split('T')[0];
       const thisMonthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
       const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
       const nextMonthStart = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;

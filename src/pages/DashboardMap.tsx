@@ -41,7 +41,7 @@ export default function DashboardMap() {
   const [renewalDays, setRenewalDays] = useState<30 | 60 | 90 | undefined>();
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedLender, setSelectedLender] = useState<string>('');
-  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [selectedProperties, _setSelectedProperties] = useState<string[]>([]);
 
   // Extract unique cities and lenders for filters
   const filterOptions = useMemo(() => {

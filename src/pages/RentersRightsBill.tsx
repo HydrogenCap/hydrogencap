@@ -362,7 +362,7 @@ export default function RentersRightsBill() {
               <div className="space-y-2">
                 {complaints.map(c => {
                   const days = differenceInDays(new Date(), parseISO(c.reported_date));
-                  const { label, variant, color } = awaaabStatus(days);
+                  const { label, variant, color: _color } = awaaabStatus(days);
                   return (
                     <div key={c.id} className="flex items-start justify-between gap-3 border rounded-lg p-3">
                       <div className="min-w-0 flex-1">

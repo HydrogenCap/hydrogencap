@@ -289,7 +289,7 @@ export function useRecordCapitalPayment() {
       if (allItems) {
         const totalPaid = allItems.reduce((s: number, i: CapitalCallItem) =>
           s + (i.id === data.itemId ? newPaidAmount : (i.paid_amount || 0)), 0);
-        const totalAmount = allItems.reduce((s: number, i: CapitalCallItem) => s + i.amount, 0);
+        const _totalAmount = allItems.reduce((s: number, i: CapitalCallItem) => s + i.amount, 0);
         const allPaid = allItems.every((i: CapitalCallItem) =>
           i.id === data.itemId ? newPaidAmount >= i.amount : i.status === 'paid');
 

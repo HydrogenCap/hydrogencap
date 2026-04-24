@@ -122,7 +122,7 @@ export function useBulkDocScanner() {
         title_number: null,
       }));
 
-      const { data: result, error: fnErr } = await supabase.functions.invoke('process-document', {
+      const { data: _result, error: fnErr } = await supabase.functions.invoke('process-document', {
         body: {
           documentId: docRecord.id,
           fileUrl: signedUrl,

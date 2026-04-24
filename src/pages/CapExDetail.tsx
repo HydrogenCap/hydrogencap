@@ -40,7 +40,7 @@ export default function CapExDetail() {
   const { data: project, isLoading } = useCapexProject(id!);
   const updateProject = useUpdateCapexProject();
   const addLineItem = useAddCapexLineItem();
-  const updateLineItem = useUpdateCapexLineItem();
+  const _updateLineItem = useUpdateCapexLineItem();
   const deleteLineItem = useDeleteCapexLineItem();
   const completeProject = useCompleteCapexProject();
 

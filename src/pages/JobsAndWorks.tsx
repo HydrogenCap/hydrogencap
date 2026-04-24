@@ -19,7 +19,7 @@ export default function JobsAndWorks() {
   const { data: jobCounts } = useJobCounts();
   const maintenanceStats = useMaintenanceStats();
   const { data: woCounts } = useWorkOrderCounts();
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedJobId, _setSelectedJobId] = useState<string | null>(null);
   const [ratingData, setRatingData] = useState<{
     contractorId: string;
     contractorName: string;

@@ -28,7 +28,7 @@ interface ShareRegisterProps {
 }
 
 export function ShareRegister({ entityId, orgId }: ShareRegisterProps) {
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   const { data: shareClasses = [], isLoading: loadingClasses } = useShareClasses(entityId);
   const { data: shareholdings = [], isLoading: loadingHoldings } = useShareholdings(entityId);
 

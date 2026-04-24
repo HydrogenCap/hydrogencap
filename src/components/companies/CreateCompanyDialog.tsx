@@ -50,7 +50,7 @@ export function CreateCompanyDialog({
   const createCompany = useCreateCompany();
 
   const [tab, setTab] = useState<'search' | 'manual'>('search');
-  const [selectedCompany, setSelectedCompany] = useState<CHCompanySearchResult | null>(null);
+  const [_selectedCompany, setSelectedCompany] = useState<CHCompanySearchResult | null>(null);
   const [chDetails, setChDetails] = useState<CHLookupResult | null>(null);
 
   // Manual entry fields

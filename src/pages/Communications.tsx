@@ -51,8 +51,8 @@ const CHANNEL_LABELS: Record<CommunicationChannel, string> = {
 
 export default function Communications() {
   const [showLog, setShowLog] = useState(false);
-  const [dirFilter, setDirFilter] = useState<CommunicationDirection | 'all'>('all');
-  const [channelFilter, setChannelFilter] = useState<CommunicationChannel | 'all'>('all');
+  const [_dirFilter, _setDirFilter] = useState<CommunicationDirection | 'all'>('all');
+  const [_channelFilter, _setChannelFilter] = useState<CommunicationChannel | 'all'>('all');
 
   const { data: allComms = [] } = useCommunications();
 

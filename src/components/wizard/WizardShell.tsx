@@ -94,7 +94,7 @@ export function WizardShell({
   }, [payload, steps, crossChecks]);
 
   // Current step issues
-  const currentStepIssues = useMemo(() => {
+  const _currentStepIssues = useMemo(() => {
     const result = steps[currentStep]?.validate(payload);
     return result?.errors || [];
   }, [payload, currentStep, steps]);

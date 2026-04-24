@@ -114,7 +114,7 @@ function formatDate(d: string | null | undefined): string {
   }
 }
 
-function formatDateShort(d: string | null | undefined): string {
+function _formatDateShort(d: string | null | undefined): string {
   if (!d) return '';
   try {
     return format(new Date(d), 'dd/MM/yyyy');

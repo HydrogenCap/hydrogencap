@@ -49,7 +49,7 @@ export function RentCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const monthStr = format(currentDate, 'yyyy-MM');
-  const { data: entries, isLoading } = useRentCalendar(monthStr);
+  const { data: entries, isLoading: _isLoading } = useRentCalendar(monthStr);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);

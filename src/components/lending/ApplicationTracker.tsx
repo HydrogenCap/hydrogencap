@@ -20,7 +20,7 @@ interface Props {
 
 const STATUS_ORDER = APPLICATION_STATUSES.map((s) => s.value);
 
-function getStageIndex(status: string): number {
+function _getStageIndex(status: string): number {
   const idx = PIPELINE_STAGES.findIndex((s) => s.value === status);
   if (status === 'researching') return -1;
   if (status === 'dip_approved') return 0;

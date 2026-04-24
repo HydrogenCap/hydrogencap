@@ -348,7 +348,7 @@ export function generateActionItems(
   properties: PropertyWithFinancials[]
 ): ActionItem[] {
   const actions: ActionItem[] = [];
-  const propertyMap = new Map(properties.map(p => [p.id, p.address_line]));
+  const _propertyMap = new Map(properties.map(p => [p.id, p.address_line]));
 
   // High LTV (>85%)
   if (insights.risk.ltvAbove85.count > 0) {

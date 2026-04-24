@@ -25,7 +25,7 @@ interface RoomEditor {
 }
 
 export function InspectionTemplateEditor() {
-  const { data: templates = [], isLoading } = useInspectionTemplates();
+  const { data: templates = [], _isLoading } = useInspectionTemplates();
   const createTemplate = useCreateInspectionTemplate();
   const updateTemplate = useUpdateInspectionTemplate();
   const deleteTemplate = useDeleteInspectionTemplate();

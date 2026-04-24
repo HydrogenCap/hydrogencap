@@ -42,7 +42,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
   const createProperty = useCreatePropertyV2();
   const bulkCreateRooms = useBulkCreateRooms();
   const createLoan = useCreateLoanFacility();
-  const createLender = useCreateLender();
+  const _createLender = useCreateLender();
 
   const TOTAL_STEPS = STEP_LABELS.length;
 

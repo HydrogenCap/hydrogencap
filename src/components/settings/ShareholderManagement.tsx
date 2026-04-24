@@ -70,7 +70,7 @@ export function ShareholderManagement() {
   };
 
   const pendingInvites = invites?.filter((i) => !i.accepted_at && !isPast(new Date(i.expires_at))) || [];
-  const expiredInvites = invites?.filter((i) => !i.accepted_at && isPast(new Date(i.expires_at))) || [];
+  const _expiredInvites = invites?.filter((i) => !i.accepted_at && isPast(new Date(i.expires_at))) || [];
 
   return (
     <Card>

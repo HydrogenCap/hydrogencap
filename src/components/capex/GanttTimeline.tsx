@@ -26,7 +26,7 @@ export default function GanttTimeline({ projectId }: { projectId: string }) {
   const [showAdd, setShowAdd] = useState(false);
   const [hoveredPhase, setHoveredPhase] = useState<string | null>(null);
 
-  const { timelineStart, timelineEnd, totalDays } = useMemo(() => {
+  const { timelineStart, timelineEnd: _timelineEnd, totalDays } = useMemo(() => {
     if (phases.length === 0) {
       const now = new Date();
       return { timelineStart: now, timelineEnd: now, totalDays: 1 };

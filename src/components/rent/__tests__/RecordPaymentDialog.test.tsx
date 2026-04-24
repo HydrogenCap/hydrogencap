@@ -40,7 +40,7 @@ describe('RecordPaymentDialog', () => {
   });
 
   it('renders nothing visible when item is null and receipt is not showing', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <RecordPaymentDialog item={null} open={false} onOpenChange={() => {}} />,
     );
     // Only receipt dialog rendered (but closed)

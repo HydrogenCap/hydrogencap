@@ -46,7 +46,7 @@ export function BeneficialGroupsSettings() {
   const removeMapping = useRemoveEntityMapping();
 
   const [newGroupName, setNewGroupName] = useState('');
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [_editingGroupId, _setEditingGroupId] = useState<string | null>(null);
   const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
   const [selectedGroupForAdd, setSelectedGroupForAdd] = useState<string>('');
   const [selectedEntityForAdd, setSelectedEntityForAdd] = useState<string>('');

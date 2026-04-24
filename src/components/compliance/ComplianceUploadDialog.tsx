@@ -60,7 +60,7 @@ export function ComplianceUploadDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
+  const [_createdItemId, setCreatedItemId] = useState<string | null>(null);
   const { toast } = useToast();
   
   const uploadDocument = useUploadComplianceDocument();

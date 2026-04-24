@@ -229,7 +229,7 @@ export function WarrantyTracker({ workOrderId, propertyId }: WarrantyTrackerProp
 
 export function WarrantyDashboard() {
   const { data: activeWarranties, isLoading: loadingActive } = useAllActiveWarranties();
-  const { data: expiringWarranties, isLoading: loadingExpiring } = useExpiringWarranties(90);
+  const { data: expiringWarranties, isLoading: _loadingExpiring } = useExpiringWarranties(90);
 
   const expiringSoon = (expiringWarranties || []).filter((w: any) => getDaysUntilExpiry(w.warranty_end) <= 90);
 

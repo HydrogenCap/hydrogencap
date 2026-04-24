@@ -111,9 +111,9 @@ export function TransactionLedger() {
       }
       const header = lines[0].toLowerCase();
       const hasDate = header.includes('date');
-      const hasDesc = header.includes('description') || header.includes('desc');
+      const _hasDesc = header.includes('description') || header.includes('desc');
       const hasAmount = header.includes('amount');
-      const hasCategory = header.includes('category') || header.includes('cat');
+      const _hasCategory = header.includes('category') || header.includes('cat');
 
       if (!hasDate || !hasAmount) {
         toast.error('CSV must contain at least Date and Amount columns');

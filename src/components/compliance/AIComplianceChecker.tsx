@@ -34,9 +34,9 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     runAnalysis,
     canAnalyze,
     getHighPriorityItems,
-    getMissingItems,
+    _getMissingItems,
     getExpiringItems,
-    getActionableInsights,
+    _getActionableInsights,
   } = useAIComplianceChecker(propertyId);
 
   if (isLoading) {
@@ -65,7 +65,7 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     }
   };
 
-  const priorityBadge = (priority: string) => {
+  const _priorityBadge = (priority: string) => {
     const variants: Record<string, string> = {
       high: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       medium: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -74,7 +74,7 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     return <Badge className={variants[priority] || variants.low}>{priority}</Badge>;
   };
 
-  const insightIcon = (type: string) => {
+  const _insightIcon = (type: string) => {
     switch (type) {
       case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
       case 'suggestion': return <Lightbulb className="h-4 w-4 text-blue-500" />;

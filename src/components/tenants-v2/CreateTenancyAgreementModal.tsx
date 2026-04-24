@@ -124,7 +124,7 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
 
   const handleSubmit = async (values: FormData) => {
     try {
-      const result = await createAgreement.mutateAsync({
+      const _result = await createAgreement.mutateAsync({
         tenant_id: values.tenant_id,
         property_id: values.property_id,
         room_id: values.room_id,

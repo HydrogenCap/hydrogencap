@@ -46,10 +46,10 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
-  const { data: messages, isLoading: messagesLoading } = useChatMessages(activeConversationId);
+  const { data: messages, isLoading: _messagesLoading } = useChatMessages(activeConversationId);
   const deleteConversation = useDeleteConversation();
   const { sendMessage: sendChatMessage, isLoading, activeTools, optimisticMessages } = useChat();
 

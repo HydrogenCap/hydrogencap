@@ -61,7 +61,7 @@ export default function WorkOrdersTab() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const { data: counts } = useWorkOrderCounts();
-  const { data: workOrders, isLoading } = useWorkOrders({
+  const { data: workOrders, isLoading: _isLoading } = useWorkOrders({
     category: categoryFilter !== 'all' ? categoryFilter as WOCategory : undefined,
   });
 

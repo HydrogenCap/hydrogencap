@@ -58,7 +58,7 @@ function fmtRent(v: number | null | undefined) {
 function getLabel(arr: readonly { value: string; label: string }[], v: string) {
   return arr.find(x => x.value === v)?.label || v;
 }
-function ComplianceRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
+function _ComplianceRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
     <div className="flex items-center justify-between text-sm py-1">
       <span className="text-muted-foreground">{label}</span>

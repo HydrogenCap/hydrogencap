@@ -560,7 +560,7 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
     issue => issue.priority !== 'high' || issue.affectedProperties.length === 0
   );
 
-  const completeCategories = qualityAnalysis.issues.filter(
+  const _completeCategories = qualityAnalysis.issues.filter(
     issue => issue.affectedProperties.length === 0
   ).length;
 
