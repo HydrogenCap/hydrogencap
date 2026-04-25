@@ -236,7 +236,7 @@ export default function TaxDashboard() {
                             tick={{ fontSize: 12 }}
                           />
                           <Tooltip
-                            formatter={(value: number) => [fmt(value), 'Tax']}
+                            formatter={(value) => [fmt(value), 'Tax']}
                             contentStyle={{
                               backgroundColor: 'hsl(var(--card))',
                               border: '1px solid hsl(var(--border))',

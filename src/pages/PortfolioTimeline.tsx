@@ -164,7 +164,7 @@ export default function PortfolioTimeline() {
                     width={72}
                   />
                   <Tooltip
-                    formatter={(value: number, name: string) => [fmtM(value), name]}
+                    formatter={(value, name) => [fmtM(value), name]}
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       borderColor: 'hsl(var(--border))',

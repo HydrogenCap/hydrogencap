@@ -142,7 +142,7 @@ function VoidMonthlyChart({ activeVoids, history }: { activeVoids: ActiveVoid[];
                 borderColor: 'hsl(var(--border))',
                 color: 'hsl(var(--foreground))',
               }}
-              formatter={(value: number) => [`${value} days`, 'Void Days']}
+              formatter={(value) => [`${value} days`, 'Void Days']}
             />
             <Bar
               dataKey="voidDays"

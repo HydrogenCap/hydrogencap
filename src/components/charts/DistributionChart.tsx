@@ -84,7 +84,7 @@ export function DistributionChart({
               }
             />
             <Tooltip
-              formatter={(value: number) => [formatValue(value), '']}
+              formatter={(value) => [formatValue(value), '']}
               {...CHART_TOOLTIP_STYLE}
             />
             <Bar

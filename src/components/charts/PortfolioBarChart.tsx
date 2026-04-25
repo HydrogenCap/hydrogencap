@@ -79,7 +79,7 @@ export function PortfolioBarChart<T extends Record<string, unknown>>({
               tickFormatter={(v) => formatValue(v)}
             />
             <Tooltip
-              formatter={(value: number) => [formatValue(value), '']}
+              formatter={(value) => [formatValue(value), '']}
               {...CHART_TOOLTIP_STYLE}
             />
             <Bar

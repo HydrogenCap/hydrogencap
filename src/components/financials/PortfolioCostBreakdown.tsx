@@ -41,7 +41,7 @@ export function PortfolioCostBreakdown({ data }: Props) {
               <Pie data={data} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} paddingAngle={2}>
                 {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip formatter={(v: number) => formatGBPDecimal(v)} />
+              <Tooltip formatter={(v) => formatGBPDecimal(v)} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-col gap-2">

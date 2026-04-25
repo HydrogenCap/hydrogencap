@@ -253,8 +253,8 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
                     tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + '…' : value}
                   />
                   <Tooltip
-                    formatter={(value, _name, item: TooltipPayload<number, string>) => {
-                      const payload = item.payload as AreaBucket | undefined;
+                    formatter={(value, _name, item) => {
+                      const payload = (item as TooltipPayload<number, string>).payload as AreaBucket | undefined;
                       return [
                         formatGBP(Number(value)),
                         `${payload?.propertyCount ?? 0} properties`,

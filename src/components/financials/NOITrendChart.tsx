@@ -38,7 +38,7 @@ export function NOITrendChart({ data }: Props) {
             <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
             <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `£${(v/1000).toFixed(0)}k`} />
             <Tooltip
-              formatter={(value: number, name: string) => [formatGBPDecimal(value), name === 'noi' ? 'NOI' : 'Cash Flow']}
+              formatter={(value, name) => [formatGBPDecimal(value), name === 'noi' ? 'NOI' : 'Cash Flow']}
               contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
               labelStyle={{ color: 'hsl(var(--foreground))' }}
             />

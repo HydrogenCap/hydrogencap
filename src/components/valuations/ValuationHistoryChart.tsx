@@ -132,7 +132,7 @@ export function ValuationHistoryChart({ propertyId, purchasePrice, purchaseDate 
               />
               <Tooltip
                 {...CHART_TOOLTIP_STYLE}
-                formatter={(value: number) => [fmtGBP(value), 'Value']}
+                formatter={(value) => [fmtGBP(value), 'Value']}
                 labelFormatter={(label) => label}
               />
               {/* Purchase price reference line */}

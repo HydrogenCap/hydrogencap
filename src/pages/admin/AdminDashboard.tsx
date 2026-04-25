@@ -144,7 +144,7 @@ export default function AdminDashboard() {
                           <Cell key={entry.name} fill={TIER_COLORS[entry.name] || '#888'} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number, name: string) => [value, name.charAt(0).toUpperCase() + name.slice(1)]} />
+                      <Tooltip formatter={(value, name) => [value, String(name).charAt(0).toUpperCase() + String(name).slice(1)]} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="space-y-2">

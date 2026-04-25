@@ -126,7 +126,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                 tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   const labels: Record<string, string> = {
                     base: 'Base Case',
                     optimistic: 'Optimistic',

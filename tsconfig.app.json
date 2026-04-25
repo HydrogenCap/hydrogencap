@@ -18,6 +18,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "strictBindCallApply": true,
+    "strictFunctionTypes": true,
     "useUnknownInCatchVariables": true,
     "paths": {
       "@/*": [

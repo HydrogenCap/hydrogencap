@@ -107,7 +107,7 @@ export function EntityFinancialSection({ entityId, entityProperties }: Props) {
                 <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis hide />
                 <Tooltip
-                  formatter={(v: number) => [formatGBPDecimal(v), 'NOI']}
+                  formatter={(v) => [formatGBPDecimal(v), 'NOI']}
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12 }}
                 />
                 <Area

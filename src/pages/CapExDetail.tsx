@@ -256,7 +256,7 @@ export default function CapExDetail() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" tickFormatter={v => fmt(v)} />
                       <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11 }} />
-                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Tooltip formatter={(v) => fmt(v)} />
                       <Bar dataKey="Budget" fill="hsl(var(--muted-foreground))" opacity={0.3} />
                       <Bar dataKey="Actual" fill="hsl(var(--primary))" />
                     </BarChart>
@@ -273,7 +273,7 @@ export default function CapExDetail() {
                         <Pie data={categoryData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${fmt(value)}`}>
                           {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                         </Pie>
-                        <Tooltip formatter={(v: number) => fmt(v)} />
+                        <Tooltip formatter={(v) => fmt(v)} />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>

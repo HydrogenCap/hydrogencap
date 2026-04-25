@@ -87,11 +87,11 @@ export function TrendLineChart<T extends Record<string, unknown>>({
               tickFormatter={(v) => formatValue(v)}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const cfg = yKeys.find((y) => y.key === name);
                 return [formatValue(value), cfg?.label ?? name];
               }}
-              labelFormatter={formatXLabel}
+              labelFormatter={formatXLabel ? (label) => formatXLabel(String(label)) : undefined}
               {...CHART_TOOLTIP_STYLE}
             />
             {showLegend && yKeys.length > 1 && (

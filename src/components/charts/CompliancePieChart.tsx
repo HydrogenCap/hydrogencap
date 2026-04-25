@@ -86,7 +86,7 @@ export function CompliancePieChart({
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [formatValue(value), '']}
+              formatter={(value) => [formatValue(Number(value)), '']}
               {...CHART_TOOLTIP_STYLE}
             />
             <Legend

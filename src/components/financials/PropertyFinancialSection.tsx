@@ -123,7 +123,7 @@ export function PropertyFinancialSection({ propertyId, currentValuation }: Props
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                 <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={v => `£${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number, n: string) => [formatGBPDecimal(v), n === 'noi' ? 'NOI' : 'Cash Flow']}
+                <Tooltip formatter={(v, n) => [formatGBPDecimal(v), n === 'noi' ? 'NOI' : 'Cash Flow']}
                   contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
                 <Bar dataKey="noi" name="NOI" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
                 <Line dataKey="cashflow" name="Cash Flow" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
@@ -187,7 +187,7 @@ export function PropertyFinancialSection({ propertyId, currentValuation }: Props
                     <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={70} paddingAngle={2}>
                       {donutData.map((_, i) => <Cell key={i} fill={COST_COLORS[i % COST_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatGBPDecimal(v)} />
+                    <Tooltip formatter={(v) => formatGBPDecimal(v)} />
                   </RechartPie>
                 </ResponsiveContainer>
                 <div className="flex flex-col gap-1">
