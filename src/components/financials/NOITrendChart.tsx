@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
+import { Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
 import { format } from 'date-fns';
 import { formatGBPDecimal } from '@/lib/calculations';
 import type { PortfolioMonthlySummary } from '@/lib/financialSnapshotTypes';
@@ -38,7 +38,7 @@ export function NOITrendChart({ data }: Props) {
             <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
             <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `£${(v/1000).toFixed(0)}k`} />
             <Tooltip
-              formatter={(value: number, name: string) => [formatGBPDecimal(value), name === 'noi' ? 'NOI' : 'Cash Flow']}
+              formatter={(value, name) => [formatGBPDecimal(value), name === 'noi' ? 'NOI' : 'Cash Flow']}
               contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
               labelStyle={{ color: 'hsl(var(--foreground))' }}
             />

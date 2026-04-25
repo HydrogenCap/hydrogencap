@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { format, addMonths } from 'date-fns';
+import { format } from 'date-fns';
 
 type AutoTableDocument = jsPDF & {
   lastAutoTable?: {

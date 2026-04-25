@@ -35,7 +35,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Plus,
   Search,
   FileText,
   Loader2,

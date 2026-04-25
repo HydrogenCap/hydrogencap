@@ -22,7 +22,7 @@ interface MortgageCalcResult {
   formula: string | null;
 }
 
-interface PropertyEditFormValues {
+export interface PropertyEditFormValues {
   address_line: string;
   area_name?: string;
   postcode?: string;

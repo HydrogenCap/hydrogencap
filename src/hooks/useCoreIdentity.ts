@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 
 // Types for Core Identity — fields that live on the `properties` table
 export interface CoreIdentityData {
@@ -56,7 +56,7 @@ export function useTitleNumbers(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_title_numbers')
         .select('*')
         .eq('property_id', propertyId)
@@ -75,7 +75,7 @@ export function useAddTitleNumber() {
   
   return useMutation({
     mutationFn: async ({ propertyId, titleNumber }: { propertyId: string; titleNumber: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_title_numbers')
         .insert({ property_id: propertyId, title_number: titleNumber.trim().toUpperCase() })
         .select()
@@ -96,7 +96,7 @@ export function useRemoveTitleNumber() {
   
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('property_title_numbers')
         .delete()
         .eq('id', id);
@@ -118,7 +118,7 @@ export function useUpdateCoreIdentity() {
     mutationFn: async ({ propertyId, data }: { propertyId: string; data: Partial<CoreIdentityData> }) => {
       const { data: user } = await supabase.auth.getUser();
       
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('properties_v2')
         .update({
           ...data,

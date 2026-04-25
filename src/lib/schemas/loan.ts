@@ -134,7 +134,7 @@ export const loanSchema = z.object({
 
 // Schema with property value context for LTV validation
 export const loanWithContextSchema = loanSchema.refine(
-  (data) => {
+  (_data) => {
     // Note: Property value validation should be done at the form level
     // where we have access to the property context
     return true;

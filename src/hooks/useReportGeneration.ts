@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useProperties } from './useProperties';
 import { useAllCompliance } from './useCompliance';
 import { usePropertyPassports } from './usePropertyPassport';
-import { useCompanies, useCompany, type CompanyWithDetails } from './useCompanies';
+import { useCompanies } from './useCompanies';
 import { logActivity } from './useActivityLog';
 import type {
   ReportFilters,
@@ -162,7 +162,12 @@ export function useReportData() {
         council_tax_band: passport.council_tax_band,
         local_authority_text: passport.local_authority_text,
       } : null,
-      insurancePolicy: (propertyWithInsurance.insurance_policies?.[0] || null) as any,
+      insurancePolicy: (propertyWithInsurance.insurance_policies?.[0] ?? null) as {
+        insurer_name: string | null;
+        policy_number: string | null;
+        renewal_date: string | null;
+        premium_gbp: number | null;
+      } | null,
       ownerName: ownerCompany?.legal_name,
     };
   });
@@ -217,7 +222,7 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return null;
 
-      const { data: company, error } = await (supabase as any)
+      const { data: company, error } = await supabaseAny
         .from('companies')
         .select(`
           id,
@@ -234,7 +239,7 @@ export function useCompanyForBrokerPack(companyId: string | undefined) {
       if (error) throw error;
 
       // Get shareholdings
-      const { data: shareholdings } = await (supabase as any)
+      const { data: shareholdings } = await supabaseAny
         .from('shareholdings')
         .select(`
           shares_held,
@@ -321,7 +326,7 @@ export function useGenerateReport() {
       reportType,
       filters,
       properties,
-      brokerNotes,
+      brokerNotes: _brokerNotes,
       brokerPackData,
     }: {
       reportType: ReportType;

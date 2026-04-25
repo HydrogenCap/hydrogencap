@@ -4,13 +4,11 @@ import {
   Check, 
   X, 
   AlertTriangle, 
-  Clock, 
   Upload, 
   ChevronDown, 
   ChevronUp,
   Info,
-  ExternalLink,
-  Plus
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -65,8 +63,8 @@ function StatusIcon({ status }: { status: RequirementStatus }) {
 function RequirementRow({ 
   requirement, 
   propertyId, 
-  propertyAddress,
-  onUploadClick 
+  propertyAddress: _propertyAddress,
+  onUploadClick: _onUploadClick 
 }: { 
   requirement: ComplianceRequirement;
   propertyId: string;

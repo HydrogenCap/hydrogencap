@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, X, Sparkles, ExternalLink, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { Check, X, Sparkles, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

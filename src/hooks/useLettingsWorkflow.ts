@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +41,7 @@ export function useTenantReferences(lettingId: string | undefined) {
     queryKey: ['tenant-references', lettingId],
     queryFn: async () => {
       if (!lettingId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_references')
         .select('*')
         .eq('letting_id', lettingId)
@@ -59,7 +59,7 @@ export function useCreateReference() {
   return useMutation({
     mutationFn: async (input: Partial<TenantReference> & { letting_id: string; applicant_name: string }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_references')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -79,7 +79,7 @@ export function useUpdateReference() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<TenantReference> & { id: string; lettingId: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_references')
         .update(updates)
         .eq('id', id)
@@ -100,7 +100,7 @@ export function useApproveApplicant() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, status }: { id: string; lettingId: string; status: 'approved' | 'rejected' }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('tenant_references')
         .update({ overall_status: status })
         .eq('id', id);
@@ -152,7 +152,7 @@ export function useMoveInChecklist(lettingId: string | undefined) {
     queryKey: ['move-in-checklist', lettingId],
     queryFn: async () => {
       if (!lettingId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('move_in_checklists')
         .select('*')
         .eq('letting_id', lettingId)
@@ -169,7 +169,7 @@ export function useCreateMoveInChecklist() {
   return useMutation({
     mutationFn: async (input: { property_id: string; letting_id: string; tenant_id?: string }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('move_in_checklists')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -188,7 +188,7 @@ export function useUpdateMoveInItem() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<MoveInChecklistItem> & { id: string; lettingId: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('move_in_checklists')
         .update(updates)
         .eq('id', id)
@@ -209,7 +209,7 @@ export function useCompleteMoveIn() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId }: { id: string; lettingId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('move_in_checklists')
         .update({ completed_at: new Date().toISOString() })
         .eq('id', id);
@@ -246,7 +246,7 @@ export function useViewings(lettingId: string | undefined) {
     queryKey: ['property-viewings', lettingId],
     queryFn: async () => {
       if (!lettingId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_viewings')
         .select('*')
         .eq('letting_id', lettingId)
@@ -264,7 +264,7 @@ export function useCreateViewing() {
   return useMutation({
     mutationFn: async (input: Omit<PropertyViewing, 'id' | 'org_id' | 'created_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_viewings')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -284,7 +284,7 @@ export function useUpdateViewing() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<PropertyViewing> & { id: string; lettingId: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_viewings')
         .update(updates)
         .eq('id', id)
@@ -331,7 +331,7 @@ export function useTenancyDraft(lettingId: string | undefined) {
     queryKey: ['tenancy-draft', lettingId],
     queryFn: async () => {
       if (!lettingId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancy_agreement_drafts')
         .select('*')
         .eq('letting_id', lettingId)
@@ -351,7 +351,7 @@ export function useSaveTenancyDraft() {
   return useMutation({
     mutationFn: async (input: Omit<TenancyAgreementDraft, 'id' | 'org_id' | 'created_at'>) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancy_agreement_drafts')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -371,7 +371,7 @@ export function useUpdateTenancyDraft() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<TenancyAgreementDraft> & { id: string; lettingId: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancy_agreement_drafts')
         .update(updates)
         .eq('id', id)

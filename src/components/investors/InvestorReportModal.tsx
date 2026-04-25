@@ -3,7 +3,7 @@ import { format, startOfYear, endOfMonth, subYears, startOfMonth } from 'date-fn
 import { FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -98,6 +98,9 @@ export function InvestorReportModal({
             <FileText className="h-5 w-5" />
             Generate Investor Statement
           </DialogTitle>
+          <DialogDescription>
+            Download a formatted statement of this investor's commitments, contributions, and distributions.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

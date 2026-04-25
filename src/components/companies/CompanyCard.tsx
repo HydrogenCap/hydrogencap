@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SEVERITY } from '@/lib/design-tokens';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCompany, type CompanyWithDetails } from '@/hooks/useCompanies';
+import { useCompany } from '@/hooks/useCompanies';
 import { formatPercent, formatDateUK } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 

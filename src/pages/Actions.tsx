@@ -238,7 +238,7 @@ function RiskRow({
 /* ─── Property Group Component ─── */
 function PropertyGroup({
   address,
-  propertyId,
+  propertyId: _propertyId,
   risks,
   snoozes,
   assignments,
@@ -309,8 +309,7 @@ function PropertyGroup({
 }
 
 export default function ActionsPage() {
-  const navigate = useNavigate();
-  const { risks, criticalCount, warningCount, totalCount, isLoading } = usePortfolioRisks();
+  const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   // Workflow data
   const { data: snoozes = [] } = useSnoozedActions();

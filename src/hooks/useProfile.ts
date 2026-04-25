@@ -1,5 +1,5 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
+ import { supabaseAny } from '@/integrations/supabase/client';
  import { useAuth } from '@/contexts/AuthContext';
  import { useToast } from '@/hooks/use-toast';
  
@@ -18,7 +18,7 @@
      queryFn: async () => {
        if (!user) return null;
        
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('profiles')
          .select('*')
          .eq('user_id', user.id)
@@ -40,7 +40,7 @@
      mutationFn: async (updates: { full_name?: string }) => {
        if (!user) throw new Error('Not authenticated');
        
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('profiles')
          .update({
            ...updates,

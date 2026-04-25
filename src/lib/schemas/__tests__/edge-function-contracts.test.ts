@@ -281,7 +281,7 @@ describe('ai-compliance-checker contract', () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect((result.data.propertyData as any).beds).toBe(3);
+      expect((result.data.propertyData as unknown as { beds: number }).beds).toBe(3);
     }
   });
 });

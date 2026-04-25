@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +41,7 @@ export function useUnreconciledTransactions(bankAccountId?: string) {
   return useQuery({
     queryKey: ['bank_transactions', 'unreconciled', bankAccountId],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('bank_transactions')
         .select('*')
         .eq('is_reconciled', false)
@@ -64,7 +64,7 @@ export function useBankTransactions(filters?: { bankAccountId?: string; batchId?
   return useQuery({
     queryKey: ['bank_transactions', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('bank_transactions')
         .select('*')
         .order('transaction_date', { ascending: false });
@@ -83,7 +83,7 @@ export function useImportBatches(bankAccountId?: string) {
   return useQuery({
     queryKey: ['import_batches', bankAccountId],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('import_batches')
         .select('*')
         .order('imported_at', { ascending: false });
@@ -124,7 +124,7 @@ export function useImportBankTransactions() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Check for duplicates
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await supabaseAny
         .from('bank_transactions')
         .select('transaction_date, amount, description')
         .eq('bank_account_id', bankAccountId);
@@ -144,7 +144,7 @@ export function useImportBankTransactions() {
       const dates = processedTxns.map(t => t.transaction_date).sort();
 
       // Create batch
-      const { data: batch, error: batchError } = await (supabase as any)
+      const { data: batch, error: batchError } = await supabaseAny
         .from('import_batches')
         .insert({
           org_id: orgId,
@@ -226,7 +226,7 @@ export function useReconcileTransaction() {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Create rent payment linked to bank transaction
-      const { error: paymentError } = await (supabase as any)
+      const { error: paymentError } = await supabaseAny
         .from('rent_payments')
         .insert({
           org_id: orgId,
@@ -244,7 +244,7 @@ export function useReconcileTransaction() {
       if (paymentError) throw paymentError;
 
       // Mark transaction as reconciled
-      const { error: txnError } = await (supabase as any)
+      const { error: txnError } = await supabaseAny
         .from('bank_transactions')
         .update({ is_reconciled: true })
         .eq('id', transactionId);
@@ -296,7 +296,7 @@ export function useBulkReconcile() {
           recorded_by: user?.id || null,
         });
 
-        await (supabase as any)
+        await supabaseAny
           .from('bank_transactions')
           .update({ is_reconciled: true })
           .eq('id', match.transactionId);

@@ -3,7 +3,6 @@ import {
   checkHMOCompliance,
   isHMOProperty,
   HMO_ROOM_MINIMUMS,
-  HMO_AMENITY_RATIOS,
   type RoomData,
   type PropertyData,
 } from '../hmo-compliance';

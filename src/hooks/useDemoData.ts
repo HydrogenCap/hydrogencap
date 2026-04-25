@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useAuth } from '@/contexts/AuthContext';
 import { seedDemoData, clearDemoData } from '@/lib/seedDemoData';
@@ -15,7 +15,7 @@ export function useDemoData() {
     queryKey: ['demo-data-check', org?.id],
     queryFn: async () => {
       if (!org?.id) return false;
-      const { count } = await (supabase as any)
+      const { count } = await supabaseAny
         .from('properties_v2')
         .select('id', { count: 'exact', head: true })
         .eq('org_id', org.id)

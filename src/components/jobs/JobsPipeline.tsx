@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { 
-  Calendar, Clock, User, AlertTriangle, Building2, 
-  ChevronRight, Zap, Ellipsis, GripVertical
+  Calendar, Clock, User, AlertTriangle, Building2, Zap, Ellipsis
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +16,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   ContractorJob, 
-  JOB_STATUSES, 
   JOB_PRIORITIES,
   JobStatus,
   useUpdateJob,

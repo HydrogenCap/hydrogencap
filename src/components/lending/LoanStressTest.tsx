@@ -14,7 +14,6 @@ import { AlertTriangle, TrendingUp } from 'lucide-react';
 import {
   useAllLoanFacilities,
   fmtGBP,
-  type LoanFacilityWithDetails,
 } from '@/hooks/useLoanFacilities';
 import {
   useLoanStressTest,

@@ -2,11 +2,10 @@ import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { formatUKPostcode, isValidUKPostcode } from '@/hooks/useCoreIdentity';
+import { formatUKPostcode } from '@/hooks/useCoreIdentity';
 
-interface AddressFormValues {
+export interface AddressFormValues {
   address_line: string | null;
   address_line2: string | null;
   town_city: string | null;

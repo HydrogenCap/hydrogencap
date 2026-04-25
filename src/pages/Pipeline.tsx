@@ -4,16 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Construction,
   MapPin,
-  PoundSterling,
   TrendingUp,
   Calendar,
   ArrowRight,
   Plus,
-  CheckCircle2,
-  Clock,
   Handshake,
   ClipboardCheck,
-  Home,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +26,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { formatGBP, formatDateUK } from '@/lib/calculations';
 import { DealPipelineBoard } from '@/components/pipeline/DealPipelineBoard';
 import { DealSourcingForm } from '@/components/pipeline/DealSourcingForm';
@@ -44,7 +40,7 @@ function useAllGoLiveChecklists() {
   return useQuery({
     queryKey: ['go_live_checklists'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('go_live_checklists')
         .select('*');
       if (error) throw error;
@@ -79,7 +75,8 @@ function GoLiveTab() {
   }, [developmentProperties]);
 
   const getChecklistProgress = (propertyId: string) => {
-    const checklist = checklists?.find((c: any) => c.property_id === propertyId);
+    const checklist = (checklists as Array<{ property_id: string } & Record<string, unknown>> | undefined)
+      ?.find((c) => c.property_id === propertyId);
     if (!checklist) return 0;
     const fields = Object.entries(checklist).filter(([key]) =>
       key.startsWith('setup_') ||

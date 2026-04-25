@@ -3,9 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, Circle, ArrowRight, Calendar, FileText, X } from 'lucide-react';
+import { Check, Circle, ArrowRight, FileText, X } from 'lucide-react';
 import {
   type MortgageApplicationWithProperty,
   useUpdateApplicationStatus,
@@ -21,7 +20,7 @@ interface Props {
 
 const STATUS_ORDER = APPLICATION_STATUSES.map((s) => s.value);
 
-function getStageIndex(status: string): number {
+function _getStageIndex(status: string): number {
   const idx = PIPELINE_STAGES.findIndex((s) => s.value === status);
   if (status === 'researching') return -1;
   if (status === 'dip_approved') return 0;
@@ -32,8 +31,8 @@ function getStageIndex(status: string): number {
 }
 
 function isStageCompleted(currentStatus: string, stageValue: string): boolean {
-  const currentIdx = STATUS_ORDER.indexOf(currentStatus as any);
-  const stageIdx = STATUS_ORDER.indexOf(stageValue as any);
+  const currentIdx = (STATUS_ORDER as readonly string[]).indexOf(currentStatus);
+  const stageIdx = (STATUS_ORDER as readonly string[]).indexOf(stageValue);
   return stageIdx >= 0 && currentIdx > stageIdx;
 }
 
@@ -55,7 +54,7 @@ export function ApplicationTracker({ application }: Props) {
 
   const nextStatus = (() => {
     if (isWithdrawn || isCompleted) return null;
-    const idx = STATUS_ORDER.indexOf(application.status as any);
+    const idx = (STATUS_ORDER as readonly string[]).indexOf(application.status);
     if (idx < 0 || idx >= STATUS_ORDER.length - 2) return null;
     return STATUS_ORDER[idx + 1];
   })();
@@ -66,7 +65,7 @@ export function ApplicationTracker({ application }: Props) {
 
   const handleAdvance = () => {
     if (!nextStatus) return;
-    const dateUpdates: Record<string, string> = {};
+    const dateUpdates: Partial<MortgageApplicationWithProperty> = {};
     const now = new Date().toISOString().split('T')[0];
 
     if (nextStatus === 'dip_submitted') dateUpdates.dip_submitted_at = now;
@@ -80,11 +79,11 @@ export function ApplicationTracker({ application }: Props) {
       id: application.id,
       status: nextStatus,
       ...dateUpdates,
-    } as any);
+    });
   };
 
   const handleSaveNotes = () => {
-    updateStatus.mutate({ id: application.id, notes } as any);
+    updateStatus.mutate({ id: application.id, notes });
     setEditingNotes(false);
   };
 
@@ -129,7 +128,7 @@ export function ApplicationTracker({ application }: Props) {
           {PIPELINE_STAGES.map((stage, idx) => {
             const completed = isStageCompleted(application.status, stage.value);
             const current = isStageCurrent(application.status, stage.value);
-            const dateValue = (application as any)[stage.dateField];
+            const dateValue = application[stage.dateField];
 
             return (
               <div key={stage.value} className="flex items-center">
@@ -285,7 +284,7 @@ export function ApplicationTracker({ application }: Props) {
               className="text-red-600"
               disabled={updateStatus.isPending}
               onClick={() =>
-                updateStatus.mutate({ id: application.id, status: 'withdrawn' } as any)
+                updateStatus.mutate({ id: application.id, status: 'withdrawn' })
               }
             >
               <X className="h-4 w-4 mr-1" /> Withdraw

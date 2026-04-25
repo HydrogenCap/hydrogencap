@@ -1,1 +1,0 @@
-export { FloorplanCard } from './FloorplanCard';

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +26,7 @@ export function useTenancyCompliance(tenancyId: string | undefined) {
   return useQuery({
     queryKey: ['tenancy-compliance', tenancyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancy_compliance_items')
         .select('*')
         .eq('tenancy_id', tenancyId!)
@@ -54,7 +54,7 @@ export function useCompleteTenancyComplianceItem() {
       if (documentUrl) {
         updatePayload.document_url = documentUrl;
       }
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancy_compliance_items')
         .update(updatePayload)
         .eq('id', itemId)
@@ -75,7 +75,7 @@ export function useUncompleteTenancyComplianceItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (itemId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('tenancy_compliance_items')
         .update({
           completed_date: null,
@@ -121,7 +121,7 @@ export function useTenancyComplianceStats() {
   return useQuery({
     queryKey: ['tenancy-compliance-stats'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancy_compliance_items')
         .select(`
           *,

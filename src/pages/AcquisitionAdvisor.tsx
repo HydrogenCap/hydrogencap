@@ -24,7 +24,6 @@ import {
   Sparkles,
   MapPin,
   PoundSterling,
-  BedDouble,
   Target,
   BarChart3,
   Clock,

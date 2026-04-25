@@ -9,11 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatDateUK } from '@/lib/calculations';
-import { cn } from '@/lib/utils';
 import {
   useWorkOrderWarranties,
   useCreateWarranty,
@@ -22,6 +22,11 @@ import {
   useAllActiveWarranties,
   type WorkOrderWarranty,
 } from '@/hooks/useWorkOrderLifecycle';
+
+type WarrantyWithJoins = WorkOrderWarranty & {
+  work_order?: { id: string; wo_number: string; title: string } | null;
+  property?: { id: string; address_line_1: string; city: string } | null;
+};
 
 // ─── Single WO Warranty Section ─────────────────────────────────────
 
@@ -156,6 +161,9 @@ export function WarrantyTracker({ workOrderId, propertyId }: WarrantyTrackerProp
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Record Warranty</DialogTitle>
+            <DialogDescription>
+              Log a product or workmanship warranty attached to this work order.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -227,9 +235,9 @@ export function WarrantyTracker({ workOrderId, propertyId }: WarrantyTrackerProp
 
 export function WarrantyDashboard() {
   const { data: activeWarranties, isLoading: loadingActive } = useAllActiveWarranties();
-  const { data: expiringWarranties, isLoading: loadingExpiring } = useExpiringWarranties(90);
+  const { data: expiringWarranties, isLoading: _loadingExpiring } = useExpiringWarranties(90);
 
-  const expiringSoon = (expiringWarranties || []).filter((w: any) => getDaysUntilExpiry(w.warranty_end) <= 90);
+  const expiringSoon = ((expiringWarranties || []) as WarrantyWithJoins[]).filter((w) => getDaysUntilExpiry(w.warranty_end) <= 90);
 
   return (
     <div className="space-y-6">
@@ -244,7 +252,7 @@ export function WarrantyDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {expiringSoon.map((w: any) => (
+              {expiringSoon.map((w) => (
                 <div key={w.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{w.description}</p>
@@ -279,7 +287,7 @@ export function WarrantyDashboard() {
             <p className="text-sm text-muted-foreground text-center py-4">No active warranties</p>
           ) : (
             <div className="space-y-2">
-              {activeWarranties!.map((w: any) => (
+              {(activeWarranties as WarrantyWithJoins[]).map((w) => (
                 <div key={w.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{w.description}</p>

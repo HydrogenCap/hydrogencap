@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,7 @@ interface Props {
   entityName: string;
 }
 
-export function EntityAccountingSection({ entityId, entityName }: Props) {
+export function EntityAccountingSection({ entityId, entityName: _entityName }: Props) {
   const navigate = useNavigate();
   const { data: exports, isLoading: exportsLoading } = useAccountingExports(entityId, 5);
   const { data: taxSummaries, isLoading: taxLoading } = useTaxYearSummaries(entityId);

@@ -1,4 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+// Structural supabase-client type — the real `SupabaseClient<Database>` from
+// supabase-js satisfies this, and a test stub with `.from()` does too.
+// deno-lint-ignore no-explicit-any
+export type RateLimitSupabaseLike = { from: (table: string) => any };
 
 /**
  * Rate limiter using the rate_limits table.
@@ -14,13 +17,18 @@ export async function checkRateLimit(
   functionName: string,
   maxRequests: number = 20,
   windowMinutes: number = 60,
-  options?: { orgId?: string | null; orgMax?: number }
+  options?: { orgId?: string | null; orgMax?: number; supabase?: RateLimitSupabaseLike }
 ): Promise<{ allowed: boolean; remaining: number; resetAt: string }> {
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // Lazy-load the real client only when no override is supplied. This keeps
+    // tests (which inject a fake) free of any esm.sh / network dependency.
+    const supabase: RateLimitSupabaseLike = options?.supabase ?? await (async () => {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+      return createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+    })();
 
     const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
 

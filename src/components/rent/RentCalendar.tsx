@@ -3,7 +3,6 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addM
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { SEVERITY } from '@/lib/design-tokens';
 import { useRentCalendar, type RentCalendarEntry } from '@/hooks/useRentManagement';
 import { cn } from '@/lib/utils';
@@ -50,7 +49,7 @@ export function RentCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const monthStr = format(currentDate, 'yyyy-MM');
-  const { data: entries, isLoading } = useRentCalendar(monthStr);
+  const { data: entries, isLoading: _isLoading } = useRentCalendar(monthStr);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);

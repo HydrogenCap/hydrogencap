@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
   MortgageSection,
   IncomeSection,
   NotesSection,
+  type PropertyEditFormValues,
 } from '@/components/property/PropertyEditFormSections';
 import { LeaseholdFormSection } from '@/components/property/LeaseholdFormSection';
 import { propertyFormSchema, type PropertyFormData } from './propertyFormSchema';
@@ -185,7 +186,7 @@ export function PropertyForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <PropertyDetailsSection
-          form={form as any}
+          form={form as unknown as UseFormReturn<PropertyEditFormValues>}
           watchedPostcode={watchedPostcode}
           watchedAddress={watchedAddress}
           watchedGeocodeStatus={watchedGeocodeStatus}
@@ -194,21 +195,21 @@ export function PropertyForm({
           onAutoPopulate={handleAutoPopulate}
         />
 
-        <LandRegistrySection form={form as any} propertyId={propertyId} />
+        <LandRegistrySection form={form as unknown as UseFormReturn<PropertyEditFormValues>} propertyId={propertyId} />
 
         <LeaseholdFormSection propertyId={propertyId} tenure={watchedTenure} />
 
-        <ValuationSection form={form as any} />
+        <ValuationSection form={form as unknown as UseFormReturn<PropertyEditFormValues>} />
 
         <MortgageSection
-          form={form as any}
+          form={form as unknown as UseFormReturn<PropertyEditFormValues>}
           watchedCapitalOrInterest={watchedCapitalOrInterest}
           mortgageCalc={mortgageCalc}
         />
 
-        <IncomeSection form={form as any} />
+        <IncomeSection form={form as unknown as UseFormReturn<PropertyEditFormValues>} />
 
-        <NotesSection form={form as any} />
+        <NotesSection form={form as unknown as UseFormReturn<PropertyEditFormValues>} />
 
         {/* Actions */}
         <div className="flex gap-4">

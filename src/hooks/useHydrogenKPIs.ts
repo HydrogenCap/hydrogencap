@@ -6,7 +6,7 @@
  */
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { OwnerAttribution } from './useOwnershipAttribution';
 
 export interface HydrogenKPIs {
@@ -29,7 +29,7 @@ export function usePrincipalParty() {
   return useQuery({
     queryKey: ['principal_party'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('parties')
         .select('id, display_name, party_type')
         .eq('is_principal', true)

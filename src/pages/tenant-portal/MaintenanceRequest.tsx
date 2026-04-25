@@ -3,13 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useDropzone } from 'react-dropzone';
 import {
-  Wrench, Plus, Upload, X, CheckCircle2, Image as ImageIcon,
+  Wrench, Plus, Upload, X, Image as ImageIcon,
   AlertTriangle, Clock,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,11 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { toast } from 'sonner';
 import { PRIORITY_CONFIG, STATUS_CONFIG } from '@/lib/maintenanceTypes';
-import { autoClassifyHazard, calculateDeadlines, type HazardCategory } from '@/hooks/useAwaabsLawCompliance';
+import { autoClassifyHazard, calculateDeadlines } from '@/hooks/useAwaabsLawCompliance';
+import type { MaintenanceCategory } from '@/lib/maintenanceTypes';
 
 const CATEGORIES = [
   { value: 'plumbing', label: 'Plumbing' },
@@ -72,7 +72,7 @@ export default function MaintenanceRequest() {
     queryKey: ['tenant-maintenance-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancies')
         .select('property_id')
         .eq('id', tenancyId)
@@ -87,7 +87,7 @@ export default function MaintenanceRequest() {
     queryKey: ['tenant-maintenance-requests', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -153,7 +153,7 @@ export default function MaintenanceRequest() {
       // Awaab's Law: auto-classify hazard and calculate statutory deadlines
       const now = new Date();
       const hazardCategory = autoClassifyHazard(
-        category as any,
+        category as MaintenanceCategory,
         description,
         urgency
       );
@@ -187,7 +187,7 @@ export default function MaintenanceRequest() {
         escalation_level: hazardCategory === 'emergency' ? 'critical' : 'normal',
       };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .insert(payload)
         .select('id, org_id')
@@ -196,7 +196,7 @@ export default function MaintenanceRequest() {
 
       // Log Awaab's Law audit event
       if (data?.id) {
-        await (supabase as any).from('awaabs_law_events').insert({
+        await supabaseAny.from('awaabs_law_events').insert({
           maintenance_request_id: data.id,
           org_id: orgId,
           event_type: 'hazard_reported',

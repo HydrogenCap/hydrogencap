@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { calculateCompletenessScore } from '@/lib/wizard/scoring';
 import type { WizardPayload, ComplianceItem, WizardRoom } from '@/lib/wizard/types';

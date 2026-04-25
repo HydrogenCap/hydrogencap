@@ -46,10 +46,10 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
-  const { data: messages, isLoading: messagesLoading } = useChatMessages(activeConversationId);
+  const { data: messages, isLoading: _messagesLoading } = useChatMessages(activeConversationId);
   const deleteConversation = useDeleteConversation();
   const { sendMessage: sendChatMessage, isLoading, activeTools, optimisticMessages } = useChat();
 
@@ -262,7 +262,7 @@ export default function Chat() {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function ChatEmptyState({ onSend }: { onSend: (msg: string) => void }) {
+function ChatEmptyState({ onSend: _onSend }: { onSend: (msg: string) => void }) {
   return (
     <div className="text-center py-12">
       <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">

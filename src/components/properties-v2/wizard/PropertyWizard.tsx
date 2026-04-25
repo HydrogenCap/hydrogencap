@@ -9,8 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreatePropertyV2 } from '@/hooks/usePropertiesV2';
 import { useBulkCreateRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
-import { useLenders, useCreateLender } from '@/hooks/useLenders';
-import { supabase } from '@/integrations/supabase/client';
+import { useCreateLender } from '@/hooks/useLenders';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
@@ -28,7 +28,6 @@ interface Props {
 }
 
 type PropertyV2Update = Database['public']['Tables']['properties_v2']['Update'];
-type RoomInsert = Database['public']['Tables']['rooms_v2']['Insert'];
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown error';
@@ -43,7 +42,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
   const createProperty = useCreatePropertyV2();
   const bulkCreateRooms = useBulkCreateRooms();
   const createLoan = useCreateLoanFacility();
-  const createLender = useCreateLender();
+  const _createLender = useCreateLender();
 
   const TOTAL_STEPS = STEP_LABELS.length;
 
@@ -136,7 +135,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
 
       // Update HMO licence number if provided (column added via migration)
       if (data.hmo_licence_number) {
-        await (supabase as any)
+        await supabaseAny
           .from('properties_v2')
           .update({ hmo_licence_number: data.hmo_licence_number } as PropertyV2Update)
           .eq('id', property.id);
@@ -172,7 +171,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       if (data.has_mortgage && data.lender_name && data.original_amount) {
         try {
           // Upsert lender
-          const { data: lenderData } = await (supabase as any)
+          const { data: lenderData } = await supabaseAny
             .from('lenders')
             .upsert(
               { org_id: orgId, lender_name: data.lender_name, lender_type: 'specialist_btl' },

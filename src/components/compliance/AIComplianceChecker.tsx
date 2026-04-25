@@ -1,23 +1,24 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { LoadingButton } from '@/components/common/LoadingButton';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Brain, 
-  Loader2, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Brain,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
   FileQuestion,
   Lightbulb,
+  ListPlus,
   PoundSterling,
   ChevronRight,
   Sparkles
 } from 'lucide-react';
 import { useAIComplianceChecker, AIComplianceRequirement, AIComplianceInsight } from '@/hooks/useAIComplianceChecker';
+import { useCreateTasksFromAIAnalysis } from '@/hooks/useComplianceTasks';
 import { cn } from '@/lib/utils';
 
 interface AIComplianceCheckerProps {
@@ -35,10 +36,28 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     runAnalysis,
     canAnalyze,
     getHighPriorityItems,
-    getMissingItems,
+    getMissingItems: _getMissingItems,
     getExpiringItems,
-    getActionableInsights,
+    getActionableInsights: _getActionableInsights,
   } = useAIComplianceChecker(propertyId);
+
+  const createTasks = useCreateTasksFromAIAnalysis();
+
+  // Count of requirements that would result in a task — drives both the
+  // button label and the disabled state without firing the mutation.
+  const actionableCount = useMemo(() => {
+    if (!analysis) return 0;
+    return analysis.requirements.filter(
+      (r) =>
+        r.required &&
+        (r.status === 'missing' || r.status === 'expired' || r.status === 'expiring_soon')
+    ).length;
+  }, [analysis]);
+
+  const handleCreateTasks = () => {
+    if (!analysis) return;
+    createTasks.mutate({ propertyId, requirements: analysis.requirements });
+  };
 
   if (isLoading) {
     return (
@@ -66,7 +85,7 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     }
   };
 
-  const priorityBadge = (priority: string) => {
+  const _priorityBadge = (priority: string) => {
     const variants: Record<string, string> = {
       high: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       medium: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
@@ -75,7 +94,7 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     return <Badge className={variants[priority] || variants.low}>{priority}</Badge>;
   };
 
-  const insightIcon = (type: string) => {
+  const _insightIcon = (type: string) => {
     switch (type) {
       case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
       case 'suggestion': return <Lightbulb className="h-4 w-4 text-blue-500" />;
@@ -178,10 +197,24 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
               {/* High Priority Items */}
               {getHighPriorityItems().length > 0 && (
                 <div>
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    High Priority Actions
-                  </h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      High Priority Actions
+                    </h4>
+                    {actionableCount > 0 && (
+                      <LoadingButton
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCreateTasks}
+                        loading={createTasks.isPending}
+                        loadingText="Creating..."
+                      >
+                        <ListPlus className="h-4 w-4 mr-1" />
+                        Create {actionableCount} task{actionableCount === 1 ? '' : 's'}
+                      </LoadingButton>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {getHighPriorityItems().slice(0, 3).map((item, idx) => (
                       <div 

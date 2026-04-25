@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 
@@ -17,7 +17,7 @@ export function useDismissedDuplicates() {
   return useQuery({
     queryKey: ['dismissed_duplicates'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('dismissed_duplicates')
         .select('*');
 
@@ -48,7 +48,7 @@ export function useDismissDuplicate() {
       // Sort IDs to ensure consistent ordering (avoids duplicate dismissals)
       const [sortedId1, sortedId2] = [propertyId1, propertyId2].sort();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('dismissed_duplicates')
         .insert({
           org_id: orgId,
@@ -77,7 +77,7 @@ export function useUndismissDuplicate() {
       // Sort IDs to ensure consistent ordering
       const [sortedId1, sortedId2] = [propertyId1, propertyId2].sort();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('dismissed_duplicates')
         .delete()
         .eq('property_id_1', sortedId1)

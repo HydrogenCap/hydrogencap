@@ -2,13 +2,9 @@ import { useMemo } from 'react';
 import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { useActivityLog } from './useActivityLog';
 import { usePropertyPassports, type PropertyPassport } from './usePropertyPassport';
-import { usePortfolioAttributableMetrics } from './useBeneficialGroups';
 import {
   formatGBP,
-  calculateLTV,
-  calculateEquity,
   getEffectiveCosts,
-  calculateMonthlyCashflowAfterDebt,
   calculateMonthlyMortgagePayment,
   calculateROCE,
   calculateNetRent,
@@ -313,7 +309,7 @@ export function usePortfolioTimeline({ properties, filters }: UsePortfolioTimeli
 
       // Find the acquisition that tipped cashflow positive
       for (let i = 0; i < sortedAcquisitions.length; i++) {
-        const propertiesAtPoint = sortedAcquisitions.slice(0, i + 1);
+        const _propertiesAtPoint = sortedAcquisitions.slice(0, i + 1);
         const pointDate = new Date(sortedAcquisitions[i].original_purchase_date!);
         const snapshot = calculateSnapshotAtDate(properties, pointDate, filters.viewMode);
         

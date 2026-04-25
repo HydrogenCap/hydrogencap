@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type PropertyV2 = Database['public']['Tables']['properties_v2']['Row'];
@@ -20,7 +20,7 @@ export function usePassportPageData() {
     queryKey: ['passport_page_data'],
     queryFn: async () => {
       // Fetch V2 properties
-      const { data: properties, error: propError } = await (supabase as any)
+      const { data: properties, error: propError } = await supabaseAny
         .from('properties_v2')
         .select('*')
         .order('address_line_1');
@@ -28,7 +28,7 @@ export function usePassportPageData() {
       if (propError) throw propError;
 
       // Fetch all passports separately
-      const { data: passports, error: passError } = await (supabase as any)
+      const { data: passports, error: passError } = await supabaseAny
         .from('property_passport')
         .select('*');
 
@@ -43,7 +43,7 @@ export function usePassportPageData() {
       // Also create a lookup by address for V1→V2 matching
       const passportByAddress = new Map<string, PropertyPassport>();
       // We'll need V1 properties to resolve the mapping
-      const { data: v1Props } = await (supabase as any)
+      const { data: v1Props } = await supabaseAny
         .from('properties')
         .select('id, address_line, postcode');
 

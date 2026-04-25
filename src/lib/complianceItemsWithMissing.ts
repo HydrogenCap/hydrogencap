@@ -38,7 +38,7 @@ export interface PropertyForCompliance {
 }
 
 // Define conditional pairs: when one exists, the other becomes optional/not_required
-const CONDITIONAL_PAIRS: Record<string, { alternative: string; priority: 'this' | 'alternative' }> = {
+const _CONDITIONAL_PAIRS: Record<string, { alternative: string; priority: 'this' | 'alternative' }> = {
   'Fire Alarm Certificate': { alternative: 'Smoke Alarm Declaration', priority: 'alternative' },
   'Smoke Alarm Declaration': { alternative: 'Fire Alarm Certificate', priority: 'this' },
 };

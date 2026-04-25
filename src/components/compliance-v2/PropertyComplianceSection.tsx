@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { ComplianceMatrixRow, ComplianceStatusV2, ComplianceDocType } from '@/lib/complianceV2Types';
+import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { format } from 'date-fns';
 import { ComplianceDetailModal } from './ComplianceDetailModal';

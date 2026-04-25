@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -145,6 +146,9 @@ export function OwnershipEditor({
           <DialogTitle>
             {editingOwnership ? 'Edit Ownership' : 'Add Ownership'}
           </DialogTitle>
+          <DialogDescription>
+            Link a legal entity to this property and record its ownership stake.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

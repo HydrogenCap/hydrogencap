@@ -1,6 +1,6 @@
  import React, { useState } from 'react';
  import { format, addYears, addMonths } from 'date-fns';
- import { Upload, Calendar, User, FileCheck, Loader2, CheckCircle } from 'lucide-react';
+ import { Upload, User, FileCheck, Loader2, CheckCircle } from 'lucide-react';
  import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
  import { Button } from '@/components/ui/button';
  import { Input } from '@/components/ui/input';
@@ -123,7 +123,7 @@
          resetForm();
        }, 2000);
  
-     } catch (error) {
+     } catch (_error) {
        toast({
          title: 'Failed to update',
          description: 'Please try again.',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, CheckCircle2, AlertTriangle, Clock, Navigation } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Clock, Navigation } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BackfillButton } from '@/components/geocoding/BackfillButton';
 import { useProperties } from '@/hooks/useProperties';

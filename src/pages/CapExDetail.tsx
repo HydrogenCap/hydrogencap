@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { HardHat, Plus, Trash2, ArrowLeft, CheckCircle, AlertTriangle, BarChart3, Clock, PoundSterling, Camera, FileText } from 'lucide-react';
+import { HardHat, Plus, Trash2, ArrowLeft, CheckCircle, BarChart3, Clock, PoundSterling, Camera, FileText } from 'lucide-react';
 import { useCapexProject, useCompleteCapexProject } from '@/hooks/useCapexAll';
 import { useAddCapexLineItem, useUpdateCapexLineItem, useDeleteCapexLineItem, useUpdateCapexProject } from '@/hooks/useCapex';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { differenceInDays, format, isPast } from 'date-fns';
 import GanttTimeline from '@/components/capex/GanttTimeline';
 import CostVarianceTracker from '@/components/capex/CostVarianceTracker';
@@ -41,7 +40,7 @@ export default function CapExDetail() {
   const { data: project, isLoading } = useCapexProject(id!);
   const updateProject = useUpdateCapexProject();
   const addLineItem = useAddCapexLineItem();
-  const updateLineItem = useUpdateCapexLineItem();
+  const _updateLineItem = useUpdateCapexLineItem();
   const deleteLineItem = useDeleteCapexLineItem();
   const completeProject = useCompleteCapexProject();
 
@@ -61,7 +60,6 @@ export default function CapExDetail() {
   const lineBudget = items.reduce((s, li) => s + Number(li.budget_gbp), 0);
   const pct = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
   const isOver = totalSpent > totalBudget;
-  const statusInfo = STATUS_LABELS[project.status] || STATUS_LABELS.planned;
 
   // Timeline
   const overdueDays = project.target_end_date && isPast(new Date(project.target_end_date))
@@ -258,7 +256,7 @@ export default function CapExDetail() {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" tickFormatter={v => fmt(v)} />
                       <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 11 }} />
-                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Tooltip formatter={(v) => fmt(v)} />
                       <Bar dataKey="Budget" fill="hsl(var(--muted-foreground))" opacity={0.3} />
                       <Bar dataKey="Actual" fill="hsl(var(--primary))" />
                     </BarChart>
@@ -275,7 +273,7 @@ export default function CapExDetail() {
                         <Pie data={categoryData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${fmt(value)}`}>
                           {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                         </Pie>
-                        <Tooltip formatter={(v: number) => fmt(v)} />
+                        <Tooltip formatter={(v) => fmt(v)} />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>

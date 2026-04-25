@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,24 +17,24 @@ import {
   type TenantGap,
   type TenancyGap,
 } from '@/hooks/useMigration';
-import { PROPERTY_TYPES, LIFECYCLE_STAGES } from '@/hooks/usePropertiesV2';
+import { PROPERTY_TYPES } from '@/hooks/usePropertiesV2';
 import { ROOM_TYPES } from '@/hooks/useRoomsV2';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 type EditableValue = string | number | boolean | null | undefined;
-type EditableRecord = { id: string; [key: string]: EditableValue };
 type EditMap = Record<string, Record<string, EditableValue>>;
 type GapFillSuggestion = { id: string; [key: string]: EditableValue };
 
 const getErrorMessage = (error: unknown) =>
   error instanceof Error ? error.message : 'An unexpected error occurred';
 
-function computeCompleteness(records: Array<Record<string, any>>, fields: string[]): number {
+function computeCompleteness<T extends object>(records: T[], fields: string[]): number {
   if (!records.length) return 100;
   const totalCells = records.length * fields.length;
   const filledCells = records.reduce((sum, r) => {
-    return sum + fields.filter(f => r[f] !== null && r[f] !== undefined && r[f] !== '').length;
+    const rec = r as Record<string, unknown>;
+    return sum + fields.filter(f => rec[f] !== null && rec[f] !== undefined && rec[f] !== '').length;
   }, 0);
   return Math.round((filledCells / totalCells) * 100);
 }
@@ -133,8 +133,9 @@ function PropertiesGapFill() {
         const { id, ...fields } = s;
         const record = properties.find(p => p.id === id);
         if (!record) continue;
+        const rec = record as unknown as Record<string, unknown>;
         for (const [field, value] of Object.entries(fields)) {
-          if (value !== null && value !== undefined && ((record as any)[field] === null || (record as any)[field] === undefined)) {
+          if (value !== null && value !== undefined && (rec[field] === null || rec[field] === undefined)) {
             setField(id, field as keyof PropertyGap, value);
             filled++;
           }
@@ -252,8 +253,9 @@ function RoomsGapFill() {
         const { id, ...fields } = s;
         const record = rooms.find((r) => r.id === id);
         if (!record) continue;
+        const rec = record as unknown as Record<string, unknown>;
         for (const [field, value] of Object.entries(fields)) {
-          if (value !== null && value !== undefined && ((record as any)[field] === null || (record as any)[field] === undefined)) {
+          if (value !== null && value !== undefined && (rec[field] === null || rec[field] === undefined)) {
             setField(id, field as keyof RoomGap, value);
             filled++;
           }

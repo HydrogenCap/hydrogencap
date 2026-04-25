@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,7 +80,12 @@ export function AddTenantModal({ open, onOpenChange, onSuccess }: AddTenantModal
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Add Tenant</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Add Tenant</DialogTitle>
+          <DialogDescription>
+            Add a new tenant — you can link them to a tenancy and room afterward.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           {/* Personal Details */}
           <div className="space-y-3">

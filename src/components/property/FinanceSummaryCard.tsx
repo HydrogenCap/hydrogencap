@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { TrendingUp, TrendingDown, Building, Wallet, PiggyBank, Percent, Calendar } from 'lucide-react';
-import { formatGBP, formatPercent, formatDateUK, getExpiryStatus, daysUntil, getEffectiveCosts, type EffectiveCosts } from '@/lib/calculations';
+import { formatGBP, formatPercent, formatDateUK, getExpiryStatus, daysUntil, type EffectiveCosts } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 
 interface LoanData {

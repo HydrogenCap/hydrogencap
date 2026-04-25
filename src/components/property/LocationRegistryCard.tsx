@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -14,7 +15,7 @@ import {
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
@@ -69,11 +70,11 @@ export function LocationRegistryCard({
   propertyId,
   latitude,
   longitude,
-  titleNumber,
-  tenure,
-  leaseYearsRemaining,
-  uprn,
-  landRegistryLink,
+  titleNumber: _titleNumber,
+  tenure: _tenure,
+  leaseYearsRemaining: _leaseYearsRemaining,
+  uprn: _uprn,
+  landRegistryLink: _landRegistryLink,
   address,
 }: LocationRegistryCardProps) {
   const [coordDialogOpen, setCoordDialogOpen] = useState(false);
@@ -109,7 +110,7 @@ export function LocationRegistryCard({
 
     setIsSaving(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('properties_v2')
         .update({ latitude: lat, longitude: lng })
         .eq('id', propertyId);
@@ -122,7 +123,7 @@ export function LocationRegistryCard({
         title: 'Coordinates saved',
         description: `Location set to ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to save coordinates.',
@@ -162,7 +163,7 @@ export function LocationRegistryCard({
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Geocoding error',
         description: 'Failed to search for address.',
@@ -249,6 +250,9 @@ export function LocationRegistryCard({
               <MapPin className="h-5 w-5" />
               Set Location
             </DialogTitle>
+            <DialogDescription>
+              Adjust the exact latitude/longitude of this property by dragging the pin or searching.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

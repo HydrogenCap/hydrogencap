@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { setCurrentOrgId } from '@/hooks/useUserOrg';
 
@@ -13,7 +13,7 @@ export function useCreateOrganization() {
       if (!userData.user) throw new Error('Not authenticated');
 
       // Create the organization
-      const { data: org, error: orgError } = await (supabase as any)
+      const { data: org, error: orgError } = await supabaseAny
         .from('organizations')
         .insert({ name })
         .select()
@@ -22,7 +22,7 @@ export function useCreateOrganization() {
       if (orgError) throw orgError;
 
       // Create owner membership
-      const { error: memberError } = await (supabase as any)
+      const { error: memberError } = await supabaseAny
         .from('memberships')
         .insert({
           user_id: userData.user.id,

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, FileText } from 'lucide-react';
@@ -44,8 +44,8 @@ export function DividendTracker({ entityId, orgId }: DividendTrackerProps) {
         payment_date: new Date().toISOString().split('T')[0],
       });
       toast({ title: 'Dividend marked as paid' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -209,8 +209,8 @@ function DeclareDividendDialog({
       setAmountPerShare('');
       setPaymentDate('');
       setNotes('');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -219,6 +219,9 @@ function DeclareDividendDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Declare Dividend</DialogTitle>
+          <DialogDescription>
+            Declare a dividend payment for this entity and its shareholders.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -294,6 +297,9 @@ function TaxVoucherDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Tax Voucher — {dividend.declaration_date}</DialogTitle>
+          <DialogDescription>
+            Preview and download the HMRC-format tax voucher for this dividend.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4 text-sm">

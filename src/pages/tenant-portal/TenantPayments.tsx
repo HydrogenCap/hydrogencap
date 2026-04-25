@@ -1,15 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
-  PoundSterling, Download, AlertCircle, CheckCircle2, Clock, Receipt,
+  PoundSterling, AlertCircle, CheckCircle2, Clock, Receipt,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP } from '@/lib/calculations';
 
@@ -29,7 +28,7 @@ export default function TenantPayments() {
     queryKey: ['tenant-payments-schedule', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_schedule')
         .select('*')
         .eq('tenancy_id', tenancyId)
@@ -45,7 +44,7 @@ export default function TenantPayments() {
     queryKey: ['tenant-payments-history', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_payments')
         .select('*')
         .eq('tenancy_id', tenancyId)

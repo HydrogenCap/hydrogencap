@@ -5,11 +5,8 @@ import {
   Clock, 
   Home, 
   Banknote, 
-  Hammer, 
-  CheckCircle2, 
-  RefreshCcw,
-  FileText,
-  TrendingUp
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatGBP } from '@/lib/calculations';
@@ -153,7 +150,7 @@ export function PropertyTimeline({ property, complianceItems = [] }: PropertyTim
           <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
           
           <div className="space-y-6">
-            {events.map((event, idx) => {
+            {events.map((event, _idx) => {
               const Icon = event.icon;
               return (
                 <div key={event.id} className="relative flex gap-4 pl-10">

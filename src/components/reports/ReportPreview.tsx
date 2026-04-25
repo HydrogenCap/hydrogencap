@@ -10,7 +10,6 @@ import {
   Check,
   X,
   TrendingUp,
-  TrendingDown,
   Building2,
   Shield,
   BarChart3,

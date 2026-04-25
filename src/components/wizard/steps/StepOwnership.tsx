@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import type { WizardPayload } from '@/lib/wizard/types';
 
@@ -30,7 +30,7 @@ export function StepOwnership({ payload, updatePayload }: StepProps) {
   useEffect(() => {
     async function load() {
       const orgId = await fetchUserOrgId();
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('legal_entities')
         .select('id, entity_name, entity_type')
         .eq('org_id', orgId)

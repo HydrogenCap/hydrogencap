@@ -29,7 +29,7 @@ import {
   type ExportPhase,
 } from '@/hooks/useComplianceDocumentExport';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 const PHASE_LABELS: Record<ExportPhase, string> = {
   idle: '',
@@ -50,7 +50,7 @@ export function ComplianceExportButton() {
       const batchSize = 1000;
       let hasMore = true;
       while (hasMore) {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabaseAny
           .from('properties_v2')
           .select('id, address_line_1')
           .order('address_line_1')

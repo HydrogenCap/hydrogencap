@@ -33,6 +33,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -107,6 +108,9 @@ function MarkCompleteDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Mark as Complete</DialogTitle>
+          <DialogDescription>
+            Confirm this checklist item is done and add any supporting evidence or notes.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
@@ -136,8 +140,8 @@ function MarkCompleteDialog({
 
 function ChecklistItemRow({
   item,
-  tenancyId,
-  orgId,
+  tenancyId: _tenancyId,
+  orgId: _orgId,
   onMarkComplete,
   onUnmark,
 }: {

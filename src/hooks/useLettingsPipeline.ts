@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -75,7 +75,7 @@ export function useLettingsPipeline() {
   return useQuery({
     queryKey: ['lettings-pipeline'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('lettings_pipeline')
         .select('*')
         .neq('stage', 'completed')
@@ -89,9 +89,9 @@ export function useLettingsPipeline() {
       const roomIds = [...new Set(data.map(d => d.room_id).filter(Boolean))] as string[];
 
       const [propsRes, roomsRes] = await Promise.all([
-        (supabase as any).from('properties_v2').select('id, address_line_1, postcode').in('id', propertyIds),
+        supabaseAny.from('properties_v2').select('id, address_line_1, postcode').in('id', propertyIds),
         roomIds.length > 0
-          ? (supabase as any).from('rooms_v2').select('id, room_name, current_rent_pcm').in('id', roomIds)
+          ? supabaseAny.from('rooms_v2').select('id, room_name, current_rent_pcm').in('id', roomIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -122,7 +122,7 @@ export function useCreateLetting() {
       listingDate?: string;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('lettings_pipeline')
         .insert({
           org_id: orgId,
@@ -152,7 +152,7 @@ export function useAdvanceStage() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: LettingsPipelineUpdate }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('lettings_pipeline')
         .update(updates)
         .eq('id', id)
@@ -185,7 +185,7 @@ export function useCompleteLetting() {
       };
       if (tenancyId) updates.tenancy_id = tenancyId;
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('lettings_pipeline')
         .update(updates)
         .eq('id', id);
@@ -193,7 +193,7 @@ export function useCompleteLetting() {
 
       // Close linked void period
       if (voidPeriodId) {
-        await (supabase as any)
+        await supabaseAny
           .from('void_periods')
           .update({ end_date: actualMoveIn || new Date().toISOString().slice(0, 10) })
           .eq('id', voidPeriodId);

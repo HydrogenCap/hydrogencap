@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ export function useInsuranceDocScan() {
         if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
         // 2 ── Create a document record (edge fn validates ownership via this)
-        const { data: docRow, error: docErr } = await (supabase as any)
+        const { data: docRow, error: docErr } = await supabaseAny
           .from('documents')
           .insert({
             org_id: orgId,

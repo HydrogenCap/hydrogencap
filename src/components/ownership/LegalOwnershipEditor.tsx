@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Building2, Search, User, Trash2 } from 'lucide-react';
+import { Plus, Building2, User, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -34,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useCompanies, useCreateCompany, type CompanyType } from '@/hooks/useCompanies';
-import { useParties, useCreateParty, type Party } from '@/hooks/useParties';
+import { useParties, useCreateParty } from '@/hooks/useParties';
 import { useProperty, useUpdateProperty } from '@/hooks/useProperties';
 import {
   usePropertyBeneficialOwnership,
@@ -329,6 +330,9 @@ export function LegalOwnershipEditor({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Set Legal Ownership</DialogTitle>
+          <DialogDescription>
+            Record who holds legal title to this property — an entity or an individual.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

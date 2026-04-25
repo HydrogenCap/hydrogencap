@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -87,7 +87,12 @@ export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, comp
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Serve Notice</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Serve Notice</DialogTitle>
+          <DialogDescription>
+            Serve a Section 21 or Section 8 notice on this tenancy and generate the notice document.
+          </DialogDescription>
+        </DialogHeader>
 
         {showS21Warning && (
           <Alert variant="destructive" className="border-2">

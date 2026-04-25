@@ -8,7 +8,7 @@ import { PortalLayout } from '@/components/portal/PortalLayout';
 import { useShareholderSession } from '@/hooks/useShareholderSession';
 import { useShareholderPortfolioData } from '@/hooks/useShareholderPortfolioData';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP, formatGBPDecimal, formatPercent } from '@/lib/calculations';
 import { format } from 'date-fns';
@@ -31,7 +31,7 @@ export default function PortalDashboard() {
     queryKey: ['portal-distributions', orgId],
     queryFn: async () => {
       if (!orgId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('distributions')
         .select(`
           *,
@@ -47,7 +47,7 @@ export default function PortalDashboard() {
       const distIds = (data || []).map(d => d.id);
       if (distIds.length === 0) return [];
 
-      const { data: allocs } = await (supabase as any)
+      const { data: allocs } = await supabaseAny
         .from('distribution_allocations')
         .select('*')
         .in('distribution_id', distIds);
@@ -320,8 +320,6 @@ export default function PortalDashboard() {
                     <AccordionContent>
                       <div className="pt-2 space-y-2">
                         {group.properties.map((property) => {
-                          const propertyLoans = loansByProperty.get(property.id) || [];
-                          const debt = propertyLoans.reduce((sum, l) => sum + l.current_balance, 0);
                           const perf = performanceByProperty.get(property.id);
                           return (
                             <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">

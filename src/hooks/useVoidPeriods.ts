@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
-import { detectVoidRooms, type DetectedVoid } from '@/lib/voidDetection';
+import { detectVoidRooms } from '@/lib/voidDetection';
 
 export type VoidReason = 'between_tenants' | 'refurbishment' | 'sale_preparation' | 'legal_dispute' | 'other';
 
@@ -32,7 +32,7 @@ export function useVoidPeriods(propertyId?: string) {
   return useQuery({
     queryKey: ['void-periods', propertyId],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('void_periods')
         .select('*')
         .order('start_date', { ascending: false });
@@ -57,7 +57,7 @@ export function useActiveVoids() {
   return useQuery({
     queryKey: ['void-periods', 'active'],
     queryFn: async () => {
-      const { data: voids, error } = await (supabase as any)
+      const { data: voids, error } = await supabaseAny
         .from('void_periods')
         .select('*')
         .is('end_date', null)
@@ -71,9 +71,9 @@ export function useActiveVoids() {
       const roomIds = [...new Set(voids.map(v => v.room_id).filter(Boolean))] as string[];
 
       const [propsRes, roomsRes] = await Promise.all([
-        (supabase as any).from('properties_v2').select('id, address_line_1, city, postcode').in('id', propertyIds),
+        supabaseAny.from('properties_v2').select('id, address_line_1, city, postcode').in('id', propertyIds),
         roomIds.length > 0
-          ? (supabase as any).from('rooms_v2').select('id, room_name, current_rent_pcm').in('id', roomIds)
+          ? supabaseAny.from('rooms_v2').select('id, room_name, current_rent_pcm').in('id', roomIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
@@ -199,7 +199,7 @@ export function useCreateVoidPeriod() {
       estimatedMonthlyCost?: number;
     }) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('void_periods')
         .insert({
           org_id: orgId,
@@ -230,7 +230,7 @@ export function useUpdateVoidPeriod() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<VoidPeriod> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('void_periods')
         .update(updates)
         .eq('id', id)
@@ -253,7 +253,7 @@ export function useEndVoidPeriod() {
 
   return useMutation({
     mutationFn: async ({ id, endDate }: { id: string; endDate: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('void_periods')
         .update({ end_date: endDate })
         .eq('id', id)

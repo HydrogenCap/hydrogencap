@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
+import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ export function useJobQuotes(jobId: string | undefined) {
     queryFn: async () => {
       if (!jobId) return [];
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('job_quotes')
         .select(`
           *,
@@ -91,7 +91,7 @@ export function useRequestQuote() {
     }) => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('job_quotes')
         .insert({
           job_id: quote.jobId,
@@ -124,7 +124,7 @@ export function useRespondToQuote() {
 
   return useMutation({
     mutationFn: async ({ quoteId, jobId, status }: { quoteId: string; jobId: string; status: 'accepted' | 'rejected' }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('job_quotes')
         .update({
           status,
@@ -138,7 +138,7 @@ export function useRespondToQuote() {
 
       // If accepted, reject all other pending quotes for this job
       if (status === 'accepted') {
-        await (supabase as any)
+        await supabaseAny
           .from('job_quotes')
           .update({ status: 'rejected', responded_at: new Date().toISOString() })
           .eq('job_id', jobId)
@@ -168,7 +168,7 @@ export function useJobEvidence(jobId: string | undefined) {
     queryFn: async () => {
       if (!jobId) return [];
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('job_evidence')
         .select('*')
         .eq('job_id', jobId)
@@ -195,7 +195,7 @@ export function useUploadEvidence() {
       const orgId = await fetchUserOrgId();
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('job_evidence')
         .insert({
           job_id: evidence.jobId,
@@ -226,8 +226,8 @@ export function useDeleteEvidence() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, jobId }: { id: string; jobId: string }) => {
-      const { error } = await (supabase as any)
+    mutationFn: async ({ id, jobId: _jobId }: { id: string; jobId: string }) => {
+      const { error } = await supabaseAny
         .from('job_evidence')
         .delete()
         .eq('id', id);
@@ -249,7 +249,7 @@ export function useContractorRatings(contractorId: string | undefined) {
     queryFn: async () => {
       if (!contractorId) return [];
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractor_ratings')
         .select('*')
         .eq('contractor_id', contractorId)
@@ -279,7 +279,7 @@ export function useRateContractor() {
     }) => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractor_ratings')
         .insert({
           contractor_id: rating.contractorId,
@@ -298,14 +298,14 @@ export function useRateContractor() {
       if (error) throw error;
 
       // Update contractor's avg_rating
-      const { data: allRatings } = await (supabase as any)
+      const { data: allRatings } = await supabaseAny
         .from('contractor_ratings')
         .select('rating')
         .eq('contractor_id', rating.contractorId);
 
       if (allRatings && allRatings.length > 0) {
         const avgRating = allRatings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / allRatings.length;
-        await (supabase as any)
+        await supabaseAny
           .from('contractors')
           .update({ avg_rating: Math.round(avgRating * 10) / 10 })
           .eq('id', rating.contractorId);

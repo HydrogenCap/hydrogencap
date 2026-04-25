@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Wrench, AlertTriangle, ArrowRight, Siren } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMaintenanceRequests } from '@/hooks/useMaintenanceRequests';
-import { PRIORITY_CONFIG, STATUS_CONFIG, OPEN_STATUSES } from '@/lib/maintenanceTypes';
+import { PRIORITY_CONFIG, OPEN_STATUSES } from '@/lib/maintenanceTypes';
 
 export function MaintenanceWidget() {
   const { data: requests, isLoading } = useMaintenanceRequests();

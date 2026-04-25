@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
+import { TrendingDown, AlertTriangle } from 'lucide-react';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
-import { calculateLTV, calculateEquity, calculateMonthlyCashflowAfterDebt, calculateNetRent, getEffectiveCosts, formatGBP, formatPercent } from '@/lib/calculations';
+import { calculateMonthlyCashflowAfterDebt, getEffectiveCosts, formatGBP, formatPercent } from '@/lib/calculations';
 
 export function StressTestPanel() {
   const { data: properties } = useProperties();
@@ -35,8 +35,6 @@ export function StressTestPanel() {
 
       // Base
       const baseEquity = value - mortgage;
-      const baseLtv = value > 0 ? (mortgage / value) * 100 : 0;
-      const baseNetRent = annualRent - effectiveCosts.total;
       const baseMonthlyCf = calculateMonthlyCashflowAfterDebt(annualRent, effectiveCosts.total, mortgagePayment);
 
       basePortfolio.totalValue += value;

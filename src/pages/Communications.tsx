@@ -2,8 +2,6 @@ import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
   Mail,
@@ -15,12 +13,11 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Plus,
-  Search,
   Send,
   Smartphone,
   TrendingUp,
 } from 'lucide-react';
-import { format, subDays, startOfMonth, isAfter } from 'date-fns';
+import { format, startOfMonth, isAfter } from 'date-fns';
 import { useCommunications } from '@/hooks/useCommunicationLog';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 import { LogCommunication } from '@/components/communications/LogCommunication';
@@ -28,7 +25,6 @@ import { TEXT } from '@/lib/design-tokens';
 import type {
   CommunicationChannel,
   CommunicationDirection,
-  CommunicationRecord,
 } from '@/hooks/useCommunicationLog';
 
 const CHANNEL_ICONS: Record<CommunicationChannel, React.ComponentType<{ className?: string }>> = {
@@ -55,9 +51,8 @@ const CHANNEL_LABELS: Record<CommunicationChannel, string> = {
 
 export default function Communications() {
   const [showLog, setShowLog] = useState(false);
-  const [search, setSearch] = useState('');
-  const [dirFilter, setDirFilter] = useState<CommunicationDirection | 'all'>('all');
-  const [channelFilter, setChannelFilter] = useState<CommunicationChannel | 'all'>('all');
+  const [_dirFilter, _setDirFilter] = useState<CommunicationDirection | 'all'>('all');
+  const [_channelFilter, _setChannelFilter] = useState<CommunicationChannel | 'all'>('all');
 
   const { data: allComms = [] } = useCommunications();
 

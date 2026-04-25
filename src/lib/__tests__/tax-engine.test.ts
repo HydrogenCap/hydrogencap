@@ -4,7 +4,6 @@ import {
   calculateSection24Impact,
   calculateCGT,
   getMarginalRate,
-  TAX_BANDS_2025_26,
   CGT_RATES,
 } from '../tax-engine';
 
@@ -49,7 +48,7 @@ describe('calculateIncomeTax', () => {
     // £200,000: PA fully tapered, taxable = 200000
     const basicBand = 37_700;
     const higherBand = 125_140 - 50_270; // 74870
-    const additionalBand = 200_000 - basicBand - higherBand; // above basic+higher taxable
+    const _additionalBand = 200_000 - basicBand - higherBand; // above basic+higher taxable
     const basicTax = basicBand * 0.2;
     const higherTax = higherBand * 0.4;
     const additionalTax = (200_000 - basicBand - higherBand) * 0.45;

@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Download, FileText, ChevronRight, Check } from 'lucide-react';
 import { formatGBP, formatGBPDecimal, formatDateShort } from '@/lib/calculations';
@@ -146,6 +146,9 @@ function LineItemsExpanded({ run }: { run: DistributionRun }) {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Investor Statement</DialogTitle>
+              <DialogDescription>
+                Detailed breakdown of this distribution's allocations by investor.
+              </DialogDescription>
             </DialogHeader>
             <InvestorStatement run={run} lineItem={statementItem} />
           </DialogContent>

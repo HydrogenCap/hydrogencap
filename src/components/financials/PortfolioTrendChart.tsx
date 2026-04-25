@@ -47,7 +47,7 @@ export function PortfolioTrendChart({ data }: Props) {
               tickFormatter={v => `£${(v / 1000).toFixed(0)}k`}
             />
             <Tooltip
-              formatter={(v: number, name: string) => [formatGBPDecimal(v), name]}
+              formatter={(v, name) => [formatGBPDecimal(v), name]}
               {...CHART_TOOLTIP_STYLE}
             />
             <Line

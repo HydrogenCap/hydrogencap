@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
@@ -27,7 +27,7 @@ export function useDocumentShareLinks(documentId?: string, complianceDocumentId?
   return useQuery({
     queryKey: ['document-share-links', orgId, documentId, complianceDocumentId],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('document_share_links')
         .select('*')
         .eq('org_id', orgId!)
@@ -55,7 +55,7 @@ export function useAllDocumentShareLinks() {
   return useQuery({
     queryKey: ['document-share-links', orgId, 'all'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('document_share_links')
         .select('*')
         .eq('org_id', orgId!)
@@ -90,7 +90,7 @@ export function useCreateDocumentShareLink() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('document_share_links')
         .insert({
           org_id: orgId,
@@ -122,7 +122,7 @@ export function useDeactivateShareLink() {
 
   return useMutation({
     mutationFn: async (linkId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('document_share_links')
         .update({ is_active: false })
         .eq('id', linkId);

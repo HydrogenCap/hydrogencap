@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import {
   checkHMOCompliance,
   isHMOProperty,
@@ -38,7 +38,7 @@ export function useHMOCompliance(propertyId: string | undefined, propertyType: s
     queryKey: ['hmo_rooms', propertyId],
     queryFn: async () => {
       if (!propertyId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rooms_v2')
         .select('id, room_name, room_type, is_lettable, size_sqm, occupancy_type, amenity_type')
         .eq('property_id', propertyId)
@@ -69,7 +69,7 @@ export function useHMOPortfolioCompliance() {
     queryKey: ['hmo_portfolio_compliance'],
     queryFn: async () => {
       // Fetch all HMO properties
-      const { data: properties, error: propError } = await (supabase as any)
+      const { data: properties, error: propError } = await supabaseAny
         .from('properties_v2')
         .select('id, property_type, address_line_1, city, postcode')
         .in('property_type', ['hmo_licensed', 'hmo_mandatory'])
@@ -80,7 +80,7 @@ export function useHMOPortfolioCompliance() {
       const propertyIds = properties.map(p => p.id);
 
       // Fetch all rooms for HMO properties
-      const { data: allRooms, error: roomError } = await (supabase as any)
+      const { data: allRooms, error: roomError } = await supabaseAny
         .from('rooms_v2')
         .select('id, property_id, room_name, room_type, is_lettable, size_sqm, occupancy_type, amenity_type')
         .in('property_id', propertyIds)

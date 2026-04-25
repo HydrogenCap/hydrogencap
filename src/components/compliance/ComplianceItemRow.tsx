@@ -12,8 +12,6 @@ import {
   Edit2,
   X,
   Check,
-  Calendar,
-  User,
   Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,8 +46,7 @@ import { DocumentViewerModal } from './DocumentViewerModal';
 import { 
   RESPONSIBLE_PARTIES, 
   type ComplianceItem, 
-  type ComplianceDocument,
-  getComplianceItemStatus 
+  type ComplianceDocument 
 } from '@/lib/complianceTypes';
 import { 
   useUpdateComplianceItem, 
@@ -87,8 +84,6 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
   const currentDoc = item.documents?.find(d => d.is_current);
   const archivedDocs = (item.documents?.filter(d => !d.is_current) || [])
     .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime());
-  
-  const status = getComplianceItemStatus(item.expiry_date);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -125,7 +120,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
       });
       setIsEditing(false);
       toast({ title: 'Compliance item updated' });
-    } catch (error) {
+    } catch (_error) {
       toast({ 
         title: 'Update failed', 
         variant: 'destructive' 
@@ -137,7 +132,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
     try {
       await deleteItem.mutateAsync({ id: item.id, propertyId });
       toast({ title: 'Compliance item deleted' });
-    } catch (error) {
+    } catch (_error) {
       toast({ 
         title: 'Delete failed', 
         variant: 'destructive' 
@@ -407,7 +402,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
                       Document History
                     </h5>
                     <div className="border rounded-lg divide-y">
-                      {archivedDocs.map((doc, index) => (
+                      {archivedDocs.map((doc, _index) => (
                         <div 
                           key={doc.id} 
                           className="p-3 flex items-center justify-between hover:bg-muted/30 transition-colors"

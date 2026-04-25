@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, ImagePlus } from 'lucide-react';
+import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -111,7 +111,7 @@ export function InspectionChecklist({ inspectionId }: InspectionChecklistProps) 
     updateItem.mutate({
       id: item.id,
       inspection_id: item.inspection_id,
-      photos: newPhotos as any,
+      photos: newPhotos,
     });
 
     setActivePhotoItemId(null);

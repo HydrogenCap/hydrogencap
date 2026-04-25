@@ -34,7 +34,7 @@ export default function Financials() {
 
   // Snapshot data (legacy)
   const { data: monthlySummary, isLoading: summaryLoading } = usePortfolioMonthlySummary(12);
-  const { data: propertyPerf, isLoading: perfLoading } = usePropertyAnnualPerformance();
+  const { data: propertyPerf, isLoading: _perfLoading } = usePropertyAnnualPerformance();
   const latestMonth = monthlySummary?.[0]?.snapshot_month;
   const { data: entitySummary, isLoading: entityLoading } = useEntityFinancialSummary(latestMonth);
 

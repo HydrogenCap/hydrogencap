@@ -1,9 +1,8 @@
-import { useState, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Upload, FileText, History, ShieldOff, ShieldCheck } from 'lucide-react';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
@@ -83,7 +82,7 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-lg">{DOC_TYPE_DISPLAY_NAMES[row.document_type]}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{row.property_address}</p>
+          <DialogDescription className="text-sm">{row.property_address}</DialogDescription>
           <div className="pt-2">{statusBadge(row.calculated_status)}</div>
         </DialogHeader>
 

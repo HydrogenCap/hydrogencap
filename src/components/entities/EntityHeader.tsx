@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { LegalEntity } from '@/hooks/useLegalEntities';
@@ -108,13 +108,13 @@ export function EntityHeader({
                 onCheckedChange={async (checked) => {
                   try {
                     if (checked) {
-                      await (supabase as any)
+                      await supabaseAny
                         .from('legal_entities')
                         .update({ is_group_parent: false })
                         .eq('org_id', entity.org_id)
                         .eq('is_group_parent', true);
                     }
-                    await (supabase as any)
+                    await supabaseAny
                       .from('legal_entities')
                       .update({ is_group_parent: checked })
                       .eq('id', entity.id);

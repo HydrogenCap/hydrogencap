@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -173,7 +173,6 @@ export function useAcceptComplianceDocument() {
         originalFilename,
         fileUrl,
         notes,
-        epcRating,
         wasEdited,
         originalAiSuggestions,
       } = params;
@@ -200,7 +199,7 @@ export function useAcceptComplianceDocument() {
       }
 
       // 1. Mark any existing current doc as superseded
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await supabaseAny
         .from('compliance_documents_v2')
         .select('id')
         .eq('property_id', propertyId)
@@ -209,7 +208,7 @@ export function useAcceptComplianceDocument() {
         .maybeSingle();
 
       if (existing) {
-        await (supabase as any)
+        await supabaseAny
           .from('compliance_documents_v2')
           .update({ is_current: false })
           .eq('id', existing.id);
@@ -246,7 +245,7 @@ export function useAcceptComplianceDocument() {
       }
 
       // 4. Create compliance_documents_v2 record
-      const { data: newDoc, error: insertError } = await (supabase as any)
+      const { data: newDoc, error: insertError } = await supabaseAny
         .from('compliance_documents_v2')
         .insert({
           org_id: orgId,
@@ -274,7 +273,7 @@ export function useAcceptComplianceDocument() {
       if (insertError) throw insertError;
 
       // 5. Update the original documents record
-      await (supabase as any)
+      await supabaseAny
         .from('documents')
         .update({
           review_status: 'accepted',
@@ -286,7 +285,7 @@ export function useAcceptComplianceDocument() {
         .eq('id', documentId);
 
       // 6. Enrich with AI-extracted certifier & reference data
-      const { data: docMeta } = await (supabase as any)
+      const { data: docMeta } = await supabaseAny
         .from('documents')
         .select('extracted_certifier_name, extracted_certifier_company, extracted_reference_number')
         .eq('id', documentId)
@@ -301,16 +300,57 @@ export function useAcceptComplianceDocument() {
           updates.certificate_number = docMeta.extracted_reference_number;
         }
         if (Object.keys(updates).length > 0) {
-          await (supabase as any)
+          await supabaseAny
             .from('compliance_documents_v2')
             .update(updates)
             .eq('id', newDoc.id);
         }
       }
 
+      // 6b. Mirror to V1 compliance_items so legacy dashboards (Property
+      // Detail, calendar export, jobs dialog, go-live checklist) reflect
+      // the new dates without requiring a separate manual entry. We don't
+      // copy the file into the V1 `compliance` bucket — viewing still
+      // happens via the V2 doc — but the dates and renewal status are the
+      // user-visible bit on those screens.
+      const { data: existingItem } = await supabaseAny
+        .from('compliance_items')
+        .select('id, expiry_date')
+        .eq('property_id', propertyId)
+        .eq('compliance_type', complianceType)
+        .maybeSingle();
+
+      const itemUpdates = {
+        issue_date: issueDate || null,
+        expiry_date: calculatedExpiryDate,
+        is_required: true,
+        is_manually_excluded: false,
+        renewal_status: null,
+        renewal_booked_date: null,
+        last_reminder_sent_at: null,
+        reminder_count: 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (existingItem) {
+        await supabaseAny
+          .from('compliance_items')
+          .update(itemUpdates)
+          .eq('id', existingItem.id);
+      } else {
+        await supabaseAny
+          .from('compliance_items')
+          .insert({
+            org_id: orgId,
+            property_id: propertyId,
+            compliance_type: complianceType,
+            ...itemUpdates,
+          });
+      }
+
       // 7. Auto-populate insurance_policies if applicable
       if (docType === 'building_insurance' || docType === 'public_liability_insurance') {
-        const { data: docData } = await (supabase as any)
+        const { data: docData } = await supabaseAny
           .from('documents')
           .select('extracted_certifier_company, extracted_reference_number, expiry_date, extracted_issue_date')
           .eq('id', documentId)
@@ -323,14 +363,14 @@ export function useAcceptComplianceDocument() {
           const startDate = issueDate || docData.extracted_issue_date || null;
 
           if (renewalDate) {
-            const { data: existingPolicy } = await (supabase as any)
+            const { data: existingPolicy } = await supabaseAny
               .from('insurance_policies')
               .select('id')
               .eq('property_id', propertyId)
               .limit(1);
 
             if (existingPolicy && existingPolicy.length > 0) {
-              await (supabase as any)
+              await supabaseAny
                 .from('insurance_policies')
                 .update({
                   insurer_name: insurerName,
@@ -343,7 +383,7 @@ export function useAcceptComplianceDocument() {
                 })
                 .eq('id', existingPolicy[0].id);
             } else {
-              await (supabase as any)
+              await supabaseAny
                 .from('insurance_policies')
                 .insert({
                   org_id: orgId,
@@ -374,6 +414,9 @@ export function useAcceptComplianceDocument() {
       queryClient.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
       queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
+      // V1 mirror — see step 6b above
+      queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
 
       toast({
         title: 'Document accepted',
@@ -399,7 +442,7 @@ export function useRejectComplianceDocument() {
 
   return useMutation({
     mutationFn: async (documentId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('documents')
         .update({ review_status: 'rejected' })
         .eq('id', documentId);

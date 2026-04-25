@@ -1,4 +1,4 @@
-import { AlertCircle, X, Sparkles, Plus } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDemoData } from '@/hooks/useDemoData';
 import { useNavigate } from 'react-router-dom';

@@ -82,7 +82,6 @@ export function PropertyPnLCard({ propertyId }: Props) {
   const avgMonthlyIncome = pnl.annualGrossIncome / 12;
   const avgMonthlyCosts = pnl.annualCosts / 12;
   const avgMonthlyNOI = pnl.annualNOI / 12;
-  const avgMonthlyCashflow = pnl.annualCashflow / 12;
 
   return (
     <Card>
@@ -109,7 +108,7 @@ export function PropertyPnLCard({ propertyId }: Props) {
               <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
               <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={v => `£${(v / 1000).toFixed(0)}k`} />
               <Tooltip
-                formatter={(v: number, name: string) => [formatGBPDecimal(v), name]}
+                formatter={(v, name) => [formatGBPDecimal(v), name]}
                 contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
               />
               <Line dataKey="income" name="Income" stroke="hsl(160, 60%, 40%)" strokeWidth={2} dot={false} />
@@ -131,7 +130,7 @@ export function PropertyPnLCard({ propertyId }: Props) {
                     <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={35} outerRadius={60} paddingAngle={2}>
                       {donutData.map((_, i) => <Cell key={i} fill={COST_COLORS[i % COST_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatGBPCompact(v)} />
+                    <Tooltip formatter={(v) => formatGBPCompact(v)} />
                   </RechartPie>
                 </ResponsiveContainer>
                 <div className="flex flex-col gap-1.5">

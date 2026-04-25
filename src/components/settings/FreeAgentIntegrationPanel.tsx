@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
-  RefreshCw, Unlink, CheckCircle2, XCircle, Clock, Zap, Building2,
+  RefreshCw, Unlink, CheckCircle2, XCircle, Clock, Zap,
   ArrowRight, Loader2, ExternalLink, FlaskConical,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -115,7 +115,7 @@ function CategoryMapping({ connection }: { connection: FreeAgentConnection }) {
 
 export function FreeAgentIntegrationPanel() {
   const [searchParams] = useSearchParams();
-  const { data: entities, isLoading: entitiesLoading } = useLegalEntities();
+  const { data: entities, isLoading: _entitiesLoading } = useLegalEntities();
   const { data: orgId } = useUserOrg();
   const { data: connections, isLoading: connectionsLoading } = useFreeAgentConnections();
   const disconnect = useDisconnectFreeAgent();

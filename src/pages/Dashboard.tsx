@@ -43,7 +43,7 @@ function DashboardPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
-  const { lifecycleFilter, filterProperties } = useLifecycleFilter();
+  const { lifecycleFilter, filterProperties: _filterProperties } = useLifecycleFilter();
 
   // ── Data hooks ──────────────────────────────────────────
   const { data: propertiesV2, isLoading: propsLoading } = usePropertiesV2();
@@ -51,7 +51,7 @@ function DashboardPage() {
   const { data: v1Properties } = useDashboardPropertiesV2();
   const isLoading = propsLoading || kpisLoading;
 
-  const { data: passports } = usePropertyPassports();
+  const { data: _passports } = usePropertyPassports();
   const { stats: missingStats } = useMissingInfo();
   const { risks: portfolioRisks, criticalCount: portfolioCriticalCount } = usePortfolioRisks();
   const { data: portfolioMonthlySummary } = usePortfolioMonthlySummary(12);

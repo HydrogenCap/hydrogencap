@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ArrowRight, CheckCircle2, Circle, AlertCircle, MinusCircle, Play, Loader2, Download } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, CheckCircle2, Circle, AlertCircle, MinusCircle, Play, Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { useMigrationStatus, useRunMigrationStep, useRunFullMigration } from '@/hooks/useMigration';
+import { useMigrationStatus, useRunMigrationStep, useRunFullMigration, type MigrationFunctionName } from '@/hooks/useMigration';
 import { GapFillSection } from '@/components/migration/GapFillSection';
 import type { MigrationStep, MigrationResult } from '@/lib/migrationTypes';
 import { getStatusColor, getStatusLabel } from '@/lib/migrationTypes';
@@ -104,7 +104,7 @@ export default function MigrationDashboard() {
   const handleRunStep = async (step: MigrationStep) => {
     setRunningStep(step.key);
     try {
-      const result = await runStep.mutateAsync(step.functionName as any);
+      const result = await runStep.mutateAsync(step.functionName as MigrationFunctionName);
       setStepResults(prev => ({ ...prev, [step.key]: result }));
       toast.success(`${step.title}: ${result.migrated} records migrated`);
     } catch (e) {

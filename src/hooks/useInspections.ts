@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useToast } from '@/hooks/use-toast';
 
@@ -112,7 +112,7 @@ export function useInspections(filters?: {
   return useQuery({
     queryKey: ['inspections', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('property_inspections')
         .select('*, property:properties_v2(id, address_line_1, city, postcode)')
         .order('scheduled_date', { ascending: false });
@@ -132,7 +132,7 @@ export function useInspection(id: string | undefined) {
   return useQuery({
     queryKey: ['inspection', id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_inspections')
         .select('*, property:properties_v2(id, address_line_1, city, postcode)')
         .eq('id', id!)
@@ -159,7 +159,7 @@ export function useCreateInspection() {
       tenant_notified?: boolean;
       access_notes?: string | null;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_inspections')
         .insert({ ...inspection, org_id: org!.id })
         .select()
@@ -183,7 +183,7 @@ export function useUpdateInspection() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<PropertyInspection> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_inspections')
         .update(updates)
         .eq('id', id)
@@ -214,7 +214,7 @@ export function useCompleteInspection() {
       summary: string;
       follow_up_actions?: FollowUpAction[];
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('property_inspections')
         .update({
           status: 'completed',
@@ -246,7 +246,7 @@ export function useInspectionItems(inspectionId: string | undefined) {
   return useQuery({
     queryKey: ['inspection_items', inspectionId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('inspection_items')
         .select('*')
         .eq('inspection_id', inspectionId!)
@@ -263,7 +263,7 @@ export function useCreateInspectionItems() {
 
   return useMutation({
     mutationFn: async (items: Omit<InspectionItem, 'id'>[]) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('inspection_items')
         .insert(items)
         .select();
@@ -283,7 +283,7 @@ export function useUpdateInspectionItem() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<InspectionItem> & { id: string; inspection_id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('inspection_items')
         .update(updates)
         .eq('id', id)
@@ -304,7 +304,7 @@ export function useInspectionTemplates() {
   return useQuery({
     queryKey: ['inspection_templates'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('inspection_templates')
         .select('*')
         .order('name');
@@ -321,7 +321,7 @@ export function useCreateInspectionTemplate() {
 
   return useMutation({
     mutationFn: async (template: { name: string; inspection_type: string; rooms: InspectionTemplateRoom[] }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('inspection_templates')
         .insert({ ...template, org_id: org!.id })
         .select()
@@ -345,7 +345,7 @@ export function useUpdateInspectionTemplate() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<InspectionTemplate> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('inspection_templates')
         .update(updates)
         .eq('id', id)
@@ -370,7 +370,7 @@ export function useDeleteInspectionTemplate() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('inspection_templates')
         .delete()
         .eq('id', id);

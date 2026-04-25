@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,11 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
-  CalendarIcon,
   Plus,
   Upload,
   Filter,
@@ -114,9 +111,9 @@ export function TransactionLedger() {
       }
       const header = lines[0].toLowerCase();
       const hasDate = header.includes('date');
-      const hasDesc = header.includes('description') || header.includes('desc');
+      const _hasDesc = header.includes('description') || header.includes('desc');
       const hasAmount = header.includes('amount');
-      const hasCategory = header.includes('category') || header.includes('cat');
+      const _hasCategory = header.includes('category') || header.includes('cat');
 
       if (!hasDate || !hasAmount) {
         toast.error('CSV must contain at least Date and Amount columns');
@@ -340,6 +337,9 @@ export function TransactionLedger() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Transaction</DialogTitle>
+            <DialogDescription>
+              Manually record a new accounting transaction in the ledger.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -425,6 +425,9 @@ export function TransactionLedger() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Import Transactions from CSV</DialogTitle>
+            <DialogDescription>
+              Upload a CSV export from your bank or accountant to bulk-import transactions.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

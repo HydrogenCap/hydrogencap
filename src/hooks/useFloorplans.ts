@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
 
@@ -39,7 +39,7 @@ export function useFloorplans(propertyId: string) {
   return useQuery({
     queryKey: ['floorplans', propertyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('floorplans')
         .select('*')
         .eq('property_id', propertyId)
@@ -57,7 +57,7 @@ export function usePrimaryFloorplan(propertyId: string) {
   return useQuery({
     queryKey: ['floorplans', propertyId, 'primary'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('floorplans')
         .select('*')
         .eq('property_id', propertyId)
@@ -101,7 +101,7 @@ export function useUploadFloorplan() {
       if (uploadError) throw uploadError;
 
       // Insert floorplan record
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('floorplans')
         .insert({
           property_id: propertyId,
@@ -142,7 +142,7 @@ export function useUpdateFloorplan() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Floorplan> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('floorplans')
         .update(updates)
         .eq('id', id)
@@ -181,7 +181,7 @@ export function useDeleteFloorplan() {
         await supabase.storage.from('floorplans').remove([storagePath]);
       }
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('floorplans')
         .delete()
         .eq('id', id);
@@ -212,8 +212,8 @@ export function useSetPrimaryFloorplan() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { data, error } = await (supabase as any)
+    mutationFn: async ({ id, propertyId: _propertyId }: { id: string; propertyId: string }) => {
+      const { data, error } = await supabaseAny
         .from('floorplans')
         .update({ is_primary: true })
         .eq('id', id)

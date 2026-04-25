@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 /**
  * Shared hook that provides compliance stats from the V2 compliance_matrix_v2 view.
@@ -10,7 +10,7 @@ export function usePortfolioComplianceStats() {
   const { data: matrixRows, isLoading } = useQuery({
     queryKey: ['compliance_matrix_v2_stats'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_matrix_v2')
         .select('calculated_status');
       if (error) throw error;

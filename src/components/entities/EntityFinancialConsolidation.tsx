@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEntityMonthlySnapshots, useEntityPropertyBreakdown } from '@/hooks/useFinancialSnapshots';
 import { useEntityPropertiesV2 } from '@/hooks/usePropertiesV2';
@@ -102,7 +101,7 @@ export function EntityFinancialConsolidation({ entityId }: Props) {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" fontSize={12} />
                   <YAxis fontSize={12} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: number) => formatGBPDecimal(v)} />
+                  <Tooltip formatter={(v) => formatGBPDecimal(v)} />
                   <Legend />
                   <Bar dataKey="income" name="Gross Income" fill="#22c55e" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="costs" name="Total Costs" fill="#ef4444" radius={[2, 2, 0, 0]} />

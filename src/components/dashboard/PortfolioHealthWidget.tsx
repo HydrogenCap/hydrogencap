@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Activity, TrendingUp, TrendingDown, ExternalLink, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,6 @@ interface PropertyScore {
 }
 
 export function PortfolioHealthWidget({ properties, onClick }: PortfolioHealthWidgetProps) {
-  const navigate = useNavigate();
   const propertyScores = useMemo<PropertyScore[]>(() => {
     const currentYear = new Date().getFullYear();
     
@@ -95,7 +94,7 @@ export function PortfolioHealthWidget({ properties, onClick }: PortfolioHealthWi
     danger: 'text-destructive',
   };
 
-  const statusBg = {
+  const _statusBg = {
     success: 'bg-success',
     warning: 'bg-warning',
     danger: 'bg-destructive',

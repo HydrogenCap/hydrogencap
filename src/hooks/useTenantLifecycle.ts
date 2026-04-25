@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { calculatePaymentScore } from '@/lib/tenant-scoring';
 
@@ -86,7 +86,7 @@ export function useTenantPaymentScore(tenantId: string | undefined) {
     queryKey: ['tenant_payment_score', tenantId],
     queryFn: async () => {
       if (!tenantId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenants_v2')
         .select('on_time_payments, late_payments, missed_payments, payment_score, housing_benefit_amount, universal_credit')
         .eq('id', tenantId)
@@ -123,7 +123,7 @@ export function useTenantNotices(tenantId: string | undefined) {
     queryKey: ['tenant_notices', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_notices')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -142,7 +142,7 @@ export function useCreateNotice() {
   return useMutation({
     mutationFn: async (notice: CreateNoticeInput) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_notices')
         .insert({ ...notice, org_id: orgId })
         .select()
@@ -166,7 +166,7 @@ export function useTenantLifecycleEvents(tenantId: string | undefined) {
     queryKey: ['tenant_lifecycle_events', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_lifecycle_events')
         .select('*')
         .eq('tenant_id', tenantId)
@@ -185,7 +185,7 @@ export function useLogLifecycleEvent() {
   return useMutation({
     mutationFn: async (event: LogEventInput) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_lifecycle_events')
         .insert({ ...event, org_id: orgId })
         .select()

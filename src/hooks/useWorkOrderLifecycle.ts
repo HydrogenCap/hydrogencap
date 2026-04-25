@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -93,7 +93,7 @@ export function useAdvanceWorkOrder() {
       const stageConfig = PIPELINE_STAGES.find(s => s.value === targetStage);
       if (!stageConfig) throw new Error('Invalid stage');
 
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         status: stageConfig.statusMap,
         updated_at: new Date().toISOString(),
       };
@@ -105,7 +105,7 @@ export function useAdvanceWorkOrder() {
         updates.actual_completion_date = new Date().toISOString().split('T')[0];
       }
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update(updates)
         .eq('id', id);
@@ -131,7 +131,7 @@ export function useApproveWorkOrderLifecycle() {
   return useMutation({
     mutationFn: async ({ id, approvedBudget }: { id: string; approvedBudget: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         status: 'approved',
         approval_status: 'approved',
         approved_budget: approvedBudget,
@@ -139,7 +139,7 @@ export function useApproveWorkOrderLifecycle() {
         approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update(updates)
         .eq('id', id);
@@ -165,13 +165,13 @@ export function useRejectWorkOrderLifecycle() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const updates: Record<string, any> = {
+      const updates: Record<string, unknown> = {
         status: 'rejected',
         approval_status: 'rejected',
         rejected_reason: reason,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_orders')
         .update(updates)
         .eq('id', id);
@@ -195,7 +195,7 @@ export function usePendingApprovals() {
   return useQuery({
     queryKey: ['pending_approvals'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_orders')
         .select(`
           *,
@@ -217,7 +217,7 @@ export function useWorkOrderMaterials(workOrderId: string | undefined) {
     queryKey: ['work_order_materials', workOrderId],
     queryFn: async () => {
       if (!workOrderId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_materials')
         .select('*')
         .eq('work_order_id', workOrderId)
@@ -246,7 +246,7 @@ export function useAddMaterial() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_materials')
         .insert({
           ...input,
@@ -273,7 +273,7 @@ export function useDeleteMaterial() {
 
   return useMutation({
     mutationFn: async ({ id, workOrderId }: { id: string; workOrderId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_order_materials')
         .delete()
         .eq('id', id);
@@ -293,7 +293,7 @@ export function useWorkOrderWarranties(workOrderId: string | undefined) {
     queryKey: ['work_order_warranties', workOrderId],
     queryFn: async () => {
       if (!workOrderId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_warranties')
         .select('*')
         .eq('work_order_id', workOrderId)
@@ -323,7 +323,7 @@ export function useCreateWarranty() {
       const orgId = await fetchUserOrgId();
       if (!orgId) throw new Error('No organization found');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_warranties')
         .insert({
           ...input,
@@ -352,7 +352,7 @@ export function useDeleteWarranty() {
 
   return useMutation({
     mutationFn: async ({ id, workOrderId }: { id: string; workOrderId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('work_order_warranties')
         .delete()
         .eq('id', id);
@@ -373,7 +373,7 @@ export function useExpiringWarranties(daysAhead: number = 90) {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + daysAhead);
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_warranties')
         .select(`
           *,
@@ -393,7 +393,7 @@ export function useAllActiveWarranties() {
   return useQuery({
     queryKey: ['active_warranties'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('work_order_warranties')
         .select(`
           *,

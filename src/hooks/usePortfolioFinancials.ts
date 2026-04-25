@@ -3,10 +3,10 @@
  * Aggregates P&L data across ALL properties using the same calculation engine as AA3a.
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { format, subMonths } from 'date-fns';
-import { calculatePropertyPnL, type PropertyFinancials, type MonthlyPnL } from '@/lib/propertyPnL';
+import { calculatePropertyPnL, type PropertyFinancials } from '@/lib/propertyPnL';
 
 export interface PropertyFinancialSummary {
   propertyId: string;
@@ -53,7 +53,7 @@ export function usePortfolioFinancials() {
       const twelveMonthsAgo = format(subMonths(new Date(), 11), 'yyyy-MM-01');
 
       // 1. Fetch all core properties
-      const { data: properties } = await (supabase as any)
+      const { data: properties } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, city, postcode, current_valuation, entity_id, lifecycle_stage')
         .in('lifecycle_stage', ['stabilised', 'letting']);
@@ -81,7 +81,7 @@ export function usePortfolioFinancials() {
         // Batch in chunks of 100 to avoid URL length limits
         for (let i = 0; i < allAgreementIds.length; i += 100) {
           const chunk = allAgreementIds.slice(i, i + 100);
-          const { data } = await (supabase as any)
+          const { data } = await supabaseAny
             .from('rent_payments')
             .select('agreement_id, amount, payment_date')
             .in('agreement_id', chunk)

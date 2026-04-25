@@ -29,7 +29,7 @@
    changePercent,
    confidence,
  }: PropertyValuationCardProps) {
-   const { data: history, isLoading: historyLoading } = usePropertyValuationHistory(propertyId);
+   const { data: history, isLoading: _historyLoading } = usePropertyValuationHistory(propertyId);
    const triggerValuation = useTriggerValuation();
  
    const latestValuation = history?.[0];

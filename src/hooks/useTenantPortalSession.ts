@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface TenantPortalAccess {
@@ -22,7 +22,7 @@ export function useTenantPortalSession() {
     queryKey: ['tenant-portal-access', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenant_portal_access')
         .select('*')
         .eq('user_id', user.id)

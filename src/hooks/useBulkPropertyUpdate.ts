@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
@@ -47,7 +47,7 @@ export function useBulkLoanUpdate() {
       }
 
       // Update all loans for selected properties
-      const { error, count } = await (supabase as any)
+      const { error, count } = await supabaseAny
         .from('loans')
         .update(updates)
         .in('property_id', propertyIds);
@@ -93,7 +93,7 @@ export function useBulkPropertyUpdate() {
         throw new Error('No updates provided');
       }
 
-      const { error, count } = await (supabase as any)
+      const { error, count } = await supabaseAny
         .from('properties_v2')
         .update(updates)
         .in('id', propertyIds);

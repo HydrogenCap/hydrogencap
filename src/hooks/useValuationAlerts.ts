@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
 
@@ -29,7 +29,7 @@ export function useValuationAlerts(includeDismissed = false) {
     queryKey: ['valuation_alerts', orgId, includeDismissed],
     enabled: !!orgId,
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('valuation_alerts')
         .select('*, properties_v2!inner(address_line_1, postcode)')
         .eq('org_id', orgId!)
@@ -39,7 +39,10 @@ export function useValuationAlerts(includeDismissed = false) {
       }
       const { data, error } = await query;
       if (error) throw error;
-      return ((data || []) as any[]).map((d) => ({
+      type WithNested = ValuationAlert & {
+        properties_v2?: { address_line_1?: string; postcode?: string } | null;
+      };
+      return ((data || []) as WithNested[]).map((d) => ({
         ...d,
         property_address: `${d.properties_v2?.address_line_1}, ${d.properties_v2?.postcode}`,
       })) as ValuationAlertWithAddress[];
@@ -57,7 +60,7 @@ export function useDismissValuationAlert() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('valuation_alerts')
         .update({ is_dismissed: true, is_read: true })
         .eq('id', id);

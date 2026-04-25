@@ -1,12 +1,29 @@
-import * as Sentry from '@sentry/react';
+/**
+ * Sentry wrappers.
+ *
+ * `@sentry/react` is ~420 kB minified. We lazy-load it on first use so it
+ * doesn't bloat the main bundle. The init call triggers the import; from
+ * that point on `sentryReady` resolves to the loaded module.
+ */
+type SentryModule = typeof import('@sentry/react');
+
+let sentryReady: Promise<SentryModule> | null = null;
+
+function loadSentry(): Promise<SentryModule> {
+  if (!sentryReady) {
+    sentryReady = import('@sentry/react');
+  }
+  return sentryReady;
+}
 
 /**
  * Initialise Sentry error tracking.
  * Only activates when VITE_SENTRY_DSN is set.
  */
-export function initSentry() {
+export async function initSentry() {
   if (!import.meta.env.VITE_SENTRY_DSN) return;
 
+  const Sentry = await loadSentry();
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     environment: import.meta.env.MODE,
@@ -31,7 +48,9 @@ export function initSentry() {
 }
 
 /** Tag the current Sentry scope with the authenticated user and org. */
-export function setSentryUser(userId: string, orgId?: string) {
+export async function setSentryUser(userId: string, orgId?: string) {
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  const Sentry = await loadSentry();
   Sentry.setUser({ id: userId });
   if (orgId) {
     Sentry.setTag('org_id', orgId);
@@ -39,7 +58,9 @@ export function setSentryUser(userId: string, orgId?: string) {
 }
 
 /** Clear user context on logout. */
-export function clearSentryUser() {
+export async function clearSentryUser() {
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  const Sentry = await loadSentry();
   Sentry.setUser(null);
 }
 
@@ -47,8 +68,10 @@ export function clearSentryUser() {
  * Capture an exception to Sentry in production only.
  * Use this in catch blocks to avoid noise in development.
  */
-export function captureError(error: unknown, context?: string) {
+export async function captureError(error: unknown, context?: string) {
   if (!import.meta.env.PROD) return;
+  if (!import.meta.env.VITE_SENTRY_DSN) return;
+  const Sentry = await loadSentry();
   Sentry.captureException(error, {
     extra: { context },
   });

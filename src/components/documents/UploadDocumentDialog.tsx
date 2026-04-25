@@ -5,6 +5,7 @@
  import {
    Dialog,
    DialogContent,
+   DialogDescription,
    DialogHeader,
    DialogTitle,
    DialogFooter,
@@ -144,6 +145,9 @@
          <form onSubmit={handleSubmit}>
            <DialogHeader>
              <DialogTitle>Upload Document</DialogTitle>
+             <DialogDescription>
+               Drag-and-drop or select files to upload to this property's document store.
+             </DialogDescription>
            </DialogHeader>
  
            <div className="space-y-4 py-4">

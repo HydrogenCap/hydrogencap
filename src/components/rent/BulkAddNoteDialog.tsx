@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,6 +37,9 @@ export default function BulkAddNoteDialog({ items, open, onOpenChange, onSuccess
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add note to {items.length} items</DialogTitle>
+          <DialogDescription>
+            This note will be attached to every selected rent schedule item.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">

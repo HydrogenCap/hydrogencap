@@ -493,7 +493,7 @@ function DataQualityIssueRow({
 
 export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
+  const [, setLastUpdateTime] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { data: companies } = useCompanies();
   
@@ -560,7 +560,7 @@ export function DataQualityWidget({ properties }: DataQualityWidgetProps) {
     issue => issue.priority !== 'high' || issue.affectedProperties.length === 0
   );
 
-  const completeCategories = qualityAnalysis.issues.filter(
+  const _completeCategories = qualityAnalysis.issues.filter(
     issue => issue.affectedProperties.length === 0
   ).length;
 

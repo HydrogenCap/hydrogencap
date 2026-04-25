@@ -10,19 +10,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP } from '@/lib/calculations';
 import { STATUS_CONFIG } from '@/lib/maintenanceTypes';
 
 export default function TenantDashboard() {
-  const { tenancyId, tenantId, orgId, canViewRent, canSubmitMaintenance } = useTenantPortalSession();
+  const { tenancyId, tenantId, orgId: _orgId, canViewRent, canSubmitMaintenance } = useTenantPortalSession();
 
   const { data: tenancy, isLoading: tenancyLoading } = useQuery({
     queryKey: ['tenant-dashboard-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancies')
         .select(`
           *,
@@ -43,7 +43,7 @@ export default function TenantDashboard() {
     queryFn: async () => {
       if (!tenancyId) return null;
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_schedule')
         .select('*')
         .eq('tenancy_id', tenancyId)
@@ -61,7 +61,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-arrears', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_schedule')
         .select('amount_outstanding')
         .eq('tenancy_id', tenancyId)
@@ -77,7 +77,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-maintenance', tenantId],
     queryFn: async () => {
       if (!tenantId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select('id, title, status, priority, created_at')
         .eq('tenant_id', tenantId)
@@ -94,7 +94,7 @@ export default function TenantDashboard() {
     queryKey: ['tenant-dashboard-recent-payment', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_payments')
         .select('*')
         .eq('tenancy_id', tenancyId)

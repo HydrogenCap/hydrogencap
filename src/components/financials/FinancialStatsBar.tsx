@@ -1,6 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Percent, BarChart3, Home } from 'lucide-react';
-import { formatGBPDecimal, formatPercent } from '@/lib/calculations';
+import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import type { PortfolioMonthlySummary } from '@/lib/financialSnapshotTypes';
 import { format } from 'date-fns';

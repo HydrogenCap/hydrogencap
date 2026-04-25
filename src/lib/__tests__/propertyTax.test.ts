@@ -5,7 +5,6 @@ import {
   buildAnnualSummary,
   generateSA105CSV,
   TAX_EXPENSE_CATEGORIES,
-  type MarginalTaxRate,
   type SA105PropertyData,
 } from '../propertyTax';
 

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, fetchUserOrgIdOrNull, useUserOrg } from '@/hooks/useUserOrg';
  
@@ -122,7 +122,7 @@ export function useContractorJobs(filters?: {
   return useQuery({
     queryKey: ['contractor-jobs', orgId, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('contractor_jobs')
         .select(`
           *,
@@ -185,7 +185,7 @@ export function useJobCounts() {
   return useQuery({
     queryKey: ['job-counts', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractor_jobs')
         .select('status, priority, contractor_id')
         .eq('org_id', orgId!)
@@ -215,7 +215,7 @@ export function useJobCounts() {
      queryFn: async () => {
        if (!jobId) return null;
  
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractor_jobs')
         .select(`
           *,
@@ -240,7 +240,7 @@ export function useJobsCalendar(startDate: Date, endDate: Date) {
   return useQuery({
     queryKey: ['contractor-jobs-calendar', orgId, startDate.toISOString(), endDate.toISOString()],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('contractor_jobs')
         .select(`
            id,
@@ -303,7 +303,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
 
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
           .from('contractor_jobs')
           .insert({
             org_id: orgId,
@@ -339,7 +339,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
 
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<ContractorJob> & { id: string }) => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('contractor_jobs')
          .update({ ...updates, updated_at: new Date().toISOString() })
          .eq('id', id)
@@ -419,7 +419,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        bookedTimeSlot?: string;
        quotedAmount?: number;
      }) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('contractor_jobs')
          .update({
            status: 'booked',
@@ -456,7 +456,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        finalAmount?: number;
        notes?: string;
      }) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('contractor_jobs')
          .update({
            status: 'completed',
@@ -485,7 +485,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  
    return useMutation({
      mutationFn: async ({ jobId, contractorId }: { jobId: string; contractorId: string }) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('contractor_jobs')
          .update({ 
            contractor_id: contractorId,
@@ -511,7 +511,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  
    return useMutation({
      mutationFn: async ({ jobId, reason }: { jobId: string; reason?: string }) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('contractor_jobs')
          .update({
            status: 'cancelled',

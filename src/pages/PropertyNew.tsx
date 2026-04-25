@@ -20,7 +20,7 @@ function PropertyNewPage() {
   const upsertIncome = useUpsertIncome();
   const { atLimit, totalUnits, limit } = useUnitUsage();
 
-  const handleSubmit = async (data: PropertyFormData, geocodeData: AddressData | null) => {
+  const handleSubmit = async (data: PropertyFormData, _geocodeData: AddressData | null) => {
     const listedValue = data.listed_status || '';
     const isListed = listedValue !== '' && listedValue !== 'Not listed';
     const epcRequired = !isListed;

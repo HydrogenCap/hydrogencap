@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,7 @@ export function useInvestorCommitments(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-commitment-detail', investorId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investor_commitment_detail')
         .select('*')
         .eq('investor_id', investorId!);
@@ -26,7 +26,7 @@ export function useInvestorDistributions(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-distributions', investorId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investor_distributions')
         .select('*')
         .eq('investor_id', investorId!)
@@ -42,7 +42,7 @@ export function useInvestorReturnMetrics(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-return-metrics', investorId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investor_return_metrics')
         .select('*')
         .eq('investor_id', investorId!);
@@ -75,7 +75,7 @@ export function useCreateCommitment() {
       notes?: string | null;
     }) => {
       const payload: InvestorCommitmentInsert = { ...data, org_id: orgId! };
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('investor_commitments')
         .insert([payload])
         .select()
@@ -117,7 +117,7 @@ export function useCreateDistribution() {
       notes?: string | null;
     }) => {
       const payload: InvestorDistributionInsert = { ...data, org_id: orgId! };
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('investor_distributions')
         .insert([payload])
         .select()

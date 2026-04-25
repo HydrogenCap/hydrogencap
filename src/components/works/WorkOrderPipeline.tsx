@@ -12,6 +12,12 @@ import {
 } from '@/hooks/useWorkOrderLifecycle';
 import type { WorkOrderWithDetails } from '@/hooks/useWorkOrders';
 
+// Extended fields not yet in the WorkOrderWithDetails type
+type WorkOrderWithApproval = WorkOrderWithDetails & {
+  approval_required?: boolean | null;
+  approval_threshold?: number | null;
+};
+
 interface WorkOrderPipelineProps {
   wo: WorkOrderWithDetails;
   onApprove?: () => void;
@@ -47,7 +53,8 @@ export function WorkOrderPipeline({ wo, onApprove, onReject }: WorkOrderPipeline
   const currentIndex = getPipelineStageIndex(currentStage);
   const isCancelled = wo.status === 'cancelled';
   const isRejected = wo.status === 'rejected';
-  const needsApproval = ((wo as any).approval_required || (wo.estimated_cost && wo.estimated_cost >= ((wo as any).approval_threshold || 500)))
+  const woExt = wo as WorkOrderWithApproval;
+  const needsApproval = (woExt.approval_required || (wo.estimated_cost && wo.estimated_cost >= (woExt.approval_threshold || 500)))
     && currentStage === 'pending_approval';
 
   const getNextStage = (): PipelineStage | null => {
@@ -57,7 +64,7 @@ export function WorkOrderPipeline({ wo, onApprove, onReject }: WorkOrderPipeline
     if (nextIdx >= PIPELINE_STAGES.length) return null;
     // Skip pending_approval if not required
     const next = PIPELINE_STAGES[nextIdx];
-    if (next.value === 'pending_approval' && !(wo as any).approval_required && !(wo.estimated_cost && wo.estimated_cost >= ((wo as any).approval_threshold || 500))) {
+    if (next.value === 'pending_approval' && !woExt.approval_required && !(wo.estimated_cost && wo.estimated_cost >= (woExt.approval_threshold || 500))) {
       return PIPELINE_STAGES[nextIdx + 1]?.value || null;
     }
     return next.value;
@@ -137,7 +144,7 @@ export function WorkOrderPipeline({ wo, onApprove, onReject }: WorkOrderPipeline
           <div className="flex-1 text-sm">
             <p className="font-medium text-amber-800 dark:text-amber-300">Approval required</p>
             <p className="text-amber-700 dark:text-amber-400 text-xs">
-              Estimated cost ({new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(wo.estimated_cost || 0)}) exceeds approval threshold ({new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format((wo as any).approval_threshold || 500)})
+              Estimated cost ({new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(wo.estimated_cost || 0)}) exceeds approval threshold ({new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(woExt.approval_threshold || 500)})
             </p>
           </div>
           <div className="flex gap-2">

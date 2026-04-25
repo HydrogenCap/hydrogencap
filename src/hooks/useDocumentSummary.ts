@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface ValuationSummary {
@@ -62,7 +62,7 @@ export function useDocumentSummary(documentId: string | undefined) {
     queryKey: ['document-summary', documentId],
     queryFn: async () => {
       if (!documentId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('document_summaries')
         .select('*')
         .eq('document_id', documentId)
@@ -112,7 +112,7 @@ export function usePortfolioValuationSummaries() {
   return useQuery({
     queryKey: ['portfolio-valuation-summaries'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('document_summaries')
         .select(`
           id, document_id, valuation_figure_gbp, valuation_date,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Search, Loader2, ExternalLink } from 'lucide-react';
+import { Building2, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SEVERITY } from '@/lib/design-tokens';
 import { useCompaniesHouse, type CHCompanySearchResult } from '@/hooks/useCompaniesHouse';

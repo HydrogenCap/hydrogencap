@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -65,7 +65,7 @@ async function fetchMembershipsForCurrentUser() {
   if (authError) throw authError;
   if (!auth.user) return [] as MembershipRow[];
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabaseAny
     .from('memberships')
     .select('id, user_id, org_id, role, created_at')
     .eq('user_id', auth.user.id);
@@ -79,7 +79,7 @@ export async function fetchUserOrganizations(): Promise<UserOrganization[]> {
   if (memberships.length === 0) return [];
 
   const orgIds = [...new Set(memberships.map((membership) => membership.org_id))];
-  const { data: organizations, error } = await (supabase as any)
+  const { data: organizations, error } = await supabaseAny
     .from('organizations')
     .select('id, name')
     .in('id', orgIds);

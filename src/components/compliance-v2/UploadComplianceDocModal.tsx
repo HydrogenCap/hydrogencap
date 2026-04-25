@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -108,6 +108,9 @@ export function UploadComplianceDocModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Upload Compliance Document</DialogTitle>
+          <DialogDescription>
+            Upload a new compliance certificate or document for this property.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

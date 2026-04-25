@@ -30,6 +30,13 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode !== 'production' ? true : 'hidden',
     rollupOptions: {
       output: {
+        // Only group vendor libs whose consumers are on the eager path.
+        // PDF / ZIP / maps / markdown are reached exclusively through dynamic
+        // imports (pdf-export flows, backup export, map routes, markdown
+        // modals), so letting rollup chunk them automatically keeps them out
+        // of the initial preload. Previously a manual "vendor-pdf" chunk was
+        // preloaded on every page load just to serve Vite's __vitePreload
+        // helper (~4 lines), at a cost of 147 kB gzipped.
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-ui": [
@@ -45,10 +52,6 @@ export default defineConfig(({ mode }) => ({
           ],
           "vendor-data": ["@tanstack/react-query", "@supabase/supabase-js"],
           "vendor-charts": ["recharts"],
-          "vendor-maps": ["leaflet", "react-leaflet"],
-          "vendor-pdf": ["jspdf", "jspdf-autotable", "pdf-lib"],
-          "vendor-zip": ["jszip", "file-saver"],
-          "vendor-markdown": ["react-markdown"],
           "vendor-date": ["date-fns"],
         },
       },

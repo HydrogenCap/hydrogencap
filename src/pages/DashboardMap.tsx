@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, MapPin, ExternalLink, Route, X, Check } from 'lucide-react';
+import { Search, Filter, MapPin, ExternalLink, Route, Check } from 'lucide-react';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { PropertyMap } from '@/components/maps/PropertyMap';
-import { useDuplicateDetection, DuplicateCandidate } from '@/hooks/useDuplicateDetection';
+import { useDuplicateDetection } from '@/hooks/useDuplicateDetection';
 import { useDismissedDuplicates, useDismissDuplicate, isDuplicateDismissed } from '@/hooks/useDismissedDuplicates';
 import { Link } from 'react-router-dom';
 import { MissingLocationsBanner } from '@/components/geocoding';
@@ -41,7 +41,7 @@ export default function DashboardMap() {
   const [renewalDays, setRenewalDays] = useState<30 | 60 | 90 | undefined>();
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedLender, setSelectedLender] = useState<string>('');
-  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [selectedProperties, _setSelectedProperties] = useState<string[]>([]);
 
   // Extract unique cities and lenders for filters
   const filterOptions = useMemo(() => {

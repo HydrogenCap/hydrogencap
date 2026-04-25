@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import RecordPaymentDialog from '../RecordPaymentDialog';
+import type { RentScheduleWithDetails } from '@/hooks/useRentCollection';
 
 const mockMutate = vi.fn();
 vi.mock('@/hooks/useRentCollection', () => ({
   useRecordPayment: () => ({ mutate: mockMutate, isPending: false }),
-  normalizeRentItem: (item: any) => ({
+  normalizeRentItem: (_item: unknown) => ({
     tenantName: 'Jane Smith',
     tenantEmail: 'jane@test.com',
     propertyAddress: '5 Oak Lane',
@@ -32,7 +33,7 @@ const mockItem = {
   tenant: { first_name: 'Jane', last_name: 'Smith', email: 'jane@test.com' },
   room: { room_name: 'Room B' },
   property: { address_line_1: '5 Oak Lane', postcode: 'N1 1AA' },
-};
+} as unknown as RentScheduleWithDetails;
 
 describe('RecordPaymentDialog', () => {
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('RecordPaymentDialog', () => {
   });
 
   it('renders nothing visible when item is null and receipt is not showing', () => {
-    const { container } = render(
+    const { container: _container } = render(
       <RecordPaymentDialog item={null} open={false} onOpenChange={() => {}} />,
     );
     // Only receipt dialog rendered (but closed)
@@ -49,14 +50,14 @@ describe('RecordPaymentDialog', () => {
 
   it('renders dialog title when open with item', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByRole('heading', { name: 'Record Payment' })).toBeInTheDocument();
   });
 
   it('displays outstanding amount', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText(/Outstanding/)).toBeInTheDocument();
     expect(screen.getByText(/£1,050/)).toBeInTheDocument();
@@ -64,7 +65,7 @@ describe('RecordPaymentDialog', () => {
 
   it('displays rent due amount', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText(/Rent due/)).toBeInTheDocument();
     expect(screen.getByText(/£1,200/)).toBeInTheDocument();
@@ -72,7 +73,7 @@ describe('RecordPaymentDialog', () => {
 
   it('displays already paid when amount_paid > 0', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText(/Already paid/)).toBeInTheDocument();
     expect(screen.getByText(/£200/)).toBeInTheDocument();
@@ -80,28 +81,28 @@ describe('RecordPaymentDialog', () => {
 
   it('displays additional charges when > 0', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText(/Additional charges/)).toBeInTheDocument();
   });
 
   it('renders Full Payment toggle', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText('Full Payment')).toBeInTheDocument();
   });
 
   it('renders payment method dropdown', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText('Payment Method')).toBeInTheDocument();
   });
 
   it('renders Cancel and Record Payment buttons', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Record Payment' })).toBeInTheDocument();
@@ -109,7 +110,7 @@ describe('RecordPaymentDialog', () => {
 
   it('shows tenant and property info in description', () => {
     render(
-      <RecordPaymentDialog item={mockItem as any} open={true} onOpenChange={() => {}} />,
+      <RecordPaymentDialog item={mockItem} open={true} onOpenChange={() => {}} />,
     );
     expect(screen.getByText(/Jane Smith/)).toBeInTheDocument();
     expect(screen.getByText(/5 Oak Lane/)).toBeInTheDocument();

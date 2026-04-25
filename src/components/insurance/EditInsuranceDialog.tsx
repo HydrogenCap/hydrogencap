@@ -3,6 +3,7 @@
  import {
    Dialog,
    DialogContent,
+   DialogDescription,
    DialogHeader,
    DialogTitle,
    DialogFooter,
@@ -95,6 +96,9 @@
          <form onSubmit={handleSubmit}>
            <DialogHeader>
              <DialogTitle>Edit Insurance Policy</DialogTitle>
+             <DialogDescription>
+               Update this policy's details, coverage, or renewal information.
+             </DialogDescription>
            </DialogHeader>
  
            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">

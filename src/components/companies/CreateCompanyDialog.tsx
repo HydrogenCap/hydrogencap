@@ -3,6 +3,7 @@ import { Building2, Loader2, Check, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -49,7 +50,7 @@ export function CreateCompanyDialog({
   const createCompany = useCreateCompany();
 
   const [tab, setTab] = useState<'search' | 'manual'>('search');
-  const [selectedCompany, setSelectedCompany] = useState<CHCompanySearchResult | null>(null);
+  const [_selectedCompany, setSelectedCompany] = useState<CHCompanySearchResult | null>(null);
   const [chDetails, setChDetails] = useState<CHLookupResult | null>(null);
 
   // Manual entry fields
@@ -119,6 +120,9 @@ export function CreateCompanyDialog({
             <Building2 className="h-5 w-5" />
             Add Company
           </DialogTitle>
+          <DialogDescription>
+            Register a new legal entity — search Companies House or enter details manually.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as 'search' | 'manual')}>

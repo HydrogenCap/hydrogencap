@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePropertyWithFeatures } from './useComplianceRequirements';
 import { usePropertyCompliance } from './useCompliance';

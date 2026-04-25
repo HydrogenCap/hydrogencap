@@ -107,7 +107,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
         <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={360}>
-            <ComposedChart data={chartData as any[]} margin={CHART_DEFAULTS.margin}>
+            <ComposedChart data={chartData as Array<Record<string, unknown>>} margin={CHART_DEFAULTS.margin}>
               <CartesianGrid
                 strokeDasharray={CHART_DEFAULTS.gridStrokeDasharray}
                 stroke={CHART_DEFAULTS.gridStroke}
@@ -126,7 +126,7 @@ export function ForecastChart({ results, scenarios, title = 'Cashflow Projection
                 tickFormatter={(v) => `£${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   const labels: Record<string, string> = {
                     base: 'Base Case',
                     optimistic: 'Optimistic',

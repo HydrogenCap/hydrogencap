@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format, addYears, addMonths, differenceInDays } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 import { 
   Sheet, 
   SheetContent, 
@@ -24,13 +24,10 @@ import {
 import { 
   Home, 
   EllipsisVertical, 
-  Upload, 
   CheckCircle2, 
   Calendar,
-  ExternalLink,
-  FileText
+  ExternalLink
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useUpdateComplianceItem, useUploadComplianceDocument } from '@/hooks/useCompliance';
 import { toast } from 'sonner';
 import type { StatusType } from './ComplianceStatusCard';
@@ -131,7 +128,7 @@ export function ComplianceItemDrawer({
       setEditingId(null);
       setUploadFile(null);
       onItemUpdated();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to update compliance item');
     }
   };

@@ -30,7 +30,7 @@ export function PassportColumnMapper({ parsedCSV, mapping, onMappingChange }: Pa
             </div>
             <Select
               value={mapping[header] || ''}
-              onValueChange={(value) => onMappingChange(header, value as any)}
+              onValueChange={(value) => onMappingChange(header, value as PassportColumnMapping[string])}
             >
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Select field..." />

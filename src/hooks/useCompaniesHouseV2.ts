@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from 'sonner';
@@ -150,7 +150,7 @@ export function useEntityVerificationStatus() {
   return useQuery({
     queryKey: ['entity_verification_status', org?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('entity_verification_status')
         .select('*')
         .eq('org_id', org!.id);
@@ -166,7 +166,7 @@ export function useEntityVerification(entityId: string | undefined) {
   return useQuery({
     queryKey: ['entity_verification', entityId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('entity_verification_status')
         .select('*')
         .eq('entity_id', entityId!)
@@ -241,7 +241,7 @@ export function useCHOfficers(entityId: string | undefined, companyNumber: strin
   return useQuery({
     queryKey: ['ch_officers', entityId],
     queryFn: async () => {
-      const { data: cached } = await (supabase as any)
+      const { data: cached } = await supabaseAny
         .from('companies_house_cache')
         .select('response_data')
         .eq('entity_id', entityId!)
@@ -264,7 +264,7 @@ export function useCHFilingHistory(entityId: string | undefined, companyNumber: 
   return useQuery({
     queryKey: ['ch_filing_history', entityId],
     queryFn: async () => {
-      const { data: cached } = await (supabase as any)
+      const { data: cached } = await supabaseAny
         .from('companies_house_cache')
         .select('response_data')
         .eq('entity_id', entityId!)

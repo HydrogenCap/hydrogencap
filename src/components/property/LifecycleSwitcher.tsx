@@ -91,7 +91,7 @@ export function LifecycleSwitcher({
           : 'Property set to Development - income metrics and compliance tracking paused'
       );
       setOpen(false);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to update property lifecycle');
     }
   };

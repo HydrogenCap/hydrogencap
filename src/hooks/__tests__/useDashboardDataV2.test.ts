@@ -16,6 +16,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   get supabase() {
     return mock;
   },
+  get supabaseAny() { return mock; },
 }));
 
 vi.mock('@/hooks/useUserOrg', () => ({
@@ -130,7 +131,12 @@ describe('useDashboardPropertiesV2', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const prop = result.current.data?.[0];
+    // The hook casts its result through `as unknown as PropertyWithFinancials`
+    // and tacks on `city` and `entity_name` fields at runtime. This test asserts
+    // that runtime contract, so we widen the type locally.
+    const prop = result.current.data?.[0] as
+      | (NonNullable<typeof result.current.data>[number] & { city?: string | null; entity_name?: string | null })
+      | undefined;
     expect(prop).toBeDefined();
 
     // V1 shape invariants

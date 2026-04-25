@@ -1,4 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+// Structural supabase-client type — the real client satisfies it and tests
+// can pass a lightweight stub with `.from()`.
+// deno-lint-ignore no-explicit-any
+export type SubscriptionSupabaseLike = { from: (table: string) => any };
 
 /**
  * Check whether the given user has access to an active subscription.
@@ -14,12 +17,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
  */
 export async function requireActiveSubscription(
   userId: string,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  supabaseAdminOverride?: SubscriptionSupabaseLike
 ): Promise<{ allowed: true } | { allowed: false; response: Response }> {
-  const supabaseAdmin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  // Lazy-load the real client only when no override is supplied so tests can
+  // inject a fake without triggering an esm.sh fetch.
+  const supabaseAdmin: SubscriptionSupabaseLike = supabaseAdminOverride ?? await (async () => {
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+    return createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+  })();
 
   // 1. User has their own subscription row.
   const { data: ownSub } = await supabaseAdmin

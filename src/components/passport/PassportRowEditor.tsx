@@ -95,7 +95,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
       });
 
       toast({ title: 'Saved', description: 'Property identity and passport updated successfully.' });
-    } catch (error) {
+    } catch (_error) {
       toast({ title: 'Error', description: 'Failed to save changes.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
@@ -107,7 +107,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
     try {
       await addTitleNumber.mutateAsync({ propertyId: property.id, titleNumber: newTitleNumber });
       setNewTitleNumber('');
-    } catch (error) {
+    } catch (_error) {
       toast({ title: 'Error', description: 'Failed to add title number.', variant: 'destructive' });
     }
   };
@@ -115,7 +115,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
   const handleRemoveTitleNumber = async (id: string) => {
     try {
       await removeTitleNumber.mutateAsync({ id, propertyId: property.id });
-    } catch (error) {
+    } catch (_error) {
       toast({ title: 'Error', description: 'Failed to remove title number.', variant: 'destructive' });
     }
   };

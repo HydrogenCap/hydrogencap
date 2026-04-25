@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 export interface CompanyProperty {
   id: string;
@@ -39,7 +39,7 @@ export function useCompanyProperties(companyId: string | undefined) {
       if (!companyId) return [];
 
       // 1. Get properties where company is legal owner
-      const { data: legalProperties, error: legalError } = await (supabase as any)
+      const { data: legalProperties, error: legalError } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, postcode, county, current_valuation')
         .eq('legal_owner_company_id', companyId);
@@ -47,7 +47,7 @@ export function useCompanyProperties(companyId: string | undefined) {
       if (legalError) throw legalError;
 
       // 2. Get properties where company is beneficial owner
-      const { data: beneficialOwnership, error: beneficialError } = await (supabase as any)
+      const { data: beneficialOwnership, error: beneficialError } = await supabaseAny
         .from('property_beneficial_owners')
         .select(`
           property_id,
@@ -114,7 +114,7 @@ export function useCompanyPropertiesWithBeneficialOwners(companyId: string | und
       if (!companyId) return [];
 
       // Get properties where company is legal owner
-      const { data: properties, error: propError } = await (supabase as any)
+      const { data: properties, error: propError } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, postcode, county')
         .eq('legal_owner_company_id', companyId);
@@ -124,7 +124,7 @@ export function useCompanyPropertiesWithBeneficialOwners(companyId: string | und
 
       // Get beneficial owners for these properties
       const propertyIds = properties.map(p => p.id);
-      const { data: beneficialOwners, error: boError } = await (supabase as any)
+      const { data: beneficialOwners, error: boError } = await supabaseAny
         .from('property_beneficial_owners')
         .select(`
           id,

@@ -18,6 +18,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   get supabase() {
     return mock;
   },
+  get supabaseAny() { return mock; },
 }));
 
 const sampleRooms = [

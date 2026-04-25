@@ -4,9 +4,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
-import { ExternalLink, FileWarning, TrendingDown, Calendar, Bed, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { FileWarning, TrendingDown, Calendar, Bed, Home } from 'lucide-react';
 import { PropertyWithFinancials } from '@/hooks/usePropertiesCompat';
 import { formatGBP, formatPercent, getExpiryStatus, daysUntil, calculateLTV, calculateMonthlyCashflowAfterDebt, getEffectiveCosts } from '@/lib/calculations';
 
@@ -132,7 +130,7 @@ function MapBoundsUpdater({ properties }: { properties: PropertyWithFinancials[]
 export const PropertyMap = forwardRef<HTMLDivElement, PropertyMapProps>(function PropertyMap({ 
   properties, 
   filters,
-  onPropertyClick,
+  onPropertyClick: _onPropertyClick,
   className = 'h-[600px]',
 }, ref) {
   // Apply filters

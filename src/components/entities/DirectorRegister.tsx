@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -147,6 +147,9 @@ export function DirectorRegister({ entityId }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Officer' : 'Add Officer'}</DialogTitle>
+            <DialogDescription>
+              {editing ? 'Update this officer\'s role and appointment dates.' : 'Add a new company officer — director, secretary, or PSC.'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -216,7 +219,7 @@ function OfficerRow({
         <div>
           <div className="font-medium">{a.person_name}</div>
           <div className="text-sm text-muted-foreground">
-            <Badge variant={roleConfig.color as any} className="mr-2 text-xs">{roleConfig.label}</Badge>
+            <Badge variant={roleConfig.color as 'default' | 'secondary' | 'destructive' | 'outline'} className="mr-2 text-xs">{roleConfig.label}</Badge>
             Appointed: {format(new Date(a.appointed_date), 'dd MMM yyyy')}
             {a.resigned_date && <> &middot; Resigned: {format(new Date(a.resigned_date), 'dd MMM yyyy')}</>}
             {a.companies_house_id && <> &middot; CH: {a.companies_house_id}</>}

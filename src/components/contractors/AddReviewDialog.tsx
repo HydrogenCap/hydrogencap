@@ -17,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
  
  export function AddReviewDialog({ contractorId, jobId, open, onOpenChange }: AddReviewDialogProps) {
    const [rating, setRating] = useState(0);
-   const [hoverRating, setHoverRating] = useState(0);
    const [reviewText, setReviewText] = useState('');
    const [punctuality, setPunctuality] = useState(0);
    const [quality, setQuality] = useState(0);

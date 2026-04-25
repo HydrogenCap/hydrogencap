@@ -5,11 +5,7 @@ import {
   Shield,
   FileText,
   TrendingUp,
-  CheckCircle,
   ArrowRight,
-  Building2,
-  Users,
-  Zap,
 } from 'lucide-react';
 import { MarketingLayout, SectionHeading, FeatureCard, TestimonialCard } from '@/components/marketing';
 import { Button } from '@/components/ui/button';

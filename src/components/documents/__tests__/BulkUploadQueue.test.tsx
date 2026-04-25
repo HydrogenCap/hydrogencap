@@ -4,7 +4,9 @@ import { BulkUploadQueue } from '../BulkUploadQueue';
 import type { QueueItem, QueueItemStatus } from '@/hooks/useBulkDocumentUpload';
 
 function makeFile(name: string, size = 1024, type = 'application/pdf'): File {
-  return new File(['content'], name, { type, size } as any);
+  const file = new File(['content'], name, { type });
+  Object.defineProperty(file, 'size', { value: size });
+  return file;
 }
 
 function makeQueueItem(overrides: Partial<QueueItem> = {}): QueueItem {

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
 
 // Types
@@ -95,7 +95,7 @@ export function useCompanyOwnership(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_links')
         .select(`
           *,
@@ -149,7 +149,7 @@ export function usePropertyBeneficialOwnership(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_links')
         .select(`
           *,
@@ -200,7 +200,7 @@ export function useOwnershipGrid(filters?: OwnershipGridFilters) {
   return useQuery({
     queryKey: ownershipKeys.grid(filters),
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('ownership_links')
         .select(`
           *,
@@ -261,7 +261,7 @@ export function useAddOwnershipLink() {
   
   return useMutation({
     mutationFn: async (input: OwnershipLinkInsert) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_links')
         .insert({
           ...input,
@@ -290,7 +290,7 @@ export function useUpdateOwnershipLink() {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: OwnershipLinkUpdate) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_links')
         .update(updates)
         .eq('id', id)
@@ -316,7 +316,7 @@ export function useDeleteOwnershipLink() {
   
   return useMutation({
     mutationFn: async ({ id, subjectType, subjectId }: { id: string; subjectType: SubjectType; subjectId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('ownership_links')
         .delete()
         .eq('id', id);

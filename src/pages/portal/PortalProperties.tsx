@@ -1,4 +1,4 @@
-import { Building2, MapPin, Home, Bed, ImageIcon } from 'lucide-react';
+import { MapPin, Bed, ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PortalLayout } from '@/components/portal/PortalLayout';

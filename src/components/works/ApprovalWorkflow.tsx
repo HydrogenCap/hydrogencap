@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, XCircle, Clock, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatGBP, formatDateUK } from '@/lib/calculations';
-import { cn } from '@/lib/utils';
 import {
   usePendingApprovals,
   useApproveWorkOrderLifecycle,
@@ -34,7 +34,17 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
   const [approvedBudget, setApprovedBudget] = useState('');
   const [rejectReason, setRejectReason] = useState('');
 
-  const selectedWO = (pendingWOs || []).find((w: any) => w.id === selectedId);
+  type PendingWO = {
+    id: string;
+    wo_number?: string;
+    title?: string;
+    estimated_cost?: number | null;
+    requested_date?: string | null;
+    created_at?: string;
+    entity?: { entity_name?: string } | null;
+    property?: { address_line_1?: string } | null;
+  };
+  const selectedWO = ((pendingWOs || []) as PendingWO[]).find((w) => w.id === selectedId);
 
   const handleApprove = async () => {
     if (!selectedId || !approvedBudget) return;
@@ -68,7 +78,7 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {pendingWOs.map((wo: any) => {
+          {(pendingWOs as PendingWO[]).map((wo) => {
             const overThreshold = wo.estimated_cost && wo.estimated_cost >= defaultThreshold;
             return (
               <div
@@ -127,6 +137,9 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Approve Work Order</DialogTitle>
+            <DialogDescription>
+              Approve this work order to release it for scheduling and billing.
+            </DialogDescription>
           </DialogHeader>
           {selectedWO && (
             <div className="space-y-4">
@@ -166,6 +179,9 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Work Order</DialogTitle>
+            <DialogDescription>
+              Reject this work order and return it to the raiser with a reason.
+            </DialogDescription>
           </DialogHeader>
           {selectedWO && (
             <div className="space-y-4">

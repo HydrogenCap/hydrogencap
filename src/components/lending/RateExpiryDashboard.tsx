@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Clock, ArrowUpRight } from 'lucide-react';
+import { Clock, ArrowUpRight } from 'lucide-react';
 import { useRateExpiries } from '@/hooks/useRefinanceWorkflow';
 import { fmtGBP, fmtDate } from '@/hooks/useLoanFacilities';
 

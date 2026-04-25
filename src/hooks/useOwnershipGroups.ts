@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
 
@@ -36,7 +36,7 @@ export function useOwnershipGroups() {
   return useQuery({
     queryKey: ['ownership_groups'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_groups')
         .select('*')
         .order('name');
@@ -53,7 +53,7 @@ export function useOwnershipGroup(groupId: string | undefined) {
     queryFn: async () => {
       if (!groupId) return null;
       
-      const { data: group, error: groupError } = await (supabase as any)
+      const { data: group, error: groupError } = await supabaseAny
         .from('ownership_groups')
         .select('*')
         .eq('id', groupId)
@@ -61,7 +61,7 @@ export function useOwnershipGroup(groupId: string | undefined) {
 
       if (groupError) throw groupError;
 
-      const { data: members, error: membersError } = await (supabase as any)
+      const { data: members, error: membersError } = await supabaseAny
         .from('group_members')
         .select(`
           *,
@@ -87,7 +87,7 @@ export function useCreateOwnershipGroup() {
     mutationFn: async (input: { name: string; description?: string }) => {
       const orgId = await getUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_groups')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -110,7 +110,7 @@ export function useUpdateOwnershipGroup() {
   
   return useMutation({
     mutationFn: async ({ id, ...group }: Partial<OwnershipGroup> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('ownership_groups')
         .update(group)
         .eq('id', id)
@@ -134,7 +134,7 @@ export function useDeleteOwnershipGroup() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('ownership_groups')
         .delete()
         .eq('id', id);
@@ -160,7 +160,7 @@ export function useAddGroupMember() {
       party_id: string;
       role?: 'MEMBER' | 'KEY_ENTITY';
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('group_members')
         .insert({
           group_id: input.group_id,
@@ -191,7 +191,7 @@ export function useRemoveGroupMember() {
   
   return useMutation({
     mutationFn: async ({ id, groupId }: { id: string; groupId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('group_members')
         .delete()
         .eq('id', id);

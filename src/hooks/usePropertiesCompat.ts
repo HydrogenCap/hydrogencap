@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { PropertyWithFinancials } from './useProperties';
 
@@ -10,10 +10,12 @@ type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
 type LoanFacilityRow = Database['public']['Tables']['loan_facilities']['Row'];
 type PropertyAnnualPerformanceRow = Database['public']['Views']['property_annual_performance']['Row'];
 type TenancyAgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
-type V1Loan = PropertyWithFinancials['loans'][number];
-type V1Income = PropertyWithFinancials['income'][number];
-type V1Costs = PropertyWithFinancials['costs'][number];
-type V1Tenancy = PropertyWithFinancials['tenancies'][number];
+
+// The tenancy_agreements select only pulls a subset of columns
+type TenancyAgreementSlim = Pick<
+  TenancyAgreementRow,
+  'id' | 'property_id' | 'tenant_id' | 'room_id' | 'status' | 'rent_amount_pcm' | 'start_date' | 'initial_end_date'
+>;
 
 type PropertyV2WithEntity = PropertyV2Row & {
   legal_entities?: { entity_name: string | null } | Array<{ entity_name: string | null }> | null;
@@ -43,18 +45,18 @@ export function usePropertiesCompat() {
     queryFn: async (): Promise<PropertyCompatWithFinancials[]> => {
       // Parallel fetch all V2 data
       const [propsRes, loansRes, perfRes, agreementsRes] = await Promise.all([
-        (supabase as any)
+        supabaseAny
           .from('properties_v2')
           .select('*, legal_entities!inner(entity_name)')
           .order('created_at', { ascending: false }),
-        (supabase as any)
+        supabaseAny
           .from('loan_facilities')
           .select('*')
           .in('status', ['active', 'drawdown']),
-        (supabase as any)
+        supabaseAny
           .from('property_annual_performance')
           .select('*'),
-        (supabase as any)
+        supabaseAny
           .from('tenancy_agreements')
           .select('id, property_id, tenant_id, room_id, status, rent_amount_pcm, start_date, initial_end_date')
           .in('status', ['active', 'pending', 'notice_period']),
@@ -75,10 +77,10 @@ export function usePropertiesCompat() {
         if (performance.property_id) perfByProp.set(performance.property_id, performance);
       }
 
-      const agreementsByProp = new Map<string, TenancyAgreementRow[]>();
-      for (const agreement of agreementsRes.data || []) {
+      const agreementsByProp = new Map<string, TenancyAgreementSlim[]>();
+      for (const agreement of (agreementsRes.data || []) as TenancyAgreementSlim[]) {
         const agreements = agreementsByProp.get(agreement.property_id) || [];
-        agreements.push(agreement as any);
+        agreements.push(agreement);
         agreementsByProp.set(agreement.property_id, agreements);
       }
 
@@ -147,7 +149,7 @@ export function usePropertiesCompat() {
 
 // â”€â”€â”€ Mappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function mapLoanToV1(loan: LoanFacilityRow): any {
+function mapLoanToV1(loan: LoanFacilityRow) {
   return {
     id: loan.id,
     org_id: loan.org_id,
@@ -171,7 +173,7 @@ function mapLoanToV1(loan: LoanFacilityRow): any {
   };
 }
 
-function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow): any {
+function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerformanceRow) {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-income-${propertyId}`,
@@ -183,7 +185,7 @@ function mapPerfToIncome(propertyId: string, performance: PropertyAnnualPerforma
   };
 }
 
-function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow): any {
+function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerformanceRow) {
   const currentYear = new Date().getFullYear();
   return {
     id: `perf-costs-${propertyId}`,
@@ -200,7 +202,7 @@ function mapPerfToCosts(propertyId: string, performance: PropertyAnnualPerforman
   };
 }
 
-function mapAgreementToTenancy(agreement: any): any {
+function mapAgreementToTenancy(agreement: TenancyAgreementSlim) {
   return {
     id: agreement.id,
     org_id: null,

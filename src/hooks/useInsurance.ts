@@ -1,5 +1,5 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
+ import { supabaseAny } from '@/integrations/supabase/client';
  import { useToast } from '@/hooks/use-toast';
  import { fetchUserOrgId, useUserOrg } from './useUserOrg';
  
@@ -50,7 +50,7 @@ export function useInsurancePolicies(filters?: {
   return useQuery({
     queryKey: ['insurance-policies', orgId, filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('insurance_policies')
         .select(`
            *,
@@ -81,7 +81,7 @@ export function useInsurancePolicies(filters?: {
    return useQuery({
      queryKey: ['insurance-totals', orgId],
      queryFn: async () => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('insurance_policies')
          .select('premium_gbp, status')
          .eq('org_id', orgId!)
@@ -110,7 +110,7 @@ export function useInsurancePolicies(filters?: {
      queryFn: async () => {
        if (!policyId || !orgId) return null;
 
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('insurance_policies')
          .select(`
            *,
@@ -150,7 +150,7 @@ export function useInsurancePolicies(filters?: {
        notes?: string;
      }) => {
         const orgId = await fetchUserOrgId();
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabaseAny
           .from('insurance_policies')
           .insert({
             org_id: orgId,
@@ -191,7 +191,7 @@ export function useInsurancePolicies(filters?: {
  
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<InsurancePolicy> & { id: string }) => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('insurance_policies')
          .update({ ...updates, updated_at: new Date().toISOString() })
          .eq('id', id)
@@ -217,7 +217,7 @@ export function useInsurancePolicies(filters?: {
  
    return useMutation({
      mutationFn: async (policyId: string) => {
-       const { error } = await (supabase as any)
+       const { error } = await supabaseAny
          .from('insurance_policies')
          .delete()
          .eq('id', policyId);

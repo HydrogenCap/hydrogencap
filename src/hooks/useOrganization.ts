@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserOrg } from '@/hooks/useUserOrg';
 
@@ -16,7 +16,7 @@ export function useOrganization() {
     queryFn: async () => {
       if (!orgId) return null;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('organizations')
         .select('id, name')
         .eq('id', orgId)
@@ -35,7 +35,7 @@ export function useUpdateOrganization() {
 
   return useMutation({
     mutationFn: async ({ orgId, name }: { orgId: string; name: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('organizations')
         .update({
           name,

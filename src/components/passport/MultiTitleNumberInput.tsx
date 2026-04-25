@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { useTitleNumbers, useAddTitleNumber, useRemoveTitleNumber, TitleNumber } from '@/hooks/useCoreIdentity';
+import { useTitleNumbers, useAddTitleNumber, useRemoveTitleNumber } from '@/hooks/useCoreIdentity';
 import { useToast } from '@/hooks/use-toast';
 
 interface MultiTitleNumberInputProps {

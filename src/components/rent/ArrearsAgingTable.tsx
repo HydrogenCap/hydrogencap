@@ -8,7 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import type { ArrearsAgingRow, RentScheduleWithDetails } from '@/hooks/useRentCollection';
+import type { ArrearsAgingRow } from '@/hooks/useRentCollection';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);

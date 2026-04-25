@@ -1,15 +1,15 @@
 import { SEO } from '@/components/SEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Calendar, CheckCircle, Send } from 'lucide-react';
-import { MarketingLayout, SectionHeading } from '@/components/marketing';
+import { Mail, MapPin, Calendar, CheckCircle, Send } from 'lucide-react';
+import { MarketingLayout } from '@/components/marketing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 export default function MarketingContact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +29,7 @@ export default function MarketingContact() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('demo_requests')
         .insert({
           name: formData.name,

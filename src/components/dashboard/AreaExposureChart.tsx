@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -74,7 +75,6 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
     const bucketMap: Record<string, { value: number; count: number }> = {};
     const debug: PropertyDebugInfo[] = [];
     let missing = 0;
-    let total = 0;
 
     properties.forEach(property => {
       // Get raw field based on groupBy
@@ -103,7 +103,6 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
 
       // Get property value
       const value = property.current_value_gbp ? Number(property.current_value_gbp) : 0;
-      total += value;
 
       // Add to bucket
       if (!bucketMap[bucketName]) {
@@ -198,6 +197,9 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Area Exposure Debug View</DialogTitle>
+                  <DialogDescription>
+                    Inspect the raw per-property breakdown that drives the area exposure chart.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-auto">
                   <Table>
@@ -251,8 +253,8 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
                     tickFormatter={(value) => value.length > 15 ? value.slice(0, 15) + '…' : value}
                   />
                   <Tooltip
-                    formatter={(value, _name, item: TooltipPayload<number, string>) => {
-                      const payload = item.payload as AreaBucket | undefined;
+                    formatter={(value, _name, item) => {
+                      const payload = (item as TooltipPayload<number, string>).payload as AreaBucket | undefined;
                       return [
                         formatGBP(Number(value)),
                         `${payload?.propertyCount ?? 0} properties`,

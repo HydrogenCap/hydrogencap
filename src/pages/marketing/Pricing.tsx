@@ -1,6 +1,6 @@
 import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight, HelpCircle } from 'lucide-react';
+import { CheckCircle, ArrowRight } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

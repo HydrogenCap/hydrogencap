@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -70,7 +70,7 @@ export interface LogCommunicationInput {
 }
 
 function buildQuery(orgId: string, filters?: CommunicationFilters) {
-  let query = (supabase as any)
+  let query = supabaseAny
     .from('communication_log')
     .select('*')
     .eq('org_id', orgId)
@@ -133,7 +133,7 @@ export function useLogCommunication() {
         is_locked: true,
       };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('communication_log')
         .insert(payload)
         .select()
@@ -165,7 +165,7 @@ export function useRelatedCommunications(relatedToType: string | undefined, rela
     queryFn: async () => {
       if (!relatedToType || !relatedToId) return [];
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('communication_log')
         .select('*')
         .eq('org_id', orgId)

@@ -15,9 +15,8 @@ import {
   useRunForecast,
   type FinancialForecast as ForecastType,
 } from '@/hooks/useFinancialForecasts';
-import { formatGBP } from '@/lib/calculations';
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
@@ -169,8 +168,8 @@ function SavedForecastsTab() {
   const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
-    const { error } = await (supabase as any)
-      .from('financial_forecasts' as any)
+    const { error } = await supabaseAny
+      .from('financial_forecasts')
       .delete()
       .eq('id', id);
 

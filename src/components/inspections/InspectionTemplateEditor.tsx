@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Plus, Trash2, GripVertical, Copy, Save } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
   useInspectionTemplates,
@@ -25,7 +25,7 @@ interface RoomEditor {
 }
 
 export function InspectionTemplateEditor() {
-  const { data: templates = [], isLoading } = useInspectionTemplates();
+  const { data: templates = [], isLoading: _isLoading } = useInspectionTemplates();
   const createTemplate = useCreateInspectionTemplate();
   const updateTemplate = useUpdateInspectionTemplate();
   const deleteTemplate = useDeleteInspectionTemplate();
@@ -251,6 +251,9 @@ export function InspectionTemplateEditor() {
             <DialogTitle>
               {editingTemplate ? 'Edit Template' : 'Create Template'}
             </DialogTitle>
+            <DialogDescription>
+              Define the sections and questions used for periodic inspections.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">

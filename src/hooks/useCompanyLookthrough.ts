@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { Company, CompanyWithDetails, Shareholding } from './useCompanies';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 export interface EffectiveOwnershipNew {
   partyId: string;
@@ -34,7 +33,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
       if (!propertyId) return null;
 
       // 1. Get the property with its legal ownership links
-      const { data: property, error: propError } = await (supabase as any)
+      const { data: property, error: propError } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, postcode')
         .eq('id', propertyId)
@@ -43,7 +42,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
       if (propError) throw propError;
 
       // 2. Get legal ownership from property_legal_ownership joined with companies
-      const { data: legalOwnership, error: loError } = await (supabase as any)
+      const { data: legalOwnership, error: loError } = await supabaseAny
         .from('property_legal_ownership')
         .select(`
           id,
@@ -64,7 +63,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
         
         // If there's an owning_company_id, look up that company's shareholders
         if (owner.owning_company_id) {
-          const { data: company, error: compError } = await (supabase as any)
+          const { data: company, error: compError } = await supabaseAny
             .from('companies')
             .select('id, legal_name')
             .eq('id', owner.owning_company_id)
@@ -79,12 +78,12 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
           });
 
           // Get share classes and shareholdings for this company
-          const { data: shareClasses } = await (supabase as any)
+          const { data: shareClasses } = await supabaseAny
             .from('share_classes')
             .select('id, name, issued_shares')
             .eq('company_id', company.id);
 
-          const { data: shareholdings } = await (supabase as any)
+          const { data: shareholdings } = await supabaseAny
             .from('shareholdings')
             .select(`
               id,
@@ -130,7 +129,7 @@ export function useCompanyLookthrough(propertyId: string | undefined) {
           });
 
           // Check for old-style shareholdings
-          const { data: oldShareholdings } = await (supabase as any)
+          const { data: oldShareholdings } = await supabaseAny
             .from('entity_shareholdings')
             .select(`
               id,

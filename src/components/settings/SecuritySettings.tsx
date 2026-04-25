@@ -30,7 +30,7 @@ export function SecuritySettings() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { toast } = useToast();
-  const { signOut } = useAuth();
+  const { signOut: _signOut } = useAuth();
 
   const form = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),

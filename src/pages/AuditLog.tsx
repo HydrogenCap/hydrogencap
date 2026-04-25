@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
-import { Download, Search, ChevronDown, ChevronRight, Plus, Pencil, Trash2, Filter, History } from 'lucide-react';
+import { Download, Search, ChevronDown, ChevronRight, Plus, Pencil, Trash2, History } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

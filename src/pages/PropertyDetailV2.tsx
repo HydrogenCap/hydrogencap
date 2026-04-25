@@ -29,7 +29,7 @@ import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
 import { SEVERITY } from '@/lib/design-tokens';
@@ -69,7 +69,7 @@ export default function PropertyDetailV2() {
     queryKey: ['legal_entities_list'],
     queryFn: async () => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('legal_entities')
         .select('id, entity_name')
         .eq('org_id', orgId)
@@ -89,7 +89,7 @@ export default function PropertyDetailV2() {
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
       // Get rent schedule entries for this property's tenancies via agreements
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('rent_schedule')
         .select(`
           status,
@@ -104,10 +104,12 @@ export default function PropertyDetailV2() {
       if (!data || data.length === 0) return 'void' as const;
 
       // Filter to this property
-      const forProperty = data.filter((r: any) => r.agreement?.property?.id === id);
+      type RentRow = { status: string; agreement?: { property?: { id?: string } } };
+      const rows = data as RentRow[];
+      const forProperty = rows.filter((r) => r.agreement?.property?.id === id);
       if (forProperty.length === 0) return 'void' as const;
 
-      const statuses = forProperty.map((r: any) => r.status);
+      const statuses = forProperty.map((r) => r.status);
       if (statuses.every((s: string) => s === 'paid')) return 'paid' as const;
       if (statuses.some((s: string) => s === 'overdue' || s === 'bad_debt')) return 'overdue' as const;
       if (statuses.some((s: string) => s === 'partial')) return 'partial' as const;
@@ -119,9 +121,10 @@ export default function PropertyDetailV2() {
   const monthlyRent = property?.whole_house_rent_pcm ?? null;
   const currentLtv = useMemo(() => {
     if (!loans || loans.length === 0 || !property?.current_valuation) return null;
-    const totalDebt = loans
-      .filter((l: any) => l.status === 'active')
-      .reduce((sum: number, l: any) => sum + (l.current_balance || 0), 0);
+    type LoanRow = { status: string; current_balance?: number | null };
+    const totalDebt = (loans as LoanRow[])
+      .filter((l) => l.status === 'active')
+      .reduce((sum, l) => sum + (l.current_balance || 0), 0);
     if (totalDebt === 0 || !property.current_valuation) return null;
     return (totalDebt / property.current_valuation) * 100;
   }, [loans, property?.current_valuation]);

@@ -33,8 +33,6 @@ const STEPS = [
   { id: 'lettings', label: 'Lettings / Development', icon: Key },
 ] as const;
 
-type StepId = (typeof STEPS)[number]['id'];
-
 interface PropertyDetails {
   address_line: string;
   postcode: string;

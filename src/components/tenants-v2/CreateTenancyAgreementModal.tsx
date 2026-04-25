@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -124,7 +124,7 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
 
   const handleSubmit = async (values: FormData) => {
     try {
-      const result = await createAgreement.mutateAsync({
+      const _result = await createAgreement.mutateAsync({
         tenant_id: values.tenant_id,
         property_id: values.property_id,
         room_id: values.room_id,
@@ -164,7 +164,12 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Create Tenancy Agreement</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Create Tenancy Agreement</DialogTitle>
+          <DialogDescription>
+            Set up the tenancy agreement — term, rent, deposit, and linked tenants.
+          </DialogDescription>
+        </DialogHeader>
 
         {warnings.length > 0 && (
           <Alert variant="default" className="border-amber-300 bg-amber-50 dark:bg-amber-950/20">

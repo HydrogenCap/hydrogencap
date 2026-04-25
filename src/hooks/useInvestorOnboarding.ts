@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,7 +58,7 @@ export function useInvestorKYC(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-kyc', investorId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('investor_kyc')
         .select('*')
         .eq('investor_id', investorId!)
@@ -80,7 +80,7 @@ export function useUpdateKYC() {
   return useMutation({
     mutationFn: async ({ investorId, data }: { investorId: string; data: Partial<InvestorKYC> }) => {
       // Check if KYC record exists
-      const { data: existing } = await (supabase as any)
+      const { data: existing } = await supabaseAny
         .from('investor_kyc')
         .select('id')
         .eq('investor_id', investorId)
@@ -88,7 +88,7 @@ export function useUpdateKYC() {
         .maybeSingle();
 
       if (existing) {
-        const { data: result, error } = await (supabase as any)
+        const { data: result, error } = await supabaseAny
           .from('investor_kyc')
           .update(data)
           .eq('id', existing.id)
@@ -97,7 +97,7 @@ export function useUpdateKYC() {
         if (error) throw error;
         return result;
       } else {
-        const { data: result, error } = await (supabase as any)
+        const { data: result, error } = await supabaseAny
           .from('investor_kyc')
           .insert([{ ...data, investor_id: investorId, org_id: orgId! }])
           .select()
@@ -126,7 +126,7 @@ export function useApproveKYC() {
       const expiresAt = new Date();
       expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('investor_kyc')
         .update({
           kyc_status: 'approved',
@@ -158,7 +158,7 @@ export function useCapitalCalls() {
   return useQuery({
     queryKey: ['capital-calls', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capital_calls')
         .select('*')
         .eq('org_id', orgId!)
@@ -184,7 +184,7 @@ export function useCreateCapitalCall() {
       items: { investor_id: string; amount: number }[];
     }) => {
       const { items, ...callData } = data;
-      const { data: call, error: callError } = await (supabase as any)
+      const { data: call, error: callError } = await supabaseAny
         .from('capital_calls')
         .insert([{ ...callData, org_id: orgId! }])
         .select()
@@ -197,7 +197,7 @@ export function useCreateCapitalCall() {
           investor_id: item.investor_id,
           amount: item.amount,
         }));
-        const { error: itemsError } = await (supabase as any)
+        const { error: itemsError } = await supabaseAny
           .from('capital_call_items')
           .insert(callItems);
         if (itemsError) throw itemsError;
@@ -220,7 +220,7 @@ export function useCapitalCallItems(callId: string | undefined) {
   return useQuery({
     queryKey: ['capital-call-items', callId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capital_call_items')
         .select('*')
         .eq('capital_call_id', callId!);
@@ -235,7 +235,7 @@ export function useInvestorCapitalCallItems(investorId: string | undefined) {
   return useQuery({
     queryKey: ['investor-capital-call-items', investorId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capital_call_items')
         .select('*, capital_calls(*)')
         .eq('investor_id', investorId!);
@@ -257,7 +257,7 @@ export function useRecordCapitalPayment() {
       payment_reference?: string;
     }) => {
       // Get current item to calculate new total
-      const { data: item, error: fetchError } = await (supabase as any)
+      const { data: item, error: fetchError } = await supabaseAny
         .from('capital_call_items')
         .select('*, capital_calls(total_amount)')
         .eq('id', data.itemId)
@@ -267,7 +267,7 @@ export function useRecordCapitalPayment() {
       const newPaidAmount = (item.paid_amount || 0) + data.paid_amount;
       const newStatus = newPaidAmount >= item.amount ? 'paid' : 'partial';
 
-      const { data: result, error } = await (supabase as any)
+      const { data: result, error } = await supabaseAny
         .from('capital_call_items')
         .update({
           paid_amount: newPaidAmount,
@@ -281,7 +281,7 @@ export function useRecordCapitalPayment() {
       if (error) throw error;
 
       // Update parent capital call status
-      const { data: allItems } = await (supabase as any)
+      const { data: allItems } = await supabaseAny
         .from('capital_call_items')
         .select('*')
         .eq('capital_call_id', item.capital_call_id);
@@ -289,12 +289,12 @@ export function useRecordCapitalPayment() {
       if (allItems) {
         const totalPaid = allItems.reduce((s: number, i: CapitalCallItem) =>
           s + (i.id === data.itemId ? newPaidAmount : (i.paid_amount || 0)), 0);
-        const totalAmount = allItems.reduce((s: number, i: CapitalCallItem) => s + i.amount, 0);
+        const _totalAmount = allItems.reduce((s: number, i: CapitalCallItem) => s + i.amount, 0);
         const allPaid = allItems.every((i: CapitalCallItem) =>
           i.id === data.itemId ? newPaidAmount >= i.amount : i.status === 'paid');
 
         const callStatus = allPaid ? 'fully_funded' : totalPaid > 0 ? 'partially_funded' : 'issued';
-        await (supabase as any)
+        await supabaseAny
           .from('capital_calls')
           .update({ status: callStatus })
           .eq('id', item.capital_call_id);

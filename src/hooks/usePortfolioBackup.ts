@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import JSZip from 'jszip';
+// JSZip is ~100 kB gzipped — dynamic-imported inside the backup flow so it
+// only loads for users who actually run a portfolio backup.
+import type JSZip from 'jszip';
 
 import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-import { BACKUP_TABLES, formatBytes, type TableExportConfig } from '@/lib/backupConfig';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
+import { BACKUP_TABLES, formatBytes } from '@/lib/backupConfig';
 import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -172,7 +174,8 @@ export function usePortfolioBackup() {
       abortRef.current = false;
 
       const warnings: string[] = [];
-      const zip = new JSZip();
+      const { default: JSZipCtor } = await import('jszip');
+      const zip: JSZip = new JSZipCtor();
       const dateStr = format(new Date(), 'yyyy-MM-dd-HHmm');
       const root = `tenureiq-backup-${dateStr}`;
 
@@ -415,7 +418,7 @@ export function usePortfolioBackup() {
 const BATCH = 1000;
 
 async function queryTableRows(table: string, offset: number, orderByCreatedAt: boolean): Promise<FetchRowsResult> {
-  const query = (supabase as any)
+  const query = supabaseAny
     .from(table as never)
     .select('*')
     .range(offset, offset + BATCH - 1);

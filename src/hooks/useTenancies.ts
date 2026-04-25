@@ -1,5 +1,5 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase } from '@/integrations/supabase/client';
+ import { supabaseAny } from '@/integrations/supabase/client';
  import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
  
@@ -58,7 +58,7 @@ export interface Tenancy {
    return useQuery({
      queryKey: ['tenancies', filters],
      queryFn: async () => {
-       let query = (supabase as any)
+       let query = supabaseAny
          .from('tenancies')
          .select(`
            *,
@@ -89,7 +89,7 @@ export interface Tenancy {
    return useQuery({
      queryKey: ['tenancies', tenancyId],
      queryFn: async () => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('tenancies')
          .select(`
            *,
@@ -115,7 +115,7 @@ export interface Tenancy {
        const orgId = await getUserOrgId();
        if (!orgId) throw new Error('No organization found');
  
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('tenancies')
          .insert({ ...tenancy, org_id: orgId })
          .select()
@@ -143,7 +143,7 @@ export interface Tenancy {
  
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<Tenancy> & { id: string }) => {
-       const { data, error } = await (supabase as any)
+       const { data, error } = await supabaseAny
          .from('tenancies')
          .update(updates)
          .eq('id', id)

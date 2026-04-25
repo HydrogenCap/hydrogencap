@@ -12,7 +12,7 @@ import { LoadingState } from '@/components/common/LoadingState';
 
 function getNextQuarterDue(): string {
   const now = new Date();
-  const q = Math.floor(now.getMonth() / 3);
+  const _q = Math.floor(now.getMonth() / 3);
   const year = now.getFullYear();
   const quarterEnds = [
     new Date(year, 2, 31), // Q1 end

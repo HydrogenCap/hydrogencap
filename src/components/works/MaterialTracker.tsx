@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -17,7 +18,6 @@ import {
   useWorkOrderMaterials,
   useAddMaterial,
   useDeleteMaterial,
-  type WorkOrderMaterial,
 } from '@/hooks/useWorkOrderLifecycle';
 
 interface MaterialTrackerProps {
@@ -146,6 +146,9 @@ export function MaterialTracker({ workOrderId, approvedBudget }: MaterialTracker
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Material</DialogTitle>
+            <DialogDescription>
+              Log a material or consumable used against this work order's budget.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

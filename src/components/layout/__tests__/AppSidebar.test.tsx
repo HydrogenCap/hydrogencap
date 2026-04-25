@@ -42,20 +42,21 @@ vi.mock('@/components/ui/theme-toggle', () => ({
 }));
 
 // Mock sidebar UI components to simplify rendering
+type SidebarMockProps = { children?: React.ReactNode; [key: string]: unknown };
 vi.mock('@/components/ui/sidebar', () => ({
-  Sidebar: ({ children }: any) => <nav data-testid="sidebar">{children}</nav>,
-  SidebarContent: ({ children }: any) => <div>{children}</div>,
-  SidebarFooter: ({ children }: any) => <div data-testid="sidebar-footer">{children}</div>,
-  SidebarGroup: ({ children }: any) => <div>{children}</div>,
-  SidebarGroupContent: ({ children }: any) => <div>{children}</div>,
-  SidebarGroupLabel: ({ children }: any) => <span>{children}</span>,
-  SidebarHeader: ({ children }: any) => <div data-testid="sidebar-header">{children}</div>,
-  SidebarMenu: ({ children }: any) => <ul>{children}</ul>,
-  SidebarMenuButton: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  SidebarMenuItem: ({ children }: any) => <li>{children}</li>,
-  SidebarMenuSub: ({ children }: any) => <ul>{children}</ul>,
-  SidebarMenuSubButton: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  SidebarMenuSubItem: ({ children }: any) => <li>{children}</li>,
+  Sidebar: ({ children }: SidebarMockProps) => <nav data-testid="sidebar">{children}</nav>,
+  SidebarContent: ({ children }: SidebarMockProps) => <div>{children}</div>,
+  SidebarFooter: ({ children }: SidebarMockProps) => <div data-testid="sidebar-footer">{children}</div>,
+  SidebarGroup: ({ children }: SidebarMockProps) => <div>{children}</div>,
+  SidebarGroupContent: ({ children }: SidebarMockProps) => <div>{children}</div>,
+  SidebarGroupLabel: ({ children }: SidebarMockProps) => <span>{children}</span>,
+  SidebarHeader: ({ children }: SidebarMockProps) => <div data-testid="sidebar-header">{children}</div>,
+  SidebarMenu: ({ children }: SidebarMockProps) => <ul>{children}</ul>,
+  SidebarMenuButton: ({ children, ...props }: SidebarMockProps) => <div {...props}>{children}</div>,
+  SidebarMenuItem: ({ children }: SidebarMockProps) => <li>{children}</li>,
+  SidebarMenuSub: ({ children }: SidebarMockProps) => <ul>{children}</ul>,
+  SidebarMenuSubButton: ({ children, ...props }: SidebarMockProps) => <div {...props}>{children}</div>,
+  SidebarMenuSubItem: ({ children }: SidebarMockProps) => <li>{children}</li>,
 }));
 
 import { AppSidebar } from '../AppSidebar';

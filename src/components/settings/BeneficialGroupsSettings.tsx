@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Plus, Trash2, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { Users, Plus, Trash2, X, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -45,7 +46,7 @@ export function BeneficialGroupsSettings() {
   const removeMapping = useRemoveEntityMapping();
 
   const [newGroupName, setNewGroupName] = useState('');
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [_editingGroupId, _setEditingGroupId] = useState<string | null>(null);
   const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
   const [selectedGroupForAdd, setSelectedGroupForAdd] = useState<string>('');
   const [selectedEntityForAdd, setSelectedEntityForAdd] = useState<string>('');
@@ -188,6 +189,9 @@ export function BeneficialGroupsSettings() {
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Add Entity to "{group.name}"</DialogTitle>
+                          <DialogDescription>
+                            Assign another legal entity to this beneficial ownership group.
+                          </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                           <Select value={selectedEntityForAdd} onValueChange={setSelectedEntityForAdd}>

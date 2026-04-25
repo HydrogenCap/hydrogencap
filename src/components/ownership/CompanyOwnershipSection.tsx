@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, User, Plus, Pencil, Trash2, AlertCircle, Check, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Building2, User, Plus, Pencil, Trash2, AlertCircle, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +32,7 @@ interface CompanyOwnershipSectionProps {
   companyName: string;
 }
 
-export function CompanyOwnershipSection({ companyId, companyName }: CompanyOwnershipSectionProps) {
+export function CompanyOwnershipSection({ companyId, companyName: _companyName }: CompanyOwnershipSectionProps) {
   const { data: links, isLoading } = useCompanyOwnership(companyId);
   const deleteLink = useDeleteOwnershipLink();
   const { toast } = useToast();

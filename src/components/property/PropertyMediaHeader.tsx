@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Camera, FileImage, Upload, Download, RefreshCw, X, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -249,8 +249,11 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
                   </Button>
                 </div>
               </DialogTitle>
+              <DialogDescription>
+                Preview the current floorplan. Use Replace to upload a new version.
+              </DialogDescription>
             </DialogHeader>
-            
+
             <div className="flex-1 overflow-auto bg-muted rounded-lg">
               {primaryFloorplan?.file_type === 'pdf' ? (
                 <div className="h-full flex flex-col">
@@ -298,6 +301,9 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Upload Floorplan</DialogTitle>
+              <DialogDescription>
+                Upload a new floorplan image or PDF for this property.
+              </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4">

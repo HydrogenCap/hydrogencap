@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -50,7 +50,7 @@ export function useSnoozedActions() {
   return useQuery({
     queryKey: ['action-snoozes', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('action_snoozes')
         .select('*')
         .eq('org_id', orgId!)
@@ -70,7 +70,7 @@ export function useActionAssignments() {
   return useQuery({
     queryKey: ['action-assignments', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('action_assignments')
         .select('*')
         .eq('org_id', orgId!);
@@ -94,7 +94,7 @@ export function useSnoozeAction() {
     mutationFn: async (input: SnoozeInput) => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('action_snoozes')
         .insert({
           org_id: orgId,
@@ -126,7 +126,7 @@ export function useUnsnoozeAction() {
 
   return useMutation({
     mutationFn: async (snoozeId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('action_snoozes')
         .delete()
         .eq('id', snoozeId);
@@ -152,7 +152,7 @@ export function useAssignAction() {
     mutationFn: async (input: AssignInput) => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('action_assignments')
         .insert({
           org_id: orgId,
@@ -184,7 +184,7 @@ export function useUnassignAction() {
 
   return useMutation({
     mutationFn: async (assignmentId: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('action_assignments')
         .delete()
         .eq('id', assignmentId);

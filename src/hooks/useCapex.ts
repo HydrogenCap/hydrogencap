@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 
@@ -38,7 +38,7 @@ export function useCapexProjects(propertyId: string) {
   return useQuery({
     queryKey: ['capex-projects', propertyId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_projects')
         .select('*, capex_line_items(*)')
         .eq('property_id', propertyId)
@@ -65,7 +65,7 @@ export function useCreateCapexProject() {
     }) => {
       const orgId = await fetchUserOrgId();
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_projects')
         .insert({ ...project, org_id: orgId })
         .select()
@@ -90,7 +90,7 @@ export function useUpdateCapexProject() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexProject> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_projects')
         .update(updates)
         .eq('id', id)
@@ -123,7 +123,7 @@ export function useAddCapexLineItem() {
       paid_date?: string;
       notes?: string;
     }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('capex_line_items')
         .insert(item)
         .select()
@@ -132,7 +132,7 @@ export function useAddCapexLineItem() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['capex-projects'] });
       toast({ title: 'Line item added' });
     },
@@ -144,7 +144,7 @@ export function useUpdateCapexLineItem() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexLineItem> & { id: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('capex_line_items')
         .update(updates)
         .eq('id', id);
@@ -162,7 +162,7 @@ export function useDeleteCapexLineItem() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('capex_line_items')
         .delete()
         .eq('id', id);

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DoorOpen, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { WizardPayload } from '@/lib/wizard/types';
 
 interface StepProps {
@@ -32,7 +32,7 @@ export function StepSelectRoom({ payload, updatePayload }: StepProps) {
     }
 
     setLoading(true);
-    (supabase as any)
+    supabaseAny
       .from('rooms_v2')
       .select('id, room_name, room_type')
       .eq('property_id', propertyId)

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { UserPlus, User, Wrench, Check, Loader2 } from 'lucide-react';
+import { User, Wrench, Check, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -22,8 +21,8 @@ interface AssignActionPopoverProps {
 export function AssignActionPopover({
   risk,
   assignment,
-  memberMap,
-  contractorMap,
+  memberMap: _memberMap,
+  contractorMap: _contractorMap,
   children,
 }: AssignActionPopoverProps) {
   const [open, setOpen] = useState(false);

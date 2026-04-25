@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription,
@@ -70,7 +70,7 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
   const { data: entities } = useLegalEntities();
 
   const form = useForm<FormInput, unknown, FormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as unknown as import('react-hook-form').Resolver<FormInput, unknown, FormValues>,
     defaultValues: {
       entity_id: '',
       commitment_type: 'equity' as const,
@@ -119,6 +119,9 @@ export function CommitmentFormModal({ open, onOpenChange, investorId }: Props) {
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Commitment</DialogTitle>
+          <DialogDescription>
+            Record an investor's commitment to an entity — equity, loan, or guarantee.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

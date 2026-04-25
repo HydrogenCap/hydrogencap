@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  ShieldCheck, FileText, MapPin, Wallet, AlertTriangle, CheckCircle2, Clock, XCircle, Upload,
+  ShieldCheck, FileText, MapPin, Wallet, AlertTriangle, CheckCircle2, Clock, XCircle,
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { useInvestorKYC, useUpdateKYC, useApproveKYC, InvestorKYC } from '@/hooks/useInvestorOnboarding';
 
@@ -335,6 +335,9 @@ export function KYCOnboardingPanel({ investorId }: { investorId: string }) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Approve KYC</DialogTitle>
+            <DialogDescription>
+              Confirm identity and address checks are complete and approve this investor.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <p className="text-sm text-muted-foreground">

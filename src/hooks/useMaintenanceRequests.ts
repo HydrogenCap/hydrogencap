@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
@@ -76,7 +76,7 @@ export function useMaintenanceRequests(filters?: {
   return useQuery({
     queryKey: ['maintenance_requests', filters],
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .order('created_at', { ascending: false });
@@ -97,7 +97,7 @@ export function useMaintenanceOverview() {
   return useQuery({
     queryKey: ['maintenance_overview'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_overview' as never)
         .select('*');
       if (error) throw error;
@@ -110,7 +110,7 @@ export function useOpenMaintenanceRequests() {
   return useQuery({
     queryKey: ['maintenance_requests', 'open'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .not('status', 'in', '("completed","verified","closed","cancelled")')
@@ -127,7 +127,7 @@ export function useMaintenanceRequest(requestId: string | undefined) {
   return useQuery({
     queryKey: ['maintenance_requests', requestId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select(MAINTENANCE_SELECT)
         .eq('id', requestId!)
@@ -170,7 +170,7 @@ export function useCreateMaintenanceRequest() {
         status: 'reported',
       };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .insert(requestPayload)
         .select()
@@ -222,7 +222,7 @@ export function useUpdateMaintenanceRequest() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: MaintenanceRequestUpdate & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .update(updates)
         .eq('id', id)
@@ -231,7 +231,7 @@ export function useUpdateMaintenanceRequest() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, vars) => {
+    onSuccess: (_, _vars) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
       toast({ title: 'Request updated' });

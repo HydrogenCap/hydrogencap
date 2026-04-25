@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bot, Sliders, ToggleLeft } from 'lucide-react';
+import { Bot, Sliders } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';

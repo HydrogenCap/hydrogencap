@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,6 +84,9 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{editingUnit ? 'Edit Unit' : 'Add Unit'}</DialogTitle>
+          <DialogDescription>
+            {editingUnit ? 'Update this unit\'s details.' : 'Add a new self-contained unit to this property.'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

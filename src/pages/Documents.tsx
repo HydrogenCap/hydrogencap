@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { FolderOpen, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';

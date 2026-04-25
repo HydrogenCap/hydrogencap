@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
 
@@ -12,7 +12,7 @@ export function usePropertyPhotos(propertyId: string | undefined) {
     queryFn: async () => {
       if (!propertyId) return [];
       
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('photos')
         .select('*')
         .eq('property_id', propertyId)
@@ -48,13 +48,13 @@ export function useUploadPhoto() {
       if (uploadError) throw uploadError;
 
       // Check how many photos exist to set display order
-      const { count } = await (supabase as any)
+      const { count } = await supabaseAny
         .from('photos')
         .select('*', { count: 'exact', head: true })
         .eq('property_id', propertyId);
 
       // Create photo record
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('photos')
         .insert({
           property_id: propertyId,
@@ -81,13 +81,13 @@ export function useSetCoverPhoto() {
   return useMutation({
     mutationFn: async ({ photoId, propertyId }: { photoId: string; propertyId: string }) => {
       // First, unset all cover photos for this property
-      await (supabase as any)
+      await supabaseAny
         .from('photos')
         .update({ is_cover: false })
         .eq('property_id', propertyId);
 
       // Then set the new cover photo
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('photos')
         .update({ is_cover: true })
         .eq('id', photoId)
@@ -108,7 +108,7 @@ export function useDeletePhoto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ photoId, propertyId, fileUrl }: { photoId: string; propertyId: string; fileUrl: string }) => {
+    mutationFn: async ({ photoId, propertyId: _propertyId, fileUrl }: { photoId: string; propertyId: string; fileUrl: string }) => {
       const filePath = extractStoragePath('photos', fileUrl);
 
       // Delete from storage
@@ -117,7 +117,7 @@ export function useDeletePhoto() {
       }
 
       // Delete record
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('photos')
         .delete()
         .eq('id', photoId);
@@ -135,10 +135,10 @@ export function useReorderPhotos() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ photos, propertyId }: { photos: { id: string; display_order: number }[]; propertyId: string }) => {
+    mutationFn: async ({ photos, propertyId: _propertyId }: { photos: { id: string; display_order: number }[]; propertyId: string }) => {
       // Update each photo's display order
       const updates = photos.map(photo =>
-        (supabase as any)
+        supabaseAny
           .from('photos')
           .update({ display_order: photo.display_order })
           .eq('id', photo.id)

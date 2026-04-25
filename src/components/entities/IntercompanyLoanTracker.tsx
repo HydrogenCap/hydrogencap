@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -16,7 +16,7 @@ import {
   type IntercompanyLoan,
   type LoanStatus,
 } from '@/hooks/useEntityCompliance';
-import { useLegalEntities, type LegalEntity } from '@/hooks/useLegalEntities';
+import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useOrganization } from '@/hooks/useOrganization';
 import { formatGBPDecimal } from '@/lib/calculations';
 import { format, differenceInDays } from 'date-fns';
@@ -206,7 +206,7 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={statusConfig.variant as any}>{statusConfig.label}</Badge>
+                      <Badge variant={statusConfig.variant as 'default' | 'secondary' | 'destructive' | 'outline'}>{statusConfig.label}</Badge>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(loan)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -233,6 +233,9 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Loan' : 'New Intercompany Loan'}</DialogTitle>
+            <DialogDescription>
+              Record a loan between two group entities for consolidated-accounts tracking.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

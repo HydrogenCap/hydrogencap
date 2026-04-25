@@ -3,6 +3,7 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import unusedImports from "eslint-plugin-unused-imports";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -16,11 +17,26 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      "unused-imports": unusedImports,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // Surfaced as warnings (ratcheted via --max-warnings in the lint script)
+      // so existing debt is tolerated but no new violations can land.
+      //
+      // Unused imports run through eslint-plugin-unused-imports instead of
+      // @typescript-eslint/no-unused-vars because the plugin ships an
+      // auto-fixer — `eslint --fix` will remove dead imports.
       "@typescript-eslint/no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "warn",
+      "unused-imports/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        ignoreRestSiblings: true,
+      }],
+      "@typescript-eslint/no-explicit-any": "warn",
       // react-hooks v7 added several strict rules that flag valid patterns
       // throughout the codebase. Disabling to keep CI green without refactoring.
       "react-hooks/set-state-in-effect": "off",
@@ -33,8 +49,6 @@ export default tseslint.config(
       "react-hooks/incompatible-library": "off",
       // these produce false positives in complex conditional flows
       "no-useless-assignment": "off",
-      // too broad for a codebase with many legitimate any usages
-      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 );

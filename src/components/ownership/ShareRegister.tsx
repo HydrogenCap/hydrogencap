@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, ArrowRightLeft } from 'lucide-react';
@@ -15,7 +15,6 @@ import {
   useAddShareClass,
   useShareholdings,
   useAddShareholding,
-  useShareTransfers,
   useAddShareTransfer,
   calculateStampDuty,
   formatCurrency,
@@ -29,7 +28,7 @@ interface ShareRegisterProps {
 }
 
 export function ShareRegister({ entityId, orgId }: ShareRegisterProps) {
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
   const { data: shareClasses = [], isLoading: loadingClasses } = useShareClasses(entityId);
   const { data: shareholdings = [], isLoading: loadingHoldings } = useShareholdings(entityId);
 
@@ -201,8 +200,8 @@ function AddShareClassDialog({
       setTotalIssued('100');
       setVotingRights(true);
       setDividendRights(true);
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -211,6 +210,9 @@ function AddShareClassDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Share Class</DialogTitle>
+          <DialogDescription>
+            Define a new class of shares for this entity (ordinary, preference, etc).
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -291,8 +293,8 @@ function AddShareholderDialog({
       setSharesHeld('');
       setPercentage('');
       setAllotmentDate('');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -301,6 +303,9 @@ function AddShareholderDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Shareholder</DialogTitle>
+          <DialogDescription>
+            Record a new shareholder — individual or entity — against a share class.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -310,7 +315,7 @@ function AddShareholderDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Holder Type</Label>
-              <Select value={holderType} onValueChange={(v: any) => setHolderType(v)}>
+              <Select value={holderType} onValueChange={(v) => setHolderType(v as typeof holderType)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="individual">Individual</SelectItem>
@@ -410,8 +415,8 @@ function RecordTransferDialog({
       setToHolder('');
       setSharesTransferred('');
       setConsideration('0');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 

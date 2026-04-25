@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg, fetchUserOrgId } from './useUserOrg';
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 
@@ -63,7 +63,7 @@ export function useValuationComparables(propertyId: string | undefined) {
     queryKey: ['valuation_comparables', propertyId, orgId],
     enabled: !!propertyId && !!orgId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('valuation_comparables')
         .select('*')
         .eq('property_id', propertyId!)
@@ -80,7 +80,7 @@ export function useCreateValuationComparable() {
   return useMutation({
     mutationFn: async (input: ValuationComparableInsert) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('valuation_comparables')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -100,7 +100,7 @@ export function useUpdateValuationComparable() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ValuationComparable> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('valuation_comparables')
         .update(updates)
         .eq('id', id)
@@ -121,7 +121,7 @@ export function useDeleteValuationComparable() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('valuation_comparables')
         .delete()
         .eq('id', id);
@@ -145,7 +145,7 @@ export function useValuationHistory(propertyId: string | undefined) {
     queryKey: ['valuation_history', propertyId, orgId],
     enabled: !!propertyId && !!orgId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('valuation_history')
         .select('*')
         .eq('property_id', propertyId!)
@@ -162,7 +162,7 @@ export function useCreateValuationHistory() {
   return useMutation({
     mutationFn: async (input: ValuationHistoryInsert) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('valuation_history')
         .insert({ ...input, org_id: orgId })
         .select()
@@ -182,7 +182,7 @@ export function useDeleteValuationHistory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, propertyId }: { id: string; propertyId: string }) => {
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('valuation_history')
         .delete()
         .eq('id', id);
@@ -207,7 +207,7 @@ export function useRevaluationTriggers() {
     enabled: !!orgId,
     queryFn: async () => {
       // Fetch all properties with their latest valuation history
-      const { data: properties, error: propErr } = await (supabase as any)
+      const { data: properties, error: propErr } = await supabaseAny
         .from('properties_v2')
         .select('id, address_line_1, postcode, current_valuation, valuation_date, purchase_price')
         .eq('org_id', orgId!);

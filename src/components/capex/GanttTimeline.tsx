@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { differenceInDays, format, parseISO, isAfter, isBefore } from 'date-fns';
+import { differenceInDays, format, parseISO, isAfter } from 'date-fns';
 import { useCapexPhases, useCreateCapexPhase, type CapexPhase } from '@/hooks/useCapexUpgrade';
 
 const fmt = (v: number) =>
@@ -26,7 +26,7 @@ export default function GanttTimeline({ projectId }: { projectId: string }) {
   const [showAdd, setShowAdd] = useState(false);
   const [hoveredPhase, setHoveredPhase] = useState<string | null>(null);
 
-  const { timelineStart, timelineEnd, totalDays } = useMemo(() => {
+  const { timelineStart, timelineEnd: _timelineEnd, totalDays } = useMemo(() => {
     if (phases.length === 0) {
       const now = new Date();
       return { timelineStart: now, timelineEnd: now, totalDays: 1 };

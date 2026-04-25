@@ -5,7 +5,7 @@
  * for UK private rented sector hazard compliance (effective 1 May 2026).
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
@@ -176,7 +176,7 @@ export function useActiveHazards() {
   return useQuery({
     queryKey: ['awaabs_law', 'active_hazards'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('maintenance_requests')
         .select(AWAABS_SELECT)
         .eq('awaabs_law_applies', true)
@@ -184,7 +184,12 @@ export function useActiveHazards() {
         .order('reported_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as any[];
+      return (data || []) as Array<AwaabsLawFields & {
+        id: string;
+        investigation_due_by: string | null;
+        written_summary_due_by: string | null;
+        repair_due_by: string | null;
+      }>;
     },
     refetchInterval: 60_000, // Poll every minute for deadline accuracy
   });
@@ -233,7 +238,7 @@ export function useAwaabsLawEvents(requestId: string | undefined) {
   return useQuery({
     queryKey: ['awaabs_law', 'events', requestId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('awaabs_law_events')
         .select('*')
         .eq('maintenance_request_id', requestId!)
@@ -254,7 +259,7 @@ async function logAwaabsEvent(
   eventData: Record<string, unknown> = {}
 ) {
   const { data: auth } = await supabase.auth.getUser();
-  const { error } = await (supabase as any)
+  const { error } = await supabaseAny
     .from('awaabs_law_events')
     .insert({
       maintenance_request_id: maintenanceRequestId,
@@ -277,7 +282,7 @@ export function useStartInvestigation() {
       const now = new Date();
 
       // Get current request to calculate deadlines
-      const { data: request, error: fetchErr } = await (supabase as any)
+      const { data: _request, error: fetchErr } = await supabaseAny
         .from('maintenance_requests')
         .select('reported_at, hazard_category')
         .eq('id', requestId)
@@ -286,7 +291,7 @@ export function useStartInvestigation() {
 
       const writtenSummaryDue = addWorkingDays(now, 3);
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           investigation_started_at: now.toISOString(),
@@ -324,7 +329,7 @@ export function useSendWrittenSummary() {
       const orgId = await fetchUserOrgId();
       const now = new Date();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           written_summary_sent_at: now.toISOString(),
@@ -361,7 +366,7 @@ export function useStartRepair() {
       const orgId = await fetchUserOrgId();
       const now = new Date();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           repair_started_at: now.toISOString(),
@@ -397,7 +402,7 @@ export function useCompleteRepair() {
       const orgId = await fetchUserOrgId();
       const now = new Date();
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           repair_completed_at: now.toISOString(),
@@ -452,7 +457,7 @@ export function useClassifyHazard() {
       const orgId = await fetchUserOrgId();
 
       // Get the request to recalculate deadlines
-      const { data: request, error: fetchErr } = await (supabase as any)
+      const { data: request, error: fetchErr } = await supabaseAny
         .from('maintenance_requests')
         .select('reported_at, investigation_started_at')
         .eq('id', requestId)
@@ -466,7 +471,7 @@ export function useClassifyHazard() {
 
       const deadlines = calculateDeadlines(reportedAt, hazardCategory, investigationStartedAt);
 
-      const { error } = await (supabase as any)
+      const { error } = await supabaseAny
         .from('maintenance_requests')
         .update({
           hazard_category: hazardCategory,
@@ -580,31 +585,38 @@ export function useComplianceStats() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       // Fetch all hazards this month
-      const { data: monthly, error: mErr } = await (supabase as any)
+      const { data: monthly, error: mErr } = await supabaseAny
         .from('maintenance_requests')
         .select('id, reported_at, investigation_started_at, repair_completed_at, escalation_level')
         .eq('awaabs_law_applies', true)
         .gte('reported_at', monthStart);
       if (mErr) throw mErr;
 
-      const requests = (monthly || []) as any[];
+      type HazardRow = {
+        id: string;
+        reported_at: string | null;
+        investigation_started_at: string | null;
+        repair_completed_at: string | null;
+        escalation_level: EscalationLevel;
+      };
+      const requests = (monthly || []) as HazardRow[];
       const totalHazards = requests.length;
 
       // Avg response time (reported → investigation started)
       const responseTimes = requests
-        .filter((r: any) => r.investigation_started_at && r.reported_at)
-        .map((r: any) => {
-          const reported = new Date(r.reported_at).getTime();
-          const investigated = new Date(r.investigation_started_at).getTime();
+        .filter((r) => r.investigation_started_at && r.reported_at)
+        .map((r) => {
+          const reported = new Date(r.reported_at!).getTime();
+          const investigated = new Date(r.investigation_started_at!).getTime();
           return (investigated - reported) / (1000 * 60 * 60);
         });
 
       const avgResponseTime = responseTimes.length > 0
-        ? responseTimes.reduce((a: number, b: number) => a + b, 0) / responseTimes.length
+        ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
         : null;
 
       // Breach count
-      const breachCount = requests.filter((r: any) => r.escalation_level === 'breach').length;
+      const breachCount = requests.filter((r) => r.escalation_level === 'breach').length;
 
       // Compliance rate
       const complianceRate = totalHazards > 0

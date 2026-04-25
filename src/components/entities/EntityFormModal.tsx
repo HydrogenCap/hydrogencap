@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -195,6 +196,9 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Entity' : 'Add Entity'}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? 'Update this legal entity\'s details.' : 'Register a new legal entity in your portfolio.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

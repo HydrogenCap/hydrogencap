@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, Pencil, X } from 'lucide-react';
 import { useUpdateWorksOrder, type WorksOrderWithContractor } from '@/hooks/useWorksOrders';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { WORKS_ORDER_STATUS_CONFIG, WORKS_ORDER_PIPELINE, type WorksOrderStatus } from '@/lib/maintenanceTypes';
 
 interface Props {
@@ -41,7 +41,7 @@ export function WorksOrderDetailForm({ worksOrder: wo }: Props) {
   const { data: contractors } = useQuery({
     queryKey: ['compliance_contractors_v2_list'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_contractors_v2')
         .select('id, company_name, rating, service_types')
         .order('company_name');

@@ -33,7 +33,6 @@ import {
   WO_CATEGORIES,
   COST_CATEGORIES,
   type CostCategory,
-  type WorkOrderWithDetails,
 } from '@/hooks/useWorkOrders';
 import { WorkOrderPipeline } from '@/components/works/WorkOrderPipeline';
 import { ApprovalWorkflow } from '@/components/works/ApprovalWorkflow';
@@ -154,7 +153,7 @@ export default function WorkOrderDetail() {
 
         {/* Approval section for pending work orders */}
         {wo.status === 'submitted' && (
-          <ApprovalWorkflow defaultThreshold={(wo as any).approval_threshold || 500} />
+          <ApprovalWorkflow defaultThreshold={(wo as { approval_threshold?: number }).approval_threshold || 500} />
         )}
 
         {/* Action Bar */}

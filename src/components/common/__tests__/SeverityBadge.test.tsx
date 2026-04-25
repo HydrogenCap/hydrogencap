@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SeverityBadge } from '../SeverityBadge';
-import { SEVERITY } from '@/lib/design-tokens';
 
 describe('SeverityBadge', () => {
   it('renders children text', () => {

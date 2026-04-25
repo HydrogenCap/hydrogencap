@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState } from '@/components/common';
-import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES, type TenantWithCurrentTenancy, type TenantStatusV2, type TenantTypeV2 } from '@/hooks/useTenantsV2';
+import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES } from '@/hooks/useTenantsV2';
 import { useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
 import { AddTenantModal } from '@/components/tenants-v2/AddTenantModal';
 

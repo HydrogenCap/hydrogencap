@@ -10,7 +10,7 @@ beforeAll(() => {
       observe() {}
       unobserve() {}
       disconnect() {}
-    } as any;
+    } as unknown as typeof ResizeObserver;
   }
 });
 
@@ -32,9 +32,10 @@ vi.mock('@/components/finance/StressTestPanel', () => ({
   StressTestPanel: () => <div data-testid="stress-panel">Stress Test</div>,
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: { from: () => ({ delete: () => ({ eq: () => ({ error: null }) }) }) },
-}));
+vi.mock('@/integrations/supabase/client', () => {
+  const client = { from: () => ({ delete: () => ({ eq: () => ({ error: null }) }) }) };
+  return { supabase: client, supabaseAny: client };
+});
 
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),

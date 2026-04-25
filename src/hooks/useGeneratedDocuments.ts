@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 
@@ -24,7 +24,7 @@ export function useGeneratedDocuments() {
     queryFn: async () => {
       if (!orgId) return [];
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('generated_documents')
         .select('*')
         .eq('org_id', orgId)
@@ -49,7 +49,7 @@ export function useCreateGeneratedDocument() {
     }) => {
       const orgId = await fetchUserOrgId();
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('generated_documents')
         .insert([{
           org_id: orgId,

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
-  Plus, AlertTriangle, CheckCircle2, Clock, Banknote, Calendar,
+  Plus, AlertTriangle, Banknote, Calendar,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
   useCapitalCalls, useCreateCapitalCall, useCapitalCallItems,
@@ -172,6 +172,9 @@ export function CapitalCallManager({ investorId }: CapitalCallManagerProps) {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Create Capital Call</DialogTitle>
+            <DialogDescription>
+              Request a new capital drawdown from investors against their commitments.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
@@ -241,6 +244,9 @@ export function CapitalCallManager({ investorId }: CapitalCallManagerProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Record Payment</DialogTitle>
+            <DialogDescription>
+              Log an investor's payment against this capital call line item.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             {selectedItem && (

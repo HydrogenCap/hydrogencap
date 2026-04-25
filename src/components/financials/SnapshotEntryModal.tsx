@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Lock, Unlock, ChevronDown, ChevronUp, Save, AlertCircle } from 'lucide-react';
 import { usePropertiesV2, type PropertyWithEntity } from '@/hooks/usePropertiesV2';
@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth, subMonths } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 import type { FinancialSnapshot } from '@/lib/financialSnapshotTypes';
@@ -104,7 +104,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const { data: roomSuggestions } = useQuery<RoomSuggestion[]>({
     queryKey: ['room_rent_suggestions'],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('rooms_v2')
         .select('property_id, current_rent_pcm, is_lettable, occupancy_status, target_rent_pcm');
       return (data || []) as RoomSuggestion[];
@@ -114,7 +114,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
   const { data: loanSuggestions } = useQuery<LoanSuggestion[]>({
     queryKey: ['loan_payment_suggestions'],
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await supabaseAny
         .from('loan_facilities')
         .select('property_id, monthly_payment, current_balance, status')
         .eq('status', 'active');
@@ -162,7 +162,10 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Record Monthly Figures</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Record Monthly Figures</DialogTitle>
+            <DialogDescription>Loading snapshot data…</DialogDescription>
+          </DialogHeader>
           <Skeleton className="h-64" />
         </DialogContent>
       </Dialog>
@@ -174,6 +177,9 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Record Monthly Figures</DialogTitle>
+          <DialogDescription>
+            Record the month-end financial snapshot for this property or portfolio.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -452,7 +458,6 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
   const saveAll = () => {
     const promises = properties.map(p => {
       const r = rows[p.id];
-      const totalCosts = r.management_fees + r.maintenance_costs + r.insurance_costs + r.utilities + r.council_tax + r.other_costs;
       const suggestions = getAutoSuggestions(p.id);
       return onSave.mutateAsync({
         org_id: p.org_id,

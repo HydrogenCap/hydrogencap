@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { toast } from 'sonner';
 
@@ -60,7 +60,7 @@ export function useAcquisitionAnalyses() {
   return useQuery({
     queryKey: ['acquisition-analyses', orgId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('acquisition_analyses')
         .select('*')
         .eq('org_id', orgId!)
@@ -79,7 +79,7 @@ export function useAcquisitionDetail(id: string | undefined) {
   return useQuery({
     queryKey: ['acquisition-analysis', id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('acquisition_analyses')
         .select('*')
         .eq('id', id!)
@@ -98,7 +98,7 @@ export function useRunAcquisitionAnalysis() {
 
   return useMutation({
     mutationFn: async (input: AcquisitionInput) => {
-      const { data, error } = await (supabase as any).functions.invoke('analyse-acquisition', {
+      const { data, error } = await supabaseAny.functions.invoke('analyse-acquisition', {
         body: input,
       });
 

@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
-import { 
-  X, Download, Pencil, Trash2, ExternalLink, 
+import { Download, Pencil, Trash2, ExternalLink, 
   FileText, Eye, Loader2
 } from 'lucide-react';
 import {

@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useRecordAuditHistory } from '@/hooks/useAuditLog';
 import { humanizeFieldName, formatAuditValue } from '@/lib/auditLogTypes';
-import { cn } from '@/lib/utils';
 
 interface Props {
   tableName: string;

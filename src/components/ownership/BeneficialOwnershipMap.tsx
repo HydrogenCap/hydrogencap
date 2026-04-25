@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Plus, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
@@ -13,9 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   useBeneficialOwnersPSC,
   useAddBeneficialOwnerPSC,
-  useUpdateBeneficialOwnerPSC,
   useDeleteBeneficialOwnerPSC,
-  type BeneficialOwner,
 } from '@/hooks/useShareRegister';
 
 const NATURE_OF_CONTROL_OPTIONS = [
@@ -47,8 +45,8 @@ export function BeneficialOwnershipMap({ entityId, orgId }: BeneficialOwnershipM
     try {
       await deleteBeneficialOwner.mutateAsync({ id, entityId });
       toast({ title: 'Beneficial owner removed' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -207,8 +205,8 @@ function AddBeneficialOwnerDialog({
       setNationality('');
       setCountryOfResidence('');
       setServiceAddress('');
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
     }
   };
 
@@ -217,6 +215,9 @@ function AddBeneficialOwnerDialog({
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Person with Significant Control</DialogTitle>
+          <DialogDescription>
+            Record a PSC entry for Companies House disclosures on this entity.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>

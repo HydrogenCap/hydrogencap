@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Home, Building2, Zap } from 'lucide-react';
+import { Plus, Search, Building2, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,6 @@ import {
 import { usePropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, getPropertyComplianceStatus } from '@/hooks/usePropertiesV2';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
-import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal';
 import { PropertyWizard } from '@/components/properties-v2/wizard/PropertyWizard';
 import { usePropertyPhotosV2 } from '@/hooks/usePropertyPhotosV2';
 import { useBulkEpcEnrichV2 } from '@/hooks/useBulkEpcEnrichV2';

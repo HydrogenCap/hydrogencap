@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { showMutationError } from '@/lib/errorToast';
 import { useAllLoanFacilities, type LoanFacilityWithDetails } from './useLoanFacilities';
@@ -85,7 +85,7 @@ export function useMortgageApplications(propertyId?: string) {
     queryKey: ['mortgage_applications', orgId, propertyId],
     enabled: !!orgId,
     queryFn: async () => {
-      let query = (supabase as any)
+      let query = supabaseAny
         .from('mortgage_applications')
         .select('*, properties_v2!inner(address_line_1, postcode)')
         .eq('org_id', orgId!);
@@ -96,7 +96,10 @@ export function useMortgageApplications(propertyId?: string) {
 
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
-      return ((data || []) as any[]).map((d: any) => ({
+      type AppWithNested = MortgageApplication & {
+        properties_v2?: { address_line_1?: string; postcode?: string } | null;
+      };
+      return ((data || []) as AppWithNested[]).map((d) => ({
         ...d,
         property_address: `${d.properties_v2?.address_line_1}, ${d.properties_v2?.postcode}`,
         properties_v2: undefined,
@@ -113,7 +116,7 @@ export function useCreateApplication() {
       app: Omit<MortgageApplication, 'id' | 'org_id' | 'created_at'>
     ) => {
       const orgId = await fetchUserOrgId();
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('mortgage_applications')
         .insert({ ...app, org_id: orgId })
         .select()
@@ -137,7 +140,7 @@ export function useUpdateApplicationStatus() {
       id,
       ...updates
     }: Partial<MortgageApplication> & { id: string }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('mortgage_applications')
         .update(updates)
         .eq('id', id)

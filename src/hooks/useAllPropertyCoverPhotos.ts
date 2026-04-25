@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 
@@ -13,7 +13,7 @@ export function useAllPropertyCoverPhotos() {
   return useQuery({
     queryKey: ['property_photos_covers_array'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('photos')
         .select('id, property_id, file_url, is_cover')
         .eq('is_cover', true)
@@ -40,7 +40,7 @@ export function useAllPropertyPhotos() {
   return useQuery({
     queryKey: ['property_photos_all'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('photos')
         .select('id, property_id, file_url, is_cover, display_order')
         .order('property_id')

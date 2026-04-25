@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, FileWarning, Check, X, AlertTriangle, Plus, Bell, DoorOpen, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Edit, FileWarning, Check, X, Plus, Bell, DoorOpen, RefreshCw } from 'lucide-react';
 import { format, differenceInYears } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTenantV2, TENANT_TYPES, TENANT_STATUSES, useUpdateTenantV2 } from '@/hooks/useTenantsV2';
+import { useTenantV2, TENANT_TYPES, TENANT_STATUSES, useUpdateTenantV2, type TenantStatusV2 } from '@/hooks/useTenantsV2';
 import { useTenancyAgreements, useTenancyComplianceChecks, TENANCY_TYPES } from '@/hooks/useTenancyAgreements';
 import { useTenantPaymentScore } from '@/hooks/useTenantLifecycle';
 import { getPaymentScoreRating } from '@/lib/tenant-scoring';
@@ -24,7 +24,7 @@ import { TenantLifecyclePanel } from '@/components/tenants/TenantLifecyclePanel'
 import { NoticeComposer } from '@/components/tenants/NoticeComposer';
 import { AffordabilityMonitor } from '@/components/tenants/AffordabilityMonitor';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { TenancyChecklist } from '@/components/lettings/TenancyChecklist';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 
@@ -58,7 +58,7 @@ function fmtRent(v: number | null | undefined) {
 function getLabel(arr: readonly { value: string; label: string }[], v: string) {
   return arr.find(x => x.value === v)?.label || v;
 }
-function ComplianceRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
+function _ComplianceRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
     <div className="flex items-center justify-between text-sm py-1">
       <span className="text-muted-foreground">{label}</span>
@@ -122,7 +122,7 @@ export default function TenantDetailV2() {
   useEffect(() => {
     if (!id) return;
 
-    void (supabase as any)
+    void supabaseAny
       .from('recurring_charges' as never)
       .select('*')
       .eq('tenant_id', id)
@@ -143,7 +143,7 @@ export default function TenantDetailV2() {
     const orgId = (tenant as { org_id?: string | null }).org_id ?? null;
     if (!orgId) return;
 
-    const { data } = await (supabase as any)
+    const { data } = await supabaseAny
       .from('recurring_charges' as never)
       .insert({
         org_id: orgId,
@@ -171,7 +171,7 @@ export default function TenantDetailV2() {
   const handleStatusTransition = (newStatus: string) => {
     if (!id) return;
     updateTenant.mutate(
-      { id, status: newStatus as any },
+      { id, status: newStatus as TenantStatusV2 },
       {
         onSuccess: () => {
           toast({ title: 'Status updated', description: `Tenant status changed to ${newStatus}.` });

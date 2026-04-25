@@ -1,79 +1,26 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import {
+  deriveKey,
+  getValidToken as getValidTokenHelper,
+  getOrCreateContact as getOrCreateContactHelper,
+} from "./helpers.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FREEAGENT_CLIENT_ID = Deno.env.get("FREEAGENT_CLIENT_ID")!;
 const FREEAGENT_CLIENT_SECRET = Deno.env.get("FREEAGENT_CLIENT_SECRET")!;
 
-async function getKey(): Promise<CryptoKey> {
-  const keyString = Deno.env.get("COMPANY_SECRETS_KEY")!;
-  const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(keyString));
-  return crypto.subtle.importKey("raw", hashBuffer, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
-}
-
-async function decrypt(ciphertext: string): Promise<string> {
-  const key = await getKey();
-  const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
-  const iv = combined.slice(0, 12);
-  const data = combined.slice(12);
-  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
-  return new TextDecoder().decode(decrypted);
-}
-
-async function encrypt(plaintext: string): Promise<string> {
-  const key = await getKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plaintext));
-  const combined = new Uint8Array(iv.length + new Uint8Array(encrypted).length);
-  combined.set(iv);
-  combined.set(new Uint8Array(encrypted), iv.length);
-  return btoa(String.fromCharCode(...combined));
-}
-
 async function getValidToken(connection: any, supabase: any): Promise<string> {
-  const now = new Date();
-  const expiresAt = new Date(connection.token_expires_at);
-
-  if (expiresAt > new Date(now.getTime() + 5 * 60000)) {
-    return await decrypt(connection.access_token_encrypted);
-  }
-
-  const apiBase = connection.use_sandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
-  const refreshToken = await decrypt(connection.refresh_token_encrypted);
-
-  const response = await fetch(`${apiBase}/v2/token_endpoint`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${btoa(`${FREEAGENT_CLIENT_ID}:${FREEAGENT_CLIENT_SECRET}`)}`,
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
+  const key = await deriveKey(Deno.env.get("COMPANY_SECRETS_KEY")!);
+  return getValidTokenHelper(connection, {
+    supabase,
+    fetch,
+    key,
+    clientId: FREEAGENT_CLIENT_ID,
+    clientSecret: FREEAGENT_CLIENT_SECRET,
   });
-
-  if (!response.ok) {
-    throw new Error(`FreeAgent token refresh failed: ${response.status}`);
-  }
-
-  const tokens = await response.json();
-  const newExpiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
-
-  await supabase
-    .from("freeagent_connections")
-    .update({
-      access_token_encrypted: await encrypt(tokens.access_token),
-      refresh_token_encrypted: await encrypt(tokens.refresh_token),
-      token_expires_at: newExpiresAt,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", connection.id);
-
-  return tokens.access_token;
 }
 
 async function getOrCreateContact(
@@ -81,58 +28,9 @@ async function getOrCreateContact(
   accessToken: string,
   tenantName: string,
   tenantEmail: string | null,
-  propertyAddress: string
+  propertyAddress: string,
 ): Promise<string> {
-  const headers = {
-    Authorization: `Bearer ${accessToken}`,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-
-  const listRes = await fetch(`${apiBase}/v2/contacts?view=active&per_page=100`, { headers });
-
-  if (listRes.ok) {
-    const listData = await listRes.json();
-    const contacts = listData.contacts || [];
-
-    const nameParts = tenantName.split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
-    const existing = contacts.find((c: any) =>
-      (c.first_name === firstName && c.last_name === lastName) ||
-      c.organisation_name === tenantName
-    );
-    if (existing) {
-      return existing.url;
-    }
-  }
-
-  const nameParts = tenantName.split(" ");
-  const contactBody = {
-    contact: {
-      first_name: nameParts[0],
-      last_name: nameParts.slice(1).join(" "),
-      email: tenantEmail,
-      address1: propertyAddress,
-      country: "United Kingdom",
-      status: "Active",
-      charge_sales_tax: "Auto",
-    },
-  };
-
-  const createRes = await fetch(`${apiBase}/v2/contacts`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(contactBody),
-  });
-
-  if (!createRes.ok) {
-    const err = await createRes.text();
-    throw new Error(`Failed to create FreeAgent contact: ${err}`);
-  }
-
-  const createData = await createRes.json();
-  return createData.contact.url;
+  return getOrCreateContactHelper(apiBase, accessToken, tenantName, tenantEmail, propertyAddress, fetch);
 }
 
 serve(async (req) => {

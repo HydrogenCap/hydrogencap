@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 /**
@@ -13,7 +13,7 @@ export function useUnitUsage() {
   const { data: totalUnits = 0, isLoading } = useQuery({
     queryKey: ['unit-usage-count'],
     queryFn: async () => {
-      const { count, error } = await (supabase as any)
+      const { count, error } = await supabaseAny
         .from('rooms')
         .select('*', { count: 'exact', head: true });
 

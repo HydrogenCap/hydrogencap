@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 // ── Merge field definitions by category ──────────────────────
@@ -114,7 +114,7 @@ function formatDate(d: string | null | undefined): string {
   }
 }
 
-function formatDateShort(d: string | null | undefined): string {
+function _formatDateShort(d: string | null | undefined): string {
   if (!d) return '';
   try {
     return format(new Date(d), 'dd/MM/yyyy');
@@ -159,7 +159,7 @@ export async function resolveMergeData(ctx: ResolveContext): Promise<Record<stri
 
   // Property + Entity
   if (ctx.propertyId) {
-    const { data: prop } = await (supabase as any)
+    const { data: prop } = await supabaseAny
       .from('properties_v2')
       .select('*, legal_entities!inner(entity_name, entity_type, company_number, registered_address, vat_number)')
       .eq('id', ctx.propertyId)
@@ -187,7 +187,7 @@ export async function resolveMergeData(ctx: ResolveContext): Promise<Record<stri
 
   // Override entity if explicitly provided
   if (ctx.entityId && !ctx.propertyId) {
-    const { data: entity } = await (supabase as any)
+    const { data: entity } = await supabaseAny
       .from('legal_entities')
       .select('*')
       .eq('id', ctx.entityId)
@@ -204,7 +204,7 @@ export async function resolveMergeData(ctx: ResolveContext): Promise<Record<stri
 
   // Tenant
   if (ctx.tenantId) {
-    const { data: tenant } = await (supabase as any)
+    const { data: tenant } = await supabaseAny
       .from('tenants_v2')
       .select('*')
       .eq('id', ctx.tenantId)
@@ -221,7 +221,7 @@ export async function resolveMergeData(ctx: ResolveContext): Promise<Record<stri
 
   // Tenancy
   if (ctx.tenancyId) {
-    const { data: tenancy } = await (supabase as any)
+    const { data: tenancy } = await supabaseAny
       .from('tenancy_agreements')
       .select('*')
       .eq('id', ctx.tenancyId)
@@ -238,7 +238,7 @@ export async function resolveMergeData(ctx: ResolveContext): Promise<Record<stri
 
       // If tenant not explicitly provided, resolve from tenancy
       if (!ctx.tenantId && tenancy.tenant_id) {
-        const { data: tenant } = await (supabase as any)
+        const { data: tenant } = await supabaseAny
           .from('tenants_v2')
           .select('*')
           .eq('id', tenancy.tenant_id)

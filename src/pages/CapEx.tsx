@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HardHat, Plus, ChevronDown, ChevronRight, Briefcase, TrendingUp, PoundSterling, AlertTriangle, type LucideIcon } from 'lucide-react';
-import { useAllCapexProjects, useCreateCapexProjectFull, CAPEX_TEMPLATES, type CapexProjectWithProperty } from '@/hooks/useCapexAll';
+import { useAllCapexProjects, useCreateCapexProjectFull, CAPEX_TEMPLATES } from '@/hooks/useCapexAll';
 import { useAddCapexLineItem } from '@/hooks/useCapex';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';

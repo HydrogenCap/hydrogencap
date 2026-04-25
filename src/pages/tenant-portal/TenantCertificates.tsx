@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { format, isPast, isBefore, addDays } from 'date-fns';
 import { ShieldCheck, Download, AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseAny } from '@/integrations/supabase/client';
 import { LoadingState } from '@/components/common/LoadingState';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { toast } from 'sonner';
@@ -59,7 +59,7 @@ export default function TenantCertificates() {
     queryKey: ['tenant-certs-tenancy', tenancyId],
     queryFn: async () => {
       if (!tenancyId) return null;
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('tenancies')
         .select('property_id')
         .eq('id', tenancyId)
@@ -75,7 +75,7 @@ export default function TenantCertificates() {
     queryKey: ['tenant-certs-compliance', tenancy?.property_id],
     queryFn: async () => {
       if (!tenancy?.property_id) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_items')
         .select(`
           id,
@@ -100,7 +100,7 @@ export default function TenantCertificates() {
     queryKey: ['tenant-certs-docs', complianceItemIds],
     queryFn: async () => {
       if (complianceItemIds.length === 0) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabaseAny
         .from('compliance_documents')
         .select('*')
         .in('compliance_item_id', complianceItemIds)
