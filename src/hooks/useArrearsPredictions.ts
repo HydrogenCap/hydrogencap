@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabaseAny } from '@/integrations/supabase/client';
+import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface ContributingFactor {
   factor: string;
@@ -97,6 +98,134 @@ export function useRunArrearsPrediction() {
       toast({
         title: 'Prediction failed',
         description: error.message || 'Failed to run arrears prediction',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+// ── Predictions → Tasks ──────────────────────────────────────
+
+const ARREARS_TASK_SOURCE = 'arrears-prediction';
+
+const RISK_LEVEL_TO_PRIORITY: Record<string, string> = {
+  critical: 'critical',
+  high: 'high',
+};
+
+const ACTIVE_TASK_STATUSES = ['open', 'in_progress', 'waiting'];
+
+export interface CreateTasksFromArrearsInput {
+  predictions: ArrearsPrediction[];
+}
+
+export interface CreateTasksFromArrearsResult {
+  created: number;
+  skipped: number;
+  total: number;
+}
+
+function isHighRisk(p: ArrearsPrediction): boolean {
+  return p.risk_level === 'critical' || p.risk_level === 'high';
+}
+
+/**
+ * Bulk-creates `tasks` rows from arrears predictions flagged as critical
+ * or high risk. Dedupes against any active task already linked to the
+ * same prediction (via source_wizard_id) so re-running the model and
+ * re-clicking the button doesn't create duplicates.
+ */
+export function useCreateTasksFromArrearsRisk() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ predictions }: CreateTasksFromArrearsInput): Promise<CreateTasksFromArrearsResult> => {
+      if (!user?.id) throw new Error('Not signed in');
+      const orgId = await fetchUserOrgId();
+      if (!orgId) throw new Error('No organisation in context');
+
+      const candidates = predictions.filter(isHighRisk);
+      if (candidates.length === 0) {
+        return { created: 0, skipped: 0, total: 0 };
+      }
+
+      const predictionIds = candidates.map((p) => p.id);
+      const { data: existingRows, error: lookupErr } = await supabaseAny
+        .from('tasks')
+        .select('source_wizard_id')
+        .eq('org_id', orgId)
+        .eq('source', ARREARS_TASK_SOURCE)
+        .in('source_wizard_id', predictionIds)
+        .in('status', ACTIVE_TASK_STATUSES);
+      if (lookupErr) throw lookupErr;
+
+      const existing = new Set(
+        ((existingRows ?? []) as Array<{ source_wizard_id: string | null }>)
+          .map((r) => r.source_wizard_id)
+          .filter((v): v is string => !!v)
+      );
+
+      const toInsert = candidates
+        .filter((p) => !existing.has(p.id))
+        .map((p) => {
+          const factors = p.contributing_factors
+            .map((f) => f.factor)
+            .slice(0, 3)
+            .join(', ');
+          const recs = p.recommended_actions.slice(0, 3).join(' · ');
+          return {
+            org_id: orgId,
+            property_id: p.property_id,
+            title: 'Contact tenant — high arrears risk',
+            description: [
+              `Predicted risk: ${Math.round(p.risk_score * 100)}% (${p.risk_level})`,
+              factors ? `Factors: ${factors}` : null,
+              recs ? `Suggested: ${recs}` : null,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            category: 'arrears',
+            priority: RISK_LEVEL_TO_PRIORITY[p.risk_level] ?? 'high',
+            status: 'open',
+            source: ARREARS_TASK_SOURCE,
+            source_wizard_id: p.id,
+            created_by: user.id,
+          };
+        });
+
+      if (toInsert.length > 0) {
+        const { error: insertErr } = await supabase.from('tasks').insert(toInsert);
+        if (insertErr) throw insertErr;
+      }
+
+      return {
+        created: toInsert.length,
+        skipped: candidates.length - toInsert.length,
+        total: candidates.length,
+      };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task-counts'] });
+      if (result.created === 0 && result.skipped > 0) {
+        toast({
+          title: 'No new tasks created',
+          description: `${result.skipped} task${result.skipped === 1 ? ' is' : 's are'} already open for these tenants.`,
+        });
+        return;
+      }
+      const skippedSuffix = result.skipped > 0 ? ` (${result.skipped} already open)` : '';
+      toast({
+        title: `Created ${result.created} task${result.created === 1 ? '' : 's'}`,
+        description: `Find them in your Tasks list${skippedSuffix}.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to create tasks',
+        description: error.message,
         variant: 'destructive',
       });
     },

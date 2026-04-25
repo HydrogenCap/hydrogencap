@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { AlertTriangle, RefreshCw, ChevronDown, ChevronUp, ShieldAlert, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertTriangle, ListPlus, RefreshCw, ChevronDown, ChevronUp, ShieldAlert, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import {
   useArrearsPredictions,
   useRunArrearsPrediction,
   useArrearsRiskSummary,
+  useCreateTasksFromArrearsRisk,
   type ArrearsPrediction,
 } from '@/hooks/useArrearsPredictions';
 import { formatDistanceToNow } from 'date-fns';
@@ -125,6 +126,17 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
   const { data: predictions, isLoading } = useArrearsPredictions(propertyId);
   const { data: summary } = useArrearsRiskSummary();
   const runPrediction = useRunArrearsPrediction();
+  const createTasks = useCreateTasksFromArrearsRisk();
+
+  const actionableCount = useMemo(
+    () => (predictions ?? []).filter((p) => p.risk_level === 'critical' || p.risk_level === 'high').length,
+    [predictions]
+  );
+
+  const handleCreateTasks = () => {
+    if (!predictions?.length) return;
+    createTasks.mutate({ predictions });
+  };
 
   if (isLoading) {
     return (
@@ -151,15 +163,30 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
             <ShieldAlert className="h-4 w-4" />
             Arrears Risk Assessment
           </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => runPrediction.mutate(propertyId)}
-            disabled={runPrediction.isPending}
-          >
-            <RefreshCw className={`h-4 w-4 mr-1 ${runPrediction.isPending ? 'animate-spin' : ''}`} />
-            {runPrediction.isPending ? 'Analysing...' : 'Run Prediction'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {actionableCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCreateTasks}
+                disabled={createTasks.isPending}
+              >
+                <ListPlus className={`h-4 w-4 mr-1 ${createTasks.isPending ? 'animate-spin' : ''}`} />
+                {createTasks.isPending
+                  ? 'Creating...'
+                  : `Create ${actionableCount} task${actionableCount === 1 ? '' : 's'}`}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => runPrediction.mutate(propertyId)}
+              disabled={runPrediction.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${runPrediction.isPending ? 'animate-spin' : ''}`} />
+              {runPrediction.isPending ? 'Analysing...' : 'Run Prediction'}
+            </Button>
+          </div>
         </div>
         {summary?.lastRunAt && (
           <p className="text-xs text-muted-foreground">
