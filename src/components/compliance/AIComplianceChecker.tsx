@@ -34,9 +34,9 @@ export function AIComplianceChecker({ propertyId, onRequirementClick }: AICompli
     runAnalysis,
     canAnalyze,
     getHighPriorityItems,
-    _getMissingItems,
+    getMissingItems: _getMissingItems,
     getExpiringItems,
-    _getActionableInsights,
+    getActionableInsights: _getActionableInsights,
   } = useAIComplianceChecker(propertyId);
 
   if (isLoading) {

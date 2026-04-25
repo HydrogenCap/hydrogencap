@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { formatUKPostcode } from '@/hooks/useCoreIdentity';
 
-interface AddressFormValues {
+export interface AddressFormValues {
   address_line: string | null;
   address_line2: string | null;
   town_city: string | null;

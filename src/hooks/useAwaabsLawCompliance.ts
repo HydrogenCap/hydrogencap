@@ -184,7 +184,12 @@ export function useActiveHazards() {
         .order('reported_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as unknown[];
+      return (data || []) as Array<AwaabsLawFields & {
+        id: string;
+        investigation_due_by: string | null;
+        written_summary_due_by: string | null;
+        repair_due_by: string | null;
+      }>;
     },
     refetchInterval: 60_000, // Poll every minute for deadline accuracy
   });

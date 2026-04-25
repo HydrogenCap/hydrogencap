@@ -21,7 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { AddressEditor } from './AddressEditor';
+import { AddressEditor, type AddressFormValues } from './AddressEditor';
 import { MultiTitleNumberInput } from './MultiTitleNumberInput';
 import { 
   useUpdateCoreIdentity,
@@ -261,7 +261,7 @@ export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <h4 className="font-medium">Full Address</h4>
               </div>
-              <AddressEditor form={form as unknown as UseFormReturn<Record<string, unknown>>} />
+              <AddressEditor form={form as unknown as UseFormReturn<AddressFormValues>} />
             </div>
 
             <Separator />

@@ -40,6 +40,7 @@ export function ApprovalWorkflow({ defaultThreshold = 500 }: ApprovalWorkflowPro
     title?: string;
     estimated_cost?: number | null;
     requested_date?: string | null;
+    created_at?: string;
     entity?: { entity_name?: string } | null;
     property?: { address_line_1?: string } | null;
   };
