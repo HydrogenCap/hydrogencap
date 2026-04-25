@@ -307,6 +307,47 @@ export function useAcceptComplianceDocument() {
         }
       }
 
+      // 6b. Mirror to V1 compliance_items so legacy dashboards (Property
+      // Detail, calendar export, jobs dialog, go-live checklist) reflect
+      // the new dates without requiring a separate manual entry. We don't
+      // copy the file into the V1 `compliance` bucket — viewing still
+      // happens via the V2 doc — but the dates and renewal status are the
+      // user-visible bit on those screens.
+      const { data: existingItem } = await supabaseAny
+        .from('compliance_items')
+        .select('id, expiry_date')
+        .eq('property_id', propertyId)
+        .eq('compliance_type', complianceType)
+        .maybeSingle();
+
+      const itemUpdates = {
+        issue_date: issueDate || null,
+        expiry_date: calculatedExpiryDate,
+        is_required: true,
+        is_manually_excluded: false,
+        renewal_status: null,
+        renewal_booked_date: null,
+        last_reminder_sent_at: null,
+        reminder_count: 0,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (existingItem) {
+        await supabaseAny
+          .from('compliance_items')
+          .update(itemUpdates)
+          .eq('id', existingItem.id);
+      } else {
+        await supabaseAny
+          .from('compliance_items')
+          .insert({
+            org_id: orgId,
+            property_id: propertyId,
+            compliance_type: complianceType,
+            ...itemUpdates,
+          });
+      }
+
       // 7. Auto-populate insurance_policies if applicable
       if (docType === 'building_insurance' || docType === 'public_liability_insurance') {
         const { data: docData } = await supabaseAny
@@ -373,6 +414,9 @@ export function useAcceptComplianceDocument() {
       queryClient.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
       queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
+      // V1 mirror — see step 6b above
+      queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
 
       toast({
         title: 'Document accepted',
