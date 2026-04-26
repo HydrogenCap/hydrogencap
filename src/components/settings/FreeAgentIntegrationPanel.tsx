@@ -132,8 +132,12 @@ export function FreeAgentIntegrationPanel() {
     if (!connectingEntity || !orgId) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const authUrl = buildFreeAgentAuthUrl(connectingEntity, orgId, user.id, useSandbox);
-    window.open(authUrl, '_blank', 'noopener,noreferrer');
+    try {
+      const authUrl = await buildFreeAgentAuthUrl(connectingEntity, orgId, user.id, useSandbox);
+      window.open(authUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Failed to start FreeAgent OAuth flow', err);
+    }
   };
 
   const handleDisconnect = async () => {
