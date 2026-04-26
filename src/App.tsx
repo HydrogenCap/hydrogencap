@@ -17,6 +17,7 @@ import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { LoadingState, ErrorBoundary, RouteBoundary } from "@/components/common";
 import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
 import { CookieConsent } from "@/components/common/CookieConsent";
+import { DensityBridge } from "@/components/DensityToggle";
 
 // Lazy-loaded pages
 const Auth = lazy(() => import("./pages/Auth"));
@@ -201,6 +202,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <DensityBridge />
                 <SessionExpiryModal />
                 <CookieConsent />
                 <ErrorBoundary>
