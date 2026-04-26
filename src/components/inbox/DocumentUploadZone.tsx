@@ -4,7 +4,6 @@ import { Upload, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateDocument, useUpdateDocument } from '@/hooks/useDocuments';
-import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 
@@ -18,7 +17,6 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const createDocument = useCreateDocument();
   const updateDocument = useUpdateDocument();
-  const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
 
   const processWithAI = useCallback(async (documentId: string, fileUrl: string, orgId: string) => {
