@@ -172,26 +172,36 @@ export default function JobsTab() {
             <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
           </TabsList>
           <TabsContent value={statusFilter} className="mt-4">
-            {isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map(i => <Card key={i} className="h-48 animate-pulse bg-muted" />)}
-              </div>
-            ) : filteredJobs?.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Briefcase className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
-                  <h3 className="font-medium mb-1">No jobs found</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {statusFilter === 'draft' ? 'Jobs will appear here automatically when compliance items are 90 days from expiry.' : 'No jobs match your current filters.'}
-                  </p>
-                  <Button onClick={() => setShowCreateDialog(true)}><Plus className="h-4 w-4 mr-2" />Create Job</Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredJobs?.map(job => <JobCard key={job.id} job={job} />)}
-              </div>
-            )}
+            <ListState
+              isLoading={isLoading}
+              error={(error as Error | null) ?? null}
+              isEmpty={!isLoading && (jobs?.length ?? 0) === 0}
+              emptyTitle="No jobs yet"
+              emptyDescription={
+                statusFilter === 'draft'
+                  ? 'Jobs will appear here automatically when compliance items are 90 days from expiry.'
+                  : 'Create your first job to get started.'
+              }
+              emptyIcon={BriefcaseIcon}
+              emptyAction={{ label: 'Create Job', onClick: () => setShowCreateDialog(true) }}
+              onRetry={() => refetch()}
+            >
+              {filteredJobs?.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Briefcase className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+                    <h3 className="font-medium mb-1">No jobs match your filters</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Try adjusting search or filters.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredJobs?.map(job => <JobCard key={job.id} job={job} />)}
+                </div>
+              )}
+            </ListState>
           </TabsContent>
         </Tabs>
       )}
