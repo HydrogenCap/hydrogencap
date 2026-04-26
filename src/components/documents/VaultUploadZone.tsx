@@ -6,6 +6,7 @@ import { useUploadManagedDocument } from '@/hooks/useDocumentManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
 
 interface VaultUploadZoneProps {
   propertyId?: string;
@@ -100,20 +101,61 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
         return;
       }
 
+      const uploadedDocs: Array<{ id: string; file_url: string; org_id: string }> = [];
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
         setUploadProgress(`Uploading ${i + 1}/${newFiles.length}: ${file.name}...`);
 
-        await uploadDocument.mutateAsync({
+        const created = await uploadDocument.mutateAsync({
           file,
           displayName: file.name,
           category: 'other',
           propertyId,
           companyId,
         });
+        if (created?.id) {
+          uploadedDocs.push({
+            id: created.id,
+            file_url: created.file_url,
+            org_id: created.org_id,
+          });
+        }
       }
 
-      // Run AI categorise + rename after upload
+      // Fire AI extraction (process-document-v2) per uploaded doc.
+      // Best-effort: failures are logged + flipped to 'failed' inside the edge function;
+      // they should never block the upload UX.
+      setUploadProgress('Queuing AI analysis…');
+      await Promise.allSettled(
+        uploadedDocs.map(async (doc) => {
+          try {
+            const signedUrl = await createSignedStorageUrl('documents', doc.file_url, 3600);
+            const { error: extErr } = await supabase.functions.invoke('process-document-v2', {
+              body: {
+                document_url: signedUrl,
+                document_id: doc.id,
+                org_id: doc.org_id,
+              },
+            });
+            if (extErr) {
+              console.error(`process-document-v2 failed for ${doc.id}:`, extErr);
+              await supabaseAny
+                .from('documents')
+                .update({ extraction_status: 'failed' })
+                .eq('id', doc.id);
+            }
+          } catch (err) {
+            console.error(`process-document-v2 invocation error for ${doc.id}:`, err);
+            await supabaseAny
+              .from('documents')
+              .update({ extraction_status: 'failed' })
+              .eq('id', doc.id)
+              .then(() => undefined, () => undefined);
+          }
+        })
+      );
+
+      // Run categorise-documents AFTER extraction so display names reflect AI doc_type.
       setUploadProgress('Running AI categorisation & renaming...');
 
       const { data, error } = await supabase.functions.invoke('categorise-documents', {
