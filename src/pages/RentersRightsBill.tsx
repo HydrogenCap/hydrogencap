@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppSettings, useUpdateAppSetting } from '@/hooks/useAppSettings';
 import { useToast } from '@/hooks/use-toast';
+import { RRBReadinessTable } from '@/components/rrb/RRBReadinessTable';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -177,6 +178,9 @@ export default function RentersRightsBill() {
             Track compliance with the Renters' Rights Act 2025 — key obligations, registration numbers and deadline timers.
           </p>
         </div>
+
+        {/* Per-property RRB readiness scoring */}
+        <RRBReadinessTable />
 
         {/* Key provisions */}
         <Card>
