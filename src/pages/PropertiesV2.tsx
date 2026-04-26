@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { PropertyCardSkeleton, EmptyState } from '@/components/common';
-import { useDemoData } from '@/hooks/useDemoData';
+import { EmptyState } from '@/components/common';
+import { ListState } from '@/components/ListState';
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -84,12 +85,12 @@ function getLifecycleLabel(value: string) {
 type PropertySortOption = 'address_asc' | 'purchase_date_desc' | 'purchase_date_asc' | 'valuation_desc' | 'valuation_asc';
 
 export default function PropertiesV2() {
-  const { data: properties, isLoading } = usePropertiesV2();
+  const { data: properties, isLoading, error, refetch } = usePropertiesV2();
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const { data: entities } = useLegalEntities();
   const { data: photoMap } = usePropertyPhotosV2();
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
-  const { seed: seedDemo } = useDemoData();
+  
   const navigate = useNavigate();
   const [showWizard, setShowWizard] = useState(false);
   const [search, setSearch] = useState('');
@@ -250,33 +251,30 @@ export default function PropertiesV2() {
         </div>
 
         {/* Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => <PropertyCardSkeleton key={i} />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          properties?.length ? (
+        <ListState
+          isLoading={isLoading}
+          error={error as Error | null}
+          isEmpty={!properties || properties.length === 0}
+          emptyIcon={Building2}
+          emptyTitle="No properties yet"
+          emptyDescription="Add your first property to start tracking compliance, rent, and portfolio performance."
+          emptyAction={{ label: 'Add Property', onClick: () => setShowWizard(true) }}
+          onRetry={() => refetch()}
+        >
+          {filtered.length === 0 ? (
             <EmptyState
               icon={Search}
               title="No properties match your filters"
               description="Try adjusting your search or filter criteria."
             />
           ) : (
-            <EmptyState
-              icon={Building2}
-              title="No properties yet"
-              description="Add your first property to start tracking compliance, rent, and portfolio performance."
-              action={{ label: 'Add Property', onClick: () => setShowWizard(true) }}
-              secondaryAction={{ label: 'Load Demo Data', onClick: () => seedDemo.mutate() }}
-            />
-          )
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(p => (
-              <PropertyCard key={p.id} property={p} roomSummary={roomSummaries?.get(p.id)} photoUrl={photoMap?.get(p.id)} onClick={() => navigate(`/properties-v2/${p.id}`)} />
-            ))}
-          </div>
-        )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map(p => (
+                <PropertyCard key={p.id} property={p} roomSummary={roomSummaries?.get(p.id)} photoUrl={photoMap?.get(p.id)} onClick={() => navigate(`/properties-v2/${p.id}`)} />
+              ))}
+            </div>
+          )}
+        </ListState>
       </div>
 
       <PropertyWizard open={showWizard} onOpenChange={setShowWizard} />
