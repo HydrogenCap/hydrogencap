@@ -13,6 +13,7 @@ import { ArrearsRiskPanel } from '@/components/rent/ArrearsRiskPanel';
 import { RentCalendar } from '@/components/rent/RentCalendar';
 import { PaymentHistoryList } from '@/components/rent/PaymentHistoryList';
 import { BankStatementImportDialog } from '@/components/rent/BankStatementImportDialog';
+import { DensityToggle } from '@/components/DensityToggle';
 import { format, startOfMonth } from 'date-fns';
 
 export default function RentCollection() {
@@ -36,7 +37,8 @@ export default function RentCollection() {
             </h1>
             <p className="text-muted-foreground">Track rent payments, arrears, and collection performance</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <DensityToggle />
             <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
               <FileSpreadsheet className="h-4 w-4 mr-1" />
               Import Statement

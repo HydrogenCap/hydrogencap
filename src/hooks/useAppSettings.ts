@@ -3,6 +3,9 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
+export type Density = 'cosy' | 'dense';
+const DENSITY_KEY = 'ui_density';
+
 interface AppSettingRow {
   setting_key: string;
   setting_value: string;
@@ -67,4 +70,29 @@ export function useUpdateAppSetting() {
       });
     },
   });
+}
+
+/**
+ * Density preference hook. Persists via the same app_settings mechanism
+ * used by other prefs, with a localStorage cache for instant first-paint.
+ */
+export function useDensity(): Density {
+  const { data: settings } = useAppSettings();
+  const fromServer = settings?.[DENSITY_KEY] as Density | undefined;
+  if (fromServer === 'dense' || fromServer === 'cosy') return fromServer;
+  if (typeof window !== 'undefined') {
+    const cached = window.localStorage.getItem(DENSITY_KEY);
+    if (cached === 'dense' || cached === 'cosy') return cached;
+  }
+  return 'cosy';
+}
+
+export function useSetDensity() {
+  const update = useUpdateAppSetting();
+  return (value: Density) => {
+    if (typeof window !== 'undefined') {
+      try { window.localStorage.setItem(DENSITY_KEY, value); } catch (_) { /* ignore */ }
+    }
+    update.mutate({ key: DENSITY_KEY, value });
+  };
 }

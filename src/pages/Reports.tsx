@@ -27,6 +27,7 @@ import {
 } from '@/hooks/useReportGeneration';
 import { useReportHistory, getReportTypeName, deleteReport } from '@/hooks/useReportHistory';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
+import { DensityToggle } from '@/components/DensityToggle';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
 type LoanPurpose = 'refinance' | 'capital_raise' | 'rate_switch' | 'purchase' | '';
@@ -200,11 +201,14 @@ export default function Reports() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-          <p className="text-muted-foreground">
-            Generate professional PDF reports for compliance, brokers, and stakeholders
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Reports</h1>
+            <p className="text-muted-foreground">
+              Generate professional PDF reports for compliance, brokers, and stakeholders
+            </p>
+          </div>
+          <DensityToggle />
         </div>
 
         <Tabs defaultValue="generate" className="space-y-6">

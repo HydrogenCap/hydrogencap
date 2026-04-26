@@ -24,6 +24,7 @@ import { RenewalWorkflowDialog } from '@/components/compliance/RenewalWorkflowDi
 import { RenewalQueue } from '@/components/compliance/RenewalQueue';
 import { useUpcomingRenewals } from '@/hooks/useComplianceAutoSchedule';
 import { useQueryClient } from '@tanstack/react-query';
+import { DensityToggle } from '@/components/DensityToggle';
 
 interface ComplianceEvent {
   id: string;
@@ -297,6 +298,7 @@ export default function ComplianceCalendar() {
                <h1 className="text-2xl font-bold text-foreground">Compliance Calendar</h1>
              </div>
              <div className="flex items-center gap-2">
+               <DensityToggle />
                {/* Event Type Filter */}
                <Popover>
                  <PopoverTrigger asChild>

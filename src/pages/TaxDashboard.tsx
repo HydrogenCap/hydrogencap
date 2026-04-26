@@ -26,6 +26,7 @@ import { getCurrentTaxYear, getRecentTaxYears } from '@/lib/accountingTypes';
 import { useTaxCalculation, useTaxProfile, useUpsertTaxProfile } from '@/hooks/useTaxEngine';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
+import { DensityToggle } from '@/components/DensityToggle';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
@@ -104,6 +105,7 @@ export default function TaxDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <DensityToggle />
             <Select value={taxYear} onValueChange={setTaxYear}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
