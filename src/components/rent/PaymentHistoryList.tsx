@@ -27,7 +27,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 export function PaymentHistoryList() {
-  const { data: payments, isLoading } = useRentHistory();
+  const { data: payments, isLoading, error, refetch } = useRentHistory();
   const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState('all');
 
@@ -49,96 +49,94 @@ export function PaymentHistoryList() {
     });
   }, [payments, search, methodFilter]);
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6 space-y-3">
-          {[1, 2, 3, 4, 5].map(i => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Input
-            placeholder="Search by reference, notes..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    <ListState
+      isLoading={isLoading}
+      error={(error as Error | null) ?? null}
+      isEmpty={!isLoading && (payments?.length ?? 0) === 0}
+      emptyTitle="No payment history yet"
+      emptyDescription="Recorded rent payments will appear here once tenants start paying."
+      emptyIcon={History}
+      onRetry={() => refetch()}
+    >
+      <div className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Input
+              placeholder="Search by reference, notes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Select value={methodFilter} onValueChange={setMethodFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All methods" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Methods</SelectItem>
+              {Object.entries(METHOD_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={methodFilter} onValueChange={setMethodFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All methods" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Methods</SelectItem>
-            {Object.entries(METHOD_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Table */}
-      <Card className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Reference</TableHead>
-              <TableHead>Reconciled</TableHead>
-              <TableHead>Notes</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
+        {/* Table */}
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  <History className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
-                  No payment history found
-                </TableCell>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Reference</TableHead>
+                <TableHead>Reconciled</TableHead>
+                <TableHead>Notes</TableHead>
               </TableRow>
-            ) : (
-              filtered.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="text-sm tabular-nums">
-                    {format(new Date(payment.payment_date), 'dd MMM yyyy')}
-                  </TableCell>
-                  <TableCell className="text-right text-sm tabular-nums font-medium text-green-600">
-                    {formatGBP(payment.amount)}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {METHOD_LABELS[payment.payment_method || ''] || payment.payment_method || '—'}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                    {payment.reference || '—'}
-                  </TableCell>
-                  <TableCell>
-                    {payment.is_reconciled ? (
-                      <Badge variant="outline" className="text-xs border-green-500/40 text-green-600">
-                        Reconciled
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs">Pending</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                    {payment.notes || '—'}
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <History className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
+                    No payments match your filters
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Card>
-    </div>
+              ) : (
+                filtered.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="text-sm tabular-nums">
+                      {format(new Date(payment.payment_date), 'dd MMM yyyy')}
+                    </TableCell>
+                    <TableCell className="text-right text-sm tabular-nums font-medium text-green-600">
+                      {formatGBP(payment.amount)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {METHOD_LABELS[payment.payment_method || ''] || payment.payment_method || '—'}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                      {payment.reference || '—'}
+                    </TableCell>
+                    <TableCell>
+                      {payment.is_reconciled ? (
+                        <Badge variant="outline" className="text-xs border-green-500/40 text-green-600">
+                          Reconciled
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Pending</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                      {payment.notes || '—'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+    </ListState>
   );
 }
