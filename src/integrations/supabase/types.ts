@@ -5797,27 +5797,6 @@ export type Database = {
           },
         ]
       }
-      oauth_states: {
-        Row: {
-          created_at: string
-          id: string
-          nonce: string
-          used_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          nonce: string
-          used_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          nonce?: string
-          used_at?: string | null
-        }
-        Relationships: []
-      }
       organizations: {
         Row: {
           created_at: string
