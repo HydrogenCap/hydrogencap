@@ -179,19 +179,16 @@ export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
     </TableHead>
   );
 
-  if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-12 bg-muted rounded" />
-          ))}
-        </div>
-      </Card>
-    );
-  }
-
   return (
+    <ListState
+      isLoading={isLoading}
+      error={(error as Error | null) ?? null}
+      isEmpty={!isLoading && items.length === 0}
+      emptyTitle="No rent scheduled for this month"
+      emptyDescription="Active tenancies will populate the rent roll automatically once their schedule kicks in."
+      emptyIcon={PoundIcon}
+      onRetry={() => refetch()}
+    >
     <div className="space-y-4">
       {/* Filters & Actions */}
       <div className="flex flex-wrap items-center gap-3">
