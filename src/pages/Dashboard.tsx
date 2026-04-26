@@ -264,6 +264,7 @@ function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <WelcomeOverlay />
         <DemoBanner />
         <ActivationWidget />
         <ActivationChecklist />
