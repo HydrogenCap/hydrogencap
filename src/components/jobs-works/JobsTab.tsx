@@ -42,7 +42,7 @@ export default function JobsTab() {
     }
   };
 
-  const { data, isLoading } = useContractorJobs({
+  const { data, isLoading, error, refetch } = useContractorJobs({
     status: getStatusArray(),
     priority: priorityFilter !== 'all' ? [priorityFilter as JobPriority] : undefined,
   });
