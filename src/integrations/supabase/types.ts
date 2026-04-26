@@ -1246,6 +1246,13 @@ export type Database = {
             referencedColumns: ["property_id"]
           },
           {
+            foreignKeyName: "compliance_documents_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
+          {
             foreignKeyName: "compliance_documents_v2_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -1460,6 +1467,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "compliance_notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       compliance_requirements_v2: {
@@ -1528,6 +1542,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -1685,6 +1706,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
         ]
@@ -1906,6 +1934,13 @@ export type Database = {
             columns: ["property_v2_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "contractor_jobs_property_v2_id_fkey"
+            columns: ["property_v2_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -3345,6 +3380,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "financial_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       floorplans: {
@@ -3621,6 +3663,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "generated_documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -4940,6 +4989,13 @@ export type Database = {
             referencedColumns: ["property_id"]
           },
           {
+            foreignKeyName: "lettings_pipeline_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
+          {
             foreignKeyName: "lettings_pipeline_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -5123,6 +5179,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "loan_facilities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
         ]
@@ -5491,6 +5554,13 @@ export type Database = {
             columns: ["property_v2_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_v2_id_fkey"
+            columns: ["property_v2_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -7250,6 +7320,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "property_units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       property_valuations: {
@@ -7734,6 +7811,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "rooms_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -8290,6 +8374,13 @@ export type Database = {
             referencedColumns: ["property_id"]
           },
           {
+            foreignKeyName: "tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
+          {
             foreignKeyName: "tasks_source_wizard_id_fkey"
             columns: ["source_wizard_id"]
             isOneToOne: false
@@ -8352,6 +8443,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "tax_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
         ]
@@ -8727,6 +8825,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -9348,6 +9453,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "wizard_drafts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       work_order_costs: {
@@ -9558,6 +9670,13 @@ export type Database = {
             referencedColumns: ["property_id"]
           },
           {
+            foreignKeyName: "work_orders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
+          {
             foreignKeyName: "work_orders_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -9651,6 +9770,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "compliance_requirements_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       compliance_task_overview: {
@@ -9710,6 +9836,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_tasks_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
         ]
@@ -9979,6 +10112,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "loan_facilities_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       portfolio_compliance_score_v2: {
@@ -10089,6 +10229,13 @@ export type Database = {
             referencedRelation: "property_room_summary_v2"
             referencedColumns: ["property_id"]
           },
+          {
+            foreignKeyName: "financial_snapshots_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
         ]
       }
       property_room_summary_v2: {
@@ -10100,6 +10247,29 @@ export type Database = {
           total_occupied: number | null
         }
         Relationships: []
+      }
+      rrb_readiness_v: {
+        Row: {
+          compliance_score: number | null
+          deposit_score: number | null
+          hmo_score: number | null
+          last_calculated: string | null
+          missing_data_count: number | null
+          org_id: string | null
+          property_id: string | null
+          rent_score: number | null
+          tenancy_score: number | null
+          total_score: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tenancy_compliance_check_v2: {
         Row: {
@@ -10139,6 +10309,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "tenancy_agreements_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
           {
@@ -10211,6 +10388,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "compliance_notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
             referencedColumns: ["property_id"]
           },
         ]
