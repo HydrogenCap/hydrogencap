@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/common';
+import { ListState } from '@/components/ListState';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { VaultUploadZone } from '@/components/documents/VaultUploadZone';
@@ -57,7 +58,7 @@ export default function Documents() {
   const queryClient = useQueryClient();
 
   const { data: summaryData, isLoading: summariesLoading } = useDocumentCategorySummaries();
-  const { data: documents, isLoading: docsLoading } = useVaultDocuments(filters);
+  const { data: documents, isLoading: docsLoading, error: docsError, refetch: refetchDocs } = useVaultDocuments(filters);
   const { data: categories } = useDocumentCategories();
   const { data: properties } = useProperties();
   const { data: companies } = useCompanies();
@@ -177,51 +178,45 @@ export default function Documents() {
         {filters.category === 'valuations' && <ValuationMasterDashboard />}
 
         {/* Document List/Grid */}
-        {docsLoading ? (
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
-          </div>
-        ) : !sortedDocuments.length ? (
-          hasActiveFilters ? (
-            <EmptyState
-              icon={FolderOpen}
-              title="No documents found"
-              description="Try adjusting your filters or search query."
-              action={{ label: 'Clear Filters', onClick: clearFilters }}
+        <ListState
+          isLoading={docsLoading}
+          error={docsError as Error | null}
+          isEmpty={!sortedDocuments.length}
+          emptyIcon={hasActiveFilters ? FolderOpen : FileText}
+          emptyTitle={hasActiveFilters ? 'No documents found' : 'No documents uploaded'}
+          emptyDescription={hasActiveFilters
+            ? 'Try adjusting your filters or search query.'
+            : 'Upload certificates, tenancy agreements, or financial documents. Our AI will classify and extract key details.'}
+          emptyAction={hasActiveFilters ? { label: 'Clear Filters', onClick: clearFilters } : undefined}
+          onRetry={() => refetchDocs()}
+        >
+          {viewMode === 'list' ? (
+            <DocumentListView
+              currentDocuments={currentDocuments}
+              archivedDocuments={archivedDocuments}
+              groupedByProperty={groupedByProperty}
+              sortBy={sortBy}
+              categories={categories}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
+              onViewDoc={setViewingDoc}
+              onEditDoc={setEditingDoc}
+              onDeleteDoc={setDeletingDoc}
+              onDownloadDoc={(doc) => downloadDoc.mutate(doc)}
             />
           ) : (
-            <EmptyState
-              icon={FileText}
-              title="No documents uploaded"
-              description="Upload certificates, tenancy agreements, or financial documents. Our AI will classify and extract key details."
+            <DocumentGridView
+              currentDocuments={currentDocuments}
+              archivedDocuments={archivedDocuments}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived(!showArchived)}
+              onViewDoc={setViewingDoc}
+              onEditDoc={setEditingDoc}
+              onDeleteDoc={setDeletingDoc}
+              onDownloadDoc={(doc) => downloadDoc.mutate(doc)}
             />
-          )
-        ) : viewMode === 'list' ? (
-          <DocumentListView
-            currentDocuments={currentDocuments}
-            archivedDocuments={archivedDocuments}
-            groupedByProperty={groupedByProperty}
-            sortBy={sortBy}
-            categories={categories}
-            showArchived={showArchived}
-            onToggleArchived={() => setShowArchived(!showArchived)}
-            onViewDoc={setViewingDoc}
-            onEditDoc={setEditingDoc}
-            onDeleteDoc={setDeletingDoc}
-            onDownloadDoc={(doc) => downloadDoc.mutate(doc)}
-          />
-        ) : (
-          <DocumentGridView
-            currentDocuments={currentDocuments}
-            archivedDocuments={archivedDocuments}
-            showArchived={showArchived}
-            onToggleArchived={() => setShowArchived(!showArchived)}
-            onViewDoc={setViewingDoc}
-            onEditDoc={setEditingDoc}
-            onDeleteDoc={setDeletingDoc}
-            onDownloadDoc={(doc) => downloadDoc.mutate(doc)}
-          />
-        )}
+          )}
+        </ListState>
       </div>
 
       {editingDoc && (
