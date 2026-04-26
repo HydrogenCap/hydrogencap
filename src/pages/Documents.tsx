@@ -3,7 +3,7 @@ import { FolderOpen, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/common';
+
 import { ListState } from '@/components/ListState';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
