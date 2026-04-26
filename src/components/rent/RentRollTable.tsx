@@ -22,6 +22,8 @@ import {
 import { exportRentRollCSV } from '@/lib/rentCsvExporter';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
+import { ListState } from '@/components/ListState';
+import { PoundSterling as PoundIcon } from 'lucide-react';
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
@@ -54,7 +56,7 @@ interface RentRollTableProps {
 }
 
 export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
-  const { data, isLoading } = useRentSchedule({ month });
+  const { data, isLoading, error, refetch } = useRentSchedule({ month });
   const items = useMemo(() => data?.items || [], [data?.items]);
 
   const [search, setSearch] = useState('');
@@ -177,19 +179,16 @@ export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
     </TableHead>
   );
 
-  if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-12 bg-muted rounded" />
-          ))}
-        </div>
-      </Card>
-    );
-  }
-
   return (
+    <ListState
+      isLoading={isLoading}
+      error={(error as Error | null) ?? null}
+      isEmpty={!isLoading && items.length === 0}
+      emptyTitle="No rent scheduled for this month"
+      emptyDescription="Active tenancies will populate the rent roll automatically once their schedule kicks in."
+      emptyIcon={PoundIcon}
+      onRetry={() => refetch()}
+    >
     <div className="space-y-4">
       {/* Filters & Actions */}
       <div className="flex flex-wrap items-center gap-3">
@@ -357,5 +356,6 @@ export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
         onOpenChange={(open) => { if (!open) setReminderItem(null); }}
       />
     </div>
+    </ListState>
   );
 }

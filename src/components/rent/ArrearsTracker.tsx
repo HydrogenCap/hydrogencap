@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronRight, Send, PoundSterling, Handshake } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Send, PoundSterling, Handshake, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { SEVERITY, type SeverityLevel } from '@/lib/design-tokens';
 import { useRentArrears, type ArrearsEntry } from '@/hooks/useRentManagement';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
+import { ListState } from '@/components/ListState';
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
@@ -139,45 +139,27 @@ function ArrearsEntryRow({ entry, severity }: { entry: ArrearsEntry; severity: S
 }
 
 export function ArrearsTracker() {
-  const { data: arrears, isLoading } = useRentArrears();
+  const { data: arrears, isLoading, error, refetch } = useRentArrears();
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3].map(i => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <Skeleton className="h-6 w-48 mb-3" />
-              <Skeleton className="h-16 w-full" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (!arrears) return null;
-
-  const groups = (['90+', '60+', '30+', '7+'] as const).filter(
-    key => arrears[key].length > 0
-  );
-
-  if (groups.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <AlertTriangle className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
-          <p className="text-sm text-muted-foreground">No overdue rent — all tenants are up to date!</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const groups = arrears
+    ? (['90+', '60+', '30+', '7+'] as const).filter(key => arrears[key].length > 0)
+    : [];
 
   return (
-    <div className="space-y-4">
-      {groups.map(key => (
-        <ArrearsGroup key={key} groupKey={key} entries={arrears[key]} />
-      ))}
-    </div>
+    <ListState
+      isLoading={isLoading}
+      error={(error as Error | null) ?? null}
+      isEmpty={!isLoading && !!arrears && groups.length === 0}
+      emptyTitle="No overdue rent"
+      emptyDescription="All tenants are up to date — nothing to chase right now."
+      emptyIcon={CheckCircle2}
+      onRetry={() => refetch()}
+    >
+      <div className="space-y-4">
+        {groups.map(key => (
+          <ArrearsGroup key={key} groupKey={key} entries={arrears![key]} />
+        ))}
+      </div>
+    </ListState>
   );
 }
