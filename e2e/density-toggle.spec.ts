@@ -14,7 +14,7 @@ test.describe('Global density toggle', () => {
   });
 
   test('toggles document.body.dataset.density between cosy and dense', async ({ page }) => {
-    await page.goto('/rent-collection');
+    await page.goto('/rent');
 
     const toggle = page.getByTestId('density-toggle');
     await expect(toggle).toBeVisible({ timeout: 10000 });
