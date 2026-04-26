@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
 import { ActivationChecklist } from '@/components/dashboard/ActivationChecklist';
+import { ActivationWidget } from '@/components/ActivationWidget';
 import { DemoBanner } from '@/components/dashboard/DemoBanner';
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
@@ -263,6 +264,7 @@ function DashboardPage() {
     <AppLayout>
       <div className="space-y-6">
         <DemoBanner />
+        <ActivationWidget />
         <ActivationChecklist />
 
         {/* Page Header */}
