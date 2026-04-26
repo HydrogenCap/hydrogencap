@@ -1,3 +1,4 @@
+// PUBLIC: OAuth callback — security relies on signed state nonce + short TTL
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
