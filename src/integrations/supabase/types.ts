@@ -2520,6 +2520,83 @@ export type Database = {
           },
         ]
       }
+      document_extractions: {
+        Row: {
+          created_at: string
+          doc_type: string | null
+          doc_type_confidence: number | null
+          document_id: string
+          extracted_fields: Json
+          extraction_version: number
+          field_confidences: Json
+          id: string
+          model_used: string | null
+          needs_human_review: boolean
+          org_id: string
+          pages_processed: number
+          processing_time_ms: number | null
+          raw_ai_response: Json | null
+          review_reasons: string[]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          total_pages: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type?: string | null
+          doc_type_confidence?: number | null
+          document_id: string
+          extracted_fields?: Json
+          extraction_version?: number
+          field_confidences?: Json
+          id?: string
+          model_used?: string | null
+          needs_human_review?: boolean
+          org_id: string
+          pages_processed?: number
+          processing_time_ms?: number | null
+          raw_ai_response?: Json | null
+          review_reasons?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string | null
+          doc_type_confidence?: number | null
+          document_id?: string
+          extracted_fields?: Json
+          extraction_version?: number
+          field_confidences?: Json
+          id?: string
+          model_used?: string | null
+          needs_human_review?: boolean
+          org_id?: string
+          pages_processed?: number
+          processing_time_ms?: number | null
+          raw_ai_response?: Json | null
+          review_reasons?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_extractions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_share_links: {
         Row: {
           compliance_document_id: string | null
