@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useDensity, useSetDensity, type Density } from '@/hooks/useAppSettings';
 import { Rows3, Rows4 } from 'lucide-react';
@@ -48,12 +49,13 @@ export function DensityToggle() {
  */
 export function DensityBridge() {
   const density = useDensity();
-  if (typeof document !== 'undefined') {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
     if (density === 'dense') {
       document.body.setAttribute('data-density', 'dense');
     } else {
       document.body.removeAttribute('data-density');
     }
-  }
+  }, [density]);
   return null;
 }
