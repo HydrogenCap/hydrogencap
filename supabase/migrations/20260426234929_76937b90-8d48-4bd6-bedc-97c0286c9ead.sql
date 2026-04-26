@@ -1,0 +1,1 @@
+UPDATE public.documents SET extraction_status='failed' WHERE id IN ('e068021a-97a5-48c7-a592-e930ea54f601','70047962-c303-47d4-bcea-613cbe70a366') AND extraction_status='processing';

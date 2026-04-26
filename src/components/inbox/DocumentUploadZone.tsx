@@ -4,7 +4,6 @@ import { Upload, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateDocument, useUpdateDocument } from '@/hooks/useDocuments';
-import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 
@@ -18,23 +17,12 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const createDocument = useCreateDocument();
   const updateDocument = useUpdateDocument();
-  const { data: properties } = usePropertiesV2();
   const { toast } = useToast();
 
-  const processWithAI = useCallback(async (documentId: string, fileUrl: string) => {
+  const processWithAI = useCallback(async (documentId: string, fileUrl: string, orgId: string) => {
     try {
-      const propertyList = (properties || []).map(p => ({
-        id: p.id,
-        address_line: `${p.address_line_1 || ''}, ${p.city || ''}`.trim().replace(/^,\s*/, ''),
-        postcode: p.postcode || null,
-      }));
-
-      const propertiesForAI = propertyList.length > 0
-        ? propertyList
-        : [{ id: '00000000-0000-0000-0000-000000000000', address_line: 'No properties yet', postcode: null }];
-
-      const response = await supabase.functions.invoke('process-document', {
-        body: { documentId, fileUrl, properties: propertiesForAI },
+      const response = await supabase.functions.invoke('process-document-v2', {
+        body: { document_url: fileUrl, document_id: documentId, org_id: orgId },
       });
 
       if (response.error) {
@@ -47,7 +35,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
       captureError(err, 'DocumentUploadZone.aiProcess');
       await updateDocument.mutateAsync({ id: documentId, extraction_status: 'failed' }).catch(() => {});
     }
-  }, [properties, updateDocument]);
+  }, [updateDocument]);
 
   const uploadFile = useCallback(async (file: File) => {
     const orgId = await getUserOrgId();
@@ -93,7 +81,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     setUploadProgress('Queued for AI analysis \u2713');
 
     // Fire-and-forget — realtime subscription will update the UI
-    processWithAI(document.id, urlData.signedUrl).catch(err => {
+    processWithAI(document.id, urlData.signedUrl, orgId).catch(err => {
       console.error('Background AI processing failed:', err);
     });
 
