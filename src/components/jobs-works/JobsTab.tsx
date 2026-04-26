@@ -16,6 +16,8 @@ import {
 } from '@/hooks/useContractorJobs';
 import { JobCard, CreateJobDialog, JobsPipeline, ViewModeToggle, type JobsViewMode } from '@/components/jobs';
 import { cn } from '@/lib/utils';
+import { ListState } from '@/components/ListState';
+import { Briefcase as BriefcaseIcon } from 'lucide-react';
 
 export default function JobsTab() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
