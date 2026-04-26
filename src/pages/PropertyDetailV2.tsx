@@ -315,6 +315,29 @@ export default function PropertyDetailV2() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Top action row */}
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPassportPdf}
+            disabled={downloadingPdf}
+            aria-busy={downloadingPdf || undefined}
+          >
+            {downloadingPdf ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <FileDown className="h-4 w-4 mr-1" />
+                Download Passport PDF
+              </>
+            )}
+          </Button>
+        </div>
+
         {/* Status Bar */}
         <PropertyStatusBar
           complianceRows={complianceRows}
