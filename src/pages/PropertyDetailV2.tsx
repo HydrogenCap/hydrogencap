@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Edit, Copy, QrCode } from 'lucide-react';
+import { Edit, Copy, QrCode, FileDown, Loader2 } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
+import { generatePassportPDF, slugifyAddress, type PassportPropertyData } from '@/lib/pdf/passport';
+import { fetchUserOrgId as getUserOrgIdForPdf } from '@/hooks/useUserOrg';
+import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
