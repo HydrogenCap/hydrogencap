@@ -3,6 +3,9 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 
+export type Density = 'cosy' | 'dense';
+const DENSITY_KEY = 'ui_density';
+
 interface AppSettingRow {
   setting_key: string;
   setting_value: string;
