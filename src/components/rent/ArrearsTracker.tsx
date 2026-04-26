@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronRight, Send, PoundSterling, Handshake } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Send, PoundSterling, Handshake, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { SEVERITY, type SeverityLevel } from '@/lib/design-tokens';
 import { useRentArrears, type ArrearsEntry } from '@/hooks/useRentManagement';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
+import { ListState } from '@/components/ListState';
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
