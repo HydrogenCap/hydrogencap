@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState } from '@/components/common';
+import { ListState } from '@/components/ListState';
 import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES } from '@/hooks/useTenantsV2';
 import { useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
 import { AddTenantModal } from '@/components/tenants-v2/AddTenantModal';
@@ -44,7 +45,7 @@ function getLabel(arr: readonly { value: string; label: string }[], v: string) {
 
 export default function TenantsV2() {
   const navigate = useNavigate();
-  const { data: tenants, isLoading } = useTenantsV2WithTenancy();
+  const { data: tenants, isLoading, error, refetch } = useTenantsV2WithTenancy();
   const { data: compliance } = useTenancyComplianceChecks();
   const { data: tenancyEvents } = useTenancyEvents({ daysAhead: 30 });
   const urgentEvents = useMemo(() =>
@@ -185,70 +186,70 @@ export default function TenantsV2() {
         </div>
 
         {/* Table */}
-        {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-        ) : filtered.length === 0 ? (
-          tenants?.length ? (
+        <ListState
+          isLoading={isLoading}
+          error={error as Error | null}
+          isEmpty={!tenants || tenants.length === 0}
+          emptyIcon={Users}
+          emptyTitle="No tenants yet"
+          emptyDescription="Add tenants to track tenancies, rent payments, and communications."
+          emptyAction={{ label: 'Add Tenant', onClick: () => setShowAdd(true) }}
+          onRetry={() => refetch()}
+        >
+          {filtered.length === 0 ? (
             <EmptyState
               icon={Search}
               title="No tenants match your filters"
               description="Try adjusting your search or filter criteria."
             />
           ) : (
-            <EmptyState
-              icon={Users}
-              title="No tenants yet"
-              description="Add tenants to track tenancies, rent payments, and communications."
-              action={{ label: 'Add Tenant', onClick: () => setShowAdd(true) }}
-            />
-          )
-        ) : (
-          <div className="border rounded-lg overflow-x-auto -mx-4 md:mx-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Room</TableHead>
-                  <TableHead className="text-right">Rent PCM</TableHead>
-                  <TableHead>Start</TableHead>
-                  <TableHead className="w-10">Deposit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map(t => {
-                    const c = complianceMap.get(t.id);
-                    const depositOk = !c || c.deposit_compliance === 'compliant' || c.deposit_compliance === 'no_deposit';
-                    return (
-                      <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tenants-v2/${t.id}`)}>
-                        <TableCell className="font-medium">{t.last_name}, {t.first_name}</TableCell>
-                        <TableCell><Badge className={STATUS_BG[t.status]}>{getLabel(TENANT_STATUSES, t.status)}</Badge></TableCell>
-                        <TableCell><Badge className={TYPE_BG[t.tenant_type]}>{getLabel(TENANT_TYPES, t.tenant_type)}</Badge></TableCell>
-                        <TableCell className="text-sm">{t.current_tenancy?.property_address || '—'}</TableCell>
-                        <TableCell className="text-sm">{t.current_tenancy?.room_name || '—'}</TableCell>
-                        <TableCell className="text-right font-medium">{fmtRent(t.current_tenancy?.rent_amount_pcm)}</TableCell>
-                        <TableCell className="text-sm">{fmtDate(t.current_tenancy?.start_date ?? null)}</TableCell>
-                        <TableCell>
-                          {c ? (
-                            depositOk ? (
-                              <Check className="h-4 w-4 text-emerald-600" />
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger><AlertTriangle className="h-4 w-4 text-destructive" /></TooltipTrigger>
-                                <TooltipContent>{c.deposit_compliance.replace(/_/g, ' ')}</TooltipContent>
-                              </Tooltip>
-                            )
-                          ) : <span className="text-muted-foreground">—</span>}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+            <div className="border rounded-lg overflow-x-auto -mx-4 md:mx-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Property</TableHead>
+                    <TableHead>Room</TableHead>
+                    <TableHead className="text-right">Rent PCM</TableHead>
+                    <TableHead>Start</TableHead>
+                    <TableHead className="w-10">Deposit</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map(t => {
+                      const c = complianceMap.get(t.id);
+                      const depositOk = !c || c.deposit_compliance === 'compliant' || c.deposit_compliance === 'no_deposit';
+                      return (
+                        <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tenants-v2/${t.id}`)}>
+                          <TableCell className="font-medium">{t.last_name}, {t.first_name}</TableCell>
+                          <TableCell><Badge className={STATUS_BG[t.status]}>{getLabel(TENANT_STATUSES, t.status)}</Badge></TableCell>
+                          <TableCell><Badge className={TYPE_BG[t.tenant_type]}>{getLabel(TENANT_TYPES, t.tenant_type)}</Badge></TableCell>
+                          <TableCell className="text-sm">{t.current_tenancy?.property_address || '—'}</TableCell>
+                          <TableCell className="text-sm">{t.current_tenancy?.room_name || '—'}</TableCell>
+                          <TableCell className="text-right font-medium">{fmtRent(t.current_tenancy?.rent_amount_pcm)}</TableCell>
+                          <TableCell className="text-sm">{fmtDate(t.current_tenancy?.start_date ?? null)}</TableCell>
+                          <TableCell>
+                            {c ? (
+                              depositOk ? (
+                                <Check className="h-4 w-4 text-emerald-600" />
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger><AlertTriangle className="h-4 w-4 text-destructive" /></TooltipTrigger>
+                                  <TooltipContent>{c.deposit_compliance.replace(/_/g, ' ')}</TooltipContent>
+                                </Tooltip>
+                              )
+                            ) : <span className="text-muted-foreground">—</span>}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </ListState>
       </div>
 
       <AddTenantModal open={showAdd} onOpenChange={setShowAdd} onSuccess={id => navigate(`/tenants-v2/${id}`)} />
