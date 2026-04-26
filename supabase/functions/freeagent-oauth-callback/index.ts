@@ -37,16 +37,54 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const stateData = JSON.parse(atob(state));
-    const { entityId, companyId, orgId, userId, useSandbox, nonce } = stateData;
+    // Verify the HMAC-signed state. The legacy base64-only format is rejected;
+    // any in-flight OAuth flow at deploy time will fail and the user retries.
+    let payload;
+    try {
+      payload = await verifyState(state);
+    } catch (err) {
+      const code =
+        err instanceof OAuthStateError ? err.code : "invalid_state";
+      console.error("OAuth state verification failed:", code);
+      return Response.redirect(
+        `${APP_URL}/settings?tab=integrations&freeagent=error&code=${encodeURIComponent(code)}`,
+        302,
+      );
+    }
+    const { entityId, companyId, orgId, userId, useSandbox, nonce } = payload as any;
 
-    // Validate required state fields to prevent forged states
+    // Defence-in-depth: ensure required fields exist (verifyState already checks shape).
     if (!orgId || !userId || !nonce) {
       return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_state`, 302);
     }
 
-    // Verify the userId from state is an owner/admin in the target org
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Replay protection: nonce must exist and be unused. Mark as used immediately.
+    const { data: nonceRow, error: nonceErr } = await supabase
+      .from("oauth_states")
+      .select("id, used_at")
+      .eq("nonce", nonce)
+      .maybeSingle();
+    if (nonceErr || !nonceRow) {
+      console.error("OAuth nonce not found", nonceErr?.message);
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=unknown_nonce`, 302);
+    }
+    if (nonceRow.used_at) {
+      console.error("OAuth nonce replay detected");
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=replayed_nonce`, 302);
+    }
+    const { error: markErr } = await supabase
+      .from("oauth_states")
+      .update({ used_at: new Date().toISOString() })
+      .eq("id", nonceRow.id)
+      .is("used_at", null);
+    if (markErr) {
+      console.error("Failed to mark nonce as used", markErr.message);
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=nonce_lock`, 302);
+    }
+
+    // Defence-in-depth: caller from state must still be owner/admin of the org.
     const { data: membership } = await supabase
       .from("memberships")
       .select("id")
