@@ -178,13 +178,16 @@ export default function Contractors() {
             </div>
 
             {/* Contractors Grid */}
-            {isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <Card key={i} className="h-64 animate-pulse bg-muted" />
-                ))}
-              </div>
-            ) : (
+            <ListState
+              isLoading={isLoading}
+              error={error as Error | null}
+              isEmpty={(contractors?.length ?? 0) === 0}
+              emptyIcon={Wrench}
+              emptyTitle="No contractors added"
+              emptyDescription="Add your contractors and tradespeople to assign maintenance jobs."
+              emptyAction={{ label: 'Add Contractor', onClick: () => setShowAddDialog(true) }}
+              onRetry={() => refetch()}
+            >
               <Tabs defaultValue="all">
                 <TabsList>
                   <TabsTrigger value="all">All ({filteredContractors?.length || 0})</TabsTrigger>
@@ -233,20 +236,11 @@ export default function Contractors() {
                   )}
 
                   {filteredContractors?.length === 0 && (
-                    searchTerm || complianceFilter !== 'all' || ratingFilter !== 'all' || areaFilter !== 'all' ? (
-                      <EmptyState
-                        icon={Search}
-                        title="No contractors found"
-                        description="Try adjusting your search or filter criteria."
-                      />
-                    ) : (
-                      <EmptyState
-                        icon={Wrench}
-                        title="No contractors added"
-                        description="Add your contractors and tradespeople to assign maintenance jobs."
-                        action={{ label: 'Add Contractor', onClick: () => setShowAddDialog(true) }}
-                      />
-                    )
+                    <EmptyState
+                      icon={Search}
+                      title="No contractors found"
+                      description="Try adjusting your search or filter criteria."
+                    />
                   )}
                 </TabsContent>
 
@@ -274,7 +268,7 @@ export default function Contractors() {
                   )}
                 </TabsContent>
               </Tabs>
-            )}
+            </ListState>
           </div>
 
           {/* Sidebar - Active Jobs */}
