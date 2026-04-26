@@ -56,7 +56,7 @@ interface RentRollTableProps {
 }
 
 export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
-  const { data, isLoading } = useRentSchedule({ month });
+  const { data, isLoading, error, refetch } = useRentSchedule({ month });
   const items = useMemo(() => data?.items || [], [data?.items]);
 
   const [search, setSearch] = useState('');
