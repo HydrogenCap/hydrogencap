@@ -13,6 +13,7 @@ import { SLATracker } from '@/components/jobs-works/SLATracker';
 import { QuoteComparison } from '@/components/jobs-works/QuoteComparison';
 import { JobEvidenceGallery } from '@/components/jobs-works/JobEvidenceGallery';
 import { RateContractorDialog } from '@/components/contractors/RateContractorDialog';
+import { DensityToggle } from '@/components/DensityToggle';
 
 export default function JobsAndWorks() {
   const [activeTab, setActiveTab] = useState('jobs');
@@ -38,14 +39,17 @@ export default function JobsAndWorks() {
   return (
     <AppLayout>
       <div className="container py-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <HardHat className="h-6 w-6" />
-            Jobs &amp; Works
-          </h1>
-          <p className="text-muted-foreground">
-            Manage contractor jobs, maintenance requests, and work orders in one place
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <HardHat className="h-6 w-6" />
+              Jobs &amp; Works
+            </h1>
+            <p className="text-muted-foreground">
+              Manage contractor jobs, maintenance requests, and work orders in one place
+            </p>
+          </div>
+          <DensityToggle />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
