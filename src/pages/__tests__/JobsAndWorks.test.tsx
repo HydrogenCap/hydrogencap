@@ -19,6 +19,10 @@ vi.mock('@/hooks/useMaintenanceRequests', () => ({
 vi.mock('@/hooks/useWorkOrders', () => ({
   useWorkOrderCounts: () => ({ data: woCounts }),
 }));
+vi.mock('@/hooks/useAppSettings', () => ({
+  useDensity: () => 'cosy',
+  useSetDensity: () => vi.fn(),
+}));
 
 vi.mock('@/components/layout/AppLayout', () => ({
   AppLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="app-layout">{children}</div>,

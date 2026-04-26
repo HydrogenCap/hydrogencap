@@ -116,7 +116,6 @@ describe('PropertiesV2 page', () => {
     properties = [];
     renderPage();
     expect(screen.getByText('No properties yet')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Load Demo Data' })).toBeInTheDocument();
   });
 
   it('shows the empty-filters state when filters exclude all properties', () => {

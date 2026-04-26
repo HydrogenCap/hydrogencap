@@ -22,6 +22,11 @@ vi.mock('@/hooks/useReportGeneration', () => ({
   validateReportInputs: () => ({ valid: true, errors: [] }),
 }));
 
+vi.mock('@/hooks/useAppSettings', () => ({
+  useDensity: () => 'cosy',
+  useSetDensity: () => vi.fn(),
+}));
+
 vi.mock('@/hooks/useReportHistory', () => ({
   useReportHistory: () => ({ data: reportHistory, isLoading: reportHistoryLoading, refetch: vi.fn() }),
   getReportTypeName: (id: string) => id,

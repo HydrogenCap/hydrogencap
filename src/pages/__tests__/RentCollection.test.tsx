@@ -21,6 +21,11 @@ vi.mock('@/lib/rentCsvExporter', () => ({
   exportRentRollCSV: (rows: unknown[]) => exportCsvSpy(rows),
 }));
 
+vi.mock('@/hooks/useAppSettings', () => ({
+  useDensity: () => 'cosy',
+  useSetDensity: () => vi.fn(),
+}));
+
 vi.mock('@/components/layout/AppLayout', () => ({
   AppLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="app-layout">{children}</div>,
 }));
