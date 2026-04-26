@@ -90,7 +90,7 @@ export default function PropertiesV2() {
   const { data: entities } = useLegalEntities();
   const { data: photoMap } = usePropertyPhotosV2();
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
-  const { seed: seedDemo } = useDemoData();
+  
   const navigate = useNavigate();
   const [showWizard, setShowWizard] = useState(false);
   const [search, setSearch] = useState('');
