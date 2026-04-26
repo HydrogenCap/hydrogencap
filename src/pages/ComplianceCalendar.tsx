@@ -24,6 +24,7 @@ import { RenewalWorkflowDialog } from '@/components/compliance/RenewalWorkflowDi
 import { RenewalQueue } from '@/components/compliance/RenewalQueue';
 import { useUpcomingRenewals } from '@/hooks/useComplianceAutoSchedule';
 import { useQueryClient } from '@tanstack/react-query';
+import { DensityToggle } from '@/components/DensityToggle';
 
 interface ComplianceEvent {
   id: string;
