@@ -359,9 +359,12 @@ Deno.serve(async (req) => {
       review_reasons: reviewReasons,
     }).eq("id", extractionId);
 
-    // Sync extraction results back to the parent documents row
+    // Sync extraction results back to the parent documents row.
+    // The documents.extraction_status column uses 'review_needed' (not 'needs_review')
+    // for human-review items — translate to keep the DB CHECK constraint happy.
+    const docExtractionStatus = needsHumanReview ? 'review_needed' : 'completed';
     await supabase.from("documents").update({
-      extraction_status: status,
+      extraction_status: docExtractionStatus,
       ai_suggested_doc_type: result.doc_type,
       ai_doc_type_confidence: result.doc_type_confidence,
       ai_suggested_property_id: extractedFields.property_id_match ?? null,
