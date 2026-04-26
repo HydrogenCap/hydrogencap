@@ -22,6 +22,8 @@ import {
 import { exportRentRollCSV } from '@/lib/rentCsvExporter';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
+import { ListState } from '@/components/ListState';
+import { PoundSterling as PoundIcon } from 'lucide-react';
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
