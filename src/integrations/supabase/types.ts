@@ -6229,11 +6229,13 @@ export type Database = {
           onboarding_completed: boolean
           onboarding_goals: Json | null
           platform_role: string
+          portfolio_size_band: string | null
           role: string | null
           section_visibility: Json
           updated_at: string
           use_property_allowance: boolean | null
           user_id: string
+          welcome_seen_at: string | null
         }
         Insert: {
           checklist_dismissed?: boolean | null
@@ -6246,11 +6248,13 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_goals?: Json | null
           platform_role?: string
+          portfolio_size_band?: string | null
           role?: string | null
           section_visibility?: Json
           updated_at?: string
           use_property_allowance?: boolean | null
           user_id: string
+          welcome_seen_at?: string | null
         }
         Update: {
           checklist_dismissed?: boolean | null
@@ -6263,11 +6267,13 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_goals?: Json | null
           platform_role?: string
+          portfolio_size_band?: string | null
           role?: string | null
           section_visibility?: Json
           updated_at?: string
           use_property_allowance?: boolean | null
           user_id?: string
+          welcome_seen_at?: string | null
         }
         Relationships: []
       }
