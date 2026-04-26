@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { BankPresentationDialog } from '@/components/reports/BankPresentationDialog';
 import { ActivationChecklist } from '@/components/dashboard/ActivationChecklist';
 import { ActivationWidget } from '@/components/ActivationWidget';
+import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
 import { DemoBanner } from '@/components/dashboard/DemoBanner';
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
