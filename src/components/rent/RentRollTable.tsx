@@ -356,5 +356,6 @@ export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
         onOpenChange={(open) => { if (!open) setReminderItem(null); }}
       />
     </div>
+    </ListState>
   );
 }
