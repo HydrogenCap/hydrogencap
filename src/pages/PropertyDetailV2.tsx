@@ -62,6 +62,7 @@ export default function PropertyDetailV2() {
   const [showRecordValuation, setShowRecordValuation] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const coverPhoto = usePropertyPhotoV2(id);
 
   // Data for status bar
