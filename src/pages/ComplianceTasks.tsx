@@ -19,6 +19,7 @@ import { LayoutGrid, List, Play, Plus, CheckCircle2, ShieldCheck,
   GitBranch, CalendarPlus, Ban, Loader2,
 } from 'lucide-react';
 import { EmptyState } from '@/components/common';
+import { ListState } from '@/components/ListState';
 import { format, formatDistanceToNow, addDays } from 'date-fns';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 
@@ -82,7 +83,7 @@ function TaskCard({ task, onStatusChange: _onStatusChange, onClick }: {
 
 export default function ComplianceTasks() {
   const { toast } = useToast();
-  const { data: tasks, isLoading } = useComplianceTasks();
+  const { data: tasks, isLoading, error, refetch } = useComplianceTasks();
   const stats = useComplianceTaskStats();
   const updateStatus = useUpdateTaskStatus();
   const updateTask = useUpdateTask();
@@ -337,22 +338,29 @@ export default function ComplianceTasks() {
           </div>
         </div>
 
-        {isLoading ? (
-          <p className="text-muted-foreground text-center py-12">Loading tasks...</p>
-        ) : filtered.length === 0 && !tasks?.length ? (
-          <EmptyState
-            icon={ShieldCheck}
-            title="All clear"
-            description="Upload your first certificate — we'll extract the details automatically."
-            variant="success"
-          />
-        ) : view === 'pipeline' ? (
-          renderPipelineView()
-        ) : view === 'board' ? (
-          renderBoardView()
-        ) : (
-          renderListView()
-        )}
+        <ListState
+          isLoading={isLoading}
+          error={error as Error | null}
+          isEmpty={!tasks?.length}
+          emptyIcon={ShieldCheck}
+          emptyTitle="All clear"
+          emptyDescription="Upload your first certificate — we'll extract the details automatically."
+          onRetry={() => refetch()}
+        >
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={ShieldCheck}
+              title="No tasks match your filters"
+              description="Try changing the priority filter or showing completed tasks."
+            />
+          ) : view === 'pipeline' ? (
+            renderPipelineView()
+          ) : view === 'board' ? (
+            renderBoardView()
+          ) : (
+            renderListView()
+          )}
+        </ListState>
 
         {/* Task Detail Drawer */}
         <Dialog open={!!selectedTask} onOpenChange={() => { setSelectedTask(null); setDismissReason(''); }}>
