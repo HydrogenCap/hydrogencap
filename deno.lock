@@ -91,6 +91,7 @@
         "npm:embla-carousel-react@^8.6.0",
         "npm:eslint-plugin-react-hooks@^7.0.1",
         "npm:eslint-plugin-react-refresh@~0.5.2",
+        "npm:eslint-plugin-unused-imports@^4.4.1",
         "npm:eslint@^10.1.0",
         "npm:file-saver@^2.0.5",
         "npm:globals@^17.4.0",
