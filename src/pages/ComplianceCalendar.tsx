@@ -297,6 +297,7 @@ export default function ComplianceCalendar() {
                <h1 className="text-2xl font-bold text-foreground">Compliance Calendar</h1>
              </div>
              <div className="flex items-center gap-2">
+               <DensityToggle />
                {/* Event Type Filter */}
                <Popover>
                  <PopoverTrigger asChild>
