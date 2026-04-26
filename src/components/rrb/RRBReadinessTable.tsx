@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ListState } from '@/components/common/ListState';
+import { ListState } from '@/components/ListState';
 import { ExternalLink, AlertTriangle, Gauge } from 'lucide-react';
 import { useRRBReadinessPortfolio, useRRBReadinessProperty, type RRBReadinessRow } from '@/hooks/useRRBReadiness';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
