@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { ListState } from '@/components/ListState';
+import { DensityToggle } from '@/components/DensityToggle';
 import { EditDocumentDialog } from '@/components/documents/EditDocumentDialog';
 import { DocumentViewer } from '@/components/documents/DocumentViewer';
 import { VaultUploadZone } from '@/components/documents/VaultUploadZone';
@@ -142,10 +143,13 @@ export default function Documents() {
               {summaryData?.totalCount || 0} documents across {summaryData?.summaries.filter(s => s.count > 0).length || 0} categories
             </p>
           </div>
-          <Button variant="outline" onClick={handleCategorise} disabled={isCategorising} className="gap-2">
-            {isCategorising ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {isCategorising ? 'Categorising...' : 'AI Categorise'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <DensityToggle />
+            <Button variant="outline" onClick={handleCategorise} disabled={isCategorising} className="gap-2">
+              {isCategorising ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {isCategorising ? 'Categorising...' : 'AI Categorise'}
+            </Button>
+          </div>
         </div>
 
         <VaultUploadZone onUploadComplete={invalidateVault} />
