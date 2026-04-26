@@ -12,6 +12,7 @@ import { BankPresentationDialog } from '@/components/reports/BankPresentationDia
 import { ActivationChecklist } from '@/components/dashboard/ActivationChecklist';
 import { ActivationWidget } from '@/components/ActivationWidget';
 import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
+import { RentersRightsBillKPI } from '@/components/RentersRightsBillKPI';
 import { DemoBanner } from '@/components/dashboard/DemoBanner';
 import { LifecycleFilterToggle } from '@/components/dashboard/LifecycleFilterToggle';
 import { MetricDetailsSheet } from '@/components/dashboard/MetricDetailsSheet';
@@ -335,6 +336,11 @@ function DashboardPage() {
                 onMetricClick={handleMetricClick}
               />
             )}
+
+            {/* RRB Readiness KPI */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <RentersRightsBillKPI />
+            </div>
 
             {/* Missing Info Shortcut */}
             {missingStats.totalMissingFields > 0 && (
