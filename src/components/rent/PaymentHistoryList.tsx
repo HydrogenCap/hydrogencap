@@ -10,8 +10,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useRentHistory } from '@/hooks/useRentManagement';
+import { ListState } from '@/components/ListState';
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
