@@ -10552,6 +10552,16 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      global_search: {
+        Args: { p_org_id: string; search_query: string }
+        Returns: {
+          result_id: string
+          result_type: string
+          subtitle: string
+          title: string
+          url: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import {
   Brain, Zap, Clock, Target, FileCheck, TrendingUp,
@@ -13,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAIProcessingStats, useProcessingHistory } from '@/hooks/useAIProcessingStats';
 import { COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
+import { RecentProcessingDetailSheet, type ProcessingHistoryDoc } from './RecentProcessingDetailSheet';
 
 function StatCard({ icon: Icon, label, value, subtitle, iconColor }: {
   icon: React.ElementType;
@@ -57,6 +59,7 @@ function StatusIcon({ status }: { status: string }) {
 export function AIProcessingDashboard() {
   const { data: stats, isLoading: statsLoading } = useAIProcessingStats();
   const { data: history, isLoading: historyLoading } = useProcessingHistory(30);
+  const [selectedDoc, setSelectedDoc] = useState<ProcessingHistoryDoc | null>(null);
 
   if (statsLoading) {
     return (
@@ -68,6 +71,11 @@ export function AIProcessingDashboard() {
       </div>
     );
   }
+
+  const totalProcessed = stats?.totalProcessed30d ?? 0;
+  const hasData = totalProcessed > 0;
+  const accuracyDisplay = hasData ? `${Math.round(stats?.classificationAccuracy ?? 0)}%` : 'N/A';
+  const autoFileDisplay = hasData ? `${Math.round(stats?.autoFileRate ?? 0)}%` : 'N/A';
 
   return (
     <div className="space-y-5">
@@ -88,15 +96,15 @@ export function AIProcessingDashboard() {
         <StatCard
           icon={FileCheck}
           label="Auto-File Rate"
-          value={`${Math.round(stats?.autoFileRate ?? 0)}%`}
-          subtitle={`${stats?.autoFiled30d ?? 0} of ${stats?.totalProcessed30d ?? 0} (30d)`}
+          value={autoFileDisplay}
+          subtitle={hasData ? `${stats?.autoFiled30d ?? 0} of ${totalProcessed} (30d)` : 'No data yet'}
           iconColor="text-emerald-500"
         />
         <StatCard
           icon={Target}
           label="Classification Accuracy"
-          value={`${Math.round(stats?.classificationAccuracy ?? 100)}%`}
-          subtitle={`Avg ${Math.round((stats?.avgProcessingTime ?? 0) / 1000)}s processing`}
+          value={accuracyDisplay}
+          subtitle={hasData ? `Avg ${Math.round((stats?.avgProcessingTime ?? 0) / 1000)}s processing` : 'No data yet'}
           iconColor="text-violet-500"
         />
       </div>
@@ -110,27 +118,35 @@ export function AIProcessingDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Classification Accuracy</span>
-              <span>{Math.round(stats?.classificationAccuracy ?? 100)}%</span>
-            </div>
-            <Progress value={stats?.classificationAccuracy ?? 100} className="h-2" />
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Auto-File Rate</span>
-              <span>{Math.round(stats?.autoFileRate ?? 0)}%</span>
-            </div>
-            <Progress value={stats?.autoFileRate ?? 0} className="h-2" />
-          </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-            <span className="flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              {stats?.totalProcessed30d ?? 0} docs processed
-            </span>
-            <span>{stats?.totalTokens30d?.toLocaleString() ?? 0} AI tokens used</span>
-          </div>
+          {!hasData ? (
+            <p className="text-sm text-muted-foreground py-2">
+              No documents processed in the last 30 days. Upload a certificate to see AI performance metrics.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Classification Accuracy</span>
+                  <span>{accuracyDisplay}</span>
+                </div>
+                <Progress value={stats?.classificationAccuracy ?? 0} className="h-2" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Auto-File Rate</span>
+                  <span>{autoFileDisplay}</span>
+                </div>
+                <Progress value={stats?.autoFileRate ?? 0} className="h-2" />
+              </div>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                <span className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" />
+                  {totalProcessed} docs processed
+                </span>
+                <span>{stats?.totalTokens30d?.toLocaleString() ?? 0} AI tokens used</span>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -159,7 +175,20 @@ export function AIProcessingDashboard() {
                 </TableHeader>
                 <TableBody>
                   {history.map((doc) => (
-                    <TableRow key={doc.id}>
+                    <TableRow
+                      key={doc.id}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => setSelectedDoc(doc as ProcessingHistoryDoc)}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Open AI extraction details for ${doc.original_file_name || 'document'}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedDoc(doc as ProcessingHistoryDoc);
+                        }
+                      }}
+                    >
                       <TableCell><StatusIcon status={doc.extraction_status || ''} /></TableCell>
                       <TableCell className="max-w-[180px] truncate text-xs font-medium">
                         {doc.original_file_name}
@@ -192,6 +221,12 @@ export function AIProcessingDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <RecentProcessingDetailSheet
+        doc={selectedDoc}
+        open={!!selectedDoc}
+        onOpenChange={(open) => { if (!open) setSelectedDoc(null); }}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { PageTransition } from '@/components/common/PageTransition';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { MobileBottomNav } from './MobileBottomNav';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { SearchErrorBoundary } from '@/components/search/SearchErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 
@@ -65,7 +66,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         </main>
       </SidebarInset>
       <MobileBottomNav />
-      <GlobalSearch open={searchOpen} onOpenChange={handleSearchOpen} />
+      <SearchErrorBoundary>
+        <GlobalSearch open={searchOpen} onOpenChange={handleSearchOpen} />
+      </SearchErrorBoundary>
     </SidebarProvider>
   );
 }

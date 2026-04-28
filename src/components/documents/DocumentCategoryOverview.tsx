@@ -49,11 +49,20 @@ export function DocumentCategoryOverview({
               return (
                 <Card
                   key={cat.slug}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Filter documents by ${cat.name}`}
                   className={cn(
-                    'cursor-pointer transition-all hover:shadow-md border-2',
+                    'cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 hover:bg-accent/40 border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     isSelected ? 'border-primary shadow-md' : 'border-transparent hover:border-border',
                   )}
                   onClick={() => onCategoryClick(cat.slug)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onCategoryClick(cat.slug);
+                    }
+                  }}
                 >
                   <CardContent className="p-3.5">
                     <div className="flex items-start justify-between mb-2">

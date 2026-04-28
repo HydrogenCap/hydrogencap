@@ -89,7 +89,7 @@ export function useGlobalSearch() {
         if (controller.signal.aborted) return;
 
         if (error) {
-          console.error('Global search error:', error);
+          console.error('Global search error:', error.message || error.code || error);
           setResults([]);
           setGrouped(groupResults([]));
         } else {
@@ -99,7 +99,7 @@ export function useGlobalSearch() {
         }
       } catch (err) {
         if (!controller.signal.aborted) {
-          console.error('Global search failed:', err);
+          console.error('Global search failed:', err instanceof Error ? err.message : err);
           setResults([]);
           setGrouped(groupResults([]));
         }

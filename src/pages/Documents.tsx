@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FolderOpen, FileText, Sparkles, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -45,12 +46,14 @@ const CATEGORY_GROUPS = [
 ];
 
 export default function Documents() {
-  const [filters, setFilters] = useState<VaultFilters>({ category: 'all' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialCategory = searchParams.get('category') || 'all';
+  const [filters, setFilters] = useState<VaultFilters>({ category: initialCategory });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [editingDoc, setEditingDoc] = useState<ManagedDocument | null>(null);
   const [viewingDoc, setViewingDoc] = useState<ManagedDocument | null>(null);
   const [deletingDoc, setDeletingDoc] = useState<ManagedDocument | null>(null);
-  const [showCategoryOverview, setShowCategoryOverview] = useState(true);
+  const [showCategoryOverview, setShowCategoryOverview] = useState(initialCategory === 'all');
   const [isCategorising, setIsCategorising] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'property' | 'name'>('date');
   const [showArchived, setShowArchived] = useState(false);
@@ -72,6 +75,18 @@ export default function Documents() {
   const activeCategory = categories?.find(c => c.slug === filters.category);
   const hasActiveFilters = (filters.category && filters.category !== 'all') ||
     filters.propertyId || filters.companyId || filters.search;
+
+  // Keep ?category= in sync with the active filter so links are shareable.
+  useEffect(() => {
+    const current = searchParams.get('category') || 'all';
+    const next = filters.category || 'all';
+    if (current !== next) {
+      const params = new URLSearchParams(searchParams);
+      if (next === 'all') params.delete('category');
+      else params.set('category', next);
+      setSearchParams(params, { replace: true });
+    }
+  }, [filters.category, searchParams, setSearchParams]);
 
   const handleCategoryClick = (slug: string) => {
     setFilters(prev => ({ ...prev, category: prev.category === slug ? 'all' : slug }));
