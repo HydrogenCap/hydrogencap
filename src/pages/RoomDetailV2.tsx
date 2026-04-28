@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRoom, useUpdateRoom, ROOM_TYPES, OCCUPANCY_STATUSES } from '@/hooks/useRoomsV2';
+import { useRoomPnL, type RoomPnLPeriod } from '@/hooks/useRoomPnL';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTenancyAgreements, TENANCY_TYPES } from '@/hooks/useTenancyAgreements';
 import { RoomFormModal } from '@/components/properties-v2/RoomFormModal';
 import { CreateTenancyAgreementModal } from '@/components/tenants-v2/CreateTenancyAgreementModal';
