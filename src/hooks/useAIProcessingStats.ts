@@ -60,10 +60,12 @@ export function useAIProcessingStats() {
       const totalTokens30d = all30d.reduce((sum, d) => sum + (d.ai_tokens_used || 0), 0);
 
       // Classification accuracy: accepted docs where AI suggestion was not corrected
+      // Classification accuracy: accepted docs where AI suggestion was not corrected.
+      // Returns 0 when no accepted docs exist; UI is responsible for showing N/A.
       const accepted = all30d.filter(d => d.review_status === 'accepted');
       const notCorrected = accepted.filter(d => d.ai_suggested_doc_type === d.doc_type || d.auto_filed);
       const classificationAccuracy = accepted.length > 0
-        ? (notCorrected.length / accepted.length) * 100 : 100;
+        ? (notCorrected.length / accepted.length) * 100 : 0;
 
       return {
         processedToday: processedToday || 0,
