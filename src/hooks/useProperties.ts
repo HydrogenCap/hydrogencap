@@ -75,7 +75,7 @@ export function useCreateProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (_property: Omit<PropertyV1Insert, 'org_id'>) => {
+    mutationFn: async (_property: Omit<PropertyV1Insert, 'org_id'>): Promise<Property> => {
       throwV1Frozen('properties', 'useCreateProperty');
     },
     onSuccess: (data) => {
