@@ -1,9 +1,8 @@
-import { Receipt, Calculator, TrendingDown, TrendingUp, AlertTriangle, PoundSterling } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer } from '@/components/charts/ChartContainer';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { KpiCard } from './KpiCard';
 import { fmt, pct } from '../utils/format';
 
 type Calc = NonNullable<ReturnType<typeof import('@/hooks/useTaxEngine').useTaxCalculation>['data']>;
@@ -19,19 +18,7 @@ export function OverviewTab({
 }) {
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard icon={PoundSterling} label="Total Property Income" value={fmt(calculation.sa105.totalRents)} />
-        <KpiCard icon={Receipt} label="Tax Liability" value={fmt(calculation.totalTaxLiability)} accent />
-        <KpiCard
-          icon={s24Additional > 0 ? TrendingDown : TrendingUp}
-          label="Section 24 Impact"
-          value={s24Additional > 0 ? `+${fmt(s24Additional)}` : fmt(0)}
-          destructive={s24Additional > 0}
-        />
-        <KpiCard icon={Calculator} label="Effective Tax Rate" value={pct(calculation.effectiveTaxRate)} />
-      </div>
-
-      <div className="space-y-6 mt-6">
+      <div className="space-y-6">
         {calculation.section24Impact.financeCredit > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartContainer title="Section 24 Impact" subtitle="Old system vs current rules — additional tax burden">
