@@ -28,6 +28,9 @@ import {
 import { useReportHistory, getReportTypeName, deleteReport } from '@/hooks/useReportHistory';
 import type { ReportFilters } from '@/lib/reportPdfGenerator';
 import { DensityToggle } from '@/components/DensityToggle';
+import { Link } from 'react-router-dom';
+import { ListState } from '@/components/ListState';
+import { useRoomPnLPortfolio, type RoomPnLPeriod } from '@/hooks/useRoomPnL';
 
 type LifecycleFilter = 'core_rental' | 'development' | 'all';
 type LoanPurpose = 'refinance' | 'capital_raise' | 'rate_switch' | 'purchase' | '';
