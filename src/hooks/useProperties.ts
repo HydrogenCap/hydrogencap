@@ -8,6 +8,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { ActivityLoggers } from './useActivityLog';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
+import { throwV1Frozen } from '@/lib/v1Frozen';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
