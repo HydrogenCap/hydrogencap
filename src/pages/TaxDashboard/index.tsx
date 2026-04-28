@@ -39,7 +39,20 @@ export default function TaxDashboard() {
         ) : !s.calculation ? (
           <div className="text-center py-12 text-muted-foreground">No property data for {s.taxYear}</div>
         ) : (
-          <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <KpiCard icon={PoundSterling} label="Total Property Income" value={fmt(s.calculation.sa105.totalRents)} />
+              <KpiCard icon={Receipt} label="Tax Liability" value={fmt(s.calculation.totalTaxLiability)} accent />
+              <KpiCard
+                icon={s.s24Additional > 0 ? TrendingDown : TrendingUp}
+                label="Section 24 Impact"
+                value={s.s24Additional > 0 ? `+${fmt(s.s24Additional)}` : fmt(0)}
+                destructive={s.s24Additional > 0}
+              />
+              <KpiCard icon={Calculator} label="Effective Tax Rate" value={pct(s.calculation.effectiveTaxRate)} />
+            </div>
+
+            <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="sa105">SA105</TabsTrigger>
