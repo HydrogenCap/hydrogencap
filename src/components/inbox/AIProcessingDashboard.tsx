@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import {
   Brain, Zap, Clock, Target, FileCheck, TrendingUp,
@@ -13,6 +14,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAIProcessingStats, useProcessingHistory } from '@/hooks/useAIProcessingStats';
 import { COMPLIANCE_DOC_TYPE_LABELS } from '@/hooks/useComplianceIntake';
+import { RecentProcessingDetailSheet, type ProcessingHistoryDoc } from './RecentProcessingDetailSheet';
 
 function StatCard({ icon: Icon, label, value, subtitle, iconColor }: {
   icon: React.ElementType;
@@ -57,6 +59,7 @@ function StatusIcon({ status }: { status: string }) {
 export function AIProcessingDashboard() {
   const { data: stats, isLoading: statsLoading } = useAIProcessingStats();
   const { data: history, isLoading: historyLoading } = useProcessingHistory(30);
+  const [selectedDoc, setSelectedDoc] = useState<ProcessingHistoryDoc | null>(null);
 
   if (statsLoading) {
     return (
