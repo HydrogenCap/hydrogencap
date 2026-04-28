@@ -64,6 +64,8 @@ export default function RoomDetailV2() {
   const [notesValue, setNotesValue] = useState('');
   const [compliance, setCompliance] = useState<ComplianceDocument[]>([]);
   const [maintenanceCosts, setMaintenanceCosts] = useState<MaintenanceCostRow[]>([]);
+  const [pnlPeriod, setPnlPeriod] = useState<RoomPnLPeriod>('last_12_months');
+  const { data: roomPnL, isLoading: pnlLoading } = useRoomPnL(id, pnlPeriod);
 
   useEffect(() => {
     if (!id) return;
