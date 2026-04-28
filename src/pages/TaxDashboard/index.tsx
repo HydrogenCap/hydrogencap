@@ -70,7 +70,8 @@ export default function TaxDashboard() {
             <TabsContent value="cgt" className="mt-6 space-y-6">
               <CGTTab calculation={s.calculation} />
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </>
         )}
       </div>
     </AppLayout>
