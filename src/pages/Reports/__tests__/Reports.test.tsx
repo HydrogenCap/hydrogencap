@@ -54,7 +54,7 @@ vi.mock('@/lib/reportPdfGenerator', () => ({
   generateReportPdf: vi.fn(),
 }));
 
-import Reports from '../Reports';
+import Reports from '../index';
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
