@@ -432,6 +432,10 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="room-performance">
+            <RoomPerformanceSection />
+          </TabsContent>
         </Tabs>
 
         {/* Mortgage Broker Pack Configuration Dialog */}
