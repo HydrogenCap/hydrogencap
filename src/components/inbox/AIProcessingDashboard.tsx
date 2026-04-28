@@ -175,7 +175,20 @@ export function AIProcessingDashboard() {
                 </TableHeader>
                 <TableBody>
                   {history.map((doc) => (
-                    <TableRow key={doc.id}>
+                    <TableRow
+                      key={doc.id}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => setSelectedDoc(doc as ProcessingHistoryDoc)}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Open AI extraction details for ${doc.original_file_name || 'document'}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedDoc(doc as ProcessingHistoryDoc);
+                        }
+                      }}
+                    >
                       <TableCell><StatusIcon status={doc.extraction_status || ''} /></TableCell>
                       <TableCell className="max-w-[180px] truncate text-xs font-medium">
                         {doc.original_file_name}
@@ -208,6 +221,12 @@ export function AIProcessingDashboard() {
           )}
         </CardContent>
       </Card>
+
+      <RecentProcessingDetailSheet
+        doc={selectedDoc}
+        open={!!selectedDoc}
+        onOpenChange={(open) => { if (!open) setSelectedDoc(null); }}
+      />
     </div>
   );
 }
