@@ -12,7 +12,7 @@ interface Props {
   setSelectedPropertyId: (v: string) => void;
   selectedTenancyId: string;
   setSelectedTenancyId: (v: string) => void;
-  activeTenancies: Array<{ id: string; tenant_name: string | null; room_name: string | null; rent_amount_pcm: number | null }>;
+  activeTenancies: Array<{ id: string; tenant_name?: string | null; room_name?: string | null; rent_amount_pcm?: number | null }>;
   onBack: () => void;
   onNext: () => void;
 }
