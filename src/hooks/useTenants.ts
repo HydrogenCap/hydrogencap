@@ -1,7 +1,7 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase, supabaseAny } from '@/integrations/supabase/client';
- import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
- import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabaseAny } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { throwV1Frozen } from '@/lib/v1Frozen';
  
  export type TenantStatus = 'prospect' | 'active' | 'past' | 'blacklisted';
  export type TenantType = 'individual' | 'company';
@@ -156,20 +156,10 @@ export interface TenantWithProperty extends Tenant {
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async (tenant: Omit<Tenant, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
-       const orgId = await getUserOrgId();
-       if (!orgId) throw new Error('No organization found');
- 
-       const { data, error } = await supabaseAny
-         .from('tenants')
-         .insert({ ...tenant, org_id: orgId })
-         .select()
-         .single();
- 
-       if (error) throw error;
-       return data;
-     },
+    return useMutation({
+      mutationFn: async (_tenant: Omit<Tenant, 'id' | 'org_id' | 'created_at' | 'updated_at'>): Promise<Tenant> => {
+        throwV1Frozen('tenants', 'useCreateTenant');
+      },
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['tenants'] });
         const displayName = data.tenant_type === 'company' 
@@ -187,18 +177,10 @@ export interface TenantWithProperty extends Tenant {
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async ({ id, ...updates }: Partial<Tenant> & { id: string }) => {
-       const { data, error } = await supabaseAny
-         .from('tenants')
-         .update(updates)
-         .eq('id', id)
-         .select()
-         .single();
- 
-       if (error) throw error;
-       return data;
-     },
+    return useMutation({
+      mutationFn: async (_args: Partial<Tenant> & { id: string }): Promise<Tenant> => {
+        throwV1Frozen('tenants', 'useUpdateTenant');
+      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['tenants'] });
        toast({ title: 'Tenant updated' });
@@ -213,11 +195,10 @@ export interface TenantWithProperty extends Tenant {
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async (id: string) => {
-       const { error } = await supabase.from('tenants').delete().eq('id', id);
-       if (error) throw error;
-     },
+    return useMutation({
+      mutationFn: async (_id: string): Promise<void> => {
+        throwV1Frozen('tenants', 'useDeleteTenant');
+      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['tenants'] });
        toast({ title: 'Tenant deleted' });

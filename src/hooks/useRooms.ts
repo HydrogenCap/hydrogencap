@@ -1,7 +1,7 @@
- import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
- import { supabase, supabaseAny } from '@/integrations/supabase/client';
- import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
- import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabaseAny } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { throwV1Frozen } from '@/lib/v1Frozen';
  
  export type RoomStatus = 'vacant' | 'occupied' | 'notice' | 'maintenance';
  export type RoomType = 'single' | 'double' | 'ensuite' | 'studio';
@@ -134,20 +134,10 @@
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async (room: Omit<Room, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
-       const orgId = await getUserOrgId();
-       if (!orgId) throw new Error('No organization found');
- 
-       const { data, error } = await supabaseAny
-         .from('rooms')
-         .insert({ ...room, org_id: orgId })
-         .select()
-         .single();
- 
-       if (error) throw error;
-       return data;
-     },
+    return useMutation({
+      mutationFn: async (_room: Omit<Room, 'id' | 'org_id' | 'created_at' | 'updated_at'>): Promise<Room> => {
+        throwV1Frozen('rooms', 'useCreateRoom');
+      },
      onSuccess: (data) => {
        queryClient.invalidateQueries({ queryKey: ['rooms'] });
        queryClient.invalidateQueries({ queryKey: ['unit-usage-count'] });
@@ -163,18 +153,10 @@
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async ({ id, ...updates }: Partial<Room> & { id: string }) => {
-       const { data, error } = await supabaseAny
-         .from('rooms')
-         .update(updates)
-         .eq('id', id)
-         .select()
-         .single();
- 
-       if (error) throw error;
-       return data;
-     },
+    return useMutation({
+      mutationFn: async (_args: Partial<Room> & { id: string }): Promise<Room> => {
+        throwV1Frozen('rooms', 'useUpdateRoom');
+      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['rooms'] });
        toast({ title: 'Room updated' });
@@ -189,11 +171,10 @@
    const queryClient = useQueryClient();
    const { toast } = useToast();
  
-   return useMutation({
-     mutationFn: async (id: string) => {
-       const { error } = await supabase.from('rooms').delete().eq('id', id);
-       if (error) throw error;
-     },
+    return useMutation({
+      mutationFn: async (_id: string): Promise<void> => {
+        throwV1Frozen('rooms', 'useDeleteRoom');
+      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['rooms'] });
        queryClient.invalidateQueries({ queryKey: ['unit-usage-count'] });
