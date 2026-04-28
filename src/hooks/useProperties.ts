@@ -75,18 +75,8 @@ export function useCreateProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (property: Omit<PropertyV1Insert, 'org_id'>) => {
-      const orgId = await getUserOrgId();
-      if (!orgId) throw new Error('No organization found');
-
-      const { data, error } = await supabaseAny
-        .from('properties')
-        .insert({ ...property, org_id: orgId })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+    mutationFn: async (_property: Omit<PropertyV1Insert, 'org_id'>) => {
+      throwV1Frozen('properties', 'useCreateProperty');
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -103,26 +93,8 @@ export function useUpdateProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, previousValue, ...property }: PropertyV1Update & { id: string; previousValue?: number | null }) => {
-      const { data, error } = await supabaseAny
-        .from('properties')
-        .update(property)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Check if valuation changed
-      if (property.current_value_gbp !== undefined && property.current_value_gbp !== previousValue) {
-        ActivityLoggers.valuationChanged(
-          data.id, 
-          previousValue ?? null, 
-          Number(property.current_value_gbp)
-        );
-      }
-      
-      return data;
+    mutationFn: async (_args: PropertyV1Update & { id: string; previousValue?: number | null }) => {
+      throwV1Frozen('properties', 'useUpdateProperty');
     },
     // Optimistic update for instant UI feedback
     onMutate: async (newData) => {
@@ -155,13 +127,8 @@ export function useDeleteProperty() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabaseAny
-        .from('properties')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+    mutationFn: async (_id: string) => {
+      throwV1Frozen('properties', 'useDeleteProperty');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
