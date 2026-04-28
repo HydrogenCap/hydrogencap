@@ -215,6 +215,7 @@ export default function Reports() {
           <TabsList>
             <TabsTrigger value="generate">Generate Reports</TabsTrigger>
             <TabsTrigger value="history">Report History</TabsTrigger>
+            <TabsTrigger value="room-performance">Room Performance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="generate" className="space-y-6">
