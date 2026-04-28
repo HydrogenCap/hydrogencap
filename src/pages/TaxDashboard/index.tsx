@@ -1,12 +1,14 @@
-import { Info } from 'lucide-react';
+import { Info, Receipt, Calculator, TrendingDown, TrendingUp, PoundSterling } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTaxDashboardState } from './hooks/useTaxDashboardState';
 import { TaxHeader } from './components/TaxHeader';
 import { TaxProfileCard } from './components/TaxProfileCard';
+import { KpiCard } from './components/KpiCard';
 import { OverviewTab } from './components/OverviewTab';
 import { SA105Tab } from './components/SA105Tab';
 import { CGTTab } from './components/CGTTab';
+import { fmt, pct } from './utils/format';
 
 export default function TaxDashboard() {
   const s = useTaxDashboardState();
