@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DoorOpen, ArrowRight } from 'lucide-react';
-import { useRooms } from '@/hooks/useRooms';
+import { supabaseAny } from '@/integrations/supabase/client';
 
 const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
   occupied: { bg: 'bg-primary', label: 'Occupied' },
@@ -11,19 +12,48 @@ const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
   maintenance: { bg: 'bg-muted-foreground', label: 'Maintenance' },
 };
 
+// Map V2 occupancy_status -> the four buckets the widget displays.
+function mapV2Status(status: string): 'occupied' | 'notice' | 'vacant' | 'maintenance' {
+  switch (status) {
+    case 'occupied':
+      return 'occupied';
+    case 'under_offer':
+      return 'notice';
+    case 'refurbishment':
+    case 'unavailable':
+      return 'maintenance';
+    case 'vacant':
+    default:
+      return 'vacant';
+  }
+}
+
 export function OccupancyWidget() {
-  const { data: rooms } = useRooms();
+  const { data: rooms } = useQuery({
+    queryKey: ['rooms_v2', 'all', 'occupancy_widget'],
+    queryFn: async () => {
+      const { data, error } = await supabaseAny
+        .from('rooms_v2')
+        .select('id, occupancy_status, is_lettable')
+        .eq('is_lettable', true);
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; occupancy_status: string; is_lettable: boolean }>;
+    },
+  });
 
   const stats = useMemo(() => {
     if (!rooms || rooms.length === 0) return null;
 
     const total = rooms.length;
     const byStatus = {
-      occupied: rooms.filter(r => r.status === 'occupied').length,
-      notice: rooms.filter(r => r.status === 'notice').length,
-      vacant: rooms.filter(r => r.status === 'vacant').length,
-      maintenance: rooms.filter(r => r.status === 'maintenance').length,
+      occupied: 0,
+      notice: 0,
+      vacant: 0,
+      maintenance: 0,
     };
+    for (const room of rooms) {
+      byStatus[mapV2Status(room.occupancy_status)] += 1;
+    }
 
     return { total, byStatus };
   }, [rooms]);
