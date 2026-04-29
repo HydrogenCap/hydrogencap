@@ -401,6 +401,10 @@ export default function WorkOrderDetail() {
         </Tabs>
       </div>
 
+      <MobileDetailsSheet title="Work Order Actions" triggerLabel="Actions">
+        {actionButtons}
+      </MobileDetailsSheet>
+
       {/* Approve Dialog */}
       <Dialog open={showApprove} onOpenChange={setShowApprove}>
         <DialogContent>
