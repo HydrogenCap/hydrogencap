@@ -73,8 +73,7 @@ export function AuditPanel() {
   }, [entries]);
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Audit Log</h1>
@@ -207,8 +206,7 @@ export function AuditPanel() {
             </div>
           </div>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }
 
@@ -329,4 +327,13 @@ function ValueList({ values, className }: { values: Record<string, unknown> | nu
   );
 }
 
-export default AuditLogPage;
+export default function AuditLogPage() {
+  const { openSidebar } = useActivitySidebar();
+  useEffect(() => { openSidebar('audit'); }, [openSidebar]);
+  return (
+    <AppLayout>
+      <AuditPanel />
+    </AppLayout>
+  );
+}
+
