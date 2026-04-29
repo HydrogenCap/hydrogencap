@@ -416,9 +416,8 @@ export function ActionsPanel() {
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
+    <div className="space-y-6">
+      {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Action Required</h1>
           <p className="text-muted-foreground">
