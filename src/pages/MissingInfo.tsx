@@ -154,8 +154,7 @@ export function MissingInfoPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-6">
-        {/* Page Header */}
+      {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Missing Information (Portfolio)</h1>
@@ -455,7 +454,16 @@ export function MissingInfoPanel() {
             ))}
           </div>
         )}
-      </div>
+    </div>
+  );
+}
+
+export default function MissingInfoPage() {
+  const { openSidebar } = useActivitySidebar();
+  useEffect(() => { openSidebar('actions'); }, [openSidebar]);
+  return (
+    <AppLayout>
+      <MissingInfoPanel />
     </AppLayout>
   );
 }
