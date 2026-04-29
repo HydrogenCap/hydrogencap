@@ -1,5 +1,8 @@
+import { Mail, FileText, Edit } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { MobileDetailsSheet } from '@/components/common';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { CommitmentFormModal } from '@/components/investors/CommitmentFormModal';
 import { DistributionFormModal } from '@/components/investors/DistributionFormModal';
@@ -36,7 +39,7 @@ export default function InvestorDetail() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 lg:pb-0">
         <InvestorHeader
           investor={investor}
           onBack={() => s.navigate('/investors')}
@@ -50,7 +53,7 @@ export default function InvestorDetail() {
         <KpiRow kpis={s.kpis} />
 
         <Tabs value={s.activeTab} onValueChange={s.setActiveTab}>
-          <TabsList>
+          <TabsList className="overflow-x-auto max-w-full justify-start">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="kyc">KYC / AML</TabsTrigger>
             <TabsTrigger value="capital-calls">Capital Calls</TabsTrigger>
@@ -82,6 +85,25 @@ export default function InvestorDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <MobileDetailsSheet title="Investor Actions" triggerLabel="Actions">
+        <div className="space-y-2">
+          <Button variant="outline" className="w-full justify-start" onClick={() => s.setShowEditModal(true)}>
+            <Edit className="h-4 w-4 mr-2" />Edit Investor
+          </Button>
+          <Button variant="outline" className="w-full justify-start" onClick={() => s.setShowReportModal(true)}>
+            <FileText className="h-4 w-4 mr-2" />Generate Statement
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            disabled={!canSendPortalAccessEmail || s.sendPortalAccessEmail.isPending}
+            onClick={() => void s.sendPortalAccessEmail.mutateAsync(investor.id)}
+          >
+            <Mail className="h-4 w-4 mr-2" />Send Portal Access
+          </Button>
+        </div>
+      </MobileDetailsSheet>
 
       <InvestorFormModal open={s.showEditModal} onOpenChange={s.setShowEditModal} investor={investor} />
       <CommitmentFormModal open={s.showCommitmentModal} onOpenChange={s.setShowCommitmentModal} investorId={s.id!} />
