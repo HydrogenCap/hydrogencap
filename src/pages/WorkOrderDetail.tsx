@@ -208,7 +208,7 @@ export default function WorkOrderDetail() {
 
         {/* Tabbed Content */}
         <Tabs defaultValue="details" className="space-y-4">
-          <TabsList>
+          <TabsList className="overflow-x-auto max-w-full justify-start">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="costs">Costs</TabsTrigger>
             <TabsTrigger value="materials">Materials</TabsTrigger>
