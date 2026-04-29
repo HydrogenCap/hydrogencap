@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  fmtGBP, fmtDate, getFacilityTypeInfo, getCovenantStatus, getLtvColor,
+  fmtGBP, fmtGBPCompact, fmtDate, getFacilityTypeInfo, getCovenantStatus, getLtvColor,
   type LoanFacilityWithDetails,
 } from '@/hooks/useLoanFacilities';
 
@@ -135,7 +135,7 @@ export function RateSensitivityCard({
     <Card>
       <CardHeader><CardTitle>Rate Sensitivity Analysis</CardTitle></CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground mb-3">Impact of rate changes on variable/tracker facilities ({fmtGBP(variableTotal)} total variable debt)</p>
+        <p className="text-sm text-muted-foreground mb-3">Impact of rate changes on variable/tracker facilities ({fmtGBPCompact(variableTotal)} total variable debt)</p>
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Current Monthly</p>
