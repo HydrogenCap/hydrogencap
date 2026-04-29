@@ -32,7 +32,7 @@ Scope: foreign key columns on dashboard hot tables. A FK is considered "covered"
 | properties_v2 | legal_owner_party_id | ❌ | **ADD** `idx_properties_v2_legal_owner_party_id` |
 | rent_payments | agreement_id, tenancy_id | ✅ | — |
 | rent_payments | bank_transaction_id | ❌ | **ADD** `idx_rent_payments_bank_transaction_id` (reconciliation joins) |
-| rent_payments | org_id | ❌ | **ADD composite** `idx_rent_payments_org_paid_at` `(org_id, paid_at DESC)` — every dashboard rent query filters by org and orders/filters by paid_at |
+| rent_payments | org_id | ❌ | **ADD composite** `idx_rent_payments_org_payment_date` `(org_id, payment_date DESC)` — every dashboard rent query filters by org and orders/filters by payment_date |
 | rent_payments | recorded_by | ❌ | **SKIP** — low-cardinality audit field, never joined in hot paths |
 | rent_payments | rent_schedule_id | ❌ | **ADD** `idx_rent_payments_rent_schedule_id` |
 | rooms_v2 | property_id, unit_id | ✅ | — |
@@ -53,7 +53,7 @@ Scope: foreign key columns on dashboard hot tables. A FK is considered "covered"
 
 ## Composite Index Justifications
 
-- **`(rent_payments.org_id, paid_at DESC)`**: every dashboard widget that lists rent activity filters by `org_id` (RLS-aligned) and orders by `paid_at` desc, or windows by paid_at for the "Last 12 months" P&L. A single composite removes a sort and avoids fetching org-id-only matches.
+- **`(rent_payments.org_id, payment_date DESC)`**: every dashboard widget that lists rent activity filters by `org_id` (RLS-aligned) and orders by `payment_date` desc, or windows by payment_date for the "Last 12 months" P&L. A single composite removes a sort and avoids fetching org-id-only matches.
 
 ## Skip Reasoning Summary
 
