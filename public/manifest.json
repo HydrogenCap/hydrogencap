@@ -1,10 +1,15 @@
 {
-  "name": "TenureIQ",
+  "name": "Tenure IQ — Property Intelligence",
   "short_name": "TenureIQ",
   "description": "Property intelligence platform for UK landlords and investors",
+  "lang": "en-GB",
+  "dir": "ltr",
+  "scope": "/",
   "start_url": "/dashboard",
+  "id": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0e131f",
   "theme_color": "#1e3a5f",
   "orientation": "any",
   "icons": [
@@ -12,13 +17,31 @@
       "src": "/pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["business", "finance", "productivity"],
