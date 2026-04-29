@@ -948,7 +948,14 @@ export type Database = {
             foreignKeyName: "company_secrets_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
-            referencedRelation: "companies"
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "company_secrets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -9794,7 +9801,14 @@ export type Database = {
             foreignKeyName: "company_secrets_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
-            referencedRelation: "companies"
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "company_secrets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
