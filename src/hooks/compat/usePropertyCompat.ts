@@ -109,7 +109,7 @@ export function v2PropertyToV1Shape(
     conservation_area: false,
     legal_owner_company_id: null,
     legal_owner_party_id: null,
-  } as Omit<PropertyWithFinancials, 'loans' | 'income' | 'costs' | 'tenancies'>;
+  } as unknown as Omit<PropertyWithFinancials, 'loans' | 'income' | 'costs' | 'tenancies'>;
 }
 
 /**
