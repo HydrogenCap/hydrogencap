@@ -4,6 +4,7 @@ import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 interface PropertyLocation {
   address: string;
   postcode: string;
@@ -20,7 +21,7 @@ interface PropertyLocation {
   annualRent?: number;
 }
 
-serve(async (req) => {
+serve(withInvocationLog("portfolio-location-insights", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -243,4 +244,4 @@ Generate JSON response with location-based analysis. Focus on factors the landlo
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

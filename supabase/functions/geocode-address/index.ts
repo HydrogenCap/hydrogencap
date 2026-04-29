@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -116,7 +117,7 @@ async function geocodeWithNominatim(query: string): Promise<NominatimResult | nu
   return data && data.length > 0 ? data[0] : null;
 }
 
-serve(async (req) => {
+serve(withInvocationLog("geocode-address", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -291,4 +292,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

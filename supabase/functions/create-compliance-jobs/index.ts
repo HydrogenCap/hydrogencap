@@ -1,4 +1,5 @@
- import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
  
  const ALLOWED_ORIGINS = [
@@ -65,7 +66,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
   return { mode: "user", manageableOrgIds };
 }
  
- serve(async (req) => {
+ serve(withInvocationLog("create-compliance-jobs", async (req, _invocationLog) => {
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: getCorsHeaders(req) });
    }
@@ -131,4 +132,4 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
      });
    }
- });
+ }));

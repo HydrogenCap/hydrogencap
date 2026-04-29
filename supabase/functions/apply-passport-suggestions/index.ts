@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 // Field mapping from suggestion field_key to passport table column
 const FIELD_MAPPING: Record<string, string> = {
   local_authority: "local_authority_text",
@@ -28,7 +29,7 @@ interface PendingSuggestionRow {
   source_ref: string | null;
 }
 
-serve(async (req) => {
+serve(withInvocationLog("apply-passport-suggestions", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -272,4 +273,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

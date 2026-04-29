@@ -5,6 +5,7 @@ import { z } from 'https://esm.sh/zod@3.23.8';
 import { validateBody } from '../_shared/validate.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   'https://tenureiq.com',
   'https://www.tenureiq.com',
@@ -26,7 +27,7 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-serve(async (req) => {
+serve(withInvocationLog("send-investor-portal-access", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -158,4 +159,4 @@ serve(async (req) => {
       }
     );
   }
-});
+}));

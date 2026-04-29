@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 // Deterministic mapping from doc_type → vault category slug
 const DOC_TYPE_TO_CATEGORY: Record<string, string> = {
   gas_safety_certificate: "gas-safety",
@@ -204,7 +205,7 @@ function generateFinalFileName(
   return `${catCode}_${entity}_${cleanDisplay}_${dateStr}${ext}`;
 }
 
-serve(async (req) => {
+serve(withInvocationLog("categorise-documents", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -804,4 +805,4 @@ Return ONLY a JSON array: [{"index": 1, "name": "NewName.pdf"}]`;
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

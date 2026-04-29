@@ -6,6 +6,7 @@
  import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
  const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
@@ -150,7 +151,7 @@ import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
    }
  }
  
- serve(async (req) => {
+ serve(withInvocationLog("generate-ai-valuation", async (req, _invocationLog) => {
    const corsHeaders = getCorsHeaders(req);
    if (req.method === "OPTIONS") {
      return new Response(null, { headers: corsHeaders });
@@ -361,4 +362,4 @@ import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
        headers: { ...corsHeaders, "Content-Type": "application/json" },
      });
    }
- });
+ }));

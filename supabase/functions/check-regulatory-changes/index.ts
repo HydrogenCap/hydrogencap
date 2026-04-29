@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
@@ -105,7 +105,7 @@ function sanitizeAlert(raw: Record<string, unknown>): AIAlert | null {
   };
 }
 
-serve(async (req) => {
+serve(withInvocationLog("check-regulatory-changes", async (req, _invocationLog) => {
   const log = createLogger("check-regulatory-changes", req);
   const corsHeaders = getCorsHeaders(req);
 
@@ -310,4 +310,4 @@ Focus on changes from the last 6 months and upcoming deadlines in the next 12 mo
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

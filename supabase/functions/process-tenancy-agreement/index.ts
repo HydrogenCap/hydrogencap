@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 interface ProcessTenancyRequest {
   fileUrl: string;
   tenantName: string;
@@ -105,7 +106,7 @@ async function fetchFileAsDataUrl(
   return { dataUrl: `data:${mimeType};base64,${base64}`, mimeType };
 }
 
-serve(async (req) => {
+serve(withInvocationLog("process-tenancy-agreement", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -309,4 +310,4 @@ IMPORTANT RULES:
       }
     );
   }
-});
+}));

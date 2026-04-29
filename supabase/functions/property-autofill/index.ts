@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 /**
  * AI-powered property auto-fill.
  * Combines Postcodes.io + EPC Open Data + Lovable AI to infer property form fields.
@@ -196,7 +197,7 @@ Rules:
 
 // ---------- Main handler ----------
 
-serve(async (req) => {
+serve(withInvocationLog("property-autofill", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -285,4 +286,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

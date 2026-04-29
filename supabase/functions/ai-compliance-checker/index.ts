@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
@@ -97,7 +97,7 @@ const COMPLIANCE_DEFINITIONS = {
   },
 };
 
-serve(async (req) => {
+serve(withInvocationLog("ai-compliance-checker", async (req, _invocationLog) => {
   const log = createLogger('ai-compliance-checker', req);
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
@@ -335,4 +335,4 @@ Determine which compliance items are required based on the property features, id
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

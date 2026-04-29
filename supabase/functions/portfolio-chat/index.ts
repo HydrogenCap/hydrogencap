@@ -4,7 +4,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { CHAT_TOOLS } from "./tools.ts";
 import { executeTool } from "./tool-executor.ts";
 
@@ -50,7 +50,7 @@ Guidelines:
 
 const MAX_TOOL_ROUNDS = 3;
 
-serve(async (req) => {
+serve(withInvocationLog("portfolio-chat", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -411,7 +411,7 @@ serve(async (req) => {
       }
     );
   }
-});
+}));
 
 // ─── Conversation management handlers ────────────────────────────────────────
 

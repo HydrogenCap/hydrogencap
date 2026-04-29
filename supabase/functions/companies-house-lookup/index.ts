@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { handleCompaniesHouseLookup } from "./handler.ts";
 
-serve(async (req) => {
+import { withInvocationLog } from "../_shared/logger.ts";
+serve(withInvocationLog("companies-house-lookup", async (req, _invocationLog) => {
   const authHeader = req.headers.get("Authorization") ?? "";
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -17,4 +18,4 @@ serve(async (req) => {
     corsHeaders: getCorsHeaders(req),
     apiKey: Deno.env.get("COMPANIES_HOUSE_API_KEY")?.trim(),
   });
-});
+}));

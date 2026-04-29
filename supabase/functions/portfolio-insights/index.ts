@@ -4,7 +4,8 @@ import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
-serve(async (req) => {
+import { withInvocationLog } from "../_shared/logger.ts";
+serve(withInvocationLog("portfolio-insights", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -174,4 +175,4 @@ Generate JSON response with overview, top 5 priorities, risks, and opportunities
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));
