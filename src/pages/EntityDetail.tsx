@@ -145,7 +145,7 @@ export default function EntityDetail() {
 
         <EntityDetailsCard entity={entity} />
 
-        {(entity.entity_type === 'ltd_company' || entity.entity_type === 'spv') && entity.company_number && (
+        {((entity.entity_type as string) === 'ltd_company' || entity.entity_type === 'spv') && entity.company_number && (
           <CompanySecretsCard companyId={entity.id} />
         )}
 
