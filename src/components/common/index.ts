@@ -21,3 +21,5 @@ export { FeatureGate } from './FeatureGate';
 export { ResponsiveModal } from './ResponsiveModal';
 export { ResponsiveTable } from './ResponsiveTable';
 export type { ColumnConfig } from './ResponsiveTable';
+export { MobileDetailsSheet } from './MobileDetailsSheet';
+export { MobilePrimaryActionBar } from './MobilePrimaryActionBar';
