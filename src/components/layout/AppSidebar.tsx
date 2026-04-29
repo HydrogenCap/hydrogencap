@@ -195,7 +195,6 @@ const adminItems: NavItem[] = [
   },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
-];
 
 const STORAGE_KEY = 'sidebar:expanded-items';
 
