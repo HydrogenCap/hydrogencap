@@ -142,7 +142,7 @@ export function MissingInfoPanel() {
 
   if (isLoading) {
     return (
-      <AppLayout>
+
         <div className="space-y-6">
           <Skeleton className="h-8 w-64" />
           <div className="grid gap-4 md:grid-cols-4">
@@ -150,7 +150,7 @@ export function MissingInfoPanel() {
           </div>
           <Skeleton className="h-96" />
         </div>
-      </AppLayout>
+<!--RM-->
     );
   }
 
