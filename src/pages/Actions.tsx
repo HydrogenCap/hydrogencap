@@ -310,7 +310,7 @@ function PropertyGroup({
   );
 }
 
-export default function ActionsPage() {
+export function ActionsPanel() {
   const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   // Workflow data
