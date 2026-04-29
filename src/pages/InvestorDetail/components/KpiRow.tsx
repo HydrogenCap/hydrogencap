@@ -24,7 +24,7 @@ export function KpiRow({
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       {items.map(kpi => (
         <Card key={kpi.label}>
           <CardContent className="p-4">
