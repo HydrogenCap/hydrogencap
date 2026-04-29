@@ -13,6 +13,8 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useActivitySidebar } from '@/state/activitySidebar';
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +37,7 @@ type MissingTypeFilter = 'all' | 'property' | 'income' | 'finance' | 'insurance'
 type PriorityFilter = 'all' | 'most_missing' | 'renewal_soon' | 'hmo_expiring';
 type MissingInfoSortOption = 'most_missing' | 'postcode' | 'updated';
 
-export default function MissingInfoPage() {
+export function MissingInfoPanel() {
   const { data, stats, lenders, insurers, isLoading } = useMissingInfo();
 
   // Filters
