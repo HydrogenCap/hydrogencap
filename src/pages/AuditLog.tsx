@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { format } from 'date-fns';
 import { Download, Search, ChevronDown, ChevronRight, Plus, Pencil, Trash2, History } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useActivitySidebar } from '@/state/activitySidebar';
+import { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +27,7 @@ const ACTION_STYLES: Record<string, { label: string; variant: 'default' | 'secon
   DELETE: { label: 'Deleted', variant: 'destructive', icon: Trash2 },
 };
 
-function AuditLogPage() {
+export function AuditPanel() {
   const [filters, setFilters] = useState<AuditLogFilters>({
     page: 1,
     pageSize: PAGE_SIZE,
