@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { TenancyChecklist } from '@/components/lettings/TenancyChecklist';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
+import { MobileDetailsSheet } from '@/components/common';
 
 const STATUS_BG: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700', prospective: 'bg-blue-100 text-blue-700',
@@ -182,21 +183,22 @@ export default function TenantDetailV2() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 lg:pb-0">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/tenants-v2')} className="mb-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2 min-w-0">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/tenants-v2')} className="mb-1" aria-label="Back to tenants">
               <ArrowLeft className="h-4 w-4 mr-1" /> Tenants
             </Button>
-            <h1 className="text-2xl font-bold text-foreground">{tenant.first_name} {tenant.last_name}</h1>
-            <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground break-words">{tenant.first_name} {tenant.last_name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
               <Badge className={STATUS_BG[tenant.status]}>{getLabel(TENANT_STATUSES, tenant.status)}</Badge>
               <Badge className="bg-blue-100 text-blue-700">{getLabel(TENANT_TYPES, tenant.tenant_type)}</Badge>
               <PaymentScoreBadge tenantId={tenant.id} />
             </div>
           </div>
-          <Button variant="outline" onClick={() => setShowEdit(true)}>
+          {/* Desktop edit — mobile uses sticky sheet */}
+          <Button variant="outline" onClick={() => setShowEdit(true)} className="hidden lg:inline-flex shrink-0">
             <Edit className="h-4 w-4 mr-2" /> Edit
           </Button>
         </div>
