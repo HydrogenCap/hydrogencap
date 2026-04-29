@@ -66,7 +66,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
   return { mode: "user", manageableOrgIds };
 }
  
- serve(withInvocationLog("create-compliance-jobs", async (req, log) => {
+ serve(withInvocationLog("create-compliance-jobs", async (req, _invocationLog) => {
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: getCorsHeaders(req) });
    }

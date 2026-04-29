@@ -105,7 +105,7 @@ function sanitizeAlert(raw: Record<string, unknown>): AIAlert | null {
   };
 }
 
-serve(withInvocationLog("check-regulatory-changes", async (req, log) => {
+serve(withInvocationLog("check-regulatory-changes", async (req, _invocationLog) => {
   const log = createLogger("check-regulatory-changes", req);
   const corsHeaders = getCorsHeaders(req);
 

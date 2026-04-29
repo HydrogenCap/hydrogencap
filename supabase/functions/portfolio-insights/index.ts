@@ -5,7 +5,7 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
-serve(withInvocationLog("portfolio-insights", async (req, log) => {
+serve(withInvocationLog("portfolio-insights", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

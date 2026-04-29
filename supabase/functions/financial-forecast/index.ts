@@ -343,7 +343,7 @@ Keep your response to 3-4 paragraphs. Use GBP figures. Be specific about numbers
   }
 }
 
-serve(withInvocationLog("financial-forecast", async (req, log) => {
+serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });

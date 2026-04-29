@@ -134,7 +134,7 @@ import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 
    return { subject, html };
  }
  
- serve(withInvocationLog("send-job-request", async (req, log) => {
+ serve(withInvocationLog("send-job-request", async (req, _invocationLog) => {
    const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@tenureiq.com';
 const corsHeaders = getCorsHeaders(req);
    // Handle CORS preflight requests

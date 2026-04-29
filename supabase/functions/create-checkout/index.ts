@@ -12,7 +12,7 @@ const ALLOWED_PRICE_IDS = new Set([
   "price_1SzP1aAZFDMuITvQsijsXgos",
 ]);
 
-serve(withInvocationLog("create-checkout", async (req, log) => {
+serve(withInvocationLog("create-checkout", async (req, _invocationLog) => {
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",

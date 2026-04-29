@@ -97,7 +97,7 @@ const COMPLIANCE_DEFINITIONS = {
   },
 };
 
-serve(withInvocationLog("ai-compliance-checker", async (req, log) => {
+serve(withInvocationLog("ai-compliance-checker", async (req, _invocationLog) => {
   const log = createLogger('ai-compliance-checker', req);
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {

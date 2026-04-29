@@ -25,7 +25,7 @@ interface PaymentPattern {
   monthsOfData: number;
 }
 
-serve(withInvocationLog("predict-arrears", async (req, log) => {
+serve(withInvocationLog("predict-arrears", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

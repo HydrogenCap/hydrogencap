@@ -117,7 +117,7 @@ async function geocodeWithNominatim(query: string): Promise<NominatimResult | nu
   return data && data.length > 0 ? data[0] : null;
 }
 
-serve(withInvocationLog("geocode-address", async (req, log) => {
+serve(withInvocationLog("geocode-address", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   // Handle CORS preflight
   if (req.method === "OPTIONS") {

@@ -346,7 +346,7 @@ function generatePlainText(
   return text;
 }
 
-serve(withInvocationLog("send-weekly-compliance-email", async (req, log) => {
+serve(withInvocationLog("send-weekly-compliance-email", async (req, _invocationLog) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: getCorsHeaders(req) });

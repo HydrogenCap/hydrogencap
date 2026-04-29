@@ -108,7 +108,7 @@ async function getManageableOrgIds(
   return data.map((membership: { org_id: string }) => membership.org_id);
 }
 
-serve(withInvocationLog("company-secrets", async (req, log) => {
+serve(withInvocationLog("company-secrets", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   // Handle CORS
   if (req.method === "OPTIONS") {

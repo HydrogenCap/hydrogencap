@@ -197,7 +197,7 @@ Rules:
 
 // ---------- Main handler ----------
 
-serve(withInvocationLog("property-autofill", async (req, log) => {
+serve(withInvocationLog("property-autofill", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

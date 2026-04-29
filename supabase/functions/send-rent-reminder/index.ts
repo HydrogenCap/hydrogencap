@@ -25,7 +25,7 @@ function getCorsHeaders(req: Request) {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-serve(withInvocationLog("send-rent-reminder", async (req: Request, log) => {
+serve(withInvocationLog("send-rent-reminder", async (req: Request, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

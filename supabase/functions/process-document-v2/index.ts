@@ -150,7 +150,7 @@ function computeReviewReasons(
   return reasons;
 }
 
-Deno.serve(withInvocationLog("process-document-v2", async (req, log) => {
+Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) => {
   const log = createLogger('process-document-v2', req);
   const corsHeaders = getCorsHeaders(req);
 

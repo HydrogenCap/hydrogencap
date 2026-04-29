@@ -178,7 +178,7 @@ async function fetchPricePaidData(
   }
 }
 
-serve(withInvocationLog("bulk-price-paid-enrich", async (req, log) => {
+serve(withInvocationLog("bulk-price-paid-enrich", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

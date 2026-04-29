@@ -22,7 +22,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-serve(withInvocationLog("portfolio-api", async (req, log) => {
+serve(withInvocationLog("portfolio-api", async (req, _invocationLog) => {
   corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

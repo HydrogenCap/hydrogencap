@@ -106,7 +106,7 @@ async function fetchFileAsDataUrl(
   return { dataUrl: `data:${mimeType};base64,${base64}`, mimeType };
 }
 
-serve(withInvocationLog("process-tenancy-agreement", async (req, log) => {
+serve(withInvocationLog("process-tenancy-agreement", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

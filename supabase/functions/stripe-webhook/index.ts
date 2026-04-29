@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { handleStripeWebhook } from "./handler.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
-serve(withInvocationLog("stripe-webhook", async (req, log) => {
+serve(withInvocationLog("stripe-webhook", async (req, _invocationLog) => {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 

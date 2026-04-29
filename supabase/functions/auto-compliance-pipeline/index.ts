@@ -13,7 +13,7 @@ const ALLOWED_ORIGINS = [
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-serve(withInvocationLog("auto-compliance-pipeline", async (req, log) => {
+serve(withInvocationLog("auto-compliance-pipeline", async (req, _invocationLog) => {
   const corsHeaders = buildCorsHeaders(req, ALLOWED_ORIGINS);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });

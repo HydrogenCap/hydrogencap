@@ -4,7 +4,7 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { handleCompaniesHouseLookup } from "./handler.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
-serve(withInvocationLog("companies-house-lookup", async (req, log) => {
+serve(withInvocationLog("companies-house-lookup", async (req, _invocationLog) => {
   const authHeader = req.headers.get("Authorization") ?? "";
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

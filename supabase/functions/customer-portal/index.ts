@@ -7,7 +7,7 @@ import { handleCustomerPortal } from "./handler.ts";
 import { withInvocationLog } from "../_shared/logger.ts";
 const DEFAULT_BILLING_ORIGIN = "https://tenureiq.com";
 
-serve(withInvocationLog("customer-portal", async (req, log) => {
+serve(withInvocationLog("customer-portal", async (req, _invocationLog) => {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 

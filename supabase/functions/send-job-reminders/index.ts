@@ -80,7 +80,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
   return { mode: 'user', manageableOrgIds };
 }
  
- serve(withInvocationLog("send-job-reminders", async (req, log) => {
+ serve(withInvocationLog("send-job-reminders", async (req, _invocationLog) => {
    const corsHeaders = getCorsHeaders(req);
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: corsHeaders });

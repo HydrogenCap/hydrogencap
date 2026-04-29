@@ -162,7 +162,7 @@ function getPropertyAddress(item: ComplianceItem): string {
    return { subject, html };
  }
  
- serve(withInvocationLog("send-compliance-reminders", async (req, log) => {
+ serve(withInvocationLog("send-compliance-reminders", async (req, _invocationLog) => {
    // Handle CORS preflight
     if (req.method === "OPTIONS") {
       return new Response(null, { headers: getCorsHeaders(req) });

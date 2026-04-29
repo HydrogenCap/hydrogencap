@@ -102,7 +102,7 @@ import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 
    }
  }
  
- serve(withInvocationLog("fetch-land-registry-comparables", async (req, log) => {
+ serve(withInvocationLog("fetch-land-registry-comparables", async (req, _invocationLog) => {
    const corsHeaders = getCorsHeaders(req);
    if (req.method === "OPTIONS") {
      return new Response(null, { headers: corsHeaders });

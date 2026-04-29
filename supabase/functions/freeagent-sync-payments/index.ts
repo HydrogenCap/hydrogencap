@@ -34,7 +34,7 @@ async function getOrCreateContact(
   return getOrCreateContactHelper(apiBase, accessToken, tenantName, tenantEmail, propertyAddress, fetch);
 }
 
-serve(withInvocationLog("freeagent-sync-payments", async (req, log) => {
+serve(withInvocationLog("freeagent-sync-payments", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

@@ -29,7 +29,7 @@ interface PendingSuggestionRow {
   source_ref: string | null;
 }
 
-serve(withInvocationLog("apply-passport-suggestions", async (req, log) => {
+serve(withInvocationLog("apply-passport-suggestions", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

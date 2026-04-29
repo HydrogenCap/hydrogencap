@@ -20,7 +20,7 @@ function getCorsHeaders(req: Request) {
 
 const CH_API_BASE = 'https://api.company-information.service.gov.uk';
 
-Deno.serve(withInvocationLog("companies-house", async (req, log) => {
+Deno.serve(withInvocationLog("companies-house", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

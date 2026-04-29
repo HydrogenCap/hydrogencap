@@ -37,7 +37,7 @@ function getComplianceStoragePath(fileUrl: string): string | null {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-serve(withInvocationLog("send-tenant-certificates", async (req: Request, log) => {
+serve(withInvocationLog("send-tenant-certificates", async (req: Request, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

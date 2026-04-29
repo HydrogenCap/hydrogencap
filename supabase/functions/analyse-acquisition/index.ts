@@ -17,7 +17,7 @@ const RequestSchema = z.object({
   notes: z.string().optional(),
 });
 
-serve(withInvocationLog("analyse-acquisition", async (req, log) => {
+serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
   const log = createLogger("analyse-acquisition", req);
   const corsHeaders = getCorsHeaders(req);
 

@@ -79,7 +79,7 @@ async function fetchEPC(postcode: string, addressLine: string) {
   }
 }
 
-Deno.serve(withInvocationLog("bulk-epc-enrich-v2", async (req, log) => {
+Deno.serve(withInvocationLog("bulk-epc-enrich-v2", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 

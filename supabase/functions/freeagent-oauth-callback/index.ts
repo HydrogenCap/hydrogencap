@@ -27,7 +27,7 @@ async function encrypt(plaintext: string): Promise<string> {
   return btoa(String.fromCharCode(...combined));
 }
 
-Deno.serve(withInvocationLog("freeagent-oauth-callback", async (req, log) => {
+Deno.serve(withInvocationLog("freeagent-oauth-callback", async (req, _invocationLog) => {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");

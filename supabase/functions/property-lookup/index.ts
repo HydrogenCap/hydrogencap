@@ -277,7 +277,7 @@ async function fetchCouncilTaxData(postcode: string, addressLine?: string): Prom
   }
 }
 
-serve(withInvocationLog("property-lookup", async (req, log) => {
+serve(withInvocationLog("property-lookup", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   // Handle CORS
   if (req.method === 'OPTIONS') {

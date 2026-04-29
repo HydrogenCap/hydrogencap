@@ -151,7 +151,7 @@ import { withInvocationLog } from "../_shared/logger.ts";
    }
  }
  
- serve(withInvocationLog("generate-ai-valuation", async (req, log) => {
+ serve(withInvocationLog("generate-ai-valuation", async (req, _invocationLog) => {
    const corsHeaders = getCorsHeaders(req);
    if (req.method === "OPTIONS") {
      return new Response(null, { headers: corsHeaders });

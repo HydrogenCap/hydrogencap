@@ -39,7 +39,7 @@ type EnrichedUser = {
   last_sign_in_at: string | null | undefined;
 };
 
-serve(withInvocationLog("admin-stats", async (req, log) => {
+serve(withInvocationLog("admin-stats", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

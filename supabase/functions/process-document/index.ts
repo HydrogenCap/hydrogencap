@@ -348,7 +348,7 @@ async function autoFileDocument(
   }
 }
 
-Deno.serve(withInvocationLog("process-document", async (req, log) => {
+Deno.serve(withInvocationLog("process-document", async (req, _invocationLog) => {
   const log = createLogger('process-document', req);
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {

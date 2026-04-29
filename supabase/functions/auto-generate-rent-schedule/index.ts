@@ -19,7 +19,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-serve(withInvocationLog("auto-generate-rent-schedule", async (req: Request, log) => {
+serve(withInvocationLog("auto-generate-rent-schedule", async (req: Request, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

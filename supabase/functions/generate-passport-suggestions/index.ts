@@ -35,7 +35,7 @@ const DATE_BAND_MAP: Record<string, string> = {
   '2012 onwards': '2003+',
 };
 
-serve(withInvocationLog("generate-passport-suggestions", async (req, log) => {
+serve(withInvocationLog("generate-passport-suggestions", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

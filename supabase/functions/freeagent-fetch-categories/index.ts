@@ -76,7 +76,7 @@ async function getValidToken(connection: any, supabase: any): Promise<string> {
   return tokens.access_token;
 }
 
-Deno.serve(withInvocationLog("freeagent-fetch-categories", async (req, log) => {
+Deno.serve(withInvocationLog("freeagent-fetch-categories", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

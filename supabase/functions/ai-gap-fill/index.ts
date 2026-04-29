@@ -5,7 +5,7 @@ import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { handleAiGapFill } from "./handler.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
-Deno.serve(withInvocationLog("ai-gap-fill", async (req, log) => {
+Deno.serve(withInvocationLog("ai-gap-fill", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   const authHeader = req.headers.get("Authorization") ?? "";
 

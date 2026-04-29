@@ -205,7 +205,7 @@ function generateFinalFileName(
   return `${catCode}_${entity}_${cleanDisplay}_${dateStr}${ext}`;
 }
 
-serve(withInvocationLog("categorise-documents", async (req, log) => {
+serve(withInvocationLog("categorise-documents", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

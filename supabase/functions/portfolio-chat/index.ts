@@ -50,7 +50,7 @@ Guidelines:
 
 const MAX_TOOL_ROUNDS = 3;
 
-serve(withInvocationLog("portfolio-chat", async (req, log) => {
+serve(withInvocationLog("portfolio-chat", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

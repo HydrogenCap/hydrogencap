@@ -83,7 +83,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
   return { mode: "user", manageableOrgIds };
 }
 
-serve(withInvocationLog("send-tenancy-expiry-reminders", async (req, log) => {
+serve(withInvocationLog("send-tenancy-expiry-reminders", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

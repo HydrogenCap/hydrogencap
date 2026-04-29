@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
-serve(withInvocationLog("delete-account", async (req, log) => {
+serve(withInvocationLog("delete-account", async (req, _invocationLog) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

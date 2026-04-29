@@ -7,7 +7,7 @@ import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
-serve(withInvocationLog("generate-investor-report", async (req, log) => {
+serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) => {
   const log = createLogger("generate-investor-report", req);
   const corsHeaders = getCorsHeaders(req);
 

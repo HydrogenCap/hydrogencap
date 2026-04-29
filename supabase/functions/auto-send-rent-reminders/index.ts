@@ -20,7 +20,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-serve(withInvocationLog("auto-send-rent-reminders", async (req: Request, log) => {
+serve(withInvocationLog("auto-send-rent-reminders", async (req: Request, _invocationLog) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: getCorsHeaders(req) });
   }
