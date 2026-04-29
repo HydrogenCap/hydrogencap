@@ -464,6 +464,27 @@ export default function TenantDetailV2() {
           />
         </>
       )}
+
+      <MobileDetailsSheet title="Tenant Actions" triggerLabel="Actions">
+        <div className="space-y-2">
+          <Button variant="outline" className="w-full justify-start" onClick={() => setShowEdit(true)}>
+            <Edit className="h-4 w-4 mr-2" /> Edit Tenant
+          </Button>
+          <Button variant="outline" className="w-full justify-start" onClick={() => setShowCreateAgreement(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Create Tenancy Agreement
+          </Button>
+          {activeAgreement && activeAgreement.status === 'active' && (
+            <>
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowNotice(true)}>
+                <Bell className="h-4 w-4 mr-2" /> Serve Notice
+              </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => setShowEnd(true)}>
+                <DoorOpen className="h-4 w-4 mr-2" /> End Tenancy
+              </Button>
+            </>
+          )}
+        </div>
+      </MobileDetailsSheet>
     </AppLayout>
   );
 }
