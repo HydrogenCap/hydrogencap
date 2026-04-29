@@ -201,50 +201,9 @@ export default function WorkOrderDetail() {
           <ApprovalWorkflow defaultThreshold={(wo as { approval_threshold?: number }).approval_threshold || 500} />
         )}
 
-        {/* Action Bar */}
-        <Card>
-          <CardContent className="py-3 flex items-center gap-2 flex-wrap">
-            {wo.status === 'draft' && (
-              <Button size="sm" onClick={() => submitWO.mutate(wo.id)} disabled={submitWO.isPending}>
-                <Send className="h-4 w-4 mr-1" /> Submit for Approval
-              </Button>
-            )}
-            {wo.status === 'submitted' && (
-              <>
-                <Button size="sm" onClick={() => { setApprovedBudget(String(wo.estimated_cost || '')); setShowApprove(true); }}>
-                  <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => setShowReject(true)}>
-                  <XCircle className="h-4 w-4 mr-1" /> Reject
-                </Button>
-              </>
-            )}
-            {wo.status === 'approved' && (
-              <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'in_progress', actual_start_date: new Date().toISOString().split('T')[0] })}>
-                <Play className="h-4 w-4 mr-1" /> Mark In Progress
-              </Button>
-            )}
-            {wo.status === 'in_progress' && (
-              <Button size="sm" onClick={() => completeWO.mutate({ id: wo.id })} disabled={completeWO.isPending}>
-                <CheckCircle2 className="h-4 w-4 mr-1" /> Complete
-              </Button>
-            )}
-            {wo.status === 'completed' && (
-              <Button size="sm" onClick={() => setShowInvoice(true)}>
-                <FileText className="h-4 w-4 mr-1" /> Record Invoice
-              </Button>
-            )}
-            {wo.status === 'invoiced' && (
-              <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'closed', payment_status: 'paid' })}>
-                <CreditCard className="h-4 w-4 mr-1" /> Mark Paid & Close
-              </Button>
-            )}
-            {!['closed', 'cancelled', 'rejected'].includes(wo.status) && (
-              <Button size="sm" variant="outline" onClick={() => updateWO.mutate({ id: wo.id, status: 'cancelled' })} className="ml-auto">
-                Cancel
-              </Button>
-            )}
-          </CardContent>
+        {/* Action Bar — desktop only; mobile uses bottom sheet */}
+        <Card className="hidden lg:block">
+          <CardContent className="py-3">{actionButtons}</CardContent>
         </Card>
 
         {/* Tabbed Content */}
