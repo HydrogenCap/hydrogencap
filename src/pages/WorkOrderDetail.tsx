@@ -377,6 +377,7 @@ export default function WorkOrderDetail() {
                             variant="ghost"
                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                             onClick={() => deleteCost.mutate({ id: item.id, workOrderId: wo.id })}
+                            aria-label={`Delete cost item ${item.description}`}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
