@@ -4,7 +4,8 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { handleStripeWebhook } from "./handler.ts";
 
-serve(async (req) => {
+import { withInvocationLog } from "../_shared/logger.ts";
+serve(withInvocationLog("stripe-webhook", async (req, log) => {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
@@ -21,4 +22,4 @@ serve(async (req) => {
   );
 
   return handleStripeWebhook(req, { stripe, supabase, webhookSecret });
-});
+}));

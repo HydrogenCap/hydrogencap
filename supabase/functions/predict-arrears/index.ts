@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 
 interface PaymentPattern {
   tenantId: string;
@@ -25,7 +25,7 @@ interface PaymentPattern {
   monthsOfData: number;
 }
 
-serve(async (req) => {
+serve(withInvocationLog("predict-arrears", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -474,4 +474,4 @@ Respond with ONLY valid JSON in this exact format:
       }
     );
   }
-});
+}));

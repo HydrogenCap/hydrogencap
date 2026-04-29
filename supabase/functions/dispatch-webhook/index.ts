@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
-serve(async (req: Request) => {
+import { withInvocationLog } from "../_shared/logger.ts";
+serve(withInvocationLog("dispatch-webhook", async (req: Request, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -156,4 +157,4 @@ serve(async (req: Request) => {
       { status: message === "Unauthorized" ? 401 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

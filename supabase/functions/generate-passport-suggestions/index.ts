@@ -4,6 +4,7 @@ import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 // Field configuration for passport suggestions
 const MUST_CONFIRM_FIELDS = ['local_authority', 'council_tax_band', 'construction_type'];
 
@@ -34,7 +35,7 @@ const DATE_BAND_MAP: Record<string, string> = {
   '2012 onwards': '2003+',
 };
 
-serve(async (req) => {
+serve(withInvocationLog("generate-passport-suggestions", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -407,4 +408,4 @@ Based on typical UK property patterns and any available information, suggest val
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

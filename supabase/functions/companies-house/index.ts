@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -19,7 +20,7 @@ function getCorsHeaders(req: Request) {
 
 const CH_API_BASE = 'https://api.company-information.service.gov.uk';
 
-Deno.serve(async (req) => {
+Deno.serve(withInvocationLog("companies-house", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -212,4 +213,4 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
+}));

@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -47,7 +48,7 @@ function isValidUUID(str: string | null | undefined): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
 
-serve(async (req) => {
+serve(withInvocationLog("summarize-valuation-document", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -326,4 +327,4 @@ Extract the following. Respond with valid JSON only — no markdown, no code fen
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

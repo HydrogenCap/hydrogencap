@@ -1,4 +1,5 @@
- import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+
+import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
  import { Resend } from 'https://esm.sh/resend@4.0.0';
  
@@ -79,7 +80,7 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
   return { mode: 'user', manageableOrgIds };
 }
  
- serve(async (req) => {
+ serve(withInvocationLog("send-job-reminders", async (req, log) => {
    const corsHeaders = getCorsHeaders(req);
    if (req.method === 'OPTIONS') {
      return new Response('ok', { headers: corsHeaders });
@@ -239,4 +240,4 @@ async function authorizeRequest(req: Request): Promise<RequestAuthorization> {
        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
      });
    }
- });
+ }));

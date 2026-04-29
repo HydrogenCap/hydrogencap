@@ -5,6 +5,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { validateBody } from "../_shared/validate.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -24,7 +25,7 @@ function getCorsHeaders(req: Request) {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-serve(async (req: Request) => {
+serve(withInvocationLog("send-rent-reminder", async (req: Request, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -209,7 +210,7 @@ serve(async (req: Request) => {
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   }
-});
+}));
 
 function formatDate(date: Date): string {
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

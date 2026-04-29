@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -343,7 +343,7 @@ Keep your response to 3-4 paragraphs. Use GBP figures. Be specific about numbers
   }
 }
 
-serve(async (req) => {
+serve(withInvocationLog("financial-forecast", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -521,4 +521,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

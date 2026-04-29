@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
@@ -150,7 +150,7 @@ function computeReviewReasons(
   return reasons;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withInvocationLog("process-document-v2", async (req, log) => {
   const log = createLogger('process-document-v2', req);
   const corsHeaders = getCorsHeaders(req);
 
@@ -430,4 +430,4 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

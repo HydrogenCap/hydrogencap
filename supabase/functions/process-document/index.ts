@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
@@ -348,7 +348,7 @@ async function autoFileDocument(
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withInvocationLog("process-document", async (req, log) => {
   const log = createLogger('process-document', req);
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
@@ -661,4 +661,4 @@ Respond with valid JSON only (no markdown):
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

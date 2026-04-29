@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -21,7 +22,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-serve(async (req) => {
+serve(withInvocationLog("portfolio-api", async (req, log) => {
   corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -70,7 +71,7 @@ serve(async (req) => {
       500
     );
   }
-});
+}));
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

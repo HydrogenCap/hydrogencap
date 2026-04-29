@@ -1,4 +1,5 @@
- import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+
+import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
  import { Resend } from 'https://esm.sh/resend@4.0.0';
  import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
@@ -133,7 +134,7 @@
    return { subject, html };
  }
  
- serve(async (req) => {
+ serve(withInvocationLog("send-job-request", async (req, log) => {
    const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@tenureiq.com';
 const corsHeaders = getCorsHeaders(req);
    // Handle CORS preflight requests
@@ -308,4 +309,4 @@ const corsHeaders = getCorsHeaders(req);
        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
      });
    }
- });
+ }));

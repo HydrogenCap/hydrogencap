@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -36,7 +37,7 @@ function getComplianceStoragePath(fileUrl: string): string | null {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-serve(async (req: Request) => {
+serve(withInvocationLog("send-tenant-certificates", async (req: Request, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -257,7 +258,7 @@ serve(async (req: Request) => {
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
   }
-});
+}));
 
 function format(date: Date, fmt: string): string {
   const pad = (n: number) => n.toString().padStart(2, "0");

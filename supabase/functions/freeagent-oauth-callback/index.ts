@@ -1,6 +1,7 @@
 // PUBLIC: OAuth callback — security relies on signed state nonce + short TTL
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FREEAGENT_CLIENT_ID = Deno.env.get("FREEAGENT_CLIENT_ID")!;
@@ -26,7 +27,7 @@ async function encrypt(plaintext: string): Promise<string> {
   return btoa(String.fromCharCode(...combined));
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withInvocationLog("freeagent-oauth-callback", async (req, log) => {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
@@ -181,4 +182,4 @@ Deno.serve(async (req) => {
     console.error("FreeAgent OAuth callback error:", error.message);
     return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=unexpected`, 302);
   }
-});
+}));

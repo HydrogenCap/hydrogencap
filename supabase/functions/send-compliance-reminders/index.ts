@@ -1,4 +1,5 @@
- import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
  import { Resend } from "https://esm.sh/resend@4.0.0";
  
@@ -161,7 +162,7 @@ function getPropertyAddress(item: ComplianceItem): string {
    return { subject, html };
  }
  
- serve(async (req) => {
+ serve(withInvocationLog("send-compliance-reminders", async (req, log) => {
    // Handle CORS preflight
     if (req.method === "OPTIONS") {
       return new Response(null, { headers: getCorsHeaders(req) });
@@ -333,4 +334,4 @@ function getPropertyAddress(item: ComplianceItem): string {
        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
      });
    }
- });
+ }));

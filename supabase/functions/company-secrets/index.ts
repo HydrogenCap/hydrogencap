@@ -4,6 +4,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { validateBody } from "../_shared/validate.ts";
 
+import { withInvocationLog } from "../_shared/logger.ts";
 const secretString = z.string().max(500).nullable().optional();
 const SetSchema = z.object({
   action: z.literal("set"),
@@ -107,7 +108,7 @@ async function getManageableOrgIds(
   return data.map((membership: { org_id: string }) => membership.org_id);
 }
 
-serve(async (req) => {
+serve(withInvocationLog("company-secrets", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   // Handle CORS
   if (req.method === "OPTIONS") {
@@ -345,4 +346,4 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

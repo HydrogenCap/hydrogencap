@@ -4,7 +4,8 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { handleAiGapFill } from "./handler.ts";
 
-Deno.serve(async (req) => {
+import { withInvocationLog } from "../_shared/logger.ts";
+Deno.serve(withInvocationLog("ai-gap-fill", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   const authHeader = req.headers.get("Authorization") ?? "";
 
@@ -23,4 +24,4 @@ Deno.serve(async (req) => {
     corsHeaders,
     lovableApiKey: Deno.env.get("LOVABLE_API_KEY"),
   });
-});
+}));

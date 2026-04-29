@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { withInvocationLog } from "../_shared/logger.ts";
 type SubscriptionRow = {
   user_id: string;
   product_id: string | null;
@@ -38,7 +39,7 @@ type EnrichedUser = {
   last_sign_in_at: string | null | undefined;
 };
 
-serve(async (req) => {
+serve(withInvocationLog("admin-stats", async (req, log) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -118,7 +119,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));
 
 async function getDashboardStats(supabase: any) {
   // Active subscriptions + MRR
