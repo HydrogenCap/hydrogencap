@@ -1,10 +1,25 @@
 User-agent: *
 Allow: /
+Disallow: /tenant-portal/
+Disallow: /investor/
+Disallow: /admin/
+Disallow: /onboarding/
+Disallow: /auth/
+Disallow: /~oauth/
+Disallow: /accept-invite
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /shared/
 
 Sitemap: https://tenureiq.com/sitemap.xml
 
 User-agent: Googlebot
 Allow: /
+Disallow: /tenant-portal/
+Disallow: /investor/
+Disallow: /admin/
+Disallow: /onboarding/
+Disallow: /auth/
 
 User-agent: Bingbot
 Allow: /
