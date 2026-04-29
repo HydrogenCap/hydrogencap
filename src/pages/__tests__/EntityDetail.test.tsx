@@ -80,29 +80,28 @@ vi.mock('@/components/layout/AppLayout', () => ({
 }));
 
 // Stub heavy sub-components so the smoke test stays focused.
-const stub = (name: string) => ({ [name]: () => <div data-testid={`stub-${name}`} /> });
-vi.mock('@/components/entities/EntityFormModal', () => stub('EntityFormModal'));
-vi.mock('@/components/entities/DirectorFormModal', () => stub('DirectorFormModal'));
-vi.mock('@/components/entities/ShareholderFormModal', () => stub('ShareholderFormModal'));
-vi.mock('@/components/entities/ShareClassFormModal', () => stub('ShareClassFormModal'));
-vi.mock('@/components/entities/CHVerificationBanner', () => stub('CHVerificationBanner'));
-vi.mock('@/components/entities/CHDataPanel', () => stub('CHDataPanel'));
-vi.mock('@/components/companies/ComplianceFilingsCard', () => stub('ComplianceFilingsCard'));
-vi.mock('@/components/financials/EntityFinancialSection', () => stub('EntityFinancialSection'));
-vi.mock('@/components/entities/EntityInvestorSection', () => stub('EntityInvestorSection'));
-vi.mock('@/components/entities/EntityOwnershipCard', () => stub('EntityOwnershipCard'));
-vi.mock('@/components/accounting/EntityAccountingSection', () => stub('EntityAccountingSection'));
-vi.mock('@/components/audit/InlineAuditHistory', () => stub('InlineAuditHistory'));
-vi.mock('@/components/entities/EntityHeader', () => stub('EntityHeader'));
-vi.mock('@/components/entities/EntityDetailsCard', () => stub('EntityDetailsCard'));
-vi.mock('@/components/entities/DirectorsSection', () => stub('DirectorsSection'));
-vi.mock('@/components/entities/ShareCapitalSection', () => stub('ShareCapitalSection'));
-vi.mock('@/components/entities/ShareholdersSection', () => stub('ShareholdersSection'));
-vi.mock('@/components/entities/EntityPropertiesCard', () => stub('EntityPropertiesCard'));
-vi.mock('@/components/entities/CompanyFilingDeadlines', () => stub('CompanyFilingDeadlines'));
-vi.mock('@/components/entities/DirectorRegister', () => stub('DirectorRegister'));
-vi.mock('@/components/entities/IntercompanyLoanTracker', () => stub('IntercompanyLoanTracker'));
-vi.mock('@/components/entities/EntityFinancialConsolidation', () => stub('EntityFinancialConsolidation'));
+vi.mock('@/components/entities/EntityFormModal', () => ({ EntityFormModal: () => null }));
+vi.mock('@/components/entities/DirectorFormModal', () => ({ DirectorFormModal: () => null }));
+vi.mock('@/components/entities/ShareholderFormModal', () => ({ ShareholderFormModal: () => null }));
+vi.mock('@/components/entities/ShareClassFormModal', () => ({ ShareClassFormModal: () => null }));
+vi.mock('@/components/entities/CHVerificationBanner', () => ({ CHVerificationBanner: () => null }));
+vi.mock('@/components/entities/CHDataPanel', () => ({ CHDataPanel: () => null }));
+vi.mock('@/components/companies/ComplianceFilingsCard', () => ({ ComplianceFilingsCard: () => null }));
+vi.mock('@/components/financials/EntityFinancialSection', () => ({ EntityFinancialSection: () => null }));
+vi.mock('@/components/entities/EntityInvestorSection', () => ({ EntityInvestorSection: () => null }));
+vi.mock('@/components/entities/EntityOwnershipCard', () => ({ EntityOwnershipCard: () => null }));
+vi.mock('@/components/accounting/EntityAccountingSection', () => ({ EntityAccountingSection: () => null }));
+vi.mock('@/components/audit/InlineAuditHistory', () => ({ InlineAuditHistory: () => null }));
+vi.mock('@/components/entities/EntityHeader', () => ({ EntityHeader: () => null }));
+vi.mock('@/components/entities/EntityDetailsCard', () => ({ EntityDetailsCard: () => null }));
+vi.mock('@/components/entities/DirectorsSection', () => ({ DirectorsSection: () => null }));
+vi.mock('@/components/entities/ShareCapitalSection', () => ({ ShareCapitalSection: () => null }));
+vi.mock('@/components/entities/ShareholdersSection', () => ({ ShareholdersSection: () => null }));
+vi.mock('@/components/entities/EntityPropertiesCard', () => ({ EntityPropertiesCard: () => null }));
+vi.mock('@/components/entities/CompanyFilingDeadlines', () => ({ CompanyFilingDeadlines: () => null }));
+vi.mock('@/components/entities/DirectorRegister', () => ({ DirectorRegister: () => null }));
+vi.mock('@/components/entities/IntercompanyLoanTracker', () => ({ IntercompanyLoanTracker: () => null }));
+vi.mock('@/components/entities/EntityFinancialConsolidation', () => ({ EntityFinancialConsolidation: () => null }));
 
 import EntityDetail from '../EntityDetail';
 
