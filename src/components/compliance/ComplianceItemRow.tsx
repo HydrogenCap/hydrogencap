@@ -157,7 +157,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-4 flex-1">
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={isOpen ? `Collapse ${item.compliance_type}` : `Expand ${item.compliance_type}`} aria-expanded={isOpen}>
                   {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </CollapsibleTrigger>

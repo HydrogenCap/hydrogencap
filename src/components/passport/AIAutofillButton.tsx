@@ -182,7 +182,12 @@ export function AIAutofillButton({ propertyId, onComplete }: AIAutofillButtonPro
     return (
       <Collapsible open={isExpanded} onOpenChange={() => toggleSection(sectionKey)}>
         <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
+          <button
+            type="button"
+            className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+            aria-label={isExpanded ? `Collapse ${title} suggestions` : `Expand ${title} suggestions`}
+            aria-expanded={isExpanded}
+          >
             <div className="flex items-center gap-2">
               <span className="font-medium text-sm">{title}</span>
               <Badge variant="secondary" className="text-xs">

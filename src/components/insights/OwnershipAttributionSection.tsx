@@ -89,7 +89,7 @@ function OwnerCard({ owner, totalPortfolioValue }: { owner: OwnerAttribution; to
                   <div className="text-lg font-bold">{formatGBP(owner.totals.totalAttributableEquity)}</div>
                   <div className="text-xs text-muted-foreground">Equity</div>
                 </div>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label={isOpen ? 'Collapse owner details' : 'Expand owner details'} aria-expanded={isOpen}>
                   {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </div>

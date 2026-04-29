@@ -73,7 +73,7 @@ Generate a 3-4 paragraph narrative summary.
                 </Button>
               )}
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={isOpen ? 'Collapse portfolio narrative' : 'Expand portfolio narrative'} aria-expanded={isOpen}>
                   {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </CollapsibleTrigger>
