@@ -25,13 +25,13 @@ export function JobHeader({ job, onBack }: Props) {
 
   return (
     <div className="flex items-start justify-between">
-      <div>
-        <Button variant="ghost" size="sm" onClick={onBack} className="mb-2 -ml-2">
+      <div className="min-w-0">
+        <Button variant="ghost" size="sm" onClick={onBack} className="mb-2 -ml-2" aria-label="Back to jobs">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Jobs
         </Button>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">{job.job_type}</h1>
+        <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+          <h1 className="text-2xl font-bold break-words">{job.job_type}</h1>
           <Badge className={cn('text-sm', config.color)}>{config.label}</Badge>
           {job.priority !== 'normal' && (
             <Badge className={cn('text-sm', priorityConfig?.color)}>
