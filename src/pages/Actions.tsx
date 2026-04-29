@@ -607,6 +607,16 @@ export function ActionsPanel() {
         onOpenChange={(open) => { if (!open) setSnoozeRisk(null); }}
         risk={snoozeRisk}
       />
+    </div>
+  );
+}
+
+export default function ActionsPage() {
+  const { openSidebar } = useActivitySidebar();
+  useEffect(() => { openSidebar('actions'); }, [openSidebar]);
+  return (
+    <AppLayout>
+      <ActionsPanel />
     </AppLayout>
   );
 }
