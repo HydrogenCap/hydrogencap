@@ -593,7 +593,6 @@ export function ActionsPanel() {
             ))}
           </div>
         )}
-      </div>
 
       {/* Dialogs */}
       <ResolveActionDialog
