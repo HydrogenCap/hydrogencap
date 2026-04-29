@@ -388,7 +388,7 @@ export default function TenantDetailV2() {
                           <TableCell>£{Number(c.amount).toFixed(2)}</TableCell>
                           <TableCell className="capitalize">{c.frequency}</TableCell>
                           <TableCell>
-                            <Button size="sm" variant="ghost" className="text-destructive h-7 w-7 p-0" onClick={() => removeCharge(c.id)}>
+                            <Button size="sm" variant="ghost" className="text-destructive h-7 w-7 p-0" onClick={() => removeCharge(c.id)} aria-label={`Remove charge ${c.description}`}>
                               <X className="h-3 w-3" />
                             </Button>
                           </TableCell>
