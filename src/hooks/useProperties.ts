@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { ActivityLoggers } from './useActivityLog';
-import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
+
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 import { throwV1Frozen } from '@/lib/v1Frozen';
 
