@@ -41,7 +41,7 @@ function OwnerRow({ owner }: { owner: PortfolioOwnerV2 }) {
               {owner.totalEffectiveProperties} properties · {pctLabel} effective
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
+          <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" aria-label={isOpen ? `Collapse ${owner.ownerName} details` : `Expand ${owner.ownerName} details`} aria-expanded={isOpen}>
             {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </Button>
         </div>
