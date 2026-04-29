@@ -80,11 +80,26 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+      (function () {
+        if (!('serviceWorker' in navigator)) return;
+        var inIframe = false;
+        try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
+        var host = window.location.hostname;
+        var isPreview =
+          host.indexOf('id-preview--') !== -1 ||
+          host.indexOf('lovableproject.com') !== -1 ||
+          host.indexOf('lovable.app') !== -1;
+        if (inIframe || isPreview) {
+          // Don't register in preview/iframe — unregister anything stale.
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          }).catch(function () {});
+          return;
+        }
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
         });
-      }
+      })();
     </script>
   </body>
 </html>
