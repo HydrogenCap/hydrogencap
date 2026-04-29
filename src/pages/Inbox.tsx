@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useActivitySidebar } from '@/state/activitySidebar';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +25,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-export default function Inbox() {
+export default function InboxPage() {
+  const { openSidebar } = useActivitySidebar();
+  useEffect(() => { openSidebar('inbox'); }, [openSidebar]);
+  return (<AppLayout><InboxPageInner /></AppLayout>);
+}
+
+function InboxPageInner() {
   useInboxRealtime();
   const { data: documents, isLoading, refetch } = useInboxDocuments();
   const { data: complianceMatrixRows } = useQuery({

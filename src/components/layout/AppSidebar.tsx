@@ -100,7 +100,6 @@ const portfolioItems: NavItem[] = [
 ];
 
 const operationsItems: NavItem[] = [
-  { title: 'Actions', icon: AlertTriangle, href: '/actions', badgeType: 'actions' },
   {
     title: 'Compliance',
     icon: Shield,
@@ -152,12 +151,10 @@ const operationsItems: NavItem[] = [
     icon: FolderOpen,
     href: '/documents',
     children: [
-      { title: 'Inbox', icon: Inbox, href: '/inbox', badgeType: 'inbox' },
       { title: 'Templates', icon: FileSignature, href: '/templates' },
       { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
     ],
   },
-  { title: 'Comms', icon: Megaphone, href: '/communications' },
 ];
 
 const intelligenceItems: NavItem[] = [
@@ -194,17 +191,9 @@ const adminItems: NavItem[] = [
     href: '/import',
     children: [
       { title: 'Passport', icon: ClipboardList, href: '/passport' },
-      { title: 'Missing Info', icon: AlertCircle, href: '/missing-info' },
     ],
   },
-  {
-    title: 'Settings',
-    icon: Settings,
-    href: '/settings',
-    children: [
-      { title: 'Audit Log', icon: ScrollText, href: '/audit-log' },
-    ],
-  },
+  { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 
 const STORAGE_KEY = 'sidebar:expanded-items';

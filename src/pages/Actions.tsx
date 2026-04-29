@@ -26,6 +26,8 @@ import {
   Wrench,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useActivitySidebar } from '@/state/activitySidebar';
+import { useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -308,7 +310,7 @@ function PropertyGroup({
   );
 }
 
-export default function ActionsPage() {
+export function ActionsPanel() {
   const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = usePortfolioRisks();
 
   // Workflow data
@@ -403,22 +405,19 @@ export default function ActionsPage() {
 
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <div className="grid gap-4 md:grid-cols-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}
-          </div>
-          <Skeleton className="h-96" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}
         </div>
-      </AppLayout>
+        <Skeleton className="h-96" />
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
+    <div className="space-y-6">
+      {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Action Required</h1>
           <p className="text-muted-foreground">
@@ -594,7 +593,6 @@ export default function ActionsPage() {
             ))}
           </div>
         )}
-      </div>
 
       {/* Dialogs */}
       <ResolveActionDialog
@@ -607,6 +605,16 @@ export default function ActionsPage() {
         onOpenChange={(open) => { if (!open) setSnoozeRisk(null); }}
         risk={snoozeRisk}
       />
+    </div>
+  );
+}
+
+export default function ActionsPage() {
+  const { openSidebar } = useActivitySidebar();
+  useEffect(() => { openSidebar('actions'); }, [openSidebar]);
+  return (
+    <AppLayout>
+      <ActionsPanel />
     </AppLayout>
   );
 }

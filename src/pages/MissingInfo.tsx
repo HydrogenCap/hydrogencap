@@ -13,6 +13,8 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useActivitySidebar } from '@/state/activitySidebar';
+import { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +37,7 @@ type MissingTypeFilter = 'all' | 'property' | 'income' | 'finance' | 'insurance'
 type PriorityFilter = 'all' | 'most_missing' | 'renewal_soon' | 'hmo_expiring';
 type MissingInfoSortOption = 'most_missing' | 'postcode' | 'updated';
 
-export default function MissingInfoPage() {
+export function MissingInfoPanel() {
   const { data, stats, lenders, insurers, isLoading } = useMissingInfo();
 
   // Filters
@@ -140,22 +142,19 @@ export default function MissingInfoPage() {
 
   if (isLoading) {
     return (
-      <AppLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <div className="grid gap-4 md:grid-cols-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20" />)}
-          </div>
-          <Skeleton className="h-96" />
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid gap-4 md:grid-cols-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20" />)}
         </div>
-      </AppLayout>
+        <Skeleton className="h-96" />
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Page Header */}
+    <div className="space-y-6">
+      {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Missing Information (Portfolio)</h1>
@@ -455,7 +454,16 @@ export default function MissingInfoPage() {
             ))}
           </div>
         )}
-      </div>
+    </div>
+  );
+}
+
+export default function MissingInfoPage() {
+  const { openSidebar } = useActivitySidebar();
+  useEffect(() => { openSidebar('actions'); }, [openSidebar]);
+  return (
+    <AppLayout>
+      <MissingInfoPanel />
     </AppLayout>
   );
 }

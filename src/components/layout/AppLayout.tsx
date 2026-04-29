@@ -1,4 +1,5 @@
-import { ReactNode, useState, useCallback } from 'react';
+import { ReactNode, useState, useCallback, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -8,15 +9,35 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { SearchErrorBoundary } from '@/components/search/SearchErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ActivitySidebar } from '@/components/activity/ActivitySidebar';
+import { useActivitySidebar, type ActivityTab } from '@/state/activitySidebar';
+import { useUnreadCount } from '@/hooks/useNotifications';
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
+const VALID_TABS: ActivityTab[] = ['notifications', 'inbox', 'actions', 'audit'];
+
 export function AppLayout({ children }: AppLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const handleSearchOpen = useCallback((open: boolean) => setSearchOpen(open), []);
+  const { openSidebar } = useActivitySidebar();
+  const { data: unreadCount = 0 } = useUnreadCount();
+  const location = useLocation();
+
+  // Parse ?activity= query param to open the sidebar on a specific tab
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const activity = params.get('activity');
+    if (activity && (VALID_TABS as string[]).includes(activity)) {
+      openSidebar(activity as ActivityTab);
+    }
+  }, [location.search, openSidebar]);
+
+  const displayCount = unreadCount > 9 ? '9+' : unreadCount;
 
   return (
     <SidebarProvider>
@@ -54,6 +75,24 @@ export function AppLayout({ children }: AppLayoutProps) {
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
+              onClick={() => openSidebar('notifications')}
+              aria-label={unreadCount > 0 ? `Activity (${unreadCount} unread)` : 'Activity'}
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[10px]"
+                  aria-hidden="true"
+                >
+                  {displayCount}
+                </Badge>
+              )}
+            </Button>
             <NotificationBell />
           </div>
         </header>
@@ -69,6 +108,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <SearchErrorBoundary>
         <GlobalSearch open={searchOpen} onOpenChange={handleSearchOpen} />
       </SearchErrorBoundary>
+      <ActivitySidebar />
     </SidebarProvider>
   );
 }

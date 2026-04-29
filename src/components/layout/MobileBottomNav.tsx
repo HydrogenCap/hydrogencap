@@ -113,7 +113,7 @@ export function MobileBottomNav() {
         <div className="flex items-center justify-around h-14">
           <MobileNavItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" isActive={isActive('/dashboard')} />
           <MobileNavItem icon={Building2} label="Properties" href="/properties-v2" isActive={isActive('/properties-v2')} />
-          <MobileNavItem icon={AlertTriangle} label="Actions" href="/actions" isActive={isActive('/actions')} />
+          <MobileNavItem icon={Shield} label="Compliance" href="/compliance-v2" isActive={isActive('/compliance-v2')} />
           <MobileNavItem icon={FolderOpen} label="Documents" href="/documents" isActive={isActive('/documents')} />
           <MobileNavItem icon={MoreHorizontal} label="More" onClick={() => setMoreOpen(true)} />
         </div>
