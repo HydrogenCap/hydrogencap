@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { LoadingState } from '@/components/common';
+import { LoadingState, MobileDetailsSheet } from '@/components/common';
 import { formatGBP, formatDateUK } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import {
@@ -116,25 +116,70 @@ export default function WorkOrderDetail() {
     setShowAddCost(false);
   };
 
+  const actionButtons = (
+    <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:flex-wrap">
+      {wo.status === 'draft' && (
+        <Button size="sm" onClick={() => submitWO.mutate(wo.id)} disabled={submitWO.isPending} className="w-full lg:w-auto">
+          <Send className="h-4 w-4 mr-1" /> Submit for Approval
+        </Button>
+      )}
+      {wo.status === 'submitted' && (
+        <>
+          <Button size="sm" onClick={() => { setApprovedBudget(String(wo.estimated_cost || '')); setShowApprove(true); }} className="w-full lg:w-auto">
+            <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
+          </Button>
+          <Button size="sm" variant="destructive" onClick={() => setShowReject(true)} className="w-full lg:w-auto">
+            <XCircle className="h-4 w-4 mr-1" /> Reject
+          </Button>
+        </>
+      )}
+      {wo.status === 'approved' && (
+        <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'in_progress', actual_start_date: new Date().toISOString().split('T')[0] })} className="w-full lg:w-auto">
+          <Play className="h-4 w-4 mr-1" /> Mark In Progress
+        </Button>
+      )}
+      {wo.status === 'in_progress' && (
+        <Button size="sm" onClick={() => completeWO.mutate({ id: wo.id })} disabled={completeWO.isPending} className="w-full lg:w-auto">
+          <CheckCircle2 className="h-4 w-4 mr-1" /> Complete
+        </Button>
+      )}
+      {wo.status === 'completed' && (
+        <Button size="sm" onClick={() => setShowInvoice(true)} className="w-full lg:w-auto">
+          <FileText className="h-4 w-4 mr-1" /> Record Invoice
+        </Button>
+      )}
+      {wo.status === 'invoiced' && (
+        <Button size="sm" onClick={() => updateWO.mutate({ id: wo.id, status: 'closed', payment_status: 'paid' })} className="w-full lg:w-auto">
+          <CreditCard className="h-4 w-4 mr-1" /> Mark Paid & Close
+        </Button>
+      )}
+      {!['closed', 'cancelled', 'rejected'].includes(wo.status) && (
+        <Button size="sm" variant="outline" onClick={() => updateWO.mutate({ id: wo.id, status: 'cancelled' })} className="w-full lg:w-auto lg:ml-auto">
+          Cancel
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <AppLayout>
-      <div className="container py-6 space-y-6">
+      <div className="container py-6 space-y-6 pb-24 lg:pb-6">
         {/* Back + Header */}
         <div>
-          <Button variant="ghost" size="sm" onClick={() => navigate('/work-orders')} className="mb-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/work-orders')} className="mb-2" aria-label="Back to work orders">
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <p className="text-sm font-mono text-muted-foreground">{wo.wo_number}</p>
-              <h1 className="text-2xl font-bold">{wo.title}</h1>
-              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+              <h1 className="text-2xl font-bold break-words">{wo.title}</h1>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-sm text-muted-foreground">
                 {wo.entity && <span>{wo.entity.entity_name}</span>}
                 {wo.property && <span>• {wo.property.address_line_1}, {wo.property.city}</span>}
                 {wo.room && <span>• {wo.room.room_name}</span>}
               </div>
             </div>
-            <Badge className={cn('text-sm', statusConfig?.color)}>
+            <Badge className={cn('text-sm shrink-0 self-start', statusConfig?.color)}>
               {statusConfig?.label}
             </Badge>
           </div>
