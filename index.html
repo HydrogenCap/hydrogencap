@@ -8,8 +8,14 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="author" content="Tenure IQ" />
     <link rel="icon" href="/favicon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
-    <meta name="theme-color" content="#1e3a5f" />
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <meta name="theme-color" content="#1e3a5f" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e131f" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TenureIQ" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://js.stripe.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://maps.googleapis.com https://maps.gstatic.com https://*.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://maps.googleapis.com https://api.companieshouse.gov.uk https://epc.opendatacommunities.org https://landregistry.data.gov.uk https://api.freeagent.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -74,11 +80,26 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+      (function () {
+        if (!('serviceWorker' in navigator)) return;
+        var inIframe = false;
+        try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
+        var host = window.location.hostname;
+        var isPreview =
+          host.indexOf('id-preview--') !== -1 ||
+          host.indexOf('lovableproject.com') !== -1 ||
+          host.indexOf('lovable.app') !== -1;
+        if (inIframe || isPreview) {
+          // Don't register in preview/iframe — unregister anything stale.
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          }).catch(function () {});
+          return;
+        }
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
         });
-      }
+      })();
     </script>
   </body>
 </html>
