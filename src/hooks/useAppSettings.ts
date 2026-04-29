@@ -91,7 +91,8 @@ export function useSetDensity() {
   const update = useUpdateAppSetting();
   return (value: Density) => {
     if (typeof window !== 'undefined') {
-      try { window.localStorage.setItem(DENSITY_KEY, value); } catch (_) { /* ignore */ }
+      // localStorage may throw in private mode or when quota is exceeded; safe to ignore — DB write below is the source of truth.
+      try { window.localStorage.setItem(DENSITY_KEY, value); } catch { /* non-fatal */ }
     }
     update.mutate({ key: DENSITY_KEY, value });
   };
