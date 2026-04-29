@@ -1,6 +1,7 @@
 import { Loader2, AlertCircle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
+import { MobileDetailsSheet } from '@/components/common';
 import { AddReviewDialog } from '@/components/contractors/AddReviewDialog';
 import { useJobDetailState } from './hooks/useJobDetailState';
 import { JobHeader } from './components/JobHeader';
@@ -39,9 +40,39 @@ export default function JobDetail() {
 
   const job = s.job;
 
+  const sidebarContent = (
+    <>
+      <ActionsSidebar
+        job={job}
+        quotedAmount={s.quotedAmount}
+        setQuotedAmount={s.setQuotedAmount}
+        sendRequest={s.sendRequest}
+        updateJob={s.updateJob}
+        handleSendRequest={s.handleSendRequest}
+        handleRecordQuote={s.handleRecordQuote}
+        handleAcceptQuote={s.handleAcceptQuote}
+        setShowBookDialog={s.setShowBookDialog}
+        handleStartWork={s.handleStartWork}
+        setShowCompleteDialog={s.setShowCompleteDialog}
+        handleVerify={s.handleVerify}
+        setShowReviewDialog={s.setShowReviewDialog}
+        handleCancel={s.handleCancel}
+      />
+      <FinancialsCard job={job} />
+      <NotesCard
+        notes={s.notes}
+        newNote={s.newNote}
+        setNewNote={s.setNewNote}
+        addNote={s.addNote}
+        handleAddNote={s.handleAddNote}
+      />
+      <CertificateInboxCard job={job} />
+    </>
+  );
+
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 lg:pb-0">
         <JobHeader job={job} onBack={() => s.navigate('/jobs')} />
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -50,35 +81,15 @@ export default function JobDetail() {
             <JobTimeline job={job} />
           </div>
 
-          <div className="space-y-6">
-            <ActionsSidebar
-              job={job}
-              quotedAmount={s.quotedAmount}
-              setQuotedAmount={s.setQuotedAmount}
-              sendRequest={s.sendRequest}
-              updateJob={s.updateJob}
-              handleSendRequest={s.handleSendRequest}
-              handleRecordQuote={s.handleRecordQuote}
-              handleAcceptQuote={s.handleAcceptQuote}
-              setShowBookDialog={s.setShowBookDialog}
-              handleStartWork={s.handleStartWork}
-              setShowCompleteDialog={s.setShowCompleteDialog}
-              handleVerify={s.handleVerify}
-              setShowReviewDialog={s.setShowReviewDialog}
-              handleCancel={s.handleCancel}
-            />
-            <FinancialsCard job={job} />
-            <NotesCard
-              notes={s.notes}
-              newNote={s.newNote}
-              setNewNote={s.setNewNote}
-              addNote={s.addNote}
-              handleAddNote={s.handleAddNote}
-            />
-            <CertificateInboxCard job={job} />
+          <div className="hidden lg:block space-y-6">
+            {sidebarContent}
           </div>
         </div>
       </div>
+
+      <MobileDetailsSheet title="Job Actions & Details" triggerLabel="Actions & Details">
+        {sidebarContent}
+      </MobileDetailsSheet>
 
       <BookDialog
         open={s.showBookDialog}
