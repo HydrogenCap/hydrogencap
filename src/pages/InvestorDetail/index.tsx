@@ -1,5 +1,8 @@
+import { Mail, FileText, Edit } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { MobileDetailsSheet } from '@/components/common';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { CommitmentFormModal } from '@/components/investors/CommitmentFormModal';
 import { DistributionFormModal } from '@/components/investors/DistributionFormModal';
