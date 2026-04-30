@@ -7152,8 +7152,22 @@ export type Database = {
             foreignKeyName: "property_ownership_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_ownership_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_ownership_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
         ]
       }
@@ -7360,8 +7374,22 @@ export type Database = {
             foreignKeyName: "property_passport_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: true
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_passport_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_passport_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
         ]
       }

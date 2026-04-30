@@ -12,69 +12,33 @@ export interface PassportPageProperty extends PropertyV2 {
 }
 
 /**
- * Fetches properties_v2 and separately fetches property_passport data,
- * then merges them client-side (since property_passport FK still points to V1).
+ * Fetches properties_v2 and joins property_passport rows by property_id.
+ *
+ * As of the 2026-04-30 Class-B FK re-point, property_passport.property_id
+ * now references properties_v2(id) directly, so the legacy V1-address
+ * bridge is no longer required.
  */
 export function usePassportPageData() {
   return useQuery({
     queryKey: ['passport_page_data'],
     queryFn: async () => {
-      // Fetch V2 properties
-      const { data: properties, error: propError } = await supabaseAny
-        .from('properties_v2')
-        .select('*')
-        .order('address_line_1');
+      const [{ data: properties, error: propError }, { data: passports, error: passError }] =
+        await Promise.all([
+          supabaseAny.from('properties_v2').select('*').order('address_line_1'),
+          supabaseAny.from('property_passport').select('*'),
+        ]);
 
       if (propError) throw propError;
-
-      // Fetch all passports separately
-      const { data: passports, error: passError } = await supabaseAny
-        .from('property_passport')
-        .select('*');
-
       if (passError) throw passError;
 
-      // Create passport lookup by property_id
-      // Note: passport.property_id still references V1 IDs
-      // We need to match by org_id + address for cross-reference
       const passportByPropertyId = new Map<string, PropertyPassport>();
-      passports?.forEach(p => passportByPropertyId.set(p.property_id, p));
+      passports?.forEach((p: PropertyPassport) => passportByPropertyId.set(p.property_id, p));
 
-      // Also create a lookup by address for V1→V2 matching
-      const passportByAddress = new Map<string, PropertyPassport>();
-      // We'll need V1 properties to resolve the mapping
-      const { data: v1Props } = await supabaseAny
-        .from('properties')
-        .select('id, address_line, postcode');
-
-      const v1IdToAddress = new Map<string, string>();
-      v1Props?.forEach(p => {
-        const key = `${(p.address_line || '').toLowerCase().trim()}|${(p.postcode || '').toLowerCase().trim()}`;
-        v1IdToAddress.set(p.id, key);
-      });
-
-      passports?.forEach(p => {
-        const addressKey = v1IdToAddress.get(p.property_id);
-        if (addressKey) {
-          passportByAddress.set(addressKey, p);
-        }
-      });
-
-      return (properties || []).map(p => {
-        // Try direct ID match first, then address match
-        let passport = passportByPropertyId.get(p.id) || null;
-        if (!passport) {
-          const key = `${(p.address_line_1 || '').toLowerCase().trim()}|${(p.postcode || '').toLowerCase().trim()}`;
-          passport = passportByAddress.get(key) || null;
-        }
-
-        return {
-          ...p,
-          property_passport: passport,
-          // V1 compat alias
-          address_line: p.address_line_1,
-        };
-      }) as PassportPageProperty[];
+      return (properties || []).map((p: PropertyV2) => ({
+        ...p,
+        property_passport: passportByPropertyId.get(p.id) || null,
+        address_line: p.address_line_1,
+      })) as PassportPageProperty[];
     },
   });
 }
