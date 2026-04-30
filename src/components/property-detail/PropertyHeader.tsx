@@ -11,10 +11,17 @@ import {
   Trash2,
   Share2,
   Bed,
+  ImagePlus,
+  FileImage,
+  Loader2,
 } from 'lucide-react';
+import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useUploadPhoto } from '@/hooks/usePhotos';
+import { useUploadFloorplan } from '@/hooks/useFloorplans';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,6 +113,34 @@ export function PropertyHeader({
 }: PropertyHeaderProps) {
   const navigate = useNavigate();
   const TypeIcon = PROPERTY_TYPE_ICONS[property.property_type] || Home;
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const floorplanInputRef = useRef<HTMLInputElement>(null);
+  const uploadPhoto = useUploadPhoto();
+  const uploadFloorplan = useUploadFloorplan();
+  const { toast } = useToast();
+  const isUploadingPhoto = uploadPhoto.isPending;
+  const isUploadingFloorplan = uploadFloorplan.isPending;
+
+  const handlePhotoFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    try {
+      for (const file of Array.from(files)) {
+        await uploadPhoto.mutateAsync({ file, propertyId: property.id });
+      }
+      toast({ title: 'Photos uploaded', description: `${files.length} photo${files.length === 1 ? '' : 's'} added.` });
+    } catch (e) {
+      toast({ title: 'Upload failed', description: (e as Error).message, variant: 'destructive' });
+    }
+  };
+
+  const handleFloorplanFile = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    try {
+      await uploadFloorplan.mutateAsync({ file: files[0], propertyId: property.id, isPrimary: true });
+    } catch {
+      /* hook toasts on error */
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -115,12 +150,76 @@ export function PropertyHeader({
       </Button>
 
       <div className="flex gap-6">
-        {/* Property image or placeholder */}
-        <div className="hidden md:flex h-32 w-48 flex-shrink-0 rounded-lg overflow-hidden border border-border bg-muted items-center justify-center">
+        {/* Property image or placeholder with upload affordances */}
+        <div className="hidden md:flex h-32 w-48 flex-shrink-0 rounded-lg overflow-hidden border border-border bg-muted items-center justify-center relative group">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => { handlePhotoFiles(e.target.files); e.target.value = ''; }}
+          />
+          <input
+            ref={floorplanInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            className="hidden"
+            onChange={(e) => { handleFloorplanFile(e.target.files); e.target.value = ''; }}
+          />
           {coverPhoto ? (
-            <img src={coverPhoto} alt={property.address_line_1} className="w-full h-full object-cover" />
+            <>
+              <img src={coverPhoto} alt={property.address_line_1} className="w-full h-full object-cover" />
+              {/* Hover edit overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 text-xs"
+                  disabled={isUploadingPhoto}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {isUploadingPhoto ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ImagePlus className="h-3 w-3 mr-1" />}
+                  Add photos
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 text-xs"
+                  disabled={isUploadingFloorplan}
+                  onClick={() => floorplanInputRef.current?.click()}
+                >
+                  {isUploadingFloorplan ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileImage className="h-3 w-3 mr-1" />}
+                  Floorplan
+                </Button>
+              </div>
+            </>
           ) : (
-            <TypeIcon className="h-12 w-12 text-muted-foreground/40" />
+            <div className="flex flex-col items-center justify-center gap-2 p-2 w-full">
+              <TypeIcon className="h-8 w-8 text-muted-foreground/40" />
+              <div className="flex flex-col gap-1.5 w-full px-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs bg-background"
+                  disabled={isUploadingPhoto}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {isUploadingPhoto ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ImagePlus className="h-3 w-3 mr-1" />}
+                  Upload photos
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs bg-background"
+                  disabled={isUploadingFloorplan}
+                  onClick={() => floorplanInputRef.current?.click()}
+                >
+                  {isUploadingFloorplan ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileImage className="h-3 w-3 mr-1" />}
+                  Upload floorplan
+                </Button>
+              </div>
+            </div>
           )}
         </div>
 
