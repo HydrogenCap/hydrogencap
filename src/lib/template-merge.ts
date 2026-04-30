@@ -161,7 +161,7 @@ export async function resolveMergeData(ctx: ResolveContext): Promise<Record<stri
   if (ctx.propertyId) {
     const { data: prop } = await supabaseAny
       .from('properties_v2')
-      .select('*, legal_entities!inner(entity_name, entity_type, company_number, registered_address, vat_number)')
+      .select('*, legal_entities!properties_v2_entity_id_fkey!inner(entity_name, entity_type, company_number, registered_address, vat_number)')
       .eq('id', ctx.propertyId)
       .single();
 

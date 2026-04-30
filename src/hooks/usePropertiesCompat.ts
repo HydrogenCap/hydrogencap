@@ -47,7 +47,7 @@ export function usePropertiesCompat() {
       const [propsRes, loansRes, perfRes, agreementsRes] = await Promise.all([
         supabaseAny
           .from('properties_v2')
-          .select('*, legal_entities!inner(entity_name)')
+          .select('*, legal_entities!properties_v2_entity_id_fkey!inner(entity_name)')
           .order('created_at', { ascending: false }),
         supabaseAny
           .from('loan_facilities')
