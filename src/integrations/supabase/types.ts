@@ -6958,7 +6958,14 @@ export type Database = {
             foreignKeyName: "properties_v2_legal_owner_company_id_fkey"
             columns: ["legal_owner_company_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "properties_v2_legal_owner_company_id_fkey"
+            columns: ["legal_owner_company_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
