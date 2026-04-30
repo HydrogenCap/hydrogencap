@@ -103,7 +103,7 @@ export async function walkDataTransfer(dt: DataTransfer): Promise<WalkedEntry[]>
   const roots: FsAnyEntry[] = [];
   for (const item of Array.from(items)) {
     const e = (item as DataTransferItem & { webkitGetAsEntry: () => unknown }).webkitGetAsEntry();
-    if (e) roots.push(e as FsAnyEntry);
+    if (e) roots.push(e as unknown as FsAnyEntry);
   }
 
   for (const root of roots) {
