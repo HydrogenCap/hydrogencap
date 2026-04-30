@@ -53,7 +53,7 @@ export function useDashboardPropertiesV2() {
       ] = await Promise.all([
         supabaseAny
           .from('properties_v2')
-          .select('*, legal_entities!inner(entity_name, entity_type)')
+          .select('*, legal_entities!properties_v2_entity_id_fkey!inner(entity_name, entity_type)')
           .eq('org_id', orgId)
           .order('created_at', { ascending: false }),
         supabaseAny

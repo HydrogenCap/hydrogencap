@@ -54,7 +54,7 @@ export function usePropertiesV2() {
     queryFn: async () => {
       const { data, error } = await supabaseAny
         .from('properties_v2')
-        .select('*, legal_entities!inner(entity_name, entity_type)')
+        .select('*, legal_entities!properties_v2_entity_id_fkey!inner(entity_name, entity_type)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return ((data || []) as PropertyWithEntityJoin[]).map((p) => ({
@@ -74,7 +74,7 @@ export function usePropertyV2(id: string | undefined) {
       if (!id) return null;
       const { data, error } = await supabaseAny
         .from('properties_v2')
-        .select('*, legal_entities!inner(entity_name, entity_type)')
+        .select('*, legal_entities!properties_v2_entity_id_fkey!inner(entity_name, entity_type)')
         .eq('id', id)
         .maybeSingle();
       if (error) throw error;
