@@ -1,78 +1,107 @@
-# Plan — V2 Replacement Design Report
 
-**Note on mode:** Plan mode forbids writing to `docs/release/`. Approving this plan switches to Build mode and writes the single deliverable file `docs/release/v2-design-loans-income-costs-tenancies-2026-04-30.md`. **No code, schema, migrations, or tests will change** — only the new markdown report.
+# Plan — append §7 to `docs/release/v1-v2-fk-drift-2026-04-30.md`
 
----
+## What changes
 
-## Headline finding from the audit
+**Single file edit, docs only.** Append a new `## 7. V1-only descendant FK audit (Class B continuation)` section to `docs/release/v1-v2-fk-drift-2026-04-30.md`. **No code, no schema, no migrations.**
 
-A pre-flight scan of `information_schema.tables` revealed that **the team has already shipped V2 siblings for 3 of the 4 tables, populated with row counts that match V1**:
+The 19 FKs listed in §2 under "V1-only descendants pending audit" have now been drift-counted via `pg_constraint` + per-FK `EXISTS (SELECT 1 FROM properties_v2 WHERE v.id = <from_table>.<from_column>)` queries. Results below feed the new section verbatim.
 
-| V1 table | V1 rows | Existing V2 sibling | V2 rows | Status |
-|---|---:|---|---:|---|
-| `loans` | 24 | **`loan_facilities`** | 24 | Functional shell + matching data — needs reconciliation |
-| `tenancies` | 13 | **`tenancy_agreements`** | 13 | Functional shell + matching data — needs reconciliation |
-| `costs` | 3 | **`tax_expenses`** | 0 | Different shape (line-item vs annual buckets) — partial only |
-| `income` | 21 | **none** | — | True greenfield |
+## Drift table to write into §7
 
-This reframes the work from "design 4 V2 tables" to "promote 3 existing V2 siblings + design 1 greenfield + design a thin annual-cost overlay".
+V1 `properties` has 25 rows; `properties_v2` has 27 rows. Id spaces are disjoint, so any populated FK pointing at V1 `properties` is automatically 100% drift unless the row count is 0.
 
----
+| from_table.from_column | populated | drift | bucket |
+|---|---:|---:|---|
+| `activity_log.property_id` | 208 | **208** | drift-prone |
+| `compliance_items.property_id` | 117 | **117** | drift-prone |
+| `passport_autofill_suggestions.property_id` | 22 | **22** | drift-prone (RLS) |
+| `property_title_numbers.property_id` | 22 | **22** | drift-prone (RLS) |
+| `go_live_checklists.property_id` | 18 | **18** | drift-prone (RLS) |
+| `insurance_policies.property_id` | 18 | **18** | drift-prone (RLS) |
+| `passport_field_audit.property_id` | 18 | **18** | drift-prone (RLS) |
+| `contractor_jobs.property_id` | 5 | 5 | drift-prone |
+| `dismissed_duplicates.property_id_1` | 2 | 2 | drift-prone |
+| `dismissed_duplicates.property_id_2` | 2 | 2 | drift-prone |
+| `property_valuations.property_id` | 2 | 2 | drift-prone |
+| `refinancing_opportunities.property_id` | 2 | 2 | drift-prone |
+| `valuation_alerts.property_id` | 2 | 2 | drift-prone |
+| `capex_projects.property_id` | 0 | 0 | cosmetic (empty from_table) |
+| `comparable_sales.source_property_id` | 0 | 0 | cosmetic |
+| `document_summaries.property_id` | 0 | 0 | cosmetic |
+| `inbound_emails.matched_property_id` | 0 | 0 | cosmetic |
+| `leasehold_details.property_id` | 0 | 0 | cosmetic |
+| `void_periods.property_id` | 0 | 0 | cosmetic |
 
-## Table-by-table summary (full detail in the file once approved)
+Totals: **13 drift-prone (438 rows total to remap)**, **6 cosmetic (zero rows in from_table — pure constraint swap)**, **0 safe**. None of the 19 are "safe" in the sense the user defined (drift=0 with rows present); rows-present and drift=0 never co-occur because id spaces are disjoint.
 
-### 1. `loans` → promote `loan_facilities`
-- **Consumers:** 3 write paths in `src/` (`useProperties.ts:151,183`, `useBatchImport.ts:107,116`, `useBulkPropertyUpdate.ts:51`); 7 read-only edge functions (`portfolio-chat/{tools,tool-executor}`, `portfolio-api`, `analyse-acquisition`, `generate-ai-valuation`, `generate-investor-report`, `financial-forecast`).
-- **Schema gap (4 fields V1 has, V2 lacks):** `refinance_target_date`, `broker_name`, `broker_contact`, `payment_override_gbp` + `payment_source`. ALTER required.
-- **V2 already adds 12 fields V1 doesn't have** (LTV, ICR/LTV covenants, ERC, fees, `lender_id`, `entity_id`).
-- **No inbound FKs.** Lowest-risk medium item.
+## §7 sub-sections to write
 
-### 2. `income` → design `property_income_budgets_v2` (greenfield)
-- **Consumers:** 2 writes (`useProperties.ts:227`, `useBatchImport.ts:135`); 4 reads (`analyse-acquisition`, `generate-investor-report`, `financial-forecast`, `portfolio-chat/tool-executor`).
-- **Why no V2 sibling:** live tenancy already covers current rent; V1 `income` is for *historical year-by-year overrides* used in forecasting/scenarios — concept the live graph cannot replicate.
-- **Proposed columns:** `id, org_id, property_id (→ properties_v2 CASCADE), tax_year text, annual_rent_gbp, rent_source CHECK ('manual'|'derived_from_tenancy'|'derived_from_market'), notes, audit + deleted_at, UNIQUE(property_id, tax_year)`.
-- **Risk:** `year` int → `tax_year` text mapping ambiguous (calendar vs UK tax year — needs David's call).
+### 7.1 Bridge candidate per FK
+All 19 are property-keyed → single bridge: `tmp_property_id_remap (v1_id, v2_id, match_strategy)`, populated by:
+1. **Exact**: lower(trim(v1.address_line)) = lower(trim(v2.address_line_1)) AND lower(trim(v1.postcode)) = lower(trim(v2.postcode)).
+2. **Postcode + leading-house-number fuzzy** fallback (proven in Prompt #31's `25 Arle Gardens` case).
+3. **Identity** for the `24 West Street` shadow row.
 
-### 3. `costs` → design `property_cost_budgets_v2` (greenfield, separate from `tax_expenses`)
-- **Consumers (smallest):** 1 write (`useProperties.ts:258`); 2 reads (`financial-forecast`, `portfolio-chat/tool-executor`).
-- **Why `tax_expenses` is *not* a replacement:** `tax_expenses` is line-item actuals for tax filing; `costs` is annual budget overrides + rule-driven autocalculations (management = 5% rent, etc.). They should coexist (budgets vs actuals).
-- **Proposed columns:** direct lift of V1's 6 manual buckets + 6 rule columns, with `org_id` added and `year` int → `tax_year` text.
+This is **the same bridge used by Prompts #28, #31** — can be lifted verbatim.
 
-### 4. `tenancies` → promote `tenancy_agreements` (heaviest)
-- **Consumers (biggest):** 7 in `src/` (`useTenancies.ts:119,147` writes; `usePropertyPnL`, `useRoomPnL`, `useDocumentManagement`, `useBatchRenameDocuments`, plus 3 portal pages); 5 edge (`send-rent-reminder`, `send-tenant-certificates`, `send-tenancy-expiry-reminders`, `auto-generate-rent-schedule`, `portfolio-chat/tool-executor`).
-- **Schema gap (5 fields V1 has, V2 lacks):** `rent_due_day`, `tenancy_agreement_url`, `notice_period_weeks`, `payment_method`, `payment_reference`.
-- **Inbound FK tax (CRITICAL):** 7 child tables CASCADE-FK into `tenancies.id`: `documents`, `payment_reminders`, `rent_payments`, `rent_schedule`, `tenancy_compliance_items`, `tenant_portal_access`, `tenant_portal_invites`. All need lockstep re-point.
-- **RLS:** SECURITY DEFINER `user_has_tenancy_portal_access(uuid)` joins through V1 `tenancies` — **must be rewritten in the same transaction** as the FK re-points or the entire tenant portal goes dark mid-flight.
+### 7.2 Batchability
+All 13 drift-prone FKs share the property_id remap pattern → **one tmp table, multiple ALTER+UPDATE pairs in one transaction**. Cosmetic 6 can ride along (no UPDATE needed) or ship separately. No company- or tenant-keyed FKs in this set, so no second bridge is needed.
 
----
+### 7.3 RLS lockstep impact
+Confirmed via `pg_policies` scan — **5 of the 13 drift-prone FKs have policies that join V1 `properties`**:
+- `go_live_checklists` (3 policies)
+- `insurance_policies` (5 policies)
+- `passport_autofill_suggestions` (4 policies)
+- `passport_field_audit` (2 policies)
+- `property_title_numbers` (4 policies)
 
-## Cross-table FK touch points (Step 4)
+Total: **~18 policies must be dropped + recreated to join `properties_v2 p` instead** in the same transaction as the FK swap. The other 8 drift-prone tables (`activity_log`, `compliance_items`, `contractor_jobs`, `dismissed_duplicates`, `property_valuations`, `refinancing_opportunities`, `valuation_alerts`) use direct `org_id` policies or no V1-properties join — no RLS rewrite needed.
 
-After replacements ship, these existing V2 tables gain new/rebound FKs:
+### 7.4 Recommended Build sequencing (3 prompts)
 
-- `documents.tenancy_id`, `payment_reminders.tenancy_id`, `rent_payments.tenancy_id`, `rent_schedule.tenancy_id`, `tenancy_compliance_items.tenancy_id`, `tenant_portal_access.tenancy_id`, `tenant_portal_invites.tenancy_id` → `tenancy_agreements.id` (mandatory, lockstep).
-- Optional new: `property_legal_ownership.loan_id` → `loan_facilities.id`; `tax_expenses.cost_budget_id` → `property_cost_budgets_v2.id`; `compliance_documents_v2.tenancy_id` → `tenancy_agreements.id`.
+```text
+Prompt #33 (Class-B Batch 2 — high-volume, no RLS):
+  activity_log.property_id          (208 rows, CASCADE)
+  compliance_items.property_id      (117 rows, CASCADE)
+  contractor_jobs.property_id       (5 rows,   CASCADE)
+  property_valuations.property_id   (2 rows,   CASCADE)
+  refinancing_opportunities.property_id (2,    CASCADE)
+  valuation_alerts.property_id      (2 rows,   CASCADE)
+  dismissed_duplicates.property_id_1 + _2 (2+2, CASCADE)
+  → 1 tmp_property_id_remap, 8 ALTER+UPDATE pairs, zero RLS rewrites.
+  → 338 rows backfilled.
 
----
+Prompt #34 (Class-B Batch 3 — RLS-coupled, passport stack):
+  passport_autofill_suggestions.property_id (22, CASCADE) + 4 policies
+  passport_field_audit.property_id          (18, CASCADE) + 2 policies
+  property_title_numbers.property_id        (22, CASCADE) + 4 policies
+  → 62 rows backfilled, 10 policies rewritten in lockstep.
+  → Same passport-page test surface — easy single-page smoke test.
 
-## Recommended sequencing
+Prompt #35 (Class-B Batch 4 — RLS-coupled, ops stack):
+  go_live_checklists.property_id    (18, CASCADE) + 3 policies
+  insurance_policies.property_id    (18, CASCADE) + 5 policies
+  → 36 rows backfilled, 8 policies rewritten.
+  → Property-detail page (Insurance + Activation tabs) smoke test.
 
-1. **`costs` → `property_cost_budgets_v2`** — *small*. One Build prompt. Warm-up using the proven Class-B template.
-2. **`income` → `property_income_budgets_v2`** — *small/medium*. One Build prompt (after David confirms tax-year semantics).
-3. **`loans` → promote `loan_facilities`** — *medium*. One Build prompt if V1↔V2 row diff is clean; two if drift is found.
-4. **`tenancies` → promote `tenancy_agreements`** — *large*. **Three Build prompts**:
-   - 4a: ALTER + pre-flight diff + backfill missing fields.
-   - 4b: Re-point 7 inbound FKs + rewrite `user_has_tenancy_portal_access` + RLS rewrite (single transaction; preview smoke-test before merge).
-   - 4c: Cutover 3 cron jobs + 5 portal pages + `useTenancies`. Freeze V1 last.
+Prompt #36 (Cosmetic sweep — zero rows, optional):
+  capex_projects, comparable_sales, document_summaries,
+  inbound_emails, leasehold_details, void_periods
+  → 6 pure constraint swaps, no UPDATE, no RLS rewrites.
+  → Can also be folded into Prompt #33 since neither touches data.
+```
 
----
+Sequencing rationale: #33 first (biggest blast radius, simplest mechanically — no RLS), then #34 and #35 (smaller volume but each carries its own RLS test surface, kept separate so a failed policy rewrite only takes one page dark). #36 is a janitorial sweep.
 
-## Final paragraph (Step 8)
+### 7.5 PostgREST embed risk
+None of the 19 from_tables currently have multiple FKs into `properties` / `properties_v2` simultaneously (verified — these are single-FK tables). So the disambiguator pattern from Prompt #30 is **not needed** for any of these batches. Pre-emptive scan: after re-pointing, none of the from_tables will gain a second FK to `properties_v2`.
 
-Shipping order: **(1) `costs` — small, (2) `income` — small/medium, (3) `loans` — medium, (4) `tenancies` — large**. Items 3 and 4 are *promotions* of pre-existing V2 siblings (`loan_facilities`, `tenancy_agreements`) with row counts already matching V1, so most of the work is reconciling 4–5 missing columns per table and re-pointing consumers; items 1 and 2 are true greenfield V2 designs.
+### 7.6 Final paragraph (Step 8)
+Of the 19 V1-only-descendant FKs flagged in §2, **13 are drift-prone (438 rows total to remap)** and **6 are cosmetic (zero rows in the from_table)**; **none are safe** because the disjoint id spaces guarantee that any populated FK pointing at V1 `properties` is 100% drift. Recommended next Build prompt: **#33 — Class-B Batch 2** covering the 8 high-volume FKs with zero RLS impact (`activity_log`, `compliance_items`, `contractor_jobs`, `property_valuations`, `refinancing_opportunities`, `valuation_alerts`, `dismissed_duplicates.property_id_1`, `dismissed_duplicates.property_id_2`) using the proven `tmp_property_id_remap` bridge, optionally bundling the 6 cosmetic FKs into the same transaction.
 
----
-
-## On approval
-
-Build mode will write the full report to `docs/release/v2-design-loans-income-costs-tenancies-2026-04-30.md` (~13 KB) containing every section above plus the per-FK detail tables, RLS impact analysis, full field-mapping tables, and consumer line refs already gathered. **No `src/`, schema, or migration changes.**
+## Constraints respected
+- Read-only audit complete via `pg_constraint`, `pg_policies`, and per-table `EXISTS` queries.
+- No `src/`, no `supabase/migrations/`, no schema changes.
+- Single deliverable: append §7 (~5 KB) to existing report.
+- All §7 numbers are sourced from live DB queries run during this audit, not estimates.
