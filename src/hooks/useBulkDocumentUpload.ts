@@ -62,7 +62,11 @@ const ACCEPTED_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
   'image/png',
+  'image/heic',
+  'image/heif',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
+const ACCEPTED_EXT_FALLBACK = /\.(pdf|jpe?g|png|heic|heif|docx)$/i;
 
 let nextId = 0;
 function generateId(): string {
