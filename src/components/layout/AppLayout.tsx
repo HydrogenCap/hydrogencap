@@ -4,7 +4,7 @@ import { AppSidebar } from './AppSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { PageTransition } from '@/components/common/PageTransition';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
+
 import { MobileBottomNav } from './MobileBottomNav';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { SearchErrorBoundary } from '@/components/search/SearchErrorBoundary';
@@ -93,7 +93,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </Badge>
               )}
             </Button>
-            <NotificationBell />
+            
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto p-3 md:p-6 pb-20 md:pb-6">
