@@ -34,12 +34,12 @@ interface BeneficialOwnersCardProps {
 function OwnershipDonut({ owners }: { owners: BeneficialOwner[] }) {
   const total = calculateBeneficialSum(owners);
   const colors = [
-    'hsl(var(--primary))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
-    'hsl(var(--muted-foreground))',
+    'hsl(var(--cat-1))',
+    'hsl(var(--cat-2))',
+    'hsl(var(--cat-3))',
+    'hsl(var(--cat-4))',
+    'hsl(var(--cat-5))',
+    'hsl(var(--cat-6))',
   ];
 
   // Calculate segments
@@ -166,7 +166,7 @@ export function BeneficialOwnersCard({ propertyId, onAddOwner, onEditOwner }: Be
               <div className="flex-1 space-y-2">
                 {/* Legend */}
                 {activeOwners.map((owner, idx) => {
-                  const colors = ['bg-primary', 'bg-chart-2', 'bg-chart-3', 'bg-chart-4', 'bg-chart-5'];
+                  const colors = ['bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4', 'bg-cat-5', 'bg-cat-6'];
                   return (
                     <div key={owner.id} className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${colors[idx % colors.length]}`} />
