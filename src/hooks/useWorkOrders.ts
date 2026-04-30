@@ -602,7 +602,7 @@ export function useCreateWOFromMaintenance() {
         .from('maintenance_requests')
         .select(`
           *,
-          property_v2:properties_v2(id, entity_id, address_line_1, city)
+          property_v2:properties_v2!property_v2_id(id, entity_id, address_line_1, city)
         `)
         .eq('id', requestId)
         .single();
