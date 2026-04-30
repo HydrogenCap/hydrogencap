@@ -49,12 +49,12 @@ export function useTaxDashboardState() {
         {
           name: 'Old System\n(pre-S24)',
           tax: Math.round(calculation.section24Impact.oldSystemTax),
-          fill: 'hsl(var(--chart-2))',
+          fill: 'hsl(var(--cat-1))',
         },
         {
           name: 'New System\n(Section 24)',
           tax: Math.round(calculation.section24Impact.newSystemTax),
-          fill: 'hsl(var(--chart-1))',
+          fill: 'hsl(var(--cat-2))',
         },
       ]
     : [];

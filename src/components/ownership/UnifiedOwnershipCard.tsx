@@ -37,12 +37,12 @@ interface UnifiedOwnershipCardProps {
 function OwnershipDonut({ links }: { links: OwnershipLink[] }) {
   const total = calculateOwnershipTotal(links);
   const colors = [
-    'hsl(var(--primary))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
-    'hsl(var(--muted-foreground))',
+    'hsl(var(--cat-1))',
+    'hsl(var(--cat-2))',
+    'hsl(var(--cat-3))',
+    'hsl(var(--cat-4))',
+    'hsl(var(--cat-5))',
+    'hsl(var(--cat-6))',
   ];
 
   let cumulativePercent = 0;
@@ -182,7 +182,7 @@ export function UnifiedOwnershipCard({ propertyId, onAddOwner, onEditOwner }: Un
                 {/* Legend */}
                 <div className="space-y-1.5">
                   {activeLinks.map((link, idx) => {
-                    const colors = ['bg-primary', 'bg-chart-2', 'bg-chart-3', 'bg-chart-4', 'bg-chart-5'];
+                    const colors = ['bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4', 'bg-cat-5', 'bg-cat-6'];
                     const isCompany = link.owner_party?.party_type === 'COMPANY';
                     return (
                       <div key={link.id} className="flex items-center gap-2">
