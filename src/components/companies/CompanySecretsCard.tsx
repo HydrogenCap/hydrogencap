@@ -97,9 +97,15 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
     );
   }
 
+  // Render the populated card whenever EITHER secret is set; only fall
+  // through to the "No sensitive details stored" empty state when BOTH
+  // auth_code_last4 AND utr_last4 are null/empty. Many migrated SPVs only
+  // have an auth code (no UTR yet) — they must still see the masked code
+  // and a working Reveal button.
   const hasAuthCode = !!maskedSecrets?.auth_code_last4;
   const hasUtr = !!maskedSecrets?.utr_last4;
   const hasAnySecrets = hasAuthCode || hasUtr;
+  const isEmpty = !hasAuthCode && !hasUtr;
   const isRevealed = !!revealed;
 
   return (
