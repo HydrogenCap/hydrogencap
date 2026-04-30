@@ -250,7 +250,16 @@ export function useBulkDocumentUpload() {
     }
   }, [updateItem, matchProperty]);
 
-  const addFiles = useCallback(async (files: File[]): Promise<QueueItem[]> => {
+  const addFiles = useCallback(async (
+    input: File[] | Array<{ file: File; relativePath?: string }>,
+  ): Promise<QueueItem[]> => {
+    // Normalise both signatures into {file, relativePath} entries.
+    const entries: Array<{ file: File; relativePath: string }> = (input as unknown[]).map((x) => {
+      if (x instanceof File) return { file: x, relativePath: '' };
+      const e = x as { file: File; relativePath?: string };
+      return { file: e.file, relativePath: e.relativePath ?? '' };
+    });
+
     const currentCount = queue.length;
     const remaining = MAX_FILES - currentCount;
 
@@ -259,35 +268,40 @@ export function useBulkDocumentUpload() {
       return [];
     }
 
-    const filesToAdd = files.slice(0, remaining);
-    if (filesToAdd.length < files.length) {
-      toast.warning(`Only adding ${filesToAdd.length} of ${files.length} files (limit: ${MAX_FILES})`);
+    const toProcess = entries.slice(0, remaining);
+    if (toProcess.length < entries.length) {
+      toast.warning(`Only adding ${toProcess.length} of ${entries.length} files (limit: ${MAX_FILES})`);
     }
 
-    const validFiles: File[] = [];
-    for (const file of filesToAdd) {
-      if (!ACCEPTED_TYPES.has(file.type)) {
-        toast.error(`${file.name}: unsupported type. Use PDF, JPG, or PNG.`);
+    const valid: Array<{ file: File; relativePath: string }> = [];
+    for (const entry of toProcess) {
+      const { file } = entry;
+      const typeOk = ACCEPTED_TYPES.has(file.type) || ACCEPTED_EXT_FALLBACK.test(file.name);
+      if (!typeOk) {
+        toast.error(`${file.name}: unsupported type. Use PDF, JPG, PNG, HEIC, or DOCX.`);
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
         toast.error(`${file.name}: exceeds 10MB limit`);
         continue;
       }
-      validFiles.push(file);
+      valid.push(entry);
     }
 
-    if (validFiles.length === 0) return [];
+    if (valid.length === 0) return [];
 
     const newItems: QueueItem[] = await Promise.all(
-      validFiles.map(async (file) => ({
+      valid.map(async ({ file, relativePath }) => ({
         id: generateId(),
         file,
+        relativePath,
         thumbnailUrl: await createThumbnail(file),
         storagePath: '',
         documentId: null,
         status: 'queued' as const,
         error: null,
+        // Classify by filename BEFORE the AI runs.
+        filenameHint: classifyFilename(file.name),
         classification: { documentType: null, confidence: 0, category: null },
         extraction: {
           address: null,
