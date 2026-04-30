@@ -1,0 +1,79 @@
+{
+  "_comment": "Snapshot of (from_table → to_table) pairs in public schema with ≥2 FK constraints. Generated 2026-04-30 from pg_constraint. When the schema changes (new FKs, FK re-points), re-run the snapshot query in src/__tests__/postgrest-embed-safety.test.ts header and update this file.",
+  "_generated_at": "2026-04-30",
+  "_query_source": "see header of postgrest-embed-safety.test.ts",
+  "ambiguous_pairs": [
+    {
+      "from_table": "dismissed_duplicates",
+      "to_table": "properties",
+      "constraints": [
+        { "constraint": "dismissed_duplicates_property_id_1_fkey", "column": "property_id_1" },
+        { "constraint": "dismissed_duplicates_property_id_2_fkey", "column": "property_id_2" }
+      ]
+    },
+    {
+      "from_table": "documents",
+      "to_table": "properties",
+      "constraints": [
+        { "constraint": "documents_ai_suggested_property_id_fkey", "column": "ai_suggested_property_id" },
+        { "constraint": "documents_property_id_fkey", "column": "property_id" }
+      ]
+    },
+    {
+      "from_table": "entity_shareholders",
+      "to_table": "legal_entities",
+      "constraints": [
+        { "constraint": "entity_shareholders_entity_id_fkey", "column": "entity_id" },
+        { "constraint": "entity_shareholders_shareholder_entity_id_fkey", "column": "shareholder_entity_id" }
+      ]
+    },
+    {
+      "from_table": "entity_shareholdings",
+      "to_table": "ownership_entities",
+      "constraints": [
+        { "constraint": "entity_shareholdings_parent_entity_id_fkey", "column": "parent_entity_id" },
+        { "constraint": "entity_shareholdings_shareholder_entity_id_fkey", "column": "shareholder_entity_id" }
+      ]
+    },
+    {
+      "from_table": "freeagent_connections",
+      "to_table": "legal_entities",
+      "constraints": [
+        { "constraint": "freeagent_connections_company_id_fkey", "column": "company_id" },
+        { "constraint": "freeagent_connections_entity_id_fkey", "column": "entity_id" }
+      ]
+    },
+    {
+      "from_table": "maintenance_requests",
+      "to_table": "properties_v2",
+      "constraints": [
+        { "constraint": "maintenance_requests_property_id_fkey", "column": "property_id" },
+        { "constraint": "maintenance_requests_property_v2_id_fkey", "column": "property_v2_id" }
+      ]
+    },
+    {
+      "from_table": "maintenance_requests",
+      "to_table": "rooms_v2",
+      "constraints": [
+        { "constraint": "maintenance_requests_room_id_fkey", "column": "room_id" },
+        { "constraint": "maintenance_requests_room_v2_id_fkey", "column": "room_v2_id" }
+      ]
+    },
+    {
+      "from_table": "maintenance_requests",
+      "to_table": "tenants_v2",
+      "constraints": [
+        { "constraint": "maintenance_requests_tenant_id_fkey", "column": "tenant_id" },
+        { "constraint": "maintenance_requests_tenant_v2_id_fkey", "column": "tenant_v2_id" }
+      ]
+    },
+    {
+      "from_table": "properties_v2",
+      "to_table": "legal_entities",
+      "constraints": [
+        { "constraint": "properties_v2_entity_id_fkey", "column": "entity_id" },
+        { "constraint": "properties_v2_legal_owner_company_id_fkey", "column": "legal_owner_company_id" }
+      ]
+    }
+  ]
+}
