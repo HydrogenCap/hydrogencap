@@ -64,12 +64,21 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 220 60% 28%;
 
-    /* Chart colors */
-    --chart-1: 220 60% 28%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 42 87% 55%;
-    --chart-4: 262 83% 58%;
-    --chart-5: 0 72% 51%;
+    /* Chart intent ladder — monotonic (best → worst). Use for ordinal/risk/performance bands. */
+    --chart-1: 160 84% 39%;  /* best (success green) */
+    --chart-2: 142 60% 48%;  /* good */
+    --chart-3: 42 87% 55%;   /* neutral / caution (gold) */
+    --chart-4: 25 90% 55%;   /* warning (orange) */
+    --chart-5: 0 72% 51%;    /* worst (destructive red) */
+
+    /* Categorical palette — distinct hues, qualitative. Use for non-ordinal categories
+       (property type, entity, owner identity, scenario name, etc.). */
+    --cat-1: 220 60% 45%;   /* navy-blue */
+    --cat-2: 14 85% 55%;    /* coral */
+    --cat-3: 168 70% 38%;   /* teal */
+    --cat-4: 280 55% 55%;   /* purple */
+    --cat-5: 38 90% 52%;    /* amber */
+    --cat-6: 200 75% 50%;   /* sky */
   }
 
   /* Dark Mode - Deep navy */
@@ -124,12 +133,20 @@
     --sidebar-border: 222 20% 18%;
     --sidebar-ring: 215 65% 58%;
 
-    /* Chart colors */
-    --chart-1: 215 65% 58%;
-    --chart-2: 158 64% 52%;
-    --chart-3: 42 87% 60%;
-    --chart-4: 262 83% 68%;
-    --chart-5: 0 72% 63%;
+    /* Chart intent ladder — monotonic (best → worst), dark-mode tuned. */
+    --chart-1: 158 64% 55%;  /* best */
+    --chart-2: 142 55% 60%;  /* good */
+    --chart-3: 42 87% 62%;   /* neutral / caution */
+    --chart-4: 25 88% 62%;   /* warning */
+    --chart-5: 0 72% 65%;    /* worst */
+
+    /* Categorical palette — dark-mode parity. */
+    --cat-1: 215 70% 65%;   /* navy-blue */
+    --cat-2: 14 80% 65%;    /* coral */
+    --cat-3: 168 60% 55%;   /* teal */
+    --cat-4: 280 60% 70%;   /* purple */
+    --cat-5: 38 90% 62%;    /* amber */
+    --cat-6: 200 75% 62%;   /* sky */
   }
 }
 
