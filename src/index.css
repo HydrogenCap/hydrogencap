@@ -214,7 +214,16 @@
   /* Glass effect */
   .glass {
     @apply bg-card/50 backdrop-blur-xl border border-border/50;
-  }
+}
+
+/* Typography hierarchy: DM Serif Display reserved for page-level h1 and KPI hero numbers.
+   All other text inherits the body sans-serif (Inter). */
+h1,
+.kpi-number {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
 
   /* Subtle glow effects */
   .glow-primary {

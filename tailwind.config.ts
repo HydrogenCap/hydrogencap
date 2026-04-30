@@ -82,6 +82,14 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        cat: {
+          "1": "hsl(var(--cat-1))",
+          "2": "hsl(var(--cat-2))",
+          "3": "hsl(var(--cat-3))",
+          "4": "hsl(var(--cat-4))",
+          "5": "hsl(var(--cat-5))",
+          "6": "hsl(var(--cat-6))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
