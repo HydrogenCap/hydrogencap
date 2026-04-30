@@ -130,7 +130,8 @@ export function useBulkDocumentUpload() {
       return;
     }
 
-    // Create document record
+    // Create document record. Persist the filename hint set BEFORE the AI runs
+    // so it's visible alongside ai_suggested_doc_type in the batch review queue.
     const { data: { user } } = await supabase.auth.getUser();
     const { data: docRecord, error: docErr } = await supabaseAny
       .from('documents')
@@ -145,6 +146,7 @@ export function useBulkDocumentUpload() {
         review_status: 'pending',
         extraction_status: 'pending',
         category: 'other',
+        filename_category_hint: item.filenameHint?.category ?? null,
       })
       .select('id')
       .single();
