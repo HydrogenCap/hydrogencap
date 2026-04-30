@@ -105,7 +105,7 @@ export const KpiCard = React.memo(function KpiCard({
 
       {/* Value row */}
       <div className="flex items-baseline gap-2">
-        <span className={cn('text-xl md:text-2xl font-bold tracking-tight', valueClassName)}>
+        <span className={cn('kpi-number text-xl md:text-2xl font-bold tracking-tight', valueClassName)}>
           {animatedValue !== undefined ? (
             <AnimatedNumber value={animatedValue} prefix={animatedPrefix} suffix={animatedSuffix} />
           ) : value}
