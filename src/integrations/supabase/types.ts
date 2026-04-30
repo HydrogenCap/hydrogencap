@@ -910,7 +910,14 @@ export type Database = {
             foreignKeyName: "company_metric_snapshots_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "company_metric_snapshots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -2655,8 +2662,15 @@ export type Database = {
             foreignKeyName: "document_share_links_compliance_document_id_fkey"
             columns: ["compliance_document_id"]
             isOneToOne: false
-            referencedRelation: "compliance_documents"
+            referencedRelation: "compliance_documents_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_share_links_compliance_document_id_fkey"
+            columns: ["compliance_document_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_matrix_v2"
+            referencedColumns: ["document_id"]
           },
           {
             foreignKeyName: "document_share_links_document_id_fkey"
@@ -3610,7 +3624,14 @@ export type Database = {
             foreignKeyName: "freeagent_connections_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "freeagent_connections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -5626,8 +5647,22 @@ export type Database = {
             foreignKeyName: "maintenance_requests_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "maintenance_requests_property_v2_id_fkey"
@@ -5654,7 +5689,7 @@ export type Database = {
             foreignKeyName: "maintenance_requests_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
-            referencedRelation: "rooms"
+            referencedRelation: "rooms_v2"
             referencedColumns: ["id"]
           },
           {
@@ -5668,7 +5703,7 @@ export type Database = {
             foreignKeyName: "maintenance_requests_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "tenants"
+            referencedRelation: "tenants_v2"
             referencedColumns: ["id"]
           },
           {
@@ -9069,7 +9104,7 @@ export type Database = {
             foreignKeyName: "tenant_portal_access_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "tenants"
+            referencedRelation: "tenants_v2"
             referencedColumns: ["id"]
           },
         ]
@@ -9130,7 +9165,7 @@ export type Database = {
             foreignKeyName: "tenant_portal_invites_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "tenants"
+            referencedRelation: "tenants_v2"
             referencedColumns: ["id"]
           },
         ]
