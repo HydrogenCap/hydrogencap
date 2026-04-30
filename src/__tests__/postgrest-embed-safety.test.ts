@@ -64,7 +64,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import ambiguityFixture from './fixtures/postgrest-fk-ambiguity.json' assert { type: 'json' };
+import ambiguityFixture from './fixtures/postgrest-fk-ambiguity.json' with { type: 'json' };
 
 interface FkConstraint {
   constraint: string;
