@@ -219,7 +219,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
             </div>
           </div>
 
-          {!hasAnySecrets && (
+          {isEmpty && (
             <p className="text-xs text-muted-foreground text-center py-2">
               No sensitive details stored. Click Edit to add.
             </p>
