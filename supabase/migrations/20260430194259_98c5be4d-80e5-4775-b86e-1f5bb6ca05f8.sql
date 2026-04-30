@@ -1,0 +1,2 @@
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS filename_category_hint text;
+COMMENT ON COLUMN public.documents.filename_category_hint IS 'Tentative category derived from filename heuristics (Bulk Document Scanner v2). Set BEFORE the AI extraction runs; used in the batch review queue to compare against ai_suggested_doc_type.';
