@@ -11,10 +11,17 @@ import {
   Trash2,
   Share2,
   Bed,
+  ImagePlus,
+  FileImage,
+  Loader2,
 } from 'lucide-react';
+import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useUploadPhoto } from '@/hooks/usePhotos';
+import { useUploadFloorplan } from '@/hooks/useFloorplans';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
