@@ -18,14 +18,15 @@ export interface QueueItem {
   id: string;
   file: File;
   /** Original path inside a dropped folder (e.g. "Property A/EICR.pdf"). Empty for flat drops. */
-  relativePath: string;
+  /** Original path inside a dropped folder (e.g. "Property A/EICR.pdf"). Empty for flat drops. */
+  relativePath?: string;
   thumbnailUrl: string | null;
   storagePath: string;
   documentId: string | null;
   status: QueueItemStatus;
   error: string | null;
   /** Tentative classification from filename heuristics — set BEFORE upload. */
-  filenameHint: FilenameClassification;
+  filenameHint?: FilenameClassification;
   classification: {
     documentType: string | null;
     confidence: number;
