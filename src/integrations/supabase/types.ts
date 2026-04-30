@@ -2818,6 +2818,7 @@ export type Database = {
           file_size_bytes: number | null
           file_type: string | null
           file_url: string
+          filename_category_hint: string | null
           final_file_name: string | null
           id: string
           is_confidential: boolean | null
@@ -2873,6 +2874,7 @@ export type Database = {
           file_size_bytes?: number | null
           file_type?: string | null
           file_url: string
+          filename_category_hint?: string | null
           final_file_name?: string | null
           id?: string
           is_confidential?: boolean | null
@@ -2928,6 +2930,7 @@ export type Database = {
           file_size_bytes?: number | null
           file_type?: string | null
           file_url?: string
+          filename_category_hint?: string | null
           final_file_name?: string | null
           id?: string
           is_confidential?: boolean | null
