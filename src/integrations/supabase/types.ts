@@ -3085,8 +3085,22 @@ export type Database = {
             foreignKeyName: "documents_ai_suggested_property_id_fkey"
             columns: ["ai_suggested_property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_ai_suggested_property_id_fkey"
+            columns: ["ai_suggested_property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "documents_ai_suggested_property_id_fkey"
+            columns: ["ai_suggested_property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "documents_company_id_fkey"
@@ -3134,8 +3148,22 @@ export type Database = {
             foreignKeyName: "documents_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "documents_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
           {
             foreignKeyName: "documents_tenancy_id_fkey"
@@ -6607,8 +6635,22 @@ export type Database = {
             foreignKeyName: "photos_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "photos_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
         ]
       }
@@ -7253,8 +7295,22 @@ export type Database = {
             foreignKeyName: "property_beneficial_owners_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_beneficial_owners_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_beneficial_owners_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
         ]
       }
@@ -7321,8 +7377,22 @@ export type Database = {
             foreignKeyName: "property_legal_ownership_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
-            referencedRelation: "properties"
+            referencedRelation: "properties_v2"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_legal_ownership_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_legal_ownership_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
           },
         ]
       }
