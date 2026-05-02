@@ -8701,7 +8701,7 @@ export type Database = {
             foreignKeyName: "shareholdings_share_class_id_fkey"
             columns: ["share_class_id"]
             isOneToOne: false
-            referencedRelation: "share_classes"
+            referencedRelation: "share_classes_v2"
             referencedColumns: ["id"]
           },
           {
