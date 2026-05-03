@@ -1,9 +1,17 @@
 import { useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+
+function invalidateComplianceCaches(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
+  qc.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
+  qc.invalidateQueries({ queryKey: ['portfolio-compliance-score-v2'] });
+  qc.invalidateQueries({ queryKey: ['compliance-requirements-v2'] });
+}
 
 export interface ScannedDocument {
   file: File;
@@ -50,6 +58,7 @@ export function useBulkDocScanner() {
   const [isFiling, setIsFiling] = useState(false);
   const { data: properties } = usePropertiesV2();
   const abortRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const updateDoc = useCallback((idx: number, patch: Partial<ScannedDocument>) => {
     setDocuments(prev => prev.map((d, i) => i === idx ? { ...d, ...patch } : d));
@@ -222,8 +231,11 @@ export function useBulkDocScanner() {
 
     await Promise.all(workers);
     setIsProcessing(false);
+    // process-document-v2 auto-creates compliance_documents_v2 records on extraction;
+    // refresh compliance views so newly-classified documents appear immediately.
+    invalidateComplianceCaches(queryClient);
     toast.success(`Processed ${validFiles.length} files`);
-  }, [documents.length, uploadAndClassify]);
+  }, [documents.length, uploadAndClassify, queryClient]);
 
   const setOverride = useCallback((idx: number, overrides: Partial<ScannedDocument['userOverrides']>) => {
     setDocuments(prev => prev.map((d, i) =>
@@ -260,28 +272,56 @@ export function useBulkDocScanner() {
       }
 
       try {
-        // Create compliance_documents_v2 record
-        const { error: compErr } = await supabaseAny
+        // Skip if process-document-v2 has already auto-filed this document
+        // (it creates a compliance_documents_v2 record during extraction)
+        const { data: existing } = await supabaseAny
           .from('compliance_documents_v2')
-          .insert({
-            org_id: orgId,
-            property_id: propId,
-            document_type: docType,
-            issue_date: issueDate,
-            expiry_date: expiryDate || null,
-            certificate_number: certNumber || null,
-            file_url: doc.storagePath || null,
-            file_name: doc.file.name,
-            status: expiryDate && new Date(expiryDate) < new Date() ? 'expired'
-              : expiryDate && new Date(expiryDate) < new Date(Date.now() + 30 * 86400000) ? 'critical'
-              : expiryDate && new Date(expiryDate) < new Date(Date.now() + 90 * 86400000) ? 'expiring_soon'
-              : 'valid',
-            ai_extracted: true,
-            ai_confidence_score: doc.classification.confidence,
-            is_current: true,
-          });
+          .select('id')
+          .eq('property_id', propId)
+          .eq('document_type', docType)
+          .eq('is_current', true)
+          .maybeSingle();
 
-        if (compErr) throw compErr;
+        const status = expiryDate && new Date(expiryDate) < new Date() ? 'expired'
+          : expiryDate && new Date(expiryDate) < new Date(Date.now() + 30 * 86400000) ? 'critical'
+          : expiryDate && new Date(expiryDate) < new Date(Date.now() + 90 * 86400000) ? 'expiring_soon'
+          : 'valid';
+
+        if (existing?.id) {
+          // Update existing current record with confirmed values rather than creating a duplicate
+          const { error: updErr } = await supabaseAny
+            .from('compliance_documents_v2')
+            .update({
+              issue_date: issueDate,
+              expiry_date: expiryDate || null,
+              certificate_number: certNumber || null,
+              file_url: doc.storagePath || null,
+              file_name: doc.file.name,
+              status,
+              ai_extracted: true,
+              ai_confidence_score: doc.classification.confidence,
+            })
+            .eq('id', existing.id);
+          if (updErr) throw updErr;
+        } else {
+          const { error: compErr } = await supabaseAny
+            .from('compliance_documents_v2')
+            .insert({
+              org_id: orgId,
+              property_id: propId,
+              document_type: docType,
+              issue_date: issueDate,
+              expiry_date: expiryDate || null,
+              certificate_number: certNumber || null,
+              file_url: doc.storagePath || null,
+              file_name: doc.file.name,
+              status,
+              ai_extracted: true,
+              ai_confidence_score: doc.classification.confidence,
+              is_current: true,
+            });
+          if (compErr) throw compErr;
+        }
 
         // Update document record
         if (doc.documentId) {
@@ -304,8 +344,9 @@ export function useBulkDocScanner() {
     }
 
     setIsFiling(false);
+    invalidateComplianceCaches(queryClient);
     toast.success(`Filed ${filedCount} documents to ${propertySet.size} properties`);
-  }, [documents, updateDoc]);
+  }, [documents, updateDoc, queryClient]);
 
   const clearAll = useCallback(() => {
     abortRef.current = true;
