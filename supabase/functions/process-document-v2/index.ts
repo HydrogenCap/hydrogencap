@@ -248,25 +248,25 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
     let propertyRefData = '[]';
     if (property_id) {
       const { data: props } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode, title_number')
+        .from('properties_v2')
+        .select('id, address_line_1, postcode, title_number')
         .eq('id', property_id)
         .limit(1);
       if (props?.length) {
         propertyRefData = JSON.stringify(props.map(p => ({
-          id: p.id, address: p.address_line, postcode: p.postcode, title: p.title_number,
+          id: p.id, address: p.address_line_1, postcode: p.postcode, title: p.title_number,
         })));
       }
     } else {
-      // Load all properties for this org for matching
+      // Load all properties for this org for matching (V2 identity table)
       const { data: props } = await supabase
-        .from('properties')
-        .select('id, address_line, postcode, title_number')
+        .from('properties_v2')
+        .select('id, address_line_1, postcode, title_number')
         .eq('org_id', org_id)
         .limit(500);
       if (props?.length) {
         propertyRefData = JSON.stringify(props.map(p => ({
-          id: p.id, address: p.address_line, postcode: p.postcode, title: p.title_number,
+          id: p.id, address: p.address_line_1, postcode: p.postcode, title: p.title_number,
         })));
       }
     }
