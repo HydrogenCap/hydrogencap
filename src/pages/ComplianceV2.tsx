@@ -4,9 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, Search, Grid3X3, CalendarDays } from 'lucide-react';
+import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianceStatuses } from '@/hooks/useComplianceV2';
 import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
@@ -21,10 +24,12 @@ export default function ComplianceV2() {
   const { data: matrix, isLoading } = useComplianceMatrix();
   const { data: score } = usePortfolioComplianceScoreV2();
   const refreshStatuses = useRefreshComplianceStatuses();
+  const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState('needs_attention');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'matrix' | 'calendar'>('matrix');
+  const [rescanning, setRescanning] = useState(false);
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
@@ -34,6 +39,28 @@ export default function ComplianceV2() {
   useEffect(() => {
     refreshStatuses.mutate();
   }, [refreshStatuses]);
+
+  const handleRescan = async () => {
+    setRescanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reprocess-vault-documents', { body: {} });
+      if (error) throw error;
+      const { succeeded = 0, failed = 0, total = 0 } = (data ?? {}) as { succeeded?: number; failed?: number; total?: number };
+      if (total === 0) {
+        toast.info('No Vault documents need rescanning');
+      } else {
+        toast.success(`Rescanned ${total} Vault docs — ${succeeded} succeeded, ${failed} failed`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2'] });
+      await queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
+      refreshStatuses.mutate();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Rescan failed';
+      toast.error(msg);
+    } finally {
+      setRescanning(false);
+    }
+  };
 
   const handleCellClick = (propertyId: string, docType: ComplianceDocType) => {
     const row = matrix?.find(r => r.property_id === propertyId && r.document_type === docType);
@@ -55,12 +82,24 @@ export default function ComplianceV2() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6" />
-            Compliance Dashboard
-          </h1>
-          <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6" />
+              Compliance Dashboard
+            </h1>
+            <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRescan}
+            disabled={rescanning}
+            title="Re-run AI extraction on Vault documents that previously failed or are still pending"
+          >
+            <RefreshCw className={cn('h-4 w-4 mr-2', rescanning && 'animate-spin')} />
+            {rescanning ? 'Rescanning…' : 'Rescan Vault Documents'}
+          </Button>
         </div>
 
         {/* Stat Cards */}
