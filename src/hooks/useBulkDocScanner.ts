@@ -231,8 +231,11 @@ export function useBulkDocScanner() {
 
     await Promise.all(workers);
     setIsProcessing(false);
+    // process-document-v2 auto-creates compliance_documents_v2 records on extraction;
+    // refresh compliance views so newly-classified documents appear immediately.
+    invalidateComplianceCaches(queryClient);
     toast.success(`Processed ${validFiles.length} files`);
-  }, [documents.length, uploadAndClassify]);
+  }, [documents.length, uploadAndClassify, queryClient]);
 
   const setOverride = useCallback((idx: number, overrides: Partial<ScannedDocument['userOverrides']>) => {
     setDocuments(prev => prev.map((d, i) =>
