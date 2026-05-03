@@ -30,6 +30,7 @@ const getErrorMessage = (error: unknown) => error instanceof Error ? error.messa
 export function useBatchRenameDocuments() {
   const [progress, setProgress] = useState<RenameProgress>(INITIAL);
   const abortRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const patch = useCallback(
     (partial: Partial<RenameProgress>) => setProgress(prev => ({ ...prev, ...partial })),
