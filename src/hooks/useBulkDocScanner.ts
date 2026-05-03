@@ -58,6 +58,7 @@ export function useBulkDocScanner() {
   const [isFiling, setIsFiling] = useState(false);
   const { data: properties } = usePropertiesV2();
   const abortRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const updateDoc = useCallback((idx: number, patch: Partial<ScannedDocument>) => {
     setDocuments(prev => prev.map((d, i) => i === idx ? { ...d, ...patch } : d));
