@@ -377,6 +377,7 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
       ai_suggested_doc_type: result.doc_type,
       ai_doc_type_confidence: result.doc_type_confidence,
       ai_suggested_property_id: matchedPropertyId,
+      ai_property_confidence: matchConfidence || null,
       extracted_address_text: extractedFields.address ?? null,
       extracted_issue_date: extractedFields.issue_date ?? null,
       extracted_reference_number: extractedFields.reference_number ?? null,
@@ -387,6 +388,82 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
       docUpdate.property_id = matchedPropertyId;
     }
     await supabase.from("documents").update(docUpdate).eq("id", document_id);
+
+    // If promoted AND maps to a compliance type, file into compliance_documents_v2.
+    if (shouldPromote) {
+      const COMPLIANCE_TYPE_MAP: Record<string, string> = {
+        gas_safety_certificate: 'gas_safety_certificate',
+        electrical_certificate: 'eicr',
+        epc_certificate: 'epc',
+        fire_alarm_certificate: 'fire_alarm_cert',
+        emergency_lighting_certificate: 'emergency_lighting_cert',
+        pat_testing: 'pat_testing',
+        fire_risk_assessment: 'fire_risk_assessment',
+        hmo_licence: 'hmo_licence',
+        building_insurance: 'buildings_insurance',
+        public_liability_insurance: 'landlord_liability_insurance',
+        asbestos_survey: 'asbestos_survey',
+        legionella_assessment: 'legionella_risk_assessment',
+      };
+      const complianceType = COMPLIANCE_TYPE_MAP[result.doc_type];
+      if (complianceType) {
+        const { data: doc } = await supabase
+          .from('documents')
+          .select('org_id, file_url, original_file_name, final_file_name, uploaded_by')
+          .eq('id', document_id)
+          .single();
+
+        if (doc?.org_id) {
+          const issueDate = extractedFields.issue_date || new Date().toISOString().slice(0, 10);
+          const expiryDate = extractedFields.expiry_date || null;
+          let statusVal = 'valid';
+          if (expiryDate) {
+            const days = Math.ceil((new Date(expiryDate).getTime() - Date.now()) / 86400000);
+            if (days < 0) statusVal = 'expired';
+            else if (days <= 30) statusVal = 'critical';
+            else if (days <= 90) statusVal = 'expiring_soon';
+          }
+
+          // Supersede prior current
+          const { data: prior } = await supabase
+            .from('compliance_documents_v2')
+            .select('id')
+            .eq('property_id', matchedPropertyId)
+            .eq('document_type', complianceType)
+            .eq('is_current', true)
+            .maybeSingle();
+          if (prior?.id) {
+            await supabase
+              .from('compliance_documents_v2')
+              .update({ is_current: false })
+              .eq('id', prior.id);
+          }
+
+          const { error: insErr } = await supabase
+            .from('compliance_documents_v2')
+            .insert({
+              org_id: doc.org_id,
+              property_id: matchedPropertyId,
+              document_type: complianceType,
+              issue_date: issueDate,
+              expiry_date: expiryDate,
+              status: statusVal,
+              issuer_name: extractedFields.certifier_company || extractedFields.certifier_name || null,
+              certificate_number: extractedFields.reference_number || null,
+              file_url: doc.file_url,
+              file_name: doc.final_file_name || doc.original_file_name,
+              is_current: true,
+              supersedes_id: prior?.id || null,
+              ai_extracted: true,
+              ai_confidence_score: result.doc_type_confidence,
+              uploaded_by: doc.uploaded_by,
+            });
+          if (insErr) {
+            log.warn?.('compliance_documents_v2 insert failed', { error: insErr.message });
+          }
+        }
+      }
+    }
 
     log.info('Extraction completed', {
       extractionId,
