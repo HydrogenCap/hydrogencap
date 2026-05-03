@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { generateStructuredFilename } from '@/lib/documentNaming';
 
@@ -29,6 +30,7 @@ const getErrorMessage = (error: unknown) => error instanceof Error ? error.messa
 export function useBatchRenameDocuments() {
   const [progress, setProgress] = useState<RenameProgress>(INITIAL);
   const abortRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const patch = useCallback(
     (partial: Partial<RenameProgress>) => setProgress(prev => ({ ...prev, ...partial })),
@@ -219,6 +221,22 @@ export function useBatchRenameDocuments() {
               renamed_at: update.renamed_at,
             })
             .eq('id', update.id);
+
+          // Mirror the rename to any linked compliance register row so the
+          // Compliance page picks up the cleaner label without a hard refresh.
+          const { data: doc } = await supabaseAny
+            .from('documents')
+            .select('file_url, property_id')
+            .eq('id', update.id)
+            .maybeSingle();
+          if (doc?.file_url && doc?.property_id) {
+            await supabaseAny
+              .from('compliance_documents_v2')
+              .update({ file_name: update.final_file_name })
+              .eq('property_id', doc.property_id)
+              .eq('file_url', doc.file_url);
+          }
+
           renamed++;
         } catch (error: unknown) {
           warnings.push(`Failed to rename ${update.id}: ${getErrorMessage(error)}`);
@@ -249,7 +267,13 @@ export function useBatchRenameDocuments() {
       skipped,
       warnings: [...warnings],
     });
-  }, [patch]);
+
+    // Refresh dependent queries so the UI reflects new labels immediately.
+    queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
+  }, [patch, queryClient]);
 
   const cancelRename = useCallback(() => { abortRef.current = true; }, []);
   const resetRename = useCallback(() => setProgress(INITIAL), []);
