@@ -1,0 +1,2 @@
+UPDATE public.compliance_requirements_v2 SET is_required = true, override_reason = NULL WHERE document_type='asbestos_survey' AND property_id='f0c8109a-8e06-46de-b72f-f4b78ec583ce';
+UPDATE public.compliance_documents_v2 SET file_name='Asbestos_1BryanstoneClose_2026-05-03.pdf' WHERE id='0f69aa31-5b48-4df7-8da2-e145447c49ef';
