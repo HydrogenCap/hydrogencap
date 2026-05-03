@@ -272,28 +272,56 @@ export function useBulkDocScanner() {
       }
 
       try {
-        // Create compliance_documents_v2 record
-        const { error: compErr } = await supabaseAny
+        // Skip if process-document-v2 has already auto-filed this document
+        // (it creates a compliance_documents_v2 record during extraction)
+        const { data: existing } = await supabaseAny
           .from('compliance_documents_v2')
-          .insert({
-            org_id: orgId,
-            property_id: propId,
-            document_type: docType,
-            issue_date: issueDate,
-            expiry_date: expiryDate || null,
-            certificate_number: certNumber || null,
-            file_url: doc.storagePath || null,
-            file_name: doc.file.name,
-            status: expiryDate && new Date(expiryDate) < new Date() ? 'expired'
-              : expiryDate && new Date(expiryDate) < new Date(Date.now() + 30 * 86400000) ? 'critical'
-              : expiryDate && new Date(expiryDate) < new Date(Date.now() + 90 * 86400000) ? 'expiring_soon'
-              : 'valid',
-            ai_extracted: true,
-            ai_confidence_score: doc.classification.confidence,
-            is_current: true,
-          });
+          .select('id')
+          .eq('property_id', propId)
+          .eq('document_type', docType)
+          .eq('is_current', true)
+          .maybeSingle();
 
-        if (compErr) throw compErr;
+        const status = expiryDate && new Date(expiryDate) < new Date() ? 'expired'
+          : expiryDate && new Date(expiryDate) < new Date(Date.now() + 30 * 86400000) ? 'critical'
+          : expiryDate && new Date(expiryDate) < new Date(Date.now() + 90 * 86400000) ? 'expiring_soon'
+          : 'valid';
+
+        if (existing?.id) {
+          // Update existing current record with confirmed values rather than creating a duplicate
+          const { error: updErr } = await supabaseAny
+            .from('compliance_documents_v2')
+            .update({
+              issue_date: issueDate,
+              expiry_date: expiryDate || null,
+              certificate_number: certNumber || null,
+              file_url: doc.storagePath || null,
+              file_name: doc.file.name,
+              status,
+              ai_extracted: true,
+              ai_confidence_score: doc.classification.confidence,
+            })
+            .eq('id', existing.id);
+          if (updErr) throw updErr;
+        } else {
+          const { error: compErr } = await supabaseAny
+            .from('compliance_documents_v2')
+            .insert({
+              org_id: orgId,
+              property_id: propId,
+              document_type: docType,
+              issue_date: issueDate,
+              expiry_date: expiryDate || null,
+              certificate_number: certNumber || null,
+              file_url: doc.storagePath || null,
+              file_name: doc.file.name,
+              status,
+              ai_extracted: true,
+              ai_confidence_score: doc.classification.confidence,
+              is_current: true,
+            });
+          if (compErr) throw compErr;
+        }
 
         // Update document record
         if (doc.documentId) {
