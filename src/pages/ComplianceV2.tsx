@@ -82,12 +82,24 @@ export default function ComplianceV2() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6" />
-            Compliance Dashboard
-          </h1>
-          <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6" />
+              Compliance Dashboard
+            </h1>
+            <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRescan}
+            disabled={rescanning}
+            title="Re-run AI extraction on Vault documents that previously failed or are still pending"
+          >
+            <RefreshCw className={cn('h-4 w-4 mr-2', rescanning && 'animate-spin')} />
+            {rescanning ? 'Rescanning…' : 'Rescan Vault Documents'}
+          </Button>
         </div>
 
         {/* Stat Cards */}
