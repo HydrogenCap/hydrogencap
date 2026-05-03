@@ -24,10 +24,12 @@ export default function ComplianceV2() {
   const { data: matrix, isLoading } = useComplianceMatrix();
   const { data: score } = usePortfolioComplianceScoreV2();
   const refreshStatuses = useRefreshComplianceStatuses();
+  const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState('needs_attention');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'matrix' | 'calendar'>('matrix');
+  const [rescanning, setRescanning] = useState(false);
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
@@ -37,6 +39,28 @@ export default function ComplianceV2() {
   useEffect(() => {
     refreshStatuses.mutate();
   }, [refreshStatuses]);
+
+  const handleRescan = async () => {
+    setRescanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reprocess-vault-documents', { body: {} });
+      if (error) throw error;
+      const { succeeded = 0, failed = 0, total = 0 } = (data ?? {}) as { succeeded?: number; failed?: number; total?: number };
+      if (total === 0) {
+        toast.info('No Vault documents need rescanning');
+      } else {
+        toast.success(`Rescanned ${total} Vault docs — ${succeeded} succeeded, ${failed} failed`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2'] });
+      await queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
+      refreshStatuses.mutate();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Rescan failed';
+      toast.error(msg);
+    } finally {
+      setRescanning(false);
+    }
+  };
 
   const handleCellClick = (propertyId: string, docType: ComplianceDocType) => {
     const row = matrix?.find(r => r.property_id === propertyId && r.document_type === docType);
