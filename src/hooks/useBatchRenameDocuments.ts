@@ -221,6 +221,22 @@ export function useBatchRenameDocuments() {
               renamed_at: update.renamed_at,
             })
             .eq('id', update.id);
+
+          // Mirror the rename to any linked compliance register row so the
+          // Compliance page picks up the cleaner label without a hard refresh.
+          const { data: doc } = await supabaseAny
+            .from('documents')
+            .select('file_url, property_id')
+            .eq('id', update.id)
+            .maybeSingle();
+          if (doc?.file_url && doc?.property_id) {
+            await supabaseAny
+              .from('compliance_documents_v2')
+              .update({ file_name: update.final_file_name })
+              .eq('property_id', doc.property_id)
+              .eq('file_url', doc.file_url);
+          }
+
           renamed++;
         } catch (error: unknown) {
           warnings.push(`Failed to rename ${update.id}: ${getErrorMessage(error)}`);
