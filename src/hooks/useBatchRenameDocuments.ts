@@ -267,7 +267,13 @@ export function useBatchRenameDocuments() {
       skipped,
       warnings: [...warnings],
     });
-  }, [patch]);
+
+    // Refresh dependent queries so the UI reflects new labels immediately.
+    queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance_matrix_v2_stats'] });
+  }, [patch, queryClient]);
 
   const cancelRename = useCallback(() => { abortRef.current = true; }, []);
   const resetRename = useCallback(() => setProgress(INITIAL), []);
