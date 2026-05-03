@@ -344,8 +344,9 @@ export function useBulkDocScanner() {
     }
 
     setIsFiling(false);
+    invalidateComplianceCaches(queryClient);
     toast.success(`Filed ${filedCount} documents to ${propertySet.size} properties`);
-  }, [documents, updateDoc]);
+  }, [documents, updateDoc, queryClient]);
 
   const clearAll = useCallback(() => {
     abortRef.current = true;
