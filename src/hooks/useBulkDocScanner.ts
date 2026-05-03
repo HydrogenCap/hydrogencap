@@ -1,9 +1,17 @@
 import { useState, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+
+function invalidateComplianceCaches(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
+  qc.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
+  qc.invalidateQueries({ queryKey: ['portfolio-compliance-score-v2'] });
+  qc.invalidateQueries({ queryKey: ['compliance-requirements-v2'] });
+}
 
 export interface ScannedDocument {
   file: File;
