@@ -363,17 +363,30 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
     // The documents.extraction_status column uses 'review_needed' (not 'needs_review')
     // for human-review items — translate to keep the DB CHECK constraint happy.
     const docExtractionStatus = needsHumanReview ? 'review_needed' : 'completed';
-    await supabase.from("documents").update({
+
+    // Promotion logic: if Gemini matched a property with high confidence (>= 0.90),
+    // auto-promote the suggestion to the canonical property_id column. Below that
+    // threshold we only record it as a suggestion for human review.
+    const matchedPropertyId = extractedFields.property_id_match ?? null;
+    const matchConfidence = fieldConfidences.property_id_match ?? 0;
+    const PROMOTION_THRESHOLD = 0.90;
+    const shouldPromote = !!matchedPropertyId && matchConfidence >= PROMOTION_THRESHOLD;
+
+    const docUpdate: Record<string, unknown> = {
       extraction_status: docExtractionStatus,
       ai_suggested_doc_type: result.doc_type,
       ai_doc_type_confidence: result.doc_type_confidence,
-      ai_suggested_property_id: extractedFields.property_id_match ?? null,
+      ai_suggested_property_id: matchedPropertyId,
       extracted_address_text: extractedFields.address ?? null,
       extracted_issue_date: extractedFields.issue_date ?? null,
       extracted_reference_number: extractedFields.reference_number ?? null,
       expiry_date: extractedFields.expiry_date ?? null,
       ai_model: 'google/gemini-2.5-flash',
-    }).eq("id", document_id);
+    };
+    if (shouldPromote) {
+      docUpdate.property_id = matchedPropertyId;
+    }
+    await supabase.from("documents").update(docUpdate).eq("id", document_id);
 
     log.info('Extraction completed', {
       extractionId,
