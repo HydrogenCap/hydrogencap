@@ -121,7 +121,15 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
     ]);
 
     const properties = propertiesRes.data || [];
-    const loans = loansRes.data || [];
+    const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
+    warnIfPropertyIdSpaceMismatch(
+      "analyse-acquisition",
+      facilityRows,
+      properties.map((p: { id: string }) => p.id),
+    );
+    const loans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+      loanFacilityToLegacyShape,
+    );
     const income = incomeRes.data || [];
     const compliance = complianceRes.data || [];
 
