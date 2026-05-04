@@ -71,11 +71,12 @@ async function getPropertyDetails(
   if (wantAll || include.includes("loans")) {
     fetches.push(
       supabase
-        .from("loans")
-        .select("*")
+        .from("loan_facilities")
+        .select(LOAN_FACILITY_SELECT)
         .eq("property_id", propertyId)
         .then(({ data }) => {
-          result.loans = (data ?? []).map((l) => ({
+          const mapped = (data ?? []).map(loanFacilityToLegacyShape);
+          result.loans = mapped.map((l) => ({
             lender: l.lender,
             balance: l.current_mortgage_balance_gbp,
             interest_rate: l.interest_rate_percent,
