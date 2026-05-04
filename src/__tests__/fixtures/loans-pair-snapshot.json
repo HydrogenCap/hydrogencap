@@ -1,0 +1,126 @@
+{
+  "_generated_at": "2026-05-04",
+  "_comment": "V1 loans.id ↔ V2 loan_facilities.id pairing via address bridge. Refresh by re-running the SQL in src/__tests__/loans-pair-completeness.test.ts header.",
+  "pairs": [
+    {
+      "v1_loan_id": "0e7a4143-4876-4bea-8be8-15c78fb673d0",
+      "v2_loan_facility_id": "68223d0e-49b1-414c-82fe-2987ec0269da",
+      "address": "28 st martins road, oxford"
+    },
+    {
+      "v1_loan_id": "209a9fe4-ea40-489f-9653-cc48f261d15e",
+      "v2_loan_facility_id": "95325fcd-9a13-4371-8bff-24361c7ac42f",
+      "address": "166 wildwood, telford"
+    },
+    {
+      "v1_loan_id": "23d8c819-203c-4804-802a-71e6349f3845",
+      "v2_loan_facility_id": "1403a6a4-14a3-486d-8aaa-0b76a4be3eaa",
+      "address": "39 chirbury, stirchley, telford"
+    },
+    {
+      "v1_loan_id": "4adc6ada-e766-4f70-8385-ac6358e2cee5",
+      "v2_loan_facility_id": "4b470da6-1abc-4c18-a996-abc1aff46480",
+      "address": "29 blenheim walk, corby"
+    },
+    {
+      "v1_loan_id": "4fef3020-8985-4310-b249-e5af8dfbe096",
+      "v2_loan_facility_id": "596fa758-64f3-49b7-b6de-8813eb05e775",
+      "address": "25 arle gardens"
+    },
+    {
+      "v1_loan_id": "7619ade0-b21f-4ead-8e4e-1c536ca42fc1",
+      "v2_loan_facility_id": "a5c734c1-3bf7-49b9-8dfa-343c726048ba",
+      "address": "12 thames road, cheltenham"
+    },
+    {
+      "v1_loan_id": "7d55cd08-2e09-4544-bda4-ce572aef6a69",
+      "v2_loan_facility_id": "c4ed6c9e-0504-4e16-aabc-9f8443790323",
+      "address": "32 pinewood drive, cheltenham"
+    },
+    {
+      "v1_loan_id": "7ff45990-490a-4c1c-8486-35404b0f8abd",
+      "v2_loan_facility_id": "b5a636f9-0f89-4282-b192-3ba41fc68e4d",
+      "address": "22 wellsfield"
+    },
+    {
+      "v1_loan_id": "8edcd400-0daf-40e3-ac0b-020713dbb2e0",
+      "v2_loan_facility_id": "d044b641-d66a-429e-9a78-ada5f856e7d4",
+      "address": "79 waverley, telford"
+    },
+    {
+      "v1_loan_id": "8fed0f2e-2004-4958-841a-839cc114544a",
+      "v2_loan_facility_id": "7993878a-862d-48d2-b622-637c04662e00",
+      "address": "1 ambrose street, cheltenham"
+    },
+    {
+      "v1_loan_id": "90df2f23-05d1-4d59-94f9-3b2b6728cbe1",
+      "v2_loan_facility_id": "04e46c04-a0d9-4b99-841c-e67a40864df0",
+      "address": "19 lynworth place, cheltenham"
+    },
+    {
+      "v1_loan_id": "9a8b7576-a30a-447f-ac9f-e75f90ce372e",
+      "v2_loan_facility_id": "f498a598-20e9-475c-b860-4198dfc3a56f",
+      "address": "40 arle gardens, cheltenham gl51 8hr"
+    },
+    {
+      "v1_loan_id": "9cfa7c66-3b4e-4371-9185-a95697bc2fcb",
+      "v2_loan_facility_id": "cbd415f7-c64c-4883-9656-314bd16f8349",
+      "address": "11 holmer road hereford"
+    },
+    {
+      "v1_loan_id": "9d652b9c-0059-4719-9ddb-a9709dede228",
+      "v2_loan_facility_id": "5e369795-3e0f-409c-b82a-96452a7770b0",
+      "address": "ivy house, 23 friarn street, bridgwater"
+    },
+    {
+      "v1_loan_id": "9f5ed6ff-2c9e-425c-80f8-cf05f866cbb3",
+      "v2_loan_facility_id": "25257f1c-6926-45e9-aedb-9a3df0c34515",
+      "address": "6a the tower centre, alvescot road, carterton"
+    },
+    {
+      "v1_loan_id": "a71a2f53-a758-49b2-890e-f66d6d1d6d60",
+      "v2_loan_facility_id": "defbb147-b104-4d3c-b0a8-2b7697e77e32",
+      "address": "48 dodmoor,  grange, telford"
+    },
+    {
+      "v1_loan_id": "b15c41c8-db95-4eb7-b581-a14fcaacd050",
+      "v2_loan_facility_id": "861bb37d-f444-435a-901a-1f3c74285ea3",
+      "address": "stowford,bayswater road, oxford"
+    },
+    {
+      "v1_loan_id": "b7f94575-d3cb-47e7-ac59-25208d88df9c",
+      "v2_loan_facility_id": "c251223d-20ae-40a3-b8dc-32e4e19f37d6",
+      "address": "11 chatham road, oxford"
+    },
+    {
+      "v1_loan_id": "c1d70e31-2aa2-4bc6-b0bc-798c3fdbefbd",
+      "v2_loan_facility_id": "e91c8430-8d12-4421-a380-af4d8687ac22",
+      "address": "47 pinewood drive, cheltenham"
+    },
+    {
+      "v1_loan_id": "d01c86b8-7e95-4061-96e3-4b5f63b9bdb9",
+      "v2_loan_facility_id": "675f822e-5ff0-4a43-857d-a6296b9f33a0",
+      "address": "knowl house, 52 stert street"
+    },
+    {
+      "v1_loan_id": "d2ac75c2-25e3-4eff-b565-2b2a0701a146",
+      "v2_loan_facility_id": "b7a494b1-ed38-4904-a2ec-88f2406a0ed3",
+      "address": "ivy house rear plot, 23 friarn street, bridgwater"
+    },
+    {
+      "v1_loan_id": "d3c3b7a2-02b2-4b9f-9e9e-5b24179a9d3b",
+      "v2_loan_facility_id": "19028f8c-5c97-4ff5-a190-d9058056e245",
+      "address": "5 william kimber crescent, oxford, ox3 8lw"
+    },
+    {
+      "v1_loan_id": "e5f9d156-2c4a-4fa3-b108-5cc7fe223858",
+      "v2_loan_facility_id": "172b1934-e1a7-46f6-af35-7b8fb010ab59",
+      "address": "1 bryanstone close, cheltenham"
+    },
+    {
+      "v1_loan_id": "fc617278-5b60-45d2-960b-6faabd636373",
+      "v2_loan_facility_id": "528acc27-8295-467a-9c7f-7a551c471f87",
+      "address": "6 aldrich road, oxford"
+    }
+  ]
+}
