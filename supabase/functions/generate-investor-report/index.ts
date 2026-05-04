@@ -99,8 +99,8 @@ serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) 
         .select("id, name, address_line, city, postcode, current_value, purchase_price, monthly_rent, status, asset_category, bedrooms, bathrooms")
         .eq("org_id", orgId),
       supabase
-        .from("loans")
-        .select("id, property_id, lender_name, loan_amount, current_balance, interest_rate, loan_type, maturity_date, monthly_payment")
+        .from("loan_facilities")
+        .select(LOAN_FACILITY_SELECT)
         .eq("org_id", orgId),
       supabase
         .from("compliance_items_v2")
