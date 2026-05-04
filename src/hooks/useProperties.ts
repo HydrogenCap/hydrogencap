@@ -141,20 +141,14 @@ export function useDeleteProperty() {
   });
 }
 
-// Loan hooks
+// Loan hooks — V1 `loans` table is frozen (Prompt #45). Writes redirected to
+// V2 `loan_facilities` via useCreateLoanFacility / useUpdateLoanFacility.
 export function useCreateLoan() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (loan: Database['public']['Tables']['loans']['Insert']) => {
-      const { data, error } = await supabaseAny
-        .from('loans')
-        .insert(loan)
-        .select()
-        .single();
 
-      if (error) throw error;
-      return data;
+  return useMutation({
+    mutationFn: async (_loan: Database['public']['Tables']['loans']['Insert']): Promise<Loan> => {
+      throwV1Frozen('loans', 'useCreateLoan');
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
@@ -169,42 +163,13 @@ export function useCreateLoan() {
 
 export function useUpdateLoan() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ 
-      id, 
-      previousRate, 
-      ...loan 
-    }: Database['public']['Tables']['loans']['Update'] & { 
-      id: string; 
-      previousRate?: number | null 
-    }) => {
-      const { data, error } = await supabaseAny
-        .from('loans')
-        .update(loan)
-        .eq('id', id)
-        .select()
-        .single();
 
-      if (error) throw error;
-      
-      // Check if rate changed
-      if (loan.interest_rate_percent !== undefined && loan.interest_rate_percent !== previousRate) {
-        ActivityLoggers.rateChanged(
-          data.property_id,
-          previousRate ?? null,
-          Number(loan.interest_rate_percent),
-          data.fixed_rate_expires || undefined
-        );
-      } else if (loan.current_mortgage_balance_gbp !== undefined) {
-        ActivityLoggers.mortgageUpdated(
-          data.property_id,
-          data.lender,
-          Number(loan.current_mortgage_balance_gbp)
-        );
-      }
-      
-      return data;
+  return useMutation({
+    mutationFn: async (_args: Database['public']['Tables']['loans']['Update'] & {
+      id: string;
+      previousRate?: number | null;
+    }): Promise<Loan> => {
+      throwV1Frozen('loans', 'useUpdateLoan');
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });

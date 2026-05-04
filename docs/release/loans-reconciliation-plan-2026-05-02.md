@@ -238,3 +238,14 @@ Apply the same 5-step pattern (audit → backfill → redirect hooks → redirec
 - Migration: `supabase/migrations/<auto>-loans-arle-gardens-pair.sql` (idempotent; temporarily disables `v1_freeze_guard` for this single one-row data fix).
 - Smoke test: `src/__tests__/loans-pair-completeness.test.ts` + `src/__tests__/fixtures/loans-pair-snapshot.json` — asserts every V1 `loans.id` resolves 1:1 to a V2 `loan_facilities.id` via the address bridge.
 - Post-fix pairing: **24/24 (100%)**.
+
+## V1 loans writers redirected 2026-05-04 (Prompt §7.B)
+
+- `src/lib/v1Frozen.ts`: widened `throwV1Frozen` to accept `'loans'` (target `loan_facilities`).
+- `src/hooks/useProperties.ts`: `useCreateLoan` / `useUpdateLoan` now throw via `throwV1Frozen('loans', …)` — mirrors V1 properties freeze pattern; signatures preserved.
+- **PropertyNew.tsx** — option (b) leave call site as-is. Page already calls frozen `useCreateProperty`; the V2 wizard (`AddPropertyWizard`) is the active create path. Adding the V2 hook here would resurrect a deprecated V1 surface.
+- **PropertyEdit.tsx** — option (b) leave call site as-is. Same reasoning: page already calls frozen `useUpdateProperty`; V2 wizard handles property/loan edits via `loan_facilities`.
+- **MissingInfoPropertyRow.tsx** — option (b) leave call site as-is. Component already invokes frozen `useUpdateProperty`; the loan-edit branch (`updateLoan.mutateAsync`) will throw consistently with the rest of its V1 surface. Loan edits should be migrated to a V2 path in a follow-up alongside the V1 properties/income unfreeze plan.
+- **useBulkPropertyUpdate.ts** — option (b) `useBulkLoanUpdate` had **zero call sites**; reduced to a freeze-throwing stub that preserves the export shape.
+- **useBatchImport.ts** — option (b) deleted the V1 `loans` upsert branch (4 SQL calls). CSV imports now skip loan columns; loans must be added via the V2 wizard / `useCreateLoanFacility`.
+- TypeScript clean; 1120 vitest tests pass.

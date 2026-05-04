@@ -1,7 +1,7 @@
 /**
  * V1 Freeze Stage A — runtime guard.
  *
- * V1 tables (`properties`, `rooms`, `tenants`) are frozen for writes.
+ * V1 tables (`properties`, `rooms`, `tenants`, `loans`) are frozen for writes.
  * Reads are still permitted during the transition. Any attempt to call a
  * V1 mutation hook (Create/Update/Delete/Upsert) will throw via this helper.
  *
@@ -11,12 +11,14 @@
  *   - properties → properties_v2
  *   - rooms      → rooms_v2
  *   - tenants    → tenants_v2
+ *   - loans      → loan_facilities
  */
-export function throwV1Frozen(v1Table: 'properties' | 'rooms' | 'tenants', op: string): never {
+export function throwV1Frozen(v1Table: 'properties' | 'rooms' | 'tenants' | 'loans', op: string): never {
   const v2Map = {
     properties: 'properties_v2',
     rooms: 'rooms_v2',
     tenants: 'tenants_v2',
+    loans: 'loan_facilities',
   } as const;
   throw new Error(
     `V1 table '${v1Table}' is frozen — write to '${v2Map[v1Table]}' instead. ` +
