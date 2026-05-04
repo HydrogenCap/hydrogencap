@@ -118,16 +118,28 @@ function InboxPageInner() {
     });
   }, []);
 
+  const handleConfirmNullBulk = async () => {
+    setShowNullConfirmDialog(false);
+    if (nullConfidenceDocs.length === 0) return;
+    setIsAcceptingAll(true);
+    try {
+      await acceptAllHighConfidence.mutateAsync(nullConfidenceDocs);
+      setSelectedIds(new Set());
+    } finally {
+      setIsAcceptingAll(false);
+    }
+  };
+
   const handleBulkAccept = async () => {
-    const selectedDocs = readyDocs.filter(d => selectedIds.has(d.id));
-    const highConfSelected = selectedDocs.filter(d =>
-      d.ai_suggested_doc_type &&
-      (d.ai_doc_type_confidence || 0) >= 0.7 &&
-      d.ai_suggested_property_id &&
-      (d.ai_property_confidence || 0) >= 0.7
-    );
-    if (highConfSelected.length === 0) {
-      toast({ title: 'No high-confidence documents selected', description: 'Only documents with high AI confidence can be bulk-accepted.', variant: 'destructive' });
+    const selectedDocs = readyDocsAll.filter(d => selectedIds.has(d.id));
+    const { highConfidence: highConfSelected, nullConfidence: nullConfSelected } = partitionReadyDocs(selectedDocs);
+    if (highConfSelected.length === 0 && nullConfSelected.length === 0) {
+      toast({ title: 'Nothing to accept', description: 'Selected documents fall below the AI confidence threshold — review them per-row.', variant: 'destructive' });
+      return;
+    }
+    if (nullConfSelected.length > 0 && highConfSelected.length === 0) {
+      // Selection is entirely NULL-confidence — require explicit confirm via dialog.
+      setShowNullConfirmDialog(true);
       return;
     }
     setIsAcceptingAll(true);
