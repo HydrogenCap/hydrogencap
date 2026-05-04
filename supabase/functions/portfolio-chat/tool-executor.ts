@@ -582,14 +582,16 @@ async function generateReport(
       const [loansRes, incomeRes, costsRes] = await Promise.all([
         supabase.from("loan_facilities").select(LOAN_FACILITY_SELECT).in("property_id", propIds),
         supabase.from("income").select("*").in("property_id", propIds).eq("year", currentYear),
-        supabase.from("costs").select("*").in("property_id", propIds).eq("year", currentYear),
+        supabase.from("property_cost_budgets_v2").select(PROPERTY_COST_BUDGET_SELECT).in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
       ]);
 
       warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
       const totalValue = properties.reduce((s, p) => s + (p.current_value_gbp ?? 0), 0);
       const totalDebt = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
       const totalRent = (incomeRes.data ?? []).reduce((s, i) => s + (i.annual_rent_gbp ?? 0), 0);
-      const totalCosts = (costsRes.data ?? []).reduce(
+      const rawFoCostRows = (costsRes.data ?? []) as unknown as Parameters<typeof propertyCostBudgetToLegacyShape>[0][];
+      warnIfLegacyYearMissing("portfolio-chat:financial_overview", rawFoCostRows);
+      const totalCosts = rawFoCostRows.map(propertyCostBudgetToLegacyShape).reduce(
         (s, c) =>
           s + (c.management_gbp ?? 0) + (c.bills_gbp ?? 0) + (c.insurance_gbp ?? 0) +
           (c.maintenance_gbp ?? 0) + (c.compliance_gbp ?? 0) + (c.other_gbp ?? 0),
