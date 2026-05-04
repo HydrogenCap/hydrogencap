@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { formatGBP, calculateCostRules, getEffectiveCosts, type CostsData } from '@/lib/calculations';
-import { useUpsertCosts } from '@/hooks/useProperties';
+import { useUpsertPropertyCostBudget, yearToTaxYear } from '@/hooks/usePropertyCostBudgets';
 import { useToast } from '@/hooks/use-toast';
 
 interface CostsEditorProps {
