@@ -180,3 +180,55 @@ Please choose:
   canonical "unreviewed" state. Zero cost.
 
 Default if no decision in 7 days: **B**.
+
+---
+
+## #57 follow-up shipped 2026-05-04 (Option B + lightweight C)
+
+David picked **B + lightweight C**. Implementation:
+
+### Bulk-gate fix (Option B)
+- Extracted the gate into a pure helper `src/lib/inboxBulkGate.ts` with
+  `partitionReadyDocs()` returning **three** buckets:
+  `highConfidence` (≥0.7 on both scores), `nullConfidence` (suggestion present
+  but at least one score is NULL), `lowConfidence` (numeric score below 0.7).
+- The 5 stuck rows used to fall into `(NULL || 0) >= 0.7 → false` and were
+  silently lumped under "Needs review" with no path to bulk-accept. They now
+  surface under a new **"Review manually before bulk-accept"** sub-header
+  with a dedicated `Confirm & accept all unscored` button that opens an
+  `AlertDialog` requiring explicit user confirmation. NULL-confidence rows
+  are never accepted silently — both the header `Confirm All` button and the
+  selected-row `Accept All` button only auto-process `highConfidence` rows.
+- If a user's selection is **entirely** NULL-confidence, `handleBulkAccept`
+  routes through the same explicit-confirm dialog instead of the toast
+  rejection that #41 shipped.
+
+### Unreviewed-AI chip (lightweight Option C)
+- New header chip beside the existing "X pending" badge:
+  `{count} unreviewed AI suggestions` driven by `countUnreviewedAISuggestions()`
+  (semantics: `ai_suggested_property_id IS NOT NULL AND property_id IS NULL`,
+  matching the audit's canonical query). Click toggles a page-level filter
+  via `showUnreviewedOnly` that narrows all three sub-headers to those rows.
+  No new route, no separate review page (full Option C deferred until count > 50).
+
+### Tests
+- `src/lib/__tests__/inboxBulkGate.test.ts` — 6 tests covering:
+  high/null/low partitioning, mixed batch, NULL-confidence stuck-rows
+  scenario surfaces in `nullConfidence` bucket, chip count semantics,
+  `isUnreviewedAISuggestion()` helper.
+- All 6 pass.
+
+### Before / after
+| | Before | After |
+|---|---|---|
+| Stuck unreviewed AI suggestions reachable from header bulk-accept | 0 of 5 | 5 of 5 (via explicit confirm) |
+| Header chip surfacing the count | absent | "5 unreviewed AI suggestions" |
+| NULL-confidence silently bulk-accepted | n/a (silently dropped) | never — explicit confirm required |
+
+### Files changed
+- `src/lib/inboxBulkGate.ts` (new)
+- `src/lib/__tests__/inboxBulkGate.test.ts` (new)
+- `src/pages/Inbox.tsx` (gate + chip + manual-review sub-header + confirm dialog)
+- `docs/release/ai-suggested-property-id-triage-2026-05-04.md` (this section)
+
+No schema changes, no migrations.
