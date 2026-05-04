@@ -185,6 +185,24 @@ function InboxPageInner() {
                   {pendingDocs.length} pending
                 </Badge>
               )}
+              {unreviewedCount > 0 && (
+                <button
+                  type="button"
+                  aria-pressed={showUnreviewedOnly}
+                  aria-label={`${unreviewedCount} unreviewed AI suggestions — click to ${showUnreviewedOnly ? 'clear filter' : 'filter'}`}
+                  onClick={() => setShowUnreviewedOnly(v => !v)}
+                  className="ml-1"
+                >
+                  <Badge
+                    variant={showUnreviewedOnly ? 'default' : 'outline'}
+                    className="gap-1 cursor-pointer hover:bg-accent"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {unreviewedCount} unreviewed AI {unreviewedCount === 1 ? 'suggestion' : 'suggestions'}
+                    {showUnreviewedOnly && <span className="ml-1 text-xs">×</span>}
+                  </Badge>
+                </button>
+              )}
             </h1>
             <p className="text-muted-foreground">
               AI-powered compliance document intake and management
