@@ -4,6 +4,12 @@ import {
   loanFacilityToLegacyShape,
   warnIfPropertyIdSpaceMismatch,
 } from "../_shared/loanFacility.ts";
+import {
+  PROPERTY_COST_BUDGET_SELECT,
+  propertyCostBudgetToLegacyShape,
+  warnIfLegacyYearMissing,
+  yearToTaxYearShim,
+} from "../_shared/propertyCostBudget.ts";
 
 type ToolArgs = Record<string, unknown>;
 
