@@ -63,14 +63,15 @@ export function useProperty(id: string | undefined) {
           *,
           loans(*),
           income(*),
-          costs(*),
+          costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
         .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
-      return data as PropertyWithFinancials | null;
+      if (!data) return null;
+      return mapV2CostsToLegacy([data], 'useProperty')[0] as unknown as PropertyWithFinancials;
     },
     enabled: !!id,
   });
