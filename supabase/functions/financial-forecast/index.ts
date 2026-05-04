@@ -448,7 +448,12 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         ),
     ]);
 
-    const properties = (propertiesRes.data || []) as PropertyData[];
+    const properties = ((propertiesRes.data || []) as Array<{ id: string; address_line_1: string | null; current_valuation: number | null; purchase_price: number | null }>).map((p) => ({
+      id: p.id,
+      address_line: p.address_line_1 ?? "",
+      current_value_gbp: p.current_valuation,
+      purchase_price_gbp: p.purchase_price,
+    })) as PropertyData[];
     const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
     warnIfPropertyIdSpaceMismatch(
       "financial-forecast",
