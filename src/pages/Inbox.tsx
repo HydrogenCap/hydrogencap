@@ -341,6 +341,24 @@ function InboxPageInner() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* #57 follow-up: explicit confirm dialog for NULL-confidence bulk-accept */}
+        <AlertDialog open={showNullConfirmDialog} onOpenChange={setShowNullConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Accept {nullConfidenceDocs.length} unscored AI {nullConfidenceDocs.length === 1 ? 'suggestion' : 'suggestions'}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                These documents have an AI-suggested property but no confidence score, so we can&rsquo;t silently bulk-accept them. Confirm only if you&rsquo;ve eyeballed the suggestions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmNullBulk} className="bg-emerald-600 hover:bg-emerald-700">
+                Confirm &amp; accept
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Document List */}
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
