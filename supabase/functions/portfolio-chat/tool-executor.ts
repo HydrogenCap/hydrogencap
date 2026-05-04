@@ -261,11 +261,21 @@ async function calculatePortfolioMetrics(
   const propertyIds = args.property_ids as string[] | undefined;
   const currentYear = new Date().getFullYear();
 
-  let propsQuery = supabase.from("properties").select("*").eq("org_id", orgId);
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap current_value_gbp→current_valuation,
+  // purchase_price_gbp→purchase_price.
+  let propsQuery = supabase
+    .from("properties_v2")
+    .select("id, current_valuation, purchase_price")
+    .eq("org_id", orgId);
   if (propertyIds?.length) propsQuery = propsQuery.in("id", propertyIds);
-  const { data: properties } = await propsQuery;
-  if (!properties || properties.length === 0)
+  const { data: propertiesRaw } = await propsQuery;
+  if (!propertiesRaw || propertiesRaw.length === 0)
     return JSON.stringify({ error: "No properties found" });
+  const properties = propertiesRaw.map((p) => ({
+    id: p.id,
+    current_value_gbp: p.current_valuation,
+    purchase_price_gbp: p.purchase_price,
+  }));
 
   const propIds = properties.map((p) => p.id);
 
