@@ -1,4 +1,9 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  LOAN_FACILITY_SELECT,
+  loanFacilityToLegacyShape,
+  warnIfPropertyIdSpaceMismatch,
+} from "../_shared/loanFacility.ts";
 
 type ToolArgs = Record<string, unknown>;
 
