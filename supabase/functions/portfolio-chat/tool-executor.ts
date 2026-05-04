@@ -420,24 +420,35 @@ async function searchProperties(
   const query = args.query as string | undefined;
   const filters = (args.filters as Record<string, unknown>) ?? {};
 
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap address_line→address_line_1,
+  // current_value_gbp→current_valuation, lifecycle_type→lifecycle_stage.
+  // V1 `beds` has no V2 scalar equivalent; min_beds filter is dropped with a warning.
   let q = supabase
-    .from("properties")
-    .select("id, address_line, postcode, property_type, beds, current_value_gbp, epc_rating, lifecycle_type, tenure")
+    .from("properties_v2")
+    .select("id, address_line_1, postcode, property_type, current_valuation, epc_rating, lifecycle_stage, tenure")
     .eq("org_id", orgId);
 
   if (query) {
     q = q.or(
-      `address_line.ilike.%${query}%,postcode.ilike.%${query}%`
+      `address_line_1.ilike.%${query}%,postcode.ilike.%${query}%`
     );
   }
 
   if (filters.property_type) q = q.eq("property_type", filters.property_type);
-  if (filters.min_value) q = q.gte("current_value_gbp", filters.min_value);
-  if (filters.max_value) q = q.lte("current_value_gbp", filters.max_value);
-  if (filters.min_beds) q = q.gte("beds", filters.min_beds);
-  if (filters.lifecycle) q = q.eq("lifecycle_type", filters.lifecycle);
+  if (filters.min_value) q = q.gte("current_valuation", filters.min_value);
+  if (filters.max_value) q = q.lte("current_valuation", filters.max_value);
+  if (filters.min_beds) {
+    console.warn(JSON.stringify({
+      ts: new Date().toISOString(),
+      fn: "portfolio-chat:search_properties",
+      outcome: "v1_filter_unavailable_in_v2",
+      filter: "min_beds",
+      message: "properties_v2 has no scalar `beds`; min_beds filter ignored.",
+    }));
+  }
+  if (filters.lifecycle) q = q.eq("lifecycle_stage", filters.lifecycle);
 
-  const { data, error } = await q.order("address_line").limit(20);
+  const { data, error } = await q.order("address_line_1").limit(20);
   if (error) return JSON.stringify({ error: error.message });
 
   let results = data ?? [];
@@ -476,13 +487,13 @@ async function searchProperties(
     count: results.length,
     properties: results.map((p) => ({
       id: p.id,
-      address: p.address_line,
+      address: p.address_line_1,
       postcode: p.postcode,
       type: p.property_type,
-      beds: p.beds,
-      value: p.current_value_gbp,
+      beds: null,
+      value: p.current_valuation,
       epc: p.epc_rating,
-      lifecycle: p.lifecycle_type,
+      lifecycle: p.lifecycle_stage,
     })),
   });
 }
