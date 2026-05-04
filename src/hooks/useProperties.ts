@@ -147,7 +147,7 @@ export function useCreateLoan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_loan: Database['public']['Tables']['loans']['Insert']) => {
+    mutationFn: async (_loan: Database['public']['Tables']['loans']['Insert']): Promise<Loan> => {
       throwV1Frozen('loans', 'useCreateLoan');
     },
     onSuccess: (data) => {
