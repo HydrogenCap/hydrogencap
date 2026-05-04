@@ -101,7 +101,7 @@ async function getPropertyDetails(
         .select(LOAN_FACILITY_SELECT)
         .eq("property_id", propertyId)
         .then(({ data }) => {
-          const mapped = (data ?? []).map(loanFacilityToLegacyShape);
+          const mapped = ((data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
           result.loans = mapped.map((l) => ({
             lender: l.lender,
             balance: l.current_mortgage_balance_gbp,
