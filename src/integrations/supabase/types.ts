@@ -7278,6 +7278,117 @@ export type Database = {
           },
         ]
       }
+      property_cost_budgets_v2: {
+        Row: {
+          bills_gbp_manual: number | null
+          compliance_gbp_manual: number | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          insurance_gbp_calculated: number | null
+          insurance_gbp_manual: number | null
+          insurance_rule_enabled: boolean | null
+          insurance_rule_percent_of_value: number | null
+          management_gbp_calculated: number | null
+          management_gbp_manual: number | null
+          management_rule_enabled: boolean | null
+          management_rule_percent_of_rent: number | null
+          org_id: string
+          other_gbp_manual: number | null
+          property_id: string
+          repairs_gbp_calculated: number | null
+          repairs_gbp_manual: number | null
+          repairs_rule_enabled: boolean | null
+          repairs_rule_percent_of_rent: number | null
+          tax_year: string
+          updated_at: string
+        }
+        Insert: {
+          bills_gbp_manual?: number | null
+          compliance_gbp_manual?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          insurance_gbp_calculated?: number | null
+          insurance_gbp_manual?: number | null
+          insurance_rule_enabled?: boolean | null
+          insurance_rule_percent_of_value?: number | null
+          management_gbp_calculated?: number | null
+          management_gbp_manual?: number | null
+          management_rule_enabled?: boolean | null
+          management_rule_percent_of_rent?: number | null
+          org_id: string
+          other_gbp_manual?: number | null
+          property_id: string
+          repairs_gbp_calculated?: number | null
+          repairs_gbp_manual?: number | null
+          repairs_rule_enabled?: boolean | null
+          repairs_rule_percent_of_rent?: number | null
+          tax_year: string
+          updated_at?: string
+        }
+        Update: {
+          bills_gbp_manual?: number | null
+          compliance_gbp_manual?: number | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          insurance_gbp_calculated?: number | null
+          insurance_gbp_manual?: number | null
+          insurance_rule_enabled?: boolean | null
+          insurance_rule_percent_of_value?: number | null
+          management_gbp_calculated?: number | null
+          management_gbp_manual?: number | null
+          management_rule_enabled?: boolean | null
+          management_rule_percent_of_rent?: number | null
+          org_id?: string
+          other_gbp_manual?: number | null
+          property_id?: string
+          repairs_gbp_calculated?: number | null
+          repairs_gbp_manual?: number | null
+          repairs_rule_enabled?: boolean | null
+          repairs_rule_percent_of_rent?: number | null
+          tax_year?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_cost_budgets_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "entity_verification_status"
+            referencedColumns: ["entity_id"]
+          },
+          {
+            foreignKeyName: "property_cost_budgets_v2_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_cost_budgets_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_cost_budgets_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_cost_budgets_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
       property_legal_ownership: {
         Row: {
           created_at: string
