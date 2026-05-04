@@ -298,13 +298,26 @@ import { withInvocationLog } from "../_shared/logger.ts";
      }
  
      // Check refinancing opportunity
+     // V1 loans → V2 loan_facilities (Prompt §7.C). NOTE: propertyId here is a
+     // V1 properties.id; loan_facilities.property_id is in the V2 properties_v2
+     // id space, so this query will frequently miss until this function is
+     // migrated to properties_v2. Warn rather than crash.
      const { data: loans } = await supabase
-       .from("loans")
-       .select("current_mortgage_balance_gbp")
+       .from("loan_facilities")
+       .select("id, current_balance")
        .eq("property_id", propertyId)
        .limit(1);
- 
-     const currentMortgage = loans?.[0]?.current_mortgage_balance_gbp || 0;
+
+     if (!loans || loans.length === 0) {
+       console.warn(JSON.stringify({
+         ts: new Date().toISOString(),
+         fn: "generate-ai-valuation",
+         outcome: "no_loan_facility_for_property",
+         property_id: propertyId,
+         message: "No loan_facilities row matched property_id (likely V1↔V2 id space drift). LTV release calc will assume zero mortgage.",
+       }));
+     }
+     const currentMortgage = loans?.[0]?.current_balance || 0;
      if (valuation.estimated_value > 0 && currentMortgage > 0) {
        const currentLtv = (currentMortgage / valuation.estimated_value) * 100;
        const targetLtv = 75;

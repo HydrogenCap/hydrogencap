@@ -6,6 +6,10 @@ import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import {
+  LOAN_FACILITY_SELECT,
+  loanFacilityToLegacyShape,
+} from "../_shared/loanFacility.ts";
 
 serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) => {
   const log = createLogger("generate-investor-report", req);
@@ -95,8 +99,8 @@ serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) 
         .select("id, name, address_line, city, postcode, current_value, purchase_price, monthly_rent, status, asset_category, bedrooms, bathrooms")
         .eq("org_id", orgId),
       supabase
-        .from("loans")
-        .select("id, property_id, lender_name, loan_amount, current_balance, interest_rate, loan_type, maturity_date, monthly_payment")
+        .from("loan_facilities")
+        .select(LOAN_FACILITY_SELECT)
         .eq("org_id", orgId),
       supabase
         .from("compliance_items_v2")
@@ -121,7 +125,9 @@ serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) 
     ]);
 
     const properties = propertiesRes.data || [];
-    const loans = loansRes.data || [];
+    const loans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+      loanFacilityToLegacyShape,
+    );
     const compliance = complianceRes.data || [];
     const investors = investorsRes.data || [];
     const distributions = distributionsRes.data || [];

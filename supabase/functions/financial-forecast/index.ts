@@ -4,6 +4,11 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger, withInvocationLog } from "../_shared/logger.ts";
+import {
+  LOAN_FACILITY_SELECT,
+  loanFacilityToLegacyShape,
+  warnIfPropertyIdSpaceMismatch,
+} from "../_shared/loanFacility.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -431,10 +436,9 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         .select("id, address_line, current_value_gbp, purchase_price_gbp")
         .eq("org_id", orgId),
       supabase
-        .from("loans")
-        .select(
-          "property_id, interest_rate_percent, current_mortgage_balance_gbp, mortgage_payment_gbp, fixed_or_variable, fixed_rate_expires, reversion_rate_percent, capital_or_interest"
-        ),
+        .from("loan_facilities")
+        .select(LOAN_FACILITY_SELECT)
+        .eq("org_id", orgId),
       supabase.from("income").select("property_id, year, annual_rent_gbp"),
       supabase
         .from("costs")
@@ -444,7 +448,15 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
     ]);
 
     const properties = (propertiesRes.data || []) as PropertyData[];
-    const allLoans = (loansRes.data || []) as LoanData[];
+    const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
+    warnIfPropertyIdSpaceMismatch(
+      "financial-forecast",
+      facilityRows,
+      properties.map((p) => p.id),
+    );
+    const allLoans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+      loanFacilityToLegacyShape,
+    ) as unknown as LoanData[];
     const allIncome = (incomeRes.data || []) as IncomeData[];
     const allCosts = (costsRes.data || []) as CostData[];
 
