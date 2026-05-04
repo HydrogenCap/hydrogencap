@@ -447,10 +447,8 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         .eq("org_id", orgId),
       supabase.from("income").select("property_id, year, annual_rent_gbp"),
       supabase
-        .from("costs")
-        .select(
-          "property_id, year, management_gbp, insurance_gbp, maintenance_gbp, bills_gbp, compliance_gbp, other_gbp"
-        ),
+        .from("property_cost_budgets_v2")
+        .select(PROPERTY_COST_BUDGET_SELECT),
     ]);
 
     const properties = ((propertiesRes.data || []) as Array<{ id: string; address_line_1: string | null; current_valuation: number | null; purchase_price: number | null }>).map((p) => ({
