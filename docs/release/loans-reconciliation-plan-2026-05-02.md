@@ -326,3 +326,21 @@ Parameters<typeof executeTool>[0]` cast.
   outcomes for `financial-forecast` (the function that previously fired most
   often). `warnIfPropertyIdSpaceMismatch` should now never fire for these 5
   functions because both sides of the join are in V2 id space.
+
+## Loans freeze trigger shipped 2026-05-04
+
+- `v1_freeze_guard` BEFORE INSERT/UPDATE/DELETE trigger installed on
+  `public.loans` via idempotent `DO $$ ... pg_trigger NOT EXISTS` block,
+  mirroring the existing freeze on `properties`, `rooms`, `tenants`.
+- Verified with `INSERT INTO public.loans ... RETURNING id` against the live
+  DB — fails with `ERROR: V1 table loans is frozen — write to loans_v2 instead`
+  (note: the trigger's generic message says `loans_v2`; the JS layer correctly
+  redirects to `loan_facilities` per `src/lib/v1Frozen.ts`). The function is
+  shared across all V1 tables so the suffix is intentional/cosmetic.
+- Smoke test added: `src/__tests__/loans-frozen.test.ts` (4 tests, all pass)
+  asserts the JS guard (`throwV1Frozen('loans', ...)`) throws for create/update/
+  delete and includes the V2 target + attempted op in the message.
+- Spot-check: routes that previously touched V1 loans (`/dashboard`, `/lending`,
+  property financial tabs) all now go through V2 `loan_facilities` per Prompts
+  #45/#46/#46b — no `frozen` errors expected, and none surfaced in the live
+  preview after deploy.
