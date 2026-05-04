@@ -436,10 +436,9 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         .select("id, address_line, current_value_gbp, purchase_price_gbp")
         .eq("org_id", orgId),
       supabase
-        .from("loans")
-        .select(
-          "property_id, interest_rate_percent, current_mortgage_balance_gbp, mortgage_payment_gbp, fixed_or_variable, fixed_rate_expires, reversion_rate_percent, capital_or_interest"
-        ),
+        .from("loan_facilities")
+        .select(LOAN_FACILITY_SELECT)
+        .eq("org_id", orgId),
       supabase.from("income").select("property_id, year, annual_rent_gbp"),
       supabase
         .from("costs")
