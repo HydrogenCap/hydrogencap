@@ -296,16 +296,18 @@ async function calculatePortfolioMetrics(
       .in("property_id", propIds)
       .eq("year", currentYear),
     supabase
-      .from("costs")
-      .select("*")
+      .from("property_cost_budgets_v2")
+      .select(PROPERTY_COST_BUDGET_SELECT)
       .in("property_id", propIds)
-      .eq("year", currentYear),
+      .eq("tax_year", yearToTaxYearShim(currentYear)),
   ]);
 
   warnIfPropertyIdSpaceMismatch("portfolio-chat:get_property_financials", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
   const loans = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
   const incomes = incomeRes.data ?? [];
-  const costs = costsRes.data ?? [];
+  const rawCostRows = (costsRes.data ?? []) as unknown as Parameters<typeof propertyCostBudgetToLegacyShape>[0][];
+  warnIfLegacyYearMissing("portfolio-chat:get_property_financials", rawCostRows);
+  const costs = rawCostRows.map(propertyCostBudgetToLegacyShape);
 
   const totalValue = properties.reduce(
     (s, p) => s + (p.current_value_gbp ?? 0),
