@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { formatGBP, calculateCostRules, getEffectiveCosts, type CostsData } from '@/lib/calculations';
-import { useUpsertCosts } from '@/hooks/useProperties';
+import { useUpsertPropertyCostBudget, yearToTaxYear } from '@/hooks/usePropertyCostBudgets';
 import { useToast } from '@/hooks/use-toast';
 
 interface CostsEditorProps {
@@ -40,7 +40,7 @@ export function CostsEditor({
   onSave,
 }: CostsEditorProps) {
   const { toast } = useToast();
-  const upsertCosts = useUpsertCosts();
+  const upsertCosts = useUpsertPropertyCostBudget();
 
   // Rule toggles
   const [managementRuleEnabled, setManagementRuleEnabled] = useState(costs?.management_rule_enabled ?? true);
@@ -113,7 +113,7 @@ export function CostsEditor({
     try {
       await upsertCosts.mutateAsync({
         property_id: propertyId,
-        year,
+        tax_year: yearToTaxYear(year),
         management_rule_enabled: managementRuleEnabled,
         management_rule_percent_of_rent: parseFloat(managementPercent) || DEFAULT_RULES.management_rule_percent_of_rent,
         management_gbp_manual: managementManual ? parseFloat(managementManual) : null,

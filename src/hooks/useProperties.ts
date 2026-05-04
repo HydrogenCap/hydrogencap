@@ -213,22 +213,16 @@ export function useUpsertIncome() {
   });
 }
 
-// Costs hooks
+// V1 `costs` table is frozen (Costs Prompt B). Writes redirected to V2
+// `property_cost_budgets_v2` via useUpsertPropertyCostBudget.
 export function useUpsertCosts() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (costs: Database['public']['Tables']['costs']['Insert']) => {
-      const { data, error } = await supabaseAny
-        .from('costs')
-        .upsert(costs, { onConflict: 'property_id,year' })
-        .select()
-        .single();
 
-      if (error) throw error;
-      return data;
+  return useMutation({
+    mutationFn: async (_costs: Database['public']['Tables']['costs']['Insert']) => {
+      throwV1Frozen('costs', 'useUpsertCosts');
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       const total = [
@@ -238,8 +232,8 @@ export function useUpsertCosts() {
         data.repairs_gbp_manual,
         data.compliance_gbp_manual,
         data.other_gbp_manual,
-      ].reduce((sum, val) => sum + (val ? Number(val) : 0), 0);
-      
+      ].reduce((sum: number, val: any) => sum + (val ? Number(val) : 0), 0);
+
       ActivityLoggers.costsUpdated(data.property_id, data.year, total);
       showMutationSuccess('Costs updated');
     },

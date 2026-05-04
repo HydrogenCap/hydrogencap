@@ -251,3 +251,12 @@ Mirrors `loan_facilities` — all four operations gated by `public.user_has_org_
 
 ### Consumers
 Zero — confirmed clean greenfield. Backfill is Prompt D; consumer cutover is Prompts B and C.
+
+## Costs B — V1 writes redirected to V2 2026-05-04
+
+- `throwV1Frozen` widened to accept `'costs'` → `property_cost_budgets_v2`.
+- `useUpsertCosts` (src/hooks/useProperties.ts) is now throw-only — calling it raises the standard V1 frozen error. Signature preserved so importers still typecheck.
+- New V2 hook: `useUpsertPropertyCostBudget()` in `src/hooks/usePropertyCostBudgets.ts`. Upserts to `property_cost_budgets_v2` keyed by the `(property_id, tax_year)` UNIQUE composite. `org_id` is resolved via `fetchUserOrgId()`.
+- New mapper: `yearToTaxYear(year: number): string` — maps V1 year `2025` → V2 tax_year `'2025/26'` (UK starting-year rule, locked 2026-05-04 per #50a).
+- `CostsEditor` ported from `useUpsertCosts` to `useUpsertPropertyCostBudget`; UI unchanged.
+- No migration, no schema change, no edge function change.
