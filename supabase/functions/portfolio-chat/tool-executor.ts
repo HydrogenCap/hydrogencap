@@ -293,8 +293,8 @@ async function calculatePortfolioMetrics(
       .eq("year", currentYear),
   ]);
 
-  warnIfPropertyIdSpaceMismatch("portfolio-chat:get_property_financials", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
-  const loans = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
+  warnIfPropertyIdSpaceMismatch("portfolio-chat:get_property_financials", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
+  const loans = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
   const incomes = incomeRes.data ?? [];
   const costs = costsRes.data ?? [];
 
@@ -574,9 +574,9 @@ async function generateReport(
         supabase.from("costs").select("*").in("property_id", propIds).eq("year", currentYear),
       ]);
 
-      warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
+      warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
       const totalValue = properties.reduce((s, p) => s + (p.current_value_gbp ?? 0), 0);
-      const totalDebt = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
+      const totalDebt = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
       const totalRent = (incomeRes.data ?? []).reduce((s, i) => s + (i.annual_rent_gbp ?? 0), 0);
       const totalCosts = (costsRes.data ?? []).reduce(
         (s, c) =>
@@ -637,9 +637,9 @@ async function generateReport(
         supabase.from("compliance_items").select("*").in("property_id", propIds),
       ]);
 
-      warnIfPropertyIdSpaceMismatch("portfolio-chat:risk_summary", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
+      warnIfPropertyIdSpaceMismatch("portfolio-chat:risk_summary", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
       const totalValue = properties.reduce((s, p) => s + (p.current_value_gbp ?? 0), 0);
-      const totalDebt = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
+      const totalDebt = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
       const totalRent = (incomeRes.data ?? []).reduce((s, i) => s + (i.annual_rent_gbp ?? 0), 0);
       const now = new Date();
       const expiredCount = (complianceRes.data ?? []).filter(
