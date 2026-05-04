@@ -140,13 +140,13 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
       current_value_gbp: p.current_valuation,
       purchase_price_gbp: p.purchase_price,
     }));
-    const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
+    const facilityRows = (loansRes.data || []) as unknown as Array<{ id: string; property_id: string }>;
     warnIfPropertyIdSpaceMismatch(
       "analyse-acquisition",
       facilityRows,
       properties.map((p: { id: string }) => p.id),
     );
-    const loans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+    const loans = ((loansRes.data || []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
       loanFacilityToLegacyShape,
     );
     const income = incomeRes.data || [];
