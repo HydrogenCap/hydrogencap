@@ -6,6 +6,11 @@ import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import {
+  LOAN_FACILITY_SELECT,
+  loanFacilityToLegacyShape,
+  warnIfPropertyIdSpaceMismatch,
+} from "../_shared/loanFacility.ts";
 
 const RequestSchema = z.object({
   address: z.string().min(1, "Address is required"),
