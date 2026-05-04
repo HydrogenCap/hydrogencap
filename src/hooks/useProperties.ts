@@ -9,6 +9,11 @@ import { ActivityLoggers } from './useActivityLog';
 
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 import { throwV1Frozen } from '@/lib/v1Frozen';
+import {
+  propertyCostBudgetToLegacyShape,
+  warnIfLegacyYearMissing,
+  type PropertyCostBudgetV2RowLite,
+} from '@/lib/propertyCostBudgetCompat';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
