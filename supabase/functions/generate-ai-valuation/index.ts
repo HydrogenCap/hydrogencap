@@ -200,19 +200,44 @@ import { withInvocationLog } from "../_shared/logger.ts";
        if ("error" in parsed) return parsed.error;
        const { propertyId } = parsed.data;
  
-     // Get property
-     const { data: property, error: propError } = await supabase
-       .from("properties")
-       .select("*")
-       .eq("id", propertyId)
-       .single();
- 
-     if (propError || !property) {
-       return new Response(JSON.stringify({ error: "Property not found" }), { 
-         status: 404,
-         headers: { ...corsHeaders, "Content-Type": "application/json" },
-       });
-     }
+      // Get property — V2 properties_v2 (Prompt §7.C hot-fix). Column remap:
+      //   address_line→address_line_1, current_value_gbp→current_valuation,
+      //   purchase_price_gbp→purchase_price. V1-only `beds` has no V2 scalar
+      //   equivalent (lives in rooms_v2 / units_v2); logged as warning.
+      const { data: propertyV2, error: propError } = await supabase
+        .from("properties_v2")
+        .select("id, org_id, address_line_1, postcode, property_type, current_valuation, purchase_price, purchase_date")
+        .eq("id", propertyId)
+        .single();
+
+      if (propError || !propertyV2) {
+        return new Response(JSON.stringify({ error: "Property not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      console.warn(JSON.stringify({
+        ts: new Date().toISOString(),
+        fn: "generate-ai-valuation",
+        outcome: "v1_column_unavailable_in_v2",
+        property_id: propertyId,
+        column: "beds",
+        message: "properties_v2 has no scalar `beds` — bedroom count omitted from valuation prompt.",
+      }));
+
+      const property = {
+        id: propertyV2.id,
+        org_id: propertyV2.org_id,
+        address_line: propertyV2.address_line_1 ?? "",
+        postcode: propertyV2.postcode ?? "",
+        property_type: propertyV2.property_type ?? "",
+        beds: 0,
+        current_value_gbp: propertyV2.current_valuation ?? 0,
+        purchase_price_gbp: propertyV2.purchase_price ?? 0,
+        purchase_date: propertyV2.purchase_date ?? "",
+      } as const;
+
 
      const { data: membership } = await supabase
        .from("memberships")
