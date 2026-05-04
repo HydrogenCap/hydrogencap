@@ -261,3 +261,68 @@ Apply the same 5-step pattern (audit → backfill → redirect hooks → redirec
 - **Column gaps**: `broker_name`, `broker_contact`, `loan_start_date`, `term_years`, `loan_term_months`, `payment_override_gbp`, `payment_auto_calculated_gbp`, `payment_source`, `refinance_target_date`, `notes` are returned as `null` (V1 had 0/24 populated per audit §1).
 - **Property-id space caveat**: `loan_facilities.property_id` → `properties_v2.id`, but `financial-forecast`, `analyse-acquisition`, `generate-ai-valuation`, and 3/4 portfolio-chat tools still query V1 `properties`. The helper logs `outcome: "loan_property_id_space_mismatch"` rather than crashing — watch `outcome=server_error`/`loan_property_id_space_mismatch` rates after deploy. Migrating those 4 functions to `properties_v2` is the next prompt; in-scope §7.C was loans-only.
 - TypeScript clean; all 5 functions deployed successfully.
+
+## Edge-function V1 properties reads ported to V2 (Prompt §7.C hot-fix) 2026-05-04
+
+Closes the `loan_property_id_space_mismatch` warning surfaced by Prompt #46 by
+porting all V1 `properties` reads in the 5 affected edge functions to V2
+`properties_v2`, so `loan_facilities.property_id` joins now resolve in the same
+id space.
+
+### Per-function `from('properties')` sites ported
+
+- **financial-forecast** — `index.ts:435` (portfolio fetch in `Promise.all`).
+- **generate-investor-report** — already on `properties_v2` after #46; no V1 sites remained.
+- **generate-ai-valuation** — `index.ts:205` (single-row fetch) and `index.ts:277` (post-valuation `update`, which had no V2 equivalent and was replaced with a structured warning).
+- **analyse-acquisition** — `index.ts:100` (portfolio fetch) plus two inline `from('properties')` lookups for `.in("property_id", …)` filters at `:112` and `:119` — all three retargeted to `properties_v2`.
+- **portfolio-chat/tool-executor** — 4 sites: `:46` (`get_property_details`), `:238` (`calculate_portfolio_metrics`), `:388` (`search_properties`), `:465` (`generate_report`).
+
+### Column remap applied inline at each `.select()`
+
+| V1 (`properties`) | V2 (`properties_v2`) |
+|---|---|
+| `address_line` | `address_line_1` |
+| `current_value_gbp` | `current_valuation` |
+| `purchase_price_gbp` | `purchase_price` |
+| `lifecycle_type` | `lifecycle_stage` |
+| `has_gas` | `has_gas_supply` |
+
+Downstream math/consumers were preserved by mapping V2 rows back to legacy
+field names immediately after the fetch, mirroring the loan helper pattern from
+#46 but kept inline (per the hot-fix scope).
+
+### V1-only columns / filters → `console.warn` (no crash)
+
+These have no scalar V2 equivalent and now emit a structured warning with the
+property id, then continue with `null`:
+
+- `beds` (lives in `rooms_v2`/`units_v2`) — emitted by `generate-ai-valuation`,
+  `analyse-acquisition`, `portfolio-chat:get_property_details`,
+  `portfolio-chat:search_properties`.
+- `last_valuation_date`, `last_valuation_estimate`, `valuation_confidence`,
+  `value_change_percent` — V1-only mirror columns on `properties`. Source of
+  truth is `property_valuations`, so the legacy mirror `update` in
+  `generate-ai-valuation` was replaced with a warning and skipped.
+- `min_beds` filter in `portfolio-chat:search_properties` — ignored with a
+  warning (no V2 column to filter on).
+
+### TypeScript hygiene
+
+Cascading `WithLenderName` cast errors caused by Supabase's `GenericStringError`
+union were fixed with the standard `as unknown as Parameters<typeof
+loanFacilityToLegacyShape>[0][]` pattern at every `loanFacilityToLegacyShape`
+call site across the 5 functions. The `executeTool(supabase, …)` call site in
+`portfolio-chat/index.ts` got the same `as unknown as
+Parameters<typeof executeTool>[0]` cast.
+
+### Verification
+
+- `node scripts/check-edge-functions.mjs` clean across all 5 functions
+  (one unrelated pre-existing error in `reprocess-vault-documents` —
+  out of scope).
+- `grep from('properties')` across the 5 functions returns zero results.
+- 5 functions re-deployed.
+- Post-deploy edge-function logs show no `loan_property_id_space_mismatch`
+  outcomes for `financial-forecast` (the function that previously fired most
+  often). `warnIfPropertyIdSpaceMismatch` should now never fire for these 5
+  functions because both sides of the join are in V2 id space.
