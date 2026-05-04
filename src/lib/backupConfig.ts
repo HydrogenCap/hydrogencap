@@ -95,7 +95,7 @@ export const BACKUP_TABLES: TableExportConfig[] = [
   { table: 'job_follow_ups', prefix: '54', label: 'Job Follow-Ups', essential: false },
   { table: 'contractor_reviews', prefix: '55', label: 'Contractor Reviews', essential: false },
   { table: 'contractor_service_areas', prefix: '56', label: 'Contractor Service Areas', essential: false },
-  { table: 'maintenance_updates', prefix: '57', label: 'Maintenance Updates', essential: false },
+  // prefix '57' (maintenance_updates) retired 2026-05-04 — table dropped (0 rows, dormant, RLS-no-policy).
   { table: 'document_share_links', prefix: '58', label: 'Document Share Links', essential: false },
   { table: 'notification_preferences', prefix: '59', label: 'Notification Preferences', essential: false },
 
