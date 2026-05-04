@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { throwV1Frozen } from '@/lib/v1Frozen';
 
 interface BulkLoanUpdateParams {
   propertyIds: string[];
@@ -16,49 +17,20 @@ interface BulkPropertyUpdateParams {
   entityId?: string | null;
 }
 
-type BulkLoanUpdates = Pick<
-  Database['public']['Tables']['loans']['Update'],
-  'interest_rate_percent' | 'fixed_rate_expires' | 'lender'
->;
-
 type BulkPropertyUpdates = Pick<
   Database['public']['Tables']['properties_v2']['Update'],
   'lifecycle_stage' | 'operational_date' | 'entity_id'
 >;
 
+/**
+ * @deprecated V1 `loans` table is frozen (Prompt #45). Bulk loan updates must
+ * go through V2 `loan_facilities` (no current call sites). Kept as a stub that
+ * throws to preserve the export shape during the transition.
+ */
 export function useBulkLoanUpdate() {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ 
-      propertyIds, 
-      interestRate, 
-      fixedRateExpires, 
-      lender 
-    }: BulkLoanUpdateParams) => {
-      // Build update object with only provided fields
-      const updates: BulkLoanUpdates = {};
-      if (interestRate !== undefined) updates.interest_rate_percent = interestRate;
-      if (fixedRateExpires !== undefined) updates.fixed_rate_expires = fixedRateExpires || null;
-      if (lender !== undefined) updates.lender = lender || null;
-
-      if (Object.keys(updates).length === 0) {
-        throw new Error('No updates provided');
-      }
-
-      // Update all loans for selected properties
-      const { error, count } = await supabaseAny
-        .from('loans')
-        .update(updates)
-        .in('property_id', propertyIds);
-
-      if (error) throw error;
-
-      return { updatedCount: count || propertyIds.length };
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
-      toast.success(`Updated loans for ${data.updatedCount} properties`);
+    mutationFn: async (_params: BulkLoanUpdateParams) => {
+      throwV1Frozen('loans', 'useBulkLoanUpdate');
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to update loans');
