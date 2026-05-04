@@ -40,7 +40,7 @@ export function CostsEditor({
   onSave,
 }: CostsEditorProps) {
   const { toast } = useToast();
-  const upsertCosts = useUpsertCosts();
+  const upsertCosts = useUpsertPropertyCostBudget();
 
   // Rule toggles
   const [managementRuleEnabled, setManagementRuleEnabled] = useState(costs?.management_rule_enabled ?? true);
