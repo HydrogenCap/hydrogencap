@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2 } from 'lucide-react';
+import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2, Sparkles } from 'lucide-react';
+import { partitionReadyDocs, countUnreviewedAISuggestions, isUnreviewedAISuggestion } from '@/lib/inboxBulkGate';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useActivitySidebar } from '@/state/activitySidebar';
 import { useEffect } from 'react';
@@ -48,6 +49,8 @@ function InboxPageInner() {
   const deleteDocument = useDeleteDocument();
   const { toast } = useToast();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
+  const [showNullConfirmDialog, setShowNullConfirmDialog] = useState(false);
+  const [showUnreviewedOnly, setShowUnreviewedOnly] = useState(false);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -62,15 +65,26 @@ function InboxPageInner() {
     (d.extraction_status === 'failed' || d.extraction_status === 'rate_limited' || d.extraction_status === 'credits_exhausted') &&
     d.review_status === 'pending'
   ) || [];
-  const readyDocs = pendingDocs.filter(d => d.extraction_status === 'completed');
+  const readyDocsAll = pendingDocs.filter(d => d.extraction_status === 'completed');
 
-  // High confidence = both doc type and property match >= 70%
-  const highConfidenceDocs = readyDocs.filter(d =>
-    d.ai_suggested_doc_type &&
-    (d.ai_doc_type_confidence || 0) >= 0.7 &&
-    d.ai_suggested_property_id &&
-    (d.ai_property_confidence || 0) >= 0.7
+  // #57 follow-up: partition into high / null-confidence / low-confidence buckets.
+  // NULL-confidence rows used to fall through `(NULL || 0) >= 0.7` and were
+  // silently excluded from Accept-All — they now surface explicitly.
+  const { highConfidence: highConfidenceDocs, nullConfidence: nullConfidenceDocs, lowConfidence: lowConfidenceDocs } =
+    useMemo(() => partitionReadyDocs(readyDocsAll), [readyDocsAll]);
+
+  // Header chip count: AI suggested a property, user has not yet confirmed.
+  const unreviewedCount = useMemo(
+    () => countUnreviewedAISuggestions(documents ?? []),
+    [documents],
   );
+
+  const readyDocs = showUnreviewedOnly
+    ? readyDocsAll.filter(isUnreviewedAISuggestion)
+    : readyDocsAll;
+  const visibleHighConf = showUnreviewedOnly ? highConfidenceDocs.filter(isUnreviewedAISuggestion) : highConfidenceDocs;
+  const visibleNullConf = showUnreviewedOnly ? nullConfidenceDocs.filter(isUnreviewedAISuggestion) : nullConfidenceDocs;
+  const visibleLowConf = showUnreviewedOnly ? lowConfidenceDocs.filter(isUnreviewedAISuggestion) : lowConfidenceDocs;
 
   // Calculate compliance stats from V2 matrix
   const complianceStats = useMemo(() => {
@@ -104,16 +118,28 @@ function InboxPageInner() {
     });
   }, []);
 
+  const handleConfirmNullBulk = async () => {
+    setShowNullConfirmDialog(false);
+    if (nullConfidenceDocs.length === 0) return;
+    setIsAcceptingAll(true);
+    try {
+      await acceptAllHighConfidence.mutateAsync(nullConfidenceDocs);
+      setSelectedIds(new Set());
+    } finally {
+      setIsAcceptingAll(false);
+    }
+  };
+
   const handleBulkAccept = async () => {
-    const selectedDocs = readyDocs.filter(d => selectedIds.has(d.id));
-    const highConfSelected = selectedDocs.filter(d =>
-      d.ai_suggested_doc_type &&
-      (d.ai_doc_type_confidence || 0) >= 0.7 &&
-      d.ai_suggested_property_id &&
-      (d.ai_property_confidence || 0) >= 0.7
-    );
-    if (highConfSelected.length === 0) {
-      toast({ title: 'No high-confidence documents selected', description: 'Only documents with high AI confidence can be bulk-accepted.', variant: 'destructive' });
+    const selectedDocs = readyDocsAll.filter(d => selectedIds.has(d.id));
+    const { highConfidence: highConfSelected, nullConfidence: nullConfSelected } = partitionReadyDocs(selectedDocs);
+    if (highConfSelected.length === 0 && nullConfSelected.length === 0) {
+      toast({ title: 'Nothing to accept', description: 'Selected documents fall below the AI confidence threshold — review them per-row.', variant: 'destructive' });
+      return;
+    }
+    if (nullConfSelected.length > 0 && highConfSelected.length === 0) {
+      // Selection is entirely NULL-confidence — require explicit confirm via dialog.
+      setShowNullConfirmDialog(true);
       return;
     }
     setIsAcceptingAll(true);
@@ -158,6 +184,24 @@ function InboxPageInner() {
                 <Badge variant="secondary" className="ml-2">
                   {pendingDocs.length} pending
                 </Badge>
+              )}
+              {unreviewedCount > 0 && (
+                <button
+                  type="button"
+                  aria-pressed={showUnreviewedOnly}
+                  aria-label={`${unreviewedCount} unreviewed AI suggestions — click to ${showUnreviewedOnly ? 'clear filter' : 'filter'}`}
+                  onClick={() => setShowUnreviewedOnly(v => !v)}
+                  className="ml-1"
+                >
+                  <Badge
+                    variant={showUnreviewedOnly ? 'default' : 'outline'}
+                    className="gap-1 cursor-pointer hover:bg-accent"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {unreviewedCount} unreviewed AI {unreviewedCount === 1 ? 'suggestion' : 'suggestions'}
+                    {showUnreviewedOnly && <span className="ml-1 text-xs">×</span>}
+                  </Badge>
+                </button>
               )}
             </h1>
             <p className="text-muted-foreground">
@@ -297,6 +341,24 @@ function InboxPageInner() {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* #57 follow-up: explicit confirm dialog for NULL-confidence bulk-accept */}
+        <AlertDialog open={showNullConfirmDialog} onOpenChange={setShowNullConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Accept {nullConfidenceDocs.length} unscored AI {nullConfidenceDocs.length === 1 ? 'suggestion' : 'suggestions'}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                These documents have an AI-suggested property but no confidence score, so we can&rsquo;t silently bulk-accept them. Confirm only if you&rsquo;ve eyeballed the suggestions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmNullBulk} className="bg-emerald-600 hover:bg-emerald-700">
+                Confirm &amp; accept
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Document List */}
         <Tabs defaultValue="pending" className="space-y-4">
           <TabsList>
@@ -342,13 +404,13 @@ function InboxPageInner() {
               />
             ) : (
               <>
-                {highConfidenceDocs.length > 0 && (
+                {visibleHighConf.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      Ready to confirm ({highConfidenceDocs.length})
+                      Ready to confirm ({visibleHighConf.length})
                     </p>
-                    {highConfidenceDocs.map(doc => (
+                    {visibleHighConf.map(doc => (
                       <ComplianceReviewCard
                         key={doc.id}
                         document={doc}
@@ -359,13 +421,43 @@ function InboxPageInner() {
                   </div>
                 )}
 
-                {readyDocs.filter(d => !highConfidenceDocs.includes(d)).length > 0 && (
+                {visibleNullConf.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-blue-500" />
+                        Review manually before bulk-accept ({visibleNullConf.length})
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowNullConfirmDialog(true)}
+                        disabled={isAcceptingAll || nullConfidenceDocs.length === 0}
+                      >
+                        Confirm &amp; accept all unscored
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      The AI suggested a property but didn&rsquo;t score its confidence. Eyeball each suggestion, then confirm.
+                    </p>
+                    {visibleNullConf.map(doc => (
+                      <ComplianceReviewCard
+                        key={doc.id}
+                        document={doc}
+                        selected={selectedIds.has(doc.id)}
+                        onSelectChange={(sel) => handleSelectChange(doc.id, sel)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {visibleLowConf.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Needs review ({readyDocs.filter(d => !highConfidenceDocs.includes(d)).length})
+                      Needs review ({visibleLowConf.length})
                     </p>
-                    {readyDocs.filter(d => !highConfidenceDocs.includes(d)).map(doc => (
+                    {visibleLowConf.map(doc => (
                       <ComplianceReviewCard
                         key={doc.id}
                         document={doc}
