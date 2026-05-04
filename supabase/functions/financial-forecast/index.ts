@@ -4,6 +4,11 @@ import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger, withInvocationLog } from "../_shared/logger.ts";
+import {
+  LOAN_FACILITY_SELECT,
+  loanFacilityToLegacyShape,
+  warnIfPropertyIdSpaceMismatch,
+} from "../_shared/loanFacility.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
