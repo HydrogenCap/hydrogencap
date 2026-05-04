@@ -42,6 +42,12 @@ export function taxYearToYear(taxYear: string): number {
   return parseInt(m[1], 10);
 }
 
+/** V1 year integer (2025) → V2 tax_year string ('2025/26'). Mirrors the src/ helper. */
+export function yearToTaxYearShim(year: number): string {
+  const next = (year + 1) % 100;
+  return `${year}/${String(next).padStart(2, "0")}`;
+}
+
 /** Log-only: warn (don't throw) when a row has unparsable tax_year. */
 export function warnIfLegacyYearMissing(
   context: string,
