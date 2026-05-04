@@ -467,7 +467,9 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
       loanFacilityToLegacyShape,
     ) as unknown as LoanData[];
     const allIncome = (incomeRes.data || []) as IncomeData[];
-    const allCosts = (costsRes.data || []) as CostData[];
+    const rawCostRows = (costsRes.data || []) as unknown as Parameters<typeof propertyCostBudgetToLegacyShape>[0][];
+    warnIfLegacyYearMissing("financial-forecast", rawCostRows);
+    const allCosts = rawCostRows.map(propertyCostBudgetToLegacyShape) as unknown as CostData[];
 
     // Filter loans/income/costs to properties in this org
     const propertyIds = new Set(properties.map((p) => p.id));
