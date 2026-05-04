@@ -431,9 +431,10 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
 
     // Fetch portfolio data in parallel
     const [propertiesRes, loansRes, incomeRes, costsRes] = await Promise.all([
+      // V2: properties_v2 — column remap: address_line→address_line_1, current_value_gbp→current_valuation, purchase_price_gbp→purchase_price
       supabase
-        .from("properties")
-        .select("id, address_line, current_value_gbp, purchase_price_gbp")
+        .from("properties_v2")
+        .select("id, address_line_1, current_valuation, purchase_price")
         .eq("org_id", orgId),
       supabase
         .from("loan_facilities")
