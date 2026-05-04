@@ -221,3 +221,33 @@ year"). Confirm before Prompt **D**.
   RLS, `UNIQUE (property_id, tax_year)`, and the V2 audit trigger. Block on
   the §8 David-decision before running Prompt **D**, but A/B/C/E can proceed
   immediately — none of them depend on the year-shape choice.
+
+## Costs A — property_cost_budgets_v2 created 2026-05-04
+
+Greenfield V2 table shipped — zero consumers pre-existed (`rg property_cost_budgets_v2 src/ supabase/functions/` returned nothing).
+
+### Columns
+- `id uuid PK DEFAULT gen_random_uuid()`
+- `org_id uuid NOT NULL` → FK `legal_entities(id) ON DELETE CASCADE`
+- `property_id uuid NOT NULL` → FK `properties_v2(id) ON DELETE CASCADE`
+- `tax_year text NOT NULL` (UK starting-year rule, e.g. V1 `year=2026` → `'2026/27'`)
+- Manual GBP buckets: `management_gbp_manual`, `bills_gbp_manual`, `insurance_gbp_manual`, `repairs_gbp_manual`, `compliance_gbp_manual`, `other_gbp_manual` (all `numeric DEFAULT 0`)
+- Rule cols: `management_rule_enabled` / `management_rule_percent_of_rent` / `management_gbp_calculated`; same triplet for `repairs_*` and `insurance_*` (`insurance_rule_percent_of_value DEFAULT 0.3`)
+- Audit: `created_at`, `updated_at` (auto-bump via `update_updated_at_column` trigger), `deleted_at` (soft-delete, nullable)
+
+### Constraints
+- PK `id`
+- FK `org_id` → `legal_entities(id)` `ON DELETE CASCADE`
+- FK `property_id` → `properties_v2(id)` `ON DELETE CASCADE`
+- `UNIQUE (property_id, tax_year)` — canonical row per property-year
+- Indexes on `org_id` and `property_id`
+
+### RLS (4 policies)
+Mirrors `loan_facilities` — all four operations gated by `public.user_has_org_access(org_id)`:
+- `property_cost_budgets_v2_select` (USING)
+- `property_cost_budgets_v2_insert` (WITH CHECK)
+- `property_cost_budgets_v2_update` (USING)
+- `property_cost_budgets_v2_delete` (USING)
+
+### Consumers
+Zero — confirmed clean greenfield. Backfill is Prompt D; consumer cutover is Prompts B and C.
