@@ -454,13 +454,13 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
       current_value_gbp: p.current_valuation,
       purchase_price_gbp: p.purchase_price,
     })) as PropertyData[];
-    const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
+    const facilityRows = (loansRes.data || []) as unknown as Array<{ id: string; property_id: string }>;
     warnIfPropertyIdSpaceMismatch(
       "financial-forecast",
       facilityRows,
       properties.map((p) => p.id),
     );
-    const allLoans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+    const allLoans = ((loansRes.data || []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
       loanFacilityToLegacyShape,
     ) as unknown as LoanData[];
     const allIncome = (incomeRes.data || []) as IncomeData[];
