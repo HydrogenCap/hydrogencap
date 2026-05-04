@@ -404,13 +404,13 @@ function InboxPageInner() {
               />
             ) : (
               <>
-                {highConfidenceDocs.length > 0 && (
+                {visibleHighConf.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      Ready to confirm ({highConfidenceDocs.length})
+                      Ready to confirm ({visibleHighConf.length})
                     </p>
-                    {highConfidenceDocs.map(doc => (
+                    {visibleHighConf.map(doc => (
                       <ComplianceReviewCard
                         key={doc.id}
                         document={doc}
@@ -421,13 +421,43 @@ function InboxPageInner() {
                   </div>
                 )}
 
-                {readyDocs.filter(d => !highConfidenceDocs.includes(d)).length > 0 && (
+                {visibleNullConf.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-blue-500" />
+                        Review manually before bulk-accept ({visibleNullConf.length})
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowNullConfirmDialog(true)}
+                        disabled={isAcceptingAll || nullConfidenceDocs.length === 0}
+                      >
+                        Confirm &amp; accept all unscored
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      The AI suggested a property but didn&rsquo;t score its confidence. Eyeball each suggestion, then confirm.
+                    </p>
+                    {visibleNullConf.map(doc => (
+                      <ComplianceReviewCard
+                        key={doc.id}
+                        document={doc}
+                        selected={selectedIds.has(doc.id)}
+                        onSelectChange={(sel) => handleSelectChange(doc.id, sel)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {visibleLowConf.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Needs review ({readyDocs.filter(d => !highConfidenceDocs.includes(d)).length})
+                      Needs review ({visibleLowConf.length})
                     </p>
-                    {readyDocs.filter(d => !highConfidenceDocs.includes(d)).map(doc => (
+                    {visibleLowConf.map(doc => (
                       <ComplianceReviewCard
                         key={doc.id}
                         document={doc}
