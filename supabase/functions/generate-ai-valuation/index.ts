@@ -297,16 +297,20 @@ import { withInvocationLog } from "../_shared/logger.ts";
        console.error("Error saving valuation:", saveError);
      }
  
-     // Update property with latest estimate
-     await supabase
-       .from("properties")
-       .update({
-         last_valuation_date: new Date().toISOString().split("T")[0],
-         last_valuation_estimate: valuation.estimated_value,
-         valuation_confidence: valuation.confidence,
-         value_change_percent: Math.round(changePercent * 100) / 100,
-       })
-       .eq("id", propertyId);
+      // V1 had columns last_valuation_date / last_valuation_estimate /
+      // valuation_confidence / value_change_percent on `properties`. None of
+      // these exist on properties_v2 — the canonical valuation history lives
+      // in `property_valuations` (already upserted above). Log and skip the
+      // legacy mirror update rather than erroring.
+      console.warn(JSON.stringify({
+        ts: new Date().toISOString(),
+        fn: "generate-ai-valuation",
+        outcome: "v1_columns_unavailable_in_v2",
+        property_id: propertyId,
+        columns: ["last_valuation_date", "last_valuation_estimate", "valuation_confidence", "value_change_percent"],
+        message: "Skipped legacy properties.* mirror update — no V2 equivalent. Source of truth is property_valuations.",
+      }));
+
  
      // Create alert if significant change (>10%)
      if (Math.abs(changePercent) >= 10 && recordedValue > 0) {
