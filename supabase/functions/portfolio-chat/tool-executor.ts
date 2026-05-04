@@ -509,13 +509,14 @@ async function generateReport(
     case "financial_overview": {
       const currentYear = new Date().getFullYear();
       const [loansRes, incomeRes, costsRes] = await Promise.all([
-        supabase.from("loans").select("*").in("property_id", propIds),
+        supabase.from("loan_facilities").select(LOAN_FACILITY_SELECT).in("property_id", propIds),
         supabase.from("income").select("*").in("property_id", propIds).eq("year", currentYear),
         supabase.from("costs").select("*").in("property_id", propIds).eq("year", currentYear),
       ]);
 
+      warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
       const totalValue = properties.reduce((s, p) => s + (p.current_value_gbp ?? 0), 0);
-      const totalDebt = (loansRes.data ?? []).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
+      const totalDebt = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
       const totalRent = (incomeRes.data ?? []).reduce((s, i) => s + (i.annual_rent_gbp ?? 0), 0);
       const totalCosts = (costsRes.data ?? []).reduce(
         (s, c) =>
