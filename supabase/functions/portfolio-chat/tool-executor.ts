@@ -130,14 +130,17 @@ async function getPropertyDetails(
           .eq("year", currentYear)
           .maybeSingle(),
         supabase
-          .from("costs")
-          .select("*")
+          .from("property_cost_budgets_v2")
+          .select(PROPERTY_COST_BUDGET_SELECT)
           .eq("property_id", propertyId)
-          .eq("year", currentYear)
+          .eq("tax_year", yearToTaxYearShim(currentYear))
           .maybeSingle(),
       ]).then(([incomeRes, costsRes]) => {
         const income = incomeRes.data;
-        const costs = costsRes.data;
+        const costsRow = costsRes.data
+          ? propertyCostBudgetToLegacyShape(costsRes.data as unknown as Parameters<typeof propertyCostBudgetToLegacyShape>[0])
+          : null;
+        const costs = costsRow;
         result.financials = {
           annual_rent: income?.annual_rent_gbp ?? 0,
           monthly_rent: income ? (income.annual_rent_gbp ?? 0) / 12 : 0,
