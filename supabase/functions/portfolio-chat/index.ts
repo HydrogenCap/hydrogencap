@@ -303,7 +303,7 @@ serve(withInvocationLog("portfolio-chat", async (req, _invocationLog) => {
 
           toolCallsExecuted.push({ name: toolName, args: toolArgs });
 
-          const result = await executeTool(supabase, orgId, toolName, toolArgs);
+          const result = await executeTool(supabase as unknown as Parameters<typeof executeTool>[0], orgId, toolName, toolArgs);
           toolResults.push({
             tool_call_id: tc.id,
             name: toolName,
