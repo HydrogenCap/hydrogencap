@@ -244,7 +244,7 @@ async function calculatePortfolioMetrics(
   const propIds = properties.map((p) => p.id);
 
   const [loansRes, incomeRes, costsRes] = await Promise.all([
-    supabase.from("loans").select("*").in("property_id", propIds),
+    supabase.from("loan_facilities").select(LOAN_FACILITY_SELECT).in("property_id", propIds),
     supabase
       .from("income")
       .select("*")
