@@ -257,7 +257,8 @@ async function calculatePortfolioMetrics(
       .eq("year", currentYear),
   ]);
 
-  const loans = loansRes.data ?? [];
+  warnIfPropertyIdSpaceMismatch("portfolio-chat:get_property_financials", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
+  const loans = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
   const incomes = incomeRes.data ?? [];
   const costs = costsRes.data ?? [];
 
