@@ -231,3 +231,10 @@ Apply the same 5-step pattern (audit → backfill → redirect hooks → redirec
 4. **`useBatchImport.ts`** is the CSV import path — confirm import schema templates point at V2 fields after redirect.
 5. **No RLS lockstep needed** for the drop itself, but Prompt B should verify `user_has_org_access` returns identical results for the test user across both pre- and post-redirect to catch any property-bridge edge cases.
 6. **`useProperties.ts:33–72` joins `loans(*)` in its select** — once `loans` is dropped, both `useProperties()` and `useProperty()` will fail at PostgREST resource-embed time. Either remove the join (and have downstream consumers fetch from V2) or delete the V1 hook entirely. Check downstream readers of `PropertyWithFinancials.loans` before the drop.
+
+## Pair completeness fix shipped 2026-05-04
+
+- Option (a) chosen: normalised V1 `properties.address_line` for `21a866cb-bc88-4f42-985e-f6e4d785ce84` from `"25 Arle Gardens, Cheltenham "` → `"25 Arle Gardens"` to match V2 `properties_v2.address_line_1`.
+- Migration: `supabase/migrations/<auto>-loans-arle-gardens-pair.sql` (idempotent; temporarily disables `v1_freeze_guard` for this single one-row data fix).
+- Smoke test: `src/__tests__/loans-pair-completeness.test.ts` + `src/__tests__/fixtures/loans-pair-snapshot.json` — asserts every V1 `loans.id` resolves 1:1 to a V2 `loan_facilities.id` via the address bridge.
+- Post-fix pairing: **24/24 (100%)**.
