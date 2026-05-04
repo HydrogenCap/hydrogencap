@@ -40,13 +40,13 @@ export function useProperties() {
           *,
           loans(*),
           income(*),
-          costs(*),
+          costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PropertyWithFinancials[];
+      return mapV2CostsToLegacy(data, 'useProperties') as unknown as PropertyWithFinancials[];
     },
   });
 }
