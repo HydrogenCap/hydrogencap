@@ -168,7 +168,7 @@ export function useUpdateLoan() {
     mutationFn: async (_args: Database['public']['Tables']['loans']['Update'] & {
       id: string;
       previousRate?: number | null;
-    }) => {
+    }): Promise<Loan> => {
       throwV1Frozen('loans', 'useUpdateLoan');
     },
     onSuccess: (data) => {
