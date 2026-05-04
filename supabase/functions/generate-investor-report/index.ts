@@ -6,6 +6,10 @@ import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { validateBody } from "../_shared/validate.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import {
+  LOAN_FACILITY_SELECT,
+  loanFacilityToLegacyShape,
+} from "../_shared/loanFacility.ts";
 
 serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) => {
   const log = createLogger("generate-investor-report", req);
