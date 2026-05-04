@@ -514,22 +514,19 @@ async function generateReport(
   let propsQuery = supabase
     .from("properties_v2")
     .select("id, address_line_1, postcode, property_type, current_valuation, purchase_price")
-    .eq("org_id", orgId)
-    .then((res) => ({
-      ...res,
-      data: res.data?.map((p: any) => ({
-        id: p.id,
-        address_line: p.address_line_1,
-        postcode: p.postcode,
-        property_type: p.property_type,
-        current_value_gbp: p.current_valuation,
-        purchase_price_gbp: p.purchase_price,
-      })),
-    }));
+    .eq("org_id", orgId);
   if (propertyIds?.length) propsQuery = propsQuery.in("id", propertyIds);
-  const { data: properties } = await propsQuery;
-  if (!properties || properties.length === 0)
+  const { data: propertiesRaw } = await propsQuery;
+  if (!propertiesRaw || propertiesRaw.length === 0)
     return JSON.stringify({ error: "No properties found" });
+  const properties = propertiesRaw.map((p: any) => ({
+    id: p.id,
+    address_line: p.address_line_1,
+    postcode: p.postcode,
+    property_type: p.property_type,
+    current_value_gbp: p.current_valuation,
+    purchase_price_gbp: p.purchase_price,
+  }));
 
   const propIds = properties.map((p) => p.id);
 
