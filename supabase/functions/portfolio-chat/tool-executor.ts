@@ -42,15 +42,41 @@ async function getPropertyDetails(
   const include = (args.include as string[] | undefined) ?? ["all"];
   const wantAll = include.includes("all");
 
-  const { data: property, error } = await supabase
-    .from("properties")
-    .select("*")
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap: address_line→address_line_1,
+  // current_value_gbp→current_valuation, purchase_price_gbp→purchase_price,
+  // lifecycle_type→lifecycle_stage, has_gas→has_gas_supply. V1 `beds` has no
+  // V2 scalar equivalent (lives in rooms_v2) — surfaced as null + warning.
+  const { data: propertyRaw, error } = await supabase
+    .from("properties_v2")
+    .select("id, address_line_1, postcode, property_type, current_valuation, purchase_price, epc_rating, lifecycle_stage, tenure, has_gas_supply")
     .eq("id", propertyId)
     .eq("org_id", orgId)
     .maybeSingle();
 
   if (error) return JSON.stringify({ error: error.message });
-  if (!property) return JSON.stringify({ error: "Property not found" });
+  if (!propertyRaw) return JSON.stringify({ error: "Property not found" });
+
+  const property = {
+    id: propertyRaw.id,
+    address_line: propertyRaw.address_line_1,
+    postcode: propertyRaw.postcode,
+    property_type: propertyRaw.property_type,
+    beds: null as number | null,
+    current_value_gbp: propertyRaw.current_valuation,
+    purchase_price_gbp: propertyRaw.purchase_price,
+    epc_rating: propertyRaw.epc_rating,
+    lifecycle_type: propertyRaw.lifecycle_stage,
+    tenure: propertyRaw.tenure,
+    has_gas: propertyRaw.has_gas_supply,
+  };
+  console.warn(JSON.stringify({
+    ts: new Date().toISOString(),
+    fn: "portfolio-chat:get_property_details",
+    outcome: "v1_column_unavailable_in_v2",
+    property_id: propertyId,
+    column: "beds",
+    message: "properties_v2 has no scalar `beds` — returning null.",
+  }));
 
   const result: Record<string, unknown> = {
     id: property.id,
