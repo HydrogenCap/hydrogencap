@@ -448,7 +448,15 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
     ]);
 
     const properties = (propertiesRes.data || []) as PropertyData[];
-    const allLoans = (loansRes.data || []) as LoanData[];
+    const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
+    warnIfPropertyIdSpaceMismatch(
+      "financial-forecast",
+      facilityRows,
+      properties.map((p) => p.id),
+    );
+    const allLoans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+      loanFacilityToLegacyShape,
+    ) as unknown as LoanData[];
     const allIncome = (incomeRes.data || []) as IncomeData[];
     const allCosts = (costsRes.data || []) as CostData[];
 
