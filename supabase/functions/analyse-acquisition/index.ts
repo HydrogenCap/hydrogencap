@@ -96,9 +96,12 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
 
     // Fetch existing portfolio data
     const [propertiesRes, loansRes, incomeRes, complianceRes] = await Promise.all([
+      // V2: properties_v2 (Prompt §7.C hot-fix). Remap address_line→address_line_1,
+      // current_value_gbp→current_valuation, purchase_price_gbp→purchase_price.
+      // V1 `beds` has no V2 scalar equivalent; surfaced as null with a warning.
       supabaseAdmin
-        .from("properties")
-        .select("id, address_line, postcode, property_type, beds, current_value_gbp, purchase_price_gbp")
+        .from("properties_v2")
+        .select("id, address_line_1, postcode, property_type, current_valuation, purchase_price")
         .eq("org_id", orgId),
       supabaseAdmin
         .from("loan_facilities")
@@ -109,18 +112,34 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
         .select("property_id, year, annual_rent_gbp")
         .in(
           "property_id",
-          (await supabaseAdmin.from("properties").select("id").eq("org_id", orgId)).data?.map((p: { id: string }) => p.id) || []
+          (await supabaseAdmin.from("properties_v2").select("id").eq("org_id", orgId)).data?.map((p: { id: string }) => p.id) || []
         ),
       supabaseAdmin
         .from("compliance_items")
         .select("property_id, compliance_type, status, expiry_date")
         .in(
           "property_id",
-          (await supabaseAdmin.from("properties").select("id").eq("org_id", orgId)).data?.map((p: { id: string }) => p.id) || []
+          (await supabaseAdmin.from("properties_v2").select("id").eq("org_id", orgId)).data?.map((p: { id: string }) => p.id) || []
         ),
     ]);
 
-    const properties = propertiesRes.data || [];
+    const propertiesRaw = propertiesRes.data || [];
+    console.warn(JSON.stringify({
+      ts: new Date().toISOString(),
+      fn: "analyse-acquisition",
+      outcome: "v1_column_unavailable_in_v2",
+      column: "beds",
+      message: "properties_v2 has no scalar `beds` — bedroom counts omitted from acquisition analysis.",
+    }));
+    const properties = propertiesRaw.map((p: any) => ({
+      id: p.id,
+      address_line: p.address_line_1,
+      postcode: p.postcode,
+      property_type: p.property_type,
+      beds: null,
+      current_value_gbp: p.current_valuation,
+      purchase_price_gbp: p.purchase_price,
+    }));
     const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
     warnIfPropertyIdSpaceMismatch(
       "analyse-acquisition",
