@@ -249,3 +249,15 @@ Apply the same 5-step pattern (audit → backfill → redirect hooks → redirec
 - **useBulkPropertyUpdate.ts** — option (b) `useBulkLoanUpdate` had **zero call sites**; reduced to a freeze-throwing stub that preserves the export shape.
 - **useBatchImport.ts** — option (b) deleted the V1 `loans` upsert branch (4 SQL calls). CSV imports now skip loan columns; loans must be added via the V2 wizard / `useCreateLoanFacility`.
 - TypeScript clean; 1120 vitest tests pass.
+
+## Edge function loans→loan_facilities redirect 2026-05-04 (Prompt §7.C)
+
+- Shared helper: `supabase/functions/_shared/loanFacility.ts` exports `LOAN_FACILITY_SELECT`, `loanFacilityToLegacyShape()` (V2→V1 column shim incl. `lender_id` → `lenders.lender_name` embed), and `warnIfPropertyIdSpaceMismatch()` for surfacing silent-zero forecasts in logs.
+- **financial-forecast** — replaced V1 select with V2 select via helper; downstream math unchanged. Adds property_id-space mismatch warning.
+- **generate-investor-report** — V2 select via helper; mapped at consumption (`loans.reduce(... current_balance ...)` continues to work).
+- **generate-ai-valuation** — single-row LTV lookup ported to `loan_facilities.current_balance`; logs warning when no row matches V1 propertyId.
+- **analyse-acquisition** — V2 select via helper, lender concentration now uses resolved `lender_name`. Mismatch warning added.
+- **portfolio-chat/tool-executor** — all 4 sites (`get_property_details`, `get_property_financials`, `portfolio_summary`, `risk_summary`) ported to V2 with helper + mismatch warnings.
+- **Column gaps**: `broker_name`, `broker_contact`, `loan_start_date`, `term_years`, `loan_term_months`, `payment_override_gbp`, `payment_auto_calculated_gbp`, `payment_source`, `refinance_target_date`, `notes` are returned as `null` (V1 had 0/24 populated per audit §1).
+- **Property-id space caveat**: `loan_facilities.property_id` → `properties_v2.id`, but `financial-forecast`, `analyse-acquisition`, `generate-ai-valuation`, and 3/4 portfolio-chat tools still query V1 `properties`. The helper logs `outcome: "loan_property_id_space_mismatch"` rather than crashing — watch `outcome=server_error`/`loan_property_id_space_mismatch` rates after deploy. Migrating those 4 functions to `properties_v2` is the next prompt; in-scope §7.C was loans-only.
+- TypeScript clean; all 5 functions deployed successfully.
