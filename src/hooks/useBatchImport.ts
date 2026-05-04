@@ -81,46 +81,10 @@ export function useBatchImport() {
             result.created++;
           }
 
-          // Handle loan data (upsert based on property_id)
-          const mortgageBalance = row.data.mortgage_balance_gbp as number | null;
-          const hasLoanData = mortgageBalance !== null || row.data.lender || row.data.interest_rate_percent;
-          
-          if (hasLoanData) {
-            // Check if loan exists
-            const { data: existingLoans } = await supabaseAny
-              .from('loans')
-              .select('id')
-              .eq('property_id', property.id)
-              .limit(1);
-              
-            const loanData = {
-              property_id: property.id,
-              current_mortgage_balance_gbp: mortgageBalance,
-              lender: row.data.lender as string | null,
-              interest_rate_percent: row.data.interest_rate_percent as number | null,
-              mortgage_payment_gbp: row.data.mortgage_payment_gbp as number | null,
-              fixed_rate_expires: row.data.fixed_rate_expires as string | null,
-            };
-
-            if (existingLoans && existingLoans.length > 0) {
-              const { error: loanError } = await supabaseAny
-                .from('loans')
-                .update(loanData)
-                .eq('id', existingLoans[0].id);
-                
-              if (loanError) {
-                console.warn('Failed to update loan:', loanError);
-              }
-            } else if (mortgageBalance !== null && mortgageBalance > 0) {
-              const { error: loanError } = await supabaseAny
-                .from('loans')
-                .insert(loanData);
-
-              if (loanError) {
-                console.warn('Failed to insert loan:', loanError);
-              }
-            }
-          }
+          // Loan data: V1 `loans` writes are frozen (Prompt #45). CSV import
+          // no longer writes loans here — loan facilities must be created via
+          // the V2 wizard / useCreateLoanFacility. Skipping any loan columns
+          // present in the CSV (no-op rather than erroring the row).
 
           // Handle income data (upsert based on property_id + year)
           const annualRent = row.data.annual_rent_gbp as number | null;
