@@ -260,3 +260,15 @@ Zero — confirmed clean greenfield. Backfill is Prompt D; consumer cutover is P
 - New mapper: `yearToTaxYear(year: number): string` — maps V1 year `2025` → V2 tax_year `'2025/26'` (UK starting-year rule, locked 2026-05-04 per #50a).
 - `CostsEditor` ported from `useUpsertCosts` to `useUpsertPropertyCostBudget`; UI unchanged.
 - No migration, no schema change, no edge function change.
+
+## Costs C — readers ported to V2 2026-05-04
+
+Helper added: `supabase/functions/_shared/propertyCostBudget.ts` (`PROPERTY_COST_BUDGET_SELECT`, `taxYearToYear`, `yearToTaxYearShim`, `propertyCostBudgetToLegacyShape`, `warnIfLegacyYearMissing`).
+Mirror src/ helper: `src/lib/propertyCostBudgetCompat.ts` (cannot cross src ↔ functions imports).
+
+Sites ported:
+- `supabase/functions/financial-forecast/index.ts` — portfolio fetch (Promise.all costs leg).
+- `supabase/functions/portfolio-chat/tool-executor.ts` — 3 sites: `get_property_passport` financials, `get_portfolio_metrics` financial fetch, `financial_overview` report. All `.eq("year", currentYear)` filters re-mapped via `yearToTaxYearShim`.
+- `src/hooks/useProperties.ts` — both `useProperties()` and `useProperty()` nested embeds switched to `costs:property_cost_budgets_v2(*)` with a per-row `mapV2CostsToLegacy` shim that warns on bad tax_year and restores the V1 `costs` shape (incl. integer `year` and effective `*_gbp` fields). Consumer types in `PropertyWithFinancials` unchanged.
+
+Confirmation: `rg "from\(['\"]costs['\"]\)|costs\(\*\)" src/ supabase/functions/` (excluding `work_order_costs`) returns **zero** matches. The upcoming Prompt #49e freeze trigger has no remaining live readers to break.

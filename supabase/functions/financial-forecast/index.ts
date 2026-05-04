@@ -9,6 +9,11 @@ import {
   loanFacilityToLegacyShape,
   warnIfPropertyIdSpaceMismatch,
 } from "../_shared/loanFacility.ts";
+import {
+  PROPERTY_COST_BUDGET_SELECT,
+  propertyCostBudgetToLegacyShape,
+  warnIfLegacyYearMissing,
+} from "../_shared/propertyCostBudget.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -442,10 +447,8 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         .eq("org_id", orgId),
       supabase.from("income").select("property_id, year, annual_rent_gbp"),
       supabase
-        .from("costs")
-        .select(
-          "property_id, year, management_gbp, insurance_gbp, maintenance_gbp, bills_gbp, compliance_gbp, other_gbp"
-        ),
+        .from("property_cost_budgets_v2")
+        .select(PROPERTY_COST_BUDGET_SELECT),
     ]);
 
     const properties = ((propertiesRes.data || []) as Array<{ id: string; address_line_1: string | null; current_valuation: number | null; purchase_price: number | null }>).map((p) => ({
@@ -464,7 +467,9 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
       loanFacilityToLegacyShape,
     ) as unknown as LoanData[];
     const allIncome = (incomeRes.data || []) as IncomeData[];
-    const allCosts = (costsRes.data || []) as CostData[];
+    const rawCostRows = (costsRes.data || []) as unknown as Parameters<typeof propertyCostBudgetToLegacyShape>[0][];
+    warnIfLegacyYearMissing("financial-forecast", rawCostRows);
+    const allCosts = rawCostRows.map(propertyCostBudgetToLegacyShape) as unknown as CostData[];
 
     // Filter loans/income/costs to properties in this org
     const propertyIds = new Set(properties.map((p) => p.id));

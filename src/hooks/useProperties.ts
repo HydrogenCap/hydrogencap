@@ -9,6 +9,11 @@ import { ActivityLoggers } from './useActivityLog';
 
 import { showMutationError, showMutationSuccess } from '@/lib/errorToast';
 import { throwV1Frozen } from '@/lib/v1Frozen';
+import {
+  propertyCostBudgetToLegacyShape,
+  warnIfLegacyYearMissing,
+  type PropertyCostBudgetV2RowLite,
+} from '@/lib/propertyCostBudgetCompat';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
@@ -25,6 +30,19 @@ export interface PropertyWithFinancials extends Property {
   tenancies: Tenancy[];
 }
 
+/**
+ * Per-row shim: V2 property_cost_budgets_v2 embed → V1 costs[] legacy shape.
+ * Applied at the consumption layer so PropertyWithFinancials downstream code is unchanged.
+ */
+function mapV2CostsToLegacy<T extends { costs?: unknown }>(rows: T[] | null | undefined, ctx: string): T[] {
+  if (!rows) return [];
+  return rows.map((r) => {
+    const v2Rows = (r.costs ?? []) as PropertyCostBudgetV2RowLite[];
+    warnIfLegacyYearMissing(ctx, v2Rows);
+    return { ...r, costs: v2Rows.map(propertyCostBudgetToLegacyShape) } as T;
+  });
+}
+
 export function useProperties() {
   return useQuery({
     queryKey: ['properties'],
@@ -35,13 +53,13 @@ export function useProperties() {
           *,
           loans(*),
           income(*),
-          costs(*),
+          costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PropertyWithFinancials[];
+      return mapV2CostsToLegacy(data, 'useProperties') as unknown as PropertyWithFinancials[];
     },
   });
 }
@@ -58,14 +76,15 @@ export function useProperty(id: string | undefined) {
           *,
           loans(*),
           income(*),
-          costs(*),
+          costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
         .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
-      return data as PropertyWithFinancials | null;
+      if (!data) return null;
+      return mapV2CostsToLegacy([data], 'useProperty')[0] as unknown as PropertyWithFinancials;
     },
     enabled: !!id,
   });
