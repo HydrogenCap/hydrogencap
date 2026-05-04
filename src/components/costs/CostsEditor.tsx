@@ -113,7 +113,7 @@ export function CostsEditor({
     try {
       await upsertCosts.mutateAsync({
         property_id: propertyId,
-        year,
+        tax_year: yearToTaxYear(year),
         management_rule_enabled: managementRuleEnabled,
         management_rule_percent_of_rent: parseFloat(managementPercent) || DEFAULT_RULES.management_rule_percent_of_rent,
         management_gbp_manual: managementManual ? parseFloat(managementManual) : null,
