@@ -5918,42 +5918,6 @@ export type Database = {
           },
         ]
       }
-      maintenance_updates: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          created_by_type: Database["public"]["Enums"]["update_creator_type"]
-          id: string
-          message: string
-          photos: string[] | null
-          request_id: string
-          update_type: string
-          visible_to_tenant: boolean
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          created_by_type?: Database["public"]["Enums"]["update_creator_type"]
-          id?: string
-          message: string
-          photos?: string[] | null
-          request_id: string
-          update_type: string
-          visible_to_tenant?: boolean
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          created_by_type?: Database["public"]["Enums"]["update_creator_type"]
-          id?: string
-          message?: string
-          photos?: string[] | null
-          request_id?: string
-          update_type?: string
-          visible_to_tenant?: boolean
-        }
-        Relationships: []
-      }
       management_companies: {
         Row: {
           created_at: string
