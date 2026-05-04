@@ -9,6 +9,11 @@ import {
   loanFacilityToLegacyShape,
   warnIfPropertyIdSpaceMismatch,
 } from "../_shared/loanFacility.ts";
+import {
+  PROPERTY_COST_BUDGET_SELECT,
+  propertyCostBudgetToLegacyShape,
+  warnIfLegacyYearMissing,
+} from "../_shared/propertyCostBudget.ts";
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
