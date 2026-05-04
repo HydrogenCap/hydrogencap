@@ -101,12 +101,9 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
         .select("id, address_line, postcode, property_type, beds, current_value_gbp, purchase_price_gbp")
         .eq("org_id", orgId),
       supabaseAdmin
-        .from("loans")
-        .select("id, property_id, lender, interest_rate_percent, current_mortgage_balance_gbp, fixed_or_variable")
-        .in(
-          "property_id",
-          (await supabaseAdmin.from("properties").select("id").eq("org_id", orgId)).data?.map((p: { id: string }) => p.id) || []
-        ),
+        .from("loan_facilities")
+        .select(LOAN_FACILITY_SELECT)
+        .eq("org_id", orgId),
       supabaseAdmin
         .from("income")
         .select("property_id, year, annual_rent_gbp")
