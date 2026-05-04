@@ -431,9 +431,10 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
 
     // Fetch portfolio data in parallel
     const [propertiesRes, loansRes, incomeRes, costsRes] = await Promise.all([
+      // V2: properties_v2 — column remap: address_line→address_line_1, current_value_gbp→current_valuation, purchase_price_gbp→purchase_price
       supabase
-        .from("properties")
-        .select("id, address_line, current_value_gbp, purchase_price_gbp")
+        .from("properties_v2")
+        .select("id, address_line_1, current_valuation, purchase_price")
         .eq("org_id", orgId),
       supabase
         .from("loan_facilities")
@@ -447,14 +448,19 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         ),
     ]);
 
-    const properties = (propertiesRes.data || []) as PropertyData[];
-    const facilityRows = (loansRes.data || []) as Array<{ id: string; property_id: string }>;
+    const properties = ((propertiesRes.data || []) as Array<{ id: string; address_line_1: string | null; current_valuation: number | null; purchase_price: number | null }>).map((p) => ({
+      id: p.id,
+      address_line: p.address_line_1 ?? "",
+      current_value_gbp: p.current_valuation,
+      purchase_price_gbp: p.purchase_price,
+    })) as PropertyData[];
+    const facilityRows = (loansRes.data || []) as unknown as Array<{ id: string; property_id: string }>;
     warnIfPropertyIdSpaceMismatch(
       "financial-forecast",
       facilityRows,
       properties.map((p) => p.id),
     );
-    const allLoans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+    const allLoans = ((loansRes.data || []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
       loanFacilityToLegacyShape,
     ) as unknown as LoanData[];
     const allIncome = (incomeRes.data || []) as IncomeData[];

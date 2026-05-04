@@ -125,7 +125,7 @@ serve(withInvocationLog("generate-investor-report", async (req, _invocationLog) 
     ]);
 
     const properties = propertiesRes.data || [];
-    const loans = ((loansRes.data || []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
+    const loans = ((loansRes.data || []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
       loanFacilityToLegacyShape,
     );
     const compliance = complianceRes.data || [];

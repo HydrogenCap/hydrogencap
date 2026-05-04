@@ -42,15 +42,41 @@ async function getPropertyDetails(
   const include = (args.include as string[] | undefined) ?? ["all"];
   const wantAll = include.includes("all");
 
-  const { data: property, error } = await supabase
-    .from("properties")
-    .select("*")
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap: address_line→address_line_1,
+  // current_value_gbp→current_valuation, purchase_price_gbp→purchase_price,
+  // lifecycle_type→lifecycle_stage, has_gas→has_gas_supply. V1 `beds` has no
+  // V2 scalar equivalent (lives in rooms_v2) — surfaced as null + warning.
+  const { data: propertyRaw, error } = await supabase
+    .from("properties_v2")
+    .select("id, address_line_1, postcode, property_type, current_valuation, purchase_price, epc_rating, lifecycle_stage, tenure, has_gas_supply")
     .eq("id", propertyId)
     .eq("org_id", orgId)
     .maybeSingle();
 
   if (error) return JSON.stringify({ error: error.message });
-  if (!property) return JSON.stringify({ error: "Property not found" });
+  if (!propertyRaw) return JSON.stringify({ error: "Property not found" });
+
+  const property = {
+    id: propertyRaw.id,
+    address_line: propertyRaw.address_line_1,
+    postcode: propertyRaw.postcode,
+    property_type: propertyRaw.property_type,
+    beds: null as number | null,
+    current_value_gbp: propertyRaw.current_valuation,
+    purchase_price_gbp: propertyRaw.purchase_price,
+    epc_rating: propertyRaw.epc_rating,
+    lifecycle_type: propertyRaw.lifecycle_stage,
+    tenure: propertyRaw.tenure,
+    has_gas: propertyRaw.has_gas_supply,
+  };
+  console.warn(JSON.stringify({
+    ts: new Date().toISOString(),
+    fn: "portfolio-chat:get_property_details",
+    outcome: "v1_column_unavailable_in_v2",
+    property_id: propertyId,
+    column: "beds",
+    message: "properties_v2 has no scalar `beds` — returning null.",
+  }));
 
   const result: Record<string, unknown> = {
     id: property.id,
@@ -75,7 +101,7 @@ async function getPropertyDetails(
         .select(LOAN_FACILITY_SELECT)
         .eq("property_id", propertyId)
         .then(({ data }) => {
-          const mapped = (data ?? []).map(loanFacilityToLegacyShape);
+          const mapped = ((data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
           result.loans = mapped.map((l) => ({
             lender: l.lender,
             balance: l.current_mortgage_balance_gbp,
@@ -235,11 +261,21 @@ async function calculatePortfolioMetrics(
   const propertyIds = args.property_ids as string[] | undefined;
   const currentYear = new Date().getFullYear();
 
-  let propsQuery = supabase.from("properties").select("*").eq("org_id", orgId);
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap current_value_gbp→current_valuation,
+  // purchase_price_gbp→purchase_price.
+  let propsQuery = supabase
+    .from("properties_v2")
+    .select("id, current_valuation, purchase_price")
+    .eq("org_id", orgId);
   if (propertyIds?.length) propsQuery = propsQuery.in("id", propertyIds);
-  const { data: properties } = await propsQuery;
-  if (!properties || properties.length === 0)
+  const { data: propertiesRaw } = await propsQuery;
+  if (!propertiesRaw || propertiesRaw.length === 0)
     return JSON.stringify({ error: "No properties found" });
+  const properties = propertiesRaw.map((p) => ({
+    id: p.id,
+    current_value_gbp: p.current_valuation,
+    purchase_price_gbp: p.purchase_price,
+  }));
 
   const propIds = properties.map((p) => p.id);
 
@@ -257,8 +293,8 @@ async function calculatePortfolioMetrics(
       .eq("year", currentYear),
   ]);
 
-  warnIfPropertyIdSpaceMismatch("portfolio-chat:get_property_financials", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
-  const loans = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
+  warnIfPropertyIdSpaceMismatch("portfolio-chat:get_property_financials", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
+  const loans = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape);
   const incomes = incomeRes.data ?? [];
   const costs = costsRes.data ?? [];
 
@@ -384,24 +420,35 @@ async function searchProperties(
   const query = args.query as string | undefined;
   const filters = (args.filters as Record<string, unknown>) ?? {};
 
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap address_line→address_line_1,
+  // current_value_gbp→current_valuation, lifecycle_type→lifecycle_stage.
+  // V1 `beds` has no V2 scalar equivalent; min_beds filter is dropped with a warning.
   let q = supabase
-    .from("properties")
-    .select("id, address_line, postcode, property_type, beds, current_value_gbp, epc_rating, lifecycle_type, tenure")
+    .from("properties_v2")
+    .select("id, address_line_1, postcode, property_type, current_valuation, epc_rating, lifecycle_stage, tenure")
     .eq("org_id", orgId);
 
   if (query) {
     q = q.or(
-      `address_line.ilike.%${query}%,postcode.ilike.%${query}%`
+      `address_line_1.ilike.%${query}%,postcode.ilike.%${query}%`
     );
   }
 
   if (filters.property_type) q = q.eq("property_type", filters.property_type);
-  if (filters.min_value) q = q.gte("current_value_gbp", filters.min_value);
-  if (filters.max_value) q = q.lte("current_value_gbp", filters.max_value);
-  if (filters.min_beds) q = q.gte("beds", filters.min_beds);
-  if (filters.lifecycle) q = q.eq("lifecycle_type", filters.lifecycle);
+  if (filters.min_value) q = q.gte("current_valuation", filters.min_value);
+  if (filters.max_value) q = q.lte("current_valuation", filters.max_value);
+  if (filters.min_beds) {
+    console.warn(JSON.stringify({
+      ts: new Date().toISOString(),
+      fn: "portfolio-chat:search_properties",
+      outcome: "v1_filter_unavailable_in_v2",
+      filter: "min_beds",
+      message: "properties_v2 has no scalar `beds`; min_beds filter ignored.",
+    }));
+  }
+  if (filters.lifecycle) q = q.eq("lifecycle_stage", filters.lifecycle);
 
-  const { data, error } = await q.order("address_line").limit(20);
+  const { data, error } = await q.order("address_line_1").limit(20);
   if (error) return JSON.stringify({ error: error.message });
 
   let results = data ?? [];
@@ -440,13 +487,13 @@ async function searchProperties(
     count: results.length,
     properties: results.map((p) => ({
       id: p.id,
-      address: p.address_line,
+      address: p.address_line_1,
       postcode: p.postcode,
       type: p.property_type,
-      beds: p.beds,
-      value: p.current_value_gbp,
+      beds: null,
+      value: p.current_valuation,
       epc: p.epc_rating,
-      lifecycle: p.lifecycle_type,
+      lifecycle: p.lifecycle_stage,
     })),
   });
 }
@@ -462,11 +509,24 @@ async function generateReport(
   const propertyIds = args.property_ids as string[] | undefined;
   const format = (args.format as string) ?? "text";
 
-  let propsQuery = supabase.from("properties").select("*").eq("org_id", orgId);
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap address_line→address_line_1,
+  // current_value_gbp→current_valuation, purchase_price_gbp→purchase_price.
+  let propsQuery = supabase
+    .from("properties_v2")
+    .select("id, address_line_1, postcode, property_type, current_valuation, purchase_price")
+    .eq("org_id", orgId);
   if (propertyIds?.length) propsQuery = propsQuery.in("id", propertyIds);
-  const { data: properties } = await propsQuery;
-  if (!properties || properties.length === 0)
+  const { data: propertiesRaw } = await propsQuery;
+  if (!propertiesRaw || propertiesRaw.length === 0)
     return JSON.stringify({ error: "No properties found" });
+  const properties = propertiesRaw.map((p: any) => ({
+    id: p.id,
+    address_line: p.address_line_1,
+    postcode: p.postcode,
+    property_type: p.property_type,
+    current_value_gbp: p.current_valuation,
+    purchase_price_gbp: p.purchase_price,
+  }));
 
   const propIds = properties.map((p) => p.id);
 
@@ -514,9 +574,9 @@ async function generateReport(
         supabase.from("costs").select("*").in("property_id", propIds).eq("year", currentYear),
       ]);
 
-      warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
+      warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
       const totalValue = properties.reduce((s, p) => s + (p.current_value_gbp ?? 0), 0);
-      const totalDebt = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
+      const totalDebt = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
       const totalRent = (incomeRes.data ?? []).reduce((s, i) => s + (i.annual_rent_gbp ?? 0), 0);
       const totalCosts = (costsRes.data ?? []).reduce(
         (s, c) =>
@@ -577,9 +637,9 @@ async function generateReport(
         supabase.from("compliance_items").select("*").in("property_id", propIds),
       ]);
 
-      warnIfPropertyIdSpaceMismatch("portfolio-chat:risk_summary", (loansRes.data ?? []) as Array<{id:string;property_id:string}>, propIds);
+      warnIfPropertyIdSpaceMismatch("portfolio-chat:risk_summary", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
       const totalValue = properties.reduce((s, p) => s + (p.current_value_gbp ?? 0), 0);
-      const totalDebt = ((loansRes.data ?? []) as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
+      const totalDebt = ((loansRes.data ?? []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(loanFacilityToLegacyShape).reduce((s, l) => s + (l.current_mortgage_balance_gbp ?? 0), 0);
       const totalRent = (incomeRes.data ?? []).reduce((s, i) => s + (i.annual_rent_gbp ?? 0), 0);
       const now = new Date();
       const expiredCount = (complianceRes.data ?? []).filter(
