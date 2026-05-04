@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2 } from 'lucide-react';
+import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2, Sparkles } from 'lucide-react';
+import { partitionReadyDocs, countUnreviewedAISuggestions, isUnreviewedAISuggestion } from '@/lib/inboxBulkGate';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useActivitySidebar } from '@/state/activitySidebar';
 import { useEffect } from 'react';
