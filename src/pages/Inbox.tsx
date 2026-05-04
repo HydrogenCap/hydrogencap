@@ -49,6 +49,8 @@ function InboxPageInner() {
   const deleteDocument = useDeleteDocument();
   const { toast } = useToast();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
+  const [showNullConfirmDialog, setShowNullConfirmDialog] = useState(false);
+  const [showUnreviewedOnly, setShowUnreviewedOnly] = useState(false);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -63,15 +65,26 @@ function InboxPageInner() {
     (d.extraction_status === 'failed' || d.extraction_status === 'rate_limited' || d.extraction_status === 'credits_exhausted') &&
     d.review_status === 'pending'
   ) || [];
-  const readyDocs = pendingDocs.filter(d => d.extraction_status === 'completed');
+  const readyDocsAll = pendingDocs.filter(d => d.extraction_status === 'completed');
 
-  // High confidence = both doc type and property match >= 70%
-  const highConfidenceDocs = readyDocs.filter(d =>
-    d.ai_suggested_doc_type &&
-    (d.ai_doc_type_confidence || 0) >= 0.7 &&
-    d.ai_suggested_property_id &&
-    (d.ai_property_confidence || 0) >= 0.7
+  // #57 follow-up: partition into high / null-confidence / low-confidence buckets.
+  // NULL-confidence rows used to fall through `(NULL || 0) >= 0.7` and were
+  // silently excluded from Accept-All — they now surface explicitly.
+  const { highConfidence: highConfidenceDocs, nullConfidence: nullConfidenceDocs, lowConfidence: lowConfidenceDocs } =
+    useMemo(() => partitionReadyDocs(readyDocsAll), [readyDocsAll]);
+
+  // Header chip count: AI suggested a property, user has not yet confirmed.
+  const unreviewedCount = useMemo(
+    () => countUnreviewedAISuggestions(documents ?? []),
+    [documents],
   );
+
+  const readyDocs = showUnreviewedOnly
+    ? readyDocsAll.filter(isUnreviewedAISuggestion)
+    : readyDocsAll;
+  const visibleHighConf = showUnreviewedOnly ? highConfidenceDocs.filter(isUnreviewedAISuggestion) : highConfidenceDocs;
+  const visibleNullConf = showUnreviewedOnly ? nullConfidenceDocs.filter(isUnreviewedAISuggestion) : nullConfidenceDocs;
+  const visibleLowConf = showUnreviewedOnly ? lowConfidenceDocs.filter(isUnreviewedAISuggestion) : lowConfidenceDocs;
 
   // Calculate compliance stats from V2 matrix
   const complianceStats = useMemo(() => {
