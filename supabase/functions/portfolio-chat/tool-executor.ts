@@ -509,7 +509,23 @@ async function generateReport(
   const propertyIds = args.property_ids as string[] | undefined;
   const format = (args.format as string) ?? "text";
 
-  let propsQuery = supabase.from("properties").select("*").eq("org_id", orgId);
+  // V2: properties_v2 (Prompt §7.C hot-fix). Remap address_line→address_line_1,
+  // current_value_gbp→current_valuation, purchase_price_gbp→purchase_price.
+  let propsQuery = supabase
+    .from("properties_v2")
+    .select("id, address_line_1, postcode, property_type, current_valuation, purchase_price")
+    .eq("org_id", orgId)
+    .then((res) => ({
+      ...res,
+      data: res.data?.map((p: any) => ({
+        id: p.id,
+        address_line: p.address_line_1,
+        postcode: p.postcode,
+        property_type: p.property_type,
+        current_value_gbp: p.current_valuation,
+        purchase_price_gbp: p.purchase_price,
+      })),
+    }));
   if (propertyIds?.length) propsQuery = propsQuery.in("id", propertyIds);
   const { data: properties } = await propsQuery;
   if (!properties || properties.length === 0)
