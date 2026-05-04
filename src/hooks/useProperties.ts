@@ -30,6 +30,19 @@ export interface PropertyWithFinancials extends Property {
   tenancies: Tenancy[];
 }
 
+/**
+ * Per-row shim: V2 property_cost_budgets_v2 embed → V1 costs[] legacy shape.
+ * Applied at the consumption layer so PropertyWithFinancials downstream code is unchanged.
+ */
+function mapV2CostsToLegacy<T extends { costs?: unknown }>(rows: T[] | null | undefined, ctx: string): T[] {
+  if (!rows) return [];
+  return rows.map((r) => {
+    const v2Rows = (r.costs ?? []) as PropertyCostBudgetV2RowLite[];
+    warnIfLegacyYearMissing(ctx, v2Rows);
+    return { ...r, costs: v2Rows.map(propertyCostBudgetToLegacyShape) } as T;
+  });
+}
+
 export function useProperties() {
   return useQuery({
     queryKey: ['properties'],
