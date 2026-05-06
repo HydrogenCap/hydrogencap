@@ -14,6 +14,10 @@ import {
   warnIfLegacyYearMissing,
   type PropertyCostBudgetV2RowLite,
 } from '@/lib/propertyCostBudgetCompat';
+import {
+  propertyIncomeBudgetToLegacyShape,
+  type PropertyIncomeBudgetV2RowLite,
+} from '@/lib/propertyIncomeBudgetCompat';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
@@ -48,6 +52,24 @@ function mapV2CostsToLegacy<T extends { costs?: unknown }>(rows: T[] | null | un
     warnIfLegacyYearMissing(ctx, v2Rows);
     return { ...r, costs: v2Rows.map(propertyCostBudgetToLegacyShape) } as T;
   });
+}
+
+/**
+ * Per-row shim: V2 property_income_budgets_v2 embed → V1 income[] legacy shape.
+ */
+function mapV2IncomeToLegacy<T extends { income?: unknown }>(rows: T[] | null | undefined): T[] {
+  if (!rows) return [];
+  return rows.map((r) => {
+    const v2Rows = (r.income ?? []) as PropertyIncomeBudgetV2RowLite[];
+    return { ...r, income: v2Rows.map(propertyIncomeBudgetToLegacyShape) } as T;
+  });
+}
+
+function mapV2Embeds<T extends { costs?: unknown; income?: unknown }>(
+  rows: T[] | null | undefined,
+  ctx: string,
+): T[] {
+  return mapV2IncomeToLegacy(mapV2CostsToLegacy(rows, ctx));
 }
 
 export function useProperties() {
