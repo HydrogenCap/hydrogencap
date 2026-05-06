@@ -106,17 +106,34 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
   };
 
   const persistRow = async (item: QueueItem, decision: RowDecision) => {
+    // doc_type is the canonical column the rest of the app reads (compliance pipeline,
+    // documents vault, AI bridge). category is a legacy free-text label kept in sync.
     const update: Record<string, unknown> = {
+      doc_type: decision.finalCategory || 'other',
       category: decision.finalCategory || 'other',
       review_status: 'accepted',
     };
     if (decision.propertyId) update.property_id = decision.propertyId;
     if (decision.tenantId) update.tenant_id = decision.tenantId;
-    const { error } = await supabaseAny
+    const { data, error, status, statusText } = await supabaseAny
       .from('documents')
       .update(update)
-      .eq('id', item.documentId!);
-    if (error) throw error;
+      .eq('id', item.documentId!)
+      .select('id');
+    if (error) {
+      // Surface the real PostgREST error rather than a generic "unknown".
+      const detail =
+        error.message ||
+        (error as { details?: string }).details ||
+        (error as { hint?: string }).hint ||
+        `${status} ${statusText}` ||
+        'unknown';
+      console.error('[BulkReviewQueue] update failed', { error, update, id: item.documentId });
+      throw new Error(detail);
+    }
+    if (!data || data.length === 0) {
+      throw new Error('No row updated — check you still have access to this document');
+    }
   };
 
   const handleApprove = async (item: QueueItem) => {
@@ -130,7 +147,8 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
       updateDecision(item.id, { status: 'approved' });
       toast.success(`Approved ${item.file.name}`);
     } catch (e) {
-      toast.error(`Failed to approve: ${e instanceof Error ? e.message : 'unknown'}`);
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Failed to approve: ${msg}`);
     }
   };
 
