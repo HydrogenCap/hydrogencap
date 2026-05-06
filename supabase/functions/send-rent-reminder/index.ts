@@ -80,16 +80,26 @@ serve(withInvocationLog("send-rent-reminder", async (req: Request, _invocationLo
     if (!membership?.org_id) throw new Error("Access denied");
     if (membership.role === "viewer") throw new Error("Viewers cannot send rent reminders");
 
-    const { data: tenancy, error: tenancyError } = await supabase
-      .from("tenancies")
+    const { data: tenancyRaw, error: tenancyError } = await supabase
+      .from("tenancy_agreements")
       .select(`
         id,
         org_id,
-        tenant:tenants(id, first_name, last_name, email, phone),
-        property:properties(id, address_line, postcode)
+        tenant:tenants_v2(id, first_name, last_name, email, phone),
+        property:properties_v2(id, address_line_1, postcode)
       `)
       .eq("id", tenancyId)
       .single();
+    const tenancy = tenancyRaw
+      ? {
+          ...tenancyRaw,
+          property: Array.isArray((tenancyRaw as any).property)
+            ? ((tenancyRaw as any).property as any[]).map((p) => ({ ...p, address_line: p.address_line_1 }))
+            : (tenancyRaw as any).property
+              ? { ...(tenancyRaw as any).property, address_line: (tenancyRaw as any).property.address_line_1 }
+              : null,
+        }
+      : null;
     if (tenancyError || !tenancy) throw new Error("Tenancy not found");
     if (tenancy.org_id !== membership.org_id) throw new Error("Access denied");
 

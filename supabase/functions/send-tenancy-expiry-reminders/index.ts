@@ -98,23 +98,31 @@ serve(withInvocationLog("send-tenancy-expiry-reminders", async (req, _invocation
     const sixtyDays = new Date(now.getTime() + 60 * 86400000).toISOString().split("T")[0];
 
     let tenanciesQuery = supabase
-      .from("tenancies")
+      .from("tenancy_agreements")
       .select(`
-        id, org_id, end_date, rent_amount_pcm, status,
-        tenant:tenants(id, first_name, last_name, email),
-        room:rooms(room_name),
-        property:properties(id, address_line, postcode)
+        id, org_id, initial_end_date, actual_end_date, rent_amount_pcm, status,
+        tenant:tenants_v2(id, first_name, last_name, email),
+        room:rooms_v2(room_name),
+        property:properties_v2(id, address_line_1, postcode)
       `)
-      .in("status", ["active", "notice"])
-      .not("end_date", "is", null)
-      .lte("end_date", sixtyDays)
-      .order("end_date", { ascending: true });
+      .in("status", ["active", "notice_period"])
+      .or(`actual_end_date.lte.${sixtyDays},and(actual_end_date.is.null,initial_end_date.lte.${sixtyDays})`)
+      .order("initial_end_date", { ascending: true });
 
     if (authorization.mode === "user" && authorization.manageableOrgIds) {
       tenanciesQuery = tenanciesQuery.in("org_id", authorization.manageableOrgIds);
     }
 
-    const { data: tenancies, error } = await tenanciesQuery;
+    const { data: tenanciesRaw, error } = await tenanciesQuery;
+    const tenancies = (tenanciesRaw ?? []).map((t: any) => ({
+      ...t,
+      end_date: t.actual_end_date ?? t.initial_end_date ?? null,
+      property: Array.isArray(t.property)
+        ? t.property.map((p: any) => ({ ...p, address_line: p.address_line_1 }))
+        : t.property
+          ? { ...t.property, address_line: t.property.address_line_1 }
+          : null,
+    })).filter((t: any) => t.end_date);
     if (error) throw error;
 
     if (!tenancies || tenancies.length === 0) {

@@ -286,13 +286,13 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
         // Fallback: resolve property from tenancy
         if (!propertyAddress && tenancyId) {
           const { data: tenancy } = await supabaseAny
-            .from('tenancies')
-            .select('property_id, properties(address_line)')
+            .from('tenancy_agreements')
+            .select('property_id, properties_v2(address_line_1)')
             .eq('id', tenancyId)
             .single();
-          const tenancyProperty = tenancy?.properties as PropertyAddressJoin | null;
+          const tenancyProperty = (tenancy as any)?.properties_v2 as { address_line_1?: string } | null;
           if (tenancyProperty) {
-            propertyAddress = tenancyProperty.address_line || null;
+            propertyAddress = tenancyProperty.address_line_1 || null;
           }
         }
 

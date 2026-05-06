@@ -41,10 +41,14 @@ serve(withInvocationLog("auto-generate-rent-schedule", async (req: Request, _inv
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: tenancies, error: tenError } = await supabase
-      .from("tenancies")
-      .select("id, org_id, property_id, room_id, rent_amount_pcm, rent_due_day, start_date, end_date, status")
+    const { data: rawTenancies, error: tenError } = await supabase
+      .from("tenancy_agreements")
+      .select("id, org_id, property_id, room_id, rent_amount_pcm, rent_due_day, start_date, initial_end_date, actual_end_date, status")
       .eq("status", "active");
+    const tenancies = (rawTenancies ?? []).map((t: any) => ({
+      ...t,
+      end_date: t.actual_end_date ?? t.initial_end_date ?? null,
+    }));
 
     if (tenError) throw tenError;
     if (!tenancies || tenancies.length === 0) {

@@ -60,7 +60,7 @@ export default function TenantCertificates() {
     queryFn: async () => {
       if (!tenancyId) return null;
       const { data, error } = await supabaseAny
-        .from('tenancies')
+        .from('tenancy_agreements')
         .select('property_id')
         .eq('id', tenancyId)
         .maybeSingle();
