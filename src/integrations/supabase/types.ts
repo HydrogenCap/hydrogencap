@@ -9307,16 +9307,21 @@ export type Database = {
           last_rent_review_amount: number | null
           last_rent_review_date: string | null
           notes: string | null
+          notice_period_weeks: number | null
           notice_served_date: string | null
           notice_type: string | null
           org_id: string
+          payment_method: string | null
+          payment_reference: string | null
           prescribed_info_served_date: string | null
           property_id: string
           rent_amount_pcm: number
+          rent_due_day: number
           rent_frequency: string
           room_id: string
           start_date: string
           status: string
+          tenancy_agreement_url: string | null
           tenancy_type: string
           tenant_id: string
           updated_at: string | null
@@ -9336,16 +9341,21 @@ export type Database = {
           last_rent_review_amount?: number | null
           last_rent_review_date?: string | null
           notes?: string | null
+          notice_period_weeks?: number | null
           notice_served_date?: string | null
           notice_type?: string | null
           org_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
           prescribed_info_served_date?: string | null
           property_id: string
           rent_amount_pcm: number
+          rent_due_day?: number
           rent_frequency?: string
           room_id: string
           start_date: string
           status?: string
+          tenancy_agreement_url?: string | null
           tenancy_type?: string
           tenant_id: string
           updated_at?: string | null
@@ -9365,16 +9375,21 @@ export type Database = {
           last_rent_review_amount?: number | null
           last_rent_review_date?: string | null
           notes?: string | null
+          notice_period_weeks?: number | null
           notice_served_date?: string | null
           notice_type?: string | null
           org_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
           prescribed_info_served_date?: string | null
           property_id?: string
           rent_amount_pcm?: number
+          rent_due_day?: number
           rent_frequency?: string
           room_id?: string
           start_date?: string
           status?: string
+          tenancy_agreement_url?: string | null
           tenancy_type?: string
           tenant_id?: string
           updated_at?: string | null
