@@ -445,7 +445,7 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         .from("loan_facilities")
         .select(LOAN_FACILITY_SELECT)
         .eq("org_id", orgId),
-      supabase.from("income").select("property_id, year, annual_rent_gbp"),
+      supabase.from("property_income_budgets_v2").select("property_id, tax_year, annual_rent_gbp"),
       supabase
         .from("property_cost_budgets_v2")
         .select(PROPERTY_COST_BUDGET_SELECT),
@@ -466,7 +466,11 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
     const allLoans = ((loansRes.data || []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
       loanFacilityToLegacyShape,
     ) as unknown as LoanData[];
-    const allIncome = (incomeRes.data || []) as IncomeData[];
+    const allIncome = ((incomeRes.data || []) as Array<{ property_id: string; tax_year: string; annual_rent_gbp: number }>).map((r) => ({
+      property_id: r.property_id,
+      year: parseInt(String(r.tax_year ?? '').slice(0, 4), 10) || 0,
+      annual_rent_gbp: r.annual_rent_gbp,
+    })) as IncomeData[];
     const rawCostRows = (costsRes.data || []) as unknown as Parameters<typeof propertyCostBudgetToLegacyShape>[0][];
     warnIfLegacyYearMissing("financial-forecast", rawCostRows);
     const allCosts = rawCostRows.map(propertyCostBudgetToLegacyShape) as unknown as CostData[];
