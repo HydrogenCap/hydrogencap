@@ -19,7 +19,14 @@ type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
 type PropertyV1Update = Database['public']['Tables']['properties']['Update'];
 type Loan = Database['public']['Tables']['loans']['Row'];
-type Income = Database['public']['Tables']['income']['Row'];
+// V1 `income` table dropped (Income migration 2026-05-06). Local legacy shape
+// preserved so PropertyWithFinancials downstream consumers keep typing.
+type Income = {
+  id: string;
+  property_id: string;
+  year: number;
+  annual_rent_gbp: number;
+};
 type Costs = Database['public']['Tables']['costs']['Row'];
 type Tenancy = Database['public']['Tables']['tenancies']['Row'];
 
