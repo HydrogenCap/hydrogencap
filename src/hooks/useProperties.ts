@@ -81,14 +81,14 @@ export function useProperties() {
         .select(`
           *,
           loans(*),
-          income(*),
+          income:property_income_budgets_v2(*),
           costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return mapV2CostsToLegacy(data, 'useProperties') as unknown as PropertyWithFinancials[];
+      return mapV2Embeds(data, 'useProperties') as unknown as PropertyWithFinancials[];
     },
   });
 }
@@ -104,7 +104,7 @@ export function useProperty(id: string | undefined) {
         .select(`
           *,
           loans(*),
-          income(*),
+          income:property_income_budgets_v2(*),
           costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
@@ -113,7 +113,7 @@ export function useProperty(id: string | undefined) {
 
       if (error) throw error;
       if (!data) return null;
-      return mapV2CostsToLegacy([data], 'useProperty')[0] as unknown as PropertyWithFinancials;
+      return mapV2Embeds([data], 'useProperty')[0] as unknown as PropertyWithFinancials;
     },
     enabled: !!id,
   });
@@ -230,29 +230,19 @@ export function useUpdateLoan() {
   });
 }
 
-// Income hooks
+// V1 `income` table dropped (Income migration 2026-05-06). Writes redirected
+// to V2 `property_income_budgets_v2` via useUpsertPropertyIncomeBudget.
 export function useUpsertIncome() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (income: Database['public']['Tables']['income']['Insert']) => {
-      const { data, error } = await supabaseAny
-        .from('income')
-        .upsert(income, { onConflict: 'property_id,year' })
-        .select()
-        .single();
 
-      if (error) throw error;
-      return data;
+  return useMutation({
+    mutationFn: async (_income: { property_id: string; year: number; annual_rent_gbp: number }) => {
+      throwV1Frozen('income', 'useUpsertIncome');
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      ActivityLoggers.incomeUpdated(
-        data.property_id, 
-        data.year, 
-        Number(data.annual_rent_gbp)
-      );
+      ActivityLoggers.incomeUpdated(data.property_id, data.year, Number(data.annual_rent_gbp));
       showMutationSuccess('Income updated');
     },
     onError: (error) => {
