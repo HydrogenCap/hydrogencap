@@ -5,7 +5,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useCreateProperty, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
+import { useCreateProperty, useCreateLoan } from '@/hooks/useProperties';
+import { useUpsertPropertyIncomeBudget, yearToTaxYear } from '@/hooks/usePropertyIncomeBudgets';
 import { extractPostcodeArea } from '@/lib/calculations';
 import { useUnitUsage } from '@/hooks/useUnitUsage';
 import { PropertyForm } from '@/components/property/PropertyForm';
@@ -17,7 +18,7 @@ function PropertyNewPage() {
   const { toast } = useToast();
   const createProperty = useCreateProperty();
   const createLoan = useCreateLoan();
-  const upsertIncome = useUpsertIncome();
+  const upsertIncome = useUpsertPropertyIncomeBudget();
   const { atLimit, totalUnits, limit } = useUnitUsage();
 
   const handleSubmit = async (data: PropertyFormData, _geocodeData: AddressData | null) => {
@@ -78,7 +79,7 @@ function PropertyNewPage() {
       const currentYear = new Date().getFullYear();
       await upsertIncome.mutateAsync({
         property_id: property.id,
-        year: currentYear,
+        tax_year: yearToTaxYear(currentYear),
         annual_rent_gbp: data.annual_rent_gbp,
       });
     }

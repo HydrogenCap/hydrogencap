@@ -5,7 +5,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useProperty, useUpdateProperty, useUpdateLoan, useCreateLoan, useUpsertIncome } from '@/hooks/useProperties';
+import { useProperty, useUpdateProperty, useUpdateLoan, useCreateLoan } from '@/hooks/useProperties';
+import { useUpsertPropertyIncomeBudget, yearToTaxYear } from '@/hooks/usePropertyIncomeBudgets';
 import { extractPostcodeArea } from '@/lib/calculations';
 import { calculateMortgagePaymentDetailed } from '@/lib/mortgageCalculations';
 import { notifyPropertyUpdated } from '@/components/dashboard';
@@ -21,7 +22,7 @@ function PropertyEditPage() {
   const updateProperty = useUpdateProperty();
   const updateLoan = useUpdateLoan();
   const createLoan = useCreateLoan();
-  const upsertIncome = useUpsertIncome();
+  const upsertIncome = useUpsertPropertyIncomeBudget();
 
   // Compute default values from loaded property
   const defaultValues = useMemo<Partial<PropertyFormData> | undefined>(() => {
@@ -178,7 +179,7 @@ function PropertyEditPage() {
       const currentYear = new Date().getFullYear();
       await upsertIncome.mutateAsync({
         property_id: id,
-        year: currentYear,
+        tax_year: yearToTaxYear(currentYear),
         annual_rent_gbp: data.annual_rent_gbp || 0,
       });
     }

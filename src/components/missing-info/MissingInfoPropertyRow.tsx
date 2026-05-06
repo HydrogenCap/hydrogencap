@@ -34,7 +34,8 @@ import {
   TERM_YEARS_FIELD,
 } from '@/hooks/useMissingInfo';
 import { MissingFieldEditor } from './MissingFieldEditor';
-import { useUpdateLoan, useUpdateProperty, useUpsertIncome } from '@/hooks/useProperties';
+import { useUpdateLoan, useUpdateProperty } from '@/hooks/useProperties';
+import { useUpsertPropertyIncomeBudget, yearToTaxYear } from '@/hooks/usePropertyIncomeBudgets';
 import { useUpsertInsurancePolicy } from '@/hooks/useMissingInfo';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { toast } from 'sonner';
@@ -59,7 +60,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
 
   const updateProperty = useUpdateProperty();
   const updateLoan = useUpdateLoan();
-  const upsertIncome = useUpsertIncome();
+  const upsertIncome = useUpsertPropertyIncomeBudget();
   const upsertInsurance = useUpsertInsurancePolicy();
   const upsertPassport = useUpsertPassport();
 
@@ -149,8 +150,8 @@ export function MissingInfoPropertyRow({ item }: Props) {
         const currentYear = new Date().getFullYear();
         await upsertIncome.mutateAsync({
           property_id: item.property.id,
-          year: currentYear,
-          ...incomeChanges,
+          tax_year: yearToTaxYear(currentYear),
+          annual_rent_gbp: Number((incomeChanges as any).annual_rent_gbp ?? 0),
         });
       }
 
