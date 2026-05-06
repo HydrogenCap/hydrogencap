@@ -292,7 +292,7 @@ export function useAcceptComplianceDocument() {
         .insert({
           org_id: orgId,
           property_id: propertyId,
-          document_type: docType,
+          document_type: v2DocType,
           issue_date: issueDate || new Date().toISOString().split('T')[0],
           expiry_date: calculatedExpiryDate,
           file_url: newFileUrl,
