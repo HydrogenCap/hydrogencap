@@ -3169,8 +3169,15 @@ export type Database = {
             foreignKeyName: "documents_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
           {
             foreignKeyName: "documents_tenant_id_fkey"
@@ -6529,8 +6536,15 @@ export type Database = {
             foreignKeyName: "payment_reminders_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
         ]
       }
@@ -8147,8 +8161,15 @@ export type Database = {
             foreignKeyName: "rent_payments_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_payments_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
         ]
       }
@@ -8242,8 +8263,15 @@ export type Database = {
             foreignKeyName: "rent_schedule_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_schedule_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
         ]
       }
@@ -9500,8 +9528,15 @@ export type Database = {
             foreignKeyName: "tenancy_compliance_items_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_compliance_items_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
         ]
       }
@@ -9564,8 +9599,15 @@ export type Database = {
             foreignKeyName: "tenant_portal_access_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_access_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
           {
             foreignKeyName: "tenant_portal_access_tenant_id_fkey"
@@ -9625,8 +9667,15 @@ export type Database = {
             foreignKeyName: "tenant_portal_invites_tenancy_id_fkey"
             columns: ["tenancy_id"]
             isOneToOne: false
-            referencedRelation: "tenancies"
+            referencedRelation: "tenancy_agreements"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_portal_invites_tenancy_id_fkey"
+            columns: ["tenancy_id"]
+            isOneToOne: false
+            referencedRelation: "tenancy_compliance_check_v2"
+            referencedColumns: ["tenancy_id"]
           },
           {
             foreignKeyName: "tenant_portal_invites_tenant_id_fkey"
