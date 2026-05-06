@@ -129,7 +129,7 @@ export function useBatchRenameDocuments() {
     const tenancyPropertyMap = new Map<string, string>();
     if (tenancyIds.length > 0) {
       const { data: tenancies } = await supabaseAny
-        .from('tenancies')
+        .from('tenancy_agreements')
         .select('id, property_id')
         .in('id', [...new Set(tenancyIds)]);
       tenancies?.forEach(t => {

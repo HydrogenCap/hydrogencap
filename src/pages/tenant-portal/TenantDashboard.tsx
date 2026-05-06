@@ -23,17 +23,24 @@ export default function TenantDashboard() {
     queryFn: async () => {
       if (!tenancyId) return null;
       const { data, error } = await supabaseAny
-        .from('tenancies')
+        .from('tenancy_agreements')
         .select(`
           *,
-          property:properties(address_line, postcode, city),
-          room:rooms(room_name),
-          tenant:tenants(first_name, last_name, company_name, tenant_type)
+          property:properties_v2(address_line_1, postcode, city),
+          room:rooms_v2(room_name),
+          tenant:tenants_v2(first_name, last_name, tenant_type)
         `)
         .eq('id', tenancyId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+      return {
+        ...data,
+        end_date: (data as any).actual_end_date ?? (data as any).initial_end_date ?? null,
+        property: (data as any).property
+          ? { ...(data as any).property, address_line: (data as any).property.address_line_1 }
+          : null,
+      };
     },
     enabled: !!tenancyId,
   });
@@ -126,9 +133,10 @@ export default function TenantDashboard() {
     );
   }
 
+  const tenantFullName = `${tenancy.tenant?.first_name || ''} ${tenancy.tenant?.last_name || ''}`.trim();
   const tenantName = tenancy.tenant?.tenant_type === 'company'
-    ? tenancy.tenant.company_name
-    : `${tenancy.tenant?.first_name || ''} ${tenancy.tenant?.last_name || ''}`.trim();
+    ? ((tenancy.tenant as any).company_name || tenantFullName)
+    : tenantFullName;
 
   const propertyAddress = [
     tenancy.property?.address_line,

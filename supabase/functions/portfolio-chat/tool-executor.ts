@@ -211,17 +211,17 @@ async function getPropertyDetails(
           }
           const roomIds = rooms.map((r) => r.id);
           const { data: tenancies } = await supabase
-            .from("tenancies")
-            .select("*, tenants(*)")
+            .from("tenancy_agreements")
+            .select("*, tenants_v2(*)")
             .in("room_id", roomIds)
             .eq("status", "active");
-          result.tenants = (tenancies ?? []).map((t) => ({
-            name: t.tenants
-              ? `${t.tenants.first_name} ${t.tenants.last_name}`
+          result.tenants = (tenancies ?? []).map((t: any) => ({
+            name: t.tenants_v2
+              ? `${t.tenants_v2.first_name} ${t.tenants_v2.last_name}`
               : "Unknown",
-            rent: t.rent_pcm,
+            rent: t.rent_amount_pcm,
             start_date: t.start_date,
-            end_date: t.end_date,
+            end_date: t.actual_end_date ?? t.initial_end_date ?? null,
             room_id: t.room_id,
           }));
         })

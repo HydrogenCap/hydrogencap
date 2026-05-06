@@ -90,7 +90,7 @@ serve(withInvocationLog("send-tenant-certificates", async (req: Request, _invoca
 
     if (tenancyId) {
       const { data: tenancy, error: tenancyError } = await supabase
-        .from("tenancies")
+        .from("tenancy_agreements")
         .select("id, org_id, tenant_id, property_id")
         .eq("id", tenancyId)
         .single();

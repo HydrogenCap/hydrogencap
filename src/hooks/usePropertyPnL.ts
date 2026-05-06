@@ -89,23 +89,7 @@ export function usePropertyPnL(propertyId: string | undefined) {
         rentPayments = payments || [];
       }
 
-      // Also try V1 tenancies path as fallback
-      if (rentPayments.length === 0) {
-        const { data: tenancies } = await supabaseAny
-          .from('tenancies')
-          .select('id')
-          .eq('property_id', propertyId);
-
-        const tenancyIds = (tenancies || []).map(t => t.id);
-        if (tenancyIds.length > 0) {
-          const { data: v1Payments } = await supabaseAny
-            .from('rent_payments')
-            .select('amount, payment_date')
-            .in('tenancy_id', tenancyIds)
-            .gte('payment_date', twelveMonthsAgo);
-          rentPayments = v1Payments || [];
-        }
-      }
+      // V1 tenancies fallback removed (#53 cutover).
 
       // Calculate expected rent from rooms
       const rooms = roomsRes.data || [];

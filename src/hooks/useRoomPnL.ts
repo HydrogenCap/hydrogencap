@@ -210,27 +210,12 @@ async function fetchRoomPnL(roomId: string, period: RoomPnLPeriod): Promise<Room
   const agreements: AgreementRow[] = (agRes.data ?? []) as AgreementRow[];
   const agreementIds = agreements.map(a => a.id);
 
-  // Legacy tenancies for fallback rent_payments lookup
-  const tenRes = await supabaseAny
-    .from('tenancies')
-    .select('id, rent_amount_pcm, start_date')
-    .eq('room_id', roomId);
-  const tenancies = (tenRes.data ?? []) as AgreementRow[];
-  const tenancyIds = tenancies.map(t => t.id);
-
-  // Combine agreements (tenancies) for daily-rent estimate fallback
-  const combinedAgreements: AgreementRow[] = [...agreements, ...tenancies];
+  // V1 tenancies path removed (#53 cutover) — agreements are the only source.
+  const combinedAgreements: AgreementRow[] = [...agreements];
 
   let rentPayments: RentPaymentRow[] = [];
   if (agreementIds.length > 0) {
     let q = supabaseAny.from('rent_payments').select('amount, payment_date').in('agreement_id', agreementIds);
-    if (start) q = q.gte('payment_date', format(start, 'yyyy-MM-dd'));
-    q = q.lte('payment_date', format(end, 'yyyy-MM-dd'));
-    const { data } = await q;
-    rentPayments = (data ?? []) as RentPaymentRow[];
-  }
-  if (rentPayments.length === 0 && tenancyIds.length > 0) {
-    let q = supabaseAny.from('rent_payments').select('amount, payment_date').in('tenancy_id', tenancyIds);
     if (start) q = q.gte('payment_date', format(start, 'yyyy-MM-dd'));
     q = q.lte('payment_date', format(end, 'yyyy-MM-dd'));
     const { data } = await q;

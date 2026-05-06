@@ -386,3 +386,30 @@ Removed the `tenancies + tenants.portal_user_id` branch (V2 has no portal column
 - Bridge-completeness assertion passed inside the migration (`v_unmapped=0`).
 - Per-table post-flight drift assertion passed for all 7 FKs (`v_drift=0`).
 - `npm run test -- postgrest-embed-safety` → green (2/2).
+
+## Tenancies consumer cutover shipped 2026-05-06
+
+Re-pointed every src/ and edge-function consumer of V1 `tenancies` to V2 `tenancy_agreements`. No schema, FK, or RLS changes (those landed in #51/#52). V1 mutation hooks now throw via `throwV1Frozen('tenancies', …)` ahead of the table drop in #54.
+
+### Hooks ported
+- `src/hooks/useTenancies.ts` — reads now go through `tenancy_agreements`; output mapped back to the legacy `TenancyWithDetails` shape (`end_date` ← coalesce(`actual_end_date`, `initial_end_date`); status `notice_period` ↔ `notice`; `properties_v2.address_line_1` aliased to `address_line`). All five mutation hooks (`useCreateTenancy`, `useUpdateTenancy`, `useActivateTenancy`, `useEndTenancy`, `useGiveNotice`) now `throwV1Frozen('tenancies', …)`. Verified: zero in-repo callers of the V1 mutation hooks.
+- `src/hooks/useBatchRenameDocuments.ts` — tenancy resolver re-pointed.
+- `src/hooks/useDocumentManagement.ts` — tenancy→property fallback re-pointed (`properties_v2.address_line_1`).
+- `src/hooks/useRoomPnL.ts` — V1 `tenancies` rent_payments fallback removed; agreements are the sole source.
+- `src/hooks/usePropertyPnL.ts` — V1 `tenancies` rent_payments fallback removed.
+
+### Pages ported
+- `src/pages/tenant-portal/TenantDashboard.tsx` — V2 select with aliased property address; tenant `company_name` falls back through `as any` since `tenants_v2` does not carry the column.
+- `src/pages/tenant-portal/TenantCertificates.tsx`
+- `src/pages/tenant-portal/MaintenanceRequest.tsx`
+- (`PropertyStatusBar.tsx` and `TenancyPipelineWidget.tsx` consume `useTenancies` and inherit the cutover unchanged — hook signature preserved.)
+
+### Edge functions ported
+- `supabase/functions/auto-generate-rent-schedule/index.ts` — `tenancy_agreements`, `end_date` coalesced.
+- `supabase/functions/send-rent-reminder/index.ts` — `tenancy_agreements` + `tenants_v2` + `properties_v2`, address aliased.
+- `supabase/functions/send-tenancy-expiry-reminders/index.ts` — `tenancy_agreements`, `notice` → `notice_period`, expiry filter expressed against coalesce(`actual_end_date`, `initial_end_date`) via `or(...)`.
+- `supabase/functions/send-tenant-certificates/index.ts` — tenancy lookup re-pointed.
+- `supabase/functions/portfolio-chat/tool-executor.ts` — `tenancy_agreements` + `tenants_v2`, end_date coalesced.
+
+### Freeze widening
+- `src/lib/v1Frozen.ts` — `'tenancies'` added to the `throwV1Frozen` union; mapped to `tenancy_agreements`.
