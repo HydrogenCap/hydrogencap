@@ -133,9 +133,10 @@ export default function TenantDashboard() {
     );
   }
 
+  const tenantFullName = `${tenancy.tenant?.first_name || ''} ${tenancy.tenant?.last_name || ''}`.trim();
   const tenantName = tenancy.tenant?.tenant_type === 'company'
-    ? tenancy.tenant.company_name
-    : `${tenancy.tenant?.first_name || ''} ${tenancy.tenant?.last_name || ''}`.trim();
+    ? ((tenancy.tenant as any).company_name || tenantFullName)
+    : tenantFullName;
 
   const propertyAddress = [
     tenancy.property?.address_line,
