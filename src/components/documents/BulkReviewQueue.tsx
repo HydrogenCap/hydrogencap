@@ -142,7 +142,7 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
       // Soft delete by setting review_status; mirrors the inbox "discard" flow.
       await supabaseAny
         .from('documents')
-        .update({ review_status: 'discarded' })
+        .update({ review_status: 'rejected' })
         .eq('id', item.documentId);
       // Also remove the file from storage to free quota.
       if (item.storagePath) {
