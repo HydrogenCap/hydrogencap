@@ -272,3 +272,12 @@ Sites ported:
 - `src/hooks/useProperties.ts` — both `useProperties()` and `useProperty()` nested embeds switched to `costs:property_cost_budgets_v2(*)` with a per-row `mapV2CostsToLegacy` shim that warns on bad tax_year and restores the V1 `costs` shape (incl. integer `year` and effective `*_gbp` fields). Consumer types in `PropertyWithFinancials` unchanged.
 
 Confirmation: `rg "from\(['\"]costs['\"]\)|costs\(\*\)" src/ supabase/functions/` (excluding `work_order_costs`) returns **zero** matches. The upcoming Prompt #49e freeze trigger has no remaining live readers to break.
+
+## Costs D — backfill + parity test shipped 2026-05-06
+
+- Migration `<auto>-fix-cost-budgets-org-id-fk.sql`: `ALTER TABLE public.property_cost_budgets_v2 DROP CONSTRAINT IF EXISTS property_cost_budgets_v2_org_id_fkey;`
+- Migration `<auto>-backfill-costs-to-v2.sql`: idempotent `INSERT … SELECT` from `public.costs` joined to `properties_v2` via the V1 address bridge (`lower(trim(properties.address_line)) = lower(trim(properties_v2.address_line_1))`), mapping `year` → `tax_year` inline (`format('%s/%s', year, lpad(((year+1)%100)::text,2,'0'))`). `ON CONFLICT (property_id, tax_year) DO NOTHING`. Post-flight `RAISE EXCEPTION` if `count(property_cost_budgets_v2) <> count(costs)`.
+- Result: **3 / 3** V1 cost rows backfilled into V2, all on `tax_year = '2026/27'`, FKs to `properties_v2(id)` resolve cleanly.
+- Parity test: `src/__tests__/costs-pair-completeness.test.ts` + fixture `src/__tests__/fixtures/costs-pair-snapshot.json` (5 assertions: row count, V1 id uniqueness, V2 id uniqueness, `(property_id, tax_year)` uniqueness, `yearToTaxYear` round-trip).
+
+> **NOTE — #49a FK mistake corrected.** The original `property_cost_budgets_v2_org_id_fkey` (added in Costs A, mirroring the `loan_facilities` pattern) FK'd `org_id` to `legal_entities(id)`. That is **wrong for this schema**: `org_id` here is the tenant/user-org identifier (matches the values used in `properties_v2.org_id`, none of which exist in `legal_entities`), not a legal-entity foreign key. The constraint blocked the backfill and was dropped in this prompt. Tenancy isolation is already enforced by the existing `user_has_org_access(org_id)` RLS — no security regression. Future V2 tables should NOT FK `org_id → legal_entities(id)`; the loan_facilities precedent should be re-examined separately.

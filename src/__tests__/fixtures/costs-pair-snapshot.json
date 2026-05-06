@@ -1,0 +1,25 @@
+{
+  "pairs": [
+    {
+      "v1_cost_id": "3b57723c-5862-4b45-9d91-3eca86d78a49",
+      "v2_budget_id": "b74dacd7-a948-4bb7-9aa2-ac6b175ef7c0",
+      "property_id": "60d3f5fe-3d9b-4545-9d84-aaf113e78064",
+      "year": 2026,
+      "tax_year": "2026/27"
+    },
+    {
+      "v1_cost_id": "54f487e2-21d7-4c69-b799-d3d981d3f20d",
+      "v2_budget_id": "465c1439-0845-4df7-bba0-2ffc13152f84",
+      "property_id": "188e1abe-4f88-4a9d-b70c-0efd6c20d580",
+      "year": 2026,
+      "tax_year": "2026/27"
+    },
+    {
+      "v1_cost_id": "b600e2c9-e080-4cfe-92c5-93f9eed8aab9",
+      "v2_budget_id": "1ee43253-22b2-418a-a698-5afbdabc64a5",
+      "property_id": "0bc31476-da2b-4735-9f31-6d5ca346b0e9",
+      "year": 2026,
+      "tax_year": "2026/27"
+    }
+  ]
+}
