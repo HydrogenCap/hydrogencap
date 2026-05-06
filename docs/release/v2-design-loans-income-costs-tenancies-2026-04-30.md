@@ -279,3 +279,49 @@ Shipping order with complexity:
 2. **`income` → `property_income_budgets_v2`** — small/medium (21 rows, 2 writes, 4 reads, no inbound FKs, but `year` int → `tax_year` text needs David's confirmation). One Build prompt.
 3. **`loans` → promote `loan_facilities` to canonical** — medium (24 rows already in V2 — likely drift, plus 4 schema gaps to fill, 3 writes, 7 read-only edge consumers, no inbound FKs). One Build prompt if V1↔V2 diff is clean, two if not.
 4. **`tenancies` → promote `tenancy_agreements` to canonical** — large (13 rows in V2, 5 schema gaps, 7 inbound CASCADE FKs, full tenant portal, 3 cron jobs, RLS SECURITY DEFINER function rewrite). Three Build prompts (schema/diff, FK + RLS re-point, consumer cutover).
+
+## V1 income migrated and dropped 2026-05-06
+
+Bundled single-prompt execution of the costs A–E pattern against V1 `income`
+(small dataset: 21 rows, 0 inbound FKs per #32 audit).
+
+**Migration** (`<auto>-income-v2-create-and-backfill.sql`):
+- Created `public.property_income_budgets_v2` with columns: `id`, `org_id`
+  (NO FK to legal_entities — lesson from #49d-fix), `property_id` FK →
+  `properties_v2(id) ON DELETE CASCADE`, `tax_year` text, `annual_rent_gbp`
+  numeric NOT NULL DEFAULT 0, audit cols, `UNIQUE (property_id, tax_year)`.
+- `updated_at` trigger; RLS enabled with 4 policies via `user_has_org_access(org_id)`.
+- Backfilled 21/21 V1 rows with `year=YYYY → tax_year='YYYY/(YY+1)'` (UK
+  starting-year rule, locked #50a). Post-flight `RAISE EXCEPTION` parity guard.
+- Installed `v1_freeze_guard` on `public.income` (defensive, idempotent).
+- **Dropped `public.income`** in same migration (per #32: 0 inbound FKs).
+
+**Code changes**:
+- `src/lib/v1Frozen.ts` — added `'income' → 'property_income_budgets_v2'`.
+- `src/hooks/usePropertyIncomeBudgets.ts` — new V2 write hook
+  `useUpsertPropertyIncomeBudget` (re-exports `yearToTaxYear` from #49b's
+  helper for single-source-of-truth).
+- `src/hooks/useProperties.ts` — `useUpsertIncome` now throws via `throwV1Frozen`;
+  `useProperties`/`useProperty` embeds switched to
+  `income:property_income_budgets_v2(*)` with new `mapV2IncomeToLegacy` shim.
+- `src/lib/propertyIncomeBudgetCompat.ts` + `supabase/functions/_shared/propertyIncomeBudget.ts`
+  — read helpers (`PROPERTY_INCOME_BUDGET_SELECT`, `propertyIncomeBudgetToLegacyShape`,
+  `taxYearToYearShim`).
+
+**Consumer ports** (4 read sites + 4 write sites):
+- Reads: `analyse-acquisition`, `financial-forecast`, `portfolio-chat/tool-executor.ts`
+  (4 sites: `get_property_details`, `get_property_financials`,
+  `financial_overview`, `rent_roll`, `portfolio_snapshot`).
+- Writes: `PropertyNew.tsx`, `PropertyEdit.tsx`,
+  `MissingInfoPropertyRow.tsx`, `useBatchImport.ts` — all moved to
+  `useUpsertPropertyIncomeBudget` (or direct V2 upsert in batch import).
+
+**Verification**:
+- `psql` confirms 21 rows in `property_income_budgets_v2`, V1 `public.income`
+  no longer exists in `information_schema.tables`.
+- `src/__tests__/income-pair-completeness.test.ts` (4 assertions) green —
+  snapshot captured pre-drop, asserts V2-only invariants.
+- Zero remaining `from('income')` references in `src/` or `supabase/functions/`.
+
+**Plan §0a 'income' — CLOSED**. Third of 4 V2-reframe items reconciled
+(loans + costs prior; tenancies remaining).
