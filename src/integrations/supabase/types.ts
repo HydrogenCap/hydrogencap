@@ -7353,20 +7353,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "property_cost_budgets_v2_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "entity_verification_status"
-            referencedColumns: ["entity_id"]
-          },
-          {
-            foreignKeyName: "property_cost_budgets_v2_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "legal_entities"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "property_cost_budgets_v2_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
