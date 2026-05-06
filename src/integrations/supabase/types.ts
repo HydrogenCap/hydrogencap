@@ -4322,41 +4322,6 @@ export type Database = {
           },
         ]
       }
-      income: {
-        Row: {
-          annual_rent_gbp: number
-          created_at: string
-          id: string
-          property_id: string
-          updated_at: string
-          year: number
-        }
-        Insert: {
-          annual_rent_gbp?: number
-          created_at?: string
-          id?: string
-          property_id: string
-          updated_at?: string
-          year: number
-        }
-        Update: {
-          annual_rent_gbp?: number
-          created_at?: string
-          id?: string
-          property_id?: string
-          updated_at?: string
-          year?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "income_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       insurance_policies: {
         Row: {
           auto_renew: boolean | null
@@ -7368,6 +7333,61 @@ export type Database = {
           },
           {
             foreignKeyName: "property_cost_budgets_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "rrb_readiness_v"
+            referencedColumns: ["property_id"]
+          },
+        ]
+      }
+      property_income_budgets_v2: {
+        Row: {
+          annual_rent_gbp: number
+          created_at: string
+          deleted_at: string | null
+          id: string
+          org_id: string
+          property_id: string
+          tax_year: string
+          updated_at: string
+        }
+        Insert: {
+          annual_rent_gbp?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          org_id: string
+          property_id: string
+          tax_year: string
+          updated_at?: string
+        }
+        Update: {
+          annual_rent_gbp?: number
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          org_id?: string
+          property_id?: string
+          tax_year?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_income_budgets_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_income_budgets_v2_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "property_room_summary_v2"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "property_income_budgets_v2_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "rrb_readiness_v"

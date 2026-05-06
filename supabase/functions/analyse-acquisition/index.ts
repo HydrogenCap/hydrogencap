@@ -108,8 +108,8 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
         .select(LOAN_FACILITY_SELECT)
         .eq("org_id", orgId),
       supabaseAdmin
-        .from("income")
-        .select("property_id, year, annual_rent_gbp")
+        .from("property_income_budgets_v2")
+        .select("property_id, tax_year, annual_rent_gbp")
         .in(
           "property_id",
           (await supabaseAdmin.from("properties_v2").select("id").eq("org_id", orgId)).data?.map((p: { id: string }) => p.id) || []
@@ -149,7 +149,11 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
     const loans = ((loansRes.data || []) as unknown as Parameters<typeof loanFacilityToLegacyShape>[0][]).map(
       loanFacilityToLegacyShape,
     );
-    const income = incomeRes.data || [];
+    const income = (incomeRes.data || []).map((r: any) => ({
+      property_id: r.property_id,
+      year: parseInt(String(r.tax_year ?? '').slice(0, 4), 10) || 0,
+      annual_rent_gbp: r.annual_rent_gbp,
+    }));
     const compliance = complianceRes.data || [];
 
     // Calculate portfolio metrics

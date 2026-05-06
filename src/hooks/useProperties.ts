@@ -14,12 +14,23 @@ import {
   warnIfLegacyYearMissing,
   type PropertyCostBudgetV2RowLite,
 } from '@/lib/propertyCostBudgetCompat';
+import {
+  propertyIncomeBudgetToLegacyShape,
+  type PropertyIncomeBudgetV2RowLite,
+} from '@/lib/propertyIncomeBudgetCompat';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
 type PropertyV1Update = Database['public']['Tables']['properties']['Update'];
 type Loan = Database['public']['Tables']['loans']['Row'];
-type Income = Database['public']['Tables']['income']['Row'];
+// V1 `income` table dropped (Income migration 2026-05-06). Local legacy shape
+// preserved so PropertyWithFinancials downstream consumers keep typing.
+type Income = {
+  id: string;
+  property_id: string;
+  year: number;
+  annual_rent_gbp: number;
+};
 type Costs = Database['public']['Tables']['costs']['Row'];
 type Tenancy = Database['public']['Tables']['tenancies']['Row'];
 
@@ -43,6 +54,24 @@ function mapV2CostsToLegacy<T extends { costs?: unknown }>(rows: T[] | null | un
   });
 }
 
+/**
+ * Per-row shim: V2 property_income_budgets_v2 embed → V1 income[] legacy shape.
+ */
+function mapV2IncomeToLegacy<T extends { income?: unknown }>(rows: T[] | null | undefined): T[] {
+  if (!rows) return [];
+  return rows.map((r) => {
+    const v2Rows = (r.income ?? []) as PropertyIncomeBudgetV2RowLite[];
+    return { ...r, income: v2Rows.map(propertyIncomeBudgetToLegacyShape) } as T;
+  });
+}
+
+function mapV2Embeds<T extends { costs?: unknown; income?: unknown }>(
+  rows: T[] | null | undefined,
+  ctx: string,
+): T[] {
+  return mapV2IncomeToLegacy(mapV2CostsToLegacy(rows, ctx));
+}
+
 export function useProperties() {
   return useQuery({
     queryKey: ['properties'],
@@ -52,14 +81,14 @@ export function useProperties() {
         .select(`
           *,
           loans(*),
-          income(*),
+          income:property_income_budgets_v2(*),
           costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return mapV2CostsToLegacy(data, 'useProperties') as unknown as PropertyWithFinancials[];
+      return mapV2Embeds(data, 'useProperties') as unknown as PropertyWithFinancials[];
     },
   });
 }
@@ -75,7 +104,7 @@ export function useProperty(id: string | undefined) {
         .select(`
           *,
           loans(*),
-          income(*),
+          income:property_income_budgets_v2(*),
           costs:property_cost_budgets_v2(*),
           tenancies(*)
         `)
@@ -84,7 +113,7 @@ export function useProperty(id: string | undefined) {
 
       if (error) throw error;
       if (!data) return null;
-      return mapV2CostsToLegacy([data], 'useProperty')[0] as unknown as PropertyWithFinancials;
+      return mapV2Embeds([data], 'useProperty')[0] as unknown as PropertyWithFinancials;
     },
     enabled: !!id,
   });
@@ -201,29 +230,19 @@ export function useUpdateLoan() {
   });
 }
 
-// Income hooks
+// V1 `income` table dropped (Income migration 2026-05-06). Writes redirected
+// to V2 `property_income_budgets_v2` via useUpsertPropertyIncomeBudget.
 export function useUpsertIncome() {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (income: Database['public']['Tables']['income']['Insert']) => {
-      const { data, error } = await supabaseAny
-        .from('income')
-        .upsert(income, { onConflict: 'property_id,year' })
-        .select()
-        .single();
 
-      if (error) throw error;
-      return data;
+  return useMutation({
+    mutationFn: async (_income: { property_id: string; year: number; annual_rent_gbp: number }) => {
+      throwV1Frozen('income', 'useUpsertIncome');
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      ActivityLoggers.incomeUpdated(
-        data.property_id, 
-        data.year, 
-        Number(data.annual_rent_gbp)
-      );
+      ActivityLoggers.incomeUpdated(data.property_id, data.year, Number(data.annual_rent_gbp));
       showMutationSuccess('Income updated');
     },
     onError: (error) => {

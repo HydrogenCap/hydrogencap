@@ -1,0 +1,25 @@
+{
+  "pairs": [
+    { "v1_income_id": "ded7c5fc-6c87-4e81-9a88-63be8f59e5a6", "v2_property_id": "60d3f5fe-3d9b-4545-9d84-aaf113e78064", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "22100.00" },
+    { "v1_income_id": "f2552017-0a1f-42d9-8033-277478b168cd", "v2_property_id": "333f55d6-3a74-4270-b856-c40c4215fe80", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "32800.00" },
+    { "v1_income_id": "a39ff3b6-3544-4ac4-80df-2d6c35a8cd7c", "v2_property_id": "d2b7a338-7b85-4d03-9edd-326fab8118bc", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "22100.00" },
+    { "v1_income_id": "bad1ef09-56e6-4e09-a964-ed05f67d9f25", "v2_property_id": "5eb681c7-2b1a-486a-8a6b-4338d356beb7", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "25400.00" },
+    { "v1_income_id": "6b767aa4-5958-4e82-a68a-56693cf431fb", "v2_property_id": "f0c8109a-8e06-46de-b72f-f4b78ec583ce", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "39600.00" },
+    { "v1_income_id": "6fd0b95f-aa60-4790-b0ca-e5584fa103ea", "v2_property_id": "0bc31476-da2b-4735-9f31-6d5ca346b0e9", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "28100.00" },
+    { "v1_income_id": "4413006c-e624-4ff1-8493-81fd90776399", "v2_property_id": "ccca2101-c442-4738-b6c4-aa2cf2ce2289", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "30200.00" },
+    { "v1_income_id": "a2d2ad11-9543-4bb8-933a-4b3db2faba4d", "v2_property_id": "d84a22dc-5549-4f1d-aae9-6a97095203f6", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "0.00" },
+    { "v1_income_id": "170f6343-d1e6-4f70-a7f7-169aaabf5d52", "v2_property_id": "cf3bfef5-c928-43c8-9b3a-cebf0bef54c4", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "25200.00" },
+    { "v1_income_id": "325c6aea-abbc-4d53-b38f-4227a14dcdc9", "v2_property_id": "628400e3-c52b-4adf-8619-880c95e3eb23", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "39600.00" },
+    { "v1_income_id": "9174c4f5-c9fa-4347-87e9-c137b9c0e6be", "v2_property_id": "a91cb466-3521-4538-b94b-a1a6a5a73175", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "21900.00" },
+    { "v1_income_id": "1f2e790c-abd4-4d7a-8fc1-23d0376a8f19", "v2_property_id": "bb3cef38-6090-4eac-a6f8-05a6a1d82888", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "33000.00" },
+    { "v1_income_id": "63714aa4-db34-46fb-825e-6f003a4f15b2", "v2_property_id": "5b7144b3-9ee5-4372-8e50-85bd912cfd2f", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "46800.00" },
+    { "v1_income_id": "fac11624-cf7f-473b-a4d4-48da8450270c", "v2_property_id": "4269be35-3be7-4268-8512-b38803fbb18f", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "39600.00" },
+    { "v1_income_id": "a1275f96-693b-43bc-a870-29be63c61a52", "v2_property_id": "ef925ae8-4215-428f-b2ca-9239c41e4075", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "25400.00" },
+    { "v1_income_id": "bb01c308-c06c-4d43-aafa-3468773ae63d", "v2_property_id": "733eb031-6bc0-4857-b961-0c7a8274390c", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "46800.00" },
+    { "v1_income_id": "a7d238c8-8439-439c-b18d-dde26fa8f7c6", "v2_property_id": "d5945cc3-845f-4501-a8e4-94707f6515a8", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "63000.00" },
+    { "v1_income_id": "19c0a866-d5bb-404f-8640-c50f6b8a8968", "v2_property_id": "993662d0-b007-4476-91b9-ecd84391b93a", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "72000.00" },
+    { "v1_income_id": "99caf634-cdcf-4b49-ae77-e96d945de9b8", "v2_property_id": "7a1a599c-189a-4c35-8d32-fe95cd96c59d", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "170000.00" },
+    { "v1_income_id": "c94a3690-5ab9-4445-a9c8-1346464a1b0a", "v2_property_id": "9b36b1d4-757a-43eb-8ba4-64a0b0b3eb15", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "0.00" },
+    { "v1_income_id": "ab543c87-9f1c-4674-b2fb-1e132a9dfb94", "v2_property_id": "188e1abe-4f88-4a9d-b70c-0efd6c20d580", "year": 2026, "tax_year": "2026/27", "annual_rent_gbp": "187200.00" }
+  ]
+}
