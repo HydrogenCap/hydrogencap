@@ -114,7 +114,10 @@ Deno.serve(withInvocationLog("reprocess-vault-documents", async (req, _invocatio
           if (!doc) break;
 
           try {
-            const signedUrl = await generateSignedUrl(adminClient, doc.file_url);
+            const signedUrl = await generateSignedUrl(
+              adminClient as unknown as Parameters<typeof generateSignedUrl>[0],
+              doc.file_url,
+            );
             if (!signedUrl) {
               throw new Error("Could not create signed URL");
             }
