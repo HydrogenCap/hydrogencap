@@ -356,3 +356,33 @@ rewrites have a stable target.
 No FK changes, no RLS changes, no `src/` changes (per #51 scope). Tenant
 portal pages render unchanged. Constraint baked in from #49d-fix: no FK on
 `org_id → legal_entities`.
+
+## Tenancies FK + RLS + SECURITY DEFINER rewrite shipped 2026-05-06
+
+### FKs flipped (7 inbound, all CASCADE preserved, tenancies → tenancy_agreements)
+| Table | Rows backfilled |
+|-------|-----------------|
+| documents | 14 |
+| payment_reminders | 111 |
+| rent_payments | 163 |
+| rent_schedule | 688 |
+| tenancy_compliance_items | 117 |
+| tenant_portal_access | 0 |
+| tenant_portal_invites | 0 |
+
+Bridge: V1 tenancy → V1 properties.address_line+postcode → properties_v2 → tenancy_agreements (property_id+start_date). 13/13 unique pairs (matches §51).
+
+### RLS policies rewritten (3)
+- `rent_payments."Tenants view own payments"` — now `user_has_tenancy_portal_access(tenancy_id)`.
+- `rent_schedule."Tenants view own rent schedule"` — same helper.
+- `maintenance_requests."Tenants can create maintenance requests"` — joins `tenancy_agreements` instead of V1 `tenancies`.
+
+`pg_policies` scan for residual V1 `tenancies` references in qual/with_check: **0**.
+
+### SECURITY DEFINER fn diff: `user_has_tenancy_portal_access(uuid)`
+Removed the `tenancies + tenants.portal_user_id` branch (V2 has no portal column on `tenants_v2`; portal access is exclusively via `tenant_portal_access`). New body joins `tenant_portal_access → tenancy_agreements`. SECURITY DEFINER + `search_path=public` preserved.
+
+### Verification
+- Bridge-completeness assertion passed inside the migration (`v_unmapped=0`).
+- Per-table post-flight drift assertion passed for all 7 FKs (`v_drift=0`).
+- `npm run test -- postgrest-embed-safety` → green (2/2).
