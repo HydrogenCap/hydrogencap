@@ -281,3 +281,10 @@ Confirmation: `rg "from\(['\"]costs['\"]\)|costs\(\*\)" src/ supabase/functions/
 - Parity test: `src/__tests__/costs-pair-completeness.test.ts` + fixture `src/__tests__/fixtures/costs-pair-snapshot.json` (5 assertions: row count, V1 id uniqueness, V2 id uniqueness, `(property_id, tax_year)` uniqueness, `yearToTaxYear` round-trip).
 
 > **NOTE — #49a FK mistake corrected.** The original `property_cost_budgets_v2_org_id_fkey` (added in Costs A, mirroring the `loan_facilities` pattern) FK'd `org_id` to `legal_entities(id)`. That is **wrong for this schema**: `org_id` here is the tenant/user-org identifier (matches the values used in `properties_v2.org_id`, none of which exist in `legal_entities`), not a legal-entity foreign key. The constraint blocked the backfill and was dropped in this prompt. Tenancy isolation is already enforced by the existing `user_has_org_access(org_id)` RLS — no security regression. Future V2 tables should NOT FK `org_id → legal_entities(id)`; the loan_facilities precedent should be re-examined separately.
+
+## Costs E — V1 costs freeze trigger shipped 2026-05-06
+- Installed `v1_freeze_guard` BEFORE INSERT/UPDATE/DELETE trigger on `public.costs` (idempotent DO-block, reuses the shared `public.v1_freeze_guard()` function from #47).
+- Verified via `pg_trigger`: trigger now present on `properties`, `rooms`, `tenants`, `loans`, `costs` (5/5).
+- Smoke test `src/__tests__/costs-frozen.test.ts` mirrors `loans-frozen.test.ts` — asserts `throwV1Frozen('costs', …)` redirects to `property_cost_budgets_v2`.
+- Live spot-check: `/properties-v2/<id>` financial tab + `CostsEditor` render cleanly — no frozen-error surfaces because Costs B (writes) and Costs C (reads) already routed everything to V2.
+- Closes Costs A–E. Second of 4 V2-reframe items reconciled (loans = first, soak pending).
