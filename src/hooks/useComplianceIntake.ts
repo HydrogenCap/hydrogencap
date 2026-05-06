@@ -237,12 +237,15 @@ export function useAcceptComplianceDocument() {
         else if (diff <= 90) status = 'expiring_soon';
       }
 
+      // Map AI/app slug -> DB-allowed document_type for compliance_documents_v2
+      const v2DocType = toV2DocumentType(docType);
+
       // 1. Mark any existing current doc as superseded
       const { data: existing } = await supabaseAny
         .from('compliance_documents_v2')
         .select('id')
         .eq('property_id', propertyId)
-        .eq('document_type', docType)
+        .eq('document_type', v2DocType)
         .eq('is_current', true)
         .maybeSingle();
 
