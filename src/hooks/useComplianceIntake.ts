@@ -26,6 +26,45 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
   "floor_plans": "Floor Plans / Fire Plans",
 };
 
+/**
+ * Map app/AI document type slugs (e.g. `building_insurance`, `epc_certificate`)
+ * to the canonical values allowed by the `compliance_documents_v2_document_type_check`
+ * DB constraint. Anything not in this map is passed through (and the DB will reject
+ * it with a clear error if invalid).
+ */
+const DOC_TYPE_TO_V2_DOC_TYPE: Record<string, string> = {
+  building_insurance: 'buildings_insurance',
+  buildings_insurance: 'buildings_insurance',
+  epc_certificate: 'epc',
+  epc: 'epc',
+  electrical_certificate: 'eicr',
+  eicr: 'eicr',
+  fire_alarm_certificate: 'fire_alarm_cert',
+  fire_alarm_cert: 'fire_alarm_cert',
+  emergency_lighting_certificate: 'emergency_lighting_cert',
+  emergency_lighting_cert: 'emergency_lighting_cert',
+  legionella_assessment: 'legionella_risk_assessment',
+  legionella_risk_assessment: 'legionella_risk_assessment',
+  smoke_co_alarm_certificate: 'smoke_co_alarm_cert',
+  smoke_co_alarm_cert: 'smoke_co_alarm_cert',
+  gas_safety_certificate: 'gas_safety_certificate',
+  fire_risk_assessment: 'fire_risk_assessment',
+  hmo_licence: 'hmo_licence',
+  selective_licence: 'selective_licence',
+  asbestos_survey: 'asbestos_survey',
+  pat_testing: 'pat_testing',
+  furniture_fire_safety: 'furniture_fire_safety',
+  energy_performance_certificate: 'energy_performance_certificate',
+  planning_permission: 'planning_permission',
+  building_regs_completion: 'building_regs_completion',
+  landlord_liability_insurance: 'landlord_liability_insurance',
+  rent_guarantee_insurance: 'rent_guarantee_insurance',
+};
+
+function toV2DocumentType(docType: string): string {
+  return DOC_TYPE_TO_V2_DOC_TYPE[docType] || 'other';
+}
+
 // Standard validity periods in years for UK compliance certificates
 const STANDARD_VALIDITY_YEARS: Record<string, number> = {
   "gas_safety_certificate": 1,
