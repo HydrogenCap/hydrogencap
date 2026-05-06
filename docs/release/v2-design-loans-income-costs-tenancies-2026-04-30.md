@@ -419,3 +419,17 @@ Re-pointed every src/ and edge-function consumer of V1 `tenancies` to V2 `tenanc
 - Installed `v1_freeze_guard` BEFORE INSERT/UPDATE/DELETE on `public.tenancies` (idempotent `DO $$` gated on `pg_trigger NOT EXISTS`). All 6 V1 tables now frozen at the DB layer: `properties`, `rooms`, `tenants`, `loans`, `costs`, `tenancies`.
 - Added `src/__tests__/tenancies-frozen.test.ts` mirroring `loans-frozen.test.ts` (#47) and `costs-frozen.test.ts` (#49e) — asserts every V1 mutation hook surface throws via `throwV1Frozen('tenancies', …)`.
 - DROP of `public.tenancies` parked as Prompt #54b for a 7-day soak window (≥ 2026-05-13) per the loans #47/#48 precedent. Soak-period monitoring: any DB-side `v1_freeze_guard` raise on `tenancies` indicates a missed consumer and blocks the drop.
+
+## v1_freeze_guard message refined 2026-05-06
+
+Refined `public.v1_freeze_guard()` so the RAISE EXCEPTION names the correct V2 sibling per frozen table (previously hardcoded `<table>_v2`, which was wrong for loans/costs/tenancies). Mappings now baked into a CASE statement:
+
+- `properties` → `properties_v2`
+- `rooms` → `rooms_v2`
+- `tenants` → `tenants_v2`
+- `loans` → `loan_facilities`
+- `costs` → `property_cost_budgets_v2`
+- `tenancies` → `tenancy_agreements`
+- ELSE fallback: `<table>_v2` (for any future-frozen V1 table)
+
+SECURITY DEFINER, pinned `search_path = public, pg_temp`, and LANGUAGE plpgsql preserved. Existing `loans-frozen.test.ts`, `costs-frozen.test.ts`, `tenancies-frozen.test.ts` assert the JS-side `throwV1Frozen` message (already correct) — no test updates required.
