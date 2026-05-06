@@ -325,3 +325,34 @@ Bundled single-prompt execution of the costs A–E pattern against V1 `income`
 
 **Plan §0a 'income' — CLOSED**. Third of 4 V2-reframe items reconciled
 (loans + costs prior; tenancies remaining).
+
+## tenancy_agreements schema parity shipped 2026-05-06
+
+First of the 4-prompt tenancies sequence (#51–#54). Brings V2
+`tenancy_agreements` to schema parity with V1 `tenancies` so #52's FK + RLS
+rewrites have a stable target.
+
+**Migration** (`<auto>-tenancy-agreements-schema-parity.sql`):
+- Added 5 columns (idempotent `IF NOT EXISTS`):
+  - `rent_due_day integer NOT NULL DEFAULT 1`
+  - `tenancy_agreement_url text`
+  - `notice_period_weeks integer DEFAULT 4`
+  - `payment_method text` (V1 enum widened to plain text in V2 to avoid
+    cross-table enum coupling)
+  - `payment_reference text`
+- Backfilled via property+start_date bridge (V1 `tenant_id` space ≠ V2
+  `tenant_id` space, so we bridge V1.property → V1.address → V2.address →
+  V2.property + start_date). 13/13 V1 rows pair uniquely with V2 rows.
+- Drift assertion: `RAISE EXCEPTION` if any V1-non-null value failed to land
+  on the matched V2 row. **Passed.**
+
+**Backfill outcome** (V2 rows = 13):
+- `rent_due_day`: 13/13
+- `tenancy_agreement_url`: 13/13
+- `notice_period_weeks`: 13/13
+- `payment_method`: 12/13 (1 V1 row had NULL — expected, no drift)
+- `payment_reference`: 0/13 (V1 had no values populated — expected, no drift)
+
+No FK changes, no RLS changes, no `src/` changes (per #51 scope). Tenant
+portal pages render unchanged. Constraint baked in from #49d-fix: no FK on
+`org_id → legal_entities`.
