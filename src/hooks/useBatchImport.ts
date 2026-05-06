@@ -86,18 +86,22 @@ export function useBatchImport() {
           // the V2 wizard / useCreateLoanFacility. Skipping any loan columns
           // present in the CSV (no-op rather than erroring the row).
 
-          // Handle income data (upsert based on property_id + year)
+          // Income data: V1 `income` dropped (Income migration 2026-05-06).
+          // Write to V2 property_income_budgets_v2 keyed by tax_year.
           const annualRent = row.data.annual_rent_gbp as number | null;
           if (annualRent !== null) {
+            const next = (currentYear + 1) % 100;
+            const taxYear = `${currentYear}/${String(next).padStart(2, '0')}`;
             const incomeData = {
+              org_id: orgId,
               property_id: property.id,
-              year: currentYear,
+              tax_year: taxYear,
               annual_rent_gbp: annualRent,
             };
 
             const { error: incomeError } = await supabaseAny
-              .from('income')
-              .upsert(incomeData, { onConflict: 'property_id,year' });
+              .from('property_income_budgets_v2')
+              .upsert(incomeData, { onConflict: 'property_id,tax_year' });
 
             if (incomeError) {
               console.warn('Failed to upsert income:', incomeError);
