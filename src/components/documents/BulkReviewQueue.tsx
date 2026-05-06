@@ -108,7 +108,7 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
   const persistRow = async (item: QueueItem, decision: RowDecision) => {
     const update: Record<string, unknown> = {
       category: decision.finalCategory || 'other',
-      review_status: 'reviewed',
+      review_status: 'accepted',
     };
     if (decision.propertyId) update.property_id = decision.propertyId;
     if (decision.tenantId) update.tenant_id = decision.tenantId;
