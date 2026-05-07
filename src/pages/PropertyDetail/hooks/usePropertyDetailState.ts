@@ -121,7 +121,7 @@ export function usePropertyDetailState() {
     if (!property) return;
     setDownloadingPdf(true);
     try {
-      await buildAndSavePassportPdf({ property, monthlyRent, loans, complianceRows });
+      await buildAndSavePassportPdf({ property: property as never, monthlyRent, loans, complianceRows: complianceRows as never });
       sonnerToast.success('Passport PDF downloaded');
     } catch (err) {
       console.error('Failed to generate passport PDF:', err);
