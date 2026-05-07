@@ -207,7 +207,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
               variant={isMonthLocked ? 'destructive' : 'outline'}
               size="sm"
               onClick={() => lockMonth.mutate({ month: selectedMonth, lock: !isMonthLocked }, {
-                onSuccess: () => toast({ title: isMonthLocked ? 'Month unlocked' : 'Month locked' }),
+                onSuccess: () => toast({ title: isMonthLocked ? 'Month open for edits' : 'Month locked for edits' }),
               })}
             >
               {isMonthLocked ? <><Unlock className="h-3 w-3 mr-1" /> Unlock</> : <><Lock className="h-3 w-3 mr-1" /> Lock Month</>}
@@ -311,8 +311,8 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
       locked_at: null,
       locked_by: null,
     }, {
-      onSuccess: () => toast({ title: `Saved for ${property.address_line_1}` }),
-      onError: (err: unknown) => toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' }),
+      onSuccess: () => toast({ title: `Snapshot saved · ${property.address_line_1}` }),
+      onError: (err: unknown) => toast({ title: "Snapshot didn't save", description: getErrorMessage(err), variant: 'destructive' }),
     });
   };
 
@@ -492,7 +492,7 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
 
     Promise.all(promises)
       .then(() => toast({ title: `Saved ${properties.length} snapshots` }))
-      .catch((err) => toast({ title: 'Error', description: err.message, variant: 'destructive' }));
+      .catch((err) => toast({ title: "Bulk save didn't complete", description: err.message, variant: 'destructive' }));
   };
 
   const fields = [

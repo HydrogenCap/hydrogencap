@@ -138,14 +138,14 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
       };
       if (editing) {
         await updateLoan.mutateAsync({ id: editing.id, ...payload });
-        toast({ title: 'Loan updated' });
+        toast({ title: 'Loan terms saved' });
       } else {
         await createLoan.mutateAsync(payload);
-        toast({ title: 'Intercompany loan created' });
+        toast({ title: 'Intercompany loan on file' });
       }
       setShowForm(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save', variant: 'destructive' });
+      toast({ title: "Loan didn't save", description: error instanceof Error ? error.message : 'Failed to save', variant: 'destructive' });
     }
   };
 
@@ -215,7 +215,7 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
                         size="icon"
                         onClick={async () => {
                           await deleteLoan.mutateAsync(loan.id);
-                          toast({ title: 'Loan removed' });
+                          toast({ title: 'Loan deleted from the register' });
                         }}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
