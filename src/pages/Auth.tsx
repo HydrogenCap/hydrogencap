@@ -145,6 +145,7 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <SEO title="Sign in — TenureIQ" description="Sign in to your TenureIQ account to manage your UK property portfolio." />
       <div className="w-full max-w-md space-y-8 animate-fade-up">
          {/* Logo */}
         <div className="text-center flex flex-col items-center">
