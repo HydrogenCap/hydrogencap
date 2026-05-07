@@ -20,7 +20,7 @@ test.describe('Global density toggle', () => {
     await expect(toggle).toBeVisible({ timeout: 10000 });
 
     // Default should be cosy → no data-density attribute on body
-    let initial = await page.evaluate(() => document.body.dataset.density ?? '');
+    const initial = await page.evaluate(() => document.body.dataset.density ?? '');
     expect(['', 'cosy']).toContain(initial);
 
     // Click "Dense"
