@@ -77,7 +77,7 @@ const Lending = lazy(() => import("./pages/Lending"));
 const PortfolioTimeline = lazy(() => import("./pages/PortfolioTimeline"));
 const RefinancingOpportunities = lazy(() => import("./pages/RefinancingOpportunities"));
 const ValuationAlerts = lazy(() => import("./pages/ValuationAlerts"));
-const RentersRightsBill = lazy(() => import("./pages/RentersRightsBill"));
+const RentersRightsBill = lazy(() => import("./pages/RentersRightsBill/index"));
 const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
 const ComplianceTasks = lazy(() => import("./pages/ComplianceTasks"));
 const RegulatoryMonitor = lazy(() => import("./pages/RegulatoryMonitor"));
