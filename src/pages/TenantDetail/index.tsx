@@ -19,11 +19,9 @@ import { PaymentsTab } from './components/PaymentsTab';
 import { LifecycleTab } from './components/LifecycleTab';
 import { NoticesTab } from './components/NoticesTab';
 import { PaymentScoreBadge } from './components/PaymentScoreBadge';
-import { Row } from './components/Row';
 import { STATUS_BG } from './utils/badges';
 import { getLabel } from './utils/format';
 
-void Row;
 
 export default function TenantDetail() {
   const navigate = useNavigate();
