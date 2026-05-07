@@ -14,7 +14,7 @@ const NotFound = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
       <div className="text-center max-w-md px-4">
-        <div className="mb-6 text-6xl font-bold text-muted-foreground/50">404</div>
+        <div className="mb-6 text-6xl font-bold text-muted-foreground/70">404</div>
         <h1 className="mb-2 text-2xl font-semibold">Page not found</h1>
         
         {isPropertyRoute ? (

@@ -122,7 +122,7 @@ export function HMOCompliancePanel({ propertyId, propertyType }: Props) {
           <ul className="space-y-1.5">
             {licenceConditions.map((condition, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 text-muted-foreground/50 shrink-0" />
+                <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 text-muted-foreground/70 shrink-0" />
                 {condition}
               </li>
             ))}

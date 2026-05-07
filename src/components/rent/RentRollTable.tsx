@@ -174,7 +174,7 @@ export function RentRollTable({ month, onViewHistory }: RentRollTableProps) {
     >
       <div className="flex items-center gap-1">
         {children}
-        <ArrowUpDown className={cn('h-3 w-3', sortField === field ? 'text-foreground' : 'text-muted-foreground/50')} />
+        <ArrowUpDown className={cn('h-3 w-3', sortField === field ? 'text-foreground' : 'text-muted-foreground/70')} />
       </div>
     </TableHead>
   );

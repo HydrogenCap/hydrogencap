@@ -200,7 +200,7 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
           </div>
         ) : (
           <div className="text-center py-8">
-            <AlertTriangle className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
+            <AlertTriangle className="h-8 w-8 mx-auto text-muted-foreground/70 mb-3" />
             <p className="text-sm text-muted-foreground">
               No predictions yet. Click "Run Prediction" to analyse your tenants' payment patterns.
             </p>

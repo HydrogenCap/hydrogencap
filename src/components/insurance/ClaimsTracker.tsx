@@ -75,7 +75,7 @@ function ClaimStatusPipeline({ currentStatus }: { currentStatus: string }) {
             <span
               className={cn(
                 'text-xs px-1.5 py-0.5 rounded',
-                isCompleted ? SEVERITY[severity].badge : 'bg-muted/50 text-muted-foreground/50'
+                isCompleted ? SEVERITY[severity].badge : 'bg-muted/50 text-muted-foreground/70'
               )}
               title={label}
             >

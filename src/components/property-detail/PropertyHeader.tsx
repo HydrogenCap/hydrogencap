@@ -196,7 +196,7 @@ export function PropertyHeader({
             </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 p-2 w-full">
-              <TypeIcon className="h-8 w-8 text-muted-foreground/40" />
+              <TypeIcon className="h-8 w-8 text-muted-foreground/60" />
               <div className="flex flex-col gap-1.5 w-full px-2">
                 <Button
                   size="sm"

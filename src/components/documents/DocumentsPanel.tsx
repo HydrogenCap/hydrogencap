@@ -250,7 +250,7 @@ interface DocumentsPanelProps {
                                className="w-full h-full object-cover"
                              />
                            ) : (
-                             <FileIcon className="h-12 w-12 text-muted-foreground/50" />
+                             <FileIcon className="h-12 w-12 text-muted-foreground/70" />
                            )}
                          </div>
  

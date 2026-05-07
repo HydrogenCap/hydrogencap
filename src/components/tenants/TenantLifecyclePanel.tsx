@@ -68,7 +68,7 @@ function StageIndicator({ currentStatus }: { currentStatus: TenantStatusV2 }) {
               {stage.label}
             </div>
             {idx < LIFECYCLE_STAGES.length - 1 && (
-              <ChevronRight className={cn('h-4 w-4 mx-0.5 flex-shrink-0', isPast ? 'text-primary/40' : 'text-muted-foreground/40')} />
+              <ChevronRight className={cn('h-4 w-4 mx-0.5 flex-shrink-0', isPast ? 'text-primary/40' : 'text-muted-foreground/60')} />
             )}
           </div>
         );

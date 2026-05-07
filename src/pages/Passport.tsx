@@ -133,7 +133,7 @@ export default function Passport() {
                   <p className="text-sm text-muted-foreground">Total Properties</p>
                   <p className="text-2xl font-bold">{totalProperties}</p>
                 </div>
-                <Building2 className="h-8 w-8 text-muted-foreground/50" />
+                <Building2 className="h-8 w-8 text-muted-foreground/70" />
               </div>
             </CardContent>
           </Card>
@@ -145,7 +145,7 @@ export default function Passport() {
                   <p className="text-sm text-muted-foreground">Core Identity Complete</p>
                   <p className="text-2xl font-bold">{withCoreIdentity}</p>
                 </div>
-                <Dna className="h-8 w-8 text-muted-foreground/50" />
+                <Dna className="h-8 w-8 text-muted-foreground/70" />
               </div>
             </CardContent>
           </Card>

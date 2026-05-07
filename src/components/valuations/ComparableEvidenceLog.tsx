@@ -330,7 +330,7 @@ function SortHeader({
     >
       <span className="inline-flex items-center gap-1">
         {label}
-        <ArrowUpDown className={`h-3 w-3 ${current === field ? 'text-foreground' : 'text-muted-foreground/50'}`} />
+        <ArrowUpDown className={`h-3 w-3 ${current === field ? 'text-foreground' : 'text-muted-foreground/70'}`} />
         {current === field && <span className="text-[10px]">{asc ? '↑' : '↓'}</span>}
       </span>
     </th>

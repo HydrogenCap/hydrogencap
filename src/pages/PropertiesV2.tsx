@@ -58,7 +58,7 @@ const LIFECYCLE_BORDER: Record<string, string> = {
 };
 
 const COMPLIANCE_DOT: Record<string, string> = {
-  grey: 'bg-muted-foreground/40',
+  grey: 'bg-muted-foreground/60',
   green: 'bg-emerald-500',
   amber: 'bg-amber-500',
   red: 'bg-red-500',
