@@ -28,7 +28,7 @@ describe('RentersRightsBill (smoke)', () => {
     );
     expect(screen.getByRole('heading', { name: /Renters' Rights Bill/i })).toBeInTheDocument();
     expect(screen.getByText(/Key Provisions/i)).toBeInTheDocument();
-    expect(screen.getByText(/Awaab's Law/i)).toBeInTheDocument();
-    expect(screen.getByText(/Decent Homes Standard/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Awaab's Law/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Decent Homes Standard/i).length).toBeGreaterThan(0);
   });
 });
