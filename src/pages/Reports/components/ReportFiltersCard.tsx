@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PropertySearchSelect } from '@/components/reports/PropertySearchSelect';
+import type { PropertyReportData } from '@/lib/reportPdfGenerator';
 import type { LifecycleFilter, SelectionMode } from '../utils/types';
 
 export function ReportFiltersCard({
@@ -25,8 +26,8 @@ export function ReportFiltersCard({
   setSelectedPropertyId: (v: string | null) => void;
   includeAttachments: boolean;
   setIncludeAttachments: (v: boolean) => void;
-  lifecycleFilteredProperties: Array<Record<string, unknown>>;
-  filteredProperties: Array<Record<string, unknown>>;
+  lifecycleFilteredProperties: PropertyReportData[];
+  filteredProperties: PropertyReportData[];
 }) {
   return (
     <Card>
@@ -86,7 +87,7 @@ export function ReportFiltersCard({
 
           {selectionMode === 'single' && (
             <PropertySearchSelect
-              properties={lifecycleFilteredProperties as Parameters<typeof PropertySearchSelect>[0]['properties']}
+              properties={lifecycleFilteredProperties}
               value={selectedPropertyId || ''}
               onValueChange={setSelectedPropertyId}
             />
