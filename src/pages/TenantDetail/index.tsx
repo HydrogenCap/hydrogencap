@@ -21,6 +21,7 @@ import { NoticesTab } from './components/NoticesTab';
 import { PaymentScoreBadge } from './components/PaymentScoreBadge';
 import { STATUS_BG } from './utils/badges';
 import { getLabel } from './utils/format';
+import { SEO } from '@/components/SEO';
 
 
 export default function TenantDetail() {
