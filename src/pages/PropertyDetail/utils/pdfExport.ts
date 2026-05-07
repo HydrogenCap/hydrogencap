@@ -71,9 +71,9 @@ export async function buildAndSavePassportPdf({ property, monthlyRent, loans, co
   }));
 
   const grossRentAnnual = monthlyRent ? monthlyRent * 12 : null;
-  const totalDebt = (loans ?? [])
+  const totalDebt: number | null = (loans ?? [])
     .filter((l) => (l as { status?: string }).status === 'active')
-    .reduce((sum, l) => sum + ((l as { current_balance?: number | null }).current_balance || 0), 0) || null;
+    .reduce<number>((sum, l) => sum + ((l as { current_balance?: number | null }).current_balance || 0), 0) || null;
   const equity = property.current_valuation && totalDebt != null
     ? property.current_valuation - totalDebt
     : property.current_valuation ?? null;
