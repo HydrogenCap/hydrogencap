@@ -120,7 +120,7 @@ serve(withInvocationLog("summarize-valuation-document", async (req, _invocationL
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    adminSupabase = supabase;
+    adminSupabase = supabase as unknown as ReturnType<typeof createClient>;
 
     // Upsert processing record
     const { data: summary, error: upsertError } = await supabase
