@@ -115,3 +115,5 @@ Not edited — these need product copy with primary CTAs ("Add your first tenant
 ## Toast + empty-state rewrite shipped 2026-05-07
 
 All ~140 generic toast strings and 4 generic empty-state copy items rewritten in David's voice across 27 source files. Character limits respected (toasts ≤60, empty-state titles ≤40, descriptions ≤120). `npm run verify` green.
+
+**Note:** `npm run verify` exits non-zero due to **40 pre-existing `@typescript-eslint/no-explicit-any` warnings** under `--max-warnings 0` in files outside this pass's scope (Reports/*, TenantDashboard, etc.). 0 errors. Lint, typecheck, tests, and build otherwise clean. These warnings are out of scope for the copy rewrite and tracked separately.
