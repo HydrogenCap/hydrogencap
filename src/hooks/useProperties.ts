@@ -31,7 +31,33 @@ type Income = {
   year: number;
   annual_rent_gbp: number;
 };
-type Costs = Database['public']['Tables']['costs']['Row'];
+// V1 `costs` table dropped (Costs Prompt F, 2026-05-07). Local legacy shape
+// preserved so PropertyWithFinancials downstream consumers (legacy `*_gbp`
+// effective amounts + integer `year`) keep typing.
+type Costs = {
+  id: string;
+  property_id: string;
+  year: number;
+  management_gbp: number | null;
+  insurance_gbp: number | null;
+  maintenance_gbp: number | null;
+  repairs_gbp: number | null;
+  bills_gbp: number | null;
+  compliance_gbp: number | null;
+  other_gbp: number | null;
+  management_gbp_manual: number | null;
+  repairs_gbp_manual: number | null;
+  insurance_gbp_manual: number | null;
+  bills_gbp_manual: number | null;
+  compliance_gbp_manual: number | null;
+  other_gbp_manual: number | null;
+  management_rule_enabled: boolean | null;
+  management_rule_percent_of_rent: number | null;
+  repairs_rule_enabled: boolean | null;
+  repairs_rule_percent_of_rent: number | null;
+  insurance_rule_enabled: boolean | null;
+  insurance_rule_percent_of_value: number | null;
+};
 type Tenancy = Database['public']['Tables']['tenancies']['Row'];
 
 export interface PropertyWithFinancials extends Property {
@@ -257,7 +283,7 @@ export function useUpsertCosts() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_costs: Database['public']['Tables']['costs']['Insert']) => {
+    mutationFn: async (_costs: Partial<Costs>) => {
       throwV1Frozen('costs', 'useUpsertCosts');
     },
     onSuccess: (data: any) => {
