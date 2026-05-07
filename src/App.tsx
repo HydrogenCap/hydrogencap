@@ -70,7 +70,7 @@ const WorkOrderDetail = lazy(() => import("./pages/WorkOrderDetail"));
 const Documents = lazy(() => import("./pages/Documents"));
 const PropertiesV2 = lazy(() => import("./pages/PropertiesV2"));
 const PropertyDetailV2 = lazy(() => import("./pages/PropertyDetail"));
-const RoomDetailV2 = lazy(() => import("./pages/RoomDetailV2"));
+const RoomDetailV2 = lazy(() => import("./pages/RoomDetail"));
 const TenantsV2 = lazy(() => import("./pages/TenantsV2"));
 const TenantDetailV2 = lazy(() => import("./pages/TenantDetail"));
 const Lending = lazy(() => import("./pages/Lending"));
