@@ -30,7 +30,7 @@ function getComplianceSeverity(rows: ComplianceMatrixRow[] | undefined): Severit
 }
 
 function getComplianceLabel(rows: ComplianceMatrixRow[] | undefined): string {
-  if (!rows || rows.length === 0) return 'No data';
+  if (!rows || rows.length === 0) return 'Awaiting first cert';
   const required = rows.filter(r => r.is_required);
   const expired = required.filter(r => r.calculated_status === 'expired' || r.calculated_status === 'missing');
   const expiring = required.filter(r => r.calculated_status === 'expiring_soon' || r.calculated_status === 'critical');
@@ -51,7 +51,7 @@ function getRentSeverity(status: string | null | undefined): SeverityLevel {
 }
 
 function getRentLabel(status: string | null | undefined): string {
-  if (!status) return 'No data';
+  if (!status) return 'No rent recorded';
   switch (status) {
     case 'paid': return 'Fully paid';
     case 'partial': return 'Partial';
