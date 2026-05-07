@@ -99,10 +99,10 @@ export function DepositProtectionCard({ agreement }: Props) {
         prescribed_info_served_date: form.prescribed_info_served_date || null,
         how_to_rent_served_date: form.how_to_rent_served_date || null,
       });
-      toast({ title: 'Deposit protection updated' });
+      toast({ title: 'Deposit details on file' });
       setEditing(false);
     } catch {
-      toast({ title: 'Error', description: 'Failed to update deposit protection', variant: 'destructive' });
+      toast({ title: "Deposit details didn't save", description: 'Give it another go.', variant: 'destructive' });
     }
   };
 

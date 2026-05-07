@@ -80,7 +80,7 @@ export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, comp
       toast({ title: 'Notice served' });
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast({ title: "Couldn't serve notice", description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

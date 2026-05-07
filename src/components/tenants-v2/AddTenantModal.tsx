@@ -68,12 +68,12 @@ export function AddTenantModal({ open, onOpenChange, onSuccess }: AddTenantModal
         emergency_contact_phone: values.emergency_contact_phone || null,
         notes: values.notes || null,
       });
-      toast({ title: 'Tenant created', description: `${values.first_name} ${values.last_name} added.` });
+      toast({ title: 'Welcome aboard', description: `${values.first_name} ${values.last_name} is now in your tenant list.` });
       form.reset();
       onOpenChange(false);
       onSuccess?.(result.id);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast({ title: "Tenant didn't save", description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

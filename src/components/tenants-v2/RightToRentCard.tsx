@@ -144,19 +144,19 @@ export function RightToRentCard({ tenancyId }: Props) {
         // Update notes only — mark as re-checked
         await completeMutation.mutateAsync({ itemId: rtrItem.id, notes });
       }
-      toast({ title: 'Right to Rent record updated' });
+      toast({ title: 'Right to Rent on file' });
       setEditing(false);
     } catch {
-      toast({ title: 'Error', description: 'Failed to update Right to Rent record', variant: 'destructive' });
+      toast({ title: "Right to Rent didn't save", description: 'Give it another go.', variant: 'destructive' });
     }
   };
 
   const handleClearCheck = async () => {
     try {
       await uncompleteMutation.mutateAsync(rtrItem.id);
-      toast({ title: 'Right to Rent check cleared' });
+      toast({ title: 'Right to Rent record cleared' });
     } catch {
-      toast({ title: 'Error', description: 'Failed to clear check', variant: 'destructive' });
+      toast({ title: "Didn't clear", description: 'Give it another go.', variant: 'destructive' });
     }
   };
 
