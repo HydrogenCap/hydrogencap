@@ -67,13 +67,8 @@ export interface TenancyWithDetails extends Tenancy {
 }
 
 // Map V2 row → V1-shaped TenancyWithDetails so existing consumers don't change.
-function mapAgreementRow(row: Record<string, unknown> & { property?: { id?: string; address_line_1?: string; postcode?: string | null } | null }): TenancyWithDetails {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V2 row shape varies; full row typing pending V2 schema generation.
-  const r: any = row;
-  return _mapAgreementRow(r);
-}
-
-function _mapAgreementRow(row: any): TenancyWithDetails { // eslint-disable-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V2 select returns dynamic shape with embedded relations; full row typing pending V2 schema codegen.
+function mapAgreementRow(row: any): TenancyWithDetails {
   const v2Status: string | null = row?.status ?? null;
   const status: TenancyStatus =
     v2Status === 'notice_period' ? 'notice'
