@@ -137,7 +137,7 @@ export function useTenancies(filters?: { status?: TenancyStatus; tenantId?: stri
 
       const { data, error } = await query;
       if (error) throw error;
-      return ((data ?? []) as any[]).map(mapAgreementRow);
+      return ((data ?? []) as unknown[]).map((r) => mapAgreementRow(r as Parameters<typeof mapAgreementRow>[0]));
     },
   });
 }
