@@ -38,7 +38,7 @@ export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
     if (!editingClass) return;
     const shares = parseInt(editValue);
     if (isNaN(shares) || shares < 1) {
-      toast({ title: 'Invalid', description: 'Enter a valid number of shares', variant: 'destructive' });
+      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
       return;
     }
     try {
@@ -47,11 +47,11 @@ export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
         issued_shares: shares,
         shares_confirmed: true,
       });
-      toast({ title: 'Share capital updated' });
+      toast({ title: 'Share capital on file' });
       setEditingClass(null);
     } catch (error) {
       console.error('Failed to update share capital:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to update share capital', variant: 'destructive' });
+      toast({ title: "Share capital didn't save", description: error instanceof Error ? error.message : 'Failed to update share capital', variant: 'destructive' });
     }
   };
 

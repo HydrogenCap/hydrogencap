@@ -71,10 +71,10 @@ export function EndTenancyModal({ open, onOpenChange, tenancyId, tenantId }: Pro
         notes: endNotes || null,
       });
       await updateTenant.mutateAsync({ id: tenantId, status: 'departed' });
-      toast({ title: 'Tenancy ended' });
+      toast({ title: 'Tenancy closed out' });
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast({ title: "End date didn't save", description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

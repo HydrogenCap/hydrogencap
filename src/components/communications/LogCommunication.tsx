@@ -102,7 +102,7 @@ export function LogCommunication({
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      toast({ title: 'Content is required', variant: 'destructive' });
+      toast({ title: 'Nothing to log', description: 'Pop the message in first.', variant: 'destructive' });
       return;
     }
 
@@ -124,12 +124,12 @@ export function LogCommunication({
 
     try {
       await logComm.mutateAsync(input);
-      toast({ title: 'Communication logged' });
+      toast({ title: 'Conversation on the record' });
       resetForm();
       onOpenChange(false);
     } catch (err) {
       toast({
-        title: 'Error',
+        title: "Log didn't save",
         description: err instanceof Error ? err.message : 'Failed to log communication',
         variant: 'destructive',
       });

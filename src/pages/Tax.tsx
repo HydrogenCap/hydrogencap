@@ -57,7 +57,7 @@ export default function Tax() {
     a.download = `SA105_${taxYear.replace('/', '-')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('SA105 CSV exported');
+    toast.success('SA105 ready for HMRC');
   };
 
   const handleAddExpense = async () => {
@@ -72,7 +72,7 @@ export default function Tax() {
     });
     setAddOpen(false);
     setNewExpense({ property_id: '', category: 'insurance', description: '', amount: '' });
-    toast.success('Expense added');
+    toast.success('Expense on the books');
   };
 
   const rateOptions: { value: string; label: string }[] = [
@@ -345,7 +345,7 @@ export default function Tax() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
-                            onClick={() => { deleteExpense.mutate(exp.id); toast.success('Deleted'); }}
+                            onClick={() => { deleteExpense.mutate(exp.id); toast.success('Expense gone from the books'); }}
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </Button>

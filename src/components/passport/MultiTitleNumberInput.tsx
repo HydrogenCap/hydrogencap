@@ -28,7 +28,7 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
     if (titleNumbers.some(t => t.title_number === trimmed)) {
       toast({
         title: 'Duplicate title number',
-        description: 'This title number has already been added.',
+        description: "You've already added this one.",
         variant: 'destructive',
       });
       return;
@@ -39,14 +39,14 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
       setNewTitle('');
       setIsAdding(false);
       toast({
-        title: 'Title number added',
+        title: 'Linked to property',
         description: `${trimmed} has been added.`,
       });
     } catch (error) {
       console.error('Failed to add title number:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to add title number.',
+        title: "Didn't add",
+        description: 'Give it another go.',
         variant: 'destructive',
       });
     }
@@ -56,14 +56,14 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
     try {
       await removeTitleNumber.mutateAsync({ id, propertyId });
       toast({
-        title: 'Title number removed',
+        title: 'Unlinked',
         description: `${titleNumber} has been removed.`,
       });
     } catch (error) {
       console.error('Failed to remove title number:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to remove title number.',
+        title: "Didn't remove",
+        description: 'Give it another go.',
         variant: 'destructive',
       });
     }

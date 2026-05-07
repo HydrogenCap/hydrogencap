@@ -52,12 +52,12 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
 
   const handleSubmit = async () => {
     if (!form.class_name.trim()) {
-      toast({ title: 'Error', description: 'Class name is required', variant: 'destructive' });
+      toast({ title: 'Missing class name', description: 'Give it a label like Ordinary or Preference.', variant: 'destructive' });
       return;
     }
     const issued = parseInt(form.issued_shares, 10);
     if (isNaN(issued) || issued < 1) {
-      toast({ title: 'Error', description: 'Issued shares must be at least 1', variant: 'destructive' });
+      toast({ title: 'At least one share', description: 'A class needs at least one issued share.', variant: 'destructive' });
       return;
     }
 
@@ -73,15 +73,15 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
     try {
       if (isEditing && editingShareClass) {
         await update.mutateAsync({ id: editingShareClass.id, ...payload });
-        toast({ title: 'Share class updated' });
+        toast({ title: 'Share class on file' });
       } else {
         await create.mutateAsync(payload);
-        toast({ title: 'Share class created' });
+        toast({ title: 'New share class added' });
       }
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save share class';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast({ title: "Share class didn't save", description, variant: 'destructive' });
     }
   };
 

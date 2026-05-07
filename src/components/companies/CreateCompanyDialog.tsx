@@ -85,7 +85,7 @@ export function CreateCompanyDialog({
 
   const handleSubmit = async () => {
     if (!legalName.trim()) {
-      toast({ title: 'Error', description: 'Company name is required', variant: 'destructive' });
+      toast({ title: 'Name required', description: 'Add a company name to continue.', variant: 'destructive' });
       return;
     }
 
@@ -99,13 +99,13 @@ export function CreateCompanyDialog({
         ch_incorporation_date: chDetails?.company?.date_of_creation,
       });
 
-      toast({ title: 'Company created', description: `${legalName} has been added` });
+      toast({ title: 'Company is live', description: `${legalName} is now in your portfolio.` });
       onOpenChange(false);
       onSuccess?.(company.id);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to create company';
       toast({
-        title: 'Error',
+        title: "Company didn't save",
         description,
         variant: 'destructive',
       });

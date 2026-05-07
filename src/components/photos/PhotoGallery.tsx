@@ -45,8 +45,8 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
 
     if (validFiles.length === 0) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload image files (JPEG, PNG, WebP, GIF)',
+        title: "That's not an image",
+        description: 'Photos need to be JPEG, PNG, WebP, or GIF.',
         variant: 'destructive',
       });
       return;
@@ -57,7 +57,7 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
         await uploadPhoto.mutateAsync({ file, propertyId });
       } catch (err) {
         toast({
-          title: 'Upload failed',
+          title: "Upload didn't complete",
           description: err instanceof Error ? err.message : 'Unknown error',
           variant: 'destructive',
         });
@@ -66,8 +66,8 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
 
     if (validFiles.length > 0) {
       toast({
-        title: 'Upload complete',
-        description: `${validFiles.length} photo(s) uploaded successfully`,
+        title: 'Photos uploaded',
+        description: `${validFiles.length} photo(s) are now in the gallery.`,
       });
     }
   }, [propertyId, uploadPhoto, toast]);
@@ -98,13 +98,13 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
     try {
       await setCoverPhoto.mutateAsync({ photoId: photo.id, propertyId });
       toast({
-        title: 'Cover photo updated',
-        description: 'This photo is now the cover image',
+        title: 'New cover photo',
+        description: 'This shot leads the property listing.',
       });
     } catch (_err) {
       toast({
-        title: 'Error',
-        description: 'Failed to set cover photo',
+        title: "Cover didn't update",
+        description: 'Give it another go.',
         variant: 'destructive',
       });
     }
@@ -120,14 +120,14 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
         fileUrl: photoToDelete.file_url,
       });
       toast({
-        title: 'Photo deleted',
-        description: 'The photo has been removed',
+        title: 'Photo removed',
+        description: 'Gone from the gallery.',
       });
       setPhotoToDelete(null);
     } catch (_err) {
       toast({
-        title: 'Error',
-        description: 'Failed to delete photo',
+        title: "Photo didn't delete",
+        description: 'Give it another go.',
         variant: 'destructive',
       });
     }

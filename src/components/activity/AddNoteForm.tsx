@@ -27,8 +27,8 @@ export function AddNoteForm({ propertyId }: AddNoteFormProps) {
       await ActivityLoggers.noteAdded(propertyId, trimmedNote);
       setNote('');
       toast({
-        title: 'Note added',
-        description: 'Your note has been added to the timeline.',
+        title: 'Note on the timeline',
+        description: 'Your note is logged against this property.',
       });
       // Invalidate activity log queries to refresh the timeline
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
@@ -36,7 +36,7 @@ export function AddNoteForm({ propertyId }: AddNoteFormProps) {
     } catch (error) {
       console.error('Failed to add note:', error);
       toast({
-        title: 'Error',
+        title: "Note didn't save",
         description: error instanceof Error ? error.message : 'Failed to add note',
         variant: 'destructive',
       });

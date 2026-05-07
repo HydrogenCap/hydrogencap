@@ -153,11 +153,11 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
         await updateTenant.mutateAsync({ id: tenant.id, status: 'active' });
       }
 
-      toast({ title: 'Tenancy agreement created' });
+      toast({ title: 'Tenancy agreement is live' });
       onOpenChange(false);
       onSuccess?.(values.tenant_id);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast({ title: "Agreement didn't save", description: getErrorMessage(error), variant: 'destructive' });
     }
   };
 

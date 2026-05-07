@@ -94,9 +94,9 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
           break;
       }
       await updateEntity.mutateAsync(updates);
-      toast({ title: `Updated ${field.replace('_', ' ')}` });
+      toast({ title: `${field.replace('_', ' ')} updated from Companies House` });
     } catch (err: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      toast({ title: "Field didn't save", description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 
@@ -117,11 +117,11 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
           imported++;
         } catch (err) {
           console.error('Failed to import officer:', officer.name, err);
-          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+          toast({ title: 'Officer import failed', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
         }
       }
     }
-    toast({ title: imported > 0 ? `Imported ${imported} officer(s)` : 'All officers already in local records' });
+    toast({ title: imported > 0 ? `${imported} officer(s) added from Companies House` : "Already up to date — every officer's on file" });
   };
 
   const handleImportAll = async () => {
@@ -140,9 +140,9 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
     try {
       await updateEntity.mutateAsync(updates);
       await handleImportOfficers();
-      toast({ title: 'All company data imported from Companies House' });
+      toast({ title: 'Synced from Companies House' });
     } catch (err: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      toast({ title: "Sync didn't complete", description: getErrorMessage(err), variant: 'destructive' });
     }
   };
 

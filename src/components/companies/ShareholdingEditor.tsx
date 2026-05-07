@@ -90,7 +90,7 @@ export function ShareholdingEditor({
 
   const handleCreateParty = async () => {
     if (!newPartyName.trim()) {
-      toast({ title: 'Error', description: 'Name is required', variant: 'destructive' });
+      toast({ title: 'Missing name', description: 'Add a name before saving.', variant: 'destructive' });
       return;
     }
 
@@ -101,27 +101,27 @@ export function ShareholdingEditor({
       });
       setSelectedPartyId(party.id);
       setShowNewPartyForm(false);
-      toast({ title: 'Party created', description: `${newPartyName} has been added` });
+      toast({ title: 'New party on file', description: `${newPartyName} can now hold shares.` });
     } catch (error) {
       console.error('Failed to create party:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create party', variant: 'destructive' });
+      toast({ title: "Party didn't save", description: error instanceof Error ? error.message : 'Failed to create party', variant: 'destructive' });
     }
   };
 
   const handleSubmit = async () => {
     if (!selectedPartyId) {
-      toast({ title: 'Error', description: 'Please select a shareholder', variant: 'destructive' });
+      toast({ title: 'Shareholder needed', description: "Choose who'll hold these shares.", variant: 'destructive' });
       return;
     }
 
     if (!selectedShareClassId) {
-      toast({ title: 'Error', description: 'Please select a share class', variant: 'destructive' });
+      toast({ title: 'Share class needed', description: 'Choose the class before saving.', variant: 'destructive' });
       return;
     }
 
     const shares = parseInt(sharesHeld, 10);
     if (isNaN(shares) || shares <= 0) {
-      toast({ title: 'Error', description: 'Shares held must be a positive number', variant: 'destructive' });
+      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
       return;
     }
 
@@ -135,7 +135,7 @@ export function ShareholdingEditor({
           shares_held: shares,
           notes: notes.trim() || null,
         });
-        toast({ title: 'Shareholding updated' });
+        toast({ title: 'Shareholding on file' });
       } else {
         await addShareholding.mutateAsync({
           company_id: companyId,
@@ -144,14 +144,14 @@ export function ShareholdingEditor({
           shares_held: shares,
           notes: notes.trim() || undefined,
         });
-        toast({ title: 'Shareholder added' });
+        toast({ title: 'Shareholder on the cap table' });
       }
       onOpenChange(false);
     } catch (err) {
       console.error('Failed to save shareholding:', err);
       const message = err instanceof Error ? err.message : 'Failed to save shareholding';
       toast({
-        title: 'Error',
+        title: "Cap table didn't update",
         description: message,
         variant: 'destructive',
       });

@@ -28,7 +28,7 @@ export function DashboardTable<T>({
   data,
   keyExtractor,
   onRowClick,
-  emptyMessage = 'No data available',
+  emptyMessage = "Quiet for now — as soon as there's activity, it'll show up in this table.",
   className,
   maxHeight,
 }: DashboardTableProps<T>) {

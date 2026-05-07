@@ -193,7 +193,7 @@ export function MetricDetailsSheet({
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
-              <p>{breakdown.emptyMessage || 'No data available'}</p>
+              <p>{breakdown.emptyMessage || "No breakdown yet — once data feeds this metric, you'll see the detail here."}</p>
             </div>
           )}
         </div>
