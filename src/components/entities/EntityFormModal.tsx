@@ -128,14 +128,14 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
 
   const handleSubmit = async () => {
     if (!form.entity_name.trim()) {
-      toast({ title: 'Error', description: 'Entity name is required', variant: 'destructive' });
+      toast({ title: 'Entity name required', description: 'Add a legal name to continue.', variant: 'destructive' });
       return;
     }
     if (!org?.id) return;
 
     const issuedShares = form.issued_shares ? parseInt(form.issued_shares, 10) : null;
     if (form.issued_shares && (isNaN(issuedShares!) || issuedShares! <= 0)) {
-      toast({ title: 'Error', description: 'Issued shares must be a positive number', variant: 'destructive' });
+      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
       return;
     }
 
@@ -157,15 +157,15 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
     try {
       if (isEditing && editingEntity) {
         await updateEntity.mutateAsync({ id: editingEntity.id, ...payload });
-        toast({ title: 'Entity updated' });
+        toast({ title: 'Entity details saved' });
       } else {
         await createEntity.mutateAsync(payload);
-        toast({ title: 'Entity created' });
+        toast({ title: 'New entity on file' });
       }
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save entity';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast({ title: "Entity didn't save", description, variant: 'destructive' });
     }
   };
 

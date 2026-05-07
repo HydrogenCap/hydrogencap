@@ -99,24 +99,24 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
 
   const handleSubmit = async () => {
     if (!form.shareholder_name.trim()) {
-      toast({ title: 'Error', description: 'Shareholder name is required', variant: 'destructive' });
+      toast({ title: 'Missing name', description: 'Add a name before saving.', variant: 'destructive' });
       return;
     }
     if (!form.share_class_id) {
-      toast({ title: 'Error', description: 'Share class is required', variant: 'destructive' });
+      toast({ title: 'Share class needed', description: 'Choose the class before saving.', variant: 'destructive' });
       return;
     }
     const shares = parseInt(form.shares_held, 10);
     if (isNaN(shares) || shares <= 0) {
-      toast({ title: 'Error', description: 'Shares held must be a positive number', variant: 'destructive' });
+      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
       return;
     }
     if (!form.effective_date) {
-      toast({ title: 'Error', description: 'Effective date is required', variant: 'destructive' });
+      toast({ title: 'Date needed', description: 'Pick when these shares were issued.', variant: 'destructive' });
       return;
     }
     if (isOverAllocated) {
-      toast({ title: 'Error', description: 'Cannot exceed issued shares for this class', variant: 'destructive' });
+      toast({ title: 'Too many shares', description: "You're over the issued total for this class.", variant: 'destructive' });
       return;
     }
 
@@ -137,15 +137,15 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
     try {
       if (isEditing && editingShareholder) {
         await updateShareholder.mutateAsync({ id: editingShareholder.id, ...payload });
-        toast({ title: 'Shareholder updated' });
+        toast({ title: 'Cap table updated' });
       } else {
         await createShareholder.mutateAsync(payload);
-        toast({ title: 'Shareholder added' });
+        toast({ title: 'Shareholder on the cap table' });
       }
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save shareholder';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast({ title: "Cap table didn't update", description, variant: 'destructive' });
     }
   };
 
