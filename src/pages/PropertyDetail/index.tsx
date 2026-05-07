@@ -9,6 +9,7 @@ import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal'
 import { ValuationRecordForm } from '@/components/valuations/ValuationRecordForm';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 import { SEVERITY } from '@/lib/design-tokens';
+import { SEO } from '@/components/SEO';
 import { usePropertyDetailState } from './hooks/usePropertyDetailState';
 import { OverviewTab } from './components/OverviewTab';
 import { FinancialsTab } from './components/FinancialsTab';
