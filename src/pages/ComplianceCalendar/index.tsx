@@ -12,6 +12,7 @@ import { StatusCardsRow } from './components/StatusCardsRow';
 import { CalendarGrid } from './components/CalendarGrid';
 import { UpcomingEventsList } from './components/UpcomingEventsList';
 import { CalendarLegend } from './components/CalendarLegend';
+import { SEO } from '@/components/SEO';
 
 export default function ComplianceCalendar() {
   const c = useComplianceCalendar();
@@ -22,6 +23,7 @@ export default function ComplianceCalendar() {
 
   return (
     <AppLayout>
+      <SEO title="Compliance Calendar — TenureIQ" description="Never miss a compliance deadline — gas, EICR, EPC, insurance, and refinancing in one calendar." />
       <div className="space-y-6">
         <CalendarHeader visibleEventTypes={c.visibleEventTypes} toggleEventType={c.toggleEventType} />
 

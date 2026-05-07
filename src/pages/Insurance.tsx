@@ -40,6 +40,7 @@ import { InsurancePolicyForm, CoverageMatrix, ClaimsTracker } from '@/components
 import { formatGBP } from '@/lib/calculations';
 import { SEVERITY, TEXT } from '@/lib/design-tokens';
 import { cn } from '@/lib/utils';
+import { SEO } from '@/components/SEO';
 
 function getExpiryBadge(endDate: string | null, status: string | null) {
   if (status === 'cancelled') {
@@ -387,6 +388,7 @@ function PoliciesTable() {
 export default function Insurance() {
   return (
     <AppLayout>
+      <SEO title="Insurance — TenureIQ" description="Track every policy, premium, and claim across your portfolio in one register." />
       <div className="space-y-6 p-6">
         <div>
           <h1 className={TEXT.pageTitle}>Insurance</h1>

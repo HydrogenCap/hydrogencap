@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { GitBranch, TableProperties, BookOpen, Users, PoundSterling, ArrowRightLeft } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 
 export default function Ownership() {
   const { data: org } = useOrganization();
@@ -25,6 +26,7 @@ export default function Ownership() {
 
   return (
     <AppLayout>
+      <SEO title="Ownership — TenureIQ" description="Visualise SPVs, shareholders, and beneficial ownership across your portfolio." />
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>

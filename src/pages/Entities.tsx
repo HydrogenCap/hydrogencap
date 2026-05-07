@@ -27,6 +27,7 @@ import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { getComplianceStatus } from '@/lib/complianceStatus';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { useToast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 
 const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: React.ComponentType<{ className?: string }> }> = {
   spv: { label: 'SPV', variant: 'default', icon: Building2 },
@@ -127,6 +128,7 @@ export default function Entities() {
 
   return (
     <AppLayout>
+      <SEO title="Entities — TenureIQ" description="Manage SPVs, partnerships, and trusts with Companies House data built in." />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

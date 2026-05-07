@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { HardHat, Plus, ChevronDown, ChevronRight, Briefcase, TrendingUp, PoundSterling, AlertTriangle, type LucideIcon } from 'lucide-react';
 import { useAllCapexProjects, useCreateCapexProjectFull, CAPEX_TEMPLATES } from '@/hooks/useCapexAll';
 import { useAddCapexLineItem } from '@/hooks/useCapex';
+import { SEO } from '@/components/SEO';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
@@ -48,6 +49,7 @@ export default function CapExPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <SEO title="CapEx — TenureIQ" description="Plan capital projects, track budget vs spend, and roll units back into letting on completion." />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">

@@ -15,6 +15,7 @@ import { AlertSection } from './components/AlertSection';
 import {
   RefinanceTimelineCard, CovenantMonitorCard, RateSensitivityCard,
 } from './components/PortfolioTables';
+import { SEO } from '@/components/SEO';
 
 export default function Lending() {
   const s = useLendingState();
@@ -25,6 +26,7 @@ export default function Lending() {
 
   return (
     <AppLayout>
+      <SEO title="Lending — TenureIQ" description="Monitor every facility, LTV, and rate across your lenders in one place." />
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Lending</h1>
 

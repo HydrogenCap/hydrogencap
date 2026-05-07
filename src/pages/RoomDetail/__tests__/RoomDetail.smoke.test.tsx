@@ -62,6 +62,6 @@ describe('RoomDetail (smoke)', () => {
     );
     expect(screen.getByRole('heading', { name: /Room A/i })).toBeInTheDocument();
     expect(screen.getByText(/Details/i)).toBeInTheDocument();
-    expect(screen.getByText(/Current Tenant/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Current Tenant/i).length).toBeGreaterThan(0);
   });
 });

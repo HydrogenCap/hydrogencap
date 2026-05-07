@@ -9,6 +9,7 @@ import { DistributionWizard } from '@/components/distributions/DistributionWizar
 import { DistributionHistory } from '@/components/distributions/DistributionHistory';
 import { formatGBP, formatGBPCompact } from '@/lib/calculations';
 import { LoadingState } from '@/components/common/LoadingState';
+import { SEO } from '@/components/SEO';
 
 function getNextQuarterDue(): string {
   const now = new Date();
@@ -84,6 +85,7 @@ export default function Distributions() {
 
   return (
     <AppLayout>
+      <SEO title="Distributions — TenureIQ" description="Calculate and pay investor distributions based on real portfolio performance." />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

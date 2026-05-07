@@ -21,6 +21,7 @@ import { NoticesTab } from './components/NoticesTab';
 import { PaymentScoreBadge } from './components/PaymentScoreBadge';
 import { STATUS_BG } from './utils/badges';
 import { getLabel } from './utils/format';
+import { SEO } from '@/components/SEO';
 
 
 export default function TenantDetail() {
@@ -39,6 +40,7 @@ export default function TenantDetail() {
 
   return (
     <AppLayout>
+      <SEO title={`${tenant.first_name} ${tenant.last_name} — TenureIQ`} description="Tenant profile, tenancy history, payment record, and notices." />
       <div className="space-y-6 pb-24 lg:pb-0">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2 min-w-0">

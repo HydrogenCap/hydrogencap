@@ -9,6 +9,7 @@ import { PropertyFormModal } from '@/components/properties-v2/PropertyFormModal'
 import { ValuationRecordForm } from '@/components/valuations/ValuationRecordForm';
 import { CommunicationTimeline } from '@/components/communications/CommunicationTimeline';
 import { SEVERITY } from '@/lib/design-tokens';
+import { SEO } from '@/components/SEO';
 import { usePropertyDetailState } from './hooks/usePropertyDetailState';
 import { OverviewTab } from './components/OverviewTab';
 import { FinancialsTab } from './components/FinancialsTab';
@@ -34,6 +35,7 @@ export default function PropertyDetail() {
 
   return (
     <AppLayout>
+      <SEO title={`${(property as any).address_line_1 || (property as any).address || 'Property'} — TenureIQ`} description="Property passport, performance, compliance, and lending in one view." />
       <div className="space-y-6">
         <div className="flex justify-end">
           <Button

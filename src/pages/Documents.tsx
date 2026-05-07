@@ -34,6 +34,7 @@ import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompa
 import { useCompanies } from '@/hooks/useCompanies';
 import { useDocumentSorting } from '@/hooks/useDocumentSorting';
 import type { GroupedSummary } from '@/components/documents/DocumentCategoryOverview';
+import { SEO } from '@/components/SEO';
 
 const CATEGORY_GROUPS = [
   { label: 'Compliance', slugs: ['gas-safety', 'eicr', 'epc', 'fire-safety', 'pat-testing', 'legionella', 'hmo-licence', 'mcs-certificate', 'building-control', 'planning'] },
@@ -149,6 +150,7 @@ export default function Documents() {
 
   return (
     <AppLayout>
+      <SEO title="Documents — TenureIQ" description="AI-classified document vault for certificates, leases, and statements." />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">

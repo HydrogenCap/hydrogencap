@@ -22,6 +22,7 @@ import { DemoDataSection } from '@/components/settings/DemoDataSection';
 import { SectionVisibilitySettings } from '@/components/settings/SectionVisibilitySettings';
 import { useProfile } from '@/hooks/useProfile';
 import { useOrganization } from '@/hooks/useOrganization';
+import { SEO } from '@/components/SEO';
 
 export default function Settings() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -45,6 +46,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
+      <SEO title="Settings — TenureIQ" description="Manage your account, organisation, and platform preferences." />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Settings</h1>
