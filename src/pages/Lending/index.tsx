@@ -13,9 +13,9 @@ import { StatsBar } from './components/StatsBar';
 import { LenderExposureCard } from './components/LenderExposureCard';
 import { AlertSection } from './components/AlertSection';
 import {
-import { SEO } from '@/components/SEO';
   RefinanceTimelineCard, CovenantMonitorCard, RateSensitivityCard,
 } from './components/PortfolioTables';
+import { SEO } from '@/components/SEO';
 
 export default function Lending() {
   const s = useLendingState();
