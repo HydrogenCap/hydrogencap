@@ -46,7 +46,7 @@ const warned = new Set<string>();
 function warnOnce(field: string) {
   if (warned.has(field)) return;
   warned.add(field);
-  // eslint-disable-next-line no-console
+   
   console.warn(
     `[usePropertyCompat] Field "${field}" is V1-only and has no V2 source. ` +
       `Caller should migrate to usePropertyV2 / property_passport. ` +

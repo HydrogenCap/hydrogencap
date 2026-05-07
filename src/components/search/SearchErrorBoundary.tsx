@@ -21,7 +21,7 @@ export class SearchErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown) {
-    // eslint-disable-next-line no-console
+     
     console.error('Global search crashed:', error);
   }
 

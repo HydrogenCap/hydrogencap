@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  AlertTriangle,
   FolderOpen,
   MoreHorizontal,
   Shield,
