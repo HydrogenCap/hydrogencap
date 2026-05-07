@@ -19,6 +19,7 @@ import { ComplianceDetailModal } from '@/components/compliance-v2/ComplianceDeta
 import { UploadComplianceDocModal } from '@/components/compliance-v2/UploadComplianceDocModal';
 import type { ComplianceMatrixRow, ComplianceDocType } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
+import { SEO } from '@/components/SEO';
 
 export default function ComplianceV2() {
   const { data: matrix, isLoading } = useComplianceMatrix();
@@ -80,6 +81,7 @@ export default function ComplianceV2() {
 
   return (
     <AppLayout>
+      <SEO title="Compliance Register — TenureIQ" description="Portfolio compliance, traffic-lighted by property and room." />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">

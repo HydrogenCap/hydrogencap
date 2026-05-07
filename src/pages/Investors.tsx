@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { useInvestors, useInvestorPortfolioSummaries, Investor } from '@/hooks/useInvestors';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
+import { SEO } from '@/components/SEO';
 
 const TYPE_BADGE: Record<string, { label: string; className: string }> = {
   individual: { label: 'Individual', className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
@@ -99,6 +100,7 @@ export default function Investors() {
 
   return (
     <AppLayout>
+      <SEO title="Investors — TenureIQ" description="Manage investor stakes, distributions, and portal access in one register." />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

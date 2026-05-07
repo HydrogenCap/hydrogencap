@@ -8,12 +8,14 @@ import { AccountingExport } from '@/components/accounting/AccountingExport';
 import { ExportWizard } from '@/components/accounting/ExportWizard';
 import { MappingsSection } from '@/components/accounting/MappingsSection';
 import { ExportHistory } from '@/components/accounting/ExportHistory';
+import { SEO } from '@/components/SEO';
 
 export default function Accounting() {
   const [activeTab, setActiveTab] = useState('ledger');
 
   return (
     <AppLayout>
+      <SEO title="Accounting — TenureIQ" description="Sync transactions to Xero, QuickBooks, or FreeAgent and keep your books current." />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Accounting</h1>

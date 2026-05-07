@@ -14,6 +14,7 @@ import { QuoteComparison } from '@/components/jobs-works/QuoteComparison';
 import { JobEvidenceGallery } from '@/components/jobs-works/JobEvidenceGallery';
 import { RateContractorDialog } from '@/components/contractors/RateContractorDialog';
 import { DensityToggle } from '@/components/DensityToggle';
+import { SEO } from '@/components/SEO';
 
 export default function JobsAndWorks() {
   const [activeTab, setActiveTab] = useState('jobs');
@@ -38,6 +39,7 @@ export default function JobsAndWorks() {
 
   return (
     <AppLayout>
+      <SEO title="Jobs & Works — TenureIQ" description="Track maintenance jobs, contractor bids, and works orders across every property." />
       <div className="container py-6 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>

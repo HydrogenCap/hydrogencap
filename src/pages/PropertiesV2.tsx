@@ -20,6 +20,7 @@ import { usePropertyPhotosV2 } from '@/hooks/usePropertyPhotosV2';
 import { useBulkEpcEnrichV2 } from '@/hooks/useBulkEpcEnrichV2';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
 import type { PropertyRoomSummary } from '@/hooks/useRoomsV2';
+import { SEO } from '@/components/SEO';
 
 // Badge colour maps
 const ENTITY_TYPE_BG: Record<string, string> = {
@@ -154,6 +155,7 @@ export default function PropertiesV2() {
 
   return (
     <AppLayout>
+      <SEO title="Properties — TenureIQ" description="Track every property in one place — tenants, compliance, finance, and documents." />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

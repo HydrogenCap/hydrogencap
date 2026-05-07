@@ -8,6 +8,7 @@ import { ReportTemplatesGrid } from './components/ReportTemplatesGrid';
 import { ReportHistoryTable } from './components/ReportHistoryTable';
 import { BrokerPackDialog } from './components/BrokerPackDialog';
 import { RoomPerformanceSection } from './components/RoomPerformanceSection';
+import { SEO } from '@/components/SEO';
 
 export default function Reports() {
   const s = useReportsState();
@@ -24,6 +25,7 @@ export default function Reports() {
 
   return (
     <AppLayout>
+      <SEO title="Reports — TenureIQ" description="Lender-ready reports in two clicks — portfolio summaries, rent rolls, and bank presentations." />
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>

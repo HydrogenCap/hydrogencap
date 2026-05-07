@@ -41,6 +41,7 @@ import { LeaseholdAlertWidget } from '@/components/dashboard/LeaseholdAlertWidge
 
 import { formatGBP, formatPercent } from '@/lib/calculations';
 import { MetricKey, MetricBreakdown } from '@/lib/metricsConfig';
+import { SEO } from '@/components/SEO';
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -264,6 +265,7 @@ function DashboardPage() {
   // ── Render ──────────────────────────────────────────────
   return (
     <AppLayout>
+      <SEO title="Dashboard — TenureIQ" description="See your portfolio at a glance — KPIs, alerts, and what needs attention today." />
       <div className="space-y-6">
         <WelcomeOverlay />
         <DemoBanner />

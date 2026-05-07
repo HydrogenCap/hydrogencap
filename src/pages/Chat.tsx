@@ -31,6 +31,7 @@ import { useConversations, useDeleteConversation } from '@/hooks/useConversation
 import { useChatMessages, type ChatMessage, type ToolCall } from '@/hooks/useChatMessages';
 import { useChat, getToolLabel } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
+import { SEO } from '@/components/SEO';
 
 const suggestedActions = [
   { label: 'Show compliance summary', message: 'Generate a compliance summary report for my portfolio' },
@@ -105,6 +106,7 @@ export default function Chat() {
 
   return (
     <AppLayout>
+      <SEO title="Portfolio Chat — TenureIQ" description="Ask questions about your portfolio in plain English — answers in seconds." />
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Conversation Sidebar */}
         {sidebarOpen && (

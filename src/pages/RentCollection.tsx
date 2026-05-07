@@ -15,6 +15,7 @@ import { PaymentHistoryList } from '@/components/rent/PaymentHistoryList';
 import { BankStatementImportDialog } from '@/components/rent/BankStatementImportDialog';
 import { DensityToggle } from '@/components/DensityToggle';
 import { format, startOfMonth } from 'date-fns';
+import { SEO } from '@/components/SEO';
 
 export default function RentCollection() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function RentCollection() {
 
   return (
     <AppLayout>
+      <SEO title="Rent Collection — TenureIQ" description="Reconcile rent against bank statements and chase arrears in a couple of clicks." />
       <div className="space-y-6 pb-20">
         {/* Header */}
         <div className="flex items-center justify-between">

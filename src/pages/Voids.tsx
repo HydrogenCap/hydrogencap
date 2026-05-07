@@ -8,6 +8,7 @@ import {
   useCreateVoidPeriod,
 } from '@/hooks/useVoidPeriods';
 import { VoidDashboard } from '@/components/voids/VoidDashboard';
+import { SEO } from '@/components/SEO';
 
 export default function Voids() {
   const { data: untrackedVoids } = useUntrackedVoids();
@@ -24,6 +25,7 @@ export default function Voids() {
 
   return (
     <AppLayout>
+      <SEO title="Voids & Lettings — TenureIQ" description="Track every void, lead, and viewing through to a signed tenancy." />
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>

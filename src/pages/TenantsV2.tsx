@@ -18,6 +18,7 @@ import { ListState } from '@/components/ListState';
 import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES } from '@/hooks/useTenantsV2';
 import { useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
 import { AddTenantModal } from '@/components/tenants-v2/AddTenantModal';
+import { SEO } from '@/components/SEO';
 
 const STATUS_BG: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-700', prospective: 'bg-blue-100 text-blue-700',
@@ -101,6 +102,7 @@ export default function TenantsV2() {
 
   return (
     <AppLayout>
+      <SEO title="Tenants — TenureIQ" description="Know your tenants before issues arise — agreements, payment scores, and notices." />
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>

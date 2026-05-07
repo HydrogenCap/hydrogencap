@@ -9,12 +9,14 @@ import { OverviewTab } from './components/OverviewTab';
 import { SA105Tab } from './components/SA105Tab';
 import { CGTTab } from './components/CGTTab';
 import { fmt, pct } from './utils/format';
+import { SEO } from '@/components/SEO';
 
 export default function TaxDashboard() {
   const s = useTaxDashboardState();
 
   return (
     <AppLayout>
+      <SEO title="Tax Dashboard — TenureIQ" description="See your UK tax position, model Section 24 impact, and export SA105-ready figures." />
       <div className="space-y-6">
         <TaxHeader taxYear={s.taxYear} setTaxYear={s.setTaxYear} taxYears={s.taxYears} />
 

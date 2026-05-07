@@ -25,6 +25,7 @@ import { useAcceptAllHighConfidence } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { SEO } from '@/components/SEO';
 
 export default function InboxPage() {
   const { openSidebar } = useActivitySidebar();
@@ -173,6 +174,7 @@ function InboxPageInner() {
 
   return (
     <AppLayout>
+      <SEO title="Inbox — TenureIQ" description="Tenant messages, contractor updates, and tasks in one place." />
       <div className="space-y-6">
         {/* Page Header */}
         <div className="flex items-center justify-between">
