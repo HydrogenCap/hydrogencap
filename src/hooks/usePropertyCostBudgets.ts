@@ -53,7 +53,7 @@ export function useUpsertPropertyCostBudget() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: { property_id?: string } | null) => {
       queryClient.invalidateQueries({ queryKey: ['property_cost_budgets_v2'] });
       queryClient.invalidateQueries({ queryKey: ['property', data?.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
