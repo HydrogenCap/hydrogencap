@@ -49,7 +49,7 @@ export function useUpsertPropertyIncomeBudget() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: { property_id?: string; tax_year?: string; annual_rent_gbp?: number } | null) => {
       queryClient.invalidateQueries({ queryKey: ['property_income_budgets_v2'] });
       queryClient.invalidateQueries({ queryKey: ['property', data?.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });

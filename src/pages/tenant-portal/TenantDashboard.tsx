@@ -34,11 +34,13 @@ export default function TenantDashboard() {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: tenancy_agreements + embedded relations; pending V2 schema codegen.
+      const d = data as any;
       return {
-        ...data,
-        end_date: (data as any).actual_end_date ?? (data as any).initial_end_date ?? null,
-        property: (data as any).property
-          ? { ...(data as any).property, address_line: (data as any).property.address_line_1 }
+        ...d,
+        end_date: d.actual_end_date ?? d.initial_end_date ?? null,
+        property: d.property
+          ? { ...d.property, address_line: d.property.address_line_1 }
           : null,
       };
     },
@@ -135,7 +137,7 @@ export default function TenantDashboard() {
 
   const tenantFullName = `${tenancy.tenant?.first_name || ''} ${tenancy.tenant?.last_name || ''}`.trim();
   const tenantName = tenancy.tenant?.tenant_type === 'company'
-    ? ((tenancy.tenant as any).company_name || tenantFullName)
+    ? ((tenancy.tenant as { company_name?: string }).company_name || tenantFullName)
     : tenantFullName;
 
   const propertyAddress = [

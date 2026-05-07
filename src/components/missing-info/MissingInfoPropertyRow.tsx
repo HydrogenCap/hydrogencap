@@ -151,7 +151,7 @@ export function MissingInfoPropertyRow({ item }: Props) {
         await upsertIncome.mutateAsync({
           property_id: item.property.id,
           tax_year: yearToTaxYear(currentYear),
-          annual_rent_gbp: Number((incomeChanges as any).annual_rent_gbp ?? 0),
+          annual_rent_gbp: Number((incomeChanges as { annual_rent_gbp?: number | string }).annual_rent_gbp ?? 0),
         });
       }
 

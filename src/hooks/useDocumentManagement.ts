@@ -290,7 +290,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
             .select('property_id, properties_v2(address_line_1)')
             .eq('id', tenancyId)
             .single();
-          const tenancyProperty = (tenancy as any)?.properties_v2 as { address_line_1?: string } | null;
+          const tenancyProperty = (tenancy as { properties_v2?: { address_line_1?: string } } | null)?.properties_v2 ?? null;
           if (tenancyProperty) {
             propertyAddress = tenancyProperty.address_line_1 || null;
           }

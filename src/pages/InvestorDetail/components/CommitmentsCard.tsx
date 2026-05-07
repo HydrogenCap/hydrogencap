@@ -44,27 +44,28 @@ export function CommitmentsCard({
                 <TableRow>
                   <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">No commitments yet</TableCell>
                 </TableRow>
-              ) : commitments.map((c: any) => {
-                const statusConfig = STATUS_BADGE[c.status || 'active'] || STATUS_BADGE.active;
+              ) : commitments.map((c) => {
+                const r = c as Record<string, string | number | null | undefined>;
+                const statusConfig = STATUS_BADGE[(r.status as string) || 'active'] || STATUS_BADGE.active;
                 return (
-                  <TableRow key={c.commitment_id}>
-                    <TableCell className="font-semibold">{c.entity_name}</TableCell>
+                  <TableRow key={r.commitment_id as string}>
+                    <TableCell className="font-semibold">{r.entity_name}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="text-xs">
-                        {COMMITMENT_TYPE_LABEL[c.commitment_type || ''] || c.commitment_type}
+                        {COMMITMENT_TYPE_LABEL[(r.commitment_type as string) || ''] || r.commitment_type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(c.committed_amount)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(c.drawn_amount)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(c.undrawn_amount)}</TableCell>
-                    <TableCell className="text-right">{c.equity_percentage ? `${c.equity_percentage}%` : '-'}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">{fmt(c.investors_share_valuation)}</TableCell>
-                    <TableCell className="text-center">{c.property_count || 0}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(r.committed_amount as number)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(r.drawn_amount as number)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(r.undrawn_amount as number)}</TableCell>
+                    <TableCell className="text-right">{r.equity_percentage ? `${r.equity_percentage}%` : '-'}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmt(r.investors_share_valuation as number)}</TableCell>
+                    <TableCell className="text-center">{r.property_count || 0}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={statusConfig.className}>{statusConfig.label}</Badge>
                     </TableCell>
-                    <TableCell className="text-sm">{c.commitment_date ? format(new Date(c.commitment_date), 'dd MMM yyyy') : '-'}</TableCell>
-                    <TableCell className="text-sm">{c.maturity_date ? format(new Date(c.maturity_date), 'dd MMM yyyy') : '-'}</TableCell>
+                    <TableCell className="text-sm">{r.commitment_date ? format(new Date(r.commitment_date as string), 'dd MMM yyyy') : '-'}</TableCell>
+                    <TableCell className="text-sm">{r.maturity_date ? format(new Date(r.maturity_date as string), 'dd MMM yyyy') : '-'}</TableCell>
                   </TableRow>
                 );
               })}

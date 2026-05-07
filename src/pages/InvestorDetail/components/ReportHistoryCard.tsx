@@ -40,6 +40,7 @@ export function ReportHistoryCard({
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No reports generated yet</TableCell>
               </TableRow>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: investor_reports row; pending V2 view typing.
             ) : reports.map((r: any) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.title}</TableCell>

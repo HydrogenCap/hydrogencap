@@ -265,6 +265,7 @@ export function useUpsertIncome() {
     mutationFn: async (_income: { property_id: string; year: number; annual_rent_gbp: number }) => {
       throwV1Frozen('income', 'useUpsertIncome');
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V1-frozen dead path; mutationFn always throws so onSuccess never runs.
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -286,6 +287,7 @@ export function useUpsertCosts() {
     mutationFn: async (_costs: Partial<Costs>) => {
       throwV1Frozen('costs', 'useUpsertCosts');
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V1-frozen dead path; mutationFn always throws so onSuccess never runs.
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -296,7 +298,7 @@ export function useUpsertCosts() {
         data.repairs_gbp_manual,
         data.compliance_gbp_manual,
         data.other_gbp_manual,
-      ].reduce((sum: number, val: any) => sum + (val ? Number(val) : 0), 0);
+      ].reduce((sum: number, val: number | string | null | undefined) => sum + (val ? Number(val) : 0), 0);
 
       ActivityLoggers.costsUpdated(data.property_id, data.year, total);
       showMutationSuccess('Costs updated');

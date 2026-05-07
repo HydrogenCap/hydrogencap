@@ -67,6 +67,7 @@ export interface TenancyWithDetails extends Tenancy {
 }
 
 // Map V2 row → V1-shaped TenancyWithDetails so existing consumers don't change.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V2 select returns dynamic shape with embedded relations; full row typing pending V2 schema codegen.
 function mapAgreementRow(row: any): TenancyWithDetails {
   const v2Status: string | null = row?.status ?? null;
   const status: TenancyStatus =
@@ -136,7 +137,7 @@ export function useTenancies(filters?: { status?: TenancyStatus; tenantId?: stri
 
       const { data, error } = await query;
       if (error) throw error;
-      return ((data ?? []) as any[]).map(mapAgreementRow);
+      return ((data ?? []) as unknown[]).map((r) => mapAgreementRow(r as Parameters<typeof mapAgreementRow>[0]));
     },
   });
 }

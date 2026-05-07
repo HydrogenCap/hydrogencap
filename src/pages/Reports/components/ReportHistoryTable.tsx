@@ -12,7 +12,7 @@ export function ReportHistoryTable({
   deletingPath,
   onDelete,
 }: {
-  reportHistory: any[] | undefined;
+  reportHistory: Array<{ path: string; name: string; report_type: string; created_at: string; download_url?: string | null }> | undefined;
   historyLoading: boolean;
   deletingPath: string | null;
   onDelete: (path: string) => void;

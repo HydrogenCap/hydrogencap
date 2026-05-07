@@ -3,13 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { REPORT_TEMPLATES, type ReportType } from '@/hooks/useReportGeneration';
+import type { PropertyReportData } from '@/lib/reportPdfGenerator';
 
 export function ReportTemplatesGrid({
   filteredProperties,
   isPending,
   onGenerate,
 }: {
-  filteredProperties: any[];
+  filteredProperties: PropertyReportData[];
   isPending: boolean;
   onGenerate: (t: ReportType) => void;
 }) {
