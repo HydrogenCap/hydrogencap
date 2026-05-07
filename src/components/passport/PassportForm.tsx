@@ -120,14 +120,14 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       });
       toast({
         title: 'Passport saved',
-        description: 'Property passport has been updated.',
+        description: "Your changes are now part of this property's passport.",
       });
     } catch (err) {
       console.error('Passport save error:', err);
       captureError(err, 'PassportForm.save');
       toast({
-        title: 'Error',
-        description: 'Failed to save passport.',
+        title: "Passport didn't save",
+        description: 'Something blocked the save — try once more.',
         variant: 'destructive',
       });
     }
@@ -157,7 +157,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       setAutofillModalOpen(true);
     } catch (error) {
       toast({
-        title: 'Error',
+        title: 'AI suggestions unavailable',
         description: error instanceof Error ? error.message : 'Failed to generate suggestions',
         variant: 'destructive',
       });
@@ -176,13 +176,13 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       setAdvancedOpen(true);
       
       toast({
-        title: 'Construction period estimated',
+        title: 'Build period inferred',
         description: `AI suggests ~${data.suggestion.estimatedYear} (${data.suggestion.confidence} confidence)`,
       });
     } catch (error) {
       console.error('Construction estimate error:', error);
       toast({
-        title: 'Estimation failed',
+        title: "Estimate didn't run",
         description: error instanceof Error ? error.message : 'Could not estimate construction year',
         variant: 'destructive',
       });

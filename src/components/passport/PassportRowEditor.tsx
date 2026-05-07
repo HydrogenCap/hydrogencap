@@ -94,9 +94,9 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
         gas_meter_number: passportData.gas_meter_number || null,
       });
 
-      toast({ title: 'Saved', description: 'Property identity and passport updated successfully.' });
+      toast({ title: 'All saved', description: 'Property identity and passport are up to date.' });
     } catch (_error) {
-      toast({ title: 'Error', description: 'Failed to save changes.', variant: 'destructive' });
+      toast({ title: "Changes didn't save", description: "Give it another go — your edits are still here.", variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -108,7 +108,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
       await addTitleNumber.mutateAsync({ propertyId: property.id, titleNumber: newTitleNumber });
       setNewTitleNumber('');
     } catch (_error) {
-      toast({ title: 'Error', description: 'Failed to add title number.', variant: 'destructive' });
+      toast({ title: "Title number didn't add", description: "Try again — Land Registry didn't accept it.", variant: 'destructive' });
     }
   };
 
@@ -116,7 +116,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
     try {
       await removeTitleNumber.mutateAsync({ id, propertyId: property.id });
     } catch (_error) {
-      toast({ title: 'Error', description: 'Failed to remove title number.', variant: 'destructive' });
+      toast({ title: "Title number didn't remove", description: 'Give it another go.', variant: 'destructive' });
     }
   };
 
