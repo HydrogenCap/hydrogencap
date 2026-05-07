@@ -298,7 +298,7 @@ describe('PostgREST embed safety (Prompt #29 → #30 regression guard)', () => {
     // Expose counters so the failure message and the test summary line up
     // with what the prompt asks the AI to report back.
     if (process.env.POSTGREST_EMBED_SAFETY_VERBOSE) {
-      // eslint-disable-next-line no-console
+       
       console.log(
         `[postgrest-embed-safety] scanned ${files.length} files, ` +
           `${totalSelects} .select() calls, ${totalEmbeds} embeds, ` +
