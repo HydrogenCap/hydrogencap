@@ -1,4 +1,4 @@
-import { CalendarCheck } from 'lucide-react';
+
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -22,6 +22,3 @@ export function ComplianceCalendarSkeleton() {
     </AppLayout>
   );
 }
-
-// Re-export icon to satisfy unused import lint if needed
-export const _icon = CalendarCheck;
