@@ -11,14 +11,16 @@ interface BuildArgs {
     postcode: string;
     property_type: string;
     current_valuation: number | null;
-  } & Record<string, unknown>;
+    [key: string]: unknown;
+  };
   monthlyRent: number | null;
   loans: unknown[] | undefined;
   complianceRows: Array<{
     is_required: boolean;
     calculated_status?: string | null;
     expiry_date?: string | null;
-  } & Record<string, unknown>> | undefined;
+    [key: string]: unknown;
+  }> | undefined;
 }
 
 export async function buildAndSavePassportPdf({ property, monthlyRent, loans, complianceRows }: BuildArgs) {
