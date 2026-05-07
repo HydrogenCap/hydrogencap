@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable/index';
 import { LogoWordmark } from '@/components/LogoWordmark';
+import { SEO } from '@/components/SEO';
 
 import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
 
