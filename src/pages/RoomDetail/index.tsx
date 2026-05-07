@@ -35,6 +35,7 @@ export default function RoomDetail() {
 
   return (
     <AppLayout>
+      <SEO title={`${room.room_name} — TenureIQ`} description="Room-level passport, occupancy, rent history, and compliance." />
       <div className="space-y-6">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
