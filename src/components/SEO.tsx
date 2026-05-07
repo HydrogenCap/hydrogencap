@@ -10,7 +10,7 @@ interface SEOProps {
 
 export function SEO({ title, description, canonical, ogImage }: SEOProps) {
   const location = useLocation();
-  const fullTitle = title.includes('Tenure IQ') ? title : `${title} | Tenure IQ`;
+  const fullTitle = title.includes('TenureIQ') || title.includes('Tenure IQ') ? title : `${title} | TenureIQ`;
   const url = canonical || `https://tenureiq.com${location.pathname}`;
 
   useEffect(() => {
