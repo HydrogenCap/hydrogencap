@@ -18,6 +18,7 @@ import { NotesCard } from './components/NotesCard';
 import { RoomComplianceCard } from './components/RoomComplianceCard';
 import { RoomMetricsCard } from './components/RoomMetricsCard';
 import { RoomPnLCard } from './components/RoomPnLCard';
+import { SEO } from '@/components/SEO';
 
 export default function RoomDetail() {
   const navigate = useNavigate();
