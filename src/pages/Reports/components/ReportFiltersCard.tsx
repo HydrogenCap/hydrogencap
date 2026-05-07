@@ -25,8 +25,8 @@ export function ReportFiltersCard({
   setSelectedPropertyId: (v: string | null) => void;
   includeAttachments: boolean;
   setIncludeAttachments: (v: boolean) => void;
-  lifecycleFilteredProperties: any[];
-  filteredProperties: any[];
+  lifecycleFilteredProperties: Array<Record<string, unknown>>;
+  filteredProperties: Array<Record<string, unknown>>;
 }) {
   return (
     <Card>
@@ -86,7 +86,7 @@ export function ReportFiltersCard({
 
           {selectionMode === 'single' && (
             <PropertySearchSelect
-              properties={lifecycleFilteredProperties}
+              properties={lifecycleFilteredProperties as Parameters<typeof PropertySearchSelect>[0]['properties']}
               value={selectedPropertyId || ''}
               onValueChange={setSelectedPropertyId}
             />

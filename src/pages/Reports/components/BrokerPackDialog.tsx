@@ -21,8 +21,8 @@ export function BrokerPackDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  propertyForBrokerPack: any;
-  companyForBrokerPack: any;
+  propertyForBrokerPack: { address_line?: string; [k: string]: unknown } | null;
+  companyForBrokerPack: { legal_name?: string; company_number?: string | null; [k: string]: unknown } | null;
   brokerPackValidation: { canGenerate: boolean; warnings: string[]; errors: string[] };
   loanPurpose: LoanPurpose;
   setLoanPurpose: (v: LoanPurpose) => void;

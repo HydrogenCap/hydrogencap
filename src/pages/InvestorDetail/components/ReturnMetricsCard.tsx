@@ -30,6 +30,7 @@ export function ReturnMetricsCard({
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No return data available</TableCell>
               </TableRow>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: investor_return_metrics view row; pending V2 view typing.
             ) : returnMetrics.map((m: any) => {
               const emColor = (m.equity_multiple || 0) >= 1.5 ? 'text-emerald-600' : (m.equity_multiple || 0) >= 1 ? 'text-amber-600' : 'text-destructive';
               const gainColor = (m.unrealised_gain_loss || 0) >= 0 ? 'text-emerald-600' : 'text-destructive';

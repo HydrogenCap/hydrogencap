@@ -9,7 +9,7 @@ export function ReportTemplatesGrid({
   isPending,
   onGenerate,
 }: {
-  filteredProperties: any[];
+  filteredProperties: Array<Record<string, unknown>>;
   isPending: boolean;
   onGenerate: (t: ReportType) => void;
 }) {

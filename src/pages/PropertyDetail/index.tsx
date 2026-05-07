@@ -35,7 +35,7 @@ export default function PropertyDetail() {
 
   return (
     <AppLayout>
-      <SEO title={`${(property as any).address_line_1 || (property as any).address || 'Property'} — TenureIQ`} description="Property passport, performance, compliance, and lending in one view." />
+      <SEO title={`${(property as { address_line_1?: string; address?: string }).address_line_1 || (property as { address_line_1?: string; address?: string }).address || 'Property'} — TenureIQ`} description="Property passport, performance, compliance, and lending in one view." />
       <div className="space-y-6">
         <div className="flex justify-end">
           <Button
