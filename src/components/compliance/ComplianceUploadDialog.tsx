@@ -89,8 +89,8 @@ export function ComplianceUploadDialog({
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     if (!validTypes.includes(file.type)) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload a PDF, JPG, or PNG file.',
+        title: 'Wrong file type',
+        description: 'Certificates need to be a PDF, JPG, or PNG.',
         variant: 'destructive',
       });
       return;
@@ -98,8 +98,8 @@ export function ComplianceUploadDialog({
     
     if (file.size > 10 * 1024 * 1024) {
       toast({
-        title: 'File too large',
-        description: 'Maximum file size is 10MB.',
+        title: 'Too big to upload',
+        description: 'Cap is 10MB — try compressing the PDF.',
         variant: 'destructive',
       });
       return;
@@ -166,7 +166,7 @@ export function ComplianceUploadDialog({
       clearInterval(progressInterval);
       console.error('Failed to analyse compliance document:', error);
       captureError(error, 'ComplianceUploadDialog.aiAnalysis');
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
+      toast({ title: "Couldn't read certificate", description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
       
       // Fall back to manual entry with placeholder data
       setAnalysisResult({
@@ -231,7 +231,7 @@ export function ComplianceUploadDialog({
       }
 
       toast({
-        title: isMissing ? 'Compliance record created' : 'Document saved',
+        title: isMissing ? 'New compliance record on file' : 'Certificate is on the record',
         description: isMissing 
           ? 'New compliance record has been created successfully.'
           : 'Compliance record has been updated successfully.',
@@ -244,8 +244,8 @@ export function ComplianceUploadDialog({
       console.error('Save error:', error);
       captureError(error, 'ComplianceUploadDialog.save');
       toast({
-        title: 'Error saving document',
-        description: 'Please try again.',
+        title: "Couldn't save certificate",
+        description: 'Try again in a moment.',
         variant: 'destructive',
       });
     } finally {
