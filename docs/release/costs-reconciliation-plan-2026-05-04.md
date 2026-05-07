@@ -288,3 +288,13 @@ Confirmation: `rg "from\(['\"]costs['\"]\)|costs\(\*\)" src/ supabase/functions/
 - Smoke test `src/__tests__/costs-frozen.test.ts` mirrors `loans-frozen.test.ts` — asserts `throwV1Frozen('costs', …)` redirects to `property_cost_budgets_v2`.
 - Live spot-check: `/properties-v2/<id>` financial tab + `CostsEditor` render cleanly — no frozen-error surfaces because Costs B (writes) and Costs C (reads) already routed everything to V2.
 - Closes Costs A–E. Second of 4 V2-reframe items reconciled (loans = first, soak pending).
+
+## V1 costs dropped 2026-05-07
+
+Costs F (final). V1 `public.costs` table dropped end-to-end.
+
+- **Pre-flight re-verified:** 3 rows (1 org), 0 inbound FKs, 0 `from('costs')` refs in src/ or supabase/functions/, frozen since 2026-05-06 (#49e).
+- **Migration:** dropped `v1_freeze_guard` + `set_costs_updated_at` triggers, 4 RLS policies, then `DROP TABLE public.costs CASCADE` (CASCADE surfaced nothing — clean drop).
+- **Code:** `src/hooks/useProperties.ts` `Costs` type detached from generated `Database['public']['Tables']['costs']` and inlined as a local legacy shape (mirrors the income drop pattern from #50b). `useUpsertCosts` retained as a frozen no-op throwing via `throwV1Frozen('costs', …)` for any stale callers.
+- **Tests:** deleted `src/__tests__/costs-frozen.test.ts` and `src/__tests__/costs-pair-completeness.test.ts` (+ fixture `costs-pair-snapshot.json`) — both asserted invariants of a now-nonexistent table.
+- **Status:** Plan §0a 'costs' is **CLOSED end-to-end** (A audit → B freeze hooks → C edge-fn shim → D backfill → E DB freeze trigger → F drop).
