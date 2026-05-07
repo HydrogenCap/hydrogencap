@@ -13,6 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { HardHat, Plus, ChevronDown, ChevronRight, Briefcase, TrendingUp, PoundSterling, AlertTriangle, type LucideIcon } from 'lucide-react';
 import { useAllCapexProjects, useCreateCapexProjectFull, CAPEX_TEMPLATES } from '@/hooks/useCapexAll';
 import { useAddCapexLineItem } from '@/hooks/useCapex';
+import { SEO } from '@/components/SEO';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
