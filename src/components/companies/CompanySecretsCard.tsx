@@ -44,7 +44,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
       setRevealed(result);
     } catch (err) {
       console.error('Failed to reveal secrets:', err);
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast({ title: "Couldn't reveal secret", description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 
@@ -77,7 +77,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
       setRevealed(null); // Hide after edit
     } catch (err) {
       console.error('Failed to save secrets:', err);
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast({ title: "Couldn't save secret", description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     }
   };
 
