@@ -80,7 +80,7 @@ export function ActivationChecklist() {
               {item.completed ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
               ) : (
-                <Circle className="h-5 w-5 text-muted-foreground/40 shrink-0" />
+                <Circle className="h-5 w-5 text-muted-foreground/60 shrink-0" />
               )}
               <div className="min-w-0">
                 <p className={cn('text-sm font-medium', item.completed && 'line-through text-muted-foreground')}>

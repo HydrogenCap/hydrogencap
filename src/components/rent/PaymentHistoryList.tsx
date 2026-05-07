@@ -99,7 +99,7 @@ export function PaymentHistoryList() {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    <History className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
+                    <History className="h-6 w-6 mx-auto mb-2 text-muted-foreground/70" />
                     No payments match your filters
                   </TableCell>
                 </TableRow>

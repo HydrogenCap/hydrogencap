@@ -14,7 +14,7 @@ const variantConfig = {
     icon: LayoutGrid,
     base: 'bg-card border-border',
     active: 'ring-2 ring-offset-2 ring-offset-background ring-primary border-primary',
-    hover: 'hover:border-muted-foreground/50 hover:shadow-md',
+    hover: 'hover:border-muted-foreground/70 hover:shadow-md',
     iconColor: 'text-muted-foreground/30',
     numberColor: 'text-foreground',
     labelColor: 'text-muted-foreground',

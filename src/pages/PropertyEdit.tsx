@@ -217,7 +217,7 @@ function PropertyEditPage() {
     return (
       <AppLayout>
         <div className="p-8 text-center space-y-4">
-          <div className="text-6xl font-bold text-muted-foreground/50">404</div>
+          <div className="text-6xl font-bold text-muted-foreground/70">404</div>
           <h1 className="text-2xl font-semibold">Property not found</h1>
           <p className="text-muted-foreground">
             This property may have been deleted or you don't have access to it.

@@ -66,7 +66,7 @@ function GridCard({
               className="w-full h-full object-cover"
             />
           ) : (
-            <FileIcon className="h-12 w-12 text-muted-foreground/40" />
+            <FileIcon className="h-12 w-12 text-muted-foreground/60" />
           )}
         </div>
         <p className="text-sm font-medium truncate" title={doc.display_name || doc.original_file_name}>
@@ -121,7 +121,7 @@ function ArchivedGridCard({
     >
       <CardContent className="p-3">
         <div className="aspect-[4/3] bg-muted rounded-md mb-2 flex items-center justify-center overflow-hidden">
-          <FileIcon className="h-12 w-12 text-muted-foreground/40" />
+          <FileIcon className="h-12 w-12 text-muted-foreground/60" />
         </div>
         <p className="text-sm font-medium truncate">{doc.display_name || doc.original_file_name}</p>
         <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">

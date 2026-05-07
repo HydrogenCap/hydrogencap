@@ -84,7 +84,7 @@ export function ListState({
     return (
       <Card data-testid="list-state-empty">
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <EmptyIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
+          <EmptyIcon className="h-12 w-12 text-muted-foreground/70 mb-4" />
           <h3 className="text-lg font-semibold mb-2">{emptyTitle}</h3>
           <p className="text-muted-foreground mb-4 max-w-md">{emptyDescription}</p>
           {emptyAction && (

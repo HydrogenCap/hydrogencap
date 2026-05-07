@@ -309,7 +309,7 @@ export function AreaExposureChart({ properties }: AreaExposureChartProps) {
           </>
         ) : (
           <div className="h-[220px] flex flex-col items-center justify-center text-muted-foreground gap-2">
-            <BarChart3 className="h-8 w-8 text-muted-foreground/40" />
+            <BarChart3 className="h-8 w-8 text-muted-foreground/60" />
             <p className="text-sm">Add properties to see geographic distribution</p>
           </div>
         )}

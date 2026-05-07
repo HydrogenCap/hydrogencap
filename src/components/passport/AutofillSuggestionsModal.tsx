@@ -328,7 +328,7 @@ export function AutofillSuggestionsModal({
             </div>
           ) : !hasSuggestions ? (
             <div className="text-center py-12">
-              <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground/70" />
               <p className="text-muted-foreground mb-4">
                 No suggestions available. Upload EPC / floorplan / inventory to improve autofill.
               </p>

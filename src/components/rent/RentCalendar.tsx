@@ -34,7 +34,7 @@ const COLOR_CLASSES: Record<EntryColor, string> = {
   green: 'bg-green-500',
   amber: 'bg-amber-500',
   red: 'bg-red-500',
-  grey: 'bg-muted-foreground/40',
+  grey: 'bg-muted-foreground/60',
 };
 
 const COLOR_RING_CLASSES: Record<EntryColor, string> = {
@@ -118,7 +118,7 @@ export function RentCalendar() {
               Overdue
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
+              <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/60" />
               Upcoming
             </div>
           </div>
@@ -149,7 +149,7 @@ export function RentCalendar() {
                       onClick={() => setSelectedDate(d)}
                       className={cn(
                         'relative flex flex-col items-center p-2 min-h-[64px] rounded-md transition-colors',
-                        isCurrentMonth ? 'text-foreground' : 'text-muted-foreground/40',
+                        isCurrentMonth ? 'text-foreground' : 'text-muted-foreground/60',
                         isSelected && 'bg-primary/10 ring-1 ring-primary',
                         isToday && !isSelected && 'bg-muted',
                         !isSelected && 'hover:bg-muted/50'

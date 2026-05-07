@@ -75,7 +75,7 @@ function ChartEmpty({ height, message }: { height: number; message: string }) {
       className="flex flex-col items-center justify-center text-muted-foreground gap-2"
       style={{ height }}
     >
-      <BarChart3 className="h-8 w-8 text-muted-foreground/40" />
+      <BarChart3 className="h-8 w-8 text-muted-foreground/60" />
       <p className="text-sm text-center max-w-[240px]">{message}</p>
     </div>
   );

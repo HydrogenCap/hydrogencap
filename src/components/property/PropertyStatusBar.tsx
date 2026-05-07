@@ -69,7 +69,7 @@ export function PropertyStatusBar({ propertyId, lifecycleType }: PropertyStatusB
       good: 'bg-green-500',
       bad: 'bg-red-500',
       neutral: 'bg-muted-foreground',
-      unknown: 'bg-muted-foreground/50',
+      unknown: 'bg-muted-foreground/70',
     };
     return <span className={`inline-block h-2 w-2 rounded-full shrink-0 ${colors[s]}`} />;
   };

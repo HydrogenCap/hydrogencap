@@ -33,20 +33,25 @@
     --secondary-foreground: 220 20% 20%;
 
     --muted: 220 14% 96%;
-    --muted-foreground: 220 8% 46%;
+    --muted-foreground: 220 9% 38%;
 
     --accent: 220 14% 93%;
     --accent-foreground: 220 30% 12%;
 
-    /* Semantic colors */
+    /* Semantic colors — solid (button / fill) */
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 92% 50%;
     --warning-foreground: 220 30% 12%;
-    
+
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
+
+    /* Semantic colors — text-on-tint variants used by .status-* utilities (AA on /10 bg) */
+    --success-text: 160 84% 25%;
+    --warning-text: 28 95% 35%;
+    --destructive-text: 0 75% 42%;
 
     --border: 220 13% 91%;
     --input: 220 13% 89%;
@@ -104,7 +109,7 @@
     --secondary-foreground: 220 14% 90%;
 
     --muted: 222 20% 15%;
-    --muted-foreground: 220 12% 55%;
+    --muted-foreground: 220 14% 70%;
 
     --accent: 222 22% 20%;
     --accent-foreground: 220 14% 95%;
@@ -112,12 +117,17 @@
     /* Semantic colors - adjusted for dark backgrounds */
     --success: 158 64% 52%;
     --success-foreground: 222 30% 8%;
-    
+
     --warning: 45 93% 58%;
     --warning-foreground: 222 30% 8%;
-    
+
     --destructive: 0 72% 63%;
     --destructive-foreground: 0 0% 100%;
+
+    /* Text-on-tint variants — lighter for dark surfaces */
+    --success-text: 158 70% 65%;
+    --warning-text: 45 95% 70%;
+    --destructive-text: 0 80% 75%;
 
     --border: 222 18% 22%;
     --input: 222 20% 18%;
@@ -181,17 +191,20 @@
 }
 
 @layer utilities {
-  /* Risk status utilities */
+  /* Risk status utilities — text uses *-text tint variants for AA contrast on /10 bg */
   .status-success {
-    @apply text-success bg-success/10 border-success/20;
+    color: hsl(var(--success-text));
+    @apply bg-success/10 border-success/20;
   }
-  
+
   .status-warning {
-    @apply text-warning bg-warning/10 border-warning/20;
+    color: hsl(var(--warning-text));
+    @apply bg-warning/10 border-warning/20;
   }
-  
+
   .status-danger {
-    @apply text-destructive bg-destructive/10 border-destructive/20;
+    color: hsl(var(--destructive-text));
+    @apply bg-destructive/10 border-destructive/20;
   }
 
   /* Gradient backgrounds */

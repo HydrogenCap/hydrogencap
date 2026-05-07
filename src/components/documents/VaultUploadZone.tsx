@@ -229,7 +229,7 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
       className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
         isDragOver
           ? 'border-primary bg-primary/5'
-          : 'border-border hover:border-muted-foreground/50'
+          : 'border-border hover:border-muted-foreground/70'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

@@ -231,7 +231,7 @@ export function LocationRegistryCard({
             </>
           ) : (
             <div className="h-[200px] rounded-lg bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center text-center p-4">
-              <MapPin className="h-10 w-10 text-muted-foreground/50 mb-3" />
+              <MapPin className="h-10 w-10 text-muted-foreground/70 mb-3" />
               <p className="text-muted-foreground mb-3">No location set for this property</p>
               <Button onClick={openCoordDialog}>
                 <MapPin className="h-4 w-4 mr-2" />
