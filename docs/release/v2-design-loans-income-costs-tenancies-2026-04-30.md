@@ -433,3 +433,29 @@ Refined `public.v1_freeze_guard()` so the RAISE EXCEPTION names the correct V2 s
 - ELSE fallback: `<table>_v2` (for any future-frozen V1 table)
 
 SECURITY DEFINER, pinned `search_path = public, pg_temp`, and LANGUAGE plpgsql preserved. Existing `loans-frozen.test.ts`, `costs-frozen.test.ts`, `tenancies-frozen.test.ts` assert the JS-side `throwV1Frozen` message (already correct) — no test updates required.
+
+---
+
+## #54b — DEFERRED on 2026-05-08 (pre-flight surfaced missed dependencies)
+
+**Decision:** Park the drop of `public.tenancies` until tenant-portal storage RLS is repointed to V2.
+
+**Pre-flight assertions ran:** `v1_freeze_guard` trigger active ✅, 0 FK refs ✅, 0 view refs ✅, 13 stale rows (already migrated to `tenancy_agreements` per #52).
+
+**Bare `DROP TABLE public.tenancies` (no CASCADE) failed with two unaudited dependencies:**
+
+1. **`public.generate_tenancy_compliance_items(tenancies)`** — SECURITY DEFINER plpgsql function whose argument is the V1 row type. Originally fired from a row-level trigger on `public.tenancies` to seed `tenancy_compliance_items`. Unreachable now that #54a froze writes, but still a hard schema dependency on the row type. No V2 caller in repo.
+2. **Storage RLS policy "Tenants can read their property documents"** on `storage.objects` — live tenant-portal read path. USING clause joins `tenant_portal_access → tenancies → properties`. Dropping `public.tenancies` (with or without CASCADE) revokes tenant document downloads via the portal.
+
+**No DB state was changed** — DROP rejected by Postgres 2BP01, table/trigger/function/policy all intact.
+
+**Precursor work required before #54b can ship:**
+
+- Repoint the storage RLS policy onto V2: rewrite USING clause to `tenant_portal_access → tenancy_agreements → properties_v2` (`p.org_id` lookup unchanged).
+- Confirm `tenant_portal_access.tenancy_id` values resolve in `tenancy_agreements` (#52's 1,093-row migration preserved ids — needs verification before policy swap).
+- Tenant-portal smoke test: invited tenant can still list/download property documents post-swap.
+- Once the policy is on V2, `#54b` can ship as: `DROP FUNCTION generate_tenancy_compliance_items(tenancies)` → `DROP TRIGGER v1_freeze_guard` → `DROP TABLE public.tenancies` (still no CASCADE, defence in depth).
+
+**Codebase: no edits made this round.** `useTenancies.ts` (V2 reads, frozen mutations), `useProperties.ts` (Tenancy row-type alias), `tenancies-frozen.test.ts`, `useMigration.ts`/`backupConfig.ts` config arrays — all left as-is for the eventual #54b PR.
+
+**Soak rationale (carried forward to whenever #54b ships):** Option 2 — same as #48. Postgres log retention can't observe the soak server-side; rely on client-side `throwV1Frozen('tenancies', …)` (#54a) + `tenancies-frozen.test.ts` + verified absence of any `from('tenancies')` writers in `src/` or `supabase/functions/`.
