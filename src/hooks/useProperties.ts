@@ -24,13 +24,31 @@ type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
 type PropertyV1Update = Database['public']['Tables']['properties']['Update'];
 // V1 `loans` table dropped (#48, 2026-05-08). Local legacy shape preserved
 // so the deprecated useCreateLoan/useUpdateLoan stubs (which throw before any
-// DB call via throwV1Frozen) keep their original return type.
+// DB call via throwV1Frozen) and downstream PropertyWithFinancials consumers
+// keep their original typing during the V2 cutover.
 type Loan = {
   id: string;
   property_id: string;
   lender: string | null;
-  amount: number | null;
-  interest_rate: number | null;
+  interest_rate_percent: number | null;
+  fixed_or_variable: string | null;
+  mortgage_type: string | null;
+  capital_or_interest: string | null;
+  fixed_rate_expires: string | null;
+  reversion_rate_percent: number | null;
+  refinance_target_date: string | null;
+  broker_name: string | null;
+  broker_contact: string | null;
+  current_mortgage_balance_gbp: number | null;
+  mortgage_payment_gbp: number | null;
+  payment_override_gbp: number | null;
+  payment_source: string | null;
+  term_years: number | null;
+  loan_term_months: number | null;
+  loan_start_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 type LoanInsertLegacy = Partial<Loan> & { property_id: string };
 type LoanUpdateLegacy = Partial<Loan>;
