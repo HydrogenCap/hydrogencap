@@ -14,7 +14,7 @@ export function DistributionsCard({
   distStats,
   onAdd,
 }: {
-  distributions: Array<Record<string, unknown>> | undefined;
+  distributions: DistributionRow[] | undefined;
   distStats: { allTime: number; thisYear: number; lastYear: number; yield: number };
   onAdd: () => void;
 }) {
