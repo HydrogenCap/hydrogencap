@@ -238,7 +238,7 @@ serve(withInvocationLog("freeagent-sync-payments", async (req, _invocationLog) =
     let syncedCount = 0;
     let failedCount = 0;
 
-    for (const payment of unsyncedPayments.slice(0, 50)) {
+    for (const payment of unsyncedPayments.slice(0, 50) as any[]) {
       try {
         const tenancy = payment.tenancy as any;
         const tenant = tenancy?.tenant;
