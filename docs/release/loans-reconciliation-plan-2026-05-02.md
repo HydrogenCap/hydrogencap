@@ -344,3 +344,42 @@ Parameters<typeof executeTool>[0]` cast.
   property financial tabs) all now go through V2 `loan_facilities` per Prompts
   #45/#46/#46b — no `frozen` errors expected, and none surfaced in the live
   preview after deploy.
+
+## #48 — `public.loans` dropped 2026-05-08
+
+**Decision:** ship on day 4 of the soak window rather than waiting until 2026-05-11.
+
+**Soak evidence:**
+- Client guard (`throwV1Frozen('loans', …)` from Prompt #45) wired into all
+  V1 loan mutation hooks — verified by `rg "throwV1Frozen\(['\"]loans"`.
+- CI regression test `src/__tests__/loans-frozen.test.ts` asserted insert/
+  update/delete throw the canonical message (deleted in this PR — table now gone).
+- DB trigger `v1_freeze_guard` (Prompt #47, refined #54c) confirmed installed
+  and enabled (`pg_trigger.tgenabled='O'`) immediately before the drop.
+- Server-side soak count: **inconclusive**. `analytics.postgres_logs` retains
+  only ~minutes of data, not the 4-day soak window. The last few minutes
+  showed zero `frozen` matches, but a full window count was not possible from
+  this source. Decision (David, 2026-05-08): accept client+CI evidence in lieu
+  of server soak.
+
+**Pre-flight (read-only) confirmed before drop:**
+- Trigger active on `public.loans`: ✅
+- Foreign keys pointing at `public.loans`: 0
+- View / RLS / function references to `public.loans` in `public` schema: 0
+- Frozen row count at drop time: **24** (already migrated to
+  `loan_facilities` per Prompt #46; V1 rows were stale duplicates)
+
+**Migration:** `supabase/migrations/20260508201014_…_drop-v1-loans.sql`
+- `DROP TRIGGER IF EXISTS v1_freeze_guard ON public.loans`
+- `DROP TABLE public.loans` (no CASCADE — bare drop would have failed loudly
+  if any dependent existed)
+
+**Post-flight:**
+- `SELECT to_regclass('public.loans')` → `NULL` ✅
+- `Database['public']['Tables']['loans']` no longer in generated types — local
+  `Loan` shape kept in `src/hooks/useProperties.ts` to preserve typing of the
+  deprecated `useCreateLoan`/`useUpdateLoan`/`useBulkLoanUpdate` stubs (still
+  throw via `throwV1Frozen('loans', …)` — never reach the DB) and downstream
+  `PropertyWithFinancials` consumers during the V2 cutover.
+- `v1Frozen.ts`'s `'loans'` arm intentionally kept — harmless, still fronts
+  the legacy stubs above.
