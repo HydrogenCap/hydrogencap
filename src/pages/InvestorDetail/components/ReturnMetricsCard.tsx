@@ -8,7 +8,7 @@ type ReturnMetricsRow = Database['public']['Views']['investor_return_metrics']['
 export function ReturnMetricsCard({
   returnMetrics,
 }: {
-  returnMetrics: Array<Record<string, unknown>> | undefined;
+  returnMetrics: ReturnMetricsRow[] | undefined;
 }) {
   return (
     <Card>
