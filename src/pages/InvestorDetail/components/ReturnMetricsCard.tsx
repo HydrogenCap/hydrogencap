@@ -1,6 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Database } from '@/integrations/supabase/types';
 import { fmt } from '../utils/badges';
+
+type ReturnMetricsRow = Database['public']['Views']['investor_return_metrics']['Row'];
 
 export function ReturnMetricsCard({
   returnMetrics,
