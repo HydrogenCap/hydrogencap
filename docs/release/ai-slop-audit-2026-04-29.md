@@ -158,3 +158,27 @@ Plus one targeted disable each on the InvestorDetail card components (`Distribut
 - `npm run build` — green.
 - `npm run check:edge` — **fails** on a pre-existing Deno typecheck error in `supabase/functions/summarize-valuation-document/index.ts:123` (`SupabaseClient<any>` not assignable to `SupabaseClient<unknown>` for the `adminSupabase` variable). **Outside the scope of this pass** — not introduced here, not part of the 40 `any` warnings (that file was untouched). Tracked separately.
 
+
+## Inline 'any' exceptions cleared 2026-05-08
+
+Closed out the 8 inline `eslint-disable @typescript-eslint/no-explicit-any` exceptions left after #59b. Per-site disposition:
+
+| Site | Action | Type used / notes |
+| --- | --- | --- |
+| `src/hooks/useProperties.ts:268` (`useUpsertIncome.onSuccess`) | **Deleted** | V1-frozen dead path — `mutationFn` always throws, so `onSuccess` never fires. No external consumers. |
+| `src/hooks/useProperties.ts:290` (`useUpsertCosts.onSuccess`) | **Deleted** | Same V1-frozen dead path; `useQueryClient`/`ActivityLoggers` calls removed. |
+| `src/hooks/useTenancies.ts:71` (`mapAgreementRow(row: any)`) | **Typed** | Local alias `AgreementWithEmbeds = Database['public']['Tables']['tenancy_agreements']['Row'] & { tenant: Pick<TenantV2Row, …> \| null; room: Pick<RoomV2Row, …> \| null; property: Pick<PropertyV2Row, …> \| null }`. |
+| `src/pages/tenant-portal/TenantDashboard.tsx:38` (embedded reshape) | **Typed** | Local alias `DashboardAgreement` derived the same way, with `Pick` of the columns the `.select()` actually requests. |
+| `src/pages/InvestorDetail/index.tsx:64–74` (block disable, 4 `as any` casts) | **Removed** | Hooks return `any` (via `supabaseAny`), assignable directly to the now-typed child props. Replaced `s.X as any` with `s.X ?? undefined`. |
+| `src/pages/InvestorDetail/components/DistributionsCard.tsx:53` | **Typed** | Prop type now `DistributionRow[] \| undefined` where `DistributionRow = Database['public']['Tables']['investor_distributions']['Row']`. |
+| `src/pages/InvestorDetail/components/ReportHistoryCard.tsx:43` | **Typed** | Prop type now `ReportRow[] \| undefined` where `ReportRow = Database['public']['Tables']['investor_reports']['Row']`. |
+| `src/pages/InvestorDetail/components/ReturnMetricsCard.tsx:33` | **Typed** | Prop type now `ReturnMetricsRow[] \| undefined` where `ReturnMetricsRow = Database['public']['Views']['investor_return_metrics']['Row']`. `key={m.commitment_id ?? undefined}` to satisfy nullable PK. |
+
+### Verification
+- `grep -rn "eslint-disable.*no-explicit-any" src/` → only 2 hits remaining, both **out of scope**: `src/components/ui/chart.tsx:94` (shadcn boilerplate) and `src/integrations/supabase/client.ts:26` (preconfigured, never edited).
+- `npx eslint --max-warnings 0` on the 7 touched files → clean.
+- `npx tsc -p tsconfig.app.json --noEmit` → clean.
+
+### Judgement calls
+- Chose **delete** over **type** for the two `useProperties` `onSuccess` handlers because (a) the V1 mutation paths are frozen at the DB-layer trigger, (b) `mutationFn` provably always throws, and (c) no in-repo consumer references the callback shape. Cleaner than typing dead code.
+- All view/embedded-relation rows had generated `Database['public']['Views' | 'Tables']` types available — no need for hand-rolled fallbacks.

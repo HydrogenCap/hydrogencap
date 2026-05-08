@@ -61,17 +61,15 @@ export default function InvestorDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
-            {/* eslint-disable @typescript-eslint/no-explicit-any -- TODO: state hook returns view rows pending V2 codegen. */}
-            <CommitmentsCard commitments={s.commitments as any} onAdd={() => s.setShowCommitmentModal(true)} />
-            <DistributionsCard distributions={s.distributions as any} distStats={s.distStats} onAdd={() => s.setShowDistributionModal(true)} />
-            <ReturnMetricsCard returnMetrics={s.returnMetrics as any} />
+            <CommitmentsCard commitments={s.commitments ?? undefined} onAdd={() => s.setShowCommitmentModal(true)} />
+            <DistributionsCard distributions={s.distributions ?? undefined} distStats={s.distStats} onAdd={() => s.setShowDistributionModal(true)} />
+            <ReturnMetricsCard returnMetrics={s.returnMetrics ?? undefined} />
             <ReportHistoryCard
-              reports={s.reports as any}
+              reports={s.reports ?? undefined}
               onGenerate={() => s.setShowReportModal(true)}
               downloadInvestorReport={s.downloadInvestorReport}
               downloading={s.downloadingInvestorReport}
             />
-            {/* eslint-enable @typescript-eslint/no-explicit-any */}
           </TabsContent>
 
           <TabsContent value="kyc" className="mt-6">

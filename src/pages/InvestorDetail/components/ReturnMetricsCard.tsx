@@ -1,11 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Database } from '@/integrations/supabase/types';
 import { fmt } from '../utils/badges';
+
+type ReturnMetricsRow = Database['public']['Views']['investor_return_metrics']['Row'];
 
 export function ReturnMetricsCard({
   returnMetrics,
 }: {
-  returnMetrics: Array<Record<string, unknown>> | undefined;
+  returnMetrics: ReturnMetricsRow[] | undefined;
 }) {
   return (
     <Card>
@@ -30,12 +33,11 @@ export function ReturnMetricsCard({
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No return data available</TableCell>
               </TableRow>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: investor_return_metrics view row; pending V2 view typing.
-            ) : returnMetrics.map((m: any) => {
+            ) : returnMetrics.map((m) => {
               const emColor = (m.equity_multiple || 0) >= 1.5 ? 'text-emerald-600' : (m.equity_multiple || 0) >= 1 ? 'text-amber-600' : 'text-destructive';
               const gainColor = (m.unrealised_gain_loss || 0) >= 0 ? 'text-emerald-600' : 'text-destructive';
               return (
-                <TableRow key={m.commitment_id}>
+                <TableRow key={m.commitment_id ?? undefined}>
                   <TableCell className="font-semibold">{m.entity_name}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{fmt(m.capital_invested)}</TableCell>
                   <TableCell className="text-right font-mono text-sm">{fmt(m.total_distributions)}</TableCell>

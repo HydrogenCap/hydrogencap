@@ -15,7 +15,20 @@
  */
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { throwV1Frozen } from '@/lib/v1Frozen';
+
+type AgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
+type TenantV2Row = Database['public']['Tables']['tenants_v2']['Row'];
+type RoomV2Row = Database['public']['Tables']['rooms_v2']['Row'];
+type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
+
+// Shape returned by V2_SELECT below: agreement row + selected embedded child columns.
+type AgreementWithEmbeds = AgreementRow & {
+  tenant: Pick<TenantV2Row, 'id' | 'first_name' | 'last_name' | 'email' | 'phone'> | null;
+  room: Pick<RoomV2Row, 'id' | 'room_name' | 'room_type'> | null;
+  property: Pick<PropertyV2Row, 'id' | 'address_line_1' | 'postcode'> | null;
+};
 
 export type TenancyStatus = 'pending' | 'active' | 'notice' | 'ended';
 
@@ -67,8 +80,7 @@ export interface TenancyWithDetails extends Tenancy {
 }
 
 // Map V2 row → V1-shaped TenancyWithDetails so existing consumers don't change.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V2 select returns dynamic shape with embedded relations; full row typing pending V2 schema codegen.
-function mapAgreementRow(row: any): TenancyWithDetails {
+function mapAgreementRow(row: AgreementWithEmbeds): TenancyWithDetails {
   const v2Status: string | null = row?.status ?? null;
   const status: TenancyStatus =
     v2Status === 'notice_period' ? 'notice'

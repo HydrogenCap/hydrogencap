@@ -11,9 +11,21 @@ import { Button } from '@/components/ui/button';
 import { TenantPortalLayoutV2 } from '@/components/tenant-portal/TenantPortalLayoutV2';
 import { useTenantPortalSession } from '@/hooks/useTenantPortalSession';
 import { supabaseAny } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { LoadingState } from '@/components/common/LoadingState';
 import { formatGBP } from '@/lib/calculations';
 import { STATUS_CONFIG } from '@/lib/maintenanceTypes';
+
+type AgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
+type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
+type RoomV2Row = Database['public']['Tables']['rooms_v2']['Row'];
+type TenantV2Row = Database['public']['Tables']['tenants_v2']['Row'];
+
+type DashboardAgreement = AgreementRow & {
+  property: Pick<PropertyV2Row, 'address_line_1' | 'postcode' | 'city'> | null;
+  room: Pick<RoomV2Row, 'room_name'> | null;
+  tenant: Pick<TenantV2Row, 'first_name' | 'last_name' | 'tenant_type'> | null;
+};
 
 export default function TenantDashboard() {
   const { tenancyId, tenantId, orgId: _orgId, canViewRent, canSubmitMaintenance } = useTenantPortalSession();
@@ -34,8 +46,7 @@ export default function TenantDashboard() {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: tenancy_agreements + embedded relations; pending V2 schema codegen.
-      const d = data as any;
+      const d = data as DashboardAgreement;
       return {
         ...d,
         end_date: d.actual_end_date ?? d.initial_end_date ?? null,

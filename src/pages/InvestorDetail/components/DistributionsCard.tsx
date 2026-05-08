@@ -4,14 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Database } from '@/integrations/supabase/types';
 import { DIST_TYPE_LABEL, fmt } from '../utils/badges';
+
+type DistributionRow = Database['public']['Tables']['investor_distributions']['Row'];
 
 export function DistributionsCard({
   distributions,
   distStats,
   onAdd,
 }: {
-  distributions: Array<Record<string, unknown>> | undefined;
+  distributions: DistributionRow[] | undefined;
   distStats: { allTime: number; thisYear: number; lastYear: number; yield: number };
   onAdd: () => void;
 }) {
@@ -50,8 +53,7 @@ export function DistributionsCard({
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No distributions recorded</TableCell>
               </TableRow>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: investor_distributions view row; pending V2 view typing.
-            ) : distributions.map((d: any) => (
+            ) : distributions.map((d) => (
               <TableRow key={d.id}>
                 <TableCell className="text-sm">{format(new Date(d.distribution_date), 'dd MMM yyyy')}</TableCell>
                 <TableCell>
