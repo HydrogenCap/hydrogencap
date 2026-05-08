@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { withInvocationLog } from "../_shared/logger.ts";
 type SubscriptionRow = {
@@ -45,11 +46,7 @@ serve(withInvocationLog("admin-stats", async (req, _invocationLog) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } }
-  );
+  const supabase = getAdminClient();
 
   try {
     // Verify caller is super_admin
@@ -121,7 +118,7 @@ serve(withInvocationLog("admin-stats", async (req, _invocationLog) => {
   }
 }));
 
-async function getDashboardStats(supabase: any) {
+async function getDashboardStats(supabase: AdminSupabaseClient) {
   // Active subscriptions + MRR
   const { data: activeSubsData } = await supabase
     .from("subscriptions")
@@ -231,7 +228,7 @@ async function getDashboardStats(supabase: any) {
 }
 
 async function getUsers(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   params: { search?: string; tierFilter?: string; statusFilter?: string; page?: number; pageSize?: number }
 ) {
   const { search, tierFilter, statusFilter, page = 1, pageSize = 50 } = params;
@@ -327,7 +324,7 @@ async function getUsers(
 }
 
 async function grantTrial(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   params: { userId: string; days?: number }
 ) {
   const { userId, days = 14 } = params;
@@ -349,7 +346,7 @@ async function grantTrial(
 }
 
 async function changePlan(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   params: { userId: string; newTier: string }
 ) {
   const { userId, newTier } = params;

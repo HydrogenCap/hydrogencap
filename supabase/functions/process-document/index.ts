@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger, withInvocationLog } from "../_shared/logger.ts";
@@ -149,7 +150,7 @@ function generateComplianceFilename(complianceType: string, propertyAddress: str
 
 // Auto-filing: creates compliance_items and compliance_documents records
 async function autoFileDocument(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   extraction: AIExtractionResult,
   documentId: string,
   orgId: string,
@@ -412,7 +413,7 @@ Deno.serve(withInvocationLog("process-document", async (req, _invocationLog) => 
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getAdminClient();
 
     // Update status
     await supabase.from("documents").update({ extraction_status: "processing" }).eq("id", documentId);
@@ -643,9 +644,7 @@ Respond with valid JSON only (no markdown):
     // Reset document status to 'failed' so it doesn't stay stuck at 'processing'
     if (parsedDocumentId) {
       try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+        const adminClient = getAdminClient();
         
         await adminClient.from("documents").update({ 
           extraction_status: "failed",

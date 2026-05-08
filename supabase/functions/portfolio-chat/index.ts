@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { validateBody } from "../_shared/validate.ts";
@@ -303,7 +304,7 @@ serve(withInvocationLog("portfolio-chat", async (req, _invocationLog) => {
 
           toolCallsExecuted.push({ name: toolName, args: toolArgs });
 
-          const result = await executeTool(supabase as unknown as Parameters<typeof executeTool>[0], orgId, toolName, toolArgs);
+          const result = await executeTool(supabase, orgId, toolName, toolArgs);
           toolResults.push({
             tool_call_id: tc.id,
             name: toolName,
@@ -415,9 +416,8 @@ serve(withInvocationLog("portfolio-chat", async (req, _invocationLog) => {
 
 // ─── Conversation management handlers ────────────────────────────────────────
 
-// deno-lint-ignore no-explicit-any
 async function handleListConversations(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   userId: string,
   corsHeaders: Record<string, string>
 ) {
@@ -441,9 +441,8 @@ async function handleListConversations(
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function handleDeleteConversation(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {
@@ -465,9 +464,8 @@ async function handleDeleteConversation(
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function handleUpdateConversation(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   conversationId: string,
   body: { title?: string },
   corsHeaders: Record<string, string>
@@ -495,9 +493,8 @@ async function handleUpdateConversation(
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function handleGetMessages(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {

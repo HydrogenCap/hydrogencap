@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { requireActiveSubscription } from "../_shared/checkSubscription.ts";
 
@@ -59,7 +60,7 @@ serve(withInvocationLog("summarize-valuation-document", async (req, _invocationL
   // the row is stuck in "processing" forever (same bug class as the original
   // documents-stuck-in-pending issue).
   let summaryId: string | null = null;
-  let adminSupabase: ReturnType<typeof createClient> | null = null;
+  let adminSupabase: AdminSupabaseClient | null = null;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -119,8 +120,8 @@ serve(withInvocationLog("summarize-valuation-document", async (req, _invocationL
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    adminSupabase = supabase as unknown as ReturnType<typeof createClient>;
+    const supabase = getAdminClient();
+    adminSupabase = supabase;
 
     // Upsert processing record
     const { data: summary, error: upsertError } = await supabase

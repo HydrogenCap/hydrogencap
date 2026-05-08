@@ -176,3 +176,53 @@ migrate the 3 already-cast sites opportunistically on next touch and adopt
 the helper in any new function. **Estimated complexity: small** — one new
 ~30-line helper file, no immediate refactor required, zero runtime change,
 no schema or migration impact.
+
+---
+
+## Option B migration shipped 2026-05-08
+
+David picked **Option B** (full fix). All 20 occurrences migrated to a shared
+typed admin-client helper.
+
+### New helper — `supabase/functions/_shared/admin-client.ts`
+
+```ts
+export type AdminSupabaseClient = SupabaseClient<any, "public", any>;
+export type AdminSupabaseLike = { from: (t: string) => any; auth?: any; storage?: any };
+export function getAdminClient(): AdminSupabaseClient;
+```
+
+Bare-default `SupabaseClient` generics chosen over `ReturnType<typeof createClient>`
+because the latter resolves to `<unknown, never, GenericSchema>` and is **not**
+assignable from anon-key user clients (`<any, "public", any>`). The permissive
+default accepts both shapes without per-call casts.
+
+### Per-file changes
+
+| File | Before | After |
+|------|--------|-------|
+| `_shared/admin-client.ts` | (new) | Helper + 2 type aliases |
+| `summarize-valuation-document/index.ts` | `as unknown as ReturnType<typeof createClient>` cast (L123) + `let adminSupabase: ReturnType<…>` (L62) | `getAdminClient()` + `AdminSupabaseClient` |
+| `reprocess-vault-documents/index.ts` | `as unknown as Parameters<…>[0]` cast (L118) + `ReturnType<…>` param | `generateSignedUrl(adminClient, …)` direct, `AdminSupabaseClient` param, `getAdminClient()` init |
+| `portfolio-chat/index.ts` | `as unknown as Parameters<typeof executeTool>[0]` (L306) + 4× `// deno-lint-ignore` + `supabase: any` helpers (L420/446/470/500) | Cast removed; 4 helpers retyped to `AdminSupabaseClient` |
+| `portfolio-chat/tool-executor.ts` | 7× `supabase: SupabaseClient` (bare) | 7× `supabase: AdminSupabaseClient` |
+| `portfolio-api/index.ts` | 6× `supabase: any` (L125/158/176/190/225/260) | 6× `supabase: AdminSupabaseClient` |
+| `admin-stats/index.ts` | 4× `supabase: any` (L124/234/330/352) + inline `createClient(URL, SERVICE_KEY)` (L49) | 4× `AdminSupabaseClient` + `getAdminClient()` |
+| `process-document/index.ts` | `supabase: any` (L152) + 2× inline service-role `createClient` (L416/649) | `AdminSupabaseClient` + `getAdminClient()` (×2) |
+| `freeagent-sync-payments/index.ts` | `supabase: any` (L16) + inline service-role `createClient` (L64) + inferred-`unknown` regression on `payment.id` | `AdminSupabaseClient` + `getAdminClient()` + `as any[]` widening on the legacy payments loop |
+| `freeagent-fetch-categories/index.ts` | `supabase: any` (L36) + inline service-role `createClient` (L106) | `AdminSupabaseClient` + `getAdminClient()` |
+| `_shared/rateLimit.ts` | `RateLimitSupabaseLike` structural type | **Unchanged** — deliberately retains stub-friendly shape for `rateLimit.test.ts` injection (per audit Step 5 guidance) |
+
+### Verification
+
+- `npm run check:edge` — **70 entry files clean** (was failing typecheck on
+  `freeagent-sync-payments` after first pass; resolved by the `as any[]`
+  widening on the V1 payments loop where the inferred row type collapsed to
+  `unknown` once the supabase client was tightened).
+- `npm run lint` — **0 warnings** under `--max-warnings 0`.
+
+### Total
+
+**20 sites migrated** (3 cohort-i casts removed · 17 cohort-ii `: any`
+parameters retyped · 1 cohort-iii intentionally preserved). One new ~30-line
+helper file. Zero runtime change. No schema or migration impact.
