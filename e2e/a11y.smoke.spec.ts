@@ -60,7 +60,6 @@ test.describe('A11y smoke (axe-core)', () => {
         };
 
         // Log moderate/minor for visibility (tracked, not failed)
-        // eslint-disable-next-line no-console
         console.log(
           `[a11y] ${route.name} ${mode}: critical=${bySeverity.critical.length} serious=${bySeverity.serious.length} moderate=${bySeverity.moderate.length} minor=${bySeverity.minor.length}`,
         );
