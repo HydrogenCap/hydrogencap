@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { withInvocationLog } from "../_shared/logger.ts";
 import {
@@ -13,7 +14,7 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FREEAGENT_CLIENT_ID = Deno.env.get("FREEAGENT_CLIENT_ID")!;
 const FREEAGENT_CLIENT_SECRET = Deno.env.get("FREEAGENT_CLIENT_SECRET")!;
 
-async function getValidToken(connection: any, supabase: any): Promise<string> {
+async function getValidToken(connection: any, supabase: AdminSupabaseClient): Promise<string> {
   const key = await deriveKey(Deno.env.get("COMPANY_SECRETS_KEY")!);
   return getValidTokenHelper(connection, {
     supabase,

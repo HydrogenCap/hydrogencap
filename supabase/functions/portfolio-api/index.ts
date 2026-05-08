@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
@@ -122,7 +123,7 @@ interface ActionItem {
 
 // ─── V2 Handlers ──────────────────────────────────────────────────────
 
-async function getPortfolioSummary(supabase: any) {
+async function getPortfolioSummary(supabase: AdminSupabaseClient) {
   const [propertiesRes, loansRes, entitiesRes] = await Promise.all([
     supabase.from("properties_v2").select("id, address_line_1, postcode, current_valuation, total_lettable_rooms, property_type, epc_rating"),
     supabase.from("loan_facilities").select("current_balance, interest_rate, property_id").eq("status", "active"),
@@ -155,7 +156,7 @@ async function getPortfolioSummary(supabase: any) {
   });
 }
 
-async function getProperties(supabase: any, params: URLSearchParams) {
+async function getProperties(supabase: AdminSupabaseClient, params: URLSearchParams) {
   const limit = Math.min(parseInt(params.get("limit") || "50"), 200);
 
   let query = supabase
@@ -173,7 +174,7 @@ async function getProperties(supabase: any, params: URLSearchParams) {
   });
 }
 
-async function getCompanies(supabase: any) {
+async function getCompanies(supabase: AdminSupabaseClient) {
   const { data, error } = await supabase
     .from("legal_entities")
     .select("id, entity_name, entity_type, company_number, status, incorporation_date");
@@ -187,7 +188,7 @@ async function getCompanies(supabase: any) {
   });
 }
 
-async function getComplianceStatus(supabase: any) {
+async function getComplianceStatus(supabase: AdminSupabaseClient) {
   const { data, error } = await supabase
     .from("compliance_documents_v2")
     .select("id, document_type, expiry_date, status, property_id, is_current")
@@ -222,7 +223,7 @@ async function getComplianceStatus(supabase: any) {
   });
 }
 
-async function getLoans(supabase: any) {
+async function getLoans(supabase: AdminSupabaseClient) {
   const { data, error } = await supabase
     .from("loan_facilities")
     .select("id, property_id, lender_id, current_balance, interest_rate, rate_type, repayment_type, rate_expiry_date, monthly_payment, status, facility_type")
@@ -257,7 +258,7 @@ async function getLoans(supabase: any) {
   });
 }
 
-async function getActionItems(supabase: any) {
+async function getActionItems(supabase: AdminSupabaseClient) {
   const [propertiesRes, complianceRes, loansRes] = await Promise.all([
     supabase.from("properties_v2").select("id, address_line_1, postcode, current_valuation, epc_rating"),
     supabase.from("compliance_documents_v2").select("id, document_type, expiry_date, status, property_id, is_current").eq("is_current", true),

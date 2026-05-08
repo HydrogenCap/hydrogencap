@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
@@ -33,7 +34,7 @@ async function encrypt(plaintext: string): Promise<string> {
   return btoa(String.fromCharCode(...combined));
 }
 
-async function getValidToken(connection: any, supabase: any): Promise<string> {
+async function getValidToken(connection: any, supabase: AdminSupabaseClient): Promise<string> {
   const now = new Date();
   const expiresAt = new Date(connection.token_expires_at);
 

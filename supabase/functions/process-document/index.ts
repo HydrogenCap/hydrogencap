@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 import { createLogger, withInvocationLog } from "../_shared/logger.ts";
@@ -149,7 +150,7 @@ function generateComplianceFilename(complianceType: string, propertyAddress: str
 
 // Auto-filing: creates compliance_items and compliance_documents records
 async function autoFileDocument(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   extraction: AIExtractionResult,
   documentId: string,
   orgId: string,
