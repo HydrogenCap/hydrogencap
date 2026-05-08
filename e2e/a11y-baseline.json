@@ -1,0 +1,3 @@
+{
+  "_comment": "Baseline moderate/minor a11y violation counts per <route-slug>-<mode>. Critical/serious always fail (gate is in spec, not here). Moderate/minor: spec fails if count INCREASES vs baseline; warns + suggests update if count DECREASES. Populated on first authenticated CI run, or via `npm run a11y:update-baseline`. Shape: { \"<route-slug>-<mode>\": { \"moderate\": N, \"minor\": N } }."
+}

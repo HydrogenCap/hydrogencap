@@ -27,3 +27,6 @@ test-results/
 *.sw?
 
 coverage/
+
+# a11y axe HTML reports
+e2e-results/axe/
