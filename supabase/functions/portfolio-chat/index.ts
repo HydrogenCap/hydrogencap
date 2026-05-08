@@ -416,9 +416,8 @@ serve(withInvocationLog("portfolio-chat", async (req, _invocationLog) => {
 
 // ─── Conversation management handlers ────────────────────────────────────────
 
-// deno-lint-ignore no-explicit-any
 async function handleListConversations(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   userId: string,
   corsHeaders: Record<string, string>
 ) {
@@ -442,9 +441,8 @@ async function handleListConversations(
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function handleDeleteConversation(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {
@@ -466,9 +464,8 @@ async function handleDeleteConversation(
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function handleUpdateConversation(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   conversationId: string,
   body: { title?: string },
   corsHeaders: Record<string, string>
@@ -496,9 +493,8 @@ async function handleUpdateConversation(
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function handleGetMessages(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   conversationId: string,
   corsHeaders: Record<string, string>
 ) {
