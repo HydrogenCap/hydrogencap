@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Database } from '@/integrations/supabase/types';
 import { DIST_TYPE_LABEL, fmt } from '../utils/badges';
+
+type DistributionRow = Database['public']['Tables']['investor_distributions']['Row'];
 
 export function DistributionsCard({
   distributions,
