@@ -459,3 +459,23 @@ SECURITY DEFINER, pinned `search_path = public, pg_temp`, and LANGUAGE plpgsql p
 **Codebase: no edits made this round.** `useTenancies.ts` (V2 reads, frozen mutations), `useProperties.ts` (Tenancy row-type alias), `tenancies-frozen.test.ts`, `useMigration.ts`/`backupConfig.ts` config arrays — all left as-is for the eventual #54b PR.
 
 **Soak rationale (carried forward to whenever #54b ships):** Option 2 — same as #48. Postgres log retention can't observe the soak server-side; rely on client-side `throwV1Frozen('tenancies', …)` (#54a) + `tenancies-frozen.test.ts` + verified absence of any `from('tenancies')` writers in `src/` or `supabase/functions/`.
+
+---
+
+## #54b precursor — Tenant-portal storage RLS cutover (shipped 2026-05-08)
+
+**Cheap path taken.** Pre-Build verification confirmed `tenant_portal_access` is empty in production (0 rows total / 0 active / 0 V1-only / 0 orphaned), so no backfill, no `agreement_id` column, no ID remap — just a single migration that swaps the policy and drops the orphaned function.
+
+**Migration (`supabase/migrations/…_54b-precursor-storage-policy-v2.sql`):**
+
+1. `DROP POLICY "Tenants can read their property documents" ON storage.objects;`
+2. Recreate joining `tenant_portal_access → tenancy_agreements → properties_v2`, gated on `tpa.can_view_documents = true`, same org-scoped folder check (`(storage.foldername(objects.name))[1] = p.org_id::text`), `TO authenticated` clause replaces the V1 `auth.role()` predicate.
+3. `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);` — confirmed zero callers beyond the row-trigger function (which drops with the V1 table); V2 has its own seeding via `v2-automation-triggers`.
+
+**Post-flight verified:** `to_regprocedure('public.generate_tenancy_compliance_items(public.tenancies)')` → NULL ✅; new policy present on `storage.objects` ✅.
+
+**Semantic change vs V1 policy:** added explicit `can_view_documents = true` gate (V1 ignored this column — latent bug). Org-scoping, read-only semantics, and coarseness unchanged. Empty-table state means observationally a no-op at cutover.
+
+**No code changes** — `useTenantPortalSession.ts` reads `tenant_portal_access` directly without a V1 join, so it was already V2-compatible.
+
+**#54b unblocked.** Remaining pre-flight on `public.tenancies` is now clean: only intra-table triggers + 2 own-table policies + composite row type left, all of which drop with the table. Next PR can ship `DROP TRIGGER v1_freeze_guard` + `DROP TABLE public.tenancies` (still no CASCADE). Tenant-portal page-level V2 cutover (per `.lovable/AF2_Tenant_Portal_V2.md`) remains separately scheduled and is not a #54b blocker.
