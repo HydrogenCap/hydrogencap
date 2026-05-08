@@ -88,7 +88,27 @@ type Costs = {
   insurance_rule_enabled: boolean | null;
   insurance_rule_percent_of_value: number | null;
 };
-type Tenancy = Database['public']['Tables']['tenancies']['Row'];
+// V1 `tenancies` table dropped (#54b, 2026-05-08). Local legacy shape preserved
+// so the deprecated useProperties/useProperty hook (kept for reference; embed
+// query is dead code at runtime since no consumer calls it) and downstream
+// PropertyWithFinancials consumers keep their original typing during the V2 cutover.
+type Tenancy = {
+  id: string;
+  property_id: string;
+  room_id: string | null;
+  tenant_id: string;
+  org_id: string;
+  start_date: string;
+  end_date: string | null;
+  rent_amount_pcm: number | null;
+  rent_frequency: string | null;
+  deposit_amount: number | null;
+  deposit_scheme: string | null;
+  status: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export interface PropertyWithFinancials extends Property {
   loans: Loan[];

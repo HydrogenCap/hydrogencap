@@ -479,3 +479,29 @@ SECURITY DEFINER, pinned `search_path = public, pg_temp`, and LANGUAGE plpgsql p
 **No code changes** — `useTenantPortalSession.ts` reads `tenant_portal_access` directly without a V1 join, so it was already V2-compatible.
 
 **#54b unblocked.** Remaining pre-flight on `public.tenancies` is now clean: only intra-table triggers + 2 own-table policies + composite row type left, all of which drop with the table. Next PR can ship `DROP TRIGGER v1_freeze_guard` + `DROP TABLE public.tenancies` (still no CASCADE). Tenant-portal page-level V2 cutover (per `.lovable/AF2_Tenant_Portal_V2.md`) remains separately scheduled and is not a #54b blocker.
+
+---
+
+## #54b — SHIPPED 2026-05-08 (deferral closed)
+
+**Precursor cleared:** storage RLS `"Tenants can read their property documents"` rewritten onto V2 (`tenant_portal_access → tenancy_agreements → properties_v2`) and `generate_tenancy_compliance_items(tenancies)` dropped — both #71-surfaced dependencies gone.
+
+**Pre-flight (single round-trip, all assertions passed):**
+- `v1_freeze_guard` trigger active on `public.tenancies` ✅
+- 0 FK refs ✅
+- 0 view refs ✅
+- **0 function/policy refs via `pg_depend`** (new check) ✅
+- 13 stale rows (informational — already mirrored in `tenancy_agreements` per #52)
+
+**Migration:** `supabase/migrations/20260508204109_…_drop-tenancies.sql` — `DROP TRIGGER IF EXISTS v1_freeze_guard ON public.tenancies` + bare `DROP TABLE public.tenancies` (no CASCADE — pre-flight verified zero deps).
+
+**Post-flight:** `to_regclass('public.tenancies')` → NULL ✅.
+
+**Codebase cleanup (mirrors #48 surface area):**
+- `src/hooks/useProperties.ts` — replaced `Database['public']['Tables']['tenancies']['Row']` with a local `Tenancy` type stub (18 fields incl. `rent_amount_pcm`, `status`, `start_date`, `end_date`, etc.) so the deprecated `useProperties`/`useProperty` hook (dead at runtime — no consumer calls it) and downstream `PropertyWithFinancials` consumers (incl. `propertyMetrics.ts`) keep typing.
+- `src/__tests__/tenancies-frozen.test.ts` deleted — table no longer exists; freeze-guard pattern still covered by `loans-frozen.test.ts`/`costs-frozen.test.ts`.
+- Sweep confirmed zero `from('tenancies')` / `public.tenancies` / `Tables['tenancies']` references in `src/` or `supabase/functions/`. `v1Frozen.ts`'s `'tenancies'` arm + the deprecated `useTenancies.ts` mutation stubs (throw before any DB call) intentionally preserved per #48 precedent. Config arrays in `useMigration.ts` and `backupConfig.ts` left as-is.
+
+**Rule lock — standard drop pre-flight now includes `pg_depend` check.** Going forward, any `DROP TABLE` of a frozen V1 table must assert zero non-trivial entries in `pg_depend` (excluding intra-table triggers, own-table policies, and the composite row type) before issuing the drop. This catches functions taking the row type as an argument and cross-schema RLS policies that FK/view scans miss — both of which #71 found the hard way.
+
+**V2 cutover COMPLETE end-to-end:** loans (#48), costs (Costs Prompt F, 2026-05-07), income (Income migration, 2026-05-06), tenancies (#54b, today) — all four V1 operational tables dropped. The remaining V1 tables (`properties`, `rooms`, `tenants`) host the deprecated `useProperties`/`useRooms`/`useTenants` hooks but are out of scope for this cutover.
