@@ -1,4 +1,4 @@
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import {
   LOAN_FACILITY_SELECT,
   loanFacilityToLegacyShape,
@@ -14,7 +14,7 @@ import {
 type ToolArgs = Record<string, unknown>;
 
 export async function executeTool(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   toolName: string,
   args: ToolArgs
@@ -40,7 +40,7 @@ export async function executeTool(
 // ─── get_property_details ────────────────────────────────────────────────────
 
 async function getPropertyDetails(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   args: ToolArgs
 ): Promise<string> {
@@ -235,7 +235,7 @@ async function getPropertyDetails(
 // ─── create_compliance_task ──────────────────────────────────────────────────
 
 async function createComplianceTask(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   args: ToolArgs
 ): Promise<string> {
@@ -262,7 +262,7 @@ async function createComplianceTask(
 // ─── calculate_portfolio_metrics ─────────────────────────────────────────────
 
 async function calculatePortfolioMetrics(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   args: ToolArgs
 ): Promise<string> {
@@ -424,7 +424,7 @@ async function calculatePortfolioMetrics(
 // ─── search_properties ───────────────────────────────────────────────────────
 
 async function searchProperties(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   args: ToolArgs
 ): Promise<string> {
@@ -512,7 +512,7 @@ async function searchProperties(
 // ─── generate_report ─────────────────────────────────────────────────────────
 
 async function generateReport(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   args: ToolArgs
 ): Promise<string> {
@@ -681,7 +681,7 @@ async function generateReport(
 // ─── schedule_reminder ───────────────────────────────────────────────────────
 
 async function scheduleReminder(
-  supabase: SupabaseClient,
+  supabase: AdminSupabaseClient,
   orgId: string,
   args: ToolArgs
 ): Promise<string> {
