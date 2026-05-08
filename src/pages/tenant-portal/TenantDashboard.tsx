@@ -46,8 +46,7 @@ export default function TenantDashboard() {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: tenancy_agreements + embedded relations; pending V2 schema codegen.
-      const d = data as any;
+      const d = data as DashboardAgreement;
       return {
         ...d,
         end_date: d.actual_end_date ?? d.initial_end_date ?? null,
