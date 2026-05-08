@@ -1,133 +1,55 @@
-# #54b Precursor Scope — Tenant Portal Access V2 Cutover
+# T8 #61 audit — STOP-and-ask before any rename ship
 
-## TL;DR — Go/No-Go
+## Step 1 — V1-sibling audit (5 tables)
 
-**GO. Cheap path.** A single Build prompt covers the precursor. No DDL on `tenant_portal_access`, no backfill, no ID remap. The V1 storage policy can be replaced with a V2 equivalent in one migration; `generate_tenancy_compliance_items(tenancies)` can be dropped outright; then #54b's `DROP TABLE public.tenancies` proceeds unchanged.
+| V1 table | V1 rows | V2 rows | Δ | V1 inbound FKs | pg_depend (non-trivial) | Live `from('<v1>')` refs in src/ + edge fns | Recommendation |
+|---|---:|---:|---:|---:|---|---|---|
+| `properties` | 25 | 27 | **−2 (stale)** | 2 | **2 views** (`investor_return_metrics`, `investor_commitment_detail`) + RLS on `floorplans`, `ownership_links`, `storage.objects/floorplans` JOIN-ing `properties` | **23 refs** (17 edge fns: bulk-epc/price-paid, freeagent-sync, process-document, summarize-valuation, send-weekly-compliance, send-tenant-certs, etc.; 6 src hooks: useProperties, useLeaseholdDetails, useInsuranceTracker, usePropertyPhotosV2, InsurancePolicyForm) + `Tables['properties']` typed in useProperties.ts | **investigate / cutover-needed (large)** |
+| `rooms` | 17 | 23 | **−6 (stale)** | 0 | none | **3 refs** (src/hooks/useUnitUsage, supabase/functions/portfolio-chat/tool-executor x2) | **precursor-needed** (small surface, but live) |
+| `tenants` | 3 | 3 | 0 | 1 | none | **3 refs** (send-tenant-certificates, useBatchRenameDocuments, useDocumentManagement) | **precursor-needed** |
+| `compliance_documents` | 117 | 224 | **−107 (very stale)** | 0 | **4 own RLS policies** (auto-deps via pg_depend; not blocking but rewrite needed); plus the storage RLS policy historically referenced this — confirm post-#71 | **12 refs** (process-document edge fn x3, send-tenant-certs, useCompliance x4, useRenewalWorkflow x3, TenantCertificates portal page) | **investigate / cutover-needed** (data gap is biggest of all 5) |
+| `share_classes` | 19 | 19 | 0 | 0 | RLS join via `companies` (own-table, deps unwind on drop) | **10 refs** (useCompanies x5, useShareRegister x4, useCompanyLookthrough) | **precursor-needed** |
 
-## Step 1 — Current state
+Cross-checked `check:no-v1-refs` allowlist — these 5 tables aren't in the script's `V1_TABLES` list, so CI hasn't been blocking them; the references above are all real production code.
 
-### 1a. Storage RLS policy `"Tenants can read their property documents"`
+### Critical finding (the STOP)
 
-```sql
-USING (
-  bucket_id = 'documents'
-  AND auth.role() = 'authenticated'
-  AND EXISTS (
-    SELECT 1
-    FROM tenant_portal_access tpa
-    JOIN tenancies t ON tpa.tenancy_id = t.id
-    JOIN properties p ON t.property_id = p.id
-    WHERE tpa.user_id = auth.uid()
-      AND tpa.revoked_at IS NULL
-      AND (storage.foldername(objects.name))[1] = p.org_id::text
-  )
-)
--- WITH CHECK: NULL (read-only policy)
-```
+Three of the five V1s are being **read live by current code on data that's measurably stale vs V2**:
+- `compliance_documents`: code reads V1 (117 rows) while V2 has 224 — code is missing **48% of compliance docs**.
+- `rooms`: V1 17 rows vs V2 23 — useUnitUsage and portfolio-chat tool-executor see a stale unit count.
+- `properties`: V1 25 vs V2 27 — useProperties (the central hook) plus 17 edge functions are reading the wrong source of truth for some rows.
 
-**Semantics:** authenticated user with a non-revoked `tenant_portal_access` row → can read any object in `documents` bucket whose first path segment is the org_id of the property attached to their tenancy. (Org-scoped, not property-scoped — coarse by design.)
+The other two (`tenants`, `share_classes`) match row counts but still have substantial code traffic.
 
-### 1b. `generate_tenancy_compliance_items(tenancies)` — disposition
+This is **not a freeze-trigger candidate set** — it's a real cutover gap. Plan §0a's "4/4 complete" claim was true only for `loans`/`tenancies`/`costs`/`income`; the V2-suffix tables that have V1 siblings are a separate, larger workstream that was never completed.
 
-- Body inserts seeded `tenancy_compliance_items` rows on tenancy creation (gas cert, EPC, deposit protection, right-to-rent, etc.).
-- Called by exactly one site: trigger function `public.trigger_generate_tenancy_compliance()`, attached as `generate_tenancy_compliance_after_insert` on `public.tenancies`.
-- That trigger drops with the table. The function has **no other callers** (verified: zero `pg_proc` defs reference it apart from the trigger fn, zero `src/` and `supabase/functions/` matches in #71's audit).
-- `#54a` write-freeze means no new INSERTs reach it anyway.
-- **Disposition: DROP outright.** No V2 rewrite. V2 compliance seeding is handled elsewhere (`v2-automation-triggers` memory — `tenancy_agreements` has its own seeding path).
+## Step 2 — 4-clean rename surface (deferred pending Step 1 decision)
 
-### 1c. `tenant_portal_access` schema
+For completeness, the rename surface for the 4 truly-clean V2 tables, sorted by blast radius:
 
-Columns: `id`, `org_id`, `tenant_id`, `tenancy_id`, `user_id`, `invite_id`, `granted_at`, `revoked_at`, `can_view_rent`, `can_view_documents`, `can_submit_maintenance`.
+| V2 → canonical | Hook files | Page/component files | Edge fn refs | SQL refs (migrations to write) |
+|---|---|---|---|---|
+| `property_income_budgets_v2` → `property_income_budgets` | `usePropertyIncomeBudgets.ts`, `propertyIncomeBudgetCompat.ts` | (none direct) | `_shared/propertyIncomeBudget.ts`, callers in financial summarisation fns | rename table + FK names; update RLS policy names |
+| `property_cost_budgets_v2` → `property_cost_budgets` | `usePropertyCostBudgets.ts`, `propertyCostBudgetCompat.ts` | (none direct) | `_shared/propertyCostBudget.ts` + ~3 callers | rename table + FK names; update RLS |
+| `compliance_requirements_v2` → `compliance_requirements` | `useCompliance.ts`, `useComplianceRequirements*.ts` | ComplianceTasks pages | `auto-compliance-pipeline`, `create-compliance-jobs`, `send-weekly-compliance-email` | rename + RLS + automation triggers |
+| `compliance_contractors_v2` → `compliance_contractors` | `useComplianceContractors.ts` | JobsAndWorks, JobDetail, WorkOrderDetail | `send-job-reminders` | rename + 2 inbound FKs (work_orders, jobs) |
 
-Constraints/indexes: PK on `id`, unique `(user_id, tenancy_id)`. **No FK from `tenancy_id` to `public.tenancies`** — the column is a bare `uuid`, so dropping `public.tenancies` does not cascade-affect this table. Good.
+Order is correct — budgets first (zero UI surface), compliance second (heavier).
 
-### 1d. Other deps on `public.tenancies` via `pg_depend`
+## Step 3 — Ship recommendation
 
-Cross-checked all non-trivial dep classes. Findings:
+**Do NOT ship the partial-#61 rename tonight, and do NOT queue freeze-triggers for the 5 V1 siblings as currently scoped.** The freeze pattern presumes zero live traffic; we have heavy live traffic plus measurable data drift.
 
-- 2 RLS policies on `public.tenancies` itself (`Org members manage tenancies`, `Tenants view own tenancies`) — drop with table.
-- 1 storage policy (the one above) — the dep we're handling.
-- The composite row type (`pg_type` entry) — drops with table.
-- 4 other triggers on `public.tenancies` (`trigger_auto_rent_schedule`, `trigger_update_room_on_tenancy`, `update_tenancies_updated_at`, `v1_freeze_guard`) — all drop with table; their underlying functions don't take `tenancies` as a row-type argument so they survive harmlessly.
+Three options for David to pick between:
 
-**No third missed dep.** Pre-flight clean once policy + function are dealt with.
+1. **Ship partial-#61 only (4 clean V2 → canonical), park the 5 V1 siblings entirely.** Lowest risk for tonight. The 4 renames are independent of the 5-V1 mess — they don't share names, RLS, or FKs with the dirty set. After ship, open a single multi-prompt §0b workstream to migrate src/ + edge fns from V1 → V2 for properties/rooms/tenants/compliance_documents/share_classes (one table per parked-window cycle), then freeze-soak-drop each. **Recommended.**
 
-## Step 2 — `tenant_portal_access` ↔ `tenancy_agreements` mapping
+2. **Hold #61 entirely** until §0b lands, so the eventual rename is one clean sweep. Cleaner end-state, but parks #61 for several cycles and the 4 clean renames are zero-risk waste-of-waiting.
 
-```
-total tenant_portal_access rows .................. 0
-active (revoked_at IS NULL) ...................... 0
-tenancy_id matches tenancy_agreements.id ......... 0
-tenancy_id matches public.tenancies only (V1) .... 0
-orphaned (matches neither) ....................... 0
-```
+3. **Investigate compliance_documents first** as an urgent bug (48% data drift on a hot read path) — could be its own Plan ticket ahead of either #61 or §0b, since it may already be causing user-visible compliance gaps.
 
-The table is empty in production. (Tenant portal not yet onboarded with real users.)
+## Question for David
 
-**Implication:** there is nothing to backfill, nothing to remap, no risk of breaking live tenant sessions. The `tenancy_id` column can stay bare-uuid for now; future inserts from invite acceptance will write `tenancy_agreements.id` directly.
+Which path? Default recommendation is **(1) ship partial-#61 + open §0b as a 5-prompt cutover series, with compliance_documents prioritised first inside §0b given its drift size**. Option (3) — peeling compliance_documents out as a hotfix — is also defensible if you suspect the drift has been causing support tickets.
 
-## Step 3 — Recommendation: **Cheap path**
-
-Single migration:
-1. `DROP POLICY "Tenants can read their property documents" ON storage.objects;`
-2. `CREATE POLICY` (V2 equivalent — see Step 4).
-3. `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);`
-
-Then #54b lands as drafted (`DROP TRIGGER v1_freeze_guard` + `DROP TABLE public.tenancies`) — either same PR or follow-up.
-
-No code changes required: `useTenantPortalSession.ts` already reads `tenant_portal_access` directly with no join through V1. Tenant portal pages still need their own V2 cutover (per `.lovable/AF2_Tenant_Portal_V2.md`) but that's orthogonal to #54b — it can ship before or after.
-
-## Step 4 — Draft V2 storage policy
-
-```sql
-CREATE POLICY "Tenants can read their property documents"
-ON storage.objects
-FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'documents'
-  AND EXISTS (
-    SELECT 1
-    FROM public.tenant_portal_access tpa
-    JOIN public.tenancy_agreements ta ON ta.id = tpa.tenancy_id
-    JOIN public.properties_v2 p ON p.id = ta.property_id
-    WHERE tpa.user_id = auth.uid()
-      AND tpa.revoked_at IS NULL
-      AND tpa.can_view_documents = true
-      AND (storage.foldername(objects.name))[1] = p.org_id::text
-  )
-);
-```
-
-Differences vs V1 — all intentional improvements:
-- Joins V2 graph (`tenancy_agreements` → `properties_v2`).
-- Adds `can_view_documents = true` gate (V1 ignored this column — bug).
-- `TO authenticated` clause replaces `auth.role() = 'authenticated'` predicate (idiomatic).
-- Same org-scoped folder check, same read-only semantics, same coarseness — no behavioural regression for any future tenant session.
-
-Because `tenant_portal_access` is empty, the rewrite is observationally a no-op at cutover time.
-
-## Step 5 — `generate_tenancy_compliance_items` disposition: **DROP**
-
-Confirmed in Step 1b. Single line: `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);`. No rewrite, no V2 equivalent needed (V2 has its own seeding via `v2-automation-triggers`).
-
-## Step 6 — Recommended Build prompt outline (for the follow-up)
-
-> **Build mode. Goal: ship #54b precursor — rewrite tenant-portal storage policy onto V2, drop the orphaned V1 compliance-seed function. Single migration, no backfill (tenant_portal_access is empty — verified 2026-05-08). Steps:**
->
-> 1. **Migration** with three statements, in order:
->    - `DROP POLICY "Tenants can read their property documents" ON storage.objects;`
->    - `CREATE POLICY` joining `tenant_portal_access → tenancy_agreements → properties_v2`, gated on `can_view_documents = true`, org-scoped folder check (see drafted SQL in plan).
->    - `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);`
-> 2. **Verify** post-migration: `to_regprocedure('public.generate_tenancy_compliance_items(public.tenancies)')` is NULL; new policy exists on `storage.objects`; `pg_depend` on `public.tenancies` shows zero non-trivial entries (only intra-table triggers + 2 own-table policies + composite row type left).
-> 3. **No code changes** — `useTenantPortalSession.ts` already V2-compatible (queries `tenant_portal_access` directly, no V1 join).
-> 4. **Document** in `docs/release/v2-design-loans-income-costs-tenancies-2026-04-30.md` under #54b precursor — state cheap-path rationale, empty-table evidence, semantic improvements (added `can_view_documents` gate).
-> 5. **Then unblock #54b** — schedule the `DROP TABLE public.tenancies` migration as a follow-up PR (or same PR, two migration files, separate commits) once this lands.
->
-> **STOP-and-ask** if `tenant_portal_access` row count is non-zero at Build time (changes the calculus — needs sanity check that any live `tenancy_id`s resolve in `tenancy_agreements`).
-
-## Risks / edge cases
-
-- **`tenant_portal_access` could gain rows between now and Build.** Mitigation: re-run the row-count check at Build time (cheap). If a row appears with a `tenancy_id` not in `tenancy_agreements`, it's a bug in invite acceptance — fix the writer, don't backfill.
-- **Tenant portal pages still query V1 tables** (per AF2 plan) — out of scope for this precursor and for #54b; the storage RLS rewrite doesn't depend on the page-level cutover.
-- **No data loss risk** — `tenancy_compliance_items` rows already inserted historically by the function are untouched (the rows persist; only the seeding function is removed).
+Either way, this audit's row-drift numbers should be saved into the §0b prompt body so future-Claude doesn't repeat the "looks dropable" mistake.
