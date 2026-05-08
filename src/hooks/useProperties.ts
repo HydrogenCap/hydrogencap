@@ -22,7 +22,18 @@ import {
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
 type PropertyV1Update = Database['public']['Tables']['properties']['Update'];
-type Loan = Database['public']['Tables']['loans']['Row'];
+// V1 `loans` table dropped (#48, 2026-05-08). Local legacy shape preserved
+// so the deprecated useCreateLoan/useUpdateLoan stubs (which throw before any
+// DB call via throwV1Frozen) keep their original return type.
+type Loan = {
+  id: string;
+  property_id: string;
+  lender: string | null;
+  amount: number | null;
+  interest_rate: number | null;
+};
+type LoanInsertLegacy = Partial<Loan> & { property_id: string };
+type LoanUpdateLegacy = Partial<Loan>;
 // V1 `income` table dropped (Income migration 2026-05-06). Local legacy shape
 // preserved so PropertyWithFinancials downstream consumers keep typing.
 type Income = {
@@ -221,7 +232,7 @@ export function useCreateLoan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_loan: Database['public']['Tables']['loans']['Insert']): Promise<Loan> => {
+    mutationFn: async (_loan: LoanInsertLegacy): Promise<Loan> => {
       throwV1Frozen('loans', 'useCreateLoan');
     },
     onSuccess: (data) => {
@@ -239,7 +250,7 @@ export function useUpdateLoan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_args: Database['public']['Tables']['loans']['Update'] & {
+    mutationFn: async (_args: LoanUpdateLegacy & {
       id: string;
       previousRate?: number | null;
     }): Promise<Loan> => {
