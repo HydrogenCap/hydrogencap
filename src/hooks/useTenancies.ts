@@ -15,7 +15,20 @@
  */
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { throwV1Frozen } from '@/lib/v1Frozen';
+
+type AgreementRow = Database['public']['Tables']['tenancy_agreements']['Row'];
+type TenantV2Row = Database['public']['Tables']['tenants_v2']['Row'];
+type RoomV2Row = Database['public']['Tables']['rooms_v2']['Row'];
+type PropertyV2Row = Database['public']['Tables']['properties_v2']['Row'];
+
+// Shape returned by V2_SELECT below: agreement row + selected embedded child columns.
+type AgreementWithEmbeds = AgreementRow & {
+  tenant: Pick<TenantV2Row, 'id' | 'first_name' | 'last_name' | 'email' | 'phone'> | null;
+  room: Pick<RoomV2Row, 'id' | 'room_name' | 'room_type'> | null;
+  property: Pick<PropertyV2Row, 'id' | 'address_line_1' | 'postcode'> | null;
+};
 
 export type TenancyStatus = 'pending' | 'active' | 'notice' | 'ended';
 
