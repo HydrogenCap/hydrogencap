@@ -46,6 +46,7 @@ type Loan = {
   term_years: number | null;
   loan_term_months: number | null;
   loan_start_date: string | null;
+  payment_auto_calculated_gbp: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
