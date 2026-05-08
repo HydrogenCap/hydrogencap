@@ -22,7 +22,37 @@ import {
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyV1Insert = Database['public']['Tables']['properties']['Insert'];
 type PropertyV1Update = Database['public']['Tables']['properties']['Update'];
-type Loan = Database['public']['Tables']['loans']['Row'];
+// V1 `loans` table dropped (#48, 2026-05-08). Local legacy shape preserved
+// so the deprecated useCreateLoan/useUpdateLoan stubs (which throw before any
+// DB call via throwV1Frozen) and downstream PropertyWithFinancials consumers
+// keep their original typing during the V2 cutover.
+type Loan = {
+  id: string;
+  property_id: string;
+  lender: string | null;
+  interest_rate_percent: number | null;
+  fixed_or_variable: string | null;
+  mortgage_type: string | null;
+  capital_or_interest: string | null;
+  fixed_rate_expires: string | null;
+  reversion_rate_percent: number | null;
+  refinance_target_date: string | null;
+  broker_name: string | null;
+  broker_contact: string | null;
+  current_mortgage_balance_gbp: number | null;
+  mortgage_payment_gbp: number | null;
+  payment_override_gbp: number | null;
+  payment_source: string | null;
+  term_years: number | null;
+  loan_term_months: number | null;
+  loan_start_date: string | null;
+  payment_auto_calculated_gbp: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+type LoanInsertLegacy = Partial<Loan> & { property_id: string };
+type LoanUpdateLegacy = Partial<Loan>;
 // V1 `income` table dropped (Income migration 2026-05-06). Local legacy shape
 // preserved so PropertyWithFinancials downstream consumers keep typing.
 type Income = {
@@ -221,7 +251,7 @@ export function useCreateLoan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_loan: Database['public']['Tables']['loans']['Insert']): Promise<Loan> => {
+    mutationFn: async (_loan: LoanInsertLegacy): Promise<Loan> => {
       throwV1Frozen('loans', 'useCreateLoan');
     },
     onSuccess: (data) => {
@@ -239,7 +269,7 @@ export function useUpdateLoan() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (_args: Database['public']['Tables']['loans']['Update'] & {
+    mutationFn: async (_args: LoanUpdateLegacy & {
       id: string;
       previousRate?: number | null;
     }): Promise<Loan> => {
