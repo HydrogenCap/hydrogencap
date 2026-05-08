@@ -413,7 +413,7 @@ Deno.serve(withInvocationLog("process-document", async (req, _invocationLog) => 
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getAdminClient();
 
     // Update status
     await supabase.from("documents").update({ extraction_status: "processing" }).eq("id", documentId);
@@ -644,9 +644,7 @@ Respond with valid JSON only (no markdown):
     // Reset document status to 'failed' so it doesn't stay stuck at 'processing'
     if (parsedDocumentId) {
       try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+        const adminClient = getAdminClient();
         
         await adminClient.from("documents").update({ 
           extraction_status: "failed",
