@@ -14,7 +14,7 @@ export function ReportHistoryCard({
   downloadInvestorReport,
   downloading,
 }: {
-  reports: Array<Record<string, unknown>> | undefined;
+  reports: ReportRow[] | undefined;
   onGenerate: () => void;
   downloadInvestorReport: (path: string, name: string) => Promise<void> | void;
   downloading: boolean;
