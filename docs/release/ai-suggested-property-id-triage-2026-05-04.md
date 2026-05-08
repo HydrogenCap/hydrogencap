@@ -232,3 +232,31 @@ David picked **B + lightweight C**. Implementation:
 - `docs/release/ai-suggested-property-id-triage-2026-05-04.md` (this section)
 
 No schema changes, no migrations.
+
+## 5 stuck NULL-confidence suggestions cleared 2026-05-08
+
+Per David's per-row triage (see `.lovable/plan.md` and the Row 5 follow-up), all 5 NULL-confidence rows that had been trapped in the Inbox manual-review bucket since 2026-04-26/28 were approved to their `ai_suggested_property_id` via a one-shot, idempotent migration.
+
+**Migration:** `supabase/migrations/<auto>-approve-5-stuck-suggestions.sql` — single `DO $$ ... $$` block, preflight `RAISE EXCEPTION` if expected-update count fell outside `[0,5]`, guard `WHERE id IN (…) AND property_id IS NULL AND ai_suggested_property_id IS NOT NULL` (idempotent — re-running is a no-op).
+
+**Field mapping** (reconciled against schema — original spec mentioned non-existent fields):
+- `property_id ← ai_suggested_property_id`
+- `doc_type ← COALESCE(ai_suggested_doc_type, doc_type)`
+- `review_status = 'accepted'` (matches existing CHECK constraint `'pending'|'accepted'|'rejected'` and the value Inbox-click + `process-document` edge function already use; spec's `'confirmed'` would have violated the CHECK)
+- `updated_at = now()`
+- `confirmed_at` / `confirmed_by` — **skipped, columns do not exist** on `public.documents`
+
+| # | id | approved → property | corroborating signals |
+|---|---|---|---|
+| 1 | `fae24951-9e46-4066-9b34-0adb5627df67` | `f4938519…` (25 Arle Gardens, GL51 8HP) | filename `25 Arle Gardnens - Insurance.pdf` (typo); extracted_address_text `25 Arle Gardens, Cheltenham`; doc_type `building_insurance` (conf 0.99) |
+| 2 | `2a274297-c909-48ac-ad94-cd73f3cf0000` | `f4938519…` (25 Arle Gardens, GL51 8HP) | filename `25 Arle Gardens - Fire Risk Assement.pdf`; extracted_address `25 Arle Gardens, Cheltenham`; doc_type `fire_risk_assessment` (conf 1.00) |
+| 3 | `d982d87d-d086-4fc2-ba11-bda6f5cd1408` | `f4938519…` (25 Arle Gardens, GL51 8HP) | filename `25 Arle Gardens – Fire Alarm Certificate Feb 2026.pdf`; extracted_address `25 Arle Gardens, Cheltenham, Gloucestershire`; doc_type `fire_alarm_certificate` (conf 0.99) |
+| 4 | `8449adcd-6a1b-4937-abd5-9668f95dc86e` | `f4938519…` (25 Arle Gardens, GL51 8HP) | filename `25 Arle Gardens – Gas Safety Certificate Feb 2026.pdf`; extracted_address `25 Arle Gardens\nCheltenham`; doc_type `gas_safety_certificate` (conf 1.00) |
+| 5 | `ac7a6017-5fc1-4cb6-a285-ea7422ccd92f` | `bb3cef38…` (12 Thames Road, Cheltenham, GL52 5PT) | filename opaque `Gas_Certificate_Ref_68489259 (3).pdf`; extracted_address `12 Thames Road\nCheltenham`; ref number `68489259` matches filename; issue date `2025-04-10`; doc_type `gas_safety_certificate` (conf 0.99) |
+
+**Post-flight verification (read query):**
+- All 5 rows: `property_id IS NOT NULL` ✅, `review_status = 'accepted'` ✅, `doc_type` matches `ai_suggested_doc_type` ✅.
+- Portfolio-wide `count(*) WHERE property_id IS NULL AND ai_suggested_property_id IS NOT NULL AND ai_property_confidence IS NULL` = **0**.
+- `partitionReadyDocs()` no longer sees them — the Inbox query in `useDocuments.ts` filters on `review_status = 'pending'`, so accepted rows drop off the gate input entirely.
+
+**Summary:** 5 rows updated; 2 properties touched (`f4938519…` × 4 docs, `bb3cef38…` × 1 doc); post-flight stuck-count = 0.
