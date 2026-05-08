@@ -2,16 +2,19 @@
 //
 // Edge functions cannot import from `src/` so the `Database` generic from
 // `src/integrations/supabase/types.ts` is unavailable here. We expose the
-// inferred `ReturnType<typeof createClient>` instead — same trade-off the
-// previously per-site `as unknown as ReturnType<typeof createClient>` casts
-// were already making, now codified in one place.
+// permissive `SupabaseClient` (default generics) instead — same trade-off
+// the previously per-site `as unknown as ReturnType<typeof createClient>`
+// casts were already making, now codified in one place.
 //
 // Test code may inject a structural stub via `AdminSupabaseLike` (mirrors
 // the `RateLimitSupabaseLike` precedent in `_shared/rateLimit.ts`).
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-export type AdminSupabaseClient = ReturnType<typeof createClient>;
+// Bare `SupabaseClient` defaults to `<any, "public", any>` — assignable from
+// both anon-key user clients and service-role admin clients without casts.
+// deno-lint-ignore no-explicit-any
+export type AdminSupabaseClient = SupabaseClient<any, "public", any>;
 
 // deno-lint-ignore no-explicit-any
 export type AdminSupabaseLike = { from: (table: string) => any; auth?: any; storage?: any };
