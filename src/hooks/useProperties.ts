@@ -258,19 +258,11 @@ export function useUpdateLoan() {
 
 // V1 `income` table dropped (Income migration 2026-05-06). Writes redirected
 // to V2 `property_income_budgets_v2` via useUpsertPropertyIncomeBudget.
+// mutationFn always throws — onSuccess removed (was dead code).
 export function useUpsertIncome() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (_income: { property_id: string; year: number; annual_rent_gbp: number }) => {
       throwV1Frozen('income', 'useUpsertIncome');
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V1-frozen dead path; mutationFn always throws so onSuccess never runs.
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-      ActivityLoggers.incomeUpdated(data.property_id, data.year, Number(data.annual_rent_gbp));
-      showMutationSuccess('Income updated');
     },
     onError: (error) => {
       showMutationError(error, 'Failed to update income');
@@ -280,28 +272,11 @@ export function useUpsertIncome() {
 
 // V1 `costs` table is frozen (Costs Prompt B). Writes redirected to V2
 // `property_cost_budgets_v2` via useUpsertPropertyCostBudget.
+// mutationFn always throws — onSuccess removed (was dead code).
 export function useUpsertCosts() {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (_costs: Partial<Costs>) => {
       throwV1Frozen('costs', 'useUpsertCosts');
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: V1-frozen dead path; mutationFn always throws so onSuccess never runs.
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['property', data.property_id] });
-      queryClient.invalidateQueries({ queryKey: ['properties'] });
-      const total = [
-        data.management_gbp_manual,
-        data.bills_gbp_manual,
-        data.insurance_gbp_manual,
-        data.repairs_gbp_manual,
-        data.compliance_gbp_manual,
-        data.other_gbp_manual,
-      ].reduce((sum: number, val: number | string | null | undefined) => sum + (val ? Number(val) : 0), 0);
-
-      ActivityLoggers.costsUpdated(data.property_id, data.year, total);
-      showMutationSuccess('Costs updated');
     },
     onError: (error) => {
       showMutationError(error, 'Failed to update costs');
