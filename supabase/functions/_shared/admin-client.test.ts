@@ -78,20 +78,27 @@ Deno.test("getAdminClient throws when SUPABASE_SERVICE_ROLE_KEY is missing", () 
   );
 });
 
-Deno.test("getAdminClient returns a client with a .from() method when env is set", () => {
-  withEnv(
-    {
-      SUPABASE_URL: "https://example.supabase.co",
-      SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-    },
-    () => {
-      const client = getAdminClient();
-      assert(client, "expected a client instance");
-      assert(typeof client.from === "function", "client.from must be a function");
-      const builder = client.from("any_table");
-      assert(builder, "from() should return a query builder");
-    },
-  );
+Deno.test({
+  name: "getAdminClient returns a client with a .from() method when env is set",
+  // The underlying supabase-js client schedules auth-refresh timers we don't
+  // own; suppress leak detection for this single happy-path test.
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: () => {
+    withEnv(
+      {
+        SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+      },
+      () => {
+        const client = getAdminClient();
+        assert(client, "expected a client instance");
+        assert(typeof client.from === "function", "client.from must be a function");
+        const builder = client.from("any_table");
+        assert(builder, "from() should return a query builder");
+      },
+    );
+  },
 });
 
 Deno.test("AdminSupabaseLike accepts a minimal structural stub", () => {
