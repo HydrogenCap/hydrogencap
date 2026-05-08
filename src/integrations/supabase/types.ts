@@ -10967,10 +10967,6 @@ export type Database = {
         }
         Returns: string
       }
-      generate_tenancy_compliance_items: {
-        Args: { tenancy_row: Database["public"]["Tables"]["tenancies"]["Row"] }
-        Returns: undefined
-      }
       generate_wo_number: {
         Args: { p_entity_id: string; p_org_id: string }
         Returns: string

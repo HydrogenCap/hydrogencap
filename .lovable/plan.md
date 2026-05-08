@@ -1,96 +1,133 @@
+# #54b Precursor Scope — Tenant Portal Access V2 Cutover
 
-# #48 — Drop `public.loans` (ship today, 2026-05-08)
+## TL;DR — Go/No-Go
 
-## Go/no-go evidence summary
+**GO. Cheap path.** A single Build prompt covers the precursor. No DDL on `tenant_portal_access`, no backfill, no ID remap. The V1 storage policy can be replaced with a V2 equivalent in one migration; `generate_tenancy_compliance_items(tenancies)` can be dropped outright; then #54b's `DROP TABLE public.tenancies` proceeds unchanged.
 
-| Check | Result |
-|---|---|
-| `v1_freeze_guard` trigger installed & enabled on `public.loans` | ✅ `pg_trigger.tgenabled = 'O'` |
-| Trigger function emits canonical message (post-#54c) | ✅ `RAISE EXCEPTION 'V1 table % is frozen — write to % instead'` with `ERRCODE='check_violation'` |
-| Client-side guard (`throwV1Frozen('loans', …)`) wired into all V1 loan mutation hooks (#45) | ✅ |
-| `src/__tests__/loans-frozen.test.ts` asserts insert/update/delete throw the canonical message | ✅ |
-| Postgres-log soak count since 2026-05-04 | ⚠️ Inconclusive — analytics retains only ~minutes of `postgres_logs`; cannot evidence the 4-day window. Decision: accept client+CI evidence in lieu of server soak. |
+## Step 1 — Current state
 
-**Recommendation accepted:** ship #48 today.
-
-## Implementation steps
-
-### 1. Pre-flight read-only checks (one psql round-trip; abort if any fail)
+### 1a. Storage RLS policy `"Tenants can read their property documents"`
 
 ```sql
--- a) Trigger still active right before we drop
-SELECT 1 FROM pg_trigger
-WHERE tgname='v1_freeze_guard'
-  AND tgrelid='public.loans'::regclass
-  AND tgenabled='O';
-
--- b) No FKs from any other table point at public.loans
-SELECT conname, conrelid::regclass
-FROM pg_constraint
-WHERE confrelid='public.loans'::regclass AND contype='f';
-
--- c) No views, RLS policies, or functions still reference it
-SELECT n.nspname||'.'||c.relname AS view
-FROM pg_rewrite r JOIN pg_class c ON c.oid=r.ev_class
-JOIN pg_namespace n ON n.oid=c.relnamespace
-WHERE r.ev_action::text LIKE '%public.loans%' AND c.relkind='v';
-
--- d) Row count snapshot for the audit doc
-SELECT count(*) AS frozen_row_count FROM public.loans;
+USING (
+  bucket_id = 'documents'
+  AND auth.role() = 'authenticated'
+  AND EXISTS (
+    SELECT 1
+    FROM tenant_portal_access tpa
+    JOIN tenancies t ON tpa.tenancy_id = t.id
+    JOIN properties p ON t.property_id = p.id
+    WHERE tpa.user_id = auth.uid()
+      AND tpa.revoked_at IS NULL
+      AND (storage.foldername(objects.name))[1] = p.org_id::text
+  )
+)
+-- WITH CHECK: NULL (read-only policy)
 ```
 
-If (a) returns 0 row → STOP, re-install trigger first.
-If (b) or (c) return rows → STOP, ask before proceeding (need to drop/repoint dependents).
+**Semantics:** authenticated user with a non-revoked `tenant_portal_access` row → can read any object in `documents` bucket whose first path segment is the org_id of the property attached to their tenancy. (Org-scoped, not property-scoped — coarse by design.)
 
-### 2. Migration `supabase/migrations/<auto>-drop-v1-loans.sql`
+### 1b. `generate_tenancy_compliance_items(tenancies)` — disposition
 
-Single transaction:
+- Body inserts seeded `tenancy_compliance_items` rows on tenancy creation (gas cert, EPC, deposit protection, right-to-rent, etc.).
+- Called by exactly one site: trigger function `public.trigger_generate_tenancy_compliance()`, attached as `generate_tenancy_compliance_after_insert` on `public.tenancies`.
+- That trigger drops with the table. The function has **no other callers** (verified: zero `pg_proc` defs reference it apart from the trigger fn, zero `src/` and `supabase/functions/` matches in #71's audit).
+- `#54a` write-freeze means no new INSERTs reach it anyway.
+- **Disposition: DROP outright.** No V2 rewrite. V2 compliance seeding is handled elsewhere (`v2-automation-triggers` memory — `tenancy_agreements` has its own seeding path).
+
+### 1c. `tenant_portal_access` schema
+
+Columns: `id`, `org_id`, `tenant_id`, `tenancy_id`, `user_id`, `invite_id`, `granted_at`, `revoked_at`, `can_view_rent`, `can_view_documents`, `can_submit_maintenance`.
+
+Constraints/indexes: PK on `id`, unique `(user_id, tenancy_id)`. **No FK from `tenancy_id` to `public.tenancies`** — the column is a bare `uuid`, so dropping `public.tenancies` does not cascade-affect this table. Good.
+
+### 1d. Other deps on `public.tenancies` via `pg_depend`
+
+Cross-checked all non-trivial dep classes. Findings:
+
+- 2 RLS policies on `public.tenancies` itself (`Org members manage tenancies`, `Tenants view own tenancies`) — drop with table.
+- 1 storage policy (the one above) — the dep we're handling.
+- The composite row type (`pg_type` entry) — drops with table.
+- 4 other triggers on `public.tenancies` (`trigger_auto_rent_schedule`, `trigger_update_room_on_tenancy`, `update_tenancies_updated_at`, `v1_freeze_guard`) — all drop with table; their underlying functions don't take `tenancies` as a row-type argument so they survive harmlessly.
+
+**No third missed dep.** Pre-flight clean once policy + function are dealt with.
+
+## Step 2 — `tenant_portal_access` ↔ `tenancy_agreements` mapping
+
+```
+total tenant_portal_access rows .................. 0
+active (revoked_at IS NULL) ...................... 0
+tenancy_id matches tenancy_agreements.id ......... 0
+tenancy_id matches public.tenancies only (V1) .... 0
+orphaned (matches neither) ....................... 0
+```
+
+The table is empty in production. (Tenant portal not yet onboarded with real users.)
+
+**Implication:** there is nothing to backfill, nothing to remap, no risk of breaking live tenant sessions. The `tenancy_id` column can stay bare-uuid for now; future inserts from invite acceptance will write `tenancy_agreements.id` directly.
+
+## Step 3 — Recommendation: **Cheap path**
+
+Single migration:
+1. `DROP POLICY "Tenants can read their property documents" ON storage.objects;`
+2. `CREATE POLICY` (V2 equivalent — see Step 4).
+3. `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);`
+
+Then #54b lands as drafted (`DROP TRIGGER v1_freeze_guard` + `DROP TABLE public.tenancies`) — either same PR or follow-up.
+
+No code changes required: `useTenantPortalSession.ts` already reads `tenant_portal_access` directly with no join through V1. Tenant portal pages still need their own V2 cutover (per `.lovable/AF2_Tenant_Portal_V2.md`) but that's orthogonal to #54b — it can ship before or after.
+
+## Step 4 — Draft V2 storage policy
 
 ```sql
-BEGIN;
-
--- Defensive: drop trigger first so DROP TABLE doesn't fight it
-DROP TRIGGER IF EXISTS v1_freeze_guard ON public.loans;
-
--- Drop the table. CASCADE only if pre-flight (b)/(c) returned empty;
--- otherwise the bare DROP will fail loudly, which is what we want.
-DROP TABLE public.loans;
-
-COMMIT;
+CREATE POLICY "Tenants can read their property documents"
+ON storage.objects
+FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'documents'
+  AND EXISTS (
+    SELECT 1
+    FROM public.tenant_portal_access tpa
+    JOIN public.tenancy_agreements ta ON ta.id = tpa.tenancy_id
+    JOIN public.properties_v2 p ON p.id = ta.property_id
+    WHERE tpa.user_id = auth.uid()
+      AND tpa.revoked_at IS NULL
+      AND tpa.can_view_documents = true
+      AND (storage.foldername(objects.name))[1] = p.org_id::text
+  )
+);
 ```
 
-No `CASCADE`. We want the migration to abort if anything still depends on it — that's a signal we missed a reference, not something to silently bulldoze.
+Differences vs V1 — all intentional improvements:
+- Joins V2 graph (`tenancy_agreements` → `properties_v2`).
+- Adds `can_view_documents = true` gate (V1 ignored this column — bug).
+- `TO authenticated` clause replaces `auth.role() = 'authenticated'` predicate (idiomatic).
+- Same org-scoped folder check, same read-only semantics, same coarseness — no behavioural regression for any future tenant session.
 
-### 3. Client-side cleanup (same PR)
+Because `tenant_portal_access` is empty, the rewrite is observationally a no-op at cutover time.
 
-- Remove the `'loans'` arm from the union in `src/lib/v1Frozen.ts` (`v1Table` param + `v2Map`). The hooks calling `throwV1Frozen('loans', …)` should already be deleted in #45's wake — verify with `rg "throwV1Frozen\(['\"]loans"` and delete any stragglers.
-- Update `src/__tests__/loans-frozen.test.ts` → either delete the file (preferred — the table no longer exists, so the DB-mirror rationale is moot) or repoint it to a still-frozen table for regression coverage. Recommend **delete**, since `tenancies-frozen.test.ts` already covers the pattern.
-- `grep` sweep for any lingering `from('loans')` / `.from("loans")` Supabase calls and any `public.loans` references in edge functions; expect zero hits (V1 read-only freeze + #45 should have cleared them) but verify.
+## Step 5 — `generate_tenancy_compliance_items` disposition: **DROP**
 
-### 4. Post-flight verification
+Confirmed in Step 1b. Single line: `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);`. No rewrite, no V2 equivalent needed (V2 has its own seeding via `v2-automation-triggers`).
 
-```sql
-SELECT to_regclass('public.loans');  -- expect NULL
-```
+## Step 6 — Recommended Build prompt outline (for the follow-up)
 
-- Run `npm run lint`, `tsc --noEmit`, `vitest run` — all green.
-- `node scripts/check-edge-functions.mjs` — confirm no edge fn references `public.loans`.
+> **Build mode. Goal: ship #54b precursor — rewrite tenant-portal storage policy onto V2, drop the orphaned V1 compliance-seed function. Single migration, no backfill (tenant_portal_access is empty — verified 2026-05-08). Steps:**
+>
+> 1. **Migration** with three statements, in order:
+>    - `DROP POLICY "Tenants can read their property documents" ON storage.objects;`
+>    - `CREATE POLICY` joining `tenant_portal_access → tenancy_agreements → properties_v2`, gated on `can_view_documents = true`, org-scoped folder check (see drafted SQL in plan).
+>    - `DROP FUNCTION public.generate_tenancy_compliance_items(public.tenancies);`
+> 2. **Verify** post-migration: `to_regprocedure('public.generate_tenancy_compliance_items(public.tenancies)')` is NULL; new policy exists on `storage.objects`; `pg_depend` on `public.tenancies` shows zero non-trivial entries (only intra-table triggers + 2 own-table policies + composite row type left).
+> 3. **No code changes** — `useTenantPortalSession.ts` already V2-compatible (queries `tenant_portal_access` directly, no V1 join).
+> 4. **Document** in `docs/release/v2-design-loans-income-costs-tenancies-2026-04-30.md` under #54b precursor — state cheap-path rationale, empty-table evidence, semantic improvements (added `can_view_documents` gate).
+> 5. **Then unblock #54b** — schedule the `DROP TABLE public.tenancies` migration as a follow-up PR (or same PR, two migration files, separate commits) once this lands.
+>
+> **STOP-and-ask** if `tenant_portal_access` row count is non-zero at Build time (changes the calculus — needs sanity check that any live `tenancy_id`s resolve in `tenancy_agreements`).
 
-### 5. Docs
+## Risks / edge cases
 
-Append a `## #48 — public.loans dropped 2026-05-08` section to `docs/release/loans-reconciliation-plan-2026-05-02.md` recording:
-- Frozen row count from pre-flight (d)
-- Soak evidence rationale (client guard + CI test + zero hits in remaining minutes of `postgres_logs`; full server-side soak waived due to log retention)
-- Migration filename + commit
-
-## Risks & mitigations
-
-- **Hidden FK / view reference** → bare `DROP TABLE` (no CASCADE) will fail the migration loudly; rollback via `BEGIN/COMMIT`.
-- **Late-arriving writer we missed** → impossible at the DB layer post-drop (table gone); any caller will get a `relation "loans" does not exist` error caught by Sentry/edge-fn logger immediately.
-- **Need to revert** → the table is empty of business data per the V2 cutover; restoration would be schema-only from migration history.
-
-## STOP-and-ask conditions during build
-
-- Pre-flight check (b) or (c) returns any row.
-- `DROP TABLE` fails with a dependency error.
-- Any `from('loans')` hit in `src/` or `supabase/functions/` outside `v1Frozen.ts` / the test file being deleted.
+- **`tenant_portal_access` could gain rows between now and Build.** Mitigation: re-run the row-count check at Build time (cheap). If a row appears with a `tenancy_id` not in `tenancy_agreements`, it's a bug in invite acceptance — fix the writer, don't backfill.
+- **Tenant portal pages still query V1 tables** (per AF2 plan) — out of scope for this precursor and for #54b; the storage RLS rewrite doesn't depend on the page-level cutover.
+- **No data loss risk** — `tenancy_compliance_items` rows already inserted historically by the function are untouched (the rows persist; only the seeding function is removed).
