@@ -103,7 +103,7 @@ Deno.serve(withInvocationLog("freeagent-fetch-categories", async (req, _invocati
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const supabase = getAdminClient();
     const body = await req.json();
     const { entityId, companyId: legacyCompanyId } = body;
 

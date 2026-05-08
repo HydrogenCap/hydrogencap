@@ -61,7 +61,7 @@ serve(withInvocationLog("freeagent-sync-payments", async (req, _invocationLog) =
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const supabase = getAdminClient();
     const body = await req.json();
     const { entityId, companyId: legacyCompanyId } = body;
 
