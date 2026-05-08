@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { getAdminClient, type AdminSupabaseClient } from "../_shared/admin-client.ts";
 import { createLogger, withInvocationLog } from "../_shared/logger.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
@@ -15,7 +16,7 @@ interface DocRow {
 }
 
 async function generateSignedUrl(
-  supabase: ReturnType<typeof createClient>,
+  supabase: AdminSupabaseClient,
   fileUrl: string,
 ): Promise<string | null> {
   // file_url stored as a storage object key (org_id/.../file.pdf) — use the
@@ -101,7 +102,7 @@ Deno.serve(withInvocationLog("reprocess-vault-documents", async (req, _invocatio
       );
     }
 
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    const adminClient = getAdminClient();
 
     let succeeded = 0;
     let failed = 0;
@@ -114,10 +115,7 @@ Deno.serve(withInvocationLog("reprocess-vault-documents", async (req, _invocatio
           if (!doc) break;
 
           try {
-            const signedUrl = await generateSignedUrl(
-              adminClient as unknown as Parameters<typeof generateSignedUrl>[0],
-              doc.file_url,
-            );
+            const signedUrl = await generateSignedUrl(adminClient, doc.file_url);
             if (!signedUrl) {
               throw new Error("Could not create signed URL");
             }
