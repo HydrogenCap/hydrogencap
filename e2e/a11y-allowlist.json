@@ -1,0 +1,4 @@
+{
+  "_comment": "Allowlist for known-acceptable axe violations (third-party widgets, intentional design choices). Entries match if rule_id == violation.id AND every node target string matches selector_pattern (regex). Matched violations are filtered before the critical/serious gate and logged separately. Shape: Array<{ rule_id: string, selector_pattern: string, reason: string, expires_at?: 'YYYY-MM-DD' }>. Entries with expires_at < today FAIL the build to prevent stale allowlisting.",
+  "entries": []
+}
