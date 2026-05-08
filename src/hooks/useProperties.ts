@@ -100,7 +100,7 @@ type Tenancy = {
   org_id: string;
   start_date: string;
   end_date: string | null;
-  rent_amount: number | null;
+  rent_amount_pcm: number | null;
   rent_frequency: string | null;
   deposit_amount: number | null;
   deposit_scheme: string | null;
