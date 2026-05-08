@@ -53,8 +53,7 @@ export function DistributionsCard({
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No distributions recorded</TableCell>
               </TableRow>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TODO: investor_distributions view row; pending V2 view typing.
-            ) : distributions.map((d: any) => (
+            ) : distributions.map((d) => (
               <TableRow key={d.id}>
                 <TableCell className="text-sm">{format(new Date(d.distribution_date), 'dd MMM yyyy')}</TableCell>
                 <TableCell>
