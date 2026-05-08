@@ -26,6 +26,7 @@ const V1_TABLES = ['loans', 'tenancies', 'costs', 'income'];
 
 const ALLOWLIST = new Set([
   'src/lib/v1Frozen.ts',
+  'src/__tests__/check-no-v1-table-refs.test.ts',
 ]);
 
 const PATTERNS = V1_TABLES.flatMap((t) => [
