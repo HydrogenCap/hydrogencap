@@ -1,70 +1,35 @@
-# Backfill compliance from Document Vault → /compliance-v2
 
-## Why "132 need attention"
+# NULL-confidence AI suggestion triage — 2026-05-08
 
-`compliance_matrix_v2` currently shows: **123 missing**, 9 expired, 9 expiring, 4 critical, 85 valid, 113 not_required. The "needs attention" filter on `/compliance-v2` is dominated by the 123 **missing** rows.
+Read-only follow-up to `docs/release/ai-suggested-property-id-triage-2026-05-04.md`.
+**No data changed.**
 
-Meanwhile, in `public.documents` we already have **157 documents that are fully classified, linked to a V2 property, AND of a compliance type**, but **0 of them exist in `compliance_documents_v2`**. They were uploaded via the Vault, processed by `process-document-v2`, but that edge function **only updates `documents`** — it never inserts into `compliance_documents_v2`. (Only `process-document` (v1) and `useBulkDocScanner` write to v2; the Vault uploader doesn't call either.) That's the gap.
+## 1. Where the trapdoor lives (confirmed)
 
-Breakdown of the 157 ready-to-file:
-- building_insurance: 25, gas_safety: 23, electrical: 23, fire_alarm: 21
-- emergency_lighting: 17, epc: 16, hmo_licence: 12, pat_testing: 9
-- fire_risk_assessment: 8, fire_suppression: 1, asbestos: 1, legionella: 1
+- **Table**: `public.documents` (no separate `ai_property_suggestions` table — suggestions live as columns on `documents`).
+- **Suggestion columns**: `ai_suggested_property_id`, `ai_property_confidence`, `ai_suggested_doc_type`, `ai_doc_type_confidence`.
+- **Confirmation semantics**: a suggestion is confirmed when `documents.property_id IS NOT NULL`; unreviewed = `ai_suggested_property_id IS NOT NULL AND property_id IS NULL`.
+- **Trapdoor logic**: `src/lib/inboxBulkGate.ts → partitionReadyDocs()`, called from `src/pages/Inbox.tsx`. NULL on either confidence routes the row to the `nullConfidence` bucket — visible in the Inbox under "Review manually before bulk-accept", excluded from silent Accept-All, requires explicit confirm dialog.
+- **Live count today**: still **5** rows match (`ai_suggested_property_id IS NOT NULL AND property_id IS NULL`), all `ai_property_confidence IS NULL`, all `review_status = 'pending'`, all `gemini-2.5-flash`. Same set as the 2026-05-04 audit — none cleared since.
 
-Plus 10 docs with only `ai_suggested_property_id` (confidence < 0.90 promotion threshold) and 59 with `extraction_status='failed'`.
+## 2. The 5 stuck rows (sorted by created_at asc)
 
-## Plan — three steps, idempotent
+| # | id | created (UTC) | doc (original_file_name) | target_field | suggested_value (property) | property context (extracted_address_text → address_line_1, postcode) | likely reason NULL | recommended action |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `fae24951-9e46-4066-9b34-0adb5627df67` | 2026-04-26 23:13:03 | `25 Arle Gardnens - Insurance.pdf` (typo "Gardnens") | `documents.property_id` (← `ai_suggested_property_id`) + `doc_type` (suggested `building_insurance`, conf 0.99) | `f4938519-8091-4644-ac3b-a021e6d67b8d` — 25 Arle Gardens | extracted: "25 Arle Gardens, Cheltenham" → DB: 25 Arle Gardens, GL51 8HP — exact match | Filename typo + bulk re-upload pass that seeded `ai_suggested_property_id` without scoring (see audit §1 "Notable"). Doc-type confidence populated, property confidence skipped — same code path on all 4 same-second-batch rows. | **Approve to `f4938519…` (25 Arle Gardens)** — extracted address matches DB exactly. |
+| 2 | `2a274297-c909-48ac-ad94-cd73f3cf0000` | 2026-04-26 23:13:04 | `25 Arle Gardens - Fire Risk Assement.pdf` | `property_id` + `doc_type` (`fire_risk_assessment`, conf 1.00) | `f4938519…` — 25 Arle Gardens | extracted: "25 Arle Gardens, Cheltenham" → 25 Arle Gardens, GL51 8HP — exact match | Same bulk re-upload batch (4 rows in 5s window), confidence not populated. | **Approve to `f4938519…`**. |
+| 3 | `d982d87d-d086-4fc2-ba11-bda6f5cd1408` | 2026-04-26 23:13:06 | `25 Arle Gardens – Fire Alarm Certificate Feb 2026.pdf` | `property_id` + `doc_type` (`fire_alarm_certificate`, conf 0.99) | `f4938519…` — 25 Arle Gardens | extracted: "25 Arle Gardens, Cheltenham, Gloucestershire" → 25 Arle Gardens, GL51 8HP — exact match | Same bulk re-upload batch. | **Approve to `f4938519…`**. |
+| 4 | `8449adcd-6a1b-4937-abd5-9668f95dc86e` | 2026-04-26 23:13:08 | `25 Arle Gardens – Gas Safety Certificate Feb 2026.pdf` | `property_id` + `doc_type` (`gas_safety_certificate`, conf 1.00) | `f4938519…` — 25 Arle Gardens | extracted: "25 Arle Gardens\nCheltenham" → 25 Arle Gardens, GL51 8HP — exact match | Same bulk re-upload batch. | **Approve to `f4938519…`**. |
+| 5 | `ac7a6017-5fc1-4cb6-a285-ea7422ccd92f` | 2026-04-28 23:18:39 | `Gas_Certificate_Ref_68489259 (3).pdf` (opaque filename) | `property_id` + `doc_type` (`gas_safety_certificate`, conf 0.99) | `bb3cef38-6090-4eac-a6f8-05a6a1d82888` — 12 Thames Road, Cheltenham | extracted: "12 Thames Road\nCheltenham" → 12 Thames Road, Cheltenham, GL52 5PT — exact match | Different upload session 2 days later; same NULL-confidence path. Filename gives no address signal — match relies solely on extracted body text. | **Leave for human eyeball**, then Approve to `bb3cef38…` if the PDF body confirms 12 Thames Road. Address match is exact, so default action is approve. |
 
-### Step 1 — One-shot SQL backfill migration (the big win)
+## 3. Summary
 
-Insert into `compliance_documents_v2` from every `documents` row where:
-- `property_id IS NOT NULL`
-- `ai_suggested_doc_type` is one of the compliance types
-- no existing `compliance_documents_v2` row already references the same `file_url`
+- **All 5 rows are still trapped** (no auto-clearing has happened since 2026-05-04).
+- **All 5 have `ai_property_confidence IS NULL`** — confirms #57b's read that this is the bulk re-upload path that populated `ai_suggested_property_id` + `ai_doc_type_confidence` but never wrote `ai_property_confidence`. The 4 same-second rows on 2026-04-26 are clearly one batch; the 2026-04-28 row is a separate single upload.
+- **All 5 have `extracted_address_text` that exactly matches `properties_v2.address_line_1` for the suggested property** — the AI's suggestions look correct on paper. Rows 1–4 also match on filename. Row 5 is filename-opaque but body-text-clean.
+- **Recommended disposition**: approve all 5 to the suggested property. No rejections needed. Row 5 deserves a quick human glance at the PDF before approval but the address signal is unambiguous.
+- **No code or data changes are part of this plan** — David triages per-row in the Inbox using the existing `ComplianceReviewCard` dropdown + the "Confirm & accept all unscored" button #57b shipped.
 
-For each backfilled row:
-- `document_type` = `ai_suggested_doc_type`
-- `issue_date` = `extracted_issue_date` (fallback: `created_at::date`)
-- `expiry_date` = `documents.expiry_date`
-- `certificate_number` = `extracted_reference_number`
-- `issuer_name` = `extracted_certifier_company` ?? `extracted_certifier_name`
-- `file_url`, `file_name` from documents
-- `ai_extracted = true`, `ai_confidence_score = ai_doc_type_confidence`
-- `is_current = true`
-- `status` computed from expiry_date: expired / critical (<30d) / expiring_soon (<90d) / valid
+## 4. STOP-and-ask check
 
-Same idempotency guard the bulk scanner uses (file_url match). Re-running is a no-op.
-
-Expected effect: ~157 new compliance docs, dropping "missing" from 123 → ~30–50 (some compliance types may have no matching upload).
-
-### Step 2 — Promote the 10 high-suggestion orphans
-
-For documents where `property_id IS NULL` AND `ai_suggested_property_id IS NOT NULL` AND `ai_property_confidence >= 0.80`, promote `ai_suggested_property_id` → `property_id`. Then they get picked up by Step 1's same migration (run as a single transaction). Anything below 0.80 is left for manual review in the Vault.
-
-### Step 3 — Re-queue 59 `failed` extractions (optional, gated)
-
-Re-trigger `process-document-v2` only for `extraction_status = 'failed'` docs uploaded > 24h ago. We do this via a small one-shot edge function (`reprocess-vault-documents`) that:
-- Fetches failed docs scoped to the caller's org (RLS via auth header)
-- Generates a fresh signed URL for each
-- Calls the existing `process-document-v2` per doc, with concurrency 3, total cap 100 per invocation
-- Returns a summary `{ requeued, succeeded, failed }`
-
-Triggered manually from a small button on `/compliance-v2` (header: "Rescan failed Vault documents (59)"). No automatic cron — David presses it.
-
-## Technical notes
-
-- **No schema change**, no edge function rewrite — `process-document-v2` already does the right thing for *new* uploads after the previous fix. This patch closes the historical gap.
-- **Backfill is a SQL migration**, not a script — runs once at deploy, idempotent on re-run via `WHERE NOT EXISTS` join on `file_url`.
-- **Auto-compliance-pipeline** then takes over: it reads `compliance_documents_v2`, generates renewal tasks, etc. So filing these 157 also kicks off the downstream automation correctly.
-- Files touched:
-  - `supabase/migrations/<ts>_backfill_compliance_v2_from_documents.sql` (Steps 1+2 in one txn)
-  - `supabase/functions/reprocess-vault-documents/index.ts` (Step 3)
-  - `src/pages/ComplianceV2.tsx` — add a small "Rescan failed Vault documents" button in the header that invokes the new function and toasts the result
-- No changes to `documents`, `compliance_documents_v2`, or `process-document-v2` schemas/logic.
-
-## Acceptance
-
-- After migration: `SELECT count(*) FROM compliance_documents_v2` rises by ~150–160; `compliance_matrix_v2` "missing" drops to ≤ ~50.
-- `/compliance-v2` "Needs Attention" count drops from 132 → ~30–60.
-- Button on `/compliance-v2` reprocesses the 59 failed docs and surfaces them in the Vault for review (no silent auto-link below 0.90 confidence — existing promotion threshold preserved).
-- Re-running the migration is a no-op.
+The trapdoor is exactly where #57b's audit said it was (`src/lib/inboxBulkGate.ts` + `src/pages/Inbox.tsx`, gating on NULL `ai_*_confidence`), and the 5-row set is unchanged. Nothing to escalate.
