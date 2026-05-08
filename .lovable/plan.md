@@ -1,35 +1,96 @@
 
-# NULL-confidence AI suggestion triage — 2026-05-08
+# #48 — Drop `public.loans` (ship today, 2026-05-08)
 
-Read-only follow-up to `docs/release/ai-suggested-property-id-triage-2026-05-04.md`.
-**No data changed.**
+## Go/no-go evidence summary
 
-## 1. Where the trapdoor lives (confirmed)
+| Check | Result |
+|---|---|
+| `v1_freeze_guard` trigger installed & enabled on `public.loans` | ✅ `pg_trigger.tgenabled = 'O'` |
+| Trigger function emits canonical message (post-#54c) | ✅ `RAISE EXCEPTION 'V1 table % is frozen — write to % instead'` with `ERRCODE='check_violation'` |
+| Client-side guard (`throwV1Frozen('loans', …)`) wired into all V1 loan mutation hooks (#45) | ✅ |
+| `src/__tests__/loans-frozen.test.ts` asserts insert/update/delete throw the canonical message | ✅ |
+| Postgres-log soak count since 2026-05-04 | ⚠️ Inconclusive — analytics retains only ~minutes of `postgres_logs`; cannot evidence the 4-day window. Decision: accept client+CI evidence in lieu of server soak. |
 
-- **Table**: `public.documents` (no separate `ai_property_suggestions` table — suggestions live as columns on `documents`).
-- **Suggestion columns**: `ai_suggested_property_id`, `ai_property_confidence`, `ai_suggested_doc_type`, `ai_doc_type_confidence`.
-- **Confirmation semantics**: a suggestion is confirmed when `documents.property_id IS NOT NULL`; unreviewed = `ai_suggested_property_id IS NOT NULL AND property_id IS NULL`.
-- **Trapdoor logic**: `src/lib/inboxBulkGate.ts → partitionReadyDocs()`, called from `src/pages/Inbox.tsx`. NULL on either confidence routes the row to the `nullConfidence` bucket — visible in the Inbox under "Review manually before bulk-accept", excluded from silent Accept-All, requires explicit confirm dialog.
-- **Live count today**: still **5** rows match (`ai_suggested_property_id IS NOT NULL AND property_id IS NULL`), all `ai_property_confidence IS NULL`, all `review_status = 'pending'`, all `gemini-2.5-flash`. Same set as the 2026-05-04 audit — none cleared since.
+**Recommendation accepted:** ship #48 today.
 
-## 2. The 5 stuck rows (sorted by created_at asc)
+## Implementation steps
 
-| # | id | created (UTC) | doc (original_file_name) | target_field | suggested_value (property) | property context (extracted_address_text → address_line_1, postcode) | likely reason NULL | recommended action |
-|---|---|---|---|---|---|---|---|---|
-| 1 | `fae24951-9e46-4066-9b34-0adb5627df67` | 2026-04-26 23:13:03 | `25 Arle Gardnens - Insurance.pdf` (typo "Gardnens") | `documents.property_id` (← `ai_suggested_property_id`) + `doc_type` (suggested `building_insurance`, conf 0.99) | `f4938519-8091-4644-ac3b-a021e6d67b8d` — 25 Arle Gardens | extracted: "25 Arle Gardens, Cheltenham" → DB: 25 Arle Gardens, GL51 8HP — exact match | Filename typo + bulk re-upload pass that seeded `ai_suggested_property_id` without scoring (see audit §1 "Notable"). Doc-type confidence populated, property confidence skipped — same code path on all 4 same-second-batch rows. | **Approve to `f4938519…` (25 Arle Gardens)** — extracted address matches DB exactly. |
-| 2 | `2a274297-c909-48ac-ad94-cd73f3cf0000` | 2026-04-26 23:13:04 | `25 Arle Gardens - Fire Risk Assement.pdf` | `property_id` + `doc_type` (`fire_risk_assessment`, conf 1.00) | `f4938519…` — 25 Arle Gardens | extracted: "25 Arle Gardens, Cheltenham" → 25 Arle Gardens, GL51 8HP — exact match | Same bulk re-upload batch (4 rows in 5s window), confidence not populated. | **Approve to `f4938519…`**. |
-| 3 | `d982d87d-d086-4fc2-ba11-bda6f5cd1408` | 2026-04-26 23:13:06 | `25 Arle Gardens – Fire Alarm Certificate Feb 2026.pdf` | `property_id` + `doc_type` (`fire_alarm_certificate`, conf 0.99) | `f4938519…` — 25 Arle Gardens | extracted: "25 Arle Gardens, Cheltenham, Gloucestershire" → 25 Arle Gardens, GL51 8HP — exact match | Same bulk re-upload batch. | **Approve to `f4938519…`**. |
-| 4 | `8449adcd-6a1b-4937-abd5-9668f95dc86e` | 2026-04-26 23:13:08 | `25 Arle Gardens – Gas Safety Certificate Feb 2026.pdf` | `property_id` + `doc_type` (`gas_safety_certificate`, conf 1.00) | `f4938519…` — 25 Arle Gardens | extracted: "25 Arle Gardens\nCheltenham" → 25 Arle Gardens, GL51 8HP — exact match | Same bulk re-upload batch. | **Approve to `f4938519…`**. |
-| 5 | `ac7a6017-5fc1-4cb6-a285-ea7422ccd92f` | 2026-04-28 23:18:39 | `Gas_Certificate_Ref_68489259 (3).pdf` (opaque filename) | `property_id` + `doc_type` (`gas_safety_certificate`, conf 0.99) | `bb3cef38-6090-4eac-a6f8-05a6a1d82888` — 12 Thames Road, Cheltenham | extracted: "12 Thames Road\nCheltenham" → 12 Thames Road, Cheltenham, GL52 5PT — exact match | Different upload session 2 days later; same NULL-confidence path. Filename gives no address signal — match relies solely on extracted body text. | **Leave for human eyeball**, then Approve to `bb3cef38…` if the PDF body confirms 12 Thames Road. Address match is exact, so default action is approve. |
+### 1. Pre-flight read-only checks (one psql round-trip; abort if any fail)
 
-## 3. Summary
+```sql
+-- a) Trigger still active right before we drop
+SELECT 1 FROM pg_trigger
+WHERE tgname='v1_freeze_guard'
+  AND tgrelid='public.loans'::regclass
+  AND tgenabled='O';
 
-- **All 5 rows are still trapped** (no auto-clearing has happened since 2026-05-04).
-- **All 5 have `ai_property_confidence IS NULL`** — confirms #57b's read that this is the bulk re-upload path that populated `ai_suggested_property_id` + `ai_doc_type_confidence` but never wrote `ai_property_confidence`. The 4 same-second rows on 2026-04-26 are clearly one batch; the 2026-04-28 row is a separate single upload.
-- **All 5 have `extracted_address_text` that exactly matches `properties_v2.address_line_1` for the suggested property** — the AI's suggestions look correct on paper. Rows 1–4 also match on filename. Row 5 is filename-opaque but body-text-clean.
-- **Recommended disposition**: approve all 5 to the suggested property. No rejections needed. Row 5 deserves a quick human glance at the PDF before approval but the address signal is unambiguous.
-- **No code or data changes are part of this plan** — David triages per-row in the Inbox using the existing `ComplianceReviewCard` dropdown + the "Confirm & accept all unscored" button #57b shipped.
+-- b) No FKs from any other table point at public.loans
+SELECT conname, conrelid::regclass
+FROM pg_constraint
+WHERE confrelid='public.loans'::regclass AND contype='f';
 
-## 4. STOP-and-ask check
+-- c) No views, RLS policies, or functions still reference it
+SELECT n.nspname||'.'||c.relname AS view
+FROM pg_rewrite r JOIN pg_class c ON c.oid=r.ev_class
+JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE r.ev_action::text LIKE '%public.loans%' AND c.relkind='v';
 
-The trapdoor is exactly where #57b's audit said it was (`src/lib/inboxBulkGate.ts` + `src/pages/Inbox.tsx`, gating on NULL `ai_*_confidence`), and the 5-row set is unchanged. Nothing to escalate.
+-- d) Row count snapshot for the audit doc
+SELECT count(*) AS frozen_row_count FROM public.loans;
+```
+
+If (a) returns 0 row → STOP, re-install trigger first.
+If (b) or (c) return rows → STOP, ask before proceeding (need to drop/repoint dependents).
+
+### 2. Migration `supabase/migrations/<auto>-drop-v1-loans.sql`
+
+Single transaction:
+
+```sql
+BEGIN;
+
+-- Defensive: drop trigger first so DROP TABLE doesn't fight it
+DROP TRIGGER IF EXISTS v1_freeze_guard ON public.loans;
+
+-- Drop the table. CASCADE only if pre-flight (b)/(c) returned empty;
+-- otherwise the bare DROP will fail loudly, which is what we want.
+DROP TABLE public.loans;
+
+COMMIT;
+```
+
+No `CASCADE`. We want the migration to abort if anything still depends on it — that's a signal we missed a reference, not something to silently bulldoze.
+
+### 3. Client-side cleanup (same PR)
+
+- Remove the `'loans'` arm from the union in `src/lib/v1Frozen.ts` (`v1Table` param + `v2Map`). The hooks calling `throwV1Frozen('loans', …)` should already be deleted in #45's wake — verify with `rg "throwV1Frozen\(['\"]loans"` and delete any stragglers.
+- Update `src/__tests__/loans-frozen.test.ts` → either delete the file (preferred — the table no longer exists, so the DB-mirror rationale is moot) or repoint it to a still-frozen table for regression coverage. Recommend **delete**, since `tenancies-frozen.test.ts` already covers the pattern.
+- `grep` sweep for any lingering `from('loans')` / `.from("loans")` Supabase calls and any `public.loans` references in edge functions; expect zero hits (V1 read-only freeze + #45 should have cleared them) but verify.
+
+### 4. Post-flight verification
+
+```sql
+SELECT to_regclass('public.loans');  -- expect NULL
+```
+
+- Run `npm run lint`, `tsc --noEmit`, `vitest run` — all green.
+- `node scripts/check-edge-functions.mjs` — confirm no edge fn references `public.loans`.
+
+### 5. Docs
+
+Append a `## #48 — public.loans dropped 2026-05-08` section to `docs/release/loans-reconciliation-plan-2026-05-02.md` recording:
+- Frozen row count from pre-flight (d)
+- Soak evidence rationale (client guard + CI test + zero hits in remaining minutes of `postgres_logs`; full server-side soak waived due to log retention)
+- Migration filename + commit
+
+## Risks & mitigations
+
+- **Hidden FK / view reference** → bare `DROP TABLE` (no CASCADE) will fail the migration loudly; rollback via `BEGIN/COMMIT`.
+- **Late-arriving writer we missed** → impossible at the DB layer post-drop (table gone); any caller will get a `relation "loans" does not exist` error caught by Sentry/edge-fn logger immediately.
+- **Need to revert** → the table is empty of business data per the V2 cutover; restoration would be schema-only from migration history.
+
+## STOP-and-ask conditions during build
+
+- Pre-flight check (b) or (c) returns any row.
+- `DROP TABLE` fails with a dependency error.
+- Any `from('loans')` hit in `src/` or `supabase/functions/` outside `v1Frozen.ts` / the test file being deleted.
