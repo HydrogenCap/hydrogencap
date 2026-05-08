@@ -36,6 +36,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@axe-core/playwright@^4.11.3",
         "npm:@eslint/js@^10.0.1",
         "npm:@hookform/resolvers@^4.1.3",
         "npm:@lovable.dev/cloud-auth-js@1",
