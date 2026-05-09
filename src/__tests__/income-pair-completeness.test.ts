@@ -2,7 +2,7 @@
  * income-pair-completeness.test.ts
  *
  * Income migration parity (2026-05-06). V1 `income` was DROPPED in the same
- * migration as the V2 `property_income_budgets_v2` create+backfill (per #32
+ * migration as the V2 `property_income_budgets` create+backfill (per #32
  * audit: 0 inbound FKs). Snapshot was captured pre-drop and now serves as the
  * V2-only invariant: 21 V2 rows, unique ids, unique (property_id, tax_year),
  * and yearToTaxYear round-trip.
@@ -19,7 +19,7 @@ interface Pair {
   annual_rent_gbp: string;
 }
 
-describe('V1 income → V2 property_income_budgets_v2 pair completeness', () => {
+describe('V1 income → V2 property_income_budgets pair completeness', () => {
   const pairs = snapshot.pairs as Pair[];
 
   it('snapshot covers all 21 backfilled rows', () => {

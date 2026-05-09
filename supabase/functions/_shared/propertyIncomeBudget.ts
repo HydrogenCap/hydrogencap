@@ -1,5 +1,5 @@
 /**
- * V2 property_income_budgets_v2 read helper for edge functions (Income migration, 2026-05-06).
+ * V2 property_income_budgets read helper for edge functions (Income migration, 2026-05-06).
  *
  * Mirrors propertyCostBudget.ts. Provides PROPERTY_INCOME_BUDGET_SELECT,
  * propertyIncomeBudgetToLegacyShape, taxYearToYearShim (re-export from cost helper).
@@ -22,7 +22,7 @@ export const PROPERTY_INCOME_BUDGET_SELECT = `
   updated_at
 `.trim();
 
-export interface PropertyIncomeBudgetV2Row {
+export interface PropertyIncomeBudgetRow {
   id: string;
   org_id: string;
   property_id: string;
@@ -39,7 +39,7 @@ export interface LegacyIncomeShape {
 }
 
 export function propertyIncomeBudgetToLegacyShape(
-  row: PropertyIncomeBudgetV2Row,
+  row: PropertyIncomeBudgetRow,
 ): LegacyIncomeShape {
   let year: number;
   try {

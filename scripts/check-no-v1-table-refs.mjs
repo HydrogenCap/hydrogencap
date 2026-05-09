@@ -4,8 +4,15 @@
 // Dropped V1 tables (replaced by V2 equivalents):
 //   loans     → loan_facilities
 //   tenancies → tenancy_agreements
-//   costs     → property_cost_budgets_v2
-//   income    → property_income_budgets_v2
+//   costs     → property_cost_budgets
+//   income    → property_income_budgets
+//
+// Renamed-away `*_v2` tables (Partial-#61, 2026-05-09 — these names no longer
+// exist in the database and must NOT be re-introduced; use the canonical name):
+//   compliance_contractors_v2  → compliance_contractors
+//   compliance_requirements_v2 → compliance_requirements
+//   property_cost_budgets_v2   → property_cost_budgets
+//   property_income_budgets_v2 → property_income_budgets
 //
 // Patterns matched:
 //   (a) .from('<table>') / .from("<table>")    — Supabase client calls
@@ -48,10 +55,26 @@ const WRITE_GUARD_ALLOWLIST = new Set([
   'supabase/functions/send-compliance-reminders/index.ts',
 ]);
 
-const PATTERNS = V1_TABLES.flatMap((t) => [
-  { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'any' },
-  { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'any' },
-]);
+// Partial-#61 (2026-05-09): forward-looking guard for the 4 V2 names that
+// were renamed to canonical. They no longer exist as DB tables — any
+// re-introduction in code is a regression.
+const RENAMED_V2_TABLES = [
+  'compliance_contractors_v2',
+  'compliance_requirements_v2',
+  'property_cost_budgets_v2',
+  'property_income_budgets_v2',
+];
+
+const PATTERNS = [
+  ...V1_TABLES.flatMap((t) => [
+    { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'drop' },
+    { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'drop' },
+  ]),
+  ...RENAMED_V2_TABLES.flatMap((t) => [
+    { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'renamed' },
+    { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'renamed' },
+  ]),
+];
 
 // Multi-line write patterns for the §0b Ship A guard. We collapse whitespace
 // before matching so a chained `.from('compliance_items')\n  .update({...})`
@@ -97,11 +120,11 @@ for (const scanDir of SCAN_DIRS) {
     const content = readFileSync(file, 'utf8');
     const lines = content.split('\n');
 
-    // (1) Per-line drop checks for fully-removed V1 tables.
+    // (1) Per-line drop checks for fully-removed V1 tables and renamed-away V2 names.
     lines.forEach((line, i) => {
-      for (const { table, regex } of PATTERNS) {
+      for (const { table, regex, kind } of PATTERNS) {
         if (regex.test(line)) {
-          offenders.push({ file: rel, line: i + 1, table, kind: 'drop', snippet: line.trim() });
+          offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });
         }
       }
     });
@@ -146,7 +169,10 @@ if (offenders.length > 0) {
   }
   console.error(
     `\nDropped V1 tables (loans, tenancies, costs, income) — migrate to V2 ` +
-    `(loan_facilities, tenancy_agreements, property_cost_budgets_v2, property_income_budgets_v2).\n` +
+    `(loan_facilities, tenancy_agreements, property_cost_budgets, property_income_budgets).\n` +
+    `Renamed-away V2 tables (Partial-#61, 2026-05-09): use the canonical names ` +
+    `(compliance_contractors, compliance_requirements, property_cost_budgets, property_income_budgets) — ` +
+    `the *_v2 names no longer exist in the database.\n` +
     `Frozen V1 writes (compliance_items, compliance_documents) — §0b Ship A killed all ` +
     `insert/update/upsert/delete on these tables. Reads via .select(...) are still allowed; they ` +
     `get redirected via a compat layer in Ship C/D.\n` +

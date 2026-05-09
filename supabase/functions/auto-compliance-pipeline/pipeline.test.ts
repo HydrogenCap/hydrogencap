@@ -353,7 +353,7 @@ Deno.test("pipeline — creates task + notification for an in-window expiring do
       if (call.table === "compliance_templates") return { data: templates, error: null };
       if (call.table === "compliance_documents_v2") return { data: [doc], error: null };
       if (call.table === "compliance_tasks" && call.op === "select") return { data: null, error: null }; // no existing task
-      if (call.table === "compliance_contractors_v2") return { data: null, error: null }; // no contractor
+      if (call.table === "compliance_contractors") return { data: null, error: null }; // no contractor
       if (call.table === "compliance_tasks" && call.op === "insert") return { data: { id: "task-1" }, error: null };
       if (call.table === "compliance_notifications") return { data: null, error: null };
       return { data: null, error: null };
@@ -398,7 +398,7 @@ Deno.test("pipeline — assigns contractor + auto-requests for critical priority
       if (call.table === "compliance_templates") return { data: templates, error: null };
       if (call.table === "compliance_documents_v2") return { data: [doc], error: null };
       if (call.table === "compliance_tasks" && call.op === "select") return { data: null, error: null };
-      if (call.table === "compliance_contractors_v2") return { data: contractor, error: null };
+      if (call.table === "compliance_contractors") return { data: contractor, error: null };
       if (call.table === "compliance_tasks" && call.op === "insert") return { data: { id: "task-2" }, error: null };
       if (call.table === "compliance_notifications") return { data: null, error: null };
       if (call.table === "compliance_tasks" && call.op === "update") return { data: null, error: null };
@@ -442,7 +442,7 @@ Deno.test("pipeline — skips doc entirely when an open task already exists", as
     const result = await runAutoCompliancePipeline(client, cronAuth, NOW);
     assertEquals(result.tasks_created, 0);
     // Contractor lookup should NOT have happened.
-    assertEquals(calls.some((c) => c.table === "compliance_contractors_v2"), false);
+    assertEquals(calls.some((c) => c.table === "compliance_contractors"), false);
   } finally { restore(); }
 });
 
@@ -458,7 +458,7 @@ Deno.test("pipeline — treats unique_violation (23505) on task insert as benign
       if (call.table === "compliance_templates") return { data: templates, error: null };
       if (call.table === "compliance_documents_v2") return { data: [doc], error: null };
       if (call.table === "compliance_tasks" && call.op === "select" && call.terminal === "maybeSingle") return { data: null, error: null };
-      if (call.table === "compliance_contractors_v2") return { data: null, error: null };
+      if (call.table === "compliance_contractors") return { data: null, error: null };
       if (call.table === "compliance_tasks" && call.op === "insert") return { data: null, error: { code: "23505", message: "unique violation" } };
       if (call.table === "compliance_tasks" && call.op === "select") return { data: [], error: null };
       return { data: null, error: null };

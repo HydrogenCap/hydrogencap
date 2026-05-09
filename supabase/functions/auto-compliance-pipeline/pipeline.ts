@@ -192,7 +192,7 @@ export async function runAutoCompliancePipeline(
 
     // Preferred contractor for this doc type + org (nullable).
     const { data: contractor } = await supabase
-      .from("compliance_contractors_v2")
+      .from("compliance_contractors")
       .select("id, company_name, email")
       .eq("org_id", doc.org_id)
       .contains("service_types", [doc.document_type])

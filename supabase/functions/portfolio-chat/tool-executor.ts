@@ -124,13 +124,13 @@ async function getPropertyDetails(
     fetches.push(
       Promise.all([
         supabase
-          .from("property_income_budgets_v2")
+          .from("property_income_budgets")
           .select("annual_rent_gbp")
           .eq("property_id", propertyId)
           .eq("tax_year", yearToTaxYearShim(currentYear))
           .maybeSingle(),
         supabase
-          .from("property_cost_budgets_v2")
+          .from("property_cost_budgets")
           .select(PROPERTY_COST_BUDGET_SELECT)
           .eq("property_id", propertyId)
           .eq("tax_year", yearToTaxYearShim(currentYear))
@@ -291,12 +291,12 @@ async function calculatePortfolioMetrics(
   const [loansRes, incomeRes, costsRes] = await Promise.all([
     supabase.from("loan_facilities").select(LOAN_FACILITY_SELECT).in("property_id", propIds),
     supabase
-      .from("property_income_budgets_v2")
+      .from("property_income_budgets")
       .select("property_id, tax_year, annual_rent_gbp")
       .in("property_id", propIds)
       .eq("tax_year", yearToTaxYearShim(currentYear)),
     supabase
-      .from("property_cost_budgets_v2")
+      .from("property_cost_budgets")
       .select(PROPERTY_COST_BUDGET_SELECT)
       .in("property_id", propIds)
       .eq("tax_year", yearToTaxYearShim(currentYear)),
@@ -581,8 +581,8 @@ async function generateReport(
       const currentYear = new Date().getFullYear();
       const [loansRes, incomeRes, costsRes] = await Promise.all([
         supabase.from("loan_facilities").select(LOAN_FACILITY_SELECT).in("property_id", propIds),
-        supabase.from("property_income_budgets_v2").select("property_id, annual_rent_gbp").in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
-        supabase.from("property_cost_budgets_v2").select(PROPERTY_COST_BUDGET_SELECT).in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
+        supabase.from("property_income_budgets").select("property_id, annual_rent_gbp").in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
+        supabase.from("property_cost_budgets").select(PROPERTY_COST_BUDGET_SELECT).in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
       ]);
 
       warnIfPropertyIdSpaceMismatch("portfolio-chat:portfolio_summary", (loansRes.data ?? []) as unknown as Array<{id:string;property_id:string}>, propIds);
@@ -616,7 +616,7 @@ async function generateReport(
     case "rent_roll": {
       const currentYear = new Date().getFullYear();
       const { data: incomes } = await supabase
-        .from("property_income_budgets_v2")
+        .from("property_income_budgets")
         .select("property_id, annual_rent_gbp")
         .in("property_id", propIds)
         .eq("tax_year", yearToTaxYearShim(currentYear));
@@ -646,7 +646,7 @@ async function generateReport(
       const currentYear = new Date().getFullYear();
       const [loansRes, incomeRes, complianceRes] = await Promise.all([
         supabase.from("loan_facilities").select(LOAN_FACILITY_SELECT).in("property_id", propIds),
-        supabase.from("property_income_budgets_v2").select("property_id, annual_rent_gbp").in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
+        supabase.from("property_income_budgets").select("property_id, annual_rent_gbp").in("property_id", propIds).eq("tax_year", yearToTaxYearShim(currentYear)),
         supabase.from("compliance_items").select("*").in("property_id", propIds),
       ]);
 

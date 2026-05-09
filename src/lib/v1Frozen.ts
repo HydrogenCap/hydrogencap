@@ -19,8 +19,8 @@ export function throwV1Frozen(v1Table: 'properties' | 'rooms' | 'tenants' | 'loa
     rooms: 'rooms_v2',
     tenants: 'tenants_v2',
     loans: 'loan_facilities',
-    costs: 'property_cost_budgets_v2',
-    income: 'property_income_budgets_v2',
+    costs: 'property_cost_budgets',
+    income: 'property_income_budgets',
     tenancies: 'tenancy_agreements',
   } as const;
   throw new Error(

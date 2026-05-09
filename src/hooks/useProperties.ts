@@ -12,11 +12,11 @@ import { throwV1Frozen } from '@/lib/v1Frozen';
 import {
   propertyCostBudgetToLegacyShape,
   warnIfLegacyYearMissing,
-  type PropertyCostBudgetV2RowLite,
+  type PropertyCostBudgetRowLite,
 } from '@/lib/propertyCostBudgetCompat';
 import {
   propertyIncomeBudgetToLegacyShape,
-  type PropertyIncomeBudgetV2RowLite,
+  type PropertyIncomeBudgetRowLite,
 } from '@/lib/propertyIncomeBudgetCompat';
 
 type Property = Database['public']['Tables']['properties']['Row'];
@@ -118,25 +118,25 @@ export interface PropertyWithFinancials extends Property {
 }
 
 /**
- * Per-row shim: V2 property_cost_budgets_v2 embed → V1 costs[] legacy shape.
+ * Per-row shim: V2 property_cost_budgets embed → V1 costs[] legacy shape.
  * Applied at the consumption layer so PropertyWithFinancials downstream code is unchanged.
  */
 function mapV2CostsToLegacy<T extends { costs?: unknown }>(rows: T[] | null | undefined, ctx: string): T[] {
   if (!rows) return [];
   return rows.map((r) => {
-    const v2Rows = (r.costs ?? []) as PropertyCostBudgetV2RowLite[];
+    const v2Rows = (r.costs ?? []) as PropertyCostBudgetRowLite[];
     warnIfLegacyYearMissing(ctx, v2Rows);
     return { ...r, costs: v2Rows.map(propertyCostBudgetToLegacyShape) } as T;
   });
 }
 
 /**
- * Per-row shim: V2 property_income_budgets_v2 embed → V1 income[] legacy shape.
+ * Per-row shim: V2 property_income_budgets embed → V1 income[] legacy shape.
  */
 function mapV2IncomeToLegacy<T extends { income?: unknown }>(rows: T[] | null | undefined): T[] {
   if (!rows) return [];
   return rows.map((r) => {
-    const v2Rows = (r.income ?? []) as PropertyIncomeBudgetV2RowLite[];
+    const v2Rows = (r.income ?? []) as PropertyIncomeBudgetRowLite[];
     return { ...r, income: v2Rows.map(propertyIncomeBudgetToLegacyShape) } as T;
   });
 }
@@ -157,8 +157,8 @@ export function useProperties() {
         .select(`
           *,
           loans(*),
-          income:property_income_budgets_v2(*),
-          costs:property_cost_budgets_v2(*),
+          income:property_income_budgets(*),
+          costs:property_cost_budgets(*),
           tenancies(*)
         `)
         .order('created_at', { ascending: false });
@@ -180,8 +180,8 @@ export function useProperty(id: string | undefined) {
         .select(`
           *,
           loans(*),
-          income:property_income_budgets_v2(*),
-          costs:property_cost_budgets_v2(*),
+          income:property_income_budgets(*),
+          costs:property_cost_budgets(*),
           tenancies(*)
         `)
         .eq('id', id)
@@ -307,7 +307,7 @@ export function useUpdateLoan() {
 }
 
 // V1 `income` table dropped (Income migration 2026-05-06). Writes redirected
-// to V2 `property_income_budgets_v2` via useUpsertPropertyIncomeBudget.
+// to V2 `property_income_budgets` via useUpsertPropertyIncomeBudget.
 // mutationFn always throws — onSuccess removed (was dead code).
 export function useUpsertIncome() {
   return useMutation({
@@ -321,7 +321,7 @@ export function useUpsertIncome() {
 }
 
 // V1 `costs` table is frozen (Costs Prompt B). Writes redirected to V2
-// `property_cost_budgets_v2` via useUpsertPropertyCostBudget.
+// `property_cost_budgets` via useUpsertPropertyCostBudget.
 // mutationFn always throws — onSuccess removed (was dead code).
 export function useUpsertCosts() {
   return useMutation({

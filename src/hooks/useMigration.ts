@@ -80,7 +80,7 @@ const MIGRATION_STEPS = [
   { key: 'compliance', title: 'Compliance → Compliance V2', v1Table: 'compliance_items', v2Table: 'compliance_documents_v2', functionName: 'migrate_compliance_to_v2' },
   { key: 'loans', title: 'Loans → Loan Facilities', v1Table: 'loans', v2Table: 'loan_facilities', functionName: 'migrate_loans_to_v2' },
   { key: 'financials', title: 'Income/Costs → Financial Snapshots', v1Table: 'income', v2Table: 'financial_snapshots', functionName: 'migrate_income_costs_to_snapshots' },
-  { key: 'contractors', title: 'Contractors → Contractors V2', v1Table: 'contractors', v2Table: 'compliance_contractors_v2', functionName: 'migrate_contractors_to_v2' },
+  { key: 'contractors', title: 'Contractors → Contractors V2', v1Table: 'contractors', v2Table: 'compliance_contractors', functionName: 'migrate_contractors_to_v2' },
 ];
 
 // Tables that don't have org_id and need to be counted via a join or without org filter

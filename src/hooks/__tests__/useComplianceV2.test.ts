@@ -54,7 +54,7 @@ beforeEach(() => {
     if (table === 'compliance_tasks' && op === 'update') {
       return { data: null, error: null };
     }
-    if (table === 'compliance_requirements_v2' && op === 'update') {
+    if (table === 'compliance_requirements' && op === 'update') {
       return { data: null, error: null };
     }
     return { data: null, error: null };
@@ -190,7 +190,7 @@ describe('useToggleRequirementV2', () => {
     });
 
     const call = mock.__calls.find(
-      (c) => c.op === 'update' && c.table === 'compliance_requirements_v2',
+      (c) => c.op === 'update' && c.table === 'compliance_requirements',
     );
     expect((call?.payload as { is_required?: boolean })?.is_required).toBe(true);
     expect((call?.payload as { override_reason?: string | null })?.override_reason).toBeNull();
@@ -209,7 +209,7 @@ describe('useToggleRequirementV2', () => {
     });
 
     const call = mock.__calls.find(
-      (c) => c.op === 'update' && c.table === 'compliance_requirements_v2',
+      (c) => c.op === 'update' && c.table === 'compliance_requirements',
     );
     expect((call?.payload as { override_reason?: string })?.override_reason).toBe(
       'listed building exempt',

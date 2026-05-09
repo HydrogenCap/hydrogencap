@@ -47,7 +47,7 @@ interface MaintenanceRequestApprovalUpdate {
 const MAINTENANCE_QUOTES_TABLE = 'maintenance_quotes' as const;
 const QUOTE_SELECT = `
   *,
-  contractor:compliance_contractors_v2(id, company_name, contact_name, phone, email)
+  contractor:compliance_contractors(id, company_name, contact_name, phone, email)
 `;
 
 export function useMaintenanceQuotes(requestId: string | undefined) {
@@ -153,7 +153,7 @@ export function useSuggestedContractors(category: string | undefined) {
       if (!orgId) return [];
 
       const { data, error } = await supabaseAny
-        .from('compliance_contractors_v2')
+        .from('compliance_contractors')
         .select('id, company_name, contact_name, phone, email, service_types, rating')
         .eq('org_id', orgId)
         .contains('service_types', [category!]);

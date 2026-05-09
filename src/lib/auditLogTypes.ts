@@ -35,7 +35,7 @@ export const TABLE_DISPLAY_NAMES: Record<string, string> = {
   lenders: 'Lender',
   loan_facilities: 'Loan Facility',
   compliance_documents_v2: 'Compliance Document',
-  compliance_requirements_v2: 'Compliance Requirement',
+  compliance_requirements: 'Compliance Requirement',
   contractors: 'Contractor',
   contractor_jobs: 'Contractor Job',
   financial_snapshots: 'Financial Snapshot',
@@ -44,7 +44,6 @@ export const TABLE_DISPLAY_NAMES: Record<string, string> = {
   rooms: 'Room (Legacy)',
   tenants: 'Tenant',
   compliance_documents: 'Compliance Document (Legacy)',
-  compliance_requirements: 'Compliance Requirement (Legacy)',
 };
 
 export const AUDITED_TABLES = Object.keys(TABLE_DISPLAY_NAMES);

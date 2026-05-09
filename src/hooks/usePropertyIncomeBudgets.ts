@@ -1,5 +1,5 @@
 /**
- * V2 write hook for property_income_budgets_v2 (Income migration, 2026-05-06).
+ * V2 write hook for property_income_budgets (Income migration, 2026-05-06).
  *
  * Mirrors usePropertyCostBudgets (Costs Prompt B). Replaces the now-frozen V1
  * useUpsertIncome. Keyed by (property_id, tax_year) UNIQUE composite.
@@ -42,7 +42,7 @@ export function useUpsertPropertyIncomeBudget() {
         annual_rent_gbp: input.annual_rent_gbp,
       };
       const { data, error } = await supabaseAny
-        .from('property_income_budgets_v2')
+        .from('property_income_budgets')
         .upsert(payload, { onConflict: 'property_id,tax_year' })
         .select()
         .single();
@@ -50,7 +50,7 @@ export function useUpsertPropertyIncomeBudget() {
       return data;
     },
     onSuccess: (data: { property_id?: string; tax_year?: string; annual_rent_gbp?: number } | null) => {
-      queryClient.invalidateQueries({ queryKey: ['property_income_budgets_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['property_income_budgets'] });
       queryClient.invalidateQueries({ queryKey: ['property', data?.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       try {

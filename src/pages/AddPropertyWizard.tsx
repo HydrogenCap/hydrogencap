@@ -82,7 +82,7 @@ export default function AddPropertyWizard() {
     // 3. Create compliance requirements
     const complianceItems = (payload.compliance_items as ComplianceItem[]) || [];
     if (complianceItems.length > 0) {
-      await supabase.from('compliance_requirements_v2').insert(
+      await supabase.from('compliance_requirements').insert(
         complianceItems.map((c) => ({
           property_id: property.id,
           org_id: orgId,

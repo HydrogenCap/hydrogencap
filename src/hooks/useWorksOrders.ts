@@ -92,7 +92,7 @@ export function useWorksOrdersForRequest(requestId: string | undefined) {
         .from('work_orders')
         .select(`
           *,
-          contractor:compliance_contractors_v2(id, company_name, contact_name, email, phone, rating, service_types)
+          contractor:compliance_contractors(id, company_name, contact_name, email, phone, rating, service_types)
         `)
         .eq('maintenance_request_id', requestId!)
         .order('created_at', { ascending: false });
@@ -111,7 +111,7 @@ export function useWorksOrder(orderId: string | undefined) {
         .from('work_orders')
         .select(`
           *,
-          contractor:compliance_contractors_v2(id, company_name, contact_name, email, phone, rating, service_types)
+          contractor:compliance_contractors(id, company_name, contact_name, email, phone, rating, service_types)
         `)
         .eq('id', orderId!)
         .single();
