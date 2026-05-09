@@ -9627,6 +9627,36 @@ export type Database = {
           },
         ]
       }
+      v1_freeze_violations: {
+        Row: {
+          attempted_at: string
+          attempted_op: string
+          db_session_user: string
+          error_code: string | null
+          id: string
+          query_fragment: string | null
+          table_name: string
+        }
+        Insert: {
+          attempted_at?: string
+          attempted_op: string
+          db_session_user: string
+          error_code?: string | null
+          id?: string
+          query_fragment?: string | null
+          table_name: string
+        }
+        Update: {
+          attempted_at?: string
+          attempted_op?: string
+          db_session_user?: string
+          error_code?: string | null
+          id?: string
+          query_fragment?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       valuation_alerts: {
         Row: {
           alert_type: string
