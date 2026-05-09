@@ -55,10 +55,26 @@ const WRITE_GUARD_ALLOWLIST = new Set([
   'supabase/functions/send-compliance-reminders/index.ts',
 ]);
 
-const PATTERNS = V1_TABLES.flatMap((t) => [
-  { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'any' },
-  { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'any' },
-]);
+// Partial-#61 (2026-05-09): forward-looking guard for the 4 V2 names that
+// were renamed to canonical. They no longer exist as DB tables — any
+// re-introduction in code is a regression.
+const RENAMED_V2_TABLES = [
+  'compliance_contractors_v2',
+  'compliance_requirements_v2',
+  'property_cost_budgets_v2',
+  'property_income_budgets_v2',
+];
+
+const PATTERNS = [
+  ...V1_TABLES.flatMap((t) => [
+    { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'drop' },
+    { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'drop' },
+  ]),
+  ...RENAMED_V2_TABLES.flatMap((t) => [
+    { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'renamed' },
+    { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'renamed' },
+  ]),
+];
 
 // Multi-line write patterns for the §0b Ship A guard. We collapse whitespace
 // before matching so a chained `.from('compliance_items')\n  .update({...})`
