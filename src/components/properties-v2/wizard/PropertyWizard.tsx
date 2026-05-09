@@ -224,7 +224,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
       const enabledCompliance = data.compliance_items.filter(c => c.is_required);
       if (enabledCompliance.length > 0) {
         try {
-          await supabase.from('compliance_requirements_v2').insert(
+          await supabase.from('compliance_requirements').insert(
             enabledCompliance.map(c => ({
               property_id: property.id,
               org_id: orgId,

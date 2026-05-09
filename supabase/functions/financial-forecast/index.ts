@@ -445,9 +445,9 @@ serve(withInvocationLog("financial-forecast", async (req, _invocationLog) => {
         .from("loan_facilities")
         .select(LOAN_FACILITY_SELECT)
         .eq("org_id", orgId),
-      supabase.from("property_income_budgets_v2").select("property_id, tax_year, annual_rent_gbp"),
+      supabase.from("property_income_budgets").select("property_id, tax_year, annual_rent_gbp"),
       supabase
-        .from("property_cost_budgets_v2")
+        .from("property_cost_budgets")
         .select(PROPERTY_COST_BUDGET_SELECT),
     ]);
 

@@ -1,5 +1,5 @@
 /**
- * V2 write hook for property_cost_budgets_v2 (Costs Prompt B, 2026-05-04).
+ * V2 write hook for property_cost_budgets (Costs Prompt B, 2026-05-04).
  *
  * Replaces the now-frozen V1 useUpsertCosts. Keyed by the
  * (property_id, tax_year) UNIQUE composite. Tax year follows the UK
@@ -43,7 +43,7 @@ export function useUpsertPropertyCostBudget() {
     mutationFn: async (input: PropertyCostBudgetUpsertInput) => {
       const orgId = await fetchUserOrgId();
       const { data, error } = await supabaseAny
-        .from('property_cost_budgets_v2')
+        .from('property_cost_budgets')
         .upsert(
           { ...input, org_id: orgId },
           { onConflict: 'property_id,tax_year' },
@@ -54,7 +54,7 @@ export function useUpsertPropertyCostBudget() {
       return data;
     },
     onSuccess: (data: { property_id?: string } | null) => {
-      queryClient.invalidateQueries({ queryKey: ['property_cost_budgets_v2'] });
+      queryClient.invalidateQueries({ queryKey: ['property_cost_budgets'] });
       queryClient.invalidateQueries({ queryKey: ['property', data?.property_id] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       showMutationSuccess('Costs updated');

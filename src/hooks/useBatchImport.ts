@@ -87,7 +87,7 @@ export function useBatchImport() {
           // present in the CSV (no-op rather than erroring the row).
 
           // Income data: V1 `income` dropped (Income migration 2026-05-06).
-          // Write to V2 property_income_budgets_v2 keyed by tax_year.
+          // Write to V2 property_income_budgets keyed by tax_year.
           const annualRent = row.data.annual_rent_gbp as number | null;
           if (annualRent !== null) {
             const next = (currentYear + 1) % 100;
@@ -100,7 +100,7 @@ export function useBatchImport() {
             };
 
             const { error: incomeError } = await supabaseAny
-              .from('property_income_budgets_v2')
+              .from('property_income_budgets')
               .upsert(incomeData, { onConflict: 'property_id,tax_year' });
 
             if (incomeError) {

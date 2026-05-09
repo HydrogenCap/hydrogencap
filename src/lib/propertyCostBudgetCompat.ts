@@ -1,5 +1,5 @@
 /**
- * V2 property_cost_budgets_v2 read shim for the src/ side (Costs Prompt C, 2026-05-04).
+ * V2 property_cost_budgets read shim for the src/ side (Costs Prompt C, 2026-05-04).
  *
  * Mirrors supabase/functions/_shared/propertyCostBudget.ts. Kept duplicated
  * because src/ and supabase/functions/ cannot import each other.
@@ -21,13 +21,13 @@ export function warnIfLegacyYearMissing(
     const tx = r.tax_year ?? '';
     if (!TAX_YEAR_RE.test(tx)) {
       console.warn(
-        `[${context}] property_cost_budgets_v2 row id=${r.id ?? '?'} has unparsable tax_year='${tx}'`,
+        `[${context}] property_cost_budgets row id=${r.id ?? '?'} has unparsable tax_year='${tx}'`,
       );
     }
   }
 }
 
-export interface PropertyCostBudgetV2RowLite {
+export interface PropertyCostBudgetRowLite {
   id: string;
   org_id?: string;
   property_id: string;
@@ -53,7 +53,7 @@ const eff = (m: number | null | undefined, c: number | null | undefined) =>
   (m ?? null) !== null ? (m as number) : (c ?? null);
 
 /** V2 row → V1 `costs` legacy shape with integer `year`. */
-export function propertyCostBudgetToLegacyShape(row: PropertyCostBudgetV2RowLite) {
+export function propertyCostBudgetToLegacyShape(row: PropertyCostBudgetRowLite) {
   let year: number;
   try {
     year = taxYearToYear(row.tax_year);

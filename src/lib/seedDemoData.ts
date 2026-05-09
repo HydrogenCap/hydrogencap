@@ -146,7 +146,7 @@ export async function seedDemoData(
     // 7. Create compliance requirements
     for (const req of DEMO_COMPLIANCE_REQS) {
       const { property_index, ...rest } = req;
-      const { error } = await supabase.from('compliance_requirements_v2').insert({
+      const { error } = await supabase.from('compliance_requirements').insert({
         ...rest,
         org_id: orgId,
         property_id: propertyIds[property_index],
@@ -221,7 +221,7 @@ export async function clearDemoData(orgId: string): Promise<{ success: boolean; 
     await supabase.from('void_periods').delete().in('property_id', propIds);
     // Compliance docs & reqs
     await supabase.from('compliance_documents_v2').delete().in('property_id', propIds);
-    await supabase.from('compliance_requirements_v2').delete().in('property_id', propIds);
+    await supabase.from('compliance_requirements').delete().in('property_id', propIds);
 
     // Find rooms for these properties
     const { data: demoRooms } = await supabase.from('rooms_v2').select('id').in('property_id', propIds);

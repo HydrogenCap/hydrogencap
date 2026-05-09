@@ -108,7 +108,7 @@ serve(withInvocationLog("analyse-acquisition", async (req, _invocationLog) => {
         .select(LOAN_FACILITY_SELECT)
         .eq("org_id", orgId),
       supabaseAdmin
-        .from("property_income_budgets_v2")
+        .from("property_income_budgets")
         .select("property_id, tax_year, annual_rent_gbp")
         .in(
           "property_id",

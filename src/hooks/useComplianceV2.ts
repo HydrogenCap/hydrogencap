@@ -203,7 +203,7 @@ export function useToggleRequirementV2() {
       overrideReason?: string;
     }) => {
       const { error } = await supabaseAny
-        .from('compliance_requirements_v2')
+        .from('compliance_requirements')
         .update({
           is_required: isRequired,
           override_reason: isRequired ? null : (overrideReason || null),

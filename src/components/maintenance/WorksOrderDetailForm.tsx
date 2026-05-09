@@ -39,10 +39,10 @@ export function WorksOrderDetailForm({ worksOrder: wo }: Props) {
 
   // Load contractors for assignment
   const { data: contractors } = useQuery({
-    queryKey: ['compliance_contractors_v2_list'],
+    queryKey: ['compliance_contractors_list'],
     queryFn: async () => {
       const { data, error } = await supabaseAny
-        .from('compliance_contractors_v2')
+        .from('compliance_contractors')
         .select('id, company_name, rating, service_types')
         .order('company_name');
       if (error) throw error;
