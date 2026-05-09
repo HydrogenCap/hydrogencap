@@ -120,11 +120,11 @@ for (const scanDir of SCAN_DIRS) {
     const content = readFileSync(file, 'utf8');
     const lines = content.split('\n');
 
-    // (1) Per-line drop checks for fully-removed V1 tables.
+    // (1) Per-line drop checks for fully-removed V1 tables and renamed-away V2 names.
     lines.forEach((line, i) => {
-      for (const { table, regex } of PATTERNS) {
+      for (const { table, regex, kind } of PATTERNS) {
         if (regex.test(line)) {
-          offenders.push({ file: rel, line: i + 1, table, kind: 'drop', snippet: line.trim() });
+          offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });
         }
       }
     });
