@@ -4,8 +4,15 @@
 // Dropped V1 tables (replaced by V2 equivalents):
 //   loans     → loan_facilities
 //   tenancies → tenancy_agreements
-//   costs     → property_cost_budgets_v2
-//   income    → property_income_budgets_v2
+//   costs     → property_cost_budgets
+//   income    → property_income_budgets
+//
+// Renamed-away `*_v2` tables (Partial-#61, 2026-05-09 — these names no longer
+// exist in the database and must NOT be re-introduced; use the canonical name):
+//   compliance_contractors_v2  → compliance_contractors
+//   compliance_requirements_v2 → compliance_requirements
+//   property_cost_budgets_v2   → property_cost_budgets
+//   property_income_budgets_v2 → property_income_budgets
 //
 // Patterns matched:
 //   (a) .from('<table>') / .from("<table>")    — Supabase client calls
