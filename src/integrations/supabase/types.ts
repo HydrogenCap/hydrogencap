@@ -1558,6 +1558,7 @@ export type Database = {
           override_reason: string | null
           property_id: string
           requirement_reason: string | null
+          responsible_party: string | null
           review_frequency_months: number | null
           room_id: string | null
           updated_at: string | null
@@ -1573,6 +1574,7 @@ export type Database = {
           override_reason?: string | null
           property_id: string
           requirement_reason?: string | null
+          responsible_party?: string | null
           review_frequency_months?: number | null
           room_id?: string | null
           updated_at?: string | null
@@ -1588,6 +1590,7 @@ export type Database = {
           override_reason?: string | null
           property_id?: string
           requirement_reason?: string | null
+          responsible_party?: string | null
           review_frequency_months?: number | null
           room_id?: string | null
           updated_at?: string | null
@@ -10151,6 +10154,7 @@ export type Database = {
           property_id: string | null
           property_type: string | null
           requirement_id: string | null
+          responsible_party: string | null
           review_frequency_months: number | null
           urgency_score: number | null
         }

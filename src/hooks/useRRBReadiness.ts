@@ -60,9 +60,14 @@ export function useRRBReadinessProperty(propertyId: string | undefined) {
         supabaseAny
           .from('rent_schedule')
           .select('tenancy_id, due_date, rent_amount, agreement_id'),
+        // §0b Ship C2 — read compliance from V2 matrix view (not V1 compliance_items).
+        // The view joins compliance_requirements_v2 + the current compliance_documents_v2
+        // row, so `expiry_date` here is the active certificate's expiry. `document_type`
+        // is the V2 enum slug (e.g. 'gas_safety_certificate'); normaliseCertType() in
+        // src/lib/rrb/score.ts handles substring matches and accepts these slugs unchanged.
         supabaseAny
-          .from('compliance_items')
-          .select('compliance_type, expiry_date')
+          .from('compliance_matrix_v2')
+          .select('document_type, expiry_date, is_required')
           .eq('property_id', propertyId),
         supabaseAny
           .from('properties_v2')
@@ -92,10 +97,14 @@ export function useRRBReadinessProperty(propertyId: string | undefined) {
           due_date: r.due_date,
           rent_amount: Number(r.rent_amount),
         }));
-      const compliance = (cRes.data || []).map((c: { compliance_type: string; expiry_date: string | null }) => ({
-        type: c.compliance_type,
-        expiry_date: c.expiry_date,
-      }));
+      // §0b Ship C2 — `document_type` is the V2 enum slug; only count rows
+      // the matrix view marks as required (filters out is_required=false overrides).
+      const compliance = (cRes.data || [])
+        .filter((c: { is_required: boolean | null }) => c.is_required !== false)
+        .map((c: { document_type: string; expiry_date: string | null }) => ({
+          type: c.document_type,
+          expiry_date: c.expiry_date,
+        }));
       const propertyType: string = pRes.data?.property_type ?? '';
       const isHmo = propertyType.toLowerCase().includes('hmo');
       const hasActiveLicence = !!pRes.data?.is_hmo_licensed && !!pRes.data?.hmo_licence_number;

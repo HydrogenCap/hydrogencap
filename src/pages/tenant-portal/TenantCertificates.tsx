@@ -11,9 +11,10 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { toast } from 'sonner';
 
-// Only show certificates tenants are legally entitled to see
+// §0b Ship C2 — V2 enum slugs from compliance_matrix_v2.document_type.
+// Only show certificates tenants are legally entitled to see.
 const TENANT_VISIBLE_CERT_TYPES = [
-  'gas_safety',
+  'gas_safety_certificate',
   'eicr',
   'epc',
   'hmo_licence',
@@ -21,7 +22,7 @@ const TENANT_VISIBLE_CERT_TYPES = [
 ];
 
 const CERT_TYPE_LABELS: Record<string, { label: string; description: string }> = {
-  gas_safety: {
+  gas_safety_certificate: {
     label: 'Gas Safety Certificate (CP12)',
     description: 'Annual gas safety check — landlords must provide a copy within 28 days',
   },
@@ -70,46 +71,29 @@ export default function TenantCertificates() {
     enabled: !!tenancyId,
   });
 
-  // Fetch compliance items for this property (only tenant-visible types)
-  const { data: complianceItems, isLoading } = useQuery({
-    queryKey: ['tenant-certs-compliance', tenancy?.property_id],
+  // §0b Ship C2 — read from compliance_matrix_v2 view (joins requirements +
+  // current document) instead of separate V1 compliance_items + compliance_documents
+  // queries. RLS on the underlying V2 tables mirrors V1 (user_has_org_access +
+  // user_has_shareholder_compliance_access) — exact parity for tenant-portal access.
+  const { data: matrixRows, isLoading } = useQuery({
+    queryKey: ['tenant-certs-matrix', tenancy?.property_id],
     queryFn: async () => {
       if (!tenancy?.property_id) return [];
       const { data, error } = await supabaseAny
-        .from('compliance_items')
-        .select(`
-          id,
-          compliance_type,
-          issue_date,
-          expiry_date,
-          is_required,
-          notes
-        `)
+        .from('compliance_matrix_v2')
+        .select(
+          'requirement_id, document_type, issue_date, expiry_date, is_required, document_id, file_url, document_notes',
+        )
         .eq('property_id', tenancy.property_id)
-        .in('compliance_type', TENANT_VISIBLE_CERT_TYPES)
-        .order('compliance_type');
+        .in('document_type', TENANT_VISIBLE_CERT_TYPES)
+        .order('document_type');
       if (error) throw error;
       return data || [];
     },
     enabled: !!tenancy?.property_id,
   });
 
-  // Fetch associated documents for compliance items
-  const complianceItemIds = complianceItems?.map(c => c.id) || [];
-  const { data: complianceDocs } = useQuery({
-    queryKey: ['tenant-certs-docs', complianceItemIds],
-    queryFn: async () => {
-      if (complianceItemIds.length === 0) return [];
-      const { data, error } = await supabaseAny
-        .from('compliance_documents')
-        .select('*')
-        .in('compliance_item_id', complianceItemIds)
-        .eq('is_current', true);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: complianceItemIds.length > 0,
-  });
+  const complianceItems = matrixRows;
 
   const handleDownload = async (fileUrl: string, fileName: string) => {
     try {
@@ -124,8 +108,8 @@ export default function TenantCertificates() {
     }
   };
 
-  const getDocForItem = (complianceItemId: string) =>
-    complianceDocs?.find(d => d.compliance_item_id === complianceItemId);
+  // Matrix-view rows already include the active doc's file_url + document_id;
+  // no separate compliance_documents query is needed under V2.
 
   return (
     <TenantPortalLayoutV2>
@@ -156,16 +140,17 @@ export default function TenantCertificates() {
         ) : complianceItems && complianceItems.length > 0 ? (
           <div className="space-y-3">
             {complianceItems.map((item) => {
-              const typeInfo = CERT_TYPE_LABELS[item.compliance_type] || {
-                label: item.compliance_type,
+              const typeInfo = CERT_TYPE_LABELS[item.document_type] || {
+                label: item.document_type,
                 description: '',
               };
               const status = getCertStatus(item.expiry_date);
               const StatusIcon = status.icon;
-              const doc = getDocForItem(item.id);
+              const hasDoc = !!item.document_id && !!item.file_url;
+              const downloadName = `${typeInfo.label}.pdf`;
 
               return (
-                <Card key={item.id}>
+                <Card key={item.requirement_id}>
                   <CardContent className="py-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1 min-w-0">
@@ -188,11 +173,11 @@ export default function TenantCertificates() {
                           <StatusIcon className="h-3 w-3" />
                           {status.label}
                         </Badge>
-                        {doc ? (
+                        {hasDoc ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDownload(doc.file_url, doc.original_file_name)}
+                            onClick={() => handleDownload(item.file_url, downloadName)}
                           >
                             <Download className="mr-1.5 h-3.5 w-3.5" />
                             Download
