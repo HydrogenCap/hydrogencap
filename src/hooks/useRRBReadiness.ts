@@ -97,10 +97,14 @@ export function useRRBReadinessProperty(propertyId: string | undefined) {
           due_date: r.due_date,
           rent_amount: Number(r.rent_amount),
         }));
-      const compliance = (cRes.data || []).map((c: { compliance_type: string; expiry_date: string | null }) => ({
-        type: c.compliance_type,
-        expiry_date: c.expiry_date,
-      }));
+      // §0b Ship C2 — `document_type` is the V2 enum slug; only count rows
+      // the matrix view marks as required (filters out is_required=false overrides).
+      const compliance = (cRes.data || [])
+        .filter((c: { is_required: boolean | null }) => c.is_required !== false)
+        .map((c: { document_type: string; expiry_date: string | null }) => ({
+          type: c.document_type,
+          expiry_date: c.expiry_date,
+        }));
       const propertyType: string = pRes.data?.property_type ?? '';
       const isHmo = propertyType.toLowerCase().includes('hmo');
       const hasActiveLicence = !!pRes.data?.is_hmo_licensed && !!pRes.data?.hmo_licence_number;
