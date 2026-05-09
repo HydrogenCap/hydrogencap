@@ -82,11 +82,6 @@ interface PropertyIdRow {
   id: string;
 }
 
-
-interface PropertyIdRow {
-  id: string;
-}
-
 interface InsurancePolicyIdRow {
   id: string;
 }
