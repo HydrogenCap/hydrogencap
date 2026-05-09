@@ -81,28 +81,62 @@ for (const scanDir of SCAN_DIRS) {
   for (const file of walk(absDir)) {
     const rel = relative(root, file).split(sep).join('/');
     if (ALLOWLIST.has(rel)) continue;
-    const lines = readFileSync(file, 'utf8').split('\n');
+    const content = readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+
+    // (1) Per-line drop checks for fully-removed V1 tables.
     lines.forEach((line, i) => {
       for (const { table, regex } of PATTERNS) {
         if (regex.test(line)) {
-          offenders.push({ file: rel, line: i + 1, table, snippet: line.trim() });
+          offenders.push({ file: rel, line: i + 1, table, kind: 'drop', snippet: line.trim() });
         }
       }
     });
+
+    // (2) Whole-file write-pattern checks for V1 tables whose reads are
+    // still allowed but whose writes were killed in §0b Ship A.
+    const collapsed = content.replace(/\s+/g, ' ');
+    for (const { table, regex } of WRITE_PATTERNS) {
+      const m = collapsed.match(regex);
+      if (m) {
+        // Re-locate the offending `.from('<table>')` call in the original
+        // text so the error points at a real line number.
+        const fromCallRe = new RegExp(`\\.from\\(\\s*['"\`]${table}['"\`]\\s*\\)`, 'g');
+        let lineNo = 0;
+        let match;
+        while ((match = fromCallRe.exec(content)) !== null) {
+          lineNo = content.slice(0, match.index).split('\n').length;
+          // Look in a small window for the banned write call.
+          const window = content.slice(match.index, match.index + 400).replace(/\s+/g, ' ');
+          if (regex.test(window)) {
+            offenders.push({
+              file: rel,
+              line: lineNo,
+              table,
+              kind: 'write',
+              snippet: window.slice(0, 120).trim(),
+            });
+            break;
+          }
+        }
+      }
+    }
   }
 }
 
 if (offenders.length > 0) {
   console.error('\n❌ Disallowed V1 table reference(s) found in production code:');
   for (const o of offenders) {
-    console.error(`  - ${o.file}:${o.line}  [${o.table}]  ${o.snippet}`);
+    console.error(`  - ${o.file}:${o.line}  [${o.table}/${o.kind}]  ${o.snippet}`);
   }
   console.error(
-    `\nThe V1 tables (loans, tenancies, costs, income) have been dropped. ` +
-    `Migrate to the V2 equivalents (loan_facilities, tenancy_agreements, ` +
-    `property_cost_budgets_v2, property_income_budgets_v2). ` +
-    `If this reference is intentional (e.g. a throw-guard string), add the file ` +
-    `to the allowlist in scripts/check-no-v1-table-refs.mjs.\n`,
+    `\nDropped V1 tables (loans, tenancies, costs, income) — migrate to V2 ` +
+    `(loan_facilities, tenancy_agreements, property_cost_budgets_v2, property_income_budgets_v2).\n` +
+    `Frozen V1 writes (compliance_items, compliance_documents) — §0b Ship A killed all ` +
+    `insert/update/upsert/delete on these tables. Reads via .select(...) are still allowed; they ` +
+    `get redirected via a compat layer in Ship C/D.\n` +
+    `If a reference is intentional (e.g. a throw-guard string), add the file to the allowlist ` +
+    `in scripts/check-no-v1-table-refs.mjs.\n`,
   );
   process.exit(1);
 }
