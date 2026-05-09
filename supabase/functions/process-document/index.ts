@@ -43,7 +43,8 @@ const DEFAULT_VALIDITY_YEARS: Record<string, number> = {
   "hmo_licence": 5, "legionella_assessment": 2,
 };
 
-const DEFAULT_REMINDER_DAYS = [90, 60, 30, 14, 7];
+// (DEFAULT_REMINDER_DAYS removed in §0b Ship A — only the V1 compliance_items
+// insert used it, and that write is gone.)
 
 // Mapping from AI doc_type to compliance_documents_v2 document_type
 const DOC_TYPE_TO_V2_TYPE: Record<string, string> = {
