@@ -1,10 +1,12 @@
 /**
- * Regression tests for useComplianceIntake — V1 mirror behaviour.
+ * Regression tests for useComplianceIntake — §0b Ship A invariant.
  *
- * useAcceptComplianceDocument writes the canonical V2 row, then mirrors
- * the issue/expiry dates into the legacy V1 `compliance_items` table so
- * Property Detail, Compliance Calendar and Go-Live Checklist stay in
- * sync without a separate manual entry.
+ * After §0b Ship A (kill double-writers), useAcceptComplianceDocument MUST
+ * NOT write to the V1 `compliance_items` or `compliance_documents` tables.
+ * Only V2 (`compliance_documents_v2`) writes are permitted.
+ *
+ * The previous test asserted V1 mirror behaviour — that mirror has been
+ * removed. This file now asserts the inverse invariant.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act } from '@testing-library/react';
@@ -31,12 +33,8 @@ vi.mock('@/hooks/useUserOrg', () => ({
   fetchUserOrgId: vi.fn(async () => 'org-1'),
 }));
 
-let existingV1Item: { id: string; expiry_date: string | null } | null = null;
-
 beforeEach(() => {
-  existingV1Item = null;
-
-  mock = createMockSupabase(({ table, op, filters }) => {
+  mock = createMockSupabase(({ table, op }) => {
     if (table === 'compliance_documents_v2' && op === 'select') {
       return { data: null, error: null };
     }
@@ -59,22 +57,11 @@ beforeEach(() => {
     if (table === 'documents' && op === 'update') {
       return { data: null, error: null };
     }
-    if (table === 'compliance_items' && op === 'select') {
-      const propEq = (filters.property_id as { eq: string } | undefined)?.eq;
-      const typeEq = (filters.compliance_type as { eq: string } | undefined)?.eq;
-      if (propEq && typeEq && existingV1Item) {
-        return { data: existingV1Item, error: null };
-      }
-      return { data: null, error: null };
-    }
-    if (table === 'compliance_items' && (op === 'insert' || op === 'update')) {
-      return { data: null, error: null };
-    }
     return { data: null, error: null };
   });
 });
 
-describe('useAcceptComplianceDocument — V1 mirror', () => {
+describe('useAcceptComplianceDocument — §0b Ship A invariant (no V1 writes)', () => {
   const baseParams = {
     documentId: 'inbox-doc-1',
     docType: 'gas_safety_certificate',
@@ -88,9 +75,7 @@ describe('useAcceptComplianceDocument — V1 mirror', () => {
     originalAiSuggestions: undefined,
   };
 
-  it('inserts a new compliance_items row when none exists for that property + type', async () => {
-    existingV1Item = null;
-
+  it('does NOT write to compliance_items (V1) during intake', async () => {
     const { useAcceptComplianceDocument } = await import('@/hooks/useComplianceIntake');
     const { result } = renderAppHook(() => useAcceptComplianceDocument());
 
@@ -98,23 +83,15 @@ describe('useAcceptComplianceDocument — V1 mirror', () => {
       await result.current.mutateAsync(baseParams);
     });
 
-    const v1Insert = mock.__calls.find(
-      (c: QueryState) => c.table === 'compliance_items' && c.op === 'insert'
+    const v1ItemWrites = mock.__calls.filter(
+      (c: QueryState) =>
+        c.table === 'compliance_items' &&
+        (c.op === 'insert' || c.op === 'update' || c.op === 'upsert' || c.op === 'delete'),
     );
-    expect(v1Insert).toBeDefined();
-    const payload = v1Insert?.payload as Record<string, unknown>;
-    expect(payload.org_id).toBe('org-1');
-    expect(payload.property_id).toBe('p1');
-    expect(payload.compliance_type).toBe('Gas Safety Certificate (CP12)');
-    expect(payload.issue_date).toBe('2025-04-01');
-    expect(payload.expiry_date).toBe('2026-04-01');
-    expect(payload.is_required).toBe(true);
-    expect(payload.is_manually_excluded).toBe(false);
+    expect(v1ItemWrites).toEqual([]);
   });
 
-  it('updates an existing compliance_items row and clears renewal / reminder state', async () => {
-    existingV1Item = { id: 'item-existing', expiry_date: '2024-04-01' };
-
+  it('does NOT write to compliance_documents (V1) during intake', async () => {
     const { useAcceptComplianceDocument } = await import('@/hooks/useComplianceIntake');
     const { result } = renderAppHook(() => useAcceptComplianceDocument());
 
@@ -122,18 +99,25 @@ describe('useAcceptComplianceDocument — V1 mirror', () => {
       await result.current.mutateAsync(baseParams);
     });
 
-    const v1Update = mock.__calls.find(
-      (c: QueryState) => c.table === 'compliance_items' && c.op === 'update'
+    const v1DocWrites = mock.__calls.filter(
+      (c: QueryState) =>
+        c.table === 'compliance_documents' &&
+        (c.op === 'insert' || c.op === 'update' || c.op === 'upsert' || c.op === 'delete'),
     );
-    expect(v1Update).toBeDefined();
-    const payload = v1Update?.payload as Record<string, unknown>;
-    expect(payload.expiry_date).toBe('2026-04-01');
-    expect(payload.renewal_status).toBeNull();
-    expect(payload.last_reminder_sent_at).toBeNull();
-    expect(payload.reminder_count).toBe(0);
+    expect(v1DocWrites).toEqual([]);
+  });
 
-    // Filter targets the existing row by id
-    const idEq = (v1Update?.filters.id as { eq: string } | undefined)?.eq;
-    expect(idEq).toBe('item-existing');
+  it('still writes the V2 compliance_documents_v2 record', async () => {
+    const { useAcceptComplianceDocument } = await import('@/hooks/useComplianceIntake');
+    const { result } = renderAppHook(() => useAcceptComplianceDocument());
+
+    await act(async () => {
+      await result.current.mutateAsync(baseParams);
+    });
+
+    const v2Insert = mock.__calls.find(
+      (c: QueryState) => c.table === 'compliance_documents_v2' && c.op === 'insert',
+    );
+    expect(v2Insert).toBeDefined();
   });
 });
