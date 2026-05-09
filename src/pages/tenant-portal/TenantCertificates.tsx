@@ -71,46 +71,29 @@ export default function TenantCertificates() {
     enabled: !!tenancyId,
   });
 
-  // Fetch compliance items for this property (only tenant-visible types)
-  const { data: complianceItems, isLoading } = useQuery({
-    queryKey: ['tenant-certs-compliance', tenancy?.property_id],
+  // §0b Ship C2 — read from compliance_matrix_v2 view (joins requirements +
+  // current document) instead of separate V1 compliance_items + compliance_documents
+  // queries. RLS on the underlying V2 tables mirrors V1 (user_has_org_access +
+  // user_has_shareholder_compliance_access) — exact parity for tenant-portal access.
+  const { data: matrixRows, isLoading } = useQuery({
+    queryKey: ['tenant-certs-matrix', tenancy?.property_id],
     queryFn: async () => {
       if (!tenancy?.property_id) return [];
       const { data, error } = await supabaseAny
-        .from('compliance_items')
-        .select(`
-          id,
-          compliance_type,
-          issue_date,
-          expiry_date,
-          is_required,
-          notes
-        `)
+        .from('compliance_matrix_v2')
+        .select(
+          'requirement_id, document_type, issue_date, expiry_date, is_required, document_id, file_url, document_notes',
+        )
         .eq('property_id', tenancy.property_id)
-        .in('compliance_type', TENANT_VISIBLE_CERT_TYPES)
-        .order('compliance_type');
+        .in('document_type', TENANT_VISIBLE_CERT_TYPES)
+        .order('document_type');
       if (error) throw error;
       return data || [];
     },
     enabled: !!tenancy?.property_id,
   });
 
-  // Fetch associated documents for compliance items
-  const complianceItemIds = complianceItems?.map(c => c.id) || [];
-  const { data: complianceDocs } = useQuery({
-    queryKey: ['tenant-certs-docs', complianceItemIds],
-    queryFn: async () => {
-      if (complianceItemIds.length === 0) return [];
-      const { data, error } = await supabaseAny
-        .from('compliance_documents')
-        .select('*')
-        .in('compliance_item_id', complianceItemIds)
-        .eq('is_current', true);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: complianceItemIds.length > 0,
-  });
+  const complianceItems = matrixRows;
 
   const handleDownload = async (fileUrl: string, fileName: string) => {
     try {
