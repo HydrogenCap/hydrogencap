@@ -272,7 +272,7 @@ async function autoFileDocument(
       }
     }
 
-    return { success: true, complianceItemId };
+    return { success: true };
   } catch (err) {
     console.error('Auto-filing error:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
