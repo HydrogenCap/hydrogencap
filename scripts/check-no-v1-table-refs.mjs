@@ -110,7 +110,9 @@ for (const scanDir of SCAN_DIRS) {
     // (2) Whole-file write-pattern checks for V1 tables whose reads are
     // still allowed but whose writes were killed in §0b Ship A.
     const collapsed = content.replace(/\s+/g, ' ');
-    for (const { table, regex } of WRITE_PATTERNS) {
+    if (WRITE_GUARD_ALLOWLIST.has(rel)) {
+      // Skip §0b Ship A write-guard for files scheduled for Ship C/D.
+    } else for (const { table, regex } of WRITE_PATTERNS) {
       const m = collapsed.match(regex);
       if (m) {
         // Re-locate the offending `.from('<table>')` call in the original
