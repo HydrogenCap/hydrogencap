@@ -11,9 +11,10 @@ import { LoadingState } from '@/components/common/LoadingState';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { toast } from 'sonner';
 
-// Only show certificates tenants are legally entitled to see
+// §0b Ship C2 — V2 enum slugs from compliance_matrix_v2.document_type.
+// Only show certificates tenants are legally entitled to see.
 const TENANT_VISIBLE_CERT_TYPES = [
-  'gas_safety',
+  'gas_safety_certificate',
   'eicr',
   'epc',
   'hmo_licence',
@@ -21,7 +22,7 @@ const TENANT_VISIBLE_CERT_TYPES = [
 ];
 
 const CERT_TYPE_LABELS: Record<string, { label: string; description: string }> = {
-  gas_safety: {
+  gas_safety_certificate: {
     label: 'Gas Safety Certificate (CP12)',
     description: 'Annual gas safety check — landlords must provide a copy within 28 days',
   },
