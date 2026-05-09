@@ -194,3 +194,22 @@ memory (mem://architecture/audit-log-system-v2) covers the V2 tables; V1
 audit coverage for these workflows is whatever already existed pre-cutover.
 Confirm in C1.5 that `compliance_tasks` triggers cover the renewal lifecycle
 events the UI cares about.
+
+## Ship D — V1 `bulk-epc-enrich` removal
+
+Confirmed dead-code via static grep + pg_cron + invocation logs:
+- 0 callers in `src/` or `supabase/functions/` (only self-registration + lint allowlist + audit-doc rows)
+- 0 `cron.job` rows matching `%bulk-epc-enrich%`
+- 0 invocations returned by `edge_function_logs`
+
+The V2 sibling `bulk-epc-enrich-v2` (driven by `useBulkEpcEnrichV2` →
+`properties_v2` + `compliance_documents_v2`) fully replaces V1's scope.
+
+Actions shipped:
+- Deleted `supabase/functions/bulk-epc-enrich/` directory
+- Deregistered the deployed function via `delete_edge_functions(['bulk-epc-enrich'])`
+- Removed the V1 allowlist entry from `scripts/check-no-v1-table-refs.mjs`
+
+No stub-and-observe phase needed; both static and runtime signals agreed on
+DEAD. The `send-compliance-reminders` allowlist entry remains as the sole
+Ship D follow-up.
