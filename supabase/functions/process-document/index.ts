@@ -43,7 +43,8 @@ const DEFAULT_VALIDITY_YEARS: Record<string, number> = {
   "hmo_licence": 5, "legionella_assessment": 2,
 };
 
-const DEFAULT_REMINDER_DAYS = [90, 60, 30, 14, 7];
+// (DEFAULT_REMINDER_DAYS removed in §0b Ship A — only the V1 compliance_items
+// insert used it, and that write is gone.)
 
 // Mapping from AI doc_type to compliance_documents_v2 document_type
 const DOC_TYPE_TO_V2_TYPE: Record<string, string> = {
@@ -76,14 +77,6 @@ interface AIExtractionResult {
   extracted_certifier_name: string | null;
   extracted_certifier_company: string | null;
   compliance_type: string | null;
-}
-
-interface ExistingComplianceItemRow {
-  id: string;
-}
-
-interface ComplianceDocumentVersionRow {
-  version_number: number | null;
 }
 
 interface PropertyIdRow {
@@ -157,8 +150,8 @@ async function autoFileDocument(
   fileUrl: string,
   originalFilename: string,
   propertyAddress: string,
-  userId: string,
-): Promise<{ success: boolean; complianceItemId?: string; error?: string }> {
+  _userId: string,
+): Promise<{ success: boolean; error?: string }> {
   try {
     const complianceType = extraction.compliance_type;
     if (!complianceType || !extraction.matched_property_id) {
@@ -169,60 +162,11 @@ async function autoFileDocument(
       extraction.doc_type, extraction.extracted_issue_date, extraction.extracted_expiry_date
     );
 
-    // Check existing compliance item
-    const { data: existingItems } = await supabase
-      .from('compliance_items')
-      .select('id')
-      .eq('property_id', extraction.matched_property_id)
-      .eq('compliance_type', complianceType)
-      .limit(1);
-
-    let complianceItemId: string;
-
-    const typedExistingItems = (existingItems || []) as ExistingComplianceItemRow[];
-
-    if (typedExistingItems.length > 0) {
-      complianceItemId = typedExistingItems[0].id;
-      await supabase.from('compliance_items').update({
-        issue_date: extraction.extracted_issue_date,
-        expiry_date: calculatedExpiryDate,
-        notes: 'Auto-updated via AI Document Processing',
-      }).eq('id', complianceItemId);
-    } else {
-      const { data: newItem, error: createError } = await supabase
-        .from('compliance_items')
-        .insert({
-          property_id: extraction.matched_property_id,
-          org_id: orgId,
-          compliance_type: complianceType,
-          issue_date: extraction.extracted_issue_date,
-          expiry_date: calculatedExpiryDate,
-          responsible_party: 'Owner',
-          reminder_days: DEFAULT_REMINDER_DAYS,
-          notes: 'Auto-created via AI Document Processing',
-        })
-        .select()
-        .single();
-      if (createError || !newItem?.id) return { success: false, error: createError?.message || 'Failed to create compliance item' };
-      complianceItemId = newItem.id as string;
-    }
-
-    // Archive previous documents
-    await supabase.from('compliance_documents').update({
-      is_current: false, archived_at: new Date().toISOString()
-    }).eq('compliance_item_id', complianceItemId).eq('is_current', true);
-
-    // Get next version
-    const { data: existingDocs } = await supabase
-      .from('compliance_documents')
-      .select('version_number')
-      .eq('compliance_item_id', complianceItemId)
-      .order('version_number', { ascending: false })
-      .limit(1);
-    const typedExistingDocs = (existingDocs || []) as ComplianceDocumentVersionRow[];
-    const nextVersion = typedExistingDocs[0]?.version_number ? typedExistingDocs[0].version_number + 1 : 1;
-
-    // Generate filename and copy file into the private compliance buckets using org-prefixed paths
+    // Generate filename and copy file into the V2 compliance bucket using org-prefixed paths.
+    // V1 `compliance_items` + `compliance_documents` writes were removed in §0b Ship A
+    // (kill double-writers). The V1 storage upload to the `compliance` bucket also goes
+    // away — V2 viewing happens via `compliance-documents`. See
+    // docs/release/compliance-cutover-2026-05-08.md.
     const structuredFilename = generateComplianceFilename(complianceType, propertyAddress, originalFilename);
     const sourcePath = fileUrl.includes('/documents/') ? fileUrl.split('/documents/')[1] : fileUrl;
 
@@ -230,22 +174,10 @@ async function autoFileDocument(
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('documents').download(sourcePath);
       if (!downloadError && fileData) {
-        const compliancePath = `${orgId}/${extraction.matched_property_id}/${complianceItemId}/${Date.now()}_${structuredFilename}`;
-        await supabase.storage.from('compliance').upload(compliancePath, fileData);
-
-        await supabase.from('compliance_documents').insert({
-          compliance_item_id: complianceItemId,
-          file_url: compliancePath,
-          original_file_name: structuredFilename,
-          file_type: originalFilename.split('.').pop() || 'pdf',
-          uploaded_by: userId,
-          is_current: true,
-          version_number: nextVersion,
-          notes: 'Auto-filed via AI Document Processing',
-        });
-        // === Also file into compliance_documents_v2 for /compliance-v2 page ===
+        // === File into compliance_documents_v2 (canonical V2 path) ===
         const v2DocType = DOC_TYPE_TO_V2_TYPE[extraction.doc_type];
         if (v2DocType && extraction.matched_property_id) {
+          // V1 properties read kept until Ship C/D — used to resolve the V2 property id by postcode
           const { data: v1Prop } = await supabase.from('properties')
             .select('postcode, address_line')
             .eq('id', extraction.matched_property_id)
@@ -298,13 +230,12 @@ async function autoFileDocument(
       }
     }
 
-    // Update document record
+    // Update document record (V1 `compliance_item_id` field no longer set — removed in §0b Ship A)
     await supabase.from('documents').update({
       review_status: 'accepted',
       auto_filed: true,
       doc_type: extraction.doc_type,
       property_id: extraction.matched_property_id,
-      compliance_item_id: complianceItemId,
       final_file_name: structuredFilename,
       renamed_at: new Date().toISOString(),
     }).eq('id', documentId);
@@ -342,7 +273,7 @@ async function autoFileDocument(
       }
     }
 
-    return { success: true, complianceItemId };
+    return { success: true };
   } catch (err) {
     console.error('Auto-filing error:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };

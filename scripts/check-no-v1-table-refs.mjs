@@ -24,15 +24,46 @@ const root = process.cwd();
 const SCAN_DIRS = ['src', 'supabase/functions'];
 const V1_TABLES = ['loans', 'tenancies', 'costs', 'income'];
 
+// §0b Ship A — write-pattern guard: V1 `compliance_items` and
+// `compliance_documents` reads are still allowed (they get redirected via
+// a compat layer in Ship C/D), but writes (insert/update/upsert/delete)
+// must not appear in production code.
+const V1_WRITE_ONLY_TABLES = ['compliance_items', 'compliance_documents'];
+
 const ALLOWLIST = new Set([
   'src/lib/v1Frozen.ts',
   'src/__tests__/check-no-v1-table-refs.test.ts',
 ]);
 
-const PATTERNS = V1_TABLES.flatMap((t) => [
-  { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`) },
-  { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`) },
+// §0b Ship A — the write-guard for compliance_items / compliance_documents
+// is staged: Ship A locks the two double-writers (useComplianceIntake +
+// process-document). The remaining V1-only writers below are scheduled for
+// Ship C (UI hooks) and Ship D (background fns). Each entry points at the
+// ship that will remove it.
+const WRITE_GUARD_ALLOWLIST = new Set([
+  // Ship C — UI hooks (V1 reads + writes redirect via compat layer)
+  'src/hooks/useCompliance.ts',
+  'src/hooks/useRenewalWorkflow.ts',
+  // Ship D — background fns
+  'supabase/functions/bulk-epc-enrich/index.ts',
+  'supabase/functions/send-compliance-reminders/index.ts',
 ]);
+
+const PATTERNS = V1_TABLES.flatMap((t) => [
+  { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'any' },
+  { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'any' },
+]);
+
+// Multi-line write patterns for the §0b Ship A guard. We collapse whitespace
+// before matching so a chained `.from('compliance_items')\n  .update({...})`
+// is caught the same as a one-liner.
+const WRITE_PATTERNS = V1_WRITE_ONLY_TABLES.map((t) => ({
+  table: t,
+  regex: new RegExp(
+    `\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)\\s*\\.\\s*(insert|update|upsert|delete)\\b`,
+  ),
+  kind: 'write',
+}));
 
 function walk(dir) {
   const out = [];
@@ -64,28 +95,64 @@ for (const scanDir of SCAN_DIRS) {
   for (const file of walk(absDir)) {
     const rel = relative(root, file).split(sep).join('/');
     if (ALLOWLIST.has(rel)) continue;
-    const lines = readFileSync(file, 'utf8').split('\n');
+    const content = readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+
+    // (1) Per-line drop checks for fully-removed V1 tables.
     lines.forEach((line, i) => {
       for (const { table, regex } of PATTERNS) {
         if (regex.test(line)) {
-          offenders.push({ file: rel, line: i + 1, table, snippet: line.trim() });
+          offenders.push({ file: rel, line: i + 1, table, kind: 'drop', snippet: line.trim() });
         }
       }
     });
+
+    // (2) Whole-file write-pattern checks for V1 tables whose reads are
+    // still allowed but whose writes were killed in §0b Ship A.
+    const collapsed = content.replace(/\s+/g, ' ');
+    if (WRITE_GUARD_ALLOWLIST.has(rel)) {
+      // Skip §0b Ship A write-guard for files scheduled for Ship C/D.
+    } else for (const { table, regex } of WRITE_PATTERNS) {
+      const m = collapsed.match(regex);
+      if (m) {
+        // Re-locate the offending `.from('<table>')` call in the original
+        // text so the error points at a real line number.
+        const fromCallRe = new RegExp(`\\.from\\(\\s*['"\`]${table}['"\`]\\s*\\)`, 'g');
+        let lineNo = 0;
+        let match;
+        while ((match = fromCallRe.exec(content)) !== null) {
+          lineNo = content.slice(0, match.index).split('\n').length;
+          // Look in a small window for the banned write call.
+          const window = content.slice(match.index, match.index + 400).replace(/\s+/g, ' ');
+          if (regex.test(window)) {
+            offenders.push({
+              file: rel,
+              line: lineNo,
+              table,
+              kind: 'write',
+              snippet: window.slice(0, 120).trim(),
+            });
+            break;
+          }
+        }
+      }
+    }
   }
 }
 
 if (offenders.length > 0) {
   console.error('\n❌ Disallowed V1 table reference(s) found in production code:');
   for (const o of offenders) {
-    console.error(`  - ${o.file}:${o.line}  [${o.table}]  ${o.snippet}`);
+    console.error(`  - ${o.file}:${o.line}  [${o.table}/${o.kind}]  ${o.snippet}`);
   }
   console.error(
-    `\nThe V1 tables (loans, tenancies, costs, income) have been dropped. ` +
-    `Migrate to the V2 equivalents (loan_facilities, tenancy_agreements, ` +
-    `property_cost_budgets_v2, property_income_budgets_v2). ` +
-    `If this reference is intentional (e.g. a throw-guard string), add the file ` +
-    `to the allowlist in scripts/check-no-v1-table-refs.mjs.\n`,
+    `\nDropped V1 tables (loans, tenancies, costs, income) — migrate to V2 ` +
+    `(loan_facilities, tenancy_agreements, property_cost_budgets_v2, property_income_budgets_v2).\n` +
+    `Frozen V1 writes (compliance_items, compliance_documents) — §0b Ship A killed all ` +
+    `insert/update/upsert/delete on these tables. Reads via .select(...) are still allowed; they ` +
+    `get redirected via a compat layer in Ship C/D.\n` +
+    `If a reference is intentional (e.g. a throw-guard string), add the file to the allowlist ` +
+    `in scripts/check-no-v1-table-refs.mjs.\n`,
   );
   process.exit(1);
 }

@@ -349,46 +349,10 @@ export function useAcceptComplianceDocument() {
         }
       }
 
-      // 6b. Mirror to V1 compliance_items so legacy dashboards (Property
-      // Detail, calendar export, jobs dialog, go-live checklist) reflect
-      // the new dates without requiring a separate manual entry. We don't
-      // copy the file into the V1 `compliance` bucket — viewing still
-      // happens via the V2 doc — but the dates and renewal status are the
-      // user-visible bit on those screens.
-      const { data: existingItem } = await supabaseAny
-        .from('compliance_items')
-        .select('id, expiry_date')
-        .eq('property_id', propertyId)
-        .eq('compliance_type', complianceType)
-        .maybeSingle();
-
-      const itemUpdates = {
-        issue_date: issueDate || null,
-        expiry_date: calculatedExpiryDate,
-        is_required: true,
-        is_manually_excluded: false,
-        renewal_status: null,
-        renewal_booked_date: null,
-        last_reminder_sent_at: null,
-        reminder_count: 0,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (existingItem) {
-        await supabaseAny
-          .from('compliance_items')
-          .update(itemUpdates)
-          .eq('id', existingItem.id);
-      } else {
-        await supabaseAny
-          .from('compliance_items')
-          .insert({
-            org_id: orgId,
-            property_id: propertyId,
-            compliance_type: complianceType,
-            ...itemUpdates,
-          });
-      }
+      // 6b. V1 `compliance_items` mirror — REMOVED in §0b Ship A
+      // (kill double-writers). Reads of V1 still happen in legacy
+      // surfaces and will be redirected via a compat layer in Ship C.
+      // See docs/release/compliance-cutover-2026-05-08.md.
 
       // 7. Auto-populate insurance_policies if applicable
       if (docType === 'building_insurance' || docType === 'public_liability_insurance') {
