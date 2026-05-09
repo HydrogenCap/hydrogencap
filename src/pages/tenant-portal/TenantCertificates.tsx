@@ -108,8 +108,8 @@ export default function TenantCertificates() {
     }
   };
 
-  const getDocForItem = (complianceItemId: string) =>
-    complianceDocs?.find(d => d.compliance_item_id === complianceItemId);
+  // Matrix-view rows already include the active doc's file_url + document_id;
+  // no separate compliance_documents query is needed under V2.
 
   return (
     <TenantPortalLayoutV2>
@@ -140,16 +140,17 @@ export default function TenantCertificates() {
         ) : complianceItems && complianceItems.length > 0 ? (
           <div className="space-y-3">
             {complianceItems.map((item) => {
-              const typeInfo = CERT_TYPE_LABELS[item.compliance_type] || {
-                label: item.compliance_type,
+              const typeInfo = CERT_TYPE_LABELS[item.document_type] || {
+                label: item.document_type,
                 description: '',
               };
               const status = getCertStatus(item.expiry_date);
               const StatusIcon = status.icon;
-              const doc = getDocForItem(item.id);
+              const hasDoc = !!item.document_id && !!item.file_url;
+              const downloadName = `${typeInfo.label}.pdf`;
 
               return (
-                <Card key={item.id}>
+                <Card key={item.requirement_id}>
                   <CardContent className="py-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1 min-w-0">
@@ -172,11 +173,11 @@ export default function TenantCertificates() {
                           <StatusIcon className="h-3 w-3" />
                           {status.label}
                         </Badge>
-                        {doc ? (
+                        {hasDoc ? (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDownload(doc.file_url, doc.original_file_name)}
+                            onClick={() => handleDownload(item.file_url, downloadName)}
                           >
                             <Download className="mr-1.5 h-3.5 w-3.5" />
                             Download
