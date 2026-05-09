@@ -45,7 +45,6 @@ const WRITE_GUARD_ALLOWLIST = new Set([
   'src/hooks/useCompliance.ts',
   'src/hooks/useRenewalWorkflow.ts',
   // Ship D — background fns
-  'supabase/functions/bulk-epc-enrich/index.ts',
   'supabase/functions/send-compliance-reminders/index.ts',
 ]);
 
