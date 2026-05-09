@@ -1,112 +1,93 @@
-# Tenants §0b cutover — audit + STOP-and-ask
+## share_classes §0b audit — STOP-and-ask triggered (case b)
 
-## Step 1 — Data characterisation
+Audit complete; **one of the three STOP triggers fired**: `useShareRegister.ts` is writing V2-shaped payloads to the V1 table. That's a real bug to fix (or rule on) before Ship A — answer the design question at the bottom and then the rest of the plan ships clean.
 
-| | V1 `tenants` | V2 `tenants_v2` |
+### Step 1 — Data characterisation
+
+| Metric | Value | Notes |
 |---|---|---|
-| Row count | 3 | 3 |
-| Shared ids | 0 | — |
-| V1-only ids | **3** | — |
-| V2-only ids | — | **3** |
-| All `status='active'` | ✓ | ✓ |
+| `share_classes` (V1) rows | **19** | Unchanged from #76 snapshot |
+| `share_classes_v2` rows | **19** | Unchanged |
+| Shared ids (V1 ∩ V2) | **0** | 100% disjoint, as #27 predicted |
+| V1-only ids | 19 | All V1 rows |
+| V2-only ids | 19 | All V2 rows |
+| `migrated_from_v1` sentinel column on V1 | **absent** | No tenants-style migration trail; V2 was populated by an entirely separate pipeline |
 
-**V1 rows (live, company-type):**
-1. `Property Team / Clearsprings Ready Homes Ltd` (tenant_type=`company`)
-2. `Property Team / Serco Limited` (tenant_type=`company`)
-3. `Mike Molton / Oxford Brookes Enterprises Limited` (tenant_type=`company`)
+Coincidence of 19/19 ≠ duplicate set (id-disjoint). Whether they're the **same logical share classes** for the same companies (just split across schemas) is a Q1-style dedupe question we have NOT yet answered for share_classes — see design question #1 below.
 
-**V2 rows (look like duplicate re-entries):**
-1. `Property Team` (tenant_type=`private`, no company link)
-2. `Property Team` (tenant_type=`private`, no company link)
-3. `Mike Molton` (tenant_type=`private`, no company link)
+### Step 2 — Schema mapping (apples vs oranges)
 
-**Same human/contact names, different ids, company linkage stripped.** V2 was populated as private individuals rather than carrying through the company-tenant identity from V1. None of the V2 rows preserves `company_name`, `company_number`, `compliance_contact_*`, `vat_*`, etc.
+| V1 `share_classes` (10 cols) | V2 `share_classes_v2` (14 cols) | Drift |
+|---|---|---|
+| `id`, `created_at`, `updated_at` | same | — |
+| **`company_id`** → FK `companies` | **`entity_id`** → FK `legal_entities` | parent table changed (companies V1 → legal_entities V2) |
+| `name` | `class_name` | renamed |
+| `issued_shares`, `nominal_value`, `currency`, `is_primary` | same | — |
+| `shares_confirmed` | — | **V1-only**: data-quality flag (used by `confirmShareCapital` mutation) |
+| — | `voting_rights`, `dividend_rights`, `total_authorised`, `notes`, **`org_id`** | V2-only: rights model + direct org tenancy |
 
-V1 has **14 rows in `public.documents` linked via `documents.tenant_id` FK** — those documents currently anchor to the V1 company-tenant ids, not the V2 ids.
+**No V2 schema gap blocks cutover** (so STOP trigger (a) does NOT fire). The only V1-only field, `shares_confirmed`, can be carried forward by adding a nullable column to V2 (1-line migration), or absorbed into V2's `notes`, or dropped if "confirmed" is no longer a workflow concept — see design question #2.
 
-## Step 2 — Schema mapping (apples ≠ oranges)
+### Step 3 — Writers/readers (`from('share_classes')`)
 
-V1 has 41 columns; V2 has 16. The diff is structural, not cosmetic.
+10 hits across 3 hooks (matches #76):
 
-| Column family | V1 has | V2 has | Verdict |
+| File | Lines | Schema used | Verdict |
 |---|---|---|---|
-| Identity (id, org_id, name, email, phone, dob, NI, status, tenant_type, notes) | ✓ | ✓ | **Compatible** |
-| Emergency contact (3 fields) | ✓ | ✓ | **Compatible** |
-| Employment (3 fields: status, employer name/address, annual_income) | ✓ | ✗ | **Missing in V2** |
-| Guarantor (4 fields) | ✓ | ✗ | **Missing in V2** |
-| Previous landlord references (4 fields) | ✓ | ✗ | **Missing in V2** |
-| Portal (`portal_user_id`) | ✓ | ✗ | **Missing in V2** |
-| Company tenant (10 fields: company_name, company_number, registered address, contact name/email/phone/role, trading_name, vat_registered, vat_number) | ✓ | ✗ | **Missing in V2** — but currently in use on all 3 V1 rows |
-| Compliance contact (compliance_contact_name, compliance_contact_email) | ✓ | ✗ | **Missing in V2** — read by `send-tenant-certificates` |
-| Referral source | ✗ | ✓ | V2-only addition |
+| `src/hooks/useCompanies.ts` | 125, 207, 294, 314, 335 | **V1** (`company_id`, `name`, `shares_confirmed`) | Correct V1 caller — read + 3 writes (auto-create Ordinary on company create, create, update, confirm) |
+| `src/hooks/useCompanyLookthrough.ts` | 82 | **V1** (`company_id`) | Read-only — feeds the legacy lookthrough that `useOwnershipData` already replaced |
+| `src/hooks/useShareRegister.ts` | 103, 132, 150, 169 | **V2 schema** (`entity_id`, `class_name`) routed to **V1 table** | 🚨 **Schema-mismatched** — read filters on `entity_id` (which doesn't exist on V1) and write payload shape is V2-shaped |
 
-LIVE/DEAD assessment of the V1-only columns (per the §0b dead-state pattern):
-- **Company block (10 fields)**: **LIVE** — all 3 V1 rows populate `tenant_type='company'` + `company_name`. `send-tenant-certificates/index.ts:84` reads `company_name`, `company_contact_email`, `compliance_contact_name`, `compliance_contact_email`. Cannot be backfilled into V2 without schema extension.
-- **Compliance contact pair**: **LIVE** — read by `send-tenant-certificates`.
-- **Portal (`portal_user_id`)**: needs a follow-up grep before we can call it dead — tenant-portal RLS in #73 used `tenant_portal_access`, but if anything still resolves a tenant from the auth user via this column it's live. (Not blocking the audit; flag for Ship B verification.)
-- **Employment / guarantor / previous-landlord (11 fields)**: most likely **DEAD-from-UI** in current build (not surfaced in any V2 wizard step), but worth a one-pass UI grep before dropping — same pattern as compliance §0b's "is_coho_required" sweep.
+**STOP-and-ask trigger (b) fires here**, but with a twist: it's not a double-writer in the classic sense — `useShareRegister` is a **single-target writer pointed at the wrong target**. Either:
 
-## Step 3 — Current writers/readers (post safe-slice)
+- (i) it's currently silently broken (PostgREST will reject `.eq('entity_id', …)` against V1 with a 400 — which means UI features powered by `useShareRegister` are dead in prod today), OR
+- (ii) it's a typo that was always meant to be `share_classes_v2` and the test coverage / UI path never exercised it, OR
+- (iii) it's vestigial — the screen that powered it was retired, but the hook was left wired.
 
-`from('tenants')` (excluding `v1Frozen.ts`) — **3 sites, all read-only lookups**:
+Easy verification: grep for `useShareRegister` consumers to see which UI surface calls it. (`useShareCapital` from `src/hooks/useShareCapital.ts`, included in the codebase context, is a separate hook that ALREADY targets `share_classes_v2` correctly — strongly suggests `useShareRegister` is duplicate/legacy code).
 
-| File:Line | Shape | Fields read | Notes |
+### Step 4 — pg_depend (RLS + functions + triggers)
+
+- **0 inbound FKs** to `public.share_classes` ✅ clean drop on the FK side
+- **0 functions** reference `share_classes` row type (per `pg_depend` scan) ✅
+- **1 trigger**: `update_share_classes_updated_at` → `handle_updated_at()` (generic, drops with the table) ✅
+- **4 own-table RLS policies** all share the same `EXISTS (SELECT 1 FROM companies c WHERE c.id = share_classes.company_id AND user_has_org_access(c.org_id))` shape (one each for SELECT/INSERT/UPDATE/DELETE):
+  - `Users can view share classes in their org`
+  - `Users can insert share classes in their org`
+  - `Users can update share classes in their org`
+  - `Users can delete share classes in their org`
+
+These reference **`public.companies`** — the V1 of `legal_entities`, which is the **expected** parent (so STOP trigger (c) does NOT fire). `companies` is not on the §0b list this round, so we cannot "rewrite onto legal_entities" the way #73's tenant_portal cutover did — `companies` is still live.
+
+**However**: because `companies` is staying for now, the existing RLS policies remain valid up until DROP, and they drop atomically with the V1 table. **The "PRECURSOR — rewrite RLS to JOIN legal_entities" ship from the prompt is therefore unnecessary** — the policies aren't blocking the drop, they're carried by it. (If `companies` were itself being cutover this round, the precursor would matter; it isn't.)
+
+This is the same pattern as #85's compliance: the V1 RLS dies with the V1 table, no precursor required.
+
+### Step 5 — Recommended ship sequence
+
+| Ship | Action | Estimate | Notes |
 |---|---|---|---|
-| `supabase/functions/send-tenant-certificates/index.ts:84` | read | id, org_id, first_name, last_name, email, **company_name, tenant_type, company_contact_email, compliance_contact_name, compliance_contact_email** | Reads V1-only company columns; cannot point at V2 today |
-| `src/hooks/useBatchRenameDocuments.ts:115` | read | id, first_name, last_name | Pure-name lookup — safe to migrate once doc FK question is answered |
-| `src/hooks/useDocumentManagement.ts:277` | read | first_name, last_name | Same — safe to migrate |
+| **A.5 (decision)** | David answers Q1 (dedupe vs union) + Q2 (`shares_confirmed` keep/drop) + Q3 (resolve `useShareRegister` mismatch) | — | Single decision prompt — mandatory before any code |
+| **A** | Fix `useShareRegister` per Q3 verdict (delete-as-dead, OR repoint to `share_classes_v2`) | 1 prompt | If repointed it becomes a redundant-with-`useShareCapital` hook — likely dead-code path |
+| **B (data)** | Backfill missing rows V1→V2 + carry `shares_confirmed` per Q2 | 1 prompt (or skipped if Q1 says V2 already covers all live companies) | Requires Q2 answer to know schema target |
+| **B-schema** | (optional) Add `shares_confirmed boolean` to V2 if Q2 = keep | 1 prompt or 0 | Single nullable column |
+| **C** | Repoint `useCompanies.ts` (5 refs) + `useCompanyLookthrough.ts` (1 ref) to V2; rename `name`→`class_name`, `company_id`→`entity_id` | 1 prompt | **Note**: this also requires repointing the parent lookups from `companies` to `legal_entities`, which is a separate scope — see open question #4 |
+| **D** | Background functions check | 0 prompts | pg_depend confirms none |
+| **PRECURSOR (RLS rewrite)** | ❌ NOT needed | 0 prompts | RLS drops with V1 table; `companies` parent stays |
+| **E** | Install `v1_freeze_guard` on `public.share_classes` (per #85, not yet installed) | 1 prompt | Audited via `v1_freeze_violations` table from #88 |
+| **F** | Drop `public.share_classes` + 4 RLS + 1 trigger | 1 prompt after soak | Clean — 0 FKs, 0 functions, only own triggers/policies |
 
-**No writers found in `src/` or `supabase/functions/`** outside `v1Frozen.ts`. Consistent with the live `v1_freeze_guard` trigger on `public.tenants` (see Step 4) — V1 is already frozen.
+**Total estimate: 4–6 prompts** (5 most likely: A.5 + A + maybe B + C + E + F), pending the dedupe answer and the `useShareRegister` verdict.
 
-`from('tenants_v2')` — 13 references across 6 files (`useTenantsV2`, `useTenantLifecycle`, `useMigration`, `useActivationChecklist`, `seedDemoData`, `template-merge`). V2 is the active write path.
+### Open design questions (for David — A.5 prompt should cover all four)
 
-No mixed-mode files (the smoking-gun pattern from #77) found.
+1. **Dedupe Q (Q1-style)**: Are V1's 19 rows and V2's 19 rows the same 19 logical share classes for the same 19 companies (just split across schemas), or are they two independent sets that need union (38 logical rows)? **Quick check**: do the same companies (matched by `companies.legal_name`↔`legal_entities.entity_name`) each have a primary share class in BOTH tables, or is it 1:1 across V1's `companies` set and V2's `legal_entities` set? Need a follow-up query.
+2. **`shares_confirmed` Q**: V1 has it; V2 doesn't. Is "shares confirmed" still a meaningful workflow (the `useConfirmShareCapital` mutation exists) — keep it (add column to V2), drop it (workflow retired), or absorb it (treat all V2 rows as implicitly confirmed)?
+3. **`useShareRegister` Q (the smoking gun)**: V2-shaped payloads going to V1 table. Three options: (i) **delete the hook** (`useShareCapital` already covers V2), (ii) repoint to `share_classes_v2` and keep both hooks (redundancy), (iii) merge into `useShareCapital`. Recommended: **delete** — `useShareCapital` is the canonical V2 hook and is already exported from the codebase.
+4. **Parent table cutover Q**: `useCompanies.ts` and `useCompanyLookthrough.ts` query `companies` (V1) heavily. Repointing share_classes refs in these files to `share_classes_v2` (which uses `entity_id` → `legal_entities`) means the surrounding code also has to switch parent. Either (a) repoint the share_classes refs and leave `companies` calls alone (will work as long as the same id is in both tables — but per #76 they're disjoint so this WILL break), or (b) bundle a `companies → legal_entities` cutover into Ship C, ballooning it to ~3–5 prompts. **This is the biggest scope question** and may push share_classes out of §0b until `companies` is also ready.
 
-## Step 4 — pg_depend on `public.tenants`
+### Headline
 
-Real dependents:
-- **FK**: `documents.tenant_id → tenants.id` (constraint `documents_tenant_id_fkey`) — 14 live rows depend on it.
-- **RLS policies**: `Org members manage tenants`, `Tenants view own profile`.
-- **Triggers**: `audit_tenant_delete_trigger`, `trg_validate_tenant_type`, `update_tenants_updated_at`, **`v1_freeze_guard`** (already enabled — V1 writes already blocked).
-- Indexes: `idx_tenants_org_id`, `idx_tenants_status`.
+share_classes is **mostly clean** for cutover — no FKs, no function deps, V2 schema is a superset (minus `shares_confirmed`), V1 RLS dies with the table. The blocker is **not** the table itself; it's that the V1→V2 redirect of `useCompanies` / `useCompanyLookthrough` is **coupled to the parallel `companies → legal_entities` cutover**, which isn't on this round's §0b list. Plus the `useShareRegister` schema-mismatch needs a decision.
 
-No SECURITY DEFINER functions or RLS policies reference `public.tenants`'s row type from outside the table itself. No #71-style cross-table function dependency.
-
-## Step 5 — STOP-and-ask (required by the prompt)
-
-The prompt says STOP-and-ask if (a) V1 has data V2 doesn't and the schema isn't compatible, or (b) the V1 rows are live tenants we can't lose. **Both are true here.**
-
-- **(a) Schema-extension blocker**: backfilling the 3 V1 company-tenants into V2 today would silently drop 10+ company columns + 2 compliance-contact columns that `send-tenant-certificates` actively reads. This is the same shape as compliance Ship C → C2 (responsible_party): V2 needs new columns before we can backfill.
-- **(b) Live-data blocker**: the 3 V1 rows are real, status=`active`, and named after real UK organisations (Clearsprings Ready Homes, Serco, Oxford Brookes Enterprises). 14 documents FK at them. They cannot be deleted without preserving the linkage.
-- **Plus a third unknown surfaced by the audit, not in the prompt's STOP-and-ask list**: V2 already has 3 rows with the same human names but `tenant_type='private'` and no company linkage — they look like **duplicate re-entries**, not independent V2 records. If they are duplicates, the migration is a *merge* (V1 company data overlaid onto V2 row, then re-FK 14 documents), not a *backfill*. If they are intentional separate records, V2 needs different ids and the 14 documents stay on V1 ids.
-
-### Three product-judgement questions for David before any ship
-
-1. **Are V2's 3 rows duplicates of V1's 3 rows?** (Same names suggest yes, but only David / data owner can confirm whether `Property Team / private` in V2 is meant to represent the same lease as `Property Team / Clearsprings / company` in V1, or a genuinely different tenant. This decides merge-vs-keep.)
-2. **Does V2 need the company-tenant column block** (`company_name`, `company_number`, `company_contact_*`, `vat_*`, `compliance_contact_*`, `trading_name`)? In compliance §0b we extended V2 (responsible_party). For tenants, this is a much bigger schema extension — 12+ columns. Alternative: model company tenants via a separate `tenants_v2.linked_company_id → companies` FK and drop the duplicated columns. (Cleaner long-term but bigger Ship C.)
-3. **Employment / guarantor / previous-landlord blocks**: extend V2 to match V1, or accept the loss (declare them DEAD in current product scope)? David's call — the data exists for the 3 rows but no UI surfaces it today.
-
-## Step 6 — Recommended ship sequence (conditional on Q1–Q3 above)
-
-Mirroring the compliance §0b pattern with the schema-extension call-out from Ship C:
-
-| Ship | Scope | Prompts | Blocker |
-|---|---|---|---|
-| **A** | Audit confirms `v1_freeze_guard` already on `public.tenants`; verify no double-writers via `check-no-v1-table-refs.mjs`. **Already largely shipped** — V1 is frozen, no app writers. | 0 (already done) | none |
-| **A.5** | Decide Q1–Q3. Single short prompt to David. | 1 | **this audit's STOP-and-ask** |
-| **B (schema)** | Migration: extend `tenants_v2` per Q2/Q3 answers (likely `company_name`, `company_number`, `compliance_contact_name`, `compliance_contact_email`, `company_contact_email` minimum to unblock `send-tenant-certificates`; full block if Q2 says yes). | 1 | depends on Q2 |
-| **B (data)** | Backfill: either MERGE (overlay V1 columns onto matching V2 row by name+org, then `UPDATE documents SET tenant_id = v2_id WHERE tenant_id = v1_id`) — if Q1=duplicates; or COPY (insert V1 rows into V2 with same ids, re-FK documents not needed) — if Q1=independent. | 1 | depends on Q1 |
-| **C** | Migrate the 3 V1 readers: `send-tenant-certificates/index.ts:84`, `useBatchRenameDocuments.ts:115`, `useDocumentManagement.ts:277`. Each is a single-table read, mechanical swap. | 1 |  |
-| **D** | Background fns sweep — none identified beyond `send-tenant-certificates` (handled in C). | 0 |  |
-| **E** | Soak (1–2 weeks) — V1 frozen, no readers, watch for any call-site missed. | 0 prompts |  |
-| **F** | Drop `documents.tenant_id` FK to V1, re-point at `tenants_v2.id`, drop `public.tenants` table + indexes + policies + triggers. | 1 |  |
-
-**Total estimate post-decisions: 4 prompts** (B-schema, B-data, C, F), plus the A.5 decision prompt now.
-
-If David picks the "linked_company_id" path on Q2, Ship B-schema balloons into a separate companies-link sub-ship and the estimate goes to ~6 prompts.
-
-## Inline summary
-
-V1 `tenants`: 3 rows, all live company tenants, frozen by `v1_freeze_guard`, 14 documents FK at them, schema is much richer than V2 (12+ fields V2 lacks, of which company_name + 4 contact fields are actively read by `send-tenant-certificates`). V2 `tenants_v2`: 3 rows, name-collide with V1 but lack company linkage — likely duplicate re-entries. Disjoint id spaces. 3 V1 readers in app (all read-only), 0 writers. No mixed-mode files. No pg_depend hazards beyond the documents FK + standard triggers. **Cannot ship a Ship B without first answering: (Q1) are V2 rows duplicates of V1?, (Q2) does V2 need the company-tenant column block (or move to a `linked_company_id` FK)?, (Q3) keep or drop V1's employment/guarantor/previous-landlord fields?** Recommended path is A.5 decision prompt → Ship B-schema → Ship B-data (merge or copy depending on Q1) → Ship C (3 readers) → Ship F (drop V1). Estimate 4–6 prompts total after decisions.
-
-No data was changed.
+**Recommendation**: A.5 prompt first to lock Q1–Q4, then consider whether share_classes should ship in this §0b wave or be deferred until `companies` joins it.
