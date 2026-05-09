@@ -169,7 +169,10 @@ if (offenders.length > 0) {
   }
   console.error(
     `\nDropped V1 tables (loans, tenancies, costs, income) — migrate to V2 ` +
-    `(loan_facilities, tenancy_agreements, property_cost_budgets_v2, property_income_budgets_v2).\n` +
+    `(loan_facilities, tenancy_agreements, property_cost_budgets, property_income_budgets).\n` +
+    `Renamed-away V2 tables (Partial-#61, 2026-05-09): use the canonical names ` +
+    `(compliance_contractors, compliance_requirements, property_cost_budgets, property_income_budgets) — ` +
+    `the *_v2 names no longer exist in the database.\n` +
     `Frozen V1 writes (compliance_items, compliance_documents) — §0b Ship A killed all ` +
     `insert/update/upsert/delete on these tables. Reads via .select(...) are still allowed; they ` +
     `get redirected via a compat layer in Ship C/D.\n` +
