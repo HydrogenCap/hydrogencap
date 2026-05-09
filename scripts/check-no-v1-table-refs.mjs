@@ -35,6 +35,20 @@ const ALLOWLIST = new Set([
   'src/__tests__/check-no-v1-table-refs.test.ts',
 ]);
 
+// §0b Ship A — the write-guard for compliance_items / compliance_documents
+// is staged: Ship A locks the two double-writers (useComplianceIntake +
+// process-document). The remaining V1-only writers below are scheduled for
+// Ship C (UI hooks) and Ship D (background fns). Each entry points at the
+// ship that will remove it.
+const WRITE_GUARD_ALLOWLIST = new Set([
+  // Ship C — UI hooks (V1 reads + writes redirect via compat layer)
+  'src/hooks/useCompliance.ts',
+  'src/hooks/useRenewalWorkflow.ts',
+  // Ship D — background fns
+  'supabase/functions/bulk-epc-enrich/index.ts',
+  'supabase/functions/send-compliance-reminders/index.ts',
+]);
+
 const PATTERNS = V1_TABLES.flatMap((t) => [
   { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'any' },
   { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'any' },
