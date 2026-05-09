@@ -78,13 +78,10 @@ interface AIExtractionResult {
   compliance_type: string | null;
 }
 
-interface ExistingComplianceItemRow {
+interface PropertyIdRow {
   id: string;
 }
 
-interface ComplianceDocumentVersionRow {
-  version_number: number | null;
-}
 
 interface PropertyIdRow {
   id: string;
