@@ -1078,7 +1078,7 @@ export type Database = {
           },
         ]
       }
-      compliance_contractors_v2: {
+      compliance_contractors: {
         Row: {
           company_name: string
           contact_name: string | null
@@ -1546,7 +1546,7 @@ export type Database = {
           },
         ]
       }
-      compliance_requirements_v2: {
+      compliance_requirements: {
         Row: {
           created_at: string | null
           document_type: string
@@ -1750,14 +1750,14 @@ export type Database = {
             foreignKeyName: "compliance_tasks_compliance_requirement_id_fkey"
             columns: ["compliance_requirement_id"]
             isOneToOne: false
-            referencedRelation: "compliance_requirements_v2"
+            referencedRelation: "compliance_requirements"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "compliance_tasks_contractor_id_fkey"
             columns: ["contractor_id"]
             isOneToOne: false
-            referencedRelation: "compliance_contractors_v2"
+            referencedRelation: "compliance_contractors"
             referencedColumns: ["id"]
           },
           {
@@ -5533,7 +5533,7 @@ export type Database = {
             foreignKeyName: "maintenance_quotes_contractor_id_fkey"
             columns: ["contractor_id"]
             isOneToOne: false
-            referencedRelation: "compliance_contractors_v2"
+            referencedRelation: "compliance_contractors"
             referencedColumns: ["id"]
           },
           {
@@ -7097,7 +7097,7 @@ export type Database = {
           },
         ]
       }
-      property_cost_budgets_v2: {
+      property_cost_budgets: {
         Row: {
           bills_gbp_manual: number | null
           compliance_gbp_manual: number | null
@@ -7194,7 +7194,7 @@ export type Database = {
           },
         ]
       }
-      property_income_budgets_v2: {
+      property_income_budgets: {
         Row: {
           annual_rent_gbp: number
           created_at: string
@@ -8777,7 +8777,7 @@ export type Database = {
             foreignKeyName: "tasks_compliance_requirement_id_fkey"
             columns: ["compliance_requirement_id"]
             isOneToOne: false
-            referencedRelation: "compliance_requirements_v2"
+            referencedRelation: "compliance_requirements"
             referencedColumns: ["id"]
           },
           {
@@ -10254,7 +10254,7 @@ export type Database = {
             foreignKeyName: "compliance_tasks_contractor_id_fkey"
             columns: ["contractor_id"]
             isOneToOne: false
-            referencedRelation: "compliance_contractors_v2"
+            referencedRelation: "compliance_contractors"
             referencedColumns: ["id"]
           },
           {
