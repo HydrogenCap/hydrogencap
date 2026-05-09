@@ -24,15 +24,32 @@ const root = process.cwd();
 const SCAN_DIRS = ['src', 'supabase/functions'];
 const V1_TABLES = ['loans', 'tenancies', 'costs', 'income'];
 
+// §0b Ship A — write-pattern guard: V1 `compliance_items` and
+// `compliance_documents` reads are still allowed (they get redirected via
+// a compat layer in Ship C/D), but writes (insert/update/upsert/delete)
+// must not appear in production code.
+const V1_WRITE_ONLY_TABLES = ['compliance_items', 'compliance_documents'];
+
 const ALLOWLIST = new Set([
   'src/lib/v1Frozen.ts',
   'src/__tests__/check-no-v1-table-refs.test.ts',
 ]);
 
 const PATTERNS = V1_TABLES.flatMap((t) => [
-  { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`) },
-  { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`) },
+  { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'any' },
+  { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'any' },
 ]);
+
+// Multi-line write patterns for the §0b Ship A guard. We collapse whitespace
+// before matching so a chained `.from('compliance_items')\n  .update({...})`
+// is caught the same as a one-liner.
+const WRITE_PATTERNS = V1_WRITE_ONLY_TABLES.map((t) => ({
+  table: t,
+  regex: new RegExp(
+    `\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)\\s*\\.\\s*(insert|update|upsert|delete)\\b`,
+  ),
+  kind: 'write',
+}));
 
 function walk(dir) {
   const out = [];
