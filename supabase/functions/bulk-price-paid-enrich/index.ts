@@ -260,7 +260,7 @@ serve(withInvocationLog("bulk-price-paid-enrich", async (req, _invocationLog) =>
     console.log(`Processing ${properties?.length || 0} properties for Price Paid enrichment`);
 
     const results: PricePaidRecord[] = [];
-    let updated = 0;
+    const updated = 0; // V1 writes disabled in Properties §0b Ship A; V2 mirror pending Ship B
     let failed = 0;
 
     // Process each property (with rate limiting)
