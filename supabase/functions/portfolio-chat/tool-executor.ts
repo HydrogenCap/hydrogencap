@@ -202,7 +202,7 @@ async function getPropertyDetails(
   if (wantAll || include.includes("tenants")) {
     fetches.push(
       supabase
-        .from("rooms")
+        .from("rooms_v2")
         .select("id")
         .eq("property_id", propertyId)
         .then(async ({ data: rooms }) => {
