@@ -50,3 +50,16 @@ Deno.test("process-document still writes the V2 compliance_documents_v2 record",
     );
   assertEquals(hasV2Insert, true, "process-document should still insert into compliance_documents_v2");
 });
+
+Deno.test("process-document does not write to V1 properties (Properties §0b Ship A)", async () => {
+  const source = await Deno.readTextFile(SOURCE_PATH);
+  const collapsed = source.replace(/\s+/g, " ");
+  const offender = collapsed.match(
+    /\.from\(\s*['"]properties['"]\s*\)\s*\.\s*(insert|update|upsert|delete)\b/,
+  );
+  assertEquals(
+    offender,
+    null,
+    `process-document must not call properties.(insert|update|upsert|delete). Found: ${offender?.[0]}`,
+  );
+});

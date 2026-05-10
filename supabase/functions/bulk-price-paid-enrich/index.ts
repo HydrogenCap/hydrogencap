@@ -260,7 +260,7 @@ serve(withInvocationLog("bulk-price-paid-enrich", async (req, _invocationLog) =>
     console.log(`Processing ${properties?.length || 0} properties for Price Paid enrichment`);
 
     const results: PricePaidRecord[] = [];
-    let updated = 0;
+    const updated = 0; // V1 writes disabled in Properties §0b Ship A; V2 mirror pending Ship B
     let failed = 0;
 
     // Process each property (with rate limiting)
@@ -286,46 +286,22 @@ serve(withInvocationLog("bulk-price-paid-enrich", async (req, _invocationLog) =>
       const priceData = await fetchPricePaidData(property.postcode, property.address_line);
 
       if (priceData?.pricePaid) {
-        // Update the property
-        const updateData: Record<string, unknown> = {
-          purchase_price_gbp: priceData.pricePaid,
-        };
-        
-        // Also update purchase date if we have it and property doesn't
-        if (priceData.transactionDate) {
-          updateData.original_purchase_date = priceData.transactionDate;
-        }
-
-        const { error: updateError } = await supabase
-          .from('properties')
-          .update(updateData)
-          .eq('id', property.id);
-
-        if (updateError) {
-          console.error('Error updating property:', updateError);
-          results.push({
-            propertyId: property.id,
-            address: property.address_line,
-            postcode: property.postcode,
-            pricePaid: null,
-            transactionDate: null,
-            propertyType: null,
-            success: false,
-            error: 'Database update failed',
-          });
-          failed++;
-        } else {
-          results.push({
-            propertyId: property.id,
-            address: property.address_line,
-            postcode: property.postcode,
-            pricePaid: priceData.pricePaid,
-            transactionDate: priceData.transactionDate || null,
-            propertyType: priceData.propertyType || null,
-            success: true,
-          });
-          updated++;
-        }
+        // V1 write removed in Properties §0b Ship A — was failing silently
+        // against v1_freeze_guard. V2 mirror (writing purchase_price to
+        // properties_v2) is queued for Ship B once V1→V2 column mapping
+        // (`purchase_price_gbp` → `purchase_price`) and id resolution land.
+        // For now, surface the fetched data via results without persisting.
+        results.push({
+          propertyId: property.id,
+          address: property.address_line,
+          postcode: property.postcode,
+          pricePaid: priceData.pricePaid,
+          transactionDate: priceData.transactionDate || null,
+          propertyType: priceData.propertyType || null,
+          success: false,
+          error: 'V1 write disabled (Properties §0b Ship A); V2 mirror pending Ship B',
+        });
+        failed++;
       } else {
         results.push({
           propertyId: property.id,

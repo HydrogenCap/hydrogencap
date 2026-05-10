@@ -31,11 +31,11 @@ const root = process.cwd();
 const SCAN_DIRS = ['src', 'supabase/functions'];
 const V1_TABLES = ['loans', 'tenancies', 'costs', 'income'];
 
-// §0b Ship A — write-pattern guard: V1 `compliance_items` and
-// `compliance_documents` reads are still allowed (they get redirected via
-// a compat layer in Ship C/D), but writes (insert/update/upsert/delete)
-// must not appear in production code.
-const V1_WRITE_ONLY_TABLES = ['compliance_items', 'compliance_documents'];
+// §0b Ship A — write-pattern guard: V1 `compliance_items`,
+// `compliance_documents`, and `properties` reads are still allowed (they get
+// redirected via a compat layer / Ship C), but writes (insert/update/upsert/
+// delete) must not appear in production code.
+const V1_WRITE_ONLY_TABLES = ['compliance_items', 'compliance_documents', 'properties'];
 
 const ALLOWLIST = new Set([
   'src/lib/v1Frozen.ts',
