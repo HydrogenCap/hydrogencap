@@ -50,7 +50,7 @@ export const BACKUP_TABLES: TableExportConfig[] = [
   { table: 'loans', prefix: '20', label: 'Loans / Mortgages', essential: true },
   { table: 'income', prefix: '21', label: 'Income', essential: true },
   { table: 'costs', prefix: '22', label: 'Costs', essential: true },
-  { table: 'rooms', prefix: '23', label: 'Rooms', essential: true },
+  { table: 'rooms_v2', prefix: '23', label: 'Rooms', essential: true },
   { table: 'property_passport', prefix: '24', label: 'Property Passports', essential: true },
   { table: 'property_title_numbers', prefix: '25', label: 'Title Numbers', essential: false },
   { table: 'property_valuations', prefix: '26', label: 'Valuations', essential: false },

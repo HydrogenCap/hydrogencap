@@ -14,7 +14,7 @@ export function useUnitUsage() {
     queryKey: ['unit-usage-count'],
     queryFn: async () => {
       const { count, error } = await supabaseAny
-        .from('rooms')
+        .from('rooms_v2')
         .select('*', { count: 'exact', head: true });
 
       if (error) throw error;

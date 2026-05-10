@@ -183,7 +183,7 @@ async function getPropertyDetails(
   if (wantAll || include.includes("rooms")) {
     fetches.push(
       supabase
-        .from("rooms")
+        .from("rooms_v2")
         .select("*")
         .eq("property_id", propertyId)
         .then(({ data }) => {
@@ -191,7 +191,8 @@ async function getPropertyDetails(
             name: r.room_name,
             type: r.room_type,
             rent: r.target_rent_pcm,
-            status: r.status,
+            // §0b Ship C (rooms): V2 renamed `status` → `occupancy_status`.
+            status: r.occupancy_status,
             floor: r.floor,
           }));
         })
@@ -201,7 +202,7 @@ async function getPropertyDetails(
   if (wantAll || include.includes("tenants")) {
     fetches.push(
       supabase
-        .from("rooms")
+        .from("rooms_v2")
         .select("id")
         .eq("property_id", propertyId)
         .then(async ({ data: rooms }) => {
