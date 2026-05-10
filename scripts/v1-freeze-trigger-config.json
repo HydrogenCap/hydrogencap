@@ -1,0 +1,31 @@
+{
+  "_comment": "Ground-truth state of the v1_freeze_guard trigger across §0b V1 tables. Locks in the lesson from #99: trigger install state must be derived from migration history, not memory. Update this file (and re-run npm run check:freeze-triggers) whenever a §0b Ship E lands a new install or a §0b Ship F drops a V1 table.",
+  "expected_installed": [
+    {
+      "table": "properties",
+      "reason": "Installed in seed migration 20260428235107 (FOREACH ARRAY ['properties','rooms','tenants']). Ship F not yet landed."
+    },
+    {
+      "table": "rooms",
+      "reason": "Installed in seed migration 20260428235107 (FOREACH ARRAY). Per #99 ground-truth grep, no Ship E migration was needed — trigger already in place pre-#85."
+    },
+    {
+      "table": "tenants",
+      "reason": "Installed in seed migration 20260428235107 (FOREACH ARRAY)."
+    }
+  ],
+  "pending_install": [
+    {
+      "table": "share_classes",
+      "reason": "Pending share_classes §0b Ship C — atomic write+read+realtime flip required for useAddShareClass + 3 useCompanies.ts writers before Ship E can install the freeze guard."
+    },
+    {
+      "table": "compliance_items",
+      "reason": "Pending compliance_items §0b Ship C — split V2 (compliance_requirements + compliance_documents_v2 + compliance_tasks) means no 1:1 sibling; product Q1–Q5 (per 2026-05-10 audit) must resolve before any ship."
+    },
+    {
+      "table": "compliance_documents",
+      "reason": "Pending compliance_documents §0b Ship C — V1→V2 reader/writer migration in progress; freeze trigger blocked on Ship A double-writer cleanup completing."
+    }
+  ]
+}
