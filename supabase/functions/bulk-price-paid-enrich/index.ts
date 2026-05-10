@@ -296,10 +296,11 @@ serve(withInvocationLog("bulk-price-paid-enrich", async (req, _invocationLog) =>
           updateData.original_purchase_date = priceData.transactionDate;
         }
 
-        const { error: updateError } = await supabase
-          .from('properties')
-          .update(updateData)
-          .eq('id', property.id);
+        // V1 write removed in Properties §0b Ship A — was failing silently
+        // against v1_freeze_guard. V2 mirror (writing purchase_price to
+        // properties_v2) is queued for Ship B once column mapping is resolved
+        // (V1 `purchase_price_gbp` → V2 `purchase_price`).
+        const updateError: { message: string } | null = null;
 
         if (updateError) {
           console.error('Error updating property:', updateError);
