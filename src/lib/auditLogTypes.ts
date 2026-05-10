@@ -76,7 +76,6 @@ export function getRecordIdentifier(tableName: string, values: AuditRecordValues
     case 'legal_entities':
       return getStringValue(values, 'entity_name') || getIdPreview(values) || '-';
     case 'rooms_v2':
-    case 'rooms':
       return getStringValue(values, 'room_name') || getIdPreview(values) || '-';
     case 'compliance_documents_v2':
     case 'compliance_documents':
