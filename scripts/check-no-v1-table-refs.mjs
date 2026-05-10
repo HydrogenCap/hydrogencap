@@ -51,6 +51,8 @@ const WRITE_GUARD_ALLOWLIST = new Set([
   // Ship C — UI hooks (V1 reads + writes redirect via compat layer)
   'src/hooks/useCompliance.ts',
   'src/hooks/useRenewalWorkflow.ts',
+  // Ship C — V1 hybrid-shape rewrite (third payload shape needs audit + product call)
+  'src/hooks/useCompanies.ts',
   // Ship D — background fns
   'supabase/functions/send-compliance-reminders/index.ts',
 ]);

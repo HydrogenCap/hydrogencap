@@ -142,41 +142,16 @@ export function useAddShareClass() {
   });
 }
 
-export function useUpdateShareClass() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<ShareClass> & { id: string; entity_id: string }) => {
-      const { data, error } = await supabaseAny
-        .from('share_classes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data as ShareClass;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: shareRegisterKeys.classes(data.entity_id) });
-    },
-  });
-}
-
-export function useDeleteShareClass() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, entityId }: { id: string; entityId: string }) => {
-      const { error } = await supabaseAny
-        .from('share_classes')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-      return { entityId };
-    },
-    onSuccess: ({ entityId }) => {
-      queryClient.invalidateQueries({ queryKey: shareRegisterKeys.classes(entityId) });
-    },
-  });
-}
+// NOTE (Share_classes §0b Ship A — Option α′, 2026-05-10): the V1
+// `useUpdateShareClass` and `useDeleteShareClass` hooks were removed here
+// because they had zero consumers (the live UI imports the V2 equivalents
+// from `useCompanies` / `useShareCapital`). The remaining V1 writer in this
+// file — `useAddShareClass` above + its sole consumer `AddShareClassDialog`
+// (ShareRegister.tsx) — is intentionally retained until Ship C, where the
+// V1 write, V1 read (`useShareClasses`), and V1 realtime channel can flip
+// to `share_classes_v2` atomically. Swapping the write alone would route
+// inserts to V2 while the list still reads V1 + watches V1 realtime,
+// producing a UX-silent duplicate-insert regression.
 
 // ─── Shareholdings ───────────────────────────────────────────────────────────
 
