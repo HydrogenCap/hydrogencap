@@ -240,11 +240,11 @@ async function autoFileDocument(
       renamed_at: new Date().toISOString(),
     }).eq('id', documentId);
 
-    // Sync EPC rating
-    if (extraction.doc_type === 'epc_certificate' && extraction.extracted_epc_rating) {
-      await supabase.from('properties').update({ epc_rating: extraction.extracted_epc_rating })
-        .eq('id', extraction.matched_property_id);
-    }
+    // Sync EPC rating — V1 write removed in Properties §0b Ship A (was failing
+    // silently against v1_freeze_guard anyway). V2 EPC sync is handled via the
+    // dedicated `bulk-epc-enrich-v2` function and AI auto-fill review path.
+    // Ship B will backfill the V2 mirror write here once the V2 property id is
+    // resolvable in this code path (see Ship C redirect of the V1 read above).
 
     // Sync insurance
     if (extraction.doc_type === 'building_insurance' || extraction.doc_type === 'public_liability_insurance') {
