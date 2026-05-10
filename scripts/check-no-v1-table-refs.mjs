@@ -58,11 +58,17 @@ const WRITE_GUARD_ALLOWLIST = new Set([
 // Partial-#61 (2026-05-09): forward-looking guard for the 4 V2 names that
 // were renamed to canonical. They no longer exist as DB tables — any
 // re-introduction in code is a regression.
+//
+// Rooms §0b Ship C (2026-05-10): `rooms` (V1) reads have been redirected
+// to `rooms_v2`. The V1 `rooms` table still exists in the DB (Ship F drops
+// it after Ship E installs `v1_freeze_guard`), but production code must
+// not read or write it any more.
 const RENAMED_V2_TABLES = [
   'compliance_contractors_v2',
   'compliance_requirements_v2',
   'property_cost_budgets_v2',
   'property_income_budgets_v2',
+  'rooms',
 ];
 
 const PATTERNS = [
