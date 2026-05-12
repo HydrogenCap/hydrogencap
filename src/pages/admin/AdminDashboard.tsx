@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { useAdminDashboard, useAdminUsers, useGrantTrial, useChangePlan } from '@/hooks/useAdminStats';
+import { useActivationFunnel, type ActivationStage } from '@/hooks/useActivationFunnel';
 import { PoundSterling, Users, TrendingUp, TrendingDown, Ellipsis, Search, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { format } from 'date-fns';
