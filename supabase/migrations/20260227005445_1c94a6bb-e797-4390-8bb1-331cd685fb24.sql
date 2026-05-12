@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 
 -- Fix migrate_loans_to_v2: map V1 mortgage_type to valid facility_type enum
 CREATE OR REPLACE FUNCTION public.migrate_loans_to_v2(p_org_id uuid)

@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- V1 income → V2 property_income_budgets_v2: create, backfill, freeze, drop V1.
 -- Mirrors the costs A–E pattern (Prompts #49a–#49e) with lessons baked in:
 --   * NO FK on org_id → legal_entities (org_id is tenant boundary, RLS-enforced)

@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- Tenancies Prompt #51: schema parity for V2 tenancy_agreements vs V1 tenancies.
 -- Adds 5 missing columns and backfills from V1 via property+start_date bridge
 -- (V1 tenant_id space ≠ V2 tenant_id space, so we bridge on property+start_date).

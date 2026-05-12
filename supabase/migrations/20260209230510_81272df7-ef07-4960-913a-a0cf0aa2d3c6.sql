@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 CREATE OR REPLACE FUNCTION public.generate_rent_schedule(p_tenancy_id uuid, p_months integer DEFAULT 12)
 RETURNS integer
 LANGUAGE plpgsql

@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- Bring tenant portal access flags into database policy enforcement.
 -- App-side route guards are helpful UX, but these checks need to exist in RLS too.
 
