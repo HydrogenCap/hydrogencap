@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { useAdminDashboard, useAdminUsers, useGrantTrial, useChangePlan } from '@/hooks/useAdminStats';
+import { useActivationFunnel, type ActivationStage } from '@/hooks/useActivationFunnel';
 import { PoundSterling, Users, TrendingUp, TrendingDown, Ellipsis, Search, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { format } from 'date-fns';
@@ -71,6 +72,7 @@ export default function AdminDashboard() {
   });
   const grantTrial = useGrantTrial();
   const changePlan = useChangePlan();
+  const { data: funnel, isLoading: funnelLoading } = useActivationFunnel();
 
   if (isAdmin === false) {
     return <Navigate to="/dashboard" replace />;
@@ -190,6 +192,9 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Activation Funnel (§4.1) */}
+        <ActivationFunnelSection data={funnel} loading={funnelLoading} />
 
         {/* Users Table */}
         <Card>
@@ -366,5 +371,79 @@ function StatusBadge({ status }: { status: string }) {
     <Badge variant={variants[status] || 'outline'} className="capitalize text-xs">
       {status === 'past_due' ? 'Past Due' : status}
     </Badge>
+  );
+}
+
+function formatDuration(hours: number | null): string {
+  if (hours === null) return '—';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  if (hours < 48) return `${hours.toFixed(1)}h`;
+  return `${(hours / 24).toFixed(1)}d`;
+}
+
+function ActivationKPI({ title, stage, totalOrgs }: { title: string; stage: ActivationStage; totalOrgs: number }) {
+  const conversion = totalOrgs > 0 ? Math.round((stage.count / totalOrgs) * 100) : 0;
+  return (
+    <Card>
+      <CardContent className="pt-6 space-y-2">
+        <p className="text-sm text-muted-foreground">{title}</p>
+        <p className="text-2xl font-bold">{formatDuration(stage.median_hours)}</p>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>p75: {formatDuration(stage.p75_hours)}</span>
+          <span>{stage.count}/{totalOrgs} orgs ({conversion}%)</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActivationFunnelSection({ data, loading }: { data?: ReturnType<typeof useActivationFunnel>['data']; loading: boolean }) {
+  if (loading || !data) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-base">Activation Funnel</CardTitle></CardHeader>
+        <CardContent><Skeleton className="h-32" /></CardContent>
+      </Card>
+    );
+  }
+  const { signed_up, has_property, has_cert, has_payment } = data.funnel;
+  const stages = [
+    { label: 'Signed up', count: signed_up },
+    { label: '1+ property', count: has_property },
+    { label: '1+ certificate', count: has_cert },
+    { label: '1+ payment', count: has_payment },
+  ];
+  const max = Math.max(signed_up, 1);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <ActivationKPI title="Median time → first property" stage={data.first_property} totalOrgs={data.total_orgs} />
+        <ActivationKPI title="Median time → first certificate" stage={data.first_cert} totalOrgs={data.total_orgs} />
+        <ActivationKPI title="Median time → first payment" stage={data.first_payment} totalOrgs={data.total_orgs} />
+      </div>
+      <Card>
+        <CardHeader><CardTitle className="text-base">Activation Funnel — orgs at each stage</CardTitle></CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {stages.map((s) => {
+              const pct = (s.count / max) * 100;
+              const dropPct = signed_up > 0 ? Math.round((s.count / signed_up) * 100) : 0;
+              return (
+                <div key={s.label} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{s.label}</span>
+                    <span className="text-muted-foreground">{s.count} orgs ({dropPct}%)</span>
+                  </div>
+                  <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

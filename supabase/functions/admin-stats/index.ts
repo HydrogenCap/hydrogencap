@@ -375,3 +375,68 @@ async function changePlan(
   if (error) throw error;
   return { success: true, tier: newTier };
 }
+
+// ---------- Activation funnel (§4.1) ----------
+type OrgRow = { id: string; created_at: string };
+type ChildRow = { org_id: string; created_at: string };
+
+function pctile(sorted: number[], p: number): number | null {
+  if (sorted.length === 0) return null;
+  if (sorted.length === 1) return sorted[0];
+  const idx = (sorted.length - 1) * p;
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+}
+
+async function getActivationFunnel(supabase: AdminSupabaseClient) {
+  const [orgsRes, propRes, certRes, payRes] = await Promise.all([
+    supabase.from("organizations").select("id, created_at"),
+    supabase.from("properties_v2").select("org_id, created_at").order("created_at", { ascending: true }),
+    supabase.from("compliance_documents_v2").select("org_id, created_at").order("created_at", { ascending: true }),
+    supabase.from("rent_payments").select("org_id, created_at").order("created_at", { ascending: true }),
+  ]);
+
+  const orgs = (orgsRes.data || []) as OrgRow[];
+  const firstByOrg = (rows: ChildRow[]): Map<string, string> => {
+    const m = new Map<string, string>();
+    for (const r of rows) if (!m.has(r.org_id)) m.set(r.org_id, r.created_at);
+    return m;
+  };
+  const firstProp = firstByOrg((propRes.data || []) as ChildRow[]);
+  const firstCert = firstByOrg((certRes.data || []) as ChildRow[]);
+  const firstPay = firstByOrg((payRes.data || []) as ChildRow[]);
+
+  const ttHours = (orgCreated: string, firstAt?: string): number | null => {
+    if (!firstAt) return null;
+    return (new Date(firstAt).getTime() - new Date(orgCreated).getTime()) / 36e5;
+  };
+
+  const stage = (which: Map<string, string>) => {
+    const deltas: number[] = [];
+    for (const o of orgs) {
+      const d = ttHours(o.created_at, which.get(o.id));
+      if (d !== null && d >= 0) deltas.push(d);
+    }
+    deltas.sort((a, b) => a - b);
+    return {
+      count: deltas.length,
+      median_hours: pctile(deltas, 0.5),
+      p75_hours: pctile(deltas, 0.75),
+    };
+  };
+
+  const totalOrgs = orgs.length;
+  return {
+    total_orgs: totalOrgs,
+    first_property: stage(firstProp),
+    first_cert: stage(firstCert),
+    first_payment: stage(firstPay),
+    funnel: {
+      signed_up: totalOrgs,
+      has_property: firstProp.size,
+      has_cert: firstCert.size,
+      has_payment: firstPay.size,
+    },
+  };
+}
