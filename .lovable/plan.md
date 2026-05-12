@@ -1,112 +1,109 @@
-## Renters' Rights Bill tracker — audit (read-only)
+## Bulk Document Scanner v2 — audit (read-only)
 
-**Headline finding:** The plan item is **~90% already shipped**. Scoring engine, DB view, portfolio hook, per-property hook, dashboard KPI tile, and a per-property readiness table all exist. The only genuine gap is a **per-property checklist surface** (the existing UI shows a portfolio table, not a 4–6 item checklist on a single property's page). No new tables or scoring engine work needed.
-
----
-
-### 1. Current state — what's already built
-
-**Page** (`src/pages/RentersRightsBill/index.tsx`, 33 lines, folder-module per #60d):
-- `ReadinessSummaryCard` → wraps `RRBReadinessTable` (portfolio table: address, total /100 badge, 5 sub-score chips, missing-items popover, deep-link to `/properties-v2/:id`)
-- `BillProvisionsCard`, `EvidenceLogCard`, `AwaaabComplaintsCard`, `DecentHomesChecklistCard` — Bill obligations, evidence storage (localStorage), AWAAAB complaints, decent-homes checklist
-- State hook: `useRentersRightsBillState` (settings + localStorage-backed)
-
-**Scoring engine** (`src/lib/rrb/score.ts`, pure function, tested):
-5 sub-scores × 20 each, total /100:
-1. **Tenancy terms** (proportional credit; penalises fixed-term-without-break)
-2. **Deposit protection** (binary; needs scheme + reference on every active tenancy)
-3. **Rent increases** (20 normal / 10 insufficient history / 0 if double-increase within 12mo)
-4. **Compliance certs** (5 each: gas, EICR, EPC, fire/alarm — read from `compliance_matrix_v2`)
-5. **HMO licence** (binary; only penalises if `is_hmo`)
-
-**DB view:** `rrb_readiness_v` (migration 20260426091221) — server-side computed; `GRANT SELECT … TO authenticated`.
-
-**Hooks** (`src/hooks/useRRBReadiness.ts`):
-- `useRRBReadinessPortfolio()` → `{averageScore, propertiesBelow80, totalProperties, rows[]}`
-- `useRRBReadinessProperty(id)` → row + recomputed `missingData[]` (re-runs `computeRRBScore` client-side off live `tenancy_agreements`, `rent_schedule`, `compliance_matrix_v2`, `properties_v2`)
-
-**Dashboard KPI:** `RentersRightsBillKPI` already mounted on `Dashboard.tsx:344` — 72px progress ring, colour-banded (green ≥80, amber ≥60, red <60), subtitle "N properties below 80%", click→`/renters-rights`.
+**Headline finding:** §4.1 "Bulk document scanner v2" is **~100% already shipped**. Drag-folder ingress, filename auto-routing, and a single review queue are all live at `/bulk-upload`. Like the RRB tracker audit, this is verification — not a build.
 
 ---
 
-### 2. Readiness scoring inputs — coverage matrix
+### 1. Current state
 
-| Plan input | Source | Status |
+**Route:** `/bulk-upload` (`src/App.tsx:642`, `ProtectedRoute`, lazy-loaded).
+
+**Page** (`src/pages/BulkDocumentScanner.tsx`, 257 lines):
+- Drop zone (react-dropzone) with **explicit "Upload folder" button** + hidden `<input webkitdirectory>` for OS folder picker
+- Custom `getFilesFromEvent` intercepts native drops to walk folders via `dataTransfer.items.webkitGetAsEntry()` (recursive)
+- Three-stage UX: **Queue → Processing (with progress %) → Summary → Review**
+- Caps: 50 files, 10MB each; types: PDF, JPG, PNG, HEIC, DOCX
+- Renders `BulkUploadQueue`, `BulkUploadSummary`, `BulkReviewQueue`
+
+**Hook:** `useBulkDocumentUpload` (`src/hooks/useBulkDocumentUpload.ts`):
+- Queue state with per-item status (queued/processing/extracted/failed)
+- `addFiles`, `processAll`, `retryItem`, `removeItem`, `setPropertyForItem`, `clearQueue`
+- Calls **`process-document-v2`** edge fn (523 lines — Gemini Vision pipeline)
+
+**Folder walker:** `src/lib/documents/folderWalker.ts` (113 lines) — handles both `DataTransfer` (recursive entry walk) and `<input webkitdirectory>` paths.
+
+---
+
+### 2. Drag-folder support — **DONE**
+
+Both ingress paths are live:
+
+| Path | Implementation |
+|---|---|
+| Drag a folder onto drop zone | `walkDataTransfer(ev.dataTransfer)` in `getFilesFromEvent` (line 59-66) |
+| Click "Upload folder" button | Hidden `<input webkitdirectory directory>` → `readInputFiles()` (line 75-83) |
+| Drag flat files | react-dropzone default `onDrop` (line 38-40) |
+| Click to browse files | react-dropzone `open()` |
+
+Recursion handled. Validation + dedup + toast feedback inside `addFiles`. **No code lift needed.**
+
+---
+
+### 3. Filename auto-routing — **DONE**
+
+- **Module:** `src/lib/documents/filenameClassifier.ts` (127 lines, tested in `__tests__/filenameClassifier.test.ts`)
+- **When:** Runs **call-side, before the AI** — invoked at `useBulkDocumentUpload.ts:304` inside `addFiles` so every queued item has a `filenameHint: { category, confidence, reason }` immediately
+- **Persisted:** Written to `documents.filename_category_hint` column at insert time (line 149) — AI hint stored separately as `ai_suggested_doc_type`
+- **Rules:** Keyword-based, ordered specific→generic. Covers `gas-cert`/`cp12`, `eicr`/`electric`, `epc`, `fire-risk`/`fra`, `pat`, `legionella`/`lra`, plus more (file goes beyond first 60 lines viewed)
+- **Reconciliation:** `BulkReviewQueue` displays both columns ("Filename hint" + "AI hint") and applies a 3-tier preference: confident-AI → filename → low-confidence-AI
+
+So the `gas-cert-2026.pdf → gas_safety_certificate` example from the plan is the literal first rule in the file (confidence 0.92).
+
+---
+
+### 4. Single review queue — **DONE**
+
+`BulkReviewQueue` (`src/components/documents/BulkReviewQueue.tsx`):
+- Surfaces **after** processing completes (`isComplete && !isProcessing` triggers the summary card with a "Review N documents" CTA → flips `showReview=true`, hides queue+drop zone)
+- Table view: filename, filename hint, AI hint, suggested property, confidence indicator, error hint
+- "Confident" rows can be auto-accepted; low-confidence rows surface for manual fix
+- Done → `clearQueue()` → navigate `/documents`
+
+Inbox is **not** the review surface — this is a dedicated post-batch screen on the same page.
+
+---
+
+### 5. Ship sequence — **nothing required**
+
+| Plan item | Status |
+|---|---|
+| (a) Drag-folder ingress | Already shipped |
+| (b) Filename auto-routing | Already shipped (call-side, pre-AI, persisted to DB) |
+| (c) Single review queue | Already shipped (`BulkReviewQueue`) |
+
+**Remaining polish candidates** (only if David wants them — none implied by §4.1):
+
+| # | Polish | Size |
 |---|---|---|
-| Open-ended tenancy migration status | `tenancy_agreements.is_periodic` + `tenancy_type` + `break_clause_date` (composed into `agreement_text`, regex'd in `isFixedTermWithoutBreak`) | ✅ Captured. Heuristic — see Q1 |
-| Written terms presence | **Not directly scored.** Implied via tenancy_agreements row existing + `agreement_text` parsing | ⚠️ Gap — see Q2 |
-| Deposit protection scheme record | `tenancy_agreements.deposit_scheme` + `deposit_reference` | ✅ Captured |
-| Rent-increase cap compliance | `rent_schedule` rows grouped by tenancy; flags 2 amount changes <365 days apart | ✅ Captured. Note: this is a frequency check, not a CPI/% cap check — see Q3 |
-| Required compliance certs | `compliance_matrix_v2` (V2 view, with `is_required` filter) | ✅ Captured |
-| HMO licence | `properties_v2.is_hmo_licensed` + `hmo_licence_number` + `property_type` substring match | ✅ Captured. `licence_type_matches` defaulted true — see Q4 |
-
-**Verdict:** All 4 plan inputs are already wired. No new capture columns needed unless we tighten any of Q1–Q4.
-
----
-
-### 3. Portfolio "Bill readiness" KPI — placement
-
-**Already placed** at `Dashboard.tsx:344`. Position appears to be in the secondary KPI strip (not adjacent to the Activation funnel section shipped today). Possible re-placements if David wants more prominence:
-
-| Option | Pros | Cons |
-|---|---|---|
-| **Keep current** | Already live; users have it | Easy to miss next to other secondary tiles |
-| Promote to Compliance row, beside Compliance Score | Topical proximity; comparison legible | Crowds the row |
-| New "Regulatory Readiness" hero band (RRB + EPC C 2028 + Awaab) | Editorial weight; differentiator framing | Larger build; needs EPC-C and Awaab readiness scorers (don't exist) |
-
-Recommendation: keep current unless David wants to merchandise it harder.
-
----
-
-### 4. Automated checklist — gap
-
-**The portfolio page has a sub-score chip table, not a checklist.** Per-property surface is currently just the deep-link target (`/properties-v2/:id`), which has no RRB tab/section.
-
-Two ways to add the "automated 4–6 item checklist that auto-updates as compliance resolves":
-
-| Option | Where | Build size |
-|---|---|---|
-| **C1** New `<RRBChecklistCard>` on PropertyDetailV2 (e.g. Compliance tab footer) — driven by `useRRBReadinessProperty(id).missingData` | Per-property | Small |
-| **C2** Add a "Per-property drilldown" panel on `/renters-rights` itself with a property selector — same checklist component | Portfolio page | Small-medium |
-
-`missingData[]` already returns human-readable items from the engine (e.g. "missing compliance certificate: gas", "missing deposit protection: tenancy <id>"). Auto-update is free — TanStack Query `staleTime: 5min`, invalidate on compliance/tenancy mutations (likely already invalidated for V2 matrix).
-
----
-
-### 5. Ship sequence
-
-| # | Prompt | Size | STOP-and-asks |
-|---|---|---|---|
-| **a** | Per-property RRB checklist card on PropertyDetailV2 (option C1) — wraps `useRRBReadinessProperty`, renders 5 sub-scores as checkboxes (✓ if score == max for that band) + `missingData` as remediation list with deep-links to compliance/tenancy/deposit forms | **Small** | None expected; component is a thin wrapper |
-| **b** | (Optional) Polish: replace `missingData` strings with structured `{key, label, href, status}` objects in `score.ts` so the checklist can deep-link cleanly to the right form (e.g. tenancy id → `/tenancies/:id` for deposit fix) | **Medium** | Touches pure-function signature → bumps `score.test.ts` snapshots; verify chain risk. Worth doing once if C1 ships |
-| **c** | (Optional) Re-place dashboard KPI per Q5 | **Small** | Only if David wants promotion |
-
-(a) is the only actual gap closure. (b) and (c) are polish.
+| P1 | Lift the 50-file cap (the "drawer dump" might exceed 50). Needs server-side rate-limit review on `process-document-v2` | Medium — STOP-and-ask on rate limits |
+| P2 | Auto-accept high-confidence rows on review-screen entry (currently user clicks through each) | Small |
+| P3 | Add confidence badge column for the AI hint and a "skip and queue for manual classification" bulk action | Small |
+| P4 | Expand filename rules — currently 7-ish core compliance categories; missing tenancy_agreement, mortgage_offer, valuation_report, insurance_policy | Small |
+| P5 | Surface "drag a folder" affordance more prominently on Dashboard / empty-state Documents page (acquisition wedge per plan: "converts trial users") | Small |
 
 ---
 
 ### 6. Open product Qs — David's call
 
-1. **Tenancy migration status** — current heuristic regexes `agreement_text` for "fixed-term" without "break". The Bill abolishes ASTs entirely on commencement — should we instead score on `tenancy_agreements.tenancy_type = 'periodic_assured'` (or whatever the post-Bill enum is) and treat any AST as 0? Today an AST with a break clause scores 20.
-2. **Written terms presence** — plan lists this as a separate input. Engine doesn't check it. Add a 6th sub-score (e.g. `agreement_document_id IS NOT NULL`)? Or fold into Tenancy Terms?
-3. **Rent-increase cap** — engine flags **frequency** (>1 increase in 12mo). The Bill's actual rule is once-per-12-months **and** capped at market rate (Section 13 process). Do we want to:
-   - keep frequency-only (current),
-   - add a market-rate cap check (needs comparable rent data per property), or
-   - just flag any increase that doesn't follow Section 13 notice (needs notice tracking we don't have)?
-4. **HMO `licence_type_matches`** — hardcoded `true` in the hook. Should we score down if licence type ≠ property type (mandatory vs additional vs selective)? Needs new column on `properties_v2`.
-5. **Score weighting** — currently flat 20-each. Bill-criticality varies (deposit protection = statutory penalty up to 3× deposit; HMO no-licence = unlimited fine; tenancy migration = future-state only). Re-weight or keep flat? E.g. 25/25/15/20/15.
-6. **Threshold bands** — green ≥80, amber ≥60, red <60. Confirm or shift (RRB consequences are severe → maybe green ≥90).
-7. **Dashboard placement** — keep current secondary slot or promote (§3)?
-
-**Recommendation:** ship (a) as-is on current scoring; tackle Qs 1–5 as a single follow-up "scoring v2" once David has answered. Don't churn the engine twice.
+1. **50-file cap** — keep, raise to 100, or unlimited with chunked processing? The "dump my whole drawer" framing implies users will hit this on day one.
+2. **Filename rule coverage** — extend beyond compliance to: tenancy AST/agreement, deposit certificate, mortgage offer, valuation, insurance schedule? Each adds 1 rule.
+3. **Confidence threshold for auto-accept** — currently the review queue shows everything. Should rows where filename hint == AI hint AND property is suggested skip review entirely (auto-file)?
+4. **Confidence-fail handling** — rows where AI extraction failed or both hints are null: keep in review with an "Unclassified" state? Drop into Inbox? Quarantine bucket?
+5. **Property assignment** — auto-route by AI suggestion if confident, or always require user pick? Currently `setPropertyForItem` is manual.
+6. **Discoverability** — `/bulk-upload` only reachable by URL today (no sidebar entry confirmed). Do we want a CTA on Dashboard / Documents empty state to drive trial conversions?
+7. **Failure retries** — currently per-item via `retryItem`. Bulk "retry all failed" button worth adding?
 
 ---
 
-### Files that would change in ship (a)
+### Files referenced (no edits)
 
-- New: `src/components/rrb/RRBPropertyChecklistCard.tsx` (~80 lines)
-- Edit: `src/pages/PropertyDetail/…` (mount card on Compliance tab — 1 import + 1 JSX line)
-- New: `src/components/rrb/__tests__/RRBPropertyChecklistCard.test.tsx`
-- No DB, no hook, no engine changes.
+- `src/pages/BulkDocumentScanner.tsx` (257 lines)
+- `src/hooks/useBulkDocumentUpload.ts`
+- `src/lib/documents/filenameClassifier.ts` (127 lines, tested)
+- `src/lib/documents/folderWalker.ts` (113 lines)
+- `src/components/documents/BulkUploadQueue.tsx`
+- `src/components/documents/BulkUploadSummary.tsx`
+- `src/components/documents/BulkReviewQueue.tsx`
+- `supabase/functions/process-document-v2/index.ts` (523 lines)
 
-**No STOP-and-ask on the #60d structural assumption** — the folder module is intact and matches what the plan implied.
+**Recommendation:** No ship. If David wants to capitalise on the "trial conversion" framing, bundle P4 (rule expansion) + P5 (Dashboard CTA) + Q3 (auto-accept threshold) into one small follow-up. Otherwise close §4.1 as Done.
