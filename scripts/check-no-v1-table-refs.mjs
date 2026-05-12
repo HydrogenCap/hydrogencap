@@ -1,40 +1,55 @@
 #!/usr/bin/env node
 // Fails CI if any reference to a dropped V1 table appears in production code.
 //
-// Dropped V1 tables (replaced by V2 equivalents):
+// === Asymmetric scan layers (Option 1, 2026-05-12) ===
+//
+// TS/JS layer (src/, supabase/functions/**/*.{ts,tsx,js,jsx,mjs,cjs}):
+//   Scans for the full V1 list — fully-dropped §0a tables, §0b write-frozen
+//   tables, and renamed-away *_v2 names. App code must not touch any of these.
+//
+// SQL layer (supabase/migrations/**/*.sql, supabase/functions/**/*.sql):
+//   Scans ONLY for the 4 fully-dropped §0a tables. §0b tables (properties,
+//   rooms, tenants, share_classes, compliance_items, compliance_documents)
+//   still live in the DB and are referenced by historical migrations + active
+//   RLS/index migrations — flagging them in SQL would force ~89 allowlist
+//   markers on legitimate migrations. Each §0b table migrates from the TS
+//   list to the SQL list when its Ship F (DROP TABLE public.<v1>) lands.
+//
+// Per-file allowlist marker:
+//   `-- @allow-v1-refs: <reason>` (SQL) or `// @allow-v1-refs: <reason>` (TS)
+//   on any line in the file disables this guard for that file. Should rarely
+//   be needed for SQL since the 4 dropped tables shouldn't legitimately
+//   appear (e.g. a hypothetical "migrate orphaned data" cleanup script
+//   could carry the marker if needed).
+//
+// Dropped V1 tables (§0a — replaced by V2 equivalents, also blocked in SQL):
 //   loans     → loan_facilities
 //   tenancies → tenancy_agreements
 //   costs     → property_cost_budgets
 //   income    → property_income_budgets
 //
-// Renamed-away `*_v2` tables (Partial-#61, 2026-05-09 — these names no longer
-// exist in the database and must NOT be re-introduced; use the canonical name):
+// Renamed-away `*_v2` tables (Partial-#61, 2026-05-09):
 //   compliance_contractors_v2  → compliance_contractors
 //   compliance_requirements_v2 → compliance_requirements
 //   property_cost_budgets_v2   → property_cost_budgets
 //   property_income_budgets_v2 → property_income_budgets
-//
-// Patterns matched:
-//   (a) .from('<table>') / .from("<table>")    — Supabase client calls
-//   (b) 'public.<table>' / "public.<table>"    — raw SQL string refs
-//
-// Allowlist:
-//   - src/lib/v1Frozen.ts  (intentional string refs in throw-guard messages)
-//
-// Scopes scanned: src/ and supabase/functions/
-// (docs/ and *.md files are excluded — they reference table names for documentation.)
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const root = process.cwd();
-const SCAN_DIRS = ['src', 'supabase/functions'];
+const SCAN_DIRS_CODE = ['src', 'supabase/functions'];
+const SCAN_DIRS_SQL = ['supabase/migrations', 'supabase/functions'];
+
+// Fully-dropped §0a V1 tables — flagged in BOTH TS and SQL layers.
 const V1_TABLES = ['loans', 'tenancies', 'costs', 'income'];
 
-// §0b Ship A — write-pattern guard: V1 `compliance_items`,
-// `compliance_documents`, and `properties` reads are still allowed (they get
+// SQL layer flags ONLY the §0a fully-dropped tables. See header for rationale.
+const SQL_FULLY_DROPPED_V1_TABLES = ['loans', 'tenancies', 'costs', 'income'];
+
+// §0b Ship A — write-pattern guard: V1 reads are still allowed (they get
 // redirected via a compat layer / Ship C), but writes (insert/update/upsert/
-// delete) must not appear in production code.
+// delete) must not appear in production TS code.
 const V1_WRITE_ONLY_TABLES = ['compliance_items', 'compliance_documents', 'properties'];
 
 const ALLOWLIST = new Set([
@@ -42,29 +57,15 @@ const ALLOWLIST = new Set([
   'src/__tests__/check-no-v1-table-refs.test.ts',
 ]);
 
-// §0b Ship A — the write-guard for compliance_items / compliance_documents
-// is staged: Ship A locks the two double-writers (useComplianceIntake +
-// process-document). The remaining V1-only writers below are scheduled for
-// Ship C (UI hooks) and Ship D (background fns). Each entry points at the
-// ship that will remove it.
+// §0b Ship A — write-guard staging allowlist (TS only).
 const WRITE_GUARD_ALLOWLIST = new Set([
-  // Ship C — UI hooks (V1 reads + writes redirect via compat layer)
   'src/hooks/useCompliance.ts',
   'src/hooks/useRenewalWorkflow.ts',
-  // Ship C — V1 hybrid-shape rewrite (third payload shape needs audit + product call)
   'src/hooks/useCompanies.ts',
-  // Ship D — background fns
   'supabase/functions/send-compliance-reminders/index.ts',
 ]);
 
-// Partial-#61 (2026-05-09): forward-looking guard for the 4 V2 names that
-// were renamed to canonical. They no longer exist as DB tables — any
-// re-introduction in code is a regression.
-//
-// Rooms §0b Ship C (2026-05-10): `rooms` (V1) reads have been redirected
-// to `rooms_v2`. The V1 `rooms` table still exists in the DB (Ship F drops
-// it after Ship E installs `v1_freeze_guard`), but production code must
-// not read or write it any more.
+// Renamed-away V2 names + V1 `rooms` redirect (TS-only guard).
 const RENAMED_V2_TABLES = [
   'compliance_contractors_v2',
   'compliance_requirements_v2',
@@ -73,7 +74,8 @@ const RENAMED_V2_TABLES = [
   'rooms',
 ];
 
-const PATTERNS = [
+// === TS/JS pattern set ===
+const TS_PATTERNS = [
   ...V1_TABLES.flatMap((t) => [
     { table: t, regex: new RegExp(`\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)`), kind: 'drop' },
     { table: t, regex: new RegExp(`['"\`]public\\.${t}['"\`]`), kind: 'drop' },
@@ -84,10 +86,7 @@ const PATTERNS = [
   ]),
 ];
 
-// Multi-line write patterns for the §0b Ship A guard. We collapse whitespace
-// before matching so a chained `.from('compliance_items')\n  .update({...})`
-// is caught the same as a one-liner.
-const WRITE_PATTERNS = V1_WRITE_ONLY_TABLES.map((t) => ({
+const TS_WRITE_PATTERNS = V1_WRITE_ONLY_TABLES.map((t) => ({
   table: t,
   regex: new RegExp(
     `\\.from\\(\\s*['"\`]${t}['"\`]\\s*\\)\\s*\\.\\s*(insert|update|upsert|delete)\\b`,
@@ -95,7 +94,24 @@ const WRITE_PATTERNS = V1_WRITE_ONLY_TABLES.map((t) => ({
   kind: 'write',
 }));
 
-function walk(dir) {
+// === SQL pattern set ===
+// Matches FROM/UPDATE/INSERT INTO/DELETE FROM/REFERENCES, optionally with
+// `public.` schema qualifier, requiring a word boundary so e.g. `loans_v2`
+// or `incoming` don't match.
+const SQL_PATTERNS = SQL_FULLY_DROPPED_V1_TABLES.flatMap((t) => [
+  {
+    table: t,
+    regex: new RegExp(
+      `\\b(?:FROM|UPDATE|INSERT\\s+INTO|DELETE\\s+FROM|REFERENCES|JOIN)\\s+(?:public\\.)?${t}\\b`,
+      'i',
+    ),
+    kind: 'sql-drop',
+  },
+]);
+
+const ALLOW_MARKER = /@allow-v1-refs:/;
+
+function walk(dir, exts) {
   const out = [];
   let entries;
   try {
@@ -106,8 +122,8 @@ function walk(dir) {
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
-      out.push(...walk(full));
-    } else if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(entry.name)) {
+      out.push(...walk(full, exts));
+    } else if (exts.test(entry.name)) {
       out.push(full);
     }
   }
@@ -115,44 +131,41 @@ function walk(dir) {
 }
 
 const offenders = [];
-for (const scanDir of SCAN_DIRS) {
+
+// --- TS/JS scan ---
+for (const scanDir of SCAN_DIRS_CODE) {
   const absDir = join(root, scanDir);
   try {
     if (!statSync(absDir).isDirectory()) continue;
   } catch {
     continue;
   }
-  for (const file of walk(absDir)) {
+  for (const file of walk(absDir, /\.(ts|tsx|js|jsx|mjs|cjs)$/)) {
     const rel = relative(root, file).split(sep).join('/');
     if (ALLOWLIST.has(rel)) continue;
     const content = readFileSync(file, 'utf8');
+    if (ALLOW_MARKER.test(content)) continue;
     const lines = content.split('\n');
 
-    // (1) Per-line drop checks for fully-removed V1 tables and renamed-away V2 names.
     lines.forEach((line, i) => {
-      for (const { table, regex, kind } of PATTERNS) {
+      for (const { table, regex, kind } of TS_PATTERNS) {
         if (regex.test(line)) {
           offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });
         }
       }
     });
 
-    // (2) Whole-file write-pattern checks for V1 tables whose reads are
-    // still allowed but whose writes were killed in §0b Ship A.
     const collapsed = content.replace(/\s+/g, ' ');
     if (WRITE_GUARD_ALLOWLIST.has(rel)) {
       // Skip §0b Ship A write-guard for files scheduled for Ship C/D.
-    } else for (const { table, regex } of WRITE_PATTERNS) {
+    } else for (const { table, regex } of TS_WRITE_PATTERNS) {
       const m = collapsed.match(regex);
       if (m) {
-        // Re-locate the offending `.from('<table>')` call in the original
-        // text so the error points at a real line number.
         const fromCallRe = new RegExp(`\\.from\\(\\s*['"\`]${table}['"\`]\\s*\\)`, 'g');
         let lineNo = 0;
         let match;
         while ((match = fromCallRe.exec(content)) !== null) {
           lineNo = content.slice(0, match.index).split('\n').length;
-          // Look in a small window for the banned write call.
           const window = content.slice(match.index, match.index + 400).replace(/\s+/g, ' ');
           if (regex.test(window)) {
             offenders.push({
@@ -170,8 +183,36 @@ for (const scanDir of SCAN_DIRS) {
   }
 }
 
+// --- SQL scan ---
+const sqlSeen = new Set();
+for (const scanDir of SCAN_DIRS_SQL) {
+  const absDir = join(root, scanDir);
+  try {
+    if (!statSync(absDir).isDirectory()) continue;
+  } catch {
+    continue;
+  }
+  for (const file of walk(absDir, /\.sql$/)) {
+    if (sqlSeen.has(file)) continue;
+    sqlSeen.add(file);
+    const rel = relative(root, file).split(sep).join('/');
+    const content = readFileSync(file, 'utf8');
+    if (ALLOW_MARKER.test(content)) continue;
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // Strip line comments before matching to avoid false positives in `-- ...`.
+      const code = line.replace(/--.*$/, '');
+      for (const { table, regex, kind } of SQL_PATTERNS) {
+        if (regex.test(code)) {
+          offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });
+        }
+      }
+    });
+  }
+}
+
 if (offenders.length > 0) {
-  console.error('\n❌ Disallowed V1 table reference(s) found in production code:');
+  console.error('\n❌ Disallowed V1 table reference(s) found:');
   for (const o of offenders) {
     console.error(`  - ${o.file}:${o.line}  [${o.table}/${o.kind}]  ${o.snippet}`);
   }
@@ -181,13 +222,14 @@ if (offenders.length > 0) {
     `Renamed-away V2 tables (Partial-#61, 2026-05-09): use the canonical names ` +
     `(compliance_contractors, compliance_requirements, property_cost_budgets, property_income_budgets) — ` +
     `the *_v2 names no longer exist in the database.\n` +
-    `Frozen V1 writes (compliance_items, compliance_documents) — §0b Ship A killed all ` +
-    `insert/update/upsert/delete on these tables. Reads via .select(...) are still allowed; they ` +
-    `get redirected via a compat layer in Ship C/D.\n` +
-    `If a reference is intentional (e.g. a throw-guard string), add the file to the allowlist ` +
-    `in scripts/check-no-v1-table-refs.mjs.\n`,
+    `Frozen V1 writes (compliance_items, compliance_documents, properties) — §0b Ship A killed all ` +
+    `insert/update/upsert/delete on these tables. Reads via .select(...) are still allowed.\n` +
+    `SQL layer flags ONLY the 4 fully-dropped §0a tables. §0b tables migrate to the SQL list as their ` +
+    `Ship F lands.\n` +
+    `If a reference is intentional (e.g. a one-off cleanup migration), add a ` +
+    `\`-- @allow-v1-refs: <reason>\` (SQL) or \`// @allow-v1-refs: <reason>\` (TS) marker to the file.\n`,
   );
   process.exit(1);
 }
 
-console.log('✓ No V1 table references in src/ or supabase/functions/.');
+console.log('✓ No V1 table references in src/, supabase/functions/, or supabase/migrations/.');
