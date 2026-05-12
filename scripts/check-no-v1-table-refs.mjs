@@ -200,8 +200,9 @@ for (const scanDir of SCAN_DIRS_SQL) {
     if (ALLOW_MARKER.test(content)) continue;
     const lines = content.split('\n');
     lines.forEach((line, i) => {
-      // Strip line comments before matching to avoid false positives in `-- ...`.
-      const code = line.replace(/--.*$/, '');
+      // Strip line comments AND single-quoted string literals before matching
+      // to avoid false positives like COMMENT ON ... 'excluded from income KPIs'.
+      const code = line.replace(/--.*$/, '').replace(/'(?:[^']|'')*'/g, "''");
       for (const { table, regex, kind } of SQL_PATTERNS) {
         if (regex.test(code)) {
           offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });

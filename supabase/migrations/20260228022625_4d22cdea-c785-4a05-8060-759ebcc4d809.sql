@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- Tenant portal: tenants can read documents for their tenancy's property
 CREATE POLICY "Tenants can read their property documents"
   ON storage.objects FOR SELECT

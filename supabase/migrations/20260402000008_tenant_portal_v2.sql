@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- Tenant Portal V2: Add enhanced fields for maintenance requests
 -- Adds: urgency, location_in_property, availability, reference_number, tenant_user_id
 

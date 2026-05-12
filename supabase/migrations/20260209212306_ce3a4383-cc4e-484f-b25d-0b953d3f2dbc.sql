@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 
 -- Create tenancy_compliance_items table
 CREATE TABLE public.tenancy_compliance_items (

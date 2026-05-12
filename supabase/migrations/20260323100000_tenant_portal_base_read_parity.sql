@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- Align tenant portal base table reads with tenant_portal_access.
 -- The portal UI now authenticates against tenant_portal_access, but the older
 -- tenant/tenancy policies were still keyed only off tenants.portal_user_id.

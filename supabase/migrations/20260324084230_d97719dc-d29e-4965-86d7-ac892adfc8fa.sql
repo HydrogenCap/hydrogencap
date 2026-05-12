@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- Bring tenant portal access flags into database policy enforcement.
 
 CREATE OR REPLACE FUNCTION public.user_has_tenant_rent_access(check_tenancy_id uuid)

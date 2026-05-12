@@ -60,4 +60,69 @@ describe('check-no-v1-table-refs script', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('No V1 table references');
   });
+
+  it('exits 1 when a .sql migration references a §0a dropped V1 table', () => {
+    const box = mkdtempSync(join(tmpdir(), 'v1-refs-sql-bad-'));
+    mkdirSync(join(box, 'scripts'), { recursive: true });
+    mkdirSync(join(box, 'supabase/migrations'), { recursive: true });
+    cpSync(SCRIPT_SRC, join(box, 'scripts/check-no-v1-table-refs.mjs'));
+    writeFileSync(
+      join(box, 'supabase/migrations/20990101000000_bad.sql'),
+      'SELECT * FROM loans;\n',
+    );
+    const r = spawnSync(process.execPath, ['scripts/check-no-v1-table-refs.mjs'], {
+      cwd: box, encoding: 'utf8',
+    });
+    rmSync(box, { recursive: true, force: true });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('loans');
+  });
+
+  it('exits 0 when a .sql migration references a §0b table not yet on SQL list', () => {
+    const box = mkdtempSync(join(tmpdir(), 'v1-refs-sql-0b-'));
+    mkdirSync(join(box, 'scripts'), { recursive: true });
+    mkdirSync(join(box, 'supabase/migrations'), { recursive: true });
+    cpSync(SCRIPT_SRC, join(box, 'scripts/check-no-v1-table-refs.mjs'));
+    writeFileSync(
+      join(box, 'supabase/migrations/20990101000001_0b.sql'),
+      'SELECT * FROM compliance_items;\n',
+    );
+    const r = spawnSync(process.execPath, ['scripts/check-no-v1-table-refs.mjs'], {
+      cwd: box, encoding: 'utf8',
+    });
+    rmSync(box, { recursive: true, force: true });
+    expect(r.status).toBe(0);
+  });
+
+  it('exits 0 when a SQL file with a forbidden ref carries the allowlist marker', () => {
+    const box = mkdtempSync(join(tmpdir(), 'v1-refs-sql-marker-'));
+    mkdirSync(join(box, 'scripts'), { recursive: true });
+    mkdirSync(join(box, 'supabase/migrations'), { recursive: true });
+    cpSync(SCRIPT_SRC, join(box, 'scripts/check-no-v1-table-refs.mjs'));
+    writeFileSync(
+      join(box, 'supabase/migrations/20990101000002_allowed.sql'),
+      '-- @allow-v1-refs: historical cleanup\nSELECT * FROM loans;\n',
+    );
+    const r = spawnSync(process.execPath, ['scripts/check-no-v1-table-refs.mjs'], {
+      cwd: box, encoding: 'utf8',
+    });
+    rmSync(box, { recursive: true, force: true });
+    expect(r.status).toBe(0);
+  });
+
+  it('does not flag V1 names appearing only inside SQL string literals', () => {
+    const box = mkdtempSync(join(tmpdir(), 'v1-refs-sql-strlit-'));
+    mkdirSync(join(box, 'scripts'), { recursive: true });
+    mkdirSync(join(box, 'supabase/migrations'), { recursive: true });
+    cpSync(SCRIPT_SRC, join(box, 'scripts/check-no-v1-table-refs.mjs'));
+    writeFileSync(
+      join(box, 'supabase/migrations/20990101000003_comment.sql'),
+      "COMMENT ON COLUMN public.x.y IS 'excluded from income KPIs';\n",
+    );
+    const r = spawnSync(process.execPath, ['scripts/check-no-v1-table-refs.mjs'], {
+      cwd: box, encoding: 'utf8',
+    });
+    rmSync(box, { recursive: true, force: true });
+    expect(r.status).toBe(0);
+  });
 });

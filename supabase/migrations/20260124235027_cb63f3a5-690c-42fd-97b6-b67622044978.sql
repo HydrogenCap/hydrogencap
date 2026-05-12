@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 -- =============================================
 -- PORTFOLIO DASHBOARD - COMPLETE DATABASE SCHEMA
 -- =============================================

@@ -1,3 +1,4 @@
+-- @allow-v1-refs: pre-cutover historical migration referencing §0a V1 tables (loans/tenancies/costs/income); baked-in DB history, not new code.
 
 -- Fix migrate_income_costs_to_snapshots: use correct column ownership_entity_id
 CREATE OR REPLACE FUNCTION public.migrate_income_costs_to_snapshots(p_org_id uuid)
