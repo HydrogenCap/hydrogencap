@@ -214,7 +214,105 @@ function main() {
   );
 }
 
-// Allow harness mode: tests import the parser without executing main.
+// === DB-query fallback (#107) ===
+//
+// Opt-in via `--mode=db` or `--db`. Defensive escape hatch for the case
+// where a future migration installs the trigger via a path the static
+// parser can't see (format()-wrapped CREATE TRIGGER outside the known
+// FOREACH ARRAY pattern, dynamic SQL, etc.). Queries pg_trigger directly.
+//
+// Connection: requires SUPABASE_DB_URL (libpq URL) and a working `psql`
+// on PATH. If only SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are present,
+// we surface a clear error — the SRK path would require a pre-installed
+// RPC against pg_catalog, which we don't ship by default.
+//
+// Exit semantics match the static path:
+//   0 → DB state matches config
+//   1 → drift (missing install, install on a 'pending' table, or
+//        an installed table the config doesn't list at all)
+import { spawnSync } from 'node:child_process';
+
+async function queryDbState(executor) {
+  // executor: ({ sql }) => Promise<Array<{ table_name: string }>>
+  const sql =
+    `SELECT c.relname AS table_name FROM pg_trigger t ` +
+    `JOIN pg_class c ON c.oid = t.tgrelid ` +
+    `JOIN pg_namespace n ON n.oid = c.relnamespace ` +
+    `WHERE t.tgname = 'v1_freeze_guard' AND NOT t.tgisinternal AND n.nspname = 'public';`;
+  const rows = await executor({ sql });
+  return new Set(rows.map((r) => r.table_name));
+}
+
+function defaultPsqlExecutor({ sql }) {
+  const url = process.env.SUPABASE_DB_URL;
+  if (!url) {
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error(
+        'DB-query fallback requires SUPABASE_DB_URL (libpq URL). The ' +
+          'SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY combination would need a ' +
+          'pre-installed pg_catalog RPC, which is not shipped. Set SUPABASE_DB_URL ' +
+          'and retry.',
+      );
+    }
+    throw new Error(
+      'DB-query fallback requires SUPABASE_DB_URL env var (libpq connection string).',
+    );
+  }
+  const r = spawnSync('psql', [url, '-At', '-F', '\t', '-c', sql], {
+    encoding: 'utf8',
+  });
+  if (r.status !== 0) {
+    throw new Error(`psql failed (exit ${r.status}): ${r.stderr || r.stdout}`);
+  }
+  return r.stdout
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((table_name) => ({ table_name }));
+}
+
+async function mainDb({ executor = defaultPsqlExecutor } = {}) {
+  const { expected, pending } = loadConfig();
+  const installed = await queryDbState(executor);
+
+  const failures = [];
+  for (const t of expected) {
+    if (!installed.has(t)) {
+      failures.push(
+        `expected '${t}' to have v1_freeze_guard installed in DB, but pg_trigger has no row.`,
+      );
+    }
+  }
+  for (const t of pending) {
+    if (installed.has(t)) {
+      failures.push(
+        `pending table '${t}' has v1_freeze_guard installed in DB — ` +
+          `move it from pending_install to expected_installed.`,
+      );
+    }
+  }
+  for (const t of installed) {
+    if (!expected.includes(t) && !pending.includes(t)) {
+      failures.push(
+        `DB has v1_freeze_guard on unconfigured table '${t}' — add it to ` +
+          `scripts/v1-freeze-trigger-config.json (or remove the trigger).`,
+      );
+    }
+  }
+
+  if (failures.length > 0) {
+    console.error('\n❌ v1_freeze_guard DB-query coverage drift detected:');
+    for (const f of failures) console.error(`  - ${f}`);
+    console.error('');
+    process.exit(1);
+  }
+
+  console.log(
+    `✓ v1_freeze_guard DB-query coverage matches config ` +
+      `(installed in DB: ${installed.size}, expected: ${expected.length}).`,
+  );
+}
+
 const isMain = (() => {
   try {
     return statSync(process.argv[1]).isFile() &&
@@ -224,6 +322,17 @@ const isMain = (() => {
   }
 })();
 
-if (isMain) main();
+if (isMain) {
+  const args = process.argv.slice(2);
+  const dbMode = args.includes('--db') || args.includes('--mode=db');
+  if (dbMode) {
+    mainDb().catch((err) => {
+      console.error(`❌ ${err.message}`);
+      process.exit(1);
+    });
+  } else {
+    main();
+  }
+}
 
-export { parseFile, computeFinalState };
+export { parseFile, computeFinalState, queryDbState, mainDb };

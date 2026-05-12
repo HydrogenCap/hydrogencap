@@ -1,4 +1,4 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, afterAll, vi } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import {
   mkdtempSync,
@@ -152,5 +152,86 @@ END $$;
     const result = run(sb);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('properties');
+  });
+});
+
+// ===== DB-query mode (#107) =====
+// Exercises mainDb() directly with an injected mock executor so we don't
+// need a real Postgres connection in CI.
+describe('check-freeze-trigger-coverage --mode=db', () => {
+  it('exits 0 when mock pg_trigger state matches config', async () => {
+    const mod = await import('../../scripts/check-freeze-trigger-coverage.mjs');
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`__exit_${code}__`);
+    }) as never);
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await mod.mainDb({
+        executor: async () => [
+          { table_name: 'properties' },
+          { table_name: 'rooms' },
+          { table_name: 'tenants' },
+        ],
+      });
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('DB-query coverage matches config'),
+      );
+    } finally {
+      exitSpy.mockRestore();
+      logSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
+  it('exits 1 when DB has trigger on a pending table (drift)', async () => {
+    const mod = await import('../../scripts/check-freeze-trigger-coverage.mjs');
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`__exit_${code}__`);
+    }) as never);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        mod.mainDb({
+          executor: async () => [
+            { table_name: 'properties' },
+            { table_name: 'rooms' },
+            { table_name: 'tenants' },
+            { table_name: 'share_classes' }, // pending → unexpected install
+          ],
+        }),
+      ).rejects.toThrow('__exit_1__');
+      expect(errSpy).toHaveBeenCalledWith(
+        expect.stringContaining('drift detected'),
+      );
+    } finally {
+      exitSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
+  it('exits 1 when DB is missing an expected install', async () => {
+    const mod = await import('../../scripts/check-freeze-trigger-coverage.mjs');
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`__exit_${code}__`);
+    }) as never);
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await expect(
+        mod.mainDb({
+          executor: async () => [
+            { table_name: 'properties' },
+            { table_name: 'rooms' },
+            // 'tenants' missing
+          ],
+        }),
+      ).rejects.toThrow('__exit_1__');
+      expect(errSpy).toHaveBeenCalledWith(
+        expect.stringContaining('tenants'),
+      );
+    } finally {
+      exitSpy.mockRestore();
+      errSpy.mockRestore();
+    }
   });
 });
