@@ -286,17 +286,9 @@ for (const scanDir of SCAN_DIRS_SQL) {
     const rel = relative(root, file).split(sep).join('/');
     const content = readFileSync(file, 'utf8');
     if (ALLOW_MARKER.test(content)) continue;
-    const lines = content.split('\n');
-    lines.forEach((line, i) => {
-      // Strip line comments AND single-quoted string literals before matching
-      // to avoid false positives like COMMENT ON ... 'excluded from income KPIs'.
-      const code = line.replace(/--.*$/, '').replace(/'(?:[^']|'')*'/g, "''");
-      for (const { table, regex, kind } of SQL_PATTERNS) {
-        if (regex.test(code)) {
-          offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });
-        }
-      }
-    });
+    for (const hit of scanSqlContent(content)) {
+      offenders.push({ file: rel, ...hit });
+    }
   }
 }
 
