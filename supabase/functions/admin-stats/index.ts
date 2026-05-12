@@ -97,6 +97,9 @@ serve(withInvocationLog("admin-stats", async (req, _invocationLog) => {
       case "change_plan":
         result = await changePlan(supabase, params);
         break;
+      case "activation_funnel":
+        result = await getActivationFunnel(supabase);
+        break;
       default:
         return new Response(JSON.stringify({ error: "Unknown action" }), {
           status: 400,
