@@ -72,6 +72,7 @@ export default function AdminDashboard() {
   });
   const grantTrial = useGrantTrial();
   const changePlan = useChangePlan();
+  const { data: funnel, isLoading: funnelLoading } = useActivationFunnel();
 
   if (isAdmin === false) {
     return <Navigate to="/dashboard" replace />;
