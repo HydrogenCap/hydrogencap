@@ -95,21 +95,109 @@ const TS_WRITE_PATTERNS = V1_WRITE_ONLY_TABLES.map((t) => ({
 }));
 
 // === SQL pattern set ===
-// Matches FROM/UPDATE/INSERT INTO/DELETE FROM/REFERENCES, optionally with
-// `public.` schema qualifier, requiring a word boundary so e.g. `loans_v2`
-// or `incoming` don't match.
+// Matches FROM/UPDATE/INSERT INTO/DELETE FROM/REFERENCES/JOIN, optionally
+// with `public.` schema qualifier, requiring a word boundary so e.g.
+// `loans_v2` or `incoming` don't match. `\s+` matches newlines, so
+// multi-line statements like `FROM\n  public.loans` are handled when the
+// pattern is run against the whole (stripped) file content.
 const SQL_PATTERNS = SQL_FULLY_DROPPED_V1_TABLES.flatMap((t) => [
   {
     table: t,
     regex: new RegExp(
       `\\b(?:FROM|UPDATE|INSERT\\s+INTO|DELETE\\s+FROM|REFERENCES|JOIN)\\s+(?:public\\.)?${t}\\b`,
-      'i',
+      'gi',
     ),
     kind: 'sql-drop',
   },
 ]);
 
 const ALLOW_MARKER = /@allow-v1-refs:/;
+
+// Strip SQL "noise" — comments and string literals — replacing each char
+// with a space (newlines preserved) so byte offsets and line numbers in
+// the stripped content match the original. Handles:
+//   - line comments:    -- ...
+//   - block comments:   /* ... */ (nested-aware)
+//   - single quotes:    '...'  (doubled '' escape)
+//   - escape strings:   E'...' (backslash escapes + doubled '')
+//   - dollar quotes:    $$...$$  and  $tag$...$tag$
+function stripSqlNoise(s) {
+  let out = '';
+  let i = 0;
+  const blank = (span) => span.replace(/[^\n]/g, ' ');
+  while (i < s.length) {
+    const c = s[i];
+    const c2 = s[i + 1];
+    if (c === '/' && c2 === '*') {
+      let depth = 1, j = i + 2;
+      while (j < s.length && depth > 0) {
+        if (s[j] === '/' && s[j + 1] === '*') { depth++; j += 2; }
+        else if (s[j] === '*' && s[j + 1] === '/') { depth--; j += 2; }
+        else j++;
+      }
+      out += blank(s.slice(i, j)); i = j; continue;
+    }
+    if (c === '-' && c2 === '-') {
+      let j = i;
+      while (j < s.length && s[j] !== '\n') j++;
+      out += blank(s.slice(i, j)); i = j; continue;
+    }
+    if (c === '$') {
+      const m = /^\$([A-Za-z_][A-Za-z0-9_]*)?\$/.exec(s.slice(i));
+      if (m) {
+        const tag = m[0];
+        const end = s.indexOf(tag, i + tag.length);
+        const j = end === -1 ? s.length : end + tag.length;
+        out += blank(s.slice(i, j)); i = j; continue;
+      }
+    }
+    if ((c === 'E' || c === 'e') && c2 === "'") {
+      let j = i + 2;
+      while (j < s.length) {
+        if (s[j] === '\\' && j + 1 < s.length) { j += 2; continue; }
+        if (s[j] === "'") {
+          if (s[j + 1] === "'") { j += 2; continue; }
+          j++; break;
+        }
+        j++;
+      }
+      out += blank(s.slice(i, j)); i = j; continue;
+    }
+    if (c === "'") {
+      let j = i + 1;
+      while (j < s.length) {
+        if (s[j] === "'") {
+          if (s[j + 1] === "'") { j += 2; continue; }
+          j++; break;
+        }
+        j++;
+      }
+      out += blank(s.slice(i, j)); i = j; continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+function scanSqlContent(content) {
+  const stripped = stripSqlNoise(content);
+  const hits = [];
+  const origLines = content.split('\n');
+  for (const { table, regex, kind } of SQL_PATTERNS) {
+    regex.lastIndex = 0;
+    let m;
+    while ((m = regex.exec(stripped)) !== null) {
+      const lineNo = stripped.slice(0, m.index).split('\n').length;
+      hits.push({
+        line: lineNo,
+        table,
+        kind,
+        snippet: (origLines[lineNo - 1] ?? '').trim(),
+      });
+    }
+  }
+  return hits;
+}
 
 function walk(dir, exts) {
   const out = [];
@@ -198,17 +286,9 @@ for (const scanDir of SCAN_DIRS_SQL) {
     const rel = relative(root, file).split(sep).join('/');
     const content = readFileSync(file, 'utf8');
     if (ALLOW_MARKER.test(content)) continue;
-    const lines = content.split('\n');
-    lines.forEach((line, i) => {
-      // Strip line comments AND single-quoted string literals before matching
-      // to avoid false positives like COMMENT ON ... 'excluded from income KPIs'.
-      const code = line.replace(/--.*$/, '').replace(/'(?:[^']|'')*'/g, "''");
-      for (const { table, regex, kind } of SQL_PATTERNS) {
-        if (regex.test(code)) {
-          offenders.push({ file: rel, line: i + 1, table, kind, snippet: line.trim() });
-        }
-      }
-    });
+    for (const hit of scanSqlContent(content)) {
+      offenders.push({ file: rel, ...hit });
+    }
   }
 }
 

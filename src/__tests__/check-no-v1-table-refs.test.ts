@@ -125,4 +125,96 @@ describe('check-no-v1-table-refs script', () => {
     rmSync(box, { recursive: true, force: true });
     expect(r.status).toBe(0);
   });
+
+  // ===== #104 SQL guard polish trio =====
+
+  function sqlBox(label: string, sql: string) {
+    const box = mkdtempSync(join(tmpdir(), `${label}-`));
+    mkdirSync(join(box, 'scripts'), { recursive: true });
+    mkdirSync(join(box, 'supabase/migrations'), { recursive: true });
+    cpSync(SCRIPT_SRC, join(box, 'scripts/check-no-v1-table-refs.mjs'));
+    writeFileSync(join(box, 'supabase/migrations/20990201000000_x.sql'), sql);
+    const r = spawnSync(process.execPath, ['scripts/check-no-v1-table-refs.mjs'], {
+      cwd: box, encoding: 'utf8',
+    });
+    rmSync(box, { recursive: true, force: true });
+    return r;
+  }
+
+  it('flags UPDATE form', () => {
+    const r = sqlBox('v1-sql-update', "UPDATE public.loans SET x = 1;\n");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('loans');
+  });
+
+  it('flags INSERT INTO form', () => {
+    const r = sqlBox('v1-sql-insert', "INSERT INTO public.loans (id) VALUES (1);\n");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('loans');
+  });
+
+  it('flags DELETE FROM without public. prefix', () => {
+    const r = sqlBox('v1-sql-delete', "DELETE FROM loans WHERE id = 1;\n");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('loans');
+  });
+
+  it('flags REFERENCES form (FK creation)', () => {
+    const r = sqlBox(
+      'v1-sql-refs',
+      "CREATE TABLE x (tenancy_id uuid REFERENCES public.tenancies(id));\n",
+    );
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('tenancies');
+  });
+
+  it('flags multi-line FROM clause', () => {
+    const r = sqlBox(
+      'v1-sql-multiline',
+      "SELECT *\nFROM\n  public.loans\nWHERE id = 1;\n",
+    );
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('loans');
+  });
+
+  it("does not flag refs inside E'...' escape strings with backslash quotes", () => {
+    const r = sqlBox(
+      'v1-sql-estring',
+      "SELECT E'derived from loans \\'metrics\\' table' AS note;\n",
+    );
+    expect(r.status).toBe(0);
+  });
+
+  it('does not flag refs inside untagged dollar-quoted strings', () => {
+    const r = sqlBox(
+      'v1-sql-dollar',
+      "DO $$ BEGIN RAISE NOTICE 'computed FROM loans table'; END $$;\n",
+    );
+    expect(r.status).toBe(0);
+  });
+
+  it('does not flag refs inside tagged dollar-quoted strings', () => {
+    const r = sqlBox(
+      'v1-sql-dollartag',
+      "CREATE FUNCTION f() RETURNS void AS $body$ SELECT 1 FROM loans; $body$ LANGUAGE sql;\n",
+    );
+    expect(r.status).toBe(0);
+  });
+
+  it('does not flag refs inside /* block comments */', () => {
+    const r = sqlBox(
+      'v1-sql-block',
+      "/* migration note: replaces FROM public.loans with loan_facilities */\nSELECT 1;\n",
+    );
+    expect(r.status).toBe(0);
+  });
+
+  it('still flags real refs that follow a stripped string literal on same line', () => {
+    const r = sqlBox(
+      'v1-sql-mixed',
+      "SELECT 'note from income KPIs' AS x, * FROM public.loans;\n",
+    );
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain('loans');
+  });
 });
