@@ -12,6 +12,7 @@
     "check:no-any-disables": "node scripts/check-no-explicit-any-disables.mjs",
     "check:no-v1-refs": "node scripts/check-no-v1-table-refs.mjs",
     "check:freeze-triggers": "node scripts/check-freeze-trigger-coverage.mjs",
+    "check:retry-wrapper": "node scripts/check-retry-wrapper-smoke.mjs",
     "test:edge": "deno test supabase/functions --allow-env",
     "lint": "eslint --max-warnings 0 src e2e scripts playwright.config.ts vitest.config.ts vite.config.ts tailwind.config.ts eslint.config.js",
     "preview": "vite preview",
@@ -24,7 +25,7 @@
     "e2e:ci": "playwright test --grep \"(mocked)|Smoke Tests|Navigation Smoke|Route Guards|Invite|Shared Document\"",
     "a11y:update-baseline": "node scripts/update-a11y-baseline.mjs",
     "e2e:ui": "playwright test --ui",
-    "verify": "npm run lint && npm run check:no-any-disables && npm run check:no-v1-refs && npm run check:freeze-triggers && npm run typecheck && npm test && npm run build && npm run check:edge"
+    "verify": "npm run lint && npm run check:no-any-disables && npm run check:no-v1-refs && npm run check:freeze-triggers && npm run typecheck && npm test && npm run build && npm run check:edge && npm run check:retry-wrapper"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
