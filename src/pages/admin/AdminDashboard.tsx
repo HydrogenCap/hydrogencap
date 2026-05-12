@@ -193,6 +193,9 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Activation Funnel (§4.1) */}
+        <ActivationFunnelSection data={funnel} loading={funnelLoading} />
+
         {/* Users Table */}
         <Card>
           <CardHeader>
