@@ -34,7 +34,7 @@
 //   property_cost_budgets_v2   → property_cost_budgets
 //   property_income_budgets_v2 → property_income_budgets
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const root = process.cwd();
