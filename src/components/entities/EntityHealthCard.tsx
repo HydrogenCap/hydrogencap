@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { AlertTriangle, CheckCircle2, CircleAlert, CircleDashed, FileWarning } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +25,7 @@ interface HealthItem {
   level: HealthLevel;
 }
 
-const LEVEL_CONFIG: Record<HealthLevel, { icon: React.ComponentType<{ className?: string }>; badge: string; className: string }> = {
+const LEVEL_CONFIG: Record<HealthLevel, { icon: ComponentType<{ className?: string }>; badge: string; className: string }> = {
   good: { icon: CheckCircle2, badge: 'Good', className: 'text-emerald-600 dark:text-emerald-400' },
   watch: { icon: AlertTriangle, badge: 'Watch', className: 'text-amber-600 dark:text-amber-400' },
   critical: { icon: CircleAlert, badge: 'Critical', className: 'text-red-600 dark:text-red-400' },
