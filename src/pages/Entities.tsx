@@ -24,6 +24,8 @@ import {
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useEntityVerificationStatus, useSyncEntity, EntityVerification } from '@/hooks/useCompaniesHouseV2';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
+import { useAllLoanFacilities } from '@/hooks/useLoanFacilities';
+import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { getComplianceStatus } from '@/lib/complianceStatus';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +43,21 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   dormant: { label: 'Dormant', className: 'bg-muted text-muted-foreground border-border' },
   dissolved: { label: 'Dissolved', className: 'bg-destructive/10 text-destructive border-destructive/20' },
 };
+
+function formatGBP(value: number | null | undefined) {
+  if (value == null) return '—';
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatPercent(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${value.toFixed(1)}%`;
+}
 
 function ComplianceStatusIndicator({ dueDate }: { dueDate: string }) {
   const status = getComplianceStatus(dueDate);
@@ -60,15 +77,25 @@ function ComplianceStatusIndicator({ dueDate }: { dueDate: string }) {
   );
 }
 
+interface EntityMetrics {
+  propertyCount: number;
+  totalValue: number;
+  totalDebt: number;
+  monthlyRent: number;
+  ltv: number | null;
+}
+
 export default function Entities() {
   const { data: entities, isLoading } = useLegalEntities();
   const { data: verifications } = useEntityVerificationStatus();
   const { data: allPropertiesV2 } = usePropertiesV2();
+  const { data: loans } = useAllLoanFacilities();
+  const { data: roomSummaries } = usePropertyRoomSummaries();
   const syncEntity = useSyncEntity();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'type' | 'status'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'type' | 'status' | 'value' | 'debt' | 'ltv'>('name');
   const [showAddModal, setShowAddModal] = useState(false);
   const [bulkSyncing, setBulkSyncing] = useState(false);
 
@@ -78,13 +105,43 @@ export default function Entities() {
     return map;
   }, [verifications]);
 
-  const propertyCountMap = useMemo(() => {
-    const map = new Map<string, number>();
-    allPropertiesV2?.forEach(p => {
-      map.set(p.entity_id, (map.get(p.entity_id) || 0) + 1);
+  const entityMetricsMap = useMemo(() => {
+    const map = new Map<string, EntityMetrics>();
+    const propertyIdToEntity = new Map<string, string>();
+
+    allPropertiesV2?.forEach((property) => {
+      propertyIdToEntity.set(property.id, property.entity_id);
+      const current = map.get(property.entity_id) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
+      const monthlyRent = property.rent_basis === 'whole_house'
+        ? (property.whole_house_rent_pcm || 0)
+        : (roomSummaries?.get(property.id)?.gross_rent_pcm || 0);
+      map.set(property.entity_id, {
+        ...current,
+        propertyCount: current.propertyCount + 1,
+        totalValue: current.totalValue + (property.current_valuation || 0),
+        monthlyRent: current.monthlyRent + monthlyRent,
+      });
     });
+
+    loans?.forEach((loan) => {
+      if (!['active', 'drawdown', 'pending_drawdown'].includes(loan.status)) return;
+      const entityId = propertyIdToEntity.get(loan.property_id) || loan.entity_id;
+      const current = map.get(entityId) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
+      map.set(entityId, {
+        ...current,
+        totalDebt: current.totalDebt + (loan.current_balance || 0),
+      });
+    });
+
+    map.forEach((metrics, entityId) => {
+      map.set(entityId, {
+        ...metrics,
+        ltv: metrics.totalValue > 0 ? (metrics.totalDebt / metrics.totalValue) * 100 : null,
+      });
+    });
+
     return map;
-  }, [allPropertiesV2]);
+  }, [allPropertiesV2, loans, roomSummaries]);
 
   const filtered = useMemo(() => {
     if (!entities) return [];
@@ -95,10 +152,16 @@ export default function Entities() {
     result.sort((a, b) => {
       if (sortBy === 'name') return a.entity_name.localeCompare(b.entity_name);
       if (sortBy === 'type') return a.entity_type.localeCompare(b.entity_type);
-      return a.status.localeCompare(b.status);
+      if (sortBy === 'status') return a.status.localeCompare(b.status);
+      const aMetrics = entityMetricsMap.get(a.id);
+      const bMetrics = entityMetricsMap.get(b.id);
+      if (sortBy === 'value') return (bMetrics?.totalValue || 0) - (aMetrics?.totalValue || 0);
+      if (sortBy === 'debt') return (bMetrics?.totalDebt || 0) - (aMetrics?.totalDebt || 0);
+      if (sortBy === 'ltv') return (bMetrics?.ltv || 0) - (aMetrics?.ltv || 0);
+      return 0;
     });
     return result;
-  }, [entities, search, sortBy]);
+  }, [entities, search, sortBy, entityMetricsMap]);
 
   const handleBulkSync = async () => {
     const spvs = entities?.filter(e => e.entity_type === 'spv' && e.company_number) || [];
@@ -133,7 +196,7 @@ export default function Entities() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Entities</h1>
-            <p className="text-muted-foreground">Manage your legal entities, directors, and shareholders</p>
+            <p className="text-muted-foreground">Manage your legal entities, directors, shareholders, and entity-level portfolio performance</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleBulkSync} disabled={bulkSyncing}>
@@ -158,13 +221,16 @@ export default function Entities() {
             />
           </div>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name">Sort by Name</SelectItem>
               <SelectItem value="type">Sort by Type</SelectItem>
               <SelectItem value="status">Sort by Status</SelectItem>
+              <SelectItem value="value">Sort by Value</SelectItem>
+              <SelectItem value="debt">Sort by Debt</SelectItem>
+              <SelectItem value="ltv">Sort by LTV</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -178,14 +244,17 @@ export default function Entities() {
             {search ? 'No entities match your search.' : 'No entities yet. Click "Add Entity" to get started.'}
           </div>
         ) : (
-          <div className="border rounded-lg">
+          <div className="border rounded-lg overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Entity Name</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Company Number</TableHead>
                   <TableHead>Properties</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
+                  <TableHead className="text-right">Debt</TableHead>
+                  <TableHead className="text-right">LTV</TableHead>
+                  <TableHead className="text-right">Rent/mo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>CH Status</TableHead>
                   <TableHead>Accounts</TableHead>
@@ -197,25 +266,32 @@ export default function Entities() {
                   const typeConfig = TYPE_CONFIG[entity.entity_type];
                   const statusConfig = STATUS_CONFIG[entity.status];
                   const v = verificationMap[entity.id];
+                  const metrics = entityMetricsMap.get(entity.id);
                   return (
                     <TableRow
                       key={entity.id}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate(`/entities/${entity.id}`)}
                     >
-                      <TableCell className="font-semibold">{entity.entity_name}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-semibold">{entity.entity_name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{entity.company_number || 'No company number'}</p>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={typeConfig.variant} className="gap-1">
                           <typeConfig.icon className="h-3 w-3" />
                           {typeConfig.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground font-mono text-sm">
-                        {entity.company_number || '—'}
-                      </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {propertyCountMap.get(entity.id) || 0}
+                        {metrics?.propertyCount || 0}
                       </TableCell>
+                      <TableCell className="text-right font-medium">{formatGBP(metrics?.totalValue)}</TableCell>
+                      <TableCell className="text-right">{formatGBP(metrics?.totalDebt)}</TableCell>
+                      <TableCell className="text-right">{formatPercent(metrics?.ltv)}</TableCell>
+                      <TableCell className="text-right">{formatGBP(metrics?.monthlyRent)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusConfig.className}>
                           {statusConfig.label}
