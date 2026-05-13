@@ -12,7 +12,7 @@ import { ListState } from '@/components/ListState';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { usePropertiesV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, getPropertyComplianceStatus } from '@/hooks/usePropertiesV2';
+import { usePropertiesV2, usePropertyComplianceStatusMap, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, type PropertyComplianceStatus } from '@/hooks/usePropertiesV2';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyWizard } from '@/components/properties-v2/wizard/PropertyWizard';
@@ -57,7 +57,7 @@ const LIFECYCLE_BORDER: Record<string, string> = {
   disposal: 'border-l-red-500',
 };
 
-const COMPLIANCE_DOT: Record<string, string> = {
+const COMPLIANCE_DOT: Record<PropertyComplianceStatus, string> = {
   grey: 'bg-muted-foreground/60',
   green: 'bg-emerald-500',
   amber: 'bg-amber-500',
@@ -90,6 +90,7 @@ export default function PropertiesV2() {
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const { data: entities } = useLegalEntities();
   const { data: photoMap } = usePropertyPhotosV2();
+  const { data: complianceStatusMap } = usePropertyComplianceStatusMap();
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
   
   const navigate = useNavigate();
@@ -272,7 +273,14 @@ export default function PropertiesV2() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map(p => (
-                <PropertyCard key={p.id} property={p} roomSummary={roomSummaries?.get(p.id)} photoUrl={photoMap?.get(p.id)} onClick={() => navigate(`/properties-v2/${p.id}`)} />
+                <PropertyCard
+                  key={p.id}
+                  property={p}
+                  roomSummary={roomSummaries?.get(p.id)}
+                  complianceStatus={complianceStatusMap?.get(p.id) ?? 'grey'}
+                  photoUrl={photoMap?.get(p.id)}
+                  onClick={() => navigate(`/properties-v2/${p.id}`)}
+                />
               ))}
             </div>
           )}
@@ -284,8 +292,7 @@ export default function PropertiesV2() {
   );
 }
 
-function PropertyCard({ property: p, roomSummary, photoUrl, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; photoUrl?: string; onClick: () => void }) {
-  const status = getPropertyComplianceStatus(p.id);
+function PropertyCard({ property: p, roomSummary, complianceStatus, photoUrl, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; complianceStatus: PropertyComplianceStatus; photoUrl?: string; onClick: () => void }) {
   const isWholeHouse = p.rent_basis === 'whole_house';
   const occupied = roomSummary?.total_occupied ?? 0;
   const lettable = roomSummary?.total_lettable ?? (p.total_lettable_rooms || 0);
@@ -306,7 +313,7 @@ function PropertyCard({ property: p, roomSummary, photoUrl, onClick }: { propert
             <p className="font-semibold text-foreground truncate">{p.address_line_1}</p>
             <p className="text-sm text-muted-foreground">{p.city}, {p.postcode}</p>
           </div>
-          <div className={`h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0 ${COMPLIANCE_DOT[status]}`} title={`Compliance: ${status}`} />
+          <div className={`h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0 ${COMPLIANCE_DOT[complianceStatus]}`} title={`Compliance: ${complianceStatus}`} />
         </div>
         <div className="flex flex-wrap gap-1.5">
           <Badge variant="secondary" className={`text-xs ${ENTITY_TYPE_BG[p.entity_type] || ''}`}>{p.entity_name}</Badge>
