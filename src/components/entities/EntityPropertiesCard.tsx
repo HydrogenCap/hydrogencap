@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PROPERTY_TYPES, LIFECYCLE_STAGES, type PropertyV2 } from '@/hooks/usePropertiesV2';
+import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 
 interface EntityPropertiesCardProps {
   entityProperties: PropertyV2[] | undefined;
@@ -21,9 +22,15 @@ export function EntityPropertiesCard({
   entityProperties,
   onNavigateToProperty,
 }: EntityPropertiesCardProps) {
+  const { data: roomSummaries } = usePropertyRoomSummaries();
+  const getMonthlyRent = (property: PropertyV2) => {
+    if (property.rent_basis === 'whole_house') return property.whole_house_rent_pcm || 0;
+    return roomSummaries?.get(property.id)?.gross_rent_pcm || 0;
+  };
+
   const propertyCount = entityProperties?.length || 0;
   const totalValuation = entityProperties?.reduce((sum, property) => sum + (property.current_valuation || 0), 0) || 0;
-  const wholeHouseRent = entityProperties?.reduce((sum, property) => sum + (property.whole_house_rent_pcm || 0), 0) || 0;
+  const totalMonthlyRent = entityProperties?.reduce((sum, property) => sum + getMonthlyRent(property), 0) || 0;
 
   return (
     <Card>
@@ -36,8 +43,8 @@ export function EntityPropertiesCard({
               <span className="font-semibold text-foreground">{formatGBP(totalValuation)}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Whole-house rent: </span>
-              <span className="font-semibold text-foreground">{formatGBP(wholeHouseRent)}</span>
+              <span className="text-muted-foreground">Monthly rent: </span>
+              <span className="font-semibold text-foreground">{formatGBP(totalMonthlyRent)}</span>
             </div>
           </div>
         )}
@@ -66,7 +73,7 @@ export function EntityPropertiesCard({
                       </div>
                       <div>
                         <span className="text-muted-foreground">Rent</span>
-                        <p className="font-semibold text-foreground">{formatGBP(p.whole_house_rent_pcm)}</p>
+                        <p className="font-semibold text-foreground">{formatGBP(getMonthlyRent(p))}</p>
                       </div>
                     </div>
                     <div className="flex gap-1.5 flex-wrap">
