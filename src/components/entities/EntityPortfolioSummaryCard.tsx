@@ -33,9 +33,10 @@ function formatRatio(value: number | null | undefined) {
 export function EntityPortfolioSummaryCard({ entityId, entityProperties }: EntityPortfolioSummaryCardProps) {
   const { data: loans } = useAllLoanFacilities();
   const { data: roomSummaries } = usePropertyRoomSummaries();
-  const properties = entityProperties || [];
+  const propertyCount = entityProperties?.length || 0;
 
   const metrics = useMemo(() => {
+    const properties = entityProperties || [];
     const propertyIds = new Set(properties.map((property) => property.id));
     const activeLoans = (loans || []).filter((loan) =>
       loan.entity_id === entityId &&
@@ -56,7 +57,7 @@ export function EntityPortfolioSummaryCard({ entityId, entityProperties }: Entit
     const dscr = monthlyDebtService > 0 ? monthlyRent / monthlyDebtService : null;
 
     return { totalValue, monthlyRent, totalDebt, monthlyDebtService, equity, ltv, grossYield, dscr };
-  }, [entityId, loans, properties, roomSummaries]);
+  }, [entityId, loans, entityProperties, roomSummaries]);
 
   const riskLabel = metrics.ltv == null
     ? 'Incomplete data'
@@ -76,7 +77,7 @@ export function EntityPortfolioSummaryCard({ entityId, entityProperties }: Entit
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Metric label="Properties" value={properties.length.toLocaleString()} />
+          <Metric label="Properties" value={propertyCount.toLocaleString()} />
           <Metric label="Value" value={formatGBP(metrics.totalValue)} />
           <Metric label="Debt" value={formatGBP(metrics.totalDebt)} />
           <Metric label="Equity" value={formatGBP(metrics.equity)} tone={metrics.equity < 0 ? 'negative' : 'positive'} />
