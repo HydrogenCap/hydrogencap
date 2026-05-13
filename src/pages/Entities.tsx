@@ -33,16 +33,21 @@ import { SEO } from '@/components/SEO';
 
 const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: ComponentType<{ className?: string }> }> = {
   spv: { label: 'SPV', variant: 'default', icon: Building2 },
+  ltd_company: { label: 'Ltd Company', variant: 'default', icon: Building2 },
   personal: { label: 'Personal', variant: 'secondary', icon: User },
   joint_venture: { label: 'Joint Venture', variant: 'outline', icon: Handshake },
   trust: { label: 'Trust', variant: 'outline', icon: Shield },
 };
+
+const DEFAULT_TYPE_CONFIG = { label: 'Entity', variant: 'outline' as const, icon: Building2 };
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   active: { label: 'Active', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
   dormant: { label: 'Dormant', className: 'bg-muted text-muted-foreground border-border' },
   dissolved: { label: 'Dissolved', className: 'bg-destructive/10 text-destructive border-destructive/20' },
 };
+
+const DEFAULT_STATUS_CONFIG = { label: 'Unknown', className: 'bg-muted text-muted-foreground border-border' };
 
 function formatGBP(value: number | null | undefined) {
   if (value == null) return '—';
@@ -182,7 +187,7 @@ export default function Entities() {
   };
 
   const CHStatusCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
-    if (entityType !== 'spv') return <span className="text-muted-foreground text-xs">N/A</span>;
+    if (entityType !== 'spv' && entityType !== 'ltd_company') return <span className="text-muted-foreground text-xs">N/A</span>;
     const v = verificationMap[entityId];
     if (!v || v.verification_status === 'not_synced') return <Badge variant="secondary" className="text-xs">Not Synced</Badge>;
     if (v.verification_status === 'verified') return <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Verified</span>;
@@ -263,8 +268,9 @@ export default function Entities() {
               </TableHeader>
               <TableBody>
                 {filtered.map((entity) => {
-                  const typeConfig = TYPE_CONFIG[entity.entity_type];
-                  const statusConfig = STATUS_CONFIG[entity.status];
+                  const typeConfig = TYPE_CONFIG[entity.entity_type] || DEFAULT_TYPE_CONFIG;
+                  const statusConfig = STATUS_CONFIG[entity.status] || DEFAULT_STATUS_CONFIG;
+                  const TypeIcon = typeConfig.icon;
                   const v = verificationMap[entity.id];
                   const metrics = entityMetricsMap.get(entity.id);
                   return (
@@ -281,7 +287,7 @@ export default function Entities() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={typeConfig.variant} className="gap-1">
-                          <typeConfig.icon className="h-3 w-3" />
+                          <TypeIcon className="h-3 w-3" />
                           {typeConfig.label}
                         </Badge>
                       </TableCell>
