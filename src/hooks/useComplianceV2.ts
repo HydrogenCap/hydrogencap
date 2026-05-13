@@ -33,6 +33,12 @@ async function resolveComplianceV2Rows<T extends { file_url?: string | null }>(r
   }));
 }
 
+function invalidateComplianceViews(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
+  qc.invalidateQueries({ queryKey: ['portfolio-compliance-score-v2'] });
+  qc.invalidateQueries({ queryKey: ['property_compliance_status_map'] });
+}
+
 // ============================================================
 // Compliance Matrix (view)
 // ============================================================
@@ -177,8 +183,7 @@ export function useCreateComplianceDocV2() {
       return data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
-      qc.invalidateQueries({ queryKey: ['portfolio-compliance-score-v2'] });
+      invalidateComplianceViews(qc);
       qc.invalidateQueries({ queryKey: ['compliance-documents-v2'] });
       qc.invalidateQueries({ queryKey: ['compliance-tasks'] });
     },
@@ -212,8 +217,7 @@ export function useToggleRequirementV2() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
-      qc.invalidateQueries({ queryKey: ['portfolio-compliance-score-v2'] });
+      invalidateComplianceViews(qc);
     },
   });
 }
@@ -223,10 +227,15 @@ export function useToggleRequirementV2() {
 // ============================================================
 
 export function useRefreshComplianceStatuses() {
+  const qc = useQueryClient();
+
   return useMutation({
     mutationFn: async () => {
       const { error } = await supabase.rpc('refresh_compliance_statuses_v2');
       if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateComplianceViews(qc);
     },
   });
 }
