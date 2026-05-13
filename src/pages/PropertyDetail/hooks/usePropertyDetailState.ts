@@ -5,6 +5,7 @@ import { toast as sonnerToast } from 'sonner';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { usePropertyV2, useUpdatePropertyV2 } from '@/hooks/usePropertiesV2';
+import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useInsurancePolicies } from '@/hooks/useInsurance';
 import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
@@ -16,6 +17,7 @@ export function usePropertyDetailState() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { data: property, isLoading } = usePropertyV2(id);
+  const { data: roomSummaries } = usePropertyRoomSummaries();
   const updateProperty = useUpdatePropertyV2();
   const [showEdit, setShowEdit] = useState(false);
   const [showRecordValuation, setShowRecordValuation] = useState(false);
@@ -77,7 +79,12 @@ export function usePropertyDetailState() {
     },
   });
 
-  const monthlyRent = property?.whole_house_rent_pcm ?? null;
+  const monthlyRent = useMemo(() => {
+    if (!property) return null;
+    if (property.rent_basis === 'whole_house') return property.whole_house_rent_pcm ?? null;
+    return roomSummaries?.get(property.id)?.gross_rent_pcm ?? null;
+  }, [property, roomSummaries]);
+
   const currentLtv = useMemo(() => {
     if (!loans || loans.length === 0 || !property?.current_valuation) return null;
     type LoanRow = { status: string; current_balance?: number | null };
