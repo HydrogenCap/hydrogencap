@@ -16,7 +16,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, signOut } = useAuth();
-  const { data: onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
+  const { data: onboarding, isLoading: onboardingLoading } = useOnboardingStatus();
   const { isRouteHidden, isLoading: visibilityLoading } = useSectionVisibility();
   const location = useLocation();
   const { toast } = useToast();
@@ -101,7 +101,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Show onboarding wizard for new users
-  if (onboardingCompleted === false) {
+  if (onboarding?.completed === false) {
     return <OnboardingWizard />;
   }
 

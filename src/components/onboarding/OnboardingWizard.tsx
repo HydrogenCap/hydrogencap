@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Rocket, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization';
+import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
@@ -30,10 +31,18 @@ export function OnboardingWizard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: org } = useOrganization();
+  const { data: onboarding } = useOnboardingStatus();
   const updateOrg = useUpdateOrganization();
   const { seed: seedDemo } = useDemoData();
 
   const [step, setStep] = useState(0);
+
+  // Load initial step from persistence
+  useEffect(() => {
+    if (onboarding?.step !== undefined && onboarding.step > 0) {
+      setStep(onboarding.step);
+    }
+  }, [onboarding?.step]);
 
   // Step 1: About You
   const [fullName, setFullName] = useState('');
@@ -102,15 +111,13 @@ export function OnboardingWizard() {
   const saveOrganization = useMutation({
     mutationFn: async () => {
       if (!org?.id) return;
-      if (orgName.trim()) {
-        updateOrg.mutate({ orgId: org.id, name: orgName.trim() });
-      }
-      if (portfolioSize) {
-        await supabaseAny
-          .from('organizations')
-          .update({ estimated_portfolio_size: portfolioSize })
-          .eq('id', org.id);
-      }
+      await updateOrg.mutateAsync({
+        orgId: org.id,
+        name: orgName.trim() || undefined,
+        property_types: propertyTypes.length > 0 ? propertyTypes : undefined,
+        region_focus: regionFocus.trim() || undefined,
+        estimated_portfolio_size: portfolioSize || undefined,
+      });
     },
   });
 
@@ -153,6 +160,15 @@ export function OnboardingWizard() {
 
   // --- Step persistence on navigation ---
 
+  const persistStep = async (nextStep: number) => {
+    const { error } = await supabaseAny
+      .from('profiles')
+      .update({ onboarding_step: nextStep })
+      .eq('user_id', user!.id);
+    if (error) console.error('Failed to persist onboarding step:', error);
+    queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
+  };
+
   const saveCurrentStep = async () => {
     try {
       switch (step) {
@@ -173,6 +189,7 @@ export function OnboardingWizard() {
           break;
         // Steps 0, 5, 6 don't need explicit saves
       }
+      await persistStep(step + 1);
     } catch (error) {
       console.error('Failed to save onboarding step:', error);
       toast({
@@ -189,12 +206,16 @@ export function OnboardingWizard() {
     setStep(s => s + 1);
   };
 
-  const handleBack = () => {
-    setStep(s => Math.max(0, s - 1));
+  const handleBack = async () => {
+    const prevStep = Math.max(0, step - 1);
+    setStep(prevStep);
+    await persistStep(prevStep);
   };
 
-  const handleSkip = () => {
-    setStep(s => s + 1);
+  const handleSkip = async () => {
+    const nextStep = step + 1;
+    setStep(nextStep);
+    await persistStep(nextStep);
   };
 
   const handleSeedDemo = async () => {
