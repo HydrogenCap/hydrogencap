@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAllLoanFacilities } from '@/hooks/useLoanFacilities';
@@ -32,35 +33,40 @@ function formatRatio(value: number | null | undefined) {
 export function EntityPortfolioSummaryCard({ entityId, entityProperties }: EntityPortfolioSummaryCardProps) {
   const { data: loans } = useAllLoanFacilities();
   const { data: roomSummaries } = usePropertyRoomSummaries();
+  const properties = entityProperties || [];
 
-  const propertyIds = new Set((entityProperties || []).map((property) => property.id));
-  const activeLoans = (loans || []).filter((loan) =>
-    loan.entity_id === entityId &&
-    propertyIds.has(loan.property_id) &&
-    ['active', 'drawdown', 'pending_drawdown'].includes(loan.status)
-  );
+  const metrics = useMemo(() => {
+    const propertyIds = new Set(properties.map((property) => property.id));
+    const activeLoans = (loans || []).filter((loan) =>
+      loan.entity_id === entityId &&
+      propertyIds.has(loan.property_id) &&
+      ['active', 'drawdown', 'pending_drawdown'].includes(loan.status)
+    );
 
-  const totalValue = (entityProperties || []).reduce((sum, property) => sum + (property.current_valuation || 0), 0);
-  const monthlyRent = (entityProperties || []).reduce((sum, property) => {
-    if (property.rent_basis === 'whole_house') return sum + (property.whole_house_rent_pcm || 0);
-    return sum + (roomSummaries?.get(property.id)?.gross_rent_pcm || 0);
-  }, 0);
-  const totalDebt = activeLoans.reduce((sum, loan) => sum + (loan.current_balance || 0), 0);
-  const monthlyDebtService = activeLoans.reduce((sum, loan) => sum + (loan.monthly_payment || 0), 0);
-  const equity = totalValue - totalDebt;
-  const ltv = totalValue > 0 ? (totalDebt / totalValue) * 100 : null;
-  const grossYield = totalValue > 0 ? ((monthlyRent * 12) / totalValue) * 100 : null;
-  const dscr = monthlyDebtService > 0 ? monthlyRent / monthlyDebtService : null;
+    const totalValue = properties.reduce((sum, property) => sum + (property.current_valuation || 0), 0);
+    const monthlyRent = properties.reduce((sum, property) => {
+      if (property.rent_basis === 'whole_house') return sum + (property.whole_house_rent_pcm || 0);
+      return sum + (roomSummaries?.get(property.id)?.gross_rent_pcm || 0);
+    }, 0);
+    const totalDebt = activeLoans.reduce((sum, loan) => sum + (loan.current_balance || 0), 0);
+    const monthlyDebtService = activeLoans.reduce((sum, loan) => sum + (loan.monthly_payment || 0), 0);
+    const equity = totalValue - totalDebt;
+    const ltv = totalValue > 0 ? (totalDebt / totalValue) * 100 : null;
+    const grossYield = totalValue > 0 ? ((monthlyRent * 12) / totalValue) * 100 : null;
+    const dscr = monthlyDebtService > 0 ? monthlyRent / monthlyDebtService : null;
 
-  const riskLabel = ltv == null
+    return { totalValue, monthlyRent, totalDebt, monthlyDebtService, equity, ltv, grossYield, dscr };
+  }, [entityId, loans, properties, roomSummaries]);
+
+  const riskLabel = metrics.ltv == null
     ? 'Incomplete data'
-    : ltv >= 75
+    : metrics.ltv >= 75
       ? 'High leverage'
-      : ltv >= 65
+      : metrics.ltv >= 65
         ? 'Watch leverage'
         : 'Healthy leverage';
 
-  const riskVariant = ltv != null && ltv >= 75 ? 'destructive' : 'secondary';
+  const riskVariant = metrics.ltv != null && metrics.ltv >= 75 ? 'destructive' : 'secondary';
 
   return (
     <Card>
@@ -70,15 +76,15 @@ export function EntityPortfolioSummaryCard({ entityId, entityProperties }: Entit
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Metric label="Properties" value={(entityProperties?.length || 0).toLocaleString()} />
-          <Metric label="Value" value={formatGBP(totalValue)} />
-          <Metric label="Debt" value={formatGBP(totalDebt)} />
-          <Metric label="Equity" value={formatGBP(equity)} tone={equity < 0 ? 'negative' : 'positive'} />
-          <Metric label="Monthly Rent" value={formatGBP(monthlyRent)} />
-          <Metric label="Monthly Debt" value={formatGBP(monthlyDebtService)} />
-          <Metric label="LTV" value={formatPercent(ltv)} tone={ltv != null && ltv >= 75 ? 'negative' : ltv != null && ltv >= 65 ? 'warning' : 'positive'} />
-          <Metric label="Gross Yield" value={formatPercent(grossYield)} />
-          <Metric label="DSCR" value={formatRatio(dscr)} tone={dscr != null && dscr < 1.25 ? 'negative' : dscr != null && dscr < 1.5 ? 'warning' : 'positive'} />
+          <Metric label="Properties" value={properties.length.toLocaleString()} />
+          <Metric label="Value" value={formatGBP(metrics.totalValue)} />
+          <Metric label="Debt" value={formatGBP(metrics.totalDebt)} />
+          <Metric label="Equity" value={formatGBP(metrics.equity)} tone={metrics.equity < 0 ? 'negative' : 'positive'} />
+          <Metric label="Monthly Rent" value={formatGBP(metrics.monthlyRent)} />
+          <Metric label="Monthly Debt" value={formatGBP(metrics.monthlyDebtService)} />
+          <Metric label="LTV" value={formatPercent(metrics.ltv)} tone={metrics.ltv != null && metrics.ltv >= 75 ? 'negative' : metrics.ltv != null && metrics.ltv >= 65 ? 'warning' : 'positive'} />
+          <Metric label="Gross Yield" value={formatPercent(metrics.grossYield)} />
+          <Metric label="DSCR" value={formatRatio(metrics.dscr)} tone={metrics.dscr != null && metrics.dscr < 1.25 ? 'negative' : metrics.dscr != null && metrics.dscr < 1.5 ? 'warning' : 'positive'} />
         </div>
       </CardContent>
     </Card>
