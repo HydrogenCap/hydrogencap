@@ -48,6 +48,14 @@ type PropertyWithEntityJoin = PropertyV2 & {
   } | null;
 };
 
+export interface PropertyComplianceStatusRow {
+  property_id: string | null;
+  is_required: boolean | null;
+  calculated_status: string | null;
+}
+
+export type PropertyComplianceStatus = 'grey' | 'green' | 'amber' | 'red';
+
 export function usePropertiesV2() {
   return useQuery({
     queryKey: ['properties_v2'],
@@ -108,6 +116,33 @@ export function useEntityPropertiesV2(entityId: string | undefined) {
   });
 }
 
+export function usePropertyComplianceStatusMap() {
+  return useQuery({
+    queryKey: ['property_compliance_status_map'],
+    queryFn: async () => {
+      const { data, error } = await supabaseAny
+        .from('compliance_matrix_v2')
+        .select('property_id, is_required, calculated_status');
+      if (error) throw error;
+
+      const grouped = new Map<string, PropertyComplianceStatusRow[]>();
+      for (const row of (data || []) as PropertyComplianceStatusRow[]) {
+        if (!row.property_id) continue;
+        const rows = grouped.get(row.property_id) || [];
+        rows.push(row);
+        grouped.set(row.property_id, rows);
+      }
+
+      const statuses = new Map<string, PropertyComplianceStatus>();
+      grouped.forEach((rows, propertyId) => {
+        statuses.set(propertyId, getPropertyComplianceStatus(rows));
+      });
+      return statuses;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
 type PropertyV2Insert = Omit<PropertyV2, 'id' | 'created_at' | 'updated_at' | 'org_id' | 'epc_rating' | 'epc_expiry_date'>;
 
 export function useCreatePropertyV2() {
@@ -125,6 +160,7 @@ export function useCreatePropertyV2() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['properties_v2'] });
+      qc.invalidateQueries({ queryKey: ['property_compliance_status_map'] });
     },
   });
 }
@@ -158,12 +194,27 @@ export function useDeletePropertyV2() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['properties_v2'] });
+      qc.invalidateQueries({ queryKey: ['property_compliance_status_map'] });
     },
   });
 }
 
-// Placeholder compliance function
-export function getPropertyComplianceStatus(_propertyId: string): 'grey' | 'green' | 'amber' | 'red' {
+export function getPropertyComplianceStatus(rows?: PropertyComplianceStatusRow[]): PropertyComplianceStatus {
+  const requiredRows = (rows || []).filter((row) => row.is_required);
+  if (requiredRows.length === 0) return 'grey';
+
+  if (requiredRows.some((row) => row.calculated_status === 'expired' || row.calculated_status === 'missing')) {
+    return 'red';
+  }
+
+  if (requiredRows.some((row) => row.calculated_status === 'critical' || row.calculated_status === 'expiring_soon')) {
+    return 'amber';
+  }
+
+  if (requiredRows.every((row) => row.calculated_status === 'valid')) {
+    return 'green';
+  }
+
   return 'grey';
 }
 
