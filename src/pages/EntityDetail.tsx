@@ -39,6 +39,7 @@ import { EntityAccountingSection } from '@/components/accounting/EntityAccountin
 import { InlineAuditHistory } from '@/components/audit/InlineAuditHistory';
 import { EntityHeader } from '@/components/entities/EntityHeader';
 import { EntityDetailsCard } from '@/components/entities/EntityDetailsCard';
+import { EntityPortfolioSummaryCard } from '@/components/entities/EntityPortfolioSummaryCard';
 import { CompanySecretsCard } from '@/components/companies/CompanySecretsCard';
 import { DirectorsSection } from '@/components/entities/DirectorsSection';
 import { ShareCapitalSection } from '@/components/entities/ShareCapitalSection';
@@ -144,6 +145,7 @@ export default function EntityDetail() {
         />
 
         <EntityDetailsCard entity={entity} />
+        <EntityPortfolioSummaryCard entityId={entity.id} entityProperties={entityProperties} />
 
         {((entity.entity_type as string) === 'ltd_company' || entity.entity_type === 'spv') && entity.company_number && (
           <CompanySecretsCard companyId={entity.id} />
