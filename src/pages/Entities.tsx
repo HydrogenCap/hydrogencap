@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, RefreshCw, Loader2, AlertCircle as AlertCircleIcon, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
-import { useEntityVerificationStatus, useSyncEntity, EntityVerification } from '@/hooks/useCompaniesHouseV2';
+import { useEntityVerificationStatus, useSyncEntity, type EntityVerification } from '@/hooks/useCompaniesHouseV2';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useAllLoanFacilities } from '@/hooks/useLoanFacilities';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
@@ -31,7 +31,7 @@ import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { useToast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
-const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: React.ComponentType<{ className?: string }> }> = {
+const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: ComponentType<{ className?: string }> }> = {
   spv: { label: 'SPV', variant: 'default', icon: Building2 },
   personal: { label: 'Personal', variant: 'secondary', icon: User },
   joint_venture: { label: 'Joint Venture', variant: 'outline', icon: Handshake },
