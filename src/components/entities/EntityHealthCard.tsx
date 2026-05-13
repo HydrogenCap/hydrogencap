@@ -7,12 +7,20 @@ import type { ShareClassWithAllocation } from '@/hooks/useShareCapital';
 import type { EntityVerification } from '@/hooks/useCompaniesHouseV2';
 import type { PropertyV2 } from '@/hooks/usePropertiesV2';
 
+interface ShareIntegrityError {
+  classId: string;
+  className: string;
+  issued: number;
+  allocated: number;
+  error: string;
+}
+
 interface EntityHealthCardProps {
   entity: LegalEntity;
   directors?: EntityDirector[];
   shareholders?: EntityShareholder[];
   shareClassesWithAllocation?: ShareClassWithAllocation[];
-  integrityErrors?: string[];
+  integrityErrors?: ShareIntegrityError[];
   verification?: EntityVerification | null;
   entityProperties?: PropertyV2[];
 }
@@ -136,13 +144,13 @@ function getOwnershipHealth(
   hasShareCapital: boolean,
   shareholders?: EntityShareholder[],
   shareClassesWithAllocation?: ShareClassWithAllocation[],
-  integrityErrors: string[] = [],
+  integrityErrors: ShareIntegrityError[] = [],
 ): HealthItem {
   if (!hasShareCapital) {
     return { label: 'Ownership', detail: 'Share capital is not required for this entity type', level: 'good' };
   }
   if (integrityErrors.length > 0) {
-    return { label: 'Ownership', detail: integrityErrors[0], level: 'critical' };
+    return { label: 'Ownership', detail: integrityErrors[0].error, level: 'critical' };
   }
   if (!shareClassesWithAllocation || shareClassesWithAllocation.length === 0) {
     return { label: 'Ownership', detail: 'No share classes recorded', level: 'critical' };
