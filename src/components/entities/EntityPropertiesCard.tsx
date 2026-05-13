@@ -7,14 +7,40 @@ interface EntityPropertiesCardProps {
   onNavigateToProperty: (propertyId: string) => void;
 }
 
+function formatGBP(value: number | null | undefined) {
+  if (value == null || value === 0) return '—';
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export function EntityPropertiesCard({
   entityProperties,
   onNavigateToProperty,
 }: EntityPropertiesCardProps) {
+  const propertyCount = entityProperties?.length || 0;
+  const totalValuation = entityProperties?.reduce((sum, property) => sum + (property.current_valuation || 0), 0) || 0;
+  const wholeHouseRent = entityProperties?.reduce((sum, property) => sum + (property.whole_house_rent_pcm || 0), 0) || 0;
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Properties <Badge variant="secondary" className="ml-2">{entityProperties?.length || 0}</Badge></CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardTitle>Properties <Badge variant="secondary" className="ml-2">{propertyCount}</Badge></CardTitle>
+        {propertyCount > 0 && (
+          <div className="flex items-center gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Value: </span>
+              <span className="font-semibold text-foreground">{formatGBP(totalValuation)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Whole-house rent: </span>
+              <span className="font-semibold text-foreground">{formatGBP(wholeHouseRent)}</span>
+            </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {entityProperties && entityProperties.length > 0 ? (
@@ -28,9 +54,21 @@ export function EntityPropertiesCard({
                   className="cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => onNavigateToProperty(p.id)}
                 >
-                  <CardContent className="pt-3 pb-2 space-y-1">
-                    <p className="font-semibold text-sm text-foreground">{p.address_line_1}, {p.city}</p>
-                    <p className="text-xs text-muted-foreground">{p.postcode}</p>
+                  <CardContent className="pt-3 pb-2 space-y-2">
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">{p.address_line_1}, {p.city}</p>
+                      <p className="text-xs text-muted-foreground">{p.postcode}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Value</span>
+                        <p className="font-semibold text-foreground">{formatGBP(p.current_valuation)}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Rent</span>
+                        <p className="font-semibold text-foreground">{formatGBP(p.whole_house_rent_pcm)}</p>
+                      </div>
+                    </div>
                     <div className="flex gap-1.5 flex-wrap">
                       <Badge variant="secondary" className="text-xs">{typeLabel}</Badge>
                       <Badge variant="secondary" className="text-xs">{stageLabel}</Badge>
