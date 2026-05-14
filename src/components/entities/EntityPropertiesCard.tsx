@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PROPERTY_TYPES, LIFECYCLE_STAGES, type PropertyV2 } from '@/hooks/usePropertiesV2';
@@ -30,12 +29,11 @@ export function EntityPropertiesCard({
 }: EntityPropertiesCardProps) {
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const properties = entityProperties || [];
-
-  const summary = useMemo(() => ({
+  const summary = {
     propertyCount: properties.length,
     totalValuation: properties.reduce((sum, property) => sum + (property.current_valuation || 0), 0),
     totalMonthlyRent: properties.reduce((sum, property) => sum + getPropertyMonthlyRent(property, roomSummaries), 0),
-  }), [properties, roomSummaries]);
+  };
 
   return (
     <Card>
