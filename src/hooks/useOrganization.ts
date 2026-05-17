@@ -6,6 +6,9 @@ import { useUserOrg } from '@/hooks/useUserOrg';
 export interface Organization {
   id: string;
   name: string;
+  property_types?: string[];
+  region_focus?: string;
+  estimated_portfolio_size?: string;
 }
 
 export function useOrganization() {
@@ -18,7 +21,7 @@ export function useOrganization() {
 
       const { data, error } = await supabaseAny
         .from('organizations')
-        .select('id, name')
+        .select('id, name, property_types, region_focus, estimated_portfolio_size')
         .eq('id', orgId)
         .single();
 
@@ -29,16 +32,24 @@ export function useOrganization() {
   });
 }
 
+interface UpdateOrgParams {
+  orgId: string;
+  name?: string;
+  property_types?: string[];
+  region_focus?: string;
+  estimated_portfolio_size?: string;
+}
+
 export function useUpdateOrganization() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ orgId, name }: { orgId: string; name: string }) => {
+    mutationFn: async ({ orgId, ...updates }: UpdateOrgParams) => {
       const { data, error } = await supabaseAny
         .from('organizations')
         .update({
-          name,
+          ...updates,
           updated_at: new Date().toISOString(),
         })
         .eq('id', orgId)

@@ -5,9 +5,9 @@ import { Building2 } from 'lucide-react';
 import { TEXT } from '@/lib/design-tokens';
 
 const PROPERTY_TYPE_OPTIONS = [
-  { value: 'hmo', label: 'HMO' },
-  { value: 'btl', label: 'Buy-to-Let' },
-  { value: 'development', label: 'Development' },
+  { value: 'hmo_licensed', label: 'HMO' },
+  { value: 'single_let', label: 'Buy-to-Let' },
+  { value: 'multi_unit_freehold', label: 'Multi-Unit' },
   { value: 'commercial', label: 'Commercial' },
 ];
 

@@ -9,7 +9,8 @@ const PROPERTY_TYPES = [
   { value: 'single_let', label: 'Single Let (BTL)' },
   { value: 'hmo_licensed', label: 'HMO (Licensed)' },
   { value: 'hmo_mandatory', label: 'HMO (Mandatory)' },
-  { value: 'multi_unit', label: 'Multi-Unit' },
+  { value: 'multi_unit_freehold', label: 'Multi-Unit' },
+  { value: 'commercial', label: 'Commercial' },
 ];
 
 interface FirstPropertyStepProps {
