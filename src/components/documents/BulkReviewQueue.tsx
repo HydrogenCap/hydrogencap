@@ -218,10 +218,19 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
     if (fail) toast.error(`${fail} failed to approve`);
   };
 
+  const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
+
   const pendingCount = Object.values(decisions).filter((d) => d.status === 'pending').length;
   const confidentPending = reviewable.filter(
     (i) => isConfident(i) && decisions[i.id]?.status === 'pending',
   ).length;
+  const needsReviewCount = reviewable.filter(
+    (i) => isLowConfidence(i) && decisions[i.id]?.status === 'pending',
+  ).length;
+
+  const visibleItems = onlyNeedsReview
+    ? reviewable.filter((i) => isLowConfidence(i))
+    : reviewable;
 
   if (reviewable.length === 0) {
     return (
