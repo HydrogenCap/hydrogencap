@@ -62,6 +62,8 @@ import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
+import { useArrears } from '@/hooks/useRentCollection';
+
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
@@ -76,7 +78,7 @@ interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks' | 'tenancy_events';
+  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks' | 'tenancy_events' | 'arrears';
   sectionKey?: SectionKey;
   children?: NavItem[];
 }
@@ -114,7 +116,7 @@ const operationsItems: NavItem[] = [
     href: '/lettings',
     children: [
       { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' },
-      { title: 'Rent', icon: PoundSterling, href: '/rent' },
+      { title: 'Rent', icon: PoundSterling, href: '/rent', badgeType: 'arrears' },
       { title: 'Voids', icon: DoorOpen, href: '/voids', sectionKey: 'voids' },
     ],
   },
@@ -222,8 +224,11 @@ export function AppSidebar() {
   const { data: jobCounts } = useJobCounts();
   const taskStats = useComplianceTaskStats();
   const { urgentCount: tenancyUrgentCount } = useTenancyEventCounts();
+  const { data: arrearsData } = useArrears();
+  const arrearsCount = arrearsData?.length ?? 0;
 
   const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
+
 
   const pendingCount = inboxDocuments?.filter(
     d => d.review_status === 'pending' && d.extraction_status === 'completed'
@@ -356,8 +361,20 @@ export function AppSidebar() {
         </Badge>
       );
     }
+    if (item.badgeType === 'arrears' && arrearsCount > 0) {
+      return (
+        <Badge
+          variant="destructive"
+          className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${arrearsCount} tenancies in arrears`}
+        >
+          {arrearsCount}
+        </Badge>
+      );
+    }
     return null;
   };
+
 
   const renderNavItem = (item: NavItem) => {
     // Filter out items hidden by section visibility
