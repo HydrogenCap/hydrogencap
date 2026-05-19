@@ -152,9 +152,10 @@ export function TodayStrip({ risks, criticalCount, loanAlerts, rentSchedule, com
         label="Rate expiry"
         value={rateValue}
         sublabel={rateSublabel}
-        href="/lending"
+        href="/lending?tab=rate-expiries"
         variant={rateVariant}
       />
+
 
     </div>
   );
