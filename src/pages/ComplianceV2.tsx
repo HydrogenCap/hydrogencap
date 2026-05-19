@@ -339,7 +339,7 @@ export default function ComplianceV2() {
             searchQuery={searchQuery}
           />
         ) : (
-          <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} />
+          <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
         )}
 
       </div>
