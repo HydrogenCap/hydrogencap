@@ -91,8 +91,9 @@ export function useLendingState() {
     activeFacilities, totalDebt, weightedRate, totalMonthly,
     fixedBalance, variableBalance, fixedPct, variablePct,
     variableFacilities, variableTotal, rateImpact1, rateImpact2,
-    criticalAlerts, warningAlerts, opportunityAlerts,
+    criticalAlerts, warningAlerts, opportunityAlerts, rateAlertCount,
     isLoading, activeApplications, completedApplications,
+
     refinanceFacility, handleStartRefinance,
   };
 }
