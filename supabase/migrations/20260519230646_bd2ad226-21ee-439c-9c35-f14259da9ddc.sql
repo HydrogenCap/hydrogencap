@@ -1,0 +1,1 @@
+ALTER VIEW public.compliance_matrix_v2 SET (security_invoker = true);
