@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "bunx tsx scripts/generate-sitemap.ts",
     "build": "vite build",
+    "prebuild": "bunx tsx scripts/generate-sitemap.ts",
     "build:analyze": "VITE_ANALYZE=true vite build",
     "build:dev": "vite build --mode development",
     "check:edge": "node scripts/run-with-retry.mjs --max=3 --backoff=5000,15000,45000 -- node scripts/check-edge-functions.mjs",

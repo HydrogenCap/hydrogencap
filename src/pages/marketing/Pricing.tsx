@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList, faqPage, productWithOffers } from '@/lib/seo/jsonLd';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
@@ -100,6 +101,22 @@ export default function MarketingPricing() {
       <SEO
         title="Pricing — Tenure IQ"
         description="Simple, transparent pricing for UK property portfolio management. Plans from £49/month for landlords managing HMOs and buy-to-lets."
+        jsonLd={[
+          breadcrumbList([
+            { name: 'Home', path: '/' },
+            { name: 'Pricing', path: '/pricing' },
+          ]),
+          faqPage(faqs),
+          productWithOffers(
+            'Tenure IQ',
+            'Property portfolio management for UK landlords and investors.',
+            [
+              { name: 'Starter', priceGbp: 49, description: 'Up to 10 properties' },
+              { name: 'Professional', priceGbp: 99, description: 'Up to 50 properties' },
+              { name: 'Enterprise', description: 'Unlimited properties' },
+            ],
+          ),
+        ]}
       />
 
       {/* Hero */}
