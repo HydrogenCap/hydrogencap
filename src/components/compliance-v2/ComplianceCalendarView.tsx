@@ -92,15 +92,31 @@ export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: Comp
           <PopoverContent className="w-80 p-3" align="start">
             <p className="text-sm font-medium mb-2">Off-grid items</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {[...missingItems, ...expiredNoDateItems].map(item => (
-                <div key={`${item.property_id}-${item.requirement_id}`} className="text-xs border-b pb-1.5 last:border-b-0">
-                  <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
-                  <p className="text-muted-foreground">{item.property_address}</p>
-                  <p className="text-destructive">
-                    {item.calculated_status === 'missing' ? 'No document uploaded' : 'Expired (no date)'}
-                  </p>
-                </div>
-              ))}
+              {[...missingItems, ...expiredNoDateItems].map(item => {
+                const content = (
+                  <>
+                    <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
+                    <p className="text-muted-foreground">{item.property_address}</p>
+                    <p className="text-destructive">
+                      {item.calculated_status === 'missing' ? 'No document uploaded' : 'Expired (no date)'}
+                    </p>
+                  </>
+                );
+                return onItemClick ? (
+                  <button
+                    key={`${item.property_id}-${item.requirement_id}`}
+                    type="button"
+                    onClick={() => onItemClick(item)}
+                    className="text-xs border-b pb-1.5 last:border-b-0 w-full text-left hover:bg-muted/40 rounded px-1 -mx-1 transition-colors"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div key={`${item.property_id}-${item.requirement_id}`} className="text-xs border-b pb-1.5 last:border-b-0">
+                    {content}
+                  </div>
+                );
+              })}
             </div>
           </PopoverContent>
         </Popover>
