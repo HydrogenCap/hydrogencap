@@ -10,6 +10,34 @@ Disallow: /accept-invite
 Disallow: /reset-password
 Disallow: /forgot-password
 Disallow: /shared/
+Disallow: /dashboard
+Disallow: /properties
+Disallow: /property/
+Disallow: /tenants
+Disallow: /tenant/
+Disallow: /entities
+Disallow: /entity/
+Disallow: /compliance
+Disallow: /jobs
+Disallow: /job/
+Disallow: /work-order/
+Disallow: /lending
+Disallow: /accounting
+Disallow: /financials
+Disallow: /insights
+Disallow: /ownership
+Disallow: /reports
+Disallow: /notifications
+Disallow: /communications
+Disallow: /inbox
+Disallow: /timeline
+Disallow: /chat
+Disallow: /settings
+Disallow: /distributions
+Disallow: /voids
+Disallow: /pipeline
+Disallow: /wizards/
+Disallow: /tax/
 
 Sitemap: https://tenureiq.com/sitemap.xml
 
