@@ -131,7 +131,18 @@ export default function ComplianceV2() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card
+                role="button"
+                tabIndex={0}
+                onClick={() => { setStatusFilter('needs_attention'); setViewMode('matrix'); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatusFilter('needs_attention'); setViewMode('matrix'); } }}
+                aria-pressed={statusFilter === 'needs_attention'}
+                className={cn(
+                  'cursor-pointer transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  statusFilter === 'needs_attention' && 'ring-2 ring-primary/40',
+                )}
+                title="Click to filter the matrix to items needing attention"
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Needs Attention</CardTitle>
                 </CardHeader>
@@ -148,7 +159,18 @@ export default function ComplianceV2() {
                           {total}
                         </span>
                         <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
-                          {missing} missing · {expired} expired · {critical} critical · {expiring} expiring soon
+                          <button
+                            type="button"
+                            className="hover:underline"
+                            onClick={(e) => { e.stopPropagation(); setStatusFilter('missing'); setViewMode('matrix'); }}
+                          >{missing} missing</button>
+                          {' · '}
+                          <button
+                            type="button"
+                            className="hover:underline"
+                            onClick={(e) => { e.stopPropagation(); setStatusFilter('expired'); setViewMode('matrix'); }}
+                          >{expired} expired</button>
+                          {' · '}{critical} critical · {expiring} expiring soon
                         </p>
                       </>
                     );
@@ -156,7 +178,14 @@ export default function ComplianceV2() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card
+                role={nextExpiry ? 'button' : undefined}
+                tabIndex={nextExpiry ? 0 : undefined}
+                onClick={() => { if (nextExpiry) setSelectedRow(nextExpiry); }}
+                onKeyDown={(e) => { if (nextExpiry && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setSelectedRow(nextExpiry); } }}
+                className={cn(nextExpiry && 'cursor-pointer transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
+                title={nextExpiry ? 'Click to open this compliance item' : undefined}
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Next Expiry</CardTitle>
                 </CardHeader>
@@ -175,8 +204,17 @@ export default function ComplianceV2() {
               </Card>
 
               <Card
-                className={cn((score?.total_expired ?? 0) > 0 && 'bg-destructive/5 border-destructive/30')}
-                title="Required certificates whose expiry date has already passed. 'Missing' (never uploaded) is tracked separately under Needs Attention."
+                role="button"
+                tabIndex={0}
+                onClick={() => { setStatusFilter('expired'); setViewMode('matrix'); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatusFilter('expired'); setViewMode('matrix'); } }}
+                aria-pressed={statusFilter === 'expired'}
+                className={cn(
+                  'cursor-pointer transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  (score?.total_expired ?? 0) > 0 && 'bg-destructive/5 border-destructive/30',
+                  statusFilter === 'expired' && 'ring-2 ring-primary/40',
+                )}
+                title="Click to filter the matrix to expired items"
               >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Items</CardTitle>
@@ -192,6 +230,7 @@ export default function ComplianceV2() {
               </Card>
 
             </>
+
           )}
         </div>
 
