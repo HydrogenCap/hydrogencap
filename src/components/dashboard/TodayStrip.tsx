@@ -85,15 +85,23 @@ export function TodayStrip({ risks, criticalCount, loanAlerts, rentSchedule, com
         ? 'warning'
         : 'default';
 
-  // 3. Next rent due
+  // 3. Rent: surface overdue first, otherwise next upcoming
   const now = new Date();
+  const overdueItems = rentSchedule?.filter(r => r.status === 'overdue' || r.status === 'partial') ?? [];
+  const overdueTotal = overdueItems.reduce((s, r) => s + (r.amount_outstanding ?? r.rent_amount ?? 0), 0);
   const upcomingRent = rentSchedule
     ?.filter(r => (r.status === 'upcoming' || r.status === 'due') && new Date(r.due_date) >= now)
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())[0];
-  const rentValue = upcomingRent ? formatGBP(upcomingRent.rent_amount) : 'None due';
-  const rentSublabel = upcomingRent
-    ? new Date(upcomingRent.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-    : undefined;
+  const rentValue = overdueItems.length > 0
+    ? formatGBP(overdueTotal)
+    : upcomingRent ? formatGBP(upcomingRent.rent_amount) : 'None due';
+  const rentSublabel = overdueItems.length > 0
+    ? `${overdueItems.length} overdue`
+    : upcomingRent
+      ? new Date(upcomingRent.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      : undefined;
+  const rentVariant: StripItemProps['variant'] = overdueItems.length > 0 ? 'critical' : 'default';
+
 
   // 4. Mortgage rate expiring soonest
   const soonestRate = loanAlerts
