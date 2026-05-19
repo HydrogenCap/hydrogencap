@@ -269,7 +269,7 @@ interface DocumentsPanelProps {
                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                            <DropdownMenu>
                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                               <Button aria-label="Ellipsis Vertical" variant="secondary" size="icon" className="h-7 w-7">
+                               <Button aria-label="More options" variant="secondary" size="icon" className="h-7 w-7">
                                  <EllipsisVertical className="h-4 w-4" />
                                </Button>
                              </DropdownMenuTrigger>
@@ -346,7 +346,7 @@ interface DocumentsPanelProps {
  
                  <DropdownMenu>
                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                     <Button aria-label="Ellipsis Vertical" variant="ghost" size="icon" className="h-8 w-8">
+                     <Button aria-label="More options" variant="ghost" size="icon" className="h-8 w-8">
                        <EllipsisVertical className="h-4 w-4" />
                      </Button>
                    </DropdownMenuTrigger>

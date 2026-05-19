@@ -350,7 +350,7 @@ function FloorplanItem({ floorplan, onView, onDownload, onDelete, onSetPrimary }
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button aria-label="Ellipsis Vertical" variant="ghost" size="icon">
+            <Button aria-label="More options" variant="ghost" size="icon">
               <EllipsisVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
