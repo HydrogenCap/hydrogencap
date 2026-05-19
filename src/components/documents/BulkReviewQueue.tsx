@@ -485,7 +485,100 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
             </tbody>
           </table>
         </div>
+        </TooltipProvider>
       </CardContent>
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ExtractedFieldsCell — colour-coded confidence badges per extracted field.
+// Threshold buckets:
+//   ≥ 0.85  → "high"   (emerald)
+//   ≥ 0.60  → "medium" (amber)
+//   < 0.60  → "low"    (rose / destructive)
+// Fields that weren't extracted at all are omitted.
+// ---------------------------------------------------------------------------
+
+interface ExtractionShape {
+  address: string | null;
+  postcode: string | null;
+  expiryDate: string | null;
+  issueDate: string | null;
+  certificateNumber: string | null;
+  rating: string | null;
+  fieldConfidences: Record<string, number>;
+}
+
+const FIELD_LABELS: Array<{
+  /** UI label */
+  label: string;
+  /** key on `extraction` */
+  valueKey: keyof Omit<ExtractionShape, 'fieldConfidences'>;
+  /** confidence-map key(s) the AI pipeline uses (first match wins) */
+  confKeys: string[];
+}> = [
+  { label: 'Address', valueKey: 'address', confKeys: ['address'] },
+  { label: 'Postcode', valueKey: 'postcode', confKeys: ['postcode'] },
+  { label: 'Issued', valueKey: 'issueDate', confKeys: ['issue_date'] },
+  { label: 'Expires', valueKey: 'expiryDate', confKeys: ['expiry_date'] },
+  { label: 'Ref', valueKey: 'certificateNumber', confKeys: ['reference_number', 'certificate_number'] },
+  { label: 'Rating', valueKey: 'rating', confKeys: ['epc_rating', 'rating'] },
+];
+
+function confidenceTier(c: number | undefined): 'none' | 'low' | 'medium' | 'high' {
+  if (!c || c <= 0) return 'none';
+  if (c >= 0.85) return 'high';
+  if (c >= 0.6) return 'medium';
+  return 'low';
+}
+
+const TIER_CLASS: Record<'none' | 'low' | 'medium' | 'high', string> = {
+  none: 'border-border bg-muted text-muted-foreground',
+  high: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+  medium: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  low: 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+};
+
+function ExtractedFieldsCell({ extraction }: { extraction: ExtractionShape }) {
+  const populated = FIELD_LABELS.filter((f) => {
+    const v = extraction[f.valueKey];
+    return v !== null && v !== undefined && String(v).length > 0;
+  });
+  if (populated.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1 max-w-[260px]">
+      {populated.map((f) => {
+        const value = String(extraction[f.valueKey] ?? '');
+        const conf =
+          f.confKeys.map((k) => extraction.fieldConfidences?.[k]).find((c) => typeof c === 'number') ?? 0;
+        const tier = confidenceTier(conf);
+        const pct = conf > 0 ? `${Math.round(conf * 100)}%` : 'no score';
+        return (
+          <Tooltip key={f.label}>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] leading-none max-w-[120px]',
+                  TIER_CLASS[tier],
+                )}
+              >
+                <span className="font-medium uppercase tracking-wide opacity-80">{f.label}</span>
+                <span className="truncate" title={value}>
+                  {value}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              <div className="font-medium">{f.label}</div>
+              <div className="text-muted-foreground">Confidence: {pct}</div>
+              <div className="max-w-[260px] break-words">{value}</div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }
