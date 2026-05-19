@@ -51,7 +51,9 @@ export default defineConfig(({ mode }) => ({
             "@radix-ui/react-tooltip",
           ],
           "vendor-data": ["@tanstack/react-query", "@supabase/supabase-js"],
-          "vendor-charts": ["recharts"],
+          // recharts intentionally NOT manually chunked — only ~10 consumers,
+          // several behind dynamic flows. Letting rollup auto-split keeps it
+          // off the initial preload waterfall on /dashboard.
           "vendor-date": ["date-fns"],
         },
       },
