@@ -226,6 +226,7 @@ export default function BulkDocumentScanner() {
               <h2 className={`${TEXT.sectionHeading}`}>Processing Complete</h2>
               <BulkUploadSummary
                 stats={stats}
+                items={queue}
                 onSendToReview={() => setShowReview(true)}
                 onDone={() => {
                   clearQueue();
