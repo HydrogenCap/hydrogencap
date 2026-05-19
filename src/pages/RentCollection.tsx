@@ -94,7 +94,11 @@ export default function RentCollection() {
             <TabsTrigger value="arrears" className="gap-1.5">
               <AlertTriangle className="h-4 w-4" />
               Arrears
+              {arrearsCount > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">{arrearsCount}</Badge>
+              )}
             </TabsTrigger>
+
             <TabsTrigger value="calendar" className="gap-1.5">
               <CalendarDays className="h-4 w-4" />
               Calendar
