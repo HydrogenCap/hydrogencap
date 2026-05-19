@@ -109,6 +109,25 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
     return Boolean(aiCat && fnCat && aiCat === fnCat);
   };
 
+  /**
+   * Low-confidence = anything that warrants a human eye:
+   *   - AI category confidence below 0.7
+   *   - any extracted field below 0.6
+   *   - filename hint and AI hint disagree
+   *   - no property could be auto-matched
+   * Surfaced as a row highlight and a "Needs review" filter.
+   */
+  const isLowConfidence = (item: QueueItem): boolean => {
+    if (item.classification.confidence > 0 && item.classification.confidence < 0.7) return true;
+    const fieldVals = Object.values(item.extraction.fieldConfidences || {});
+    if (fieldVals.some((c) => c > 0 && c < 0.6)) return true;
+    const aiCat = item.classification.category;
+    const fnCat = item.filenameHint?.category;
+    if (aiCat && fnCat && aiCat !== fnCat) return true;
+    if (!item.matchedPropertyId && !item.selectedPropertyId) return true;
+    return false;
+  };
+
   const persistRow = async (item: QueueItem, decision: RowDecision) => {
     // doc_type is the canonical column the rest of the app reads (compliance pipeline,
     // documents vault, AI bridge). category is a legacy free-text label kept in sync.
