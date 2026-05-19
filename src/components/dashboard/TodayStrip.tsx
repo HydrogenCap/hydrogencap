@@ -126,6 +126,7 @@ export function TodayStrip({ risks, criticalCount, loanAlerts, rentSchedule, com
         label="Next certificate"
         value={certValue}
         sublabel={certSublabel}
+        href="/compliance-v2"
         variant={certVariant}
       />
       <StripItem
@@ -133,14 +134,17 @@ export function TodayStrip({ risks, criticalCount, loanAlerts, rentSchedule, com
         label="Next rent due"
         value={rentValue}
         sublabel={rentSublabel}
+        href="/rent"
       />
       <StripItem
         icon={Percent}
         label="Rate expiry"
         value={rateValue}
         sublabel={rateSublabel}
+        href="/lending"
         variant={rateVariant}
       />
+
     </div>
   );
 }
