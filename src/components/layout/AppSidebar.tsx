@@ -114,7 +114,7 @@ const operationsItems: NavItem[] = [
     href: '/lettings',
     children: [
       { title: 'Tenants', icon: Users, href: '/tenants-v2', badgeType: 'tenancy_events' },
-      { title: 'Rent', icon: PoundSterling, href: '/rent' },
+      { title: 'Rent', icon: PoundSterling, href: '/rent', badgeType: 'arrears' },
       { title: 'Voids', icon: DoorOpen, href: '/voids', sectionKey: 'voids' },
     ],
   },
