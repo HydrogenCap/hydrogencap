@@ -372,6 +372,35 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
     const PROMOTION_THRESHOLD = 0.90;
     const shouldPromote = !!matchedPropertyId && matchConfidence >= PROMOTION_THRESHOLD;
 
+    // Defensive backstop: derive the vault `category` from a high-confidence
+    // doc_type so the file lands in the right tab even if `categorise-documents`
+    // was skipped, raced, or hasn't been updated for newer doc types.
+    const DOC_TYPE_TO_CATEGORY: Record<string, string> = {
+      gas_safety_certificate: 'gas-safety',
+      electrical_certificate: 'eicr',
+      epc_certificate: 'epc',
+      fire_alarm_certificate: 'fire-safety',
+      fire_risk_assessment: 'fire-safety',
+      fire_suppression_certificate: 'fire-safety',
+      fire_door_certification: 'fire-safety',
+      fire_panel_commissioning: 'fire-safety',
+      emergency_lighting_certificate: 'fire-safety',
+      hmo_licence: 'hmo-licence',
+      building_insurance: 'insurance',
+      public_liability_insurance: 'insurance',
+      legionella_assessment: 'legionella',
+      pat_testing: 'pat-testing',
+      mcs_certificate: 'mcs-certificate',
+      floor_plans: 'floor-plans',
+      asbestos_survey: 'surveys',
+      planning_building_control: 'planning',
+    };
+    const CATEGORY_CONFIDENCE_THRESHOLD = 0.8;
+    const derivedCategory =
+      result.doc_type_confidence >= CATEGORY_CONFIDENCE_THRESHOLD
+        ? DOC_TYPE_TO_CATEGORY[result.doc_type] ?? null
+        : null;
+
     const docUpdate: Record<string, unknown> = {
       extraction_status: docExtractionStatus,
       ai_suggested_doc_type: result.doc_type,
@@ -387,7 +416,20 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
     if (shouldPromote) {
       docUpdate.property_id = matchedPropertyId;
     }
+    if (derivedCategory) {
+      // Only overwrite if the row is still in the default `other` bucket — never
+      // stomp on a user's manual category choice.
+      const { data: currentDoc } = await supabase
+        .from('documents')
+        .select('category')
+        .eq('id', document_id)
+        .single();
+      if (!currentDoc?.category || currentDoc.category === 'other') {
+        docUpdate.category = derivedCategory;
+      }
+    }
     await supabase.from("documents").update(docUpdate).eq("id", document_id);
+
 
     // If promoted AND maps to a compliance type, file into compliance_documents_v2.
     if (shouldPromote) {
