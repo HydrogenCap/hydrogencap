@@ -87,6 +87,26 @@ function shouldShowProperty(cells: Map<ComplianceDocType, ComplianceMatrixRow>, 
   }
 }
 
+const STATUS_WEIGHT: Record<string, number> = {
+  expired: 1000,
+  missing: 900,
+  critical: 800,
+  expiring_soon: 400,
+  valid: 0,
+  not_required: 0,
+};
+
+function rowUrgency(cells: Map<ComplianceDocType, ComplianceMatrixRow>) {
+  let score = 0;
+  let issues = 0;
+  for (const cell of cells.values()) {
+    const w = STATUS_WEIGHT[cell.calculated_status] ?? 0;
+    score += w;
+    if (w >= 400) issues += 1;
+  }
+  return { score, issues };
+}
+
 export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQuery }: ComplianceMatrixGridProps) {
   const grouped = groupByProperty(rows);
   const visibleEntries = Array.from(grouped.entries())
@@ -94,7 +114,12 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
       if (searchQuery && !prop.address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return shouldShowProperty(prop.cells, statusFilter);
     })
-    .sort(([, a], [, b]) => a.address.localeCompare(b.address));
+    .map(([id, prop]) => ({ id, prop, urgency: rowUrgency(prop.cells) }))
+    .sort((a, b) => {
+      // Most urgent first; ties → alphabetical
+      if (b.urgency.score !== a.urgency.score) return b.urgency.score - a.urgency.score;
+      return a.prop.address.localeCompare(b.prop.address);
+    });
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -107,7 +132,7 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block" /> Expired</span>
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-destructive inline-block" /> Missing</span>
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-muted inline-block" /> Not required</span>
-          <span className="ml-auto">{visibleEntries.length} of {grouped.size} properties</span>
+          <span className="ml-auto">Sorted by urgency · {visibleEntries.length} of {grouped.size} properties</span>
         </div>
 
         <div className="overflow-x-auto border rounded-lg">
@@ -123,11 +148,31 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
               </tr>
             </thead>
             <tbody>
-              {visibleEntries.map(([propertyId, prop]) => (
-                  <tr key={propertyId} className="border-t hover:bg-muted/30 transition-colors">
-                    <td className="p-2 font-medium sticky left-0 bg-background z-10">
-                      <div className="truncate max-w-[220px]" title={prop.address}>{prop.address}</div>
-                      {prop.entityName && <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>}
+              {visibleEntries.map(({ id: propertyId, prop, urgency }) => {
+                const hasExpiredOrMissing = Array.from(prop.cells.values()).some(c => c.calculated_status === 'expired' || c.calculated_status === 'missing');
+                return (
+                  <tr
+                    key={propertyId}
+                    className={cn(
+                      'border-t transition-colors',
+                      hasExpiredOrMissing ? 'bg-destructive/[0.03] hover:bg-destructive/[0.06]' : 'hover:bg-muted/30',
+                    )}
+                  >
+                    <td className={cn('p-2 font-medium sticky left-0 z-10', hasExpiredOrMissing ? 'bg-destructive/[0.03]' : 'bg-background')}>
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate max-w-[180px]" title={prop.address}>{prop.address}</div>
+                          {prop.entityName && <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>}
+                        </div>
+                        {urgency.issues > 0 && (
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive shrink-0"
+                            title={`${urgency.issues} item${urgency.issues === 1 ? '' : 's'} need attention`}
+                          >
+                            {urgency.issues}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     {MATRIX_COLUMN_ORDER.map(docType => {
                       const cell = prop.cells.get(docType);
@@ -156,7 +201,8 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
                       );
                     })}
                   </tr>
-                ))}
+                );
+              })}
             </tbody>
           </table>
           {grouped.size === 0 ? (

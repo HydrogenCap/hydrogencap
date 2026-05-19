@@ -13,6 +13,8 @@ interface ComplianceCalendarViewProps {
    * stat cards (e.g. only show items contributing to "Needs Attention").
    */
   statusFilter?: string;
+  /** Open detail modal when a calendar item is clicked */
+  onItemClick?: (row: ComplianceMatrixRow) => void;
 }
 
 const NEEDS_ATTENTION = new Set(['expiring_soon', 'critical', 'expired', 'missing']);
@@ -23,7 +25,7 @@ function passesFilter(status: string | null | undefined, filter: string | undefi
   return (status ?? '') === filter;
 }
 
-export function ComplianceCalendarView({ rows, statusFilter }: ComplianceCalendarViewProps) {
+export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: ComplianceCalendarViewProps) {
   const months = useMemo(() => {
     const start = startOfMonth(new Date());
     const end = endOfMonth(addMonths(start, 11));
@@ -44,6 +46,10 @@ export function ComplianceCalendarView({ rows, statusFilter }: ComplianceCalenda
       if (!row.expiry_date) continue;
       const key = format(new Date(row.expiry_date), 'yyyy-MM');
       if (map.has(key)) map.get(key)!.push(row);
+    }
+    // Sort items within each month by expiry date ascending
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.expiry_date || '').localeCompare(b.expiry_date || ''));
     }
     return map;
   }, [filteredRows, months]);
@@ -86,15 +92,31 @@ export function ComplianceCalendarView({ rows, statusFilter }: ComplianceCalenda
           <PopoverContent className="w-80 p-3" align="start">
             <p className="text-sm font-medium mb-2">Off-grid items</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {[...missingItems, ...expiredNoDateItems].map(item => (
-                <div key={`${item.property_id}-${item.requirement_id}`} className="text-xs border-b pb-1.5 last:border-b-0">
-                  <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
-                  <p className="text-muted-foreground">{item.property_address}</p>
-                  <p className="text-destructive">
-                    {item.calculated_status === 'missing' ? 'No document uploaded' : 'Expired (no date)'}
-                  </p>
-                </div>
-              ))}
+              {[...missingItems, ...expiredNoDateItems].map(item => {
+                const content = (
+                  <>
+                    <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
+                    <p className="text-muted-foreground">{item.property_address}</p>
+                    <p className="text-destructive">
+                      {item.calculated_status === 'missing' ? 'No document uploaded' : 'Expired (no date)'}
+                    </p>
+                  </>
+                );
+                return onItemClick ? (
+                  <button
+                    key={`${item.property_id}-${item.requirement_id}`}
+                    type="button"
+                    onClick={() => onItemClick(item)}
+                    className="text-xs border-b pb-1.5 last:border-b-0 w-full text-left hover:bg-muted/40 rounded px-1 -mx-1 transition-colors"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div key={`${item.property_id}-${item.requirement_id}`} className="text-xs border-b pb-1.5 last:border-b-0">
+                    {content}
+                  </div>
+                );
+              })}
             </div>
           </PopoverContent>
         </Popover>
@@ -132,13 +154,29 @@ export function ComplianceCalendarView({ rows, statusFilter }: ComplianceCalenda
                 <PopoverContent className="w-72 p-3" align="start">
                   <p className="text-sm font-medium mb-2">Expiring in {format(month, 'MMMM yyyy')}</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {items.map(item => (
-                      <div key={item.requirement_id} className="text-xs border-b pb-1.5 last:border-b-0">
-                        <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
-                        <p className="text-muted-foreground">{item.property_address}</p>
-                        <p className="text-muted-foreground">{item.expiry_date && format(new Date(item.expiry_date), 'dd/MM/yyyy')}</p>
-                      </div>
-                    ))}
+                    {items.map(item => {
+                      const content = (
+                        <>
+                          <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
+                          <p className="text-muted-foreground">{item.property_address}</p>
+                          <p className="text-muted-foreground">{item.expiry_date && format(new Date(item.expiry_date), 'dd/MM/yyyy')}</p>
+                        </>
+                      );
+                      return onItemClick ? (
+                        <button
+                          key={item.requirement_id}
+                          type="button"
+                          onClick={() => onItemClick(item)}
+                          className="text-xs border-b pb-1.5 last:border-b-0 w-full text-left hover:bg-muted/40 rounded px-1 -mx-1 transition-colors"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div key={item.requirement_id} className="text-xs border-b pb-1.5 last:border-b-0">
+                          {content}
+                        </div>
+                      );
+                    })}
                   </div>
                 </PopoverContent>
               )}
