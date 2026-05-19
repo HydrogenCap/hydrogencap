@@ -136,9 +136,23 @@ export default function ComplianceV2() {
                   <CardTitle className="text-sm font-medium text-muted-foreground">Needs Attention</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <span className={cn('text-3xl font-bold', ((score?.total_expiring_soon ?? 0) + (score?.total_critical ?? 0) + (score?.total_expired ?? 0) + (score?.total_missing ?? 0)) > 0 && 'text-destructive')}>
-                    {(score?.total_expiring_soon ?? 0) + (score?.total_critical ?? 0) + (score?.total_expired ?? 0) + (score?.total_missing ?? 0)}
-                  </span>
+                  {(() => {
+                    const expiring = score?.total_expiring_soon ?? 0;
+                    const critical = score?.total_critical ?? 0;
+                    const expired = score?.total_expired ?? 0;
+                    const missing = score?.total_missing ?? 0;
+                    const total = expiring + critical + expired + missing;
+                    return (
+                      <>
+                        <span className={cn('text-3xl font-bold', total > 0 && 'text-destructive')}>
+                          {total}
+                        </span>
+                        <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                          {missing} missing · {expired} expired · {critical} critical · {expiring} expiring soon
+                        </p>
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
@@ -160,16 +174,23 @@ export default function ComplianceV2() {
                 </CardContent>
               </Card>
 
-              <Card className={cn(((score?.total_expired ?? 0) + (score?.total_missing ?? 0)) > 0 && 'bg-destructive/5 border-destructive/30')}>
+              <Card
+                className={cn((score?.total_expired ?? 0) > 0 && 'bg-destructive/5 border-destructive/30')}
+                title="Required certificates whose expiry date has already passed. 'Missing' (never uploaded) is tracked separately under Needs Attention."
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Items</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <span className={cn('text-3xl font-bold', ((score?.total_expired ?? 0) + (score?.total_missing ?? 0)) > 0 && 'text-destructive')}>
-                    {(score?.total_expired ?? 0) + (score?.total_missing ?? 0)}
+                  <span className={cn('text-3xl font-bold', (score?.total_expired ?? 0) > 0 && 'text-destructive')}>
+                    {score?.total_expired ?? 0}
                   </span>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                    Past expiry date (excludes missing)
+                  </p>
                 </CardContent>
               </Card>
+
             </>
           )}
         </div>
@@ -233,8 +254,9 @@ export default function ComplianceV2() {
             searchQuery={searchQuery}
           />
         ) : (
-          <ComplianceCalendarView rows={matrix || []} />
+          <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} />
         )}
+
       </div>
 
       {/* Modals */}
