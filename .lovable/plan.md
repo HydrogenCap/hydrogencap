@@ -1,103 +1,128 @@
-## Onboarding wizard end-to-end — audit (read-only)
+# SEO & Marketing Site — Full Epic
 
-**Headline finding:** §4.1 is **~100% already shipped**, third audit in a row to come back this way (RRB tracker, Bulk scanner, now Onboarding). Welcome overlay, activation checklist widget, first-run detection, and the wizard chain all exist on `/dashboard` today. Nothing to build.
+## Current state (audit)
 
----
+**Working today**
+- Sitewide head in `index.html`: title, description, canonical, og:*, Twitter, Organization + SoftwareApplication JSON-LD, theme-color, OG image (`/og-image.jpg`).
+- `public/robots.txt` blocks the app surface (`/auth`, `/dashboard` not listed but `/onboarding`, `/tenant-portal`, `/investor`, `/admin` are).
+- `public/sitemap.xml` static, 13 marketing URLs, lastmod `2026-04-29` (stale).
+- `src/components/SEO.tsx` mutates `document.head` directly. Used on 30+ pages. Works for Googlebot, **invisible to social-preview crawlers** (LinkedIn/Slack/Facebook don't run JS).
+- 10 marketing routes: `/`, `/product`, `/pricing`, `/portfolio`, `/case-studies`, `/security`, `/about`, `/contact`, `/demo`, `/book-a-demo` + 3 legal.
 
-### 1. Current state
+**Scanner gaps**
+1. Home `<title>` >60 chars (truncated in SERPs).
+2. `Pricing.tsx` has a FAQ section but no `FAQPage` JSON-LD.
+3. Google Search Console not connected → no impression/click data, no sitemap submission.
+4. Sitemap flagged for missing `/auth`, `/dashboard`, `/dashboard/map` — **false positive**, these are private. The real fix is making sure `robots.txt` explicitly disallows them.
+5. `/llms.txt` missing.
+6. Lighthouse low-contrast text (likely `muted-foreground` on muted backgrounds in marketing footer/captions).
 
-**`Wizards.tsx`** (`src/pages/Wizards.tsx`, 64 lines): Hub page that lists the available wizards (`AddPropertyWizard`, `AddEntityWizard`, `AddComplianceWizard`) with launch CTAs — these wizards live as **dedicated routes** (`src/pages/AddPropertyWizard.tsx`, `AddComplianceWizard.tsx`, `AddEntityWizard.tsx`), not modals.
-
-**`OnboardingWizard.tsx`** (`src/components/onboarding/OnboardingWizard.tsx`, 392 lines): The 6-step new-org wizard from memory `mem://auth/team-and-organization-management` — Welcome → AboutYou → Goals → Organization → FirstProperty → DemoData → Completion. Triggered from the post-signup flow, not from `/dashboard`.
-
-**`useActivationChecklist`** (`src/hooks/useActivationChecklist.ts`, 131 lines): Tracks the live signal set used by the dashboard widget. Per memory `mem://features/dashboard-activation-checklist` — milestones include first property, invite teammate (marked complete on send), upload first compliance doc, etc.; permanently dismissible.
-
-**`useGoLiveChecklist`** (`src/hooks/useGoLiveChecklist.ts`): Per-property "Go Live" checklist — different surface (mounted on PropertyDetail via `<GoLiveChecklist>`).
-
----
-
-### 2. First-run wiring — **DONE**
-
-Detection signal lives on **`profiles.welcome_seen_at`** (NULL → first-run). Driven by `useWelcomeOverlay` (`src/hooks/useWelcomeOverlay.ts`):
-- `shouldShow = welcome_seen_at IS NULL`
-- `markSeen()` on dismissal/completion writes timestamp
-- `setBand(portfolio_size_band)` records `'1' | '2-5' | '6-20' | '21+'` for analytics segmentation
-
-Signup flow → `OnboardingWizard` → `/dashboard`. On dashboard, `<WelcomeOverlay />` self-shows for users with NULL `welcome_seen_at`.
-
----
-
-### 3. Dashboard activation widget — **DONE**
-
-`<ActivationChecklist />` is mounted at `Dashboard.tsx:273` (one line below `<WelcomeOverlay />` at line 270). Behaviour:
-
-- Hidden when `isLoading` or `dismissed === true`
-- Shows progress bar (`completedCount/totalItems`), per-item rows with route deep-links ("Do this →")
-- At 100% (`allRequiredComplete`) → swaps to a celebratory "Setup complete!" green card with `<PartyPopper>` icon
-- Dismiss button (×) writes the dismissed flag → component returns null forever after
-
-This **is** the persistent widget from §5.6 + §4.1. The Wave-2 ListState reference and §5.6 widget are the **same surface** — there is no second one to build.
+**Structural gaps not in the scan**
+- No `react-helmet-async` → social cards fall back to sitewide OG on every route.
+- No per-route canonical that survives social crawlers.
+- No Breadcrumb JSON-LD (rich snippets miss).
+- `og-image.jpg` exists but never audited for the 1200×630 spec.
+- No content surface (blog/guides) to win long-tail UK landlord queries — the most reliable SaaS organic-growth lever.
 
 ---
 
-### 4. Welcome overlay (§5.6 three-step) — **DONE**
+## Goals
 
-`<WelcomeOverlay />` (`src/components/onboarding/WelcomeOverlay.tsx`, 351 lines) is a **4-step modal** (one more than the §5.6 spec, which is an improvement):
-
-| Step | Content |
-|---|---|
-| 0 | Portfolio size band picker (`1` / `2-5` / `6-20` / `21+`) — writes to `profiles.portfolio_size_band` |
-| 1 | First property — address-only quick capture (matches "we'll fill in the details" promise) |
-| 2 | Upload a compliance certificate — accepts gas / EICR / EPC, AI classifies |
-| 3 | "You're ready!" — points user at the activation checklist below |
-
-Step counter at top (`Step N of 4`). Each step writes its own progress, so a user dropping off mid-flow resumes at the right step on next session via the same `welcome_seen_at` gate (until they hit step 3, which calls `markSeen`).
+1. Make every public route ship a correct, social-crawler-visible head.
+2. Close every scanner finding cleanly.
+3. Stand up an evergreen content surface (Guides) so the site can rank for "EICR renewal", "HMO licence rules", "Section 21 abolition", etc.
+4. Wire Google Search Console so future SEO work is data-driven.
 
 ---
 
-### 5. Ship sequence — **nothing required**
+## Phases
 
-| Plan item | Status |
-|---|---|
-| (a) First-run detection + route wiring | Already shipped (`welcome_seen_at`, `useWelcomeOverlay`) |
-| (b) Welcome overlay (3-step → actually 4-step) | Already shipped |
-| (c) Persistent activation widget tracking to 100% | Already shipped (`<ActivationChecklist>`, `<PartyPopper>` at completion) |
+### Phase 1 — Foundations (small)
 
-**Optional polish candidates** (only if David wants them):
+- Install `react-helmet-async`, wrap `<HelmetProvider>` in `src/main.tsx` once.
+- Replace `src/components/SEO.tsx` internals with `Helmet` (keep the same prop API → zero call-site churn). Add optional `jsonLd?: object | object[]` and `noindex?: boolean` props.
+- **Remove** the single `<link rel="canonical">` from `index.html` to prevent duplicate canonicals on JS-aware crawlers. Leave sitewide og:* as fallback.
+- Tighten Home title to ≤60 chars (e.g. `"Tenure IQ — UK Property Portfolio Management"`).
+- Add explicit `Disallow: /dashboard` and `Disallow: /properties` (+ other app routes) to `robots.txt` so the scanner stops flagging them; mark that finding fixed.
+- Migrate `public/sitemap.xml` (static, stale dates) → `scripts/generate-sitemap.ts` invoked from `predev` + `prebuild`. Auto-stamp `lastmod` to today. Source the route list from a single constant shared with the marketing nav.
 
-| # | Polish | Size |
+### Phase 2 — Structured data + per-route polish (medium)
+
+- Add `FAQPage` JSON-LD to `Pricing.tsx` (use existing `faqs` array).
+- Add `BreadcrumbList` JSON-LD helper, drop into every marketing page via the new `SEO` component's `jsonLd` prop.
+- Add `Product` schema with `AggregateOffer` to `Pricing.tsx` (Starter/Growth/Pro tiers) — Google can render price ranges in SERPs.
+- Add `Article` schema scaffolding to `CaseStudies.tsx` entries.
+- Audit `/og-image.jpg`: verify 1200×630, regenerate via `imagegen` if needed with the Navy/Gold brand and tagline.
+- Per-route og:image override for: Pricing (price-callout image), Case Studies (per-study image), Security (badge collage).
+- Fix Lighthouse contrast: replace any `text-muted-foreground/50` or `text-gray-300/400` in marketing components with `text-muted-foreground` or `text-foreground`.
+
+### Phase 3 — Discoverability infra (small)
+
+- Create `public/llms.txt` with H1, 1-line summary, and a curated link list (marketing + guides only, never app routes). Generated from the same sitemap entry list.
+- Connect Google Search Console via the connector flow, run META verification on `https://tenureiq.com/`, submit `https://tenureiq.com/sitemap.xml`.
+- Add `<link rel="alternate" hreflang="en-GB" />` self-reference (we're UK-only — locks the right SERP locale).
+- Add `WebSite` JSON-LD with `SearchAction` to `index.html` so Google can offer a Sitelinks search box.
+
+### Phase 4 — Content surface (large, biggest organic lever)
+
+A small `/guides` section is where the actual organic compounding happens. UK landlord queries are high-intent and competitively soft compared to US SaaS.
+
+- New route `/guides` (index) + `/guides/:slug` (article) under `MarketingLayout`.
+- Author 6 launch guides aimed at high-intent landlord queries (use Semrush to confirm volume/difficulty before writing — short list below).
+- MDX-style: keep articles as TS files under `src/content/guides/*.tsx` (no CMS, no backend). Each carries Helmet + Article + Breadcrumb JSON-LD.
+- Each guide ends with a contextual CTA to the matching product feature (e.g. EICR guide → Compliance module).
+- Extend the sitemap generator to enumerate guide slugs automatically.
+
+**Launch guide shortlist** (validate with Semrush before writing):
+- HMO licence renewal — process & timeline
+- EICR for landlords — 2026 rules
+- Section 21 abolition — what changes for landlords
+- Gas Safety certificate — landlord obligations
+- EPC band C deadline — what's still required
+- Right to Rent checks — 2026 process
+
+### Phase 5 — Measurement & ongoing (small)
+
+- Add a one-pager `docs/seo-playbook.md` with: how to add a new marketing page (Helmet checklist), how to add a guide, where canonicals live, the route → sitemap pipeline.
+- Set a `lastmod` policy: auto-stamp from file mtime in the generator so each edit refreshes the sitemap entry.
+- After publishing, re-run the SEO Review; mark remaining findings fixed.
+
+---
+
+## STOP-and-ask checkpoints
+
+- **Before Phase 4:** confirm content tone/voice and whether guides should be authored by you / a copywriter / AI-drafted-then-edited. The shortlist also needs your sign-off (or replacement) based on the lead funnel.
+- **GSC connection (Phase 3):** requires you to authorize the Google OAuth flow inline — I can't do that headless.
+- **OG image regeneration (Phase 2):** I'll only spend the imagegen call if you want it; otherwise the current asset stays.
+
+---
+
+## Out of scope (intentional)
+
+- SSR / prerendering. Helmet handles JS-aware crawlers; current social-card fallback in `index.html` is acceptable until the lead volume justifies the build complexity.
+- Translating the site. UK-only stays UK-only.
+- Migrating off the static sitemap to dynamic DB-driven entries (no public dynamic content yet — guides are file-backed).
+- Touching app-internal routes (Dashboard, Properties, etc.) — they're correctly `noindex` via robots.
+
+---
+
+## Technical notes
+
+- `react-helmet-async` is React-19-compatible (peer warning only).
+- The existing `SEO` component API stays the same to avoid touching 30+ call sites; only its internals change.
+- Sitemap generator runs in Node via `tsx` — no Vite plugin needed, matches the project's existing script pattern (`scripts/check-edge-functions.mjs`, etc.).
+- All JSON-LD goes through a small helper (`src/lib/seo/jsonLd.ts`) that stringifies safely.
+
+---
+
+## Sequencing & sizing
+
+| Phase | Size | Blocks others |
 |---|---|---|
-| P1 | Telemetry: log time-from-signup → step-3-completion, surface in the §4.1 Activation funnel section already on AdminDashboard | Small |
-| P2 | "Resume where you left off" toast on dashboard if user closed overlay mid-flow but step-3 not reached | Small |
-| P3 | A/B test the portfolio-size question — currently mandatory; some users may bounce | Small |
-| P4 | Localise step copy (currently uses curly apostrophes — UK English ✓ but no i18n layer yet — see Q4) | Medium |
-| P5 | Add "Skip for now, I'll do this later" CTA on overlay step 1 (currently must complete to advance) — reduces drop-off | Small |
-| P6 | Mark the activation widget non-dismissible until 50% complete (currently any user can × it on day one) | Small — STOP-and-ask |
+| 1 Foundations | S (~2h) | Yes — Phase 2 depends on Helmet |
+| 2 Structured data | M (~4h) | No |
+| 3 Discoverability | S (~1h) + GSC auth | No |
+| 4 Content surface | L (~1–2 days incl. drafting) | No — can ship after 1–3 |
+| 5 Playbook | S (~30m) | No |
 
----
-
-### 6. Open product Qs — David's call
-
-1. **Portfolio-size band granularity** — current bands `1 / 2-5 / 6-20 / 21+`. Confirm or shift (e.g. add `100+` for institutional)?
-2. **10-minute path enforcement** — plan says "under 10 minutes". Should we measure (P1) and surface a "you took N minutes — tell others!" share moment, or just leave it as an internal SLO?
-3. **Dismiss-before-100% policy** — should the activation widget block dismiss until at least property + first compliance done? Currently × always works (per §3 Hidden when dismissed).
-4. **Welcome-overlay copy voice** — currently chatty ("How big is your portfolio?", "Just an address — we'll fill in the details", "Drop in a recent gas safety…"). Memory `mem://core` says "fintech-grade" tone — is this on-brand or too casual?
-5. **Demo data step** — `OnboardingWizard.tsx` has a `DemoDataStep` (per `src/pages/.lovable/AE2_Demo_Data.md`). Should the Welcome Overlay also offer "Try with demo data first" so users without a real property can still hit step 2? Currently they must type a real address.
-6. **Step-3 destination** — overlay closes and user lands on dashboard with `<ActivationChecklist>` at 50% (property + cert done). Is that the right "you're ready!" moment, or should we deep-link to the property detail page they just created so they see the value of the AI extraction?
-7. **"Greeted by empty charts" framing** — the empty-state today is the activation widget (good). Confirm there are no other empty surfaces (charts on dashboard with `<NoDataState>`) that still feel desolate for first-run users? (Could audit separately.)
-
----
-
-### Files referenced (no edits)
-
-- `src/pages/Dashboard.tsx` (lines 270, 273 mount overlay + checklist)
-- `src/components/onboarding/WelcomeOverlay.tsx` (351 lines, 4-step)
-- `src/components/dashboard/ActivationChecklist.tsx` (108 lines)
-- `src/hooks/useWelcomeOverlay.ts`
-- `src/hooks/useActivationChecklist.ts` (131 lines)
-- `src/hooks/useGoLiveChecklist.ts`
-- `src/components/onboarding/OnboardingWizard.tsx` (392 lines, 6-step org wizard)
-- `src/pages/Wizards.tsx` (64 lines, hub)
-- `src/pages/AddPropertyWizard.tsx`, `AddComplianceWizard.tsx`, `AddEntityWizard.tsx` (full wizard routes)
-
-**Recommendation:** Close §4.1 as Done. Pattern across this audit batch is that the plan document lags reality — worth a separate pass to mark §4.1 NOW items as ✅ Shipped so we stop re-scoping completed work. If David wants any single follow-up, P1 (telemetry) is the highest-leverage because it converts the existing flow into a measurable funnel against the already-live AdminDashboard activation tiles.
+Recommend shipping 1+2+3 as the first PR (one preview, one scanner re-run), then 4 as a follow-up once the launch guide list is agreed.
