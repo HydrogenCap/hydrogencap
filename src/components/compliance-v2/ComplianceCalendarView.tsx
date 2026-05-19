@@ -13,6 +13,8 @@ interface ComplianceCalendarViewProps {
    * stat cards (e.g. only show items contributing to "Needs Attention").
    */
   statusFilter?: string;
+  /** Open detail modal when a calendar item is clicked */
+  onItemClick?: (row: ComplianceMatrixRow) => void;
 }
 
 const NEEDS_ATTENTION = new Set(['expiring_soon', 'critical', 'expired', 'missing']);
