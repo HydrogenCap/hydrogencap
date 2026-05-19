@@ -247,6 +247,7 @@ export default function BulkDocumentScanner() {
           <BulkReviewQueue
             items={queue}
             properties={properties}
+            tenants={tenants}
             onDone={() => {
               setShowReview(false);
               clearQueue();
