@@ -22,6 +22,9 @@ const DOC_TYPE_TO_CATEGORY: Record<string, string> = {
   pat_testing: "pat-testing",
   mcs_certificate: "mcs-certificate",
   floor_plan: "floor-plans",
+  floor_plans: "floor-plans",
+  asbestos_survey: "surveys",
+  planning_building_control: "planning",
 };
 
 // Category slug → short label for display names
