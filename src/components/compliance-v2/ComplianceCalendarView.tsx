@@ -25,7 +25,7 @@ function passesFilter(status: string | null | undefined, filter: string | undefi
   return (status ?? '') === filter;
 }
 
-export function ComplianceCalendarView({ rows, statusFilter }: ComplianceCalendarViewProps) {
+export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: ComplianceCalendarViewProps) {
   const months = useMemo(() => {
     const start = startOfMonth(new Date());
     const end = endOfMonth(addMonths(start, 11));
