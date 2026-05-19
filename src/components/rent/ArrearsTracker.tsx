@@ -114,17 +114,10 @@ function ArrearsEntryRow({ entry, severity }: { entry: ArrearsEntry; severity: S
             >
               <PoundSterling className="h-3.5 w-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2"
-              title="Mark arrangement in place"
-            >
-              <Handshake className="h-3.5 w-3.5" />
-            </Button>
           </div>
         </div>
       </div>
+
 
       <RecordPaymentDialog
         item={paymentOpen ? entry.scheduleItem : null}
