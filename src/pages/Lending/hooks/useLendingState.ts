@@ -63,6 +63,9 @@ export function useLendingState() {
     a.rate_alert === 'rate_expiring_soon' || a.term_alert === 'term_ending_soon' || a.term_alert === 'term_ending_within_year' || a.ltv_covenant_alert === 'covenant_warning'
   );
   const opportunityAlerts = alerts.filter(a => a.erc_alert === 'erc_ending_soon');
+  const rateAlertCount = alerts.filter(a => a.rate_alert === 'rate_expired' || a.rate_alert === 'rate_expiring_soon').length;
+
+
 
   const isLoading = loadingSummary || loadingFacilities || loadingAlerts;
 
