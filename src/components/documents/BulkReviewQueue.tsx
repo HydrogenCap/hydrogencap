@@ -247,11 +247,35 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
       <CardHeader className="sticky top-0 z-10 bg-card border-b flex flex-row items-center justify-between gap-4">
         <div>
           <CardTitle className="text-lg">Review Queue</CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {pendingCount} pending · {confidentPending} confident
-          </p>
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <span>{pendingCount} pending</span>
+            <span aria-hidden>·</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {confidentPending} confident
+            </span>
+            <span aria-hidden>·</span>
+            <span className="inline-flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 text-amber-500" />
+              <span className={needsReviewCount > 0 ? 'text-amber-600 font-medium' : ''}>
+                {needsReviewCount} need review
+              </span>
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <Switch
+              id="only-needs-review"
+              checked={onlyNeedsReview}
+              onCheckedChange={setOnlyNeedsReview}
+              aria-label="Show only items that need review"
+            />
+            <Label htmlFor="only-needs-review" className="text-xs cursor-pointer">
+              Only needs review
+            </Label>
+          </div>
           <Button
             size="sm"
             variant="default"
@@ -269,6 +293,7 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
       </CardHeader>
 
       <CardContent className="p-0">
+        <TooltipProvider delayDuration={150}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
@@ -276,6 +301,7 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
                 <th className="px-3 py-2 text-left">File</th>
                 <th className="px-3 py-2 text-left">Filename hint</th>
                 <th className="px-3 py-2 text-left">AI hint</th>
+                <th className="px-3 py-2 text-left">Extracted</th>
                 <th className="px-3 py-2 text-left">Final category</th>
                 <th className="px-3 py-2 text-left">Property</th>
                 <th className="px-3 py-2 text-left">Tenant</th>
@@ -283,13 +309,28 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
               </tr>
             </thead>
             <tbody>
-              {reviewable.map((item) => {
+              {visibleItems.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-3 py-8 text-center text-xs text-muted-foreground">
+                    Nothing matches the current filter.
+                  </td>
+                </tr>
+              )}
+              {visibleItems.map((item) => {
                 const d = decisions[item.id];
                 if (!d) return null;
                 const confident = isConfident(item);
-                const rowDim = d.status !== 'pending' ? 'opacity-50' : '';
+                const lowConf = isLowConfidence(item);
+                const isPending = d.status === 'pending';
+                const rowClass = cn(
+                  'border-t border-l-2 transition-colors',
+                  !isPending && 'opacity-50',
+                  isPending && lowConf
+                    ? 'border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/20'
+                    : 'border-l-transparent',
+                );
                 return (
-                  <tr key={item.id} className={`border-t ${rowDim}`}>
+                  <tr key={item.id} className={rowClass}>
                     <td className="px-3 py-2 align-top">
                       <div className="flex items-start gap-2">
                         {item.thumbnailUrl ? (
