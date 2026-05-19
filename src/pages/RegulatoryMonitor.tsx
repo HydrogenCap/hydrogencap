@@ -143,8 +143,7 @@ function AlertCard({ alert }: { alert: RegulatoryAlert }) {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <Button aria-label="Collapse"
-              variant="ghost"
+            <Button variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={() => setExpanded(!expanded)}
@@ -153,8 +152,7 @@ function AlertCard({ alert }: { alert: RegulatoryAlert }) {
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
             {!alert.acknowledged_at && !alert.dismissed && (
-              <Button aria-label="Confirm"
-                variant="ghost"
+              <Button variant="ghost"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => acknowledge.mutate(alert.id)}
@@ -165,8 +163,7 @@ function AlertCard({ alert }: { alert: RegulatoryAlert }) {
               </Button>
             )}
             {!alert.dismissed && (
-              <Button aria-label="Close"
-                variant="ghost"
+              <Button variant="ghost"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => dismiss.mutate(alert.id)}

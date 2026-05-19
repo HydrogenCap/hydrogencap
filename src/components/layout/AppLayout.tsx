@@ -66,8 +66,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <span className="text-xs">⌘</span>K
               </kbd>
             </Button>
-            <Button aria-label="Search"
-              variant="ghost"
+            <Button variant="ghost"
               size="icon"
               className="md:hidden min-h-[44px] min-w-[44px]"
               onClick={() => setSearchOpen(true)}
@@ -75,8 +74,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </Button>
-            <Button aria-label="Notifications"
-              variant="ghost"
+            <Button variant="ghost"
               size="icon"
               className="relative"
               onClick={() => openSidebar('notifications')}

@@ -182,8 +182,7 @@ interface DocumentsPanelProps {
            </Select>
  
            <div className="flex border rounded-md">
-             <Button aria-label="Grid view"
-               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+             <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
                size="icon"
                className="h-9 w-9 rounded-r-none"
                onClick={() => setViewMode('grid')}
@@ -192,8 +191,7 @@ interface DocumentsPanelProps {
              >
                <Grid className="h-4 w-4" />
              </Button>
-             <Button aria-label="List view"
-               variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+             <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'}
                size="icon"
                className="h-9 w-9 rounded-l-none"
                onClick={() => setViewMode('list')}
