@@ -10,6 +10,7 @@ import { BulkUploadQueue } from '@/components/documents/BulkUploadQueue';
 import { BulkUploadSummary } from '@/components/documents/BulkUploadSummary';
 import { BulkReviewQueue } from '@/components/documents/BulkReviewQueue';
 import { useBulkDocumentUpload } from '@/hooks/useBulkDocumentUpload';
+import { useTenantsV2 } from '@/hooks/useTenantsV2';
 import { walkDataTransfer, readInputFiles } from '@/lib/documents/folderWalker';
 import { TEXT } from '@/lib/design-tokens';
 
@@ -17,6 +18,8 @@ export default function BulkDocumentScanner() {
   const navigate = useNavigate();
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const { data: tenantsData } = useTenantsV2('active');
+  const tenants = tenantsData?.items ?? [];
 
   const {
     queue,
@@ -244,6 +247,7 @@ export default function BulkDocumentScanner() {
           <BulkReviewQueue
             items={queue}
             properties={properties}
+            tenants={tenants}
             onDone={() => {
               setShowReview(false);
               clearQueue();

@@ -125,3 +125,66 @@ export function classifyFilename(filename: string): FilenameClassification {
 
   return { category: null, confidence: 0, reason: 'no keyword matched' };
 }
+
+/**
+ * Best-effort ISO date (YYYY-MM-DD) extracted from a filename.
+ * Recognised patterns (case-insensitive):
+ *   - 2025-03-15, 2025_03_15, 2025.03.15
+ *   - 15-03-2025, 15/03/2025  (UK day-first)
+ *   - 15-Mar-2025, 15Mar2025
+ *   - Mar-2025 → 2025-03-01 (month-precision fallback)
+ *
+ * Returns null if no plausible date is found, or if the parsed date is
+ * outside a sensible window (1990–2100) to avoid matching reference numbers.
+ */
+const MONTHS: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12,
+};
+
+function pad(n: number): string {
+  return n.toString().padStart(2, '0');
+}
+
+function withinRange(y: number): boolean {
+  return y >= 1990 && y <= 2100;
+}
+
+export function extractDateFromFilename(filename: string): string | null {
+  if (!filename) return null;
+  const base = filename.replace(/\.[^.]+$/, '');
+
+  // ISO-like: 2025-03-15 / 2025_03_15 / 2025.03.15
+  const iso = base.match(/(20\d{2}|19\d{2})[-_.](1[0-2]|0?[1-9])[-_.](3[01]|[12]\d|0?[1-9])/);
+  if (iso) {
+    const y = +iso[1], m = +iso[2], d = +iso[3];
+    if (withinRange(y)) return `${y}-${pad(m)}-${pad(d)}`;
+  }
+
+  // Day-first: 15-03-2025 / 15/03/2025 / 15.03.2025
+  const dmy = base.match(/(3[01]|[12]\d|0?[1-9])[-/.](1[0-2]|0?[1-9])[-/.](20\d{2}|19\d{2})/);
+  if (dmy) {
+    const d = +dmy[1], m = +dmy[2], y = +dmy[3];
+    if (withinRange(y)) return `${y}-${pad(m)}-${pad(d)}`;
+  }
+
+  // Day-month-year with month name: 15-Mar-2025, 15Mar2025, 15 Mar 2025
+  const dMonY = base.match(/(3[01]|[12]\d|0?[1-9])[-_ ]?([A-Za-z]{3,4})[-_ ]?(20\d{2}|19\d{2})/);
+  if (dMonY) {
+    const d = +dMonY[1];
+    const m = MONTHS[dMonY[2].toLowerCase()];
+    const y = +dMonY[3];
+    if (m && withinRange(y)) return `${y}-${pad(m)}-${pad(d)}`;
+  }
+
+  // Month-year only: Mar-2025, March 2025 → assume the 1st.
+  const monY = base.match(/\b([A-Za-z]{3,9})[-_ ](20\d{2}|19\d{2})\b/);
+  if (monY) {
+    const m = MONTHS[monY[1].slice(0, 3).toLowerCase()];
+    const y = +monY[2];
+    if (m && withinRange(y)) return `${y}-${pad(m)}-01`;
+  }
+
+  return null;
+}
+

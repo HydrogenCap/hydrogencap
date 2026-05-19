@@ -3,7 +3,8 @@ import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
-import { classifyFilename, type FilenameClassification } from '@/lib/documents/filenameClassifier';
+import { classifyFilename, extractDateFromFilename, type FilenameClassification } from '@/lib/documents/filenameClassifier';
+import { matchPropertyFromFolder } from '@/lib/documents/folderPropertyMatcher';
 import { toast } from 'sonner';
 
 export type QueueItemStatus =
@@ -291,37 +292,42 @@ export function useBulkDocumentUpload() {
     if (valid.length === 0) return [];
 
     const newItems: QueueItem[] = await Promise.all(
-      valid.map(async ({ file, relativePath }) => ({
-        id: generateId(),
-        file,
-        relativePath,
-        thumbnailUrl: await createThumbnail(file),
-        storagePath: '',
-        documentId: null,
-        status: 'queued' as const,
-        error: null,
-        // Classify by filename BEFORE the AI runs.
-        filenameHint: classifyFilename(file.name),
-        classification: { documentType: null, confidence: 0, category: null },
-        extraction: {
-          address: null,
-          postcode: null,
-          expiryDate: null,
-          issueDate: null,
-          certificateNumber: null,
-          rating: null,
-          fieldConfidences: {},
-        },
-        matchedPropertyId: null,
-        selectedPropertyId: null,
-        retryCount: 0,
-      }))
+      valid.map(async ({ file, relativePath }) => {
+        // Pre-AI heuristics: folder routing + date in filename. These give the
+        // review queue a sensible default even before the AI pipeline returns.
+        const folderMatchId = matchPropertyFromFolder(relativePath, properties || []);
+        const filenameDate = extractDateFromFilename(file.name);
+        return {
+          id: generateId(),
+          file,
+          relativePath,
+          thumbnailUrl: await createThumbnail(file),
+          storagePath: '',
+          documentId: null,
+          status: 'queued' as const,
+          error: null,
+          filenameHint: classifyFilename(file.name),
+          classification: { documentType: null, confidence: 0, category: null },
+          extraction: {
+            address: null,
+            postcode: null,
+            expiryDate: null,
+            issueDate: filenameDate,
+            certificateNumber: null,
+            rating: null,
+            fieldConfidences: {},
+          },
+          matchedPropertyId: folderMatchId,
+          selectedPropertyId: folderMatchId,
+          retryCount: 0,
+        };
+      })
     );
 
     setQueue(prev => [...prev, ...newItems]);
     setIsComplete(false);
     return newItems;
-  }, [queue.length]);
+  }, [queue.length, properties]);
 
   const processAll = useCallback(async () => {
     const queued = queue.filter(item => item.status === 'queued');
