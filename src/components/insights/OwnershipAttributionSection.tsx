@@ -194,7 +194,7 @@ function OwnerCard({ owner, totalPortfolioValue }: { owner: OwnerAttribution; to
                       </TableCell>
                       <TableCell>
                         <Link to={`/properties/${prop.propertyId}`}>
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Button aria-label="Open in new tab" variant="ghost" size="icon" className="h-6 w-6">
                             <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>

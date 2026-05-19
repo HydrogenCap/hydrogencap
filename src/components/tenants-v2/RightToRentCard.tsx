@@ -171,7 +171,7 @@ export function RightToRentCard({ tenancyId }: Props) {
           <div className="flex items-center gap-2">
             {cfg.badge}
             {!editing && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+              <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                 setForm({
                   doc_type: parsed.doc_type ?? '',
                   check_date: parsed.check_date ?? '',

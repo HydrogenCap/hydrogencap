@@ -82,7 +82,7 @@
  
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button aria-label="Ellipsis Vertical" variant="ghost" size="icon" className="h-8 w-8">
                     <EllipsisVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

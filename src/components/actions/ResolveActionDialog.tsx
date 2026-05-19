@@ -129,7 +129,7 @@ function UploadPanel({ risk }: { risk: RiskItem }) {
             <File className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm font-medium">{file.name}</span>
             <span className="text-xs text-muted-foreground">({formatBytes(file.size)})</span>
-            <Button
+            <Button aria-label="Close"
               variant="ghost"
               size="icon"
               className="h-6 w-6"

@@ -73,7 +73,7 @@ export function NotificationPanel({ notifications, onMarkRead, onMarkAllRead, on
                       {formatDistanceToNow(new Date(n.created_at))} ago
                     </p>
                   </div>
-                  <Button
+                  <Button aria-label="Close"
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 shrink-0"

@@ -89,7 +89,7 @@ export default function PaymentDetail() {
     <div className="container py-6 space-y-6 max-w-3xl">
       {/* Back button & header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/rent')}>
+        <Button aria-label="Back" variant="ghost" size="icon" onClick={() => navigate('/rent')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">

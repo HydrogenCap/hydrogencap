@@ -139,7 +139,7 @@ export function StepRooms({ data, onChange }: Props) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeRoom(i)}>
+                    <Button aria-label="Delete" variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeRoom(i)}>
                       <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                     </Button>
                   </TableCell>

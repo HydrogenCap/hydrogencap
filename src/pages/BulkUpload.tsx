@@ -289,7 +289,7 @@ function DocumentRow({
       <TableCell>
         {isEditable && (
           <div className="flex gap-1">
-            <Button
+            <Button aria-label="Confirm"
               size="icon"
               variant={doc.status === 'confirmed' ? 'default' : 'outline'}
               className="h-7 w-7"
@@ -298,7 +298,7 @@ function DocumentRow({
             >
               <Check className="h-3.5 w-3.5" />
             </Button>
-            <Button
+            <Button aria-label="Close"
               size="icon"
               variant="ghost"
               className="h-7 w-7 text-destructive"

@@ -123,12 +123,12 @@ export function RoomCard({ room, onEdit }: Props) {
 
         {/* Actions */}
         <div className="flex gap-1 pt-1" onClick={e => e.stopPropagation()}>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(room)}>
+          <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(room)}>
             <Edit className="h-3.5 w-3.5" />
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+              <Button aria-label="Delete" variant="ghost" size="icon" className="h-7 w-7 text-destructive">
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </AlertDialogTrigger>

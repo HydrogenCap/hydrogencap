@@ -341,7 +341,7 @@ export default function Tax() {
                         <TableCell className="text-muted-foreground">{exp.description || '—'}</TableCell>
                         <TableCell className="text-right">{fmt(Number(exp.amount))}</TableCell>
                         <TableCell>
-                          <Button
+                          <Button aria-label="Delete"
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"

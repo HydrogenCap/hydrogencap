@@ -143,7 +143,7 @@ function AlertCard({ alert }: { alert: RegulatoryAlert }) {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <Button
+            <Button aria-label="Collapse"
               variant="ghost"
               size="icon"
               className="h-8 w-8"
@@ -153,7 +153,7 @@ function AlertCard({ alert }: { alert: RegulatoryAlert }) {
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
             {!alert.acknowledged_at && !alert.dismissed && (
-              <Button
+              <Button aria-label="Confirm"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
@@ -165,7 +165,7 @@ function AlertCard({ alert }: { alert: RegulatoryAlert }) {
               </Button>
             )}
             {!alert.dismissed && (
-              <Button
+              <Button aria-label="Close"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"

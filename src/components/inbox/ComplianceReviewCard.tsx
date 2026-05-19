@@ -362,7 +362,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
             {/* Actions */}
             <div className="flex items-center gap-2 shrink-0">
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button aria-label="Expand" variant="ghost" size="icon">
                   <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </Button>
               </CollapsibleTrigger>
@@ -370,7 +370,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
               {/* Delete button with confirmation */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button
+                  <Button aria-label="Delete"
                     size="icon"
                     variant="ghost"
                     className="text-muted-foreground hover:text-destructive"
@@ -415,7 +415,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
 
               {!isCreditsExhausted && (
                 <>
-                  <Button
+                  <Button aria-label="Close"
                     size="icon"
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
@@ -444,7 +444,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
 
               {isCreditsExhausted && (
                 <>
-                  <Button
+                  <Button aria-label="Close"
                     size="icon"
                     variant="ghost"
                     className="text-destructive hover:text-destructive"

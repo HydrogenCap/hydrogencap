@@ -66,7 +66,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <span className="text-xs">⌘</span>K
               </kbd>
             </Button>
-            <Button
+            <Button aria-label="Search"
               variant="ghost"
               size="icon"
               className="md:hidden min-h-[44px] min-w-[44px]"
@@ -75,7 +75,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </Button>
-            <Button
+            <Button aria-label="Notifications"
               variant="ghost"
               size="icon"
               className="relative"

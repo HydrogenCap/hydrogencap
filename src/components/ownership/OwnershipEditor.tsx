@@ -224,7 +224,7 @@ export function OwnershipEditor({
                     ))}
                   </SelectContent>
                 </Select>
-                <Button type="button" variant="outline" size="icon" onClick={() => setShowNewEntity(true)}>
+                <Button aria-label="Add" type="button" variant="outline" size="icon" onClick={() => setShowNewEntity(true)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>

@@ -306,7 +306,7 @@ export function AIAutofillButton({ propertyId, onComplete }: AIAutofillButtonPro
       </Button>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button aria-label="Info" variant="ghost" size="icon" className="h-8 w-8">
             <Info className="h-4 w-4 text-muted-foreground" />
           </Button>
         </TooltipTrigger>

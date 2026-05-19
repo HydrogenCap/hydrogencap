@@ -184,7 +184,7 @@ function RiskRow({
         onClick={e => e.stopPropagation()}
       >
         {isSnoozedItem ? (
-          <Button
+          <Button aria-label="Alarm Clock"
             variant="ghost"
             size="icon"
             className="h-7 w-7"
@@ -195,7 +195,7 @@ function RiskRow({
           </Button>
         ) : (
           <>
-            <Button
+            <Button aria-label="Play Circle"
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
@@ -204,7 +204,7 @@ function RiskRow({
             >
               <PlayCircle className="h-3.5 w-3.5" />
             </Button>
-            <Button
+            <Button aria-label="Alarm Clock"
               variant="ghost"
               size="icon"
               className="h-7 w-7"

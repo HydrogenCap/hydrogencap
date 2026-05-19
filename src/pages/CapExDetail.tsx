@@ -226,7 +226,7 @@ export default function CapExDetail() {
                             {fmt(Number(item.actual_gbp))}
                           </td>
                           <td className="px-2 py-2">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLineItem.mutate(item.id)}>
+                            <Button aria-label="Delete" variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteLineItem.mutate(item.id)}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </td>

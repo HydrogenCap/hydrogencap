@@ -105,7 +105,7 @@ function ListRow({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+            <Button aria-label="Ellipsis Vertical" variant="ghost" size="icon" className="h-8 w-8 shrink-0">
               <EllipsisVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

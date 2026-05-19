@@ -119,7 +119,7 @@ export function DepositProtectionCard({ agreement }: Props) {
           <div className="flex items-center gap-2">
             {cfg.badge}
             {!editing && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
+              <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(true)}>
                 <Pencil className="h-3 w-3" />
               </Button>
             )}

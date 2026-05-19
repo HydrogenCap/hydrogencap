@@ -35,7 +35,7 @@ export function EvidenceLogCard({ state }: { state: RentersRightsBillState }) {
                 {ombudsmanNumber
                   ? <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   : <AlertTriangle className="h-4 w-4 text-amber-600" />}
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setOmbudsmanDraft(ombudsmanNumber); setEditingOmbudsman(true); }}>
+                <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setOmbudsmanDraft(ombudsmanNumber); setEditingOmbudsman(true); }}>
                   <Pencil className="h-3 w-3" />
                 </Button>
               </div>
@@ -85,7 +85,7 @@ export function EvidenceLogCard({ state }: { state: RentersRightsBillState }) {
                 {portalNumber
                   ? <ShieldCheck className="h-4 w-4 text-emerald-600" />
                   : <AlertTriangle className="h-4 w-4 text-amber-600" />}
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setPortalDraft(portalNumber); setEditingPortal(true); }}>
+                <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setPortalDraft(portalNumber); setEditingPortal(true); }}>
                   <Pencil className="h-3 w-3" />
                 </Button>
               </div>

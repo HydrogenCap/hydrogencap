@@ -72,7 +72,7 @@ export function TenantPortalLayoutV2({ children, propertyName, tenantName }: Ten
 
           {/* Mobile menu toggle */}
           <div className="flex sm:hidden items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <Button aria-label="Open menu" variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               <Menu className="h-5 w-5" />
             </Button>
           </div>

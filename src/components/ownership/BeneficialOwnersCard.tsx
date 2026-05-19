@@ -247,7 +247,7 @@ export function BeneficialOwnersCard({ propertyId, onAddOwner, onEditOwner }: Be
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
+                          <Button aria-label="Edit"
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
@@ -255,7 +255,7 @@ export function BeneficialOwnersCard({ propertyId, onAddOwner, onEditOwner }: Be
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
-                          <Button
+                          <Button aria-label="Delete"
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-destructive"

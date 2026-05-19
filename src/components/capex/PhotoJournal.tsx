@@ -155,7 +155,7 @@ export default function PhotoJournal({ projectId }: { projectId: string }) {
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{photo.description}</p>
                       )}
                     </div>
-                    <Button
+                    <Button aria-label="Close"
                       variant="ghost"
                       size="icon"
                       className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 bg-black/40 text-white hover:bg-black/60"

@@ -83,7 +83,7 @@ export function TeamMembersSettings() {
                   )}
 
                   {isOwner && !isSelf && !isOnlyOwner && (
-                    <Button
+                    <Button aria-label="Delete"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"

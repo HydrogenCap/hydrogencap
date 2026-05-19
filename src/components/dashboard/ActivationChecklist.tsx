@@ -41,7 +41,7 @@ export function ActivationChecklist() {
                 <p className="text-sm text-muted-foreground">You're ready to manage your portfolio like a pro.</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleDismiss} className="shrink-0">
+            <Button aria-label="Close" variant="ghost" size="icon" onClick={handleDismiss} className="shrink-0">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -60,7 +60,7 @@ export function ActivationChecklist() {
           </CardTitle>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{completedCount}/{totalItems} complete</span>
-            <Button variant="ghost" size="icon" onClick={handleDismiss} className="h-7 w-7">
+            <Button aria-label="Close" variant="ghost" size="icon" onClick={handleDismiss} className="h-7 w-7">
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>

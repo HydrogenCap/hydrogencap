@@ -106,7 +106,7 @@ function ShareholdingsSection({ entityId, entityName, onAddShareholder, onEditSh
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{formatPercent(Number(shareholding.shareholder_percent))}</span>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                      <Button
+                      <Button aria-label="Edit"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
@@ -114,7 +114,7 @@ function ShareholdingsSection({ entityId, entityName, onAddShareholder, onEditSh
                       >
                         <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button
+                      <Button aria-label="Delete"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive"
@@ -236,7 +236,7 @@ export function LegalOwnershipCard({
                       <div className="flex items-center gap-3">
                         <span className="text-lg font-bold">{formatPercent(Number(owner.owner_percent))}</span>
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          <Button
+                          <Button aria-label="Edit"
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
@@ -244,7 +244,7 @@ export function LegalOwnershipCard({
                           >
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                          <Button
+                          <Button aria-label="Delete"
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive"

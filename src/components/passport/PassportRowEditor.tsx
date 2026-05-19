@@ -133,7 +133,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
     <div className="bg-muted/30 border border-border rounded-lg p-4 mt-2 space-y-4">
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-sm">Edit Core Identity</h4>
-        <Button variant="ghost" size="icon" onClick={onToggle}>
+        <Button aria-label="Collapse" variant="ghost" size="icon" onClick={onToggle}>
           <ChevronUp className="h-4 w-4" />
         </Button>
       </div>

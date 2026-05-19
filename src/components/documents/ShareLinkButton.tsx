@@ -111,10 +111,10 @@ export function ShareLinkButton({
                     )}
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => copyLink(link.token)}>
+                    <Button aria-label="Copy" variant="ghost" size="icon" onClick={() => copyLink(link.token)}>
                       <Copy className="h-3 w-3" />
                     </Button>
-                    <Button
+                    <Button aria-label="Delete"
                       variant="ghost"
                       size="icon"
                       onClick={() => deactivateLink.mutate(link.id)}

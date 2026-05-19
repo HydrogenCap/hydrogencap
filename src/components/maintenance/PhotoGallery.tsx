@@ -60,7 +60,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
               />
               {resolvedUrls.length > 1 && (
                 <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
-                  <Button
+                  <Button aria-label="Previous"
                     size="icon"
                     variant="secondary"
                     className="rounded-full opacity-80"
@@ -68,7 +68,7 @@ export function PhotoGallery({ photos }: PhotoGalleryProps) {
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button
+                  <Button aria-label="Next"
                     size="icon"
                     variant="secondary"
                     className="rounded-full opacity-80"

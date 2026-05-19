@@ -189,7 +189,7 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
                     <Eye className="h-4 w-4 mr-1" />
                     View
                   </Button>
-                  <Button 
+                  <Button aria-label="Download" 
                     variant="ghost" 
                     size="icon"
                     className="h-8 w-8"

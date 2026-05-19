@@ -315,13 +315,13 @@ export function ComplianceCalendarContent() {
             <div className="flex items-center justify-between">
               <CardTitle>{format(currentMonth, 'MMMM yyyy')}</CardTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+                <Button aria-label="Previous" variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
                   Today
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+                <Button aria-label="Next" variant="outline" size="icon" onClick={() => navigateMonth(1)}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>

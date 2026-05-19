@@ -168,7 +168,7 @@
                      <p className="font-medium">{file.name}</p>
                      <p className="text-sm text-muted-foreground">{formatBytes(file.size)}</p>
                    </div>
-                   <Button
+                   <Button aria-label="Close"
                      type="button"
                      variant="ghost"
                      size="icon"
