@@ -102,6 +102,7 @@ vi.mock('@/components/entities/CompanyFilingDeadlines', () => ({ CompanyFilingDe
 vi.mock('@/components/entities/DirectorRegister', () => ({ DirectorRegister: () => null }));
 vi.mock('@/components/entities/IntercompanyLoanTracker', () => ({ IntercompanyLoanTracker: () => null }));
 vi.mock('@/components/entities/EntityFinancialConsolidation', () => ({ EntityFinancialConsolidation: () => null }));
+vi.mock('@/components/entities/EntityPortfolioSummaryCard', () => ({ EntityPortfolioSummaryCard: () => null }));
 
 import EntityDetail from '../EntityDetail';
 
