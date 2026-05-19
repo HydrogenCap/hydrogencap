@@ -239,6 +239,7 @@ export default function Chat() {
                   rows={1}
                 />
                 <Button
+                  aria-label="Send message"
                   onClick={() => sendMessage(input)}
                   disabled={!input.trim() || isLoading}
                   size="icon"
