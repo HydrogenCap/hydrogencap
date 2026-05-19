@@ -3,7 +3,8 @@ import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
-import { classifyFilename, type FilenameClassification } from '@/lib/documents/filenameClassifier';
+import { classifyFilename, extractDateFromFilename, type FilenameClassification } from '@/lib/documents/filenameClassifier';
+import { matchPropertyFromFolder } from '@/lib/documents/folderPropertyMatcher';
 import { toast } from 'sonner';
 
 export type QueueItemStatus =
