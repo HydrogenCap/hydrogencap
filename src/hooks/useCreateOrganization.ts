@@ -12,25 +12,15 @@ export function useCreateOrganization() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('Not authenticated');
 
-      // Create the organization
-      const { data: org, error: orgError } = await supabaseAny
-        .from('organizations')
-        .insert({ name })
-        .select()
-        .single();
+      // Use SECURITY DEFINER RPC that atomically creates the org and owner
+      // membership. Direct client-side INSERT into memberships is no longer
+      // permitted by RLS (would otherwise allow cross-org takeover).
+      const { data: org, error } = await supabaseAny.rpc('create_organization', {
+        p_name: name,
+      });
 
-      if (orgError) throw orgError;
-
-      // Create owner membership
-      const { error: memberError } = await supabaseAny
-        .from('memberships')
-        .insert({
-          user_id: userData.user.id,
-          org_id: org.id,
-          role: 'owner',
-        });
-
-      if (memberError) throw memberError;
+      if (error) throw error;
+      if (!org) throw new Error('Failed to create organization');
 
       // Switch to the new org
       setCurrentOrgId(org.id);
