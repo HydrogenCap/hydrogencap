@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 interface SEOProps {
@@ -6,54 +6,49 @@ interface SEOProps {
   description: string;
   canonical?: string;
   ogImage?: string;
+  /** Set to true for app routes/utility pages that should not be indexed. */
+  noindex?: boolean;
+  /** JSON-LD payload(s). Pass a single object or an array. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
-export function SEO({ title, description, canonical, ogImage }: SEOProps) {
+const SITE = 'https://tenureiq.com';
+
+/**
+ * Per-route head tags powered by react-helmet-async.
+ *
+ * - title is wrapped with " | TenureIQ" unless it already mentions the brand.
+ * - canonical defaults to SITE + current pathname.
+ * - jsonLd accepts one or many schema.org objects (Article, FAQPage, etc.).
+ *
+ * The sitewide og:* defaults stay in index.html so non-JS social crawlers
+ * still see a valid card; Helmet replaces them per-route for JS crawlers.
+ */
+export function SEO({ title, description, canonical, ogImage, noindex, jsonLd }: SEOProps) {
   const location = useLocation();
-  const fullTitle = title.includes('TenureIQ') || title.includes('Tenure IQ') ? title : `${title} | TenureIQ`;
-  const url = canonical || `https://tenureiq.com${location.pathname}`;
+  const fullTitle = /tenure\s*iq/i.test(title) ? title : `${title} | TenureIQ`;
+  const url = canonical || `${SITE}${location.pathname}`;
+  const schemas = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
-  useEffect(() => {
-    document.title = fullTitle;
+  return (
+    <Helmet>
+      <title>{fullTitle}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={url} />
+      {noindex ? <meta name="robots" content="noindex,nofollow" /> : null}
 
-    let metaDesc = document.querySelector('meta[name="description"]');
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta');
-      metaDesc.setAttribute('name', 'description');
-      document.head.appendChild(metaDesc);
-    }
-    metaDesc.setAttribute('content', description);
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={url} />
+      {ogImage ? <meta property="og:image" content={ogImage} /> : null}
 
-    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-    if (!link) {
-      link = document.createElement('link');
-      link.setAttribute('rel', 'canonical');
-      document.head.appendChild(link);
-    }
-    link.setAttribute('href', url);
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={description} />
+      {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
 
-    setMetaProperty('og:title', fullTitle);
-    setMetaProperty('og:description', description);
-    setMetaProperty('og:url', url);
-    if (ogImage) setMetaProperty('og:image', ogImage);
-
-    setMetaProperty('twitter:title', fullTitle);
-    setMetaProperty('twitter:description', description);
-
-    return () => {
-      document.title = 'Tenure IQ | Property Portfolio Management';
-    };
-  }, [fullTitle, description, url, ogImage]);
-
-  return null;
-}
-
-function setMetaProperty(property: string, content: string) {
-  let meta = document.querySelector(`meta[property="${property}"]`);
-  if (!meta) {
-    meta = document.createElement('meta');
-    meta.setAttribute('property', property);
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute('content', content);
+      {schemas.map((schema, i) => (
+        <script key={i} type="application/ld+json">{JSON.stringify(schema)}</script>
+      ))}
+    </Helmet>
+  );
 }

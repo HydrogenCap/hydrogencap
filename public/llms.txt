@@ -1,0 +1,23 @@
+# Tenure IQ
+
+> Property intelligence platform for UK landlords and investors managing HMO and buy-to-let portfolios. Track compliance, rent collection, financials, and portfolio performance from one dashboard.
+
+Tenure IQ helps UK landlords and portfolio investors replace spreadsheets with a single source of truth — covering EICR / Gas Safety / EPC / HMO licence compliance, multi-entity (SPV) ownership, rent reconciliation, and lender-grade reporting.
+
+## Pages
+
+- [Home](/): Product overview and headline value proposition.
+- [Product](/product): Feature tour — portfolio KPIs, compliance, financials, reporting.
+- [Pricing](/pricing): Plans, what each tier includes, and FAQs.
+- [Portfolio](/portfolio): Portfolio management capabilities for HMO and BTL investors.
+- [Case Studies](/case-studies): Landlord and operator stories.
+- [Security](/security): Data protection, RLS, encryption, and infrastructure.
+- [About](/about): Company background (Oxygen Management Ltd).
+- [Contact](/contact): Sales and support contact details.
+- [Book a Demo](/book-a-demo): Schedule a live walkthrough.
+
+## Optional
+
+- [Privacy Policy](/privacy)
+- [Terms of Service](/terms)
+- [Cookie Policy](/cookies)

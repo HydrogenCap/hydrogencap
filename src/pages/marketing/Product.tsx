@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -124,6 +125,10 @@ export default function MarketingProduct() {
       <SEO
         title="Product Features — Tenure IQ"
         description="Compliance tracking, rent collection, mortgage monitoring, AI document processing, and portfolio analytics. Everything UK landlords need in one platform."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Product', path: '/product' },
+        ])}
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">

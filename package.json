@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "bunx tsx scripts/generate-sitemap.ts",
     "build": "vite build",
+    "prebuild": "bunx tsx scripts/generate-sitemap.ts",
     "build:analyze": "VITE_ANALYZE=true vite build",
     "build:dev": "vite build --mode development",
     "check:edge": "node scripts/run-with-retry.mjs --max=3 --backoff=5000,15000,45000 -- node scripts/check-edge-functions.mjs",
@@ -86,6 +88,7 @@
     "react-day-picker": "^8.10.1",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.4.0",
+    "react-helmet-async": "^3.0.0",
     "react-hook-form": "^7.72.0",
     "react-is": "^19.2.4",
     "react-leaflet": "^5.0.0",

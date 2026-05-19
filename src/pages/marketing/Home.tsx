@@ -79,8 +79,8 @@ export default function MarketingHome() {
   return (
     <MarketingLayout>
       <SEO
-        title="Tenure IQ — Property Portfolio Management for UK HMO & BTL Investors"
-        description="Know your yield. Track your compliance. Grow your portfolio. Built for UK landlords managing HMO and buy-to-let investments."
+        title="Tenure IQ — UK Property Portfolio Management"
+        description="Know your yield, track your compliance, grow your portfolio. Built for UK landlords managing HMO and buy-to-let investments."
         ogImage="https://tenureiq.com/og-image.jpg"
       />
       {/* Hero Section */}

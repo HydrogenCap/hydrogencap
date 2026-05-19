@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send, CheckCircle, Building2, Shield, BarChart3 } from 'lucide-react';
@@ -89,6 +90,10 @@ export default function MarketingBookDemo() {
       <SEO
         title="Book a Demo — Tenure IQ"
         description="Book a free 20-minute demo of Tenure IQ. See how UK landlords manage HMO compliance, track portfolio yield, and generate professional reports."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Book a Demo', path: '/book-a-demo' },
+        ])}
       />
 
       {/* Hero */}
