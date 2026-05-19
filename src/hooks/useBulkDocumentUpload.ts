@@ -392,6 +392,7 @@ export function useBulkDocumentUpload() {
     setIsComplete(false);
   }, []);
 
+  const todayIso = new Date().toISOString().slice(0, 10);
   const stats: BulkUploadStats = {
     total: queue.length,
     classified: queue.filter(q => q.classification.documentType !== null).length,
@@ -400,6 +401,21 @@ export function useBulkDocumentUpload() {
       q.status === 'done' && (q.classification.confidence < 0.7 || !q.matchedPropertyId)
     ).length,
     failed: queue.filter(q => q.status === 'error').length,
+    propertyMatched: queue.filter(q =>
+      q.status === 'done' && Boolean(q.matchedPropertyId || q.selectedPropertyId)
+    ).length,
+    propertyUnmatched: queue.filter(q =>
+      q.status === 'done' && !q.matchedPropertyId && !q.selectedPropertyId
+    ).length,
+    datesParsed: queue.filter(q =>
+      Boolean(q.extraction.issueDate || q.extraction.expiryDate)
+    ).length,
+    expiredCertificates: queue.filter(q =>
+      q.extraction.expiryDate && q.extraction.expiryDate < todayIso
+    ).length,
+    lowConfidenceFields: queue.filter(q =>
+      Object.values(q.extraction.fieldConfidences || {}).some(c => c > 0 && c < 0.6)
+    ).length,
     byDocType: queue.reduce((acc, q) => {
       const type = q.classification.documentType || 'unclassified';
       acc[type] = (acc[type] || 0) + 1;
