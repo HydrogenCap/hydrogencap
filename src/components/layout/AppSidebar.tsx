@@ -224,8 +224,11 @@ export function AppSidebar() {
   const { data: jobCounts } = useJobCounts();
   const taskStats = useComplianceTaskStats();
   const { urgentCount: tenancyUrgentCount } = useTenancyEventCounts();
+  const { data: arrearsData } = useArrears();
+  const arrearsCount = arrearsData?.length ?? 0;
 
   const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
+
 
   const pendingCount = inboxDocuments?.filter(
     d => d.review_status === 'pending' && d.extraction_status === 'completed'
