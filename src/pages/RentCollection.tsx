@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PoundSterling, Download, FileSpreadsheet, Link2, CalendarDays, AlertTriangle, History, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useRentSchedule } from '@/hooks/useRentCollection';
+import { Badge } from '@/components/ui/badge';
+import { useRentSchedule, useArrears } from '@/hooks/useRentCollection';
 import { exportRentRollCSV } from '@/lib/rentCsvExporter';
 import { RentDashboardStrip } from '@/components/rent/RentDashboardStrip';
 import { RentRollTable } from '@/components/rent/RentRollTable';
@@ -17,14 +18,39 @@ import { DensityToggle } from '@/components/DensityToggle';
 import { format, startOfMonth } from 'date-fns';
 import { SEO } from '@/components/SEO';
 
+const VALID_TABS = ['rent-roll', 'arrears', 'calendar', 'history'] as const;
+type RentTab = typeof VALID_TABS[number];
+
 export default function RentCollection() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('rent-roll');
+  const initialTab = (VALID_TABS as readonly string[]).includes(searchParams.get('tab') ?? '')
+    ? (searchParams.get('tab') as RentTab)
+    : 'rent-roll';
+  const [activeTab, setActiveTab] = useState<RentTab>(initialTab);
+
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && (VALID_TABS as readonly string[]).includes(t) && t !== activeTab) {
+      setActiveTab(t as RentTab);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as RentTab);
+    const next = new URLSearchParams(searchParams);
+    if (value === 'rent-roll') next.delete('tab');
+    else next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
 
   const monthStr = format(startOfMonth(new Date()), 'yyyy-MM');
   const { data: currentMonthData } = useRentSchedule({ month: monthStr });
   const currentMonthSchedule = currentMonthData?.items;
+  const { data: arrearsData } = useArrears();
+  const arrearsCount = arrearsData?.length ?? 0;
+
 
   return (
     <AppLayout>
