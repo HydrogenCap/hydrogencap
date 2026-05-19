@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   usePortfolioDebtSummary,
   useAllLoanFacilities,
@@ -6,14 +7,36 @@ import {
 } from '@/hooks/useLoanFacilities';
 import { useMortgageApplications } from '@/hooks/useRefinanceWorkflow';
 
+const VALID_TABS = ['portfolio', 'rate-expiries', 'applications', 'stress-test'] as const;
+
 export function useLendingState() {
   const { data: debtSummary = [], isLoading: loadingSummary } = usePortfolioDebtSummary();
   const { data: facilities = [], isLoading: loadingFacilities } = useAllLoanFacilities();
   const { data: alerts = [], isLoading: loadingAlerts } = useLoanAlerts();
   const { data: applications = [] } = useMortgageApplications();
 
-  const [activeTab, setActiveTab] = useState('portfolio');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (VALID_TABS as readonly string[]).includes(searchParams.get('tab') ?? '')
+    ? (searchParams.get('tab') as string)
+    : 'portfolio';
+  const [activeTab, setActiveTabState] = useState<string>(initialTab);
   const [refinanceFacilityId, setRefinanceFacilityId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && (VALID_TABS as readonly string[]).includes(t) && t !== activeTab) {
+      setActiveTabState(t);
+    }
+  }, [searchParams, activeTab]);
+
+  const setActiveTab = (value: string) => {
+    setActiveTabState(value);
+    const next = new URLSearchParams(searchParams);
+    if (value === 'portfolio') next.delete('tab');
+    else next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
+
 
   const activeFacilities = facilities.filter(f => f.status === 'active');
   const totalDebt = activeFacilities.reduce((s, f) => s + f.current_balance, 0);
