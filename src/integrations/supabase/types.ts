@@ -10857,6 +10857,22 @@ export type Database = {
       create_jobs_for_expiring_compliance:
         | { Args: never; Returns: number }
         | { Args: { p_org_ids?: string[] }; Returns: number }
+      create_organization: {
+        Args: { p_name: string }
+        Returns: {
+          created_at: string
+          estimated_portfolio_size: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "organizations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       find_matching_contractors: {
         Args: {
           p_compliance_type: string
