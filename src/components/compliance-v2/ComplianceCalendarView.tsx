@@ -47,6 +47,10 @@ export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: Comp
       const key = format(new Date(row.expiry_date), 'yyyy-MM');
       if (map.has(key)) map.get(key)!.push(row);
     }
+    // Sort items within each month by expiry date ascending
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.expiry_date || '').localeCompare(b.expiry_date || ''));
+    }
     return map;
   }, [filteredRows, months]);
 
