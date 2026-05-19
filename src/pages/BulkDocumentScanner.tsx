@@ -10,6 +10,7 @@ import { BulkUploadQueue } from '@/components/documents/BulkUploadQueue';
 import { BulkUploadSummary } from '@/components/documents/BulkUploadSummary';
 import { BulkReviewQueue } from '@/components/documents/BulkReviewQueue';
 import { useBulkDocumentUpload } from '@/hooks/useBulkDocumentUpload';
+import { useTenantsV2 } from '@/hooks/useTenantsV2';
 import { walkDataTransfer, readInputFiles } from '@/lib/documents/folderWalker';
 import { TEXT } from '@/lib/design-tokens';
 
