@@ -154,13 +154,29 @@ export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: Comp
                 <PopoverContent className="w-72 p-3" align="start">
                   <p className="text-sm font-medium mb-2">Expiring in {format(month, 'MMMM yyyy')}</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {items.map(item => (
-                      <div key={item.requirement_id} className="text-xs border-b pb-1.5 last:border-b-0">
-                        <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
-                        <p className="text-muted-foreground">{item.property_address}</p>
-                        <p className="text-muted-foreground">{item.expiry_date && format(new Date(item.expiry_date), 'dd/MM/yyyy')}</p>
-                      </div>
-                    ))}
+                    {items.map(item => {
+                      const content = (
+                        <>
+                          <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[item.document_type]}</p>
+                          <p className="text-muted-foreground">{item.property_address}</p>
+                          <p className="text-muted-foreground">{item.expiry_date && format(new Date(item.expiry_date), 'dd/MM/yyyy')}</p>
+                        </>
+                      );
+                      return onItemClick ? (
+                        <button
+                          key={item.requirement_id}
+                          type="button"
+                          onClick={() => onItemClick(item)}
+                          className="text-xs border-b pb-1.5 last:border-b-0 w-full text-left hover:bg-muted/40 rounded px-1 -mx-1 transition-colors"
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div key={item.requirement_id} className="text-xs border-b pb-1.5 last:border-b-0">
+                          {content}
+                        </div>
+                      );
+                    })}
                   </div>
                 </PopoverContent>
               )}
