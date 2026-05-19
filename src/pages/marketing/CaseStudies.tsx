@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, Calendar, TrendingUp, CheckCircle } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
@@ -78,6 +79,10 @@ export default function MarketingCaseStudies() {
       <SEO
         title="Case Studies — Tenure IQ"
         description="See how UK landlords use Tenure IQ to manage compliance, track rent, and grow their property portfolios."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Case Studies', path: '/case-studies' },
+        ])}
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">

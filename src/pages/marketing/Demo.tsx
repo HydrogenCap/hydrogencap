@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -81,6 +82,10 @@ export default function MarketingDemo() {
       <SEO
         title="Book a Demo — Tenure IQ"
         description="See Tenure IQ in action. Book a free 15-minute demo to see how we can simplify your property portfolio management."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Demo', path: '/demo' },
+        ])}
       />
       {/* Demo Header */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-8 border-b">

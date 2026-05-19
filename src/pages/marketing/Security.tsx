@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { Link } from 'react-router-dom';
 import {
   Shield,
@@ -73,6 +74,10 @@ export default function MarketingSecurity() {
       <SEO
         title="Security & Data Protection — Tenure IQ"
         description="Learn how Tenure IQ protects your property portfolio data with enterprise-grade encryption, UK data hosting, GDPR compliance, and immutable audit trails."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Security', path: '/security' },
+        ])}
       />
 
       {/* Hero */}

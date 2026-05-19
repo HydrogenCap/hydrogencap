@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { Link } from 'react-router-dom';
 import { Target, Eye, Zap, Shield, Users, CheckCircle } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
@@ -52,6 +53,10 @@ export default function MarketingAbout() {
       <SEO
         title="About Us — Tenure IQ"
         description="Tenure IQ was built by UK property investors who were frustrated with spreadsheets. We're on a mission to make portfolio management effortless."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'About', path: '/about' },
+        ])}
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">

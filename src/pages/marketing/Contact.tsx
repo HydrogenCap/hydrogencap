@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, Calendar, CheckCircle, Send } from 'lucide-react';
@@ -67,6 +68,10 @@ export default function MarketingContact() {
       <SEO
         title="Contact Us — Tenure IQ"
         description="Get in touch with the Tenure IQ team. Book a demo, ask a question, or tell us about your portfolio management needs."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Contact', path: '/contact' },
+        ])}
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">

@@ -1,4 +1,5 @@
 import { SEO } from '@/components/SEO';
+import { breadcrumbList } from '@/lib/seo/jsonLd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -57,6 +58,10 @@ export default function MarketingPortfolio() {
       <SEO
         title="Portfolio Dashboard — Tenure IQ"
         description="See how Tenure IQ gives you a real-time overview of your property portfolio with KPIs, compliance status, and financial metrics."
+        jsonLd={breadcrumbList([
+          { name: 'Home', path: '/' },
+          { name: 'Portfolio', path: '/portfolio' },
+        ])}
       />
       {/* Hero */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-16 lg:py-20">
