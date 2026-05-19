@@ -401,3 +401,16 @@ body[data-density='dense'] [role='table'] [data-slot='badge'] {
   font-size: 10px;
   line-height: 1.2;
 }
+
+/* Respect users who prefer reduced motion — disable transitions/animations
+   and smooth-scrolling. Keeps interactivity but removes vestibular triggers. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -14,7 +14,7 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button aria-label="Light mode" variant="ghost" size="icon" className="h-8 w-8">
           {resolvedTheme === 'light' ? (
             <Sun className="h-4 w-4" />
           ) : (

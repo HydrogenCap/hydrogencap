@@ -89,7 +89,7 @@ import { AddReviewDialog } from './AddReviewDialog';
                  )}
                </div>
                <div className="flex items-center gap-2">
-                 <Button
+                 <Button aria-label="Close"
                    variant="ghost"
                    size="icon"
                    onClick={() => setIsEditing(!isEditing)}

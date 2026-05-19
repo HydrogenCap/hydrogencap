@@ -219,10 +219,10 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
                         {tl.icon}
                         <span className="ml-1">{tl.label}</span>
                       </Badge>
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(f)}>
+                      <Button aria-label="Edit" variant="ghost" size="icon" onClick={() => openEdit(f)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button
+                      <Button aria-label="Delete"
                         variant="ghost"
                         size="icon"
                         onClick={async () => {

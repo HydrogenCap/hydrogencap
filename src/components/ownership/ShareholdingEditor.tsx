@@ -167,7 +167,7 @@ export function ShareholdingEditor({
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
+                <Button aria-label="Add"
                   variant="outline"
                   size="icon"
                   onClick={() => setShowNewEntityForm(true)}

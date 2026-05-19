@@ -154,7 +154,7 @@ export default function Reconciliation() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/rent')}>
+            <Button aria-label="Back" variant="ghost" size="icon" onClick={() => navigate('/rent')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>

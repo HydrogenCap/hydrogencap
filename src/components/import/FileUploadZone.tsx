@@ -66,7 +66,7 @@ export function FileUploadZone({ onFileSelect, selectedFile, onClear }: FileUplo
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClear}>
+          <Button aria-label="Close" variant="ghost" size="icon" onClick={onClear}>
             <X className="h-4 w-4" />
           </Button>
         </div>

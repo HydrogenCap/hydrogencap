@@ -327,7 +327,7 @@ function UploadEvidenceDialog({
                 placeholder="https://storage.example.com/photo.jpg"
                 className="flex-1"
               />
-              <Button variant="outline" size="icon" className="shrink-0" disabled>
+              <Button aria-label="Camera" variant="outline" size="icon" className="shrink-0" disabled>
                 <Camera className="h-4 w-4" />
               </Button>
             </div>

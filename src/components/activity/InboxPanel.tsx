@@ -152,7 +152,7 @@ export function InboxPanel() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
+          <Button aria-label="Refresh" variant="outline" size="icon" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4" />
           </Button>
           {highConfidenceDocs.length > 0 && (

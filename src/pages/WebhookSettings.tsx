@@ -125,7 +125,7 @@ export default function WebhookSettings() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Button
+                          <Button aria-label="Show"
                             variant="ghost"
                             size="icon"
                             onClick={() => setDetailEndpoint(ep)}
@@ -133,7 +133,7 @@ export default function WebhookSettings() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
+                          <Button aria-label="Edit"
                             variant="ghost"
                             size="icon"
                             onClick={() => setEditEndpoint(ep)}
@@ -141,7 +141,7 @@ export default function WebhookSettings() {
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button
+                          <Button aria-label="Play"
                             variant="ghost"
                             size="icon"
                             onClick={() => testWebhook.mutate(ep.id)}
@@ -150,7 +150,7 @@ export default function WebhookSettings() {
                           >
                             <Play className="h-4 w-4" />
                           </Button>
-                          <Button
+                          <Button aria-label="Delete"
                             variant="ghost"
                             size="icon"
                             onClick={() => deleteEndpoint.mutate(ep.id)}
@@ -359,10 +359,10 @@ function EndpointDetailSheet({
             <code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono break-all">
               {secretVisible ? endpoint.secret : maskedSecret}
             </code>
-            <Button variant="ghost" size="icon" onClick={() => setSecretVisible(!secretVisible)}>
+            <Button aria-label="Hide" variant="ghost" size="icon" onClick={() => setSecretVisible(!secretVisible)}>
               {secretVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" onClick={copySecret}>
+            <Button aria-label="Copy" variant="ghost" size="icon" onClick={copySecret}>
               <Copy className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" onClick={onRegenerateSecret} title="Regenerate secret">

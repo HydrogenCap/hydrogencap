@@ -30,13 +30,13 @@ export function FiltersBar({ view, setView, priorityFilter, setPriorityFilter, s
         {showCompleted ? 'Hide' : 'Show'} Completed
       </Button>
       <div className="ml-auto flex gap-1">
-        <Button variant={view === 'pipeline' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('pipeline')} title="Pipeline View">
+        <Button aria-label="Git Branch" variant={view === 'pipeline' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('pipeline')} title="Pipeline View">
           <GitBranch className="h-4 w-4" />
         </Button>
-        <Button variant={view === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('board')} title="Board View">
+        <Button aria-label="Grid view" variant={view === 'board' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('board')} title="Board View">
           <LayoutGrid className="h-4 w-4" />
         </Button>
-        <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} title="List View">
+        <Button aria-label="List view" variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('list')} title="List View">
           <List className="h-4 w-4" />
         </Button>
       </div>

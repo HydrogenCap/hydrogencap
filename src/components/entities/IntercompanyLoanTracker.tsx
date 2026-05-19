@@ -207,10 +207,10 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={statusConfig.variant as 'default' | 'secondary' | 'destructive' | 'outline'}>{statusConfig.label}</Badge>
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(loan)}>
+                      <Button aria-label="Edit" variant="ghost" size="icon" onClick={() => openEdit(loan)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button
+                      <Button aria-label="Delete"
                         variant="ghost"
                         size="icon"
                         onClick={async () => {

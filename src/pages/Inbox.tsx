@@ -212,7 +212,7 @@ function InboxPageInner() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
+            <Button aria-label="Refresh"
               variant="outline"
               size="icon"
               onClick={() => refetch()}

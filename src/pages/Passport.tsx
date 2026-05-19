@@ -381,7 +381,7 @@ export default function Passport() {
                             isExpanded={expandedRowId === property.id}
                             onToggle={() => toggleRow(property.id)}
                           />
-                          <Button asChild variant="ghost" size="icon">
+                          <Button aria-label="Copy link" asChild variant="ghost" size="icon">
                             <Link to={`/properties/${property.id}?tab=operations`}>
                               <ChevronRight className="h-4 w-4" />
                             </Link>

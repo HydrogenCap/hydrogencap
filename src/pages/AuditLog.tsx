@@ -100,7 +100,7 @@ export function AuditPanel() {
                     onKeyDown={e => e.key === 'Enter' && handleSearch()}
                     className="font-mono text-sm"
                   />
-                  <Button size="icon" variant="outline" onClick={handleSearch}>
+                  <Button aria-label="Search" size="icon" variant="outline" onClick={handleSearch}>
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>

@@ -148,13 +148,13 @@ export function BankAccountSettings() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleReveal(account.id)}>
+                        <Button aria-label="Hide" variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleReveal(account.id)}>
                           {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(account)}>
+                        <Button aria-label="Edit" variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(account)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
+                        <Button aria-label="Delete"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"

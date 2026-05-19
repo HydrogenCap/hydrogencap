@@ -205,7 +205,7 @@ export function OwnershipTable() {
                     {row.effectiveValue != null ? formatGBP(row.effectiveValue) : '—'}
                   </TableCell>
                   <TableCell>
-                    <Button
+                    <Button aria-label="Open in new tab"
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"

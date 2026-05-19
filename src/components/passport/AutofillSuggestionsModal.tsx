@@ -280,7 +280,7 @@ export function AutofillSuggestionsModal({
 
           {/* Accept/Reject buttons */}
           <div className="flex gap-1">
-            <Button
+            <Button aria-label="Confirm"
               variant={state.accepted ? 'default' : 'outline'}
               size="icon"
               className="h-8 w-8"
@@ -288,7 +288,7 @@ export function AutofillSuggestionsModal({
             >
               <Check className="h-4 w-4" />
             </Button>
-            <Button
+            <Button aria-label="Close"
               variant={state.rejected ? 'destructive' : 'outline'}
               size="icon"
               className="h-8 w-8"

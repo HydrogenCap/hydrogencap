@@ -167,11 +167,11 @@ export function InspectionScheduler() {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(m => subMonths(m, 1))}>
+            <Button aria-label="Previous" variant="ghost" size="icon" onClick={() => setCurrentMonth(m => subMonths(m, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <h3 className="text-sm font-medium">{format(currentMonth, 'MMMM yyyy')}</h3>
-            <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(m => addMonths(m, 1))}>
+            <Button aria-label="Next" variant="ghost" size="icon" onClick={() => setCurrentMonth(m => addMonths(m, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

@@ -112,7 +112,7 @@ export function NotificationsPanel() {
                       {formatDistanceToNow(new Date(n.created_at))} ago
                     </p>
                   </div>
-                  <Button
+                  <Button aria-label="Close"
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 shrink-0"

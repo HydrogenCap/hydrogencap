@@ -406,7 +406,7 @@ export function LegalOwnershipEditor({
                         </Command>
                       </PopoverContent>
                     </Popover>
-                    <Button
+                    <Button aria-label="Add"
                       variant="outline"
                       size="icon"
                       onClick={() => setShowNewCompanyForm(true)}
@@ -494,7 +494,7 @@ export function LegalOwnershipEditor({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold">{owner.percent}%</span>
-                        <Button
+                        <Button aria-label="Delete"
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive"
@@ -559,7 +559,7 @@ export function LegalOwnershipEditor({
                             </Command>
                           </PopoverContent>
                         </Popover>
-                        <Button
+                        <Button aria-label="Add"
                           variant="outline"
                           size="icon"
                           onClick={() => setShowNewPersonForm(true)}

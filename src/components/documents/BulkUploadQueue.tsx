@@ -173,7 +173,7 @@ function QueueRow({
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">
         {item.status === 'error' && (
-          <Button
+          <Button aria-label="Undo"
             size="icon"
             variant="ghost"
             className="h-7 w-7"
@@ -184,7 +184,7 @@ function QueueRow({
           </Button>
         )}
         {!isActive && (
-          <Button
+          <Button aria-label="Close"
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-muted-foreground hover:text-destructive"

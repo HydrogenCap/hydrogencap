@@ -114,10 +114,10 @@ export default function Chat() {
             <div className="p-3 border-b flex items-center justify-between">
               <h2 className="font-semibold text-sm">Conversations</h2>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={startNewConversation}>
+                <Button aria-label="Add" variant="ghost" size="icon" className="h-8 w-8" onClick={startNewConversation}>
                   <Plus className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)}>
+                <Button aria-label="Panel Left Close" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(false)}>
                   <PanelLeftClose className="h-4 w-4" />
                 </Button>
               </div>
@@ -142,7 +142,7 @@ export default function Chat() {
                     >
                       <MessageSquare className="h-4 w-4 flex-shrink-0" />
                       <span className="truncate flex-1">{conv.title}</span>
-                      <Button
+                      <Button aria-label="Delete"
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -167,7 +167,7 @@ export default function Chat() {
           {/* Header */}
           <div className="flex items-center gap-3 px-6 py-4 border-b">
             {!sidebarOpen && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(true)}>
+              <Button aria-label="Panel Left" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSidebarOpen(true)}>
                 <PanelLeft className="h-4 w-4" />
               </Button>
             )}
@@ -239,6 +239,7 @@ export default function Chat() {
                   rows={1}
                 />
                 <Button
+                  aria-label="Send message"
                   onClick={() => sendMessage(input)}
                   disabled={!input.trim() || isLoading}
                   size="icon"

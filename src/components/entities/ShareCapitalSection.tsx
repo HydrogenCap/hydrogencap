@@ -102,11 +102,11 @@ export function ShareCapitalSection({
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                      <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7"
                         onClick={() => onEditShareClass(sc)}>
                         <Edit className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                      <Button aria-label="Delete" variant="ghost" size="icon" className="h-7 w-7 text-destructive"
                         onClick={() => onDeleteShareClass(sc)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>

@@ -73,7 +73,7 @@ export function LenderSelector({ value, onChange }: LenderSelectorProps) {
             ))}
           </SelectContent>
         </Select>
-        <Button type="button" variant="outline" size="icon" onClick={() => setShowAdd(true)}>
+        <Button aria-label="Add" type="button" variant="outline" size="icon" onClick={() => setShowAdd(true)}>
           <Plus className="h-4 w-4" />
         </Button>
       </div>

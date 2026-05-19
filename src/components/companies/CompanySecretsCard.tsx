@@ -168,7 +168,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
                 </Badge>
               )}
               {isRevealed && revealed?.auth_code && (
-                <Button
+                <Button aria-label="Confirm"
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
@@ -203,7 +203,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
                 </Badge>
               )}
               {isRevealed && revealed?.utr && (
-                <Button
+                <Button aria-label="Confirm"
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"

@@ -221,10 +221,10 @@ export function InspectionTemplateEditor() {
                   </Badge>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(template)}>
+                  <Button aria-label="Save" variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(template)}>
                     <Save className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(template.id)}>
+                  <Button aria-label="Delete" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(template.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -311,7 +311,7 @@ export function InspectionTemplateEditor() {
                         onChange={e => updateRoomName(roomIndex, e.target.value)}
                         className="flex-1"
                       />
-                      <Button
+                      <Button aria-label="Delete"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive shrink-0"
@@ -330,7 +330,7 @@ export function InspectionTemplateEditor() {
                             onChange={e => updateItemName(roomIndex, itemIndex, e.target.value)}
                             className="flex-1 h-8 text-sm"
                           />
-                          <Button
+                          <Button aria-label="Delete"
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"

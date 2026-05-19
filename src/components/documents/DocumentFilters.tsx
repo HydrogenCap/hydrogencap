@@ -148,7 +148,7 @@ export function DocumentFilters({
         </Select>
 
         <div className="flex border rounded-lg overflow-hidden h-10">
-          <Button
+          <Button aria-label="Grid view"
             variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
             size="icon"
             className="h-full w-10 rounded-none"
@@ -156,7 +156,7 @@ export function DocumentFilters({
           >
             <Grid className="h-4 w-4" />
           </Button>
-          <Button
+          <Button aria-label="List view"
             variant={viewMode === 'list' ? 'secondary' : 'ghost'}
             size="icon"
             className="h-full w-10 rounded-none"

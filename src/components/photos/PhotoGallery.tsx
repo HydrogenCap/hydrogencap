@@ -261,7 +261,7 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
             className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
             onClick={() => setSelectedPhoto(null)}
           >
-            <Button
+            <Button aria-label="Close"
               variant="ghost"
               size="icon"
               className="absolute top-4 right-4 text-white hover:bg-white/20"

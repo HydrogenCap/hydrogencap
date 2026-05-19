@@ -169,10 +169,10 @@ function OwnershipRow({ ownership, onEdit, onDelete }: OwnershipRowProps) {
           {formatPercent(Number(ownership.ownership_percent))}
         </Badge>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+          <Button aria-label="Edit" variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onDelete}>
+          <Button aria-label="Delete" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onDelete}>
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>

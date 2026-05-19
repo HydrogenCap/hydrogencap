@@ -182,8 +182,7 @@ interface DocumentsPanelProps {
            </Select>
  
            <div className="flex border rounded-md">
-             <Button
-               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+             <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
                size="icon"
                className="h-9 w-9 rounded-r-none"
                onClick={() => setViewMode('grid')}
@@ -192,8 +191,7 @@ interface DocumentsPanelProps {
              >
                <Grid className="h-4 w-4" />
              </Button>
-             <Button
-               variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+             <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'}
                size="icon"
                className="h-9 w-9 rounded-l-none"
                onClick={() => setViewMode('list')}
@@ -269,7 +267,7 @@ interface DocumentsPanelProps {
                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                            <DropdownMenu>
                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                               <Button variant="secondary" size="icon" className="h-7 w-7">
+                               <Button aria-label="More options" variant="secondary" size="icon" className="h-7 w-7">
                                  <EllipsisVertical className="h-4 w-4" />
                                </Button>
                              </DropdownMenuTrigger>
@@ -346,7 +344,7 @@ interface DocumentsPanelProps {
  
                  <DropdownMenu>
                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                     <Button variant="ghost" size="icon" className="h-8 w-8">
+                     <Button aria-label="More options" variant="ghost" size="icon" className="h-8 w-8">
                        <EllipsisVertical className="h-4 w-4" />
                      </Button>
                    </DropdownMenuTrigger>

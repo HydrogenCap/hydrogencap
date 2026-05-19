@@ -386,7 +386,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-bold">{formatPercent(Number(link.percent))}</span>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                      <Button
+                      <Button aria-label="Edit"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
@@ -394,7 +394,7 @@ export function DerivedBeneficialOwnershipCard({ propertyId }: DerivedBeneficial
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
-                      <Button
+                      <Button aria-label="Delete"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"

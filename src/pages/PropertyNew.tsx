@@ -97,7 +97,7 @@ function PropertyNewPage() {
       <div className="space-y-6 max-w-3xl">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/properties')}>
+          <Button aria-label="Back" variant="ghost" size="icon" onClick={() => navigate('/properties')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

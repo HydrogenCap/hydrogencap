@@ -124,7 +124,7 @@ export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
                   </div>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => handleEdit(sc)}>
+              <Button aria-label="Edit" variant="ghost" size="icon" onClick={() => handleEdit(sc)}>
                 <Pencil className="h-4 w-4" />
               </Button>
             </div>

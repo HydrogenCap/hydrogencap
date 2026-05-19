@@ -177,7 +177,7 @@ function PipelineJobCard({ job }: { job: ContractorJob }) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
+                <Button aria-label="More options" 
                   variant="ghost" 
                   size="icon" 
                   className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
