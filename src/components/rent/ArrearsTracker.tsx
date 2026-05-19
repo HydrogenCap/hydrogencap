@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Send, PoundSterling, Handshake, CheckCircle2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, Send, PoundSterling, CheckCircle2, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { useRentArrears, type ArrearsEntry } from '@/hooks/useRentManagement';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
 import { ListState } from '@/components/ListState';
+import { exportArrearsCSV } from '@/lib/rentCsvExporter';
+
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
