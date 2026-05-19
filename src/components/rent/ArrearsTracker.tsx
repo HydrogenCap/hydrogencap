@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Send, PoundSterling, Handshake, CheckCircle2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight, Send, PoundSterling, CheckCircle2, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { useRentArrears, type ArrearsEntry } from '@/hooks/useRentManagement';
 import RecordPaymentDialog from '@/components/rent/RecordPaymentDialog';
 import SendReminderDialog from '@/components/rent/SendReminderDialog';
 import { ListState } from '@/components/ListState';
+import { exportArrearsCSV } from '@/lib/rentCsvExporter';
+
 
 const formatGBP = (v: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(v);
@@ -112,17 +114,10 @@ function ArrearsEntryRow({ entry, severity }: { entry: ArrearsEntry; severity: S
             >
               <PoundSterling className="h-3.5 w-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2"
-              title="Mark arrangement in place"
-            >
-              <Handshake className="h-3.5 w-3.5" />
-            </Button>
           </div>
         </div>
       </div>
+
 
       <RecordPaymentDialog
         item={paymentOpen ? entry.scheduleItem : null}
@@ -145,6 +140,22 @@ export function ArrearsTracker() {
     ? (['90+', '60+', '30+', '7+'] as const).filter(key => arrears[key].length > 0)
     : [];
 
+  const summary = useMemo(() => {
+    if (!arrears) return { count: 0, owed: 0, critical: 0 };
+    const all = [...arrears['7+'], ...arrears['30+'], ...arrears['60+'], ...arrears['90+']];
+    return {
+      count: all.length,
+      owed: all.reduce((s, e) => s + e.amountOwed, 0),
+      critical: arrears['60+'].length + arrears['90+'].length,
+    };
+  }, [arrears]);
+
+  const handleExport = () => {
+    if (!arrears) return;
+    const all = [...arrears['90+'], ...arrears['60+'], ...arrears['30+'], ...arrears['7+']];
+    exportArrearsCSV(all.map(e => ({ ...e.scheduleItem, days_overdue: e.daysOverdue })));
+  };
+
   return (
     <ListState
       isLoading={isLoading}
@@ -156,6 +167,32 @@ export function ArrearsTracker() {
       onRetry={() => refetch()}
     >
       <div className="space-y-4">
+        {summary.count > 0 && (
+          <Card>
+            <CardContent className="py-3 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-6 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Total outstanding</p>
+                  <p className="text-lg font-bold text-destructive">{formatGBP(summary.owed)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tenants in arrears</p>
+                  <p className="text-lg font-semibold">{summary.count}</p>
+                </div>
+                {summary.critical > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">60+ days</p>
+                    <p className="text-lg font-semibold text-destructive">{summary.critical}</p>
+                  </div>
+                )}
+              </div>
+              <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+                <Download className="h-3.5 w-3.5" />
+                Export CSV
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         {groups.map(key => (
           <ArrearsGroup key={key} groupKey={key} entries={arrears![key]} />
         ))}
@@ -163,3 +200,4 @@ export function ArrearsTracker() {
     </ListState>
   );
 }
+
