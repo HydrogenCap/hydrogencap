@@ -174,6 +174,9 @@ export default function ComplianceV2() {
                   )}>
                     {score?.compliance_score_pct ?? 0}%
                   </span>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                    {score?.total_valid ?? 0} of {score?.total_required ?? 0} required items valid
+                  </p>
                 </CardContent>
               </Card>
 
