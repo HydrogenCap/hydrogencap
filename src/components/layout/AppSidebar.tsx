@@ -62,6 +62,8 @@ import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInboxDocuments } from '@/hooks/useDocuments';
+import { useArrears } from '@/hooks/useRentCollection';
+
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
