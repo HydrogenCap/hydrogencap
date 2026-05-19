@@ -383,6 +383,9 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
                       )}
                     </td>
                     <td className="px-3 py-2 align-top">
+                      <ExtractedFieldsCell extraction={item.extraction} />
+                    </td>
+                    <td className="px-3 py-2 align-top">
                       <Select
                         value={d.finalCategory}
                         onValueChange={(v) => updateDecision(item.id, { finalCategory: v })}
