@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,16 +92,62 @@ export default function ComplianceV2() {
             </h1>
             <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRescan}
-            disabled={rescanning}
-            title="Re-run AI extraction on Vault documents that previously failed or are still pending"
-          >
-            <RefreshCw className={cn('h-4 w-4 mr-2', rescanning && 'animate-spin')} />
-            {rescanning ? 'Rescanning…' : 'Rescan Vault Documents'}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const rows = (matrix || []).filter(r => r.is_required);
+                if (rows.length === 0) {
+                  toast.info('Nothing to export');
+                  return;
+                }
+                const headers = ['Property', 'Document', 'Status', 'Days Remaining', 'Expiry Date', 'Issue Date', 'Issuer', 'Certificate #', 'Cost (£)'];
+                const escape = (v: unknown) => {
+                  const s = v === null || v === undefined ? '' : String(v);
+                  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                };
+                const lines = [headers.join(',')];
+                for (const r of rows) {
+                  lines.push([
+                    r.property_address,
+                    DOC_TYPE_DISPLAY_NAMES[r.document_type],
+                    r.calculated_status,
+                    r.days_remaining ?? '',
+                    r.expiry_date ?? '',
+                    r.issue_date ?? '',
+                    r.issuer_name ?? '',
+                    r.certificate_number ?? '',
+                    r.cost ?? '',
+                  ].map(escape).join(','));
+                }
+                const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `compliance-register-${new Date().toISOString().slice(0, 10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                toast.success(`Exported ${rows.length} compliance items`);
+              }}
+              disabled={isLoading || !matrix?.length}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRescan}
+              disabled={rescanning}
+              title="Re-run AI extraction on Vault documents that previously failed or are still pending"
+            >
+              <RefreshCw className={cn('h-4 w-4 mr-2', rescanning && 'animate-spin')} />
+              {rescanning ? 'Rescanning…' : 'Rescan Vault Documents'}
+            </Button>
+          </div>
         </div>
 
         {/* Stat Cards */}
