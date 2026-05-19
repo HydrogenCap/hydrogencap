@@ -18,6 +18,8 @@ export default function BulkDocumentScanner() {
   const navigate = useNavigate();
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const { data: tenantsData } = useTenantsV2('active');
+  const tenants = tenantsData?.items ?? [];
 
   const {
     queue,
