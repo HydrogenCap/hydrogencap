@@ -30,10 +30,30 @@ export function checkBudget(name: string, value: number): boolean {
   const withinBudget = value <= budget;
 
   if (!withinBudget && import.meta.env.DEV) {
-    const unit = name === 'CLS' ? '' : 'ms';
-    console.warn(
-      `[Perf Budget] ${name} exceeded: ${value.toFixed(2)}${unit} (budget: ${budget}${unit})`,
-    );
+    // Skip noise in the Lovable preview iframe — Vite cold-compile inflates
+    // LCP/FCP/TTFB in a way that doesn't reflect production performance.
+    const inPreviewIframe =
+      typeof window !== 'undefined' &&
+      (() => {
+        try {
+          if (window.self !== window.top) return true;
+        } catch {
+          return true;
+        }
+        const host = window.location.hostname;
+        return (
+          host.includes('lovableproject.com') ||
+          host.includes('lovable.app') ||
+          host.includes('id-preview--')
+        );
+      })();
+
+    if (!inPreviewIframe) {
+      const unit = name === 'CLS' ? '' : 'ms';
+      console.warn(
+        `[Perf Budget] ${name} exceeded: ${value.toFixed(2)}${unit} (budget: ${budget}${unit})`,
+      );
+    }
   }
 
   return withinBudget;
