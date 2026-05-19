@@ -27,8 +27,8 @@ function makeItem(over: Partial<QueueItem> = {}): QueueItem {
       rating: null,
       fieldConfidences: {},
     },
-    matchedPropertyId: over.matchedPropertyId ?? 'p1',
-    selectedPropertyId: over.selectedPropertyId ?? null,
+    matchedPropertyId: 'matchedPropertyId' in over ? over.matchedPropertyId ?? null : 'p1',
+    selectedPropertyId: 'selectedPropertyId' in over ? over.selectedPropertyId ?? null : null,
     retryCount: 0,
   } as QueueItem;
 }
