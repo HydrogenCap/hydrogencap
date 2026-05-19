@@ -53,6 +53,16 @@ export interface BulkUploadStats {
   extracted: number;
   needsReview: number;
   failed: number;
+  /** Items routed to a property (folder match, AI suggestion, or manual). */
+  propertyMatched: number;
+  /** Items that ended up without any property after processing. */
+  propertyUnmatched: number;
+  /** Items where an issue or expiry date was parsed (filename or AI). */
+  datesParsed: number;
+  /** Items whose expiry date is in the past — surfaces dead certs. */
+  expiredCertificates: number;
+  /** Items with at least one extracted field below 0.6 confidence. */
+  lowConfidenceFields: number;
   byDocType: Record<string, number>;
 }
 
