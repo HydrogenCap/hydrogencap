@@ -11,13 +11,17 @@
  */
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X, ArrowRight, Sparkles } from 'lucide-react';
+import { Check, X, ArrowRight, Sparkles, AlertTriangle, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import type { QueueItem } from '@/hooks/useBulkDocumentUpload';
 
 interface PropertyLite {
@@ -103,6 +107,25 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
     const aiCat = item.classification.category;
     const fnCat = item.filenameHint?.category;
     return Boolean(aiCat && fnCat && aiCat === fnCat);
+  };
+
+  /**
+   * Low-confidence = anything that warrants a human eye:
+   *   - AI category confidence below 0.7
+   *   - any extracted field below 0.6
+   *   - filename hint and AI hint disagree
+   *   - no property could be auto-matched
+   * Surfaced as a row highlight and a "Needs review" filter.
+   */
+  const isLowConfidence = (item: QueueItem): boolean => {
+    if (item.classification.confidence > 0 && item.classification.confidence < 0.7) return true;
+    const fieldVals = Object.values(item.extraction.fieldConfidences || {});
+    if (fieldVals.some((c) => c > 0 && c < 0.6)) return true;
+    const aiCat = item.classification.category;
+    const fnCat = item.filenameHint?.category;
+    if (aiCat && fnCat && aiCat !== fnCat) return true;
+    if (!item.matchedPropertyId && !item.selectedPropertyId) return true;
+    return false;
   };
 
   const persistRow = async (item: QueueItem, decision: RowDecision) => {
@@ -195,10 +218,19 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
     if (fail) toast.error(`${fail} failed to approve`);
   };
 
+  const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
+
   const pendingCount = Object.values(decisions).filter((d) => d.status === 'pending').length;
   const confidentPending = reviewable.filter(
     (i) => isConfident(i) && decisions[i.id]?.status === 'pending',
   ).length;
+  const needsReviewCount = reviewable.filter(
+    (i) => isLowConfidence(i) && decisions[i.id]?.status === 'pending',
+  ).length;
+
+  const visibleItems = onlyNeedsReview
+    ? reviewable.filter((i) => isLowConfidence(i))
+    : reviewable;
 
   if (reviewable.length === 0) {
     return (
@@ -215,11 +247,35 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
       <CardHeader className="sticky top-0 z-10 bg-card border-b flex flex-row items-center justify-between gap-4">
         <div>
           <CardTitle className="text-lg">Review Queue</CardTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {pendingCount} pending · {confidentPending} confident
-          </p>
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <span>{pendingCount} pending</span>
+            <span aria-hidden>·</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {confidentPending} confident
+            </span>
+            <span aria-hidden>·</span>
+            <span className="inline-flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 text-amber-500" />
+              <span className={needsReviewCount > 0 ? 'text-amber-600 font-medium' : ''}>
+                {needsReviewCount} need review
+              </span>
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <Switch
+              id="only-needs-review"
+              checked={onlyNeedsReview}
+              onCheckedChange={setOnlyNeedsReview}
+              aria-label="Show only items that need review"
+            />
+            <Label htmlFor="only-needs-review" className="text-xs cursor-pointer">
+              Only needs review
+            </Label>
+          </div>
           <Button
             size="sm"
             variant="default"
@@ -237,6 +293,7 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
       </CardHeader>
 
       <CardContent className="p-0">
+        <TooltipProvider delayDuration={150}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
@@ -244,6 +301,7 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
                 <th className="px-3 py-2 text-left">File</th>
                 <th className="px-3 py-2 text-left">Filename hint</th>
                 <th className="px-3 py-2 text-left">AI hint</th>
+                <th className="px-3 py-2 text-left">Extracted</th>
                 <th className="px-3 py-2 text-left">Final category</th>
                 <th className="px-3 py-2 text-left">Property</th>
                 <th className="px-3 py-2 text-left">Tenant</th>
@@ -251,13 +309,28 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
               </tr>
             </thead>
             <tbody>
-              {reviewable.map((item) => {
+              {visibleItems.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-3 py-8 text-center text-xs text-muted-foreground">
+                    Nothing matches the current filter.
+                  </td>
+                </tr>
+              )}
+              {visibleItems.map((item) => {
                 const d = decisions[item.id];
                 if (!d) return null;
                 const confident = isConfident(item);
-                const rowDim = d.status !== 'pending' ? 'opacity-50' : '';
+                const lowConf = isLowConfidence(item);
+                const isPending = d.status === 'pending';
+                const rowClass = cn(
+                  'border-t border-l-2 transition-colors',
+                  !isPending && 'opacity-50',
+                  isPending && lowConf
+                    ? 'border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/20'
+                    : 'border-l-transparent',
+                );
                 return (
-                  <tr key={item.id} className={`border-t ${rowDim}`}>
+                  <tr key={item.id} className={rowClass}>
                     <td className="px-3 py-2 align-top">
                       <div className="flex items-start gap-2">
                         {item.thumbnailUrl ? (
@@ -308,6 +381,9 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
+                    </td>
+                    <td className="px-3 py-2 align-top">
+                      <ExtractedFieldsCell extraction={item.extraction} />
                     </td>
                     <td className="px-3 py-2 align-top">
                       <Select
@@ -409,7 +485,100 @@ export function BulkReviewQueue({ items, properties, tenants = [], onDone }: Bul
             </tbody>
           </table>
         </div>
+        </TooltipProvider>
       </CardContent>
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ExtractedFieldsCell — colour-coded confidence badges per extracted field.
+// Threshold buckets:
+//   ≥ 0.85  → "high"   (emerald)
+//   ≥ 0.60  → "medium" (amber)
+//   < 0.60  → "low"    (rose / destructive)
+// Fields that weren't extracted at all are omitted.
+// ---------------------------------------------------------------------------
+
+interface ExtractionShape {
+  address: string | null;
+  postcode: string | null;
+  expiryDate: string | null;
+  issueDate: string | null;
+  certificateNumber: string | null;
+  rating: string | null;
+  fieldConfidences: Record<string, number>;
+}
+
+const FIELD_LABELS: Array<{
+  /** UI label */
+  label: string;
+  /** key on `extraction` */
+  valueKey: keyof Omit<ExtractionShape, 'fieldConfidences'>;
+  /** confidence-map key(s) the AI pipeline uses (first match wins) */
+  confKeys: string[];
+}> = [
+  { label: 'Address', valueKey: 'address', confKeys: ['address'] },
+  { label: 'Postcode', valueKey: 'postcode', confKeys: ['postcode'] },
+  { label: 'Issued', valueKey: 'issueDate', confKeys: ['issue_date'] },
+  { label: 'Expires', valueKey: 'expiryDate', confKeys: ['expiry_date'] },
+  { label: 'Ref', valueKey: 'certificateNumber', confKeys: ['reference_number', 'certificate_number'] },
+  { label: 'Rating', valueKey: 'rating', confKeys: ['epc_rating', 'rating'] },
+];
+
+function confidenceTier(c: number | undefined): 'none' | 'low' | 'medium' | 'high' {
+  if (!c || c <= 0) return 'none';
+  if (c >= 0.85) return 'high';
+  if (c >= 0.6) return 'medium';
+  return 'low';
+}
+
+const TIER_CLASS: Record<'none' | 'low' | 'medium' | 'high', string> = {
+  none: 'border-border bg-muted text-muted-foreground',
+  high: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+  medium: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  low: 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+};
+
+function ExtractedFieldsCell({ extraction }: { extraction: ExtractionShape }) {
+  const populated = FIELD_LABELS.filter((f) => {
+    const v = extraction[f.valueKey];
+    return v !== null && v !== undefined && String(v).length > 0;
+  });
+  if (populated.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1 max-w-[260px]">
+      {populated.map((f) => {
+        const value = String(extraction[f.valueKey] ?? '');
+        const conf =
+          f.confKeys.map((k) => extraction.fieldConfidences?.[k]).find((c) => typeof c === 'number') ?? 0;
+        const tier = confidenceTier(conf);
+        const pct = conf > 0 ? `${Math.round(conf * 100)}%` : 'no score';
+        return (
+          <Tooltip key={f.label}>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] leading-none max-w-[120px]',
+                  TIER_CLASS[tier],
+                )}
+              >
+                <span className="font-medium uppercase tracking-wide opacity-80">{f.label}</span>
+                <span className="truncate" title={value}>
+                  {value}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              <div className="font-medium">{f.label}</div>
+              <div className="text-muted-foreground">Confidence: {pct}</div>
+              <div className="max-w-[260px] break-words">{value}</div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
   );
 }
