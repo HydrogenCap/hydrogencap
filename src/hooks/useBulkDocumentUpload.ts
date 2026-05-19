@@ -327,7 +327,7 @@ export function useBulkDocumentUpload() {
     setQueue(prev => [...prev, ...newItems]);
     setIsComplete(false);
     return newItems;
-  }, [queue.length]);
+  }, [queue.length, properties]);
 
   const processAll = useCallback(async () => {
     const queued = queue.filter(item => item.status === 'queued');
