@@ -85,7 +85,7 @@ export default function RentCollection() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="rent-roll" className="gap-1.5">
               <List className="h-4 w-4" />
