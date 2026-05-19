@@ -254,8 +254,9 @@ export default function ComplianceV2() {
             searchQuery={searchQuery}
           />
         ) : (
-          <ComplianceCalendarView rows={matrix || []} />
+          <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} />
         )}
+
       </div>
 
       {/* Modals */}
