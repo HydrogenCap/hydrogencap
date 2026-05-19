@@ -361,8 +361,20 @@ export function AppSidebar() {
         </Badge>
       );
     }
+    if (item.badgeType === 'arrears' && arrearsCount > 0) {
+      return (
+        <Badge
+          variant="destructive"
+          className="h-5 min-w-5 px-1.5 text-xs"
+          aria-label={`${arrearsCount} tenancies in arrears`}
+        >
+          {arrearsCount}
+        </Badge>
+      );
+    }
     return null;
   };
+
 
   const renderNavItem = (item: NavItem) => {
     // Filter out items hidden by section visibility
