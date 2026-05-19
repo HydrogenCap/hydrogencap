@@ -155,21 +155,21 @@ export function extractDateFromFilename(filename: string): string | null {
   const base = filename.replace(/\.[^.]+$/, '');
 
   // ISO-like: 2025-03-15 / 2025_03_15 / 2025.03.15
-  const iso = base.match(/(20\d{2}|19\d{2})[-_.](0?[1-9]|1[0-2])[-_.](0?[1-9]|[12]\d|3[01])/);
+  const iso = base.match(/(20\d{2}|19\d{2})[-_.](1[0-2]|0?[1-9])[-_.](3[01]|[12]\d|0?[1-9])/);
   if (iso) {
     const y = +iso[1], m = +iso[2], d = +iso[3];
     if (withinRange(y)) return `${y}-${pad(m)}-${pad(d)}`;
   }
 
   // Day-first: 15-03-2025 / 15/03/2025 / 15.03.2025
-  const dmy = base.match(/(0?[1-9]|[12]\d|3[01])[-/.](0?[1-9]|1[0-2])[-/.](20\d{2}|19\d{2})/);
+  const dmy = base.match(/(3[01]|[12]\d|0?[1-9])[-/.](1[0-2]|0?[1-9])[-/.](20\d{2}|19\d{2})/);
   if (dmy) {
     const d = +dmy[1], m = +dmy[2], y = +dmy[3];
     if (withinRange(y)) return `${y}-${pad(m)}-${pad(d)}`;
   }
 
   // Day-month-year with month name: 15-Mar-2025, 15Mar2025, 15 Mar 2025
-  const dMonY = base.match(/(0?[1-9]|[12]\d|3[01])[-_ ]?([A-Za-z]{3,4})[-_ ]?(20\d{2}|19\d{2})/);
+  const dMonY = base.match(/(3[01]|[12]\d|0?[1-9])[-_ ]?([A-Za-z]{3,4})[-_ ]?(20\d{2}|19\d{2})/);
   if (dMonY) {
     const d = +dMonY[1];
     const m = MONTHS[dMonY[2].toLowerCase()];
