@@ -76,7 +76,7 @@ interface NavItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks' | 'tenancy_events';
+  badgeType?: 'actions' | 'jobs' | 'compliance' | 'inbox' | 'tasks' | 'tenancy_events' | 'arrears';
   sectionKey?: SectionKey;
   children?: NavItem[];
 }
