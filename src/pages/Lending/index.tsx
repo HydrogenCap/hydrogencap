@@ -45,7 +45,13 @@ export default function Lending() {
             <TabsTrigger value="portfolio">Portfolio Debt</TabsTrigger>
             <TabsTrigger value="rate-expiries">
               Rate Expiries
+              {s.rateAlertCount > 0 && (
+                <Badge variant="destructive" className="ml-1.5 text-xs px-1.5 py-0">
+                  {s.rateAlertCount}
+                </Badge>
+              )}
             </TabsTrigger>
+
             <TabsTrigger value="applications">
               Applications
               {s.activeApplications.length > 0 && (
