@@ -139,11 +139,13 @@ export function TodayStrip({ risks, criticalCount, loanAlerts, rentSchedule, com
       />
       <StripItem
         icon={PoundSterling}
-        label="Next rent due"
+        label={overdueItems.length > 0 ? 'Rent overdue' : 'Next rent due'}
         value={rentValue}
         sublabel={rentSublabel}
         href="/rent"
+        variant={rentVariant}
       />
+
       <StripItem
         icon={Percent}
         label="Rate expiry"
