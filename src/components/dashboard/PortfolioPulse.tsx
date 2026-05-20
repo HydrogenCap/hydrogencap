@@ -7,8 +7,10 @@ import {
   Banknote,
   BellOff,
   CalendarClock,
+  Check,
   CheckCircle2,
   ChevronRight,
+  Copy,
   EyeOff,
   Eye,
   ShieldAlert,
@@ -21,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
+import { useToast } from '@/hooks/use-toast';
 import { PulseActionDrawer, type PulseActionId } from './PulseActionDrawer';
 import { usePulseHistory, usePulseSnooze } from './usePulsePersistence';
 
