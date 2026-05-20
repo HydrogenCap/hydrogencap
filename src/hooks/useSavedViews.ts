@@ -22,7 +22,7 @@ export interface SavedView {
  */
 export function useSavedViews(scope: string) {
   const { user } = useAuth();
-  const { activeOrgId } = useOrganization();
+  const { data: activeOrgId } = useUserOrg();
 
   return useQuery({
     queryKey: ['saved_views', scope, activeOrgId, user?.id],
@@ -42,7 +42,7 @@ export function useSavedViews(scope: string) {
 export function useCreateSavedView() {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { activeOrgId } = useOrganization();
+  const { data: activeOrgId } = useUserOrg();
 
   return useMutation({
     mutationFn: async (input: {
