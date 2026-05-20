@@ -139,31 +139,48 @@ export default function TenancyLedger() {
 
         {/* Ledger Table */}
         <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Running Balance</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visibleEntries.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No entries match your filters
-                  </TableCell>
-                </TableRow>
-              ) : (
-                visibleEntries.map((entry) => (
-                  <LedgerRow key={entry.id} entry={entry} />
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <div className="p-2">
+            <ResponsiveTable
+              data={visibleEntries}
+              keyExtractor={(e) => e.id}
+              emptyMessage="No entries match your filters"
+              columns={[
+                {
+                  key: 'date', header: 'Date', render: (entry) => (
+                    <span className={cn('tabular-nums', entry.type === 'payment' && 'text-green-600')}>
+                      {format(new Date(entry.date), 'dd MMM yyyy')}
+                    </span>
+                  ),
+                },
+                { key: 'type', header: 'Type', render: (entry) => entry.description },
+                { key: 'status', header: 'Status', render: (entry) => getStatusBadge(entry) ?? <span className="text-muted-foreground">—</span>, hideOnMobile: true },
+                {
+                  key: 'amount', header: 'Amount', render: (entry) => (
+                    <span className={cn('tabular-nums font-medium', entry.type === 'payment' ? 'text-green-600' : '')}>
+                      {entry.type === 'payment' ? `−${fmt(Math.abs(entry.amount))}` : fmt(entry.amount)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'balance', header: 'Running Balance', render: (entry) => (
+                    <span className={cn(
+                      'tabular-nums',
+                      entry.is_future ? 'text-muted-foreground' : entry.running_balance > 0 ? 'text-destructive font-bold' : ''
+                    )}>
+                      {entry.is_future ? '—' : fmt(entry.running_balance)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'link', header: '', render: (entry) => (
+                    entry.rent_schedule_id && entry.type === 'rent'
+                      ? <Link to={`/rent/${entry.rent_schedule_id}`} className="text-xs text-primary hover:underline">View</Link>
+                      : null
+                  ), hideOnMobile: true,
+                },
+              ] as ColumnConfig<LedgerEntry>[]}
+            />
+          </div>
         </Card>
 
         {/* Action Toolbar */}
@@ -186,36 +203,6 @@ export default function TenancyLedger() {
   );
 }
 
-function LedgerRow({ entry }: { entry: LedgerEntry }) {
-  const isPayment = entry.type === 'payment';
-  const statusBadge = getStatusBadge(entry);
-
-  return (
-    <TableRow className={cn(isPayment && 'bg-green-50/50 dark:bg-green-950/10')}>
-      <TableCell className={cn('tabular-nums', isPayment && 'text-green-600')}>
-        {format(new Date(entry.date), 'dd MMM yyyy')}
-      </TableCell>
-      <TableCell>{entry.description}</TableCell>
-      <TableCell>{statusBadge}</TableCell>
-      <TableCell className={cn('text-right tabular-nums font-medium', isPayment ? 'text-green-600' : '')}>
-        {isPayment ? `−${fmt(Math.abs(entry.amount))}` : fmt(entry.amount)}
-      </TableCell>
-      <TableCell className={cn(
-        'text-right tabular-nums',
-        entry.is_future ? 'text-muted-foreground' : entry.running_balance > 0 ? 'text-destructive font-bold' : ''
-      )}>
-        {entry.is_future ? '' : fmt(entry.running_balance)}
-      </TableCell>
-      <TableCell>
-        {entry.rent_schedule_id && entry.type === 'rent' && (
-          <Link to={`/rent/${entry.rent_schedule_id}`} className="text-xs text-primary hover:underline">
-            View
-          </Link>
-        )}
-      </TableCell>
-    </TableRow>
-  );
-}
 
 function getStatusBadge(entry: LedgerEntry) {
   if (entry.is_future || entry.type === 'payment') return null;
