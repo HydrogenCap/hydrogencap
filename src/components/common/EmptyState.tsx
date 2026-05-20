@@ -1,75 +1,62 @@
-import { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { LucideIcon, FileQuestion } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-
-interface EmptyStateAction {
-  label: string;
-  href?: string;
-  onClick?: () => void;
-}
+import React, { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
-  icon?: LucideIcon;
+  icon?: React.ComponentType<{ className?: string }>;
   title: string;
   description?: string;
-  action?: EmptyStateAction;
-  secondaryAction?: EmptyStateAction;
-  children?: ReactNode;
+  action?: ReactNode;
   className?: string;
-  variant?: 'default' | 'success';
+  /** Visual size — 'sm' for inline use, 'md' for full-section. */
+  size?: 'sm' | 'md';
 }
 
-function ActionButton({ action, variant = 'default' }: { action: EmptyStateAction; variant?: 'default' | 'outline' }) {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    if (action.onClick) action.onClick();
-    else if (action.href) navigate(action.href);
-  };
-
-  return (
-    <Button variant={variant} onClick={handleClick}>
-      {action.label}
-    </Button>
-  );
-}
-
+/**
+ * Reusable empty-state pattern: icon, title, supporting copy, optional CTA.
+ * Use whenever a list/grid/tab has no content to show.
+ */
 export function EmptyState({
-  icon: Icon = FileQuestion,
+  icon: Icon,
   title,
   description,
   action,
-  secondaryAction,
-  children,
-  className = '',
-  variant = 'default',
+  className,
+  size = 'md',
 }: EmptyStateProps) {
-  const isSuccess = variant === 'success';
-
   return (
-    <Card className={className}>
-      <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-        {isSuccess ? (
-          <div className="p-4 rounded-full bg-emerald-500/10 mb-4">
-            <Icon className="h-12 w-12 text-emerald-500" />
-          </div>
-        ) : (
-          <Icon className="h-12 w-12 text-muted-foreground/70 mb-4" />
-        )}
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
-        {description && (
-          <p className="text-muted-foreground mb-4 max-w-md">{description}</p>
-        )}
-        {(action || secondaryAction) && (
-          <div className="flex items-center gap-3">
-            {action && <ActionButton action={action} />}
-            {secondaryAction && <ActionButton action={secondaryAction} variant="outline" />}
-          </div>
-        )}
-        {children}
-      </CardContent>
-    </Card>
+    <div
+      role="status"
+      className={cn(
+        'flex flex-col items-center justify-center text-center',
+        'rounded-lg border border-dashed bg-muted/20',
+        size === 'sm' ? 'py-8 px-4' : 'py-12 px-6',
+        className,
+      )}
+    >
+      {Icon && (
+        <span
+          className={cn(
+            'inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground mb-3',
+            size === 'sm' ? 'h-9 w-9' : 'h-12 w-12',
+          )}
+        >
+          <Icon className={size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
+        </span>
+      )}
+      <h3 className={cn('font-semibold text-foreground', size === 'sm' ? 'text-sm' : 'text-base')}>
+        {title}
+      </h3>
+      {description && (
+        <p
+          className={cn(
+            'text-muted-foreground mt-1 max-w-md',
+            size === 'sm' ? 'text-xs' : 'text-sm',
+          )}
+        >
+          {description}
+        </p>
+      )}
+      {action && <div className="mt-4 flex flex-wrap items-center justify-center gap-2">{action}</div>}
+    </div>
   );
 }
