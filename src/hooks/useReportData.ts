@@ -14,13 +14,13 @@ import { usePropertiesV2 } from './usePropertiesV2';
 import { usePropertyRoomSummaries } from './useRoomsV2';
 import { useLegalEntities } from './useLegalEntities';
 import { usePortfolioKPIs } from './usePortfolioKPIs';
-import { useAllLoanFacilities } from './useLoanFacilities';
+import { useAllLoanFacilities } from './useAllLoanFacilities';
 
 export interface ReportDataset {
   generatedAt: Date;
   properties: ReturnType<typeof usePropertiesV2>['data'];
   entities: ReturnType<typeof useLegalEntities>['data'];
-  loans: ReturnType<typeof useLoanFacilities>['data'];
+  loans: ReturnType<typeof useAllLoanFacilities>['data'];
   kpis: ReturnType<typeof usePortfolioKPIs>['data'];
   totals: {
     propertyCount: number;
@@ -37,7 +37,7 @@ export interface ReportDataset {
 export function useReportData(): ReportDataset {
   const properties = usePropertiesV2();
   const entities = useLegalEntities();
-  const loans = useLoanFacilities();
+  const loans = useAllLoanFacilities();
   const kpis = usePortfolioKPIs();
   const roomSummaries = usePropertyRoomSummaries();
 
