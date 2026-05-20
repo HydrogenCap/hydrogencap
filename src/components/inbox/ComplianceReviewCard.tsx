@@ -26,6 +26,8 @@ import { SEVERITY } from '@/lib/design-tokens';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { useQueryClient } from '@tanstack/react-query';
 
 type Document = Database['public']['Tables']['documents']['Row'];
 
@@ -124,13 +126,19 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const { toast } = useToast();
 
   const isProcessed = document.extraction_status === 'completed';
-  const isPending = document.extraction_status === 'pending' || document.extraction_status === 'processing';
+  const isReviewNeeded = document.extraction_status === 'review_needed';
+  const hasTimedOut = (document.extraction_status === 'pending' || document.extraction_status === 'processing') &&
+    !!document.created_at &&
+    Date.now() - new Date(document.created_at).getTime() > 10 * 60 * 1000;
+  const isActionable = isProcessed || isReviewNeeded;
+  const isPending = (document.extraction_status === 'pending' || document.extraction_status === 'processing') && !hasTimedOut;
   const isFailed = document.extraction_status === 'failed';
   const isRateLimited = document.extraction_status === 'rate_limited';
   const isCreditsExhausted = document.extraction_status === 'credits_exhausted';
-  const needsManualClassification = isFailed || isRateLimited || isCreditsExhausted;
+  const needsManualClassification = isFailed || isRateLimited || isCreditsExhausted || hasTimedOut;
   const isProcessing = acceptDocument.isPending || rejectDocument.isPending || deleteDocument.isPending;
   const [isRetrying, setIsRetrying] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
@@ -140,32 +148,24 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
         validation_errors: null,
       }).eq('id', document.id);
 
-      const storagePath = document.file_url;
-      const { data: urlData } = await supabase.storage
-        .from('documents')
-        .createSignedUrl(storagePath, 3600);
+      const signedUrl = await createSignedStorageUrl('documents', document.file_url, 3600);
+      const orgId = document.org_id;
 
-      if (urlData?.signedUrl) {
-        const { data: props } = await supabase.from('properties_v2')
-          .select('id, address_line_1, city, postcode');
-
-        const propertyList = (props || []).map(p => ({
-          id: p.id,
-          address_line: `${p.address_line_1}, ${p.city}`,
-          postcode: p.postcode,
-        }));
-
-        await supabase.functions.invoke('process-document', {
-          body: { documentId: document.id, fileUrl: urlData.signedUrl, properties: propertyList },
+      if (signedUrl && orgId) {
+        const { error } = await supabase.functions.invoke('process-document-v2', {
+          body: { document_url: signedUrl, document_id: document.id, org_id: orgId },
         });
+
+        if (error) throw error;
       }
+      await queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
     } catch (err) {
       console.error('Failed to retry document processing:', err);
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
     } finally {
       setIsRetrying(false);
     }
-  }, [document.id, document.file_url, toast]);
+  }, [document.id, document.file_url, document.org_id, queryClient, toast]);
 
   const handleDelete = useCallback(async () => {
     try {
@@ -198,10 +198,10 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   useEffect(() => {
     if (needsManualClassification) {
       setIsExpanded(true);
-    } else if (isProcessed && (docTypeConfidence < 0.7 || propertyConfidence < 0.7 || !document.ai_suggested_property_id)) {
+    } else if (isActionable && (docTypeConfidence < 0.7 || propertyConfidence < 0.7 || !document.ai_suggested_property_id)) {
       setIsExpanded(true);
     }
-  }, [isProcessed, docTypeConfidence, propertyConfidence, document.ai_suggested_property_id, needsManualClassification]);
+  }, [isActionable, docTypeConfidence, propertyConfidence, document.ai_suggested_property_id, needsManualClassification]);
 
   const getConfidenceBadge = (confidence: number) => {
     if (confidence >= 0.8) return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">High</Badge>;
@@ -250,7 +250,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
 
   const complianceStatus = expiryDate ? getComplianceItemStatus(expiryDate) : 'unknown';
 
-  const isReadyForConfirm = isProcessed &&
+  const isReadyForConfirm = isActionable &&
     docTypeConfidence >= 0.7 &&
     propertyConfidence >= 0.7 &&
     selectedPropertyId;
@@ -294,7 +294,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                   {COMPLIANCE_DOC_TYPE_LABELS[selectedDocType] || document.original_file_name}
                 </p>
                 <ExtractionStatusBadge
-                  status={document.extraction_status || 'pending'}
+                  status={hasTimedOut ? 'failed' : document.extraction_status || 'pending'}
                   docType={document.ai_suggested_doc_type}
                   validationErrors={document.validation_errors}
                 />
