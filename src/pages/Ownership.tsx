@@ -24,6 +24,7 @@ export default function Ownership() {
   const { data: org } = useOrganization();
   const { data: entities = [] } = useLegalEntities();
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
+  const [asOfDate, setAsOfDate] = useState<string>('');
 
   const activeEntityId = selectedEntityId || entities[0]?.id || '';
   const orgId = org?.id || '';
