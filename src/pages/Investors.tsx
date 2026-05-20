@@ -11,9 +11,7 @@ import { ListState } from '@/components/ListState';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+import { ResponsiveTable, ColumnConfig } from '@/components/common';
 import { useInvestors, useInvestorPortfolioSummaries, Investor } from '@/hooks/useInvestors';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { SEO } from '@/components/SEO';
@@ -175,66 +173,89 @@ export default function Investors() {
               No investors match your filters.
             </div>
           ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Investor Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Entities</TableHead>
-                    <TableHead className="text-right">Total Committed</TableHead>
-                    <TableHead className="text-right">Total Drawn</TableHead>
-                    <TableHead className="text-right">Total Distributed</TableHead>
-                    <TableHead className="text-right">Multiple</TableHead>
-                    <TableHead className="text-center">Portal</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map(investor => {
-                    const s = summaryMap[investor.id];
-                    const typeConfig = TYPE_BADGE[investor.investor_type] || TYPE_BADGE.individual;
-                    const multiple = s?.distribution_multiple || 0;
-                    const multipleColor = multiple >= 1 ? 'text-emerald-600' : multiple >= 0.5 ? 'text-amber-600' : 'text-destructive';
-
-                    return (
-                      <TableRow
-                        key={investor.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => navigate(`/investors/${investor.id}`)}
-                      >
-                        <TableCell className="font-semibold">{investor.investor_name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={typeConfig.className}>{typeConfig.label}</Badge>
-                        </TableCell>
-                        <TableCell>{s?.entities_invested || 0}</TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatAmount(s?.total_committed || 0)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatAmount(s?.total_drawn || 0)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatAmount(s?.total_distributed || 0)}
-                        </TableCell>
-                        <TableCell className={`text-right font-mono text-sm font-semibold ${multipleColor}`}>
-                          {multiple.toFixed(2)}x
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {investor.portal_access_enabled
-                            ? <Check className="h-4 w-4 text-emerald-600 mx-auto" />
-                            : <Minus className="h-4 w-4 text-muted-foreground mx-auto" />}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm" onClick={(e) => handleEdit(investor, e)}>
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <div className="border rounded-lg p-2">
+              <ResponsiveTable
+                data={filtered}
+                keyExtractor={(i) => i.id}
+                onRowClick={(i) => navigate(`/investors/${i.id}`)}
+                columns={[
+                  {
+                    key: 'name',
+                    header: 'Investor Name',
+                    render: (i) => <span className="font-semibold">{i.investor_name}</span>,
+                  },
+                  {
+                    key: 'type',
+                    header: 'Type',
+                    hideOnMobile: true,
+                    render: (i) => {
+                      const cfg = TYPE_BADGE[i.investor_type] || TYPE_BADGE.individual;
+                      return <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>;
+                    },
+                  },
+                  {
+                    key: 'entities',
+                    header: 'Entities',
+                    hideOnMobile: true,
+                    render: (i) => summaryMap[i.id]?.entities_invested || 0,
+                  },
+                  {
+                    key: 'committed',
+                    header: 'Total Committed',
+                    render: (i) => (
+                      <span className="font-mono text-sm">
+                        {formatAmount(summaryMap[i.id]?.total_committed || 0)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'drawn',
+                    header: 'Total Drawn',
+                    hideOnMobile: true,
+                    render: (i) => (
+                      <span className="font-mono text-sm">
+                        {formatAmount(summaryMap[i.id]?.total_drawn || 0)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'distributed',
+                    header: 'Total Distributed',
+                    hideOnMobile: true,
+                    render: (i) => (
+                      <span className="font-mono text-sm">
+                        {formatAmount(summaryMap[i.id]?.total_distributed || 0)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'multiple',
+                    header: 'Multiple',
+                    render: (i) => {
+                      const m = summaryMap[i.id]?.distribution_multiple || 0;
+                      const color = m >= 1 ? 'text-emerald-600' : m >= 0.5 ? 'text-amber-600' : 'text-destructive';
+                      return <span className={`font-mono text-sm font-semibold ${color}`}>{m.toFixed(2)}x</span>;
+                    },
+                  },
+                  {
+                    key: 'portal',
+                    header: 'Portal',
+                    hideOnMobile: true,
+                    render: (i) => i.portal_access_enabled
+                      ? <Check className="h-4 w-4 text-emerald-600" />
+                      : <Minus className="h-4 w-4 text-muted-foreground" />,
+                  },
+                  {
+                    key: 'actions',
+                    header: 'Actions',
+                    render: (i) => (
+                      <Button variant="ghost" size="sm" onClick={(e) => handleEdit(i, e)}>
+                        Edit
+                      </Button>
+                    ),
+                  },
+                ] satisfies ColumnConfig<Investor>[]}
+              />
             </div>
           )}
         </ListState>
