@@ -27,3 +27,5 @@ export { BackToTop } from './BackToTop';
 export { GlobalShortcuts, SHORTCUT_GROUPS } from './GlobalShortcuts';
 export { CommandPalette } from './CommandPalette';
 export { ShortcutsCheatSheet } from './ShortcutsCheatSheet';
+export { ConnectionStatus } from './ConnectionStatus';
+export { CopyButton } from './CopyButton';
