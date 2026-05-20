@@ -44,6 +44,7 @@ import { LeaseholdAlertWidget } from '@/components/dashboard/LeaseholdAlertWidge
 import { formatGBP, formatPercent } from '@/lib/calculations';
 import { MetricKey, MetricBreakdown } from '@/lib/metricsConfig';
 import { SEO } from '@/components/SEO';
+import { cn } from '@/lib/utils';
 
 function DashboardPage() {
   const navigate = useNavigate();
