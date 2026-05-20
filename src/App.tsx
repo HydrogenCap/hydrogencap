@@ -25,6 +25,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Today = lazy(() => import("./pages/Today"));
+const FixIt = lazy(() => import("./pages/FixIt"));
 
 const PropertyNew = lazy(() => import("./pages/PropertyNew"));
 const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
@@ -223,6 +225,26 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Protected routes */}
+            <Route
+              path="/today"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <Today />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fix-it"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <FixIt />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
