@@ -226,10 +226,36 @@ export function CommandPalette() {
           </>
         )}
 
+        {/* Recently viewed records when not searching */}
+        {!query && recentEntities.length > 0 && (
+          <>
+            <CommandGroup heading="Recently viewed">
+              {recentEntities.map((r) => {
+                const Icon = RECENT_ENTITY_ICON[r.type];
+                return (
+                  <CommandItem
+                    key={`rv-${r.type}-${r.id}`}
+                    value={`recent ${r.label} ${r.type}`}
+                    onSelect={() => {
+                      navigate(r.url);
+                      setOpen(false);
+                    }}
+                  >
+                    <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">{r.label}</span>
+                    <span className="ml-auto text-xs text-muted-foreground capitalize">{r.type}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         {/* Recently used commands when not searching */}
         {!query && recentNav.length > 0 && (
           <>
-            <CommandGroup heading="Recent">
+            <CommandGroup heading="Recent shortcuts">
               {recentNav.map((cmd) => {
                 const Icon = cmd.icon;
                 return (
