@@ -110,10 +110,10 @@ export default function Ownership() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="chart" className="mt-4">
-            <OwnershipFlowchart />
+            <OwnershipFlowchart asOfDate={asOfDate || undefined} />
           </TabsContent>
           <TabsContent value="table" className="mt-4">
-            <OwnershipTable />
+            <OwnershipTable asOfDate={asOfDate || undefined} />
           </TabsContent>
           <TabsContent value="register" className="mt-4">
             {activeEntityId && orgId ? (
