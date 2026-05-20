@@ -14,7 +14,7 @@ import { usePropertiesV2 } from './usePropertiesV2';
 import { usePropertyRoomSummaries } from './useRoomsV2';
 import { useLegalEntities } from './useLegalEntities';
 import { usePortfolioKPIs } from './usePortfolioKPIs';
-import { useLoanFacilities } from './useLoanFacilities';
+import { useAllLoanFacilities } from './useLoanFacilities';
 
 export interface ReportDataset {
   generatedAt: Date;
