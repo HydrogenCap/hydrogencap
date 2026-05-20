@@ -17,6 +17,8 @@ interface ComplianceMatrixGridProps {
   propertyTypeFilter?: string;
   /** Click handler from the legend chips to filter by status */
   onLegendStatusClick?: (status: string) => void;
+  /** Optional callback when user wants to clear all filters from empty state */
+  onClearFilters?: () => void;
 }
 
 /** Group matrix rows by property */
