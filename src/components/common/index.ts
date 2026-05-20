@@ -29,3 +29,4 @@ export { CommandPalette } from './CommandPalette';
 export { ShortcutsCheatSheet } from './ShortcutsCheatSheet';
 export { ConnectionStatus } from './ConnectionStatus';
 export { CopyButton } from './CopyButton';
+export { KpiBreakdownPopover } from './KpiBreakdownPopover';
