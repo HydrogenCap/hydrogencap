@@ -233,7 +233,19 @@ export default function ComplianceV2() {
             <>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Compliance Score</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    Compliance Score
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" aria-label="How the compliance score is calculated">
+                          <Info className="h-3 w-3 text-muted-foreground/70" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px] text-xs">
+                        Percentage of required compliance items that are currently valid. Expired, missing, critical and expiring-soon items all reduce the score.
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <span className={cn(
