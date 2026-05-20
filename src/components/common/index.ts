@@ -30,3 +30,5 @@ export { ShortcutsCheatSheet } from './ShortcutsCheatSheet';
 export { ConnectionStatus } from './ConnectionStatus';
 export { CopyButton } from './CopyButton';
 export { KpiBreakdownPopover } from './KpiBreakdownPopover';
+export { BulkActionBar } from './BulkActionBar';
+export { SavedViewsMenu } from './SavedViewsMenu';
