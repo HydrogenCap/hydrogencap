@@ -1,18 +1,28 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Building2, Zap } from 'lucide-react';
+import { Plus, Search, Building2, Zap, Trash2, MoveRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { EmptyState, SavedViewsMenu } from '@/components/common';
+import { Checkbox } from '@/components/ui/checkbox';
+import { EmptyState, SavedViewsMenu, BulkActionBar } from '@/components/common';
 import { ListState } from '@/components/ListState';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useTableSelection } from '@/hooks/useTableSelection';
+import { useToast } from '@/hooks/use-toast';
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { usePropertiesV2, usePropertyComplianceStatusMap, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, type PropertyComplianceStatus } from '@/hooks/usePropertiesV2';
+import { usePropertiesV2, usePropertyComplianceStatusMap, useDeletePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, type PropertyComplianceStatus } from '@/hooks/usePropertiesV2';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyWizard } from '@/components/properties-v2/wizard/PropertyWizard';
@@ -94,7 +104,11 @@ export default function PropertiesV2() {
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
   
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const deleteProperty = useDeletePropertyV2();
+  const updateProperty = useUpdatePropertyV2();
   const [showWizard, setShowWizard] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [search, setSearch] = useState('');
   const [filterEntity, setFilterEntity] = useState('all');
   const [filterType, setFilterType] = useState('all');
@@ -130,6 +144,32 @@ export default function PropertiesV2() {
     });
     return result;
   }, [properties, search, filterEntity, filterType, filterStage, filterListing, sort]);
+
+  const sel = useTableSelection(filtered.map(p => p.id));
+
+  const handleBulkDelete = async () => {
+    const ids = sel.selectedIds;
+    setConfirmDelete(false);
+    try {
+      await Promise.all(ids.map(id => deleteProperty.mutateAsync(id)));
+      toast({ title: 'Properties deleted', description: `${ids.length} removed.` });
+      sel.clear();
+    } catch (err: any) {
+      toast({ title: 'Delete failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkSetStage = async (stage: string) => {
+    const ids = sel.selectedIds;
+    try {
+      await Promise.all(ids.map(id => updateProperty.mutateAsync({ id, lifecycle_stage: stage } as any)));
+      toast({ title: 'Stage updated', description: `${ids.length} properties moved to ${LIFECYCLE_STAGES.find(s => s.value === stage)?.label ?? stage}.` });
+      sel.clear();
+    } catch (err: any) {
+      toast({ title: 'Update failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
 
   // Stats
   const totalCount = properties?.length || 0;
@@ -283,37 +323,92 @@ export default function PropertiesV2() {
               description="Try adjusting your search or filter criteria."
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map(p => (
-                <PropertyCard
-                  key={p.id}
-                  property={p}
-                  roomSummary={roomSummaries?.get(p.id)}
-                  complianceStatus={complianceStatusMap?.get(p.id) ?? 'grey'}
-                  photoUrl={photoMap?.get(p.id)}
-                  onClick={() => navigate(`/properties-v2/${p.id}`)}
+            <>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <Checkbox
+                  checked={sel.isAllSelected}
+                  onCheckedChange={() => sel.toggleAll()}
+                  aria-label="Select all properties"
                 />
-              ))}
-            </div>
+                <span>{sel.count > 0 ? `${sel.count} of ${filtered.length} selected` : `Select all (${filtered.length})`}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map(p => (
+                  <PropertyCard
+                    key={p.id}
+                    property={p}
+                    roomSummary={roomSummaries?.get(p.id)}
+                    complianceStatus={complianceStatusMap?.get(p.id) ?? 'grey'}
+                    photoUrl={photoMap?.get(p.id)}
+                    selected={sel.isSelected(p.id)}
+                    onToggleSelect={() => sel.toggle(p.id)}
+                    onClick={() => navigate(`/properties-v2/${p.id}`)}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </ListState>
       </div>
+
+      <BulkActionBar count={sel.count} onClear={sel.clear} itemLabel="property">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <MoveRight className="h-3.5 w-3.5 mr-1.5" /> Move stage
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {LIFECYCLE_STAGES.map(s => (
+              <DropdownMenuItem key={s.value} onClick={() => handleBulkSetStage(s.value)}>
+                {s.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+        </Button>
+      </BulkActionBar>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {sel.count} {sel.count === 1 ? 'property' : 'properties'}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected properties and all their linked passport data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <PropertyWizard open={showWizard} onOpenChange={setShowWizard} />
     </AppLayout>
   );
 }
 
-function PropertyCard({ property: p, roomSummary, complianceStatus, photoUrl, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; complianceStatus: PropertyComplianceStatus; photoUrl?: string; onClick: () => void }) {
+function PropertyCard({ property: p, roomSummary, complianceStatus, photoUrl, selected, onToggleSelect, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; complianceStatus: PropertyComplianceStatus; photoUrl?: string; selected?: boolean; onToggleSelect?: () => void; onClick: () => void }) {
   const isWholeHouse = p.rent_basis === 'whole_house';
   const occupied = roomSummary?.total_occupied ?? 0;
   const lettable = roomSummary?.total_lettable ?? (p.total_lettable_rooms || 0);
   const grossRent = isWholeHouse ? (p.whole_house_rent_pcm ?? 0) : (roomSummary?.gross_rent_pcm ?? 0);
   return (
     <Card
-      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden`}
+      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden relative ${selected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
     >
+      {onToggleSelect && (
+        <div
+          className="absolute top-2 left-2 z-10 bg-card/90 backdrop-blur-sm rounded p-1 shadow"
+          onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
+        >
+          <Checkbox checked={!!selected} aria-label={`Select ${p.address_line_1}`} />
+        </div>
+      )}
       {photoUrl && (
         <div className="h-32 w-full overflow-hidden">
           <img src={photoUrl} alt={p.address_line_1} loading="lazy" width={400} height={128} className="w-full h-full object-cover" />
