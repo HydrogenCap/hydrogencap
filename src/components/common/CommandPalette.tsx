@@ -32,6 +32,7 @@ import {
   CommandShortcut,
 } from '@/components/ui/command';
 import { useGlobalSearch, type SearchResult } from '@/hooks/useGlobalSearch';
+import { useRecentlyViewed, type RecentEntityType } from '@/hooks/useRecentlyViewed';
 
 interface NavCommand {
   id: string;
