@@ -318,6 +318,29 @@ h1,
     --input: 220 13% 89%;
     --ring: 220 60% 28%;
   }
+
+  @page {
+    margin: 14mm 12mm;
+  }
+
+  /* Repeat table headers across printed pages */
+  thead { display: table-header-group; }
+  tr, td, th { page-break-inside: avoid; }
+
+  /* Hide non-essential UI in print */
+  nav,
+  aside,
+  [data-sidebar],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Let the matrix print fully without inner scrollbars */
+  .overflow-x-auto,
+  .overflow-y-auto {
+    overflow: visible !important;
+    max-height: none !important;
+  }
 }
 
 /* Focus visible for keyboard navigation */
