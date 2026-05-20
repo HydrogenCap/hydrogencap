@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, FileText, History, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Upload, FileText, History, ShieldOff, ShieldCheck, Copy, RotateCcw } from 'lucide-react';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { useComplianceDocumentsV2, useToggleRequirementV2 } from '@/hooks/useComplianceV2';
@@ -11,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+
+const GBP = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 });
 
 interface ComplianceDetailModalProps {
   row: ComplianceMatrixRow | null;
