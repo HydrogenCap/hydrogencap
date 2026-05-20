@@ -1,15 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download, X, Printer, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
 
 import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianceStatuses } from '@/hooks/useComplianceV2';
 import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
@@ -22,15 +25,42 @@ import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { SEO } from '@/components/SEO';
 
 export default function ComplianceV2() {
-  const { data: matrix, isLoading } = useComplianceMatrix();
+  const { data: matrix, isLoading, dataUpdatedAt } = useComplianceMatrix();
   const { data: score } = usePortfolioComplianceScoreV2();
   const refreshStatuses = useRefreshComplianceStatuses();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [statusFilter, setStatusFilter] = useState('needs_attention');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'matrix' | 'calendar'>('matrix');
+  // URL-synced state
+  const VALID_FILTERS = ['needs_attention', 'all', 'expired', 'missing', 'valid'];
+  const urlStatus = searchParams.get('status');
+  const urlView = searchParams.get('view');
+  const urlSearch = searchParams.get('q') ?? '';
+  const [statusFilter, setStatusFilterState] = useState(
+    urlStatus && VALID_FILTERS.includes(urlStatus) ? urlStatus : 'needs_attention',
+  );
+  const [searchQuery, setSearchQueryState] = useState(urlSearch);
+  const [viewMode, setViewModeState] = useState<'matrix' | 'calendar'>(urlView === 'calendar' ? 'calendar' : 'matrix');
   const [rescanning, setRescanning] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const updateUrl = useCallback((next: Record<string, string | null>) => {
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      for (const [k, v] of Object.entries(next)) {
+        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix')) {
+          params.delete(k);
+        } else {
+          params.set(k, v);
+        }
+      }
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setStatusFilter = (v: string) => { setStatusFilterState(v); updateUrl({ status: v }); };
+  const setSearchQuery = (v: string) => { setSearchQueryState(v); updateUrl({ q: v }); };
+  const setViewMode = (v: 'matrix' | 'calendar') => { setViewModeState(v); updateUrl({ view: v }); };
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
@@ -40,6 +70,24 @@ export default function ComplianceV2() {
   useEffect(() => {
     refreshStatuses.mutate();
   }, [refreshStatuses]);
+
+  // Keyboard shortcuts: "/" focuses search, Escape clears
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (e.key === '/' && !isTyping) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'Escape' && target === searchInputRef.current && searchQuery) {
+        setSearchQuery('');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
 
   const handleRescan = async () => {
     setRescanning(true);
@@ -79,10 +127,14 @@ export default function ComplianceV2() {
 
   const orgId = matrix?.[0]?.org_id || '';
 
+  const uniquePropertyCount = useMemo(() => new Set((matrix || []).map(r => r.property_id)).size, [matrix]);
+  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '';
+
   return (
     <AppLayout>
       <SEO title="Compliance Register — TenureIQ" description="Portfolio compliance, traffic-lighted by property and room." />
-      <div className="space-y-6">
+      <TooltipProvider delayDuration={200}>
+      <div className="space-y-6 print:space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
@@ -90,7 +142,14 @@ export default function ComplianceV2() {
               <ShieldCheck className="h-6 w-6" />
               Compliance Dashboard
             </h1>
-            <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
+            <p className="text-muted-foreground">
+              {uniquePropertyCount > 0
+                ? `${uniquePropertyCount} ${uniquePropertyCount === 1 ? 'property' : 'properties'} · Portfolio-wide compliance monitoring`
+                : 'Portfolio-wide compliance monitoring and document management'}
+              {dataUpdatedAt > 0 && (
+                <span className="ml-2 text-xs">· Updated {formatDistanceToNow(new Date(dataUpdatedAt), { addSuffix: true })}</span>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
@@ -140,9 +199,20 @@ export default function ComplianceV2() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => window.print()}
+              title="Print the compliance register"
+              className="print:hidden"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleRescan}
               disabled={rescanning}
               title="Re-run AI extraction on Vault documents that previously failed or are still pending"
+              className="print:hidden"
             >
               <RefreshCw className={cn('h-4 w-4 mr-2', rescanning && 'animate-spin')} />
               {rescanning ? 'Rescanning…' : 'Rescan Vault Documents'}
@@ -163,7 +233,19 @@ export default function ComplianceV2() {
             <>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Compliance Score</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    Compliance Score
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" aria-label="How the compliance score is calculated">
+                          <Info className="h-3 w-3 text-muted-foreground/70" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px] text-xs">
+                        Percentage of required compliance items that are currently valid. Expired, missing, critical and expiring-soon items all reduce the score.
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <span className={cn(
@@ -287,10 +369,10 @@ export default function ComplianceV2() {
         <TenancyChecklistSummaryCard />
 
         {/* Filters + View Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between print:hidden">
           <div className="flex items-center gap-3 flex-wrap">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px]" aria-label="Status filter">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -305,12 +387,34 @@ export default function ComplianceV2() {
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search property..."
+                ref={searchInputRef}
+                placeholder="Search property... (press /)"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 w-[200px]"
+                className="pl-9 pr-8 w-[220px]"
+                aria-label="Search properties"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
+
+            {filtersActive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); }}
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Clear filters
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-1 border rounded-lg p-0.5">
@@ -318,6 +422,7 @@ export default function ComplianceV2() {
               variant={viewMode === 'matrix' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('matrix')}
+              aria-pressed={viewMode === 'matrix'}
             >
               <Grid3X3 className="h-4 w-4 mr-1" /> Matrix
             </Button>
@@ -325,6 +430,7 @@ export default function ComplianceV2() {
               variant={viewMode === 'calendar' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('calendar')}
+              aria-pressed={viewMode === 'calendar'}
             >
               <CalendarDays className="h-4 w-4 mr-1" /> Calendar
             </Button>
@@ -346,6 +452,7 @@ export default function ComplianceV2() {
         )}
 
       </div>
+      </TooltipProvider>
 
       {/* Modals */}
       <ComplianceDetailModal

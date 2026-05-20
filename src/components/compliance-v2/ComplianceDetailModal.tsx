@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, FileText, History, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Upload, FileText, History, ShieldOff, ShieldCheck, Copy, RotateCcw } from 'lucide-react';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { useComplianceDocumentsV2, useToggleRequirementV2 } from '@/hooks/useComplianceV2';
@@ -11,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+
+const GBP = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 });
 
 interface ComplianceDetailModalProps {
   row: ComplianceMatrixRow | null;
@@ -44,6 +47,24 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
   const [showHistory, setShowHistory] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
   const [showOverrideInput, setShowOverrideInput] = useState(false);
+  const overrideRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showOverrideInput) {
+      // Defer to allow Input to mount
+      const t = setTimeout(() => overrideRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [showOverrideInput]);
+
+  // Reset transient state when row changes or modal closes
+  useEffect(() => {
+    if (!open) {
+      setShowHistory(false);
+      setShowOverrideInput(false);
+      setOverrideReason('');
+    }
+  }, [open, row?.requirement_id]);
 
   const toggleReq = useToggleRequirementV2();
 
@@ -77,13 +98,44 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
     }
   };
 
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(row.property_address);
+      toast.success('Address copied');
+    } catch {
+      toast.error('Could not copy address');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-lg">{DOC_TYPE_DISPLAY_NAMES[row.document_type]}</DialogTitle>
-          <DialogDescription className="text-sm">{row.property_address}</DialogDescription>
-          <div className="pt-2">{statusBadge(row.calculated_status)}</div>
+          <DialogDescription className="text-sm flex items-center gap-1.5">
+            <span className="truncate">{row.property_address}</span>
+            <button
+              type="button"
+              onClick={copyAddress}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label="Copy property address"
+              title="Copy address"
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </button>
+          </DialogDescription>
+          {row.entity_name && (
+            <p className="text-xs text-muted-foreground">Owned by {row.entity_name}</p>
+          )}
+          <div className="pt-2 flex items-center gap-2 flex-wrap">
+            {statusBadge(row.calculated_status)}
+            {row.review_frequency_months && (
+              <Badge variant="outline" className="text-xs gap-1">
+                <RotateCcw className="h-3 w-3" />
+                Renews every {row.review_frequency_months} {row.review_frequency_months === 1 ? 'month' : 'months'}
+              </Badge>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
@@ -110,21 +162,23 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
               {row.certificate_number && (
                 <div>
                   <span className="text-muted-foreground">Certificate Number</span>
-                  <p className="font-medium">{row.certificate_number}</p>
+                  <p className="font-medium font-mono text-xs">{row.certificate_number}</p>
                 </div>
               )}
               {row.cost != null && (
                 <div>
                   <span className="text-muted-foreground">Cost</span>
-                  <p className="font-medium">£{Number(row.cost).toFixed(2)}</p>
+                  <p className="font-medium">{GBP.format(Number(row.cost))}</p>
                 </div>
               )}
               {row.ai_extracted && (
                 <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">AI Extracted</Badge>
               )}
               {row.file_url && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={async () => {
                     try {
                       const signedUrl = await createSignedStorageUrl('compliance', row.file_url!);
@@ -134,10 +188,9 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
                       toast.error(error instanceof Error ? error.message : 'Failed to open document');
                     }
                   }}
-                  className="text-primary underline text-sm flex items-center gap-1 cursor-pointer"
                 >
-                  <FileText className="h-3.5 w-3.5" /> View / Download
-                </button>
+                  <FileText className="h-3.5 w-3.5 mr-1.5" /> View / Download
+                </Button>
               )}
               {row.document_notes && (
                 <div>
@@ -172,36 +225,60 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
 
           {/* Override reason input */}
           {showOverrideInput && (
-            <div className="space-y-2">
+            <div className="space-y-1.5 border-l-2 border-warning/40 pl-3">
+              <Label htmlFor="override-reason" className="text-xs text-muted-foreground">
+                Reason for marking as not required <span className="text-destructive">*</span>
+              </Label>
               <Input
-                placeholder="Reason for marking as not required..."
+                id="override-reason"
+                ref={overrideRef}
+                placeholder="e.g. Commercial unit — not subject to residential gas regs"
                 value={overrideReason}
                 onChange={e => setOverrideReason(e.target.value)}
               />
+              <div className="flex gap-2 pt-1">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleToggle}
+                  disabled={toggleReq.isPending || overrideReason.trim().length < 3}
+                >
+                  Confirm Mark Not Required
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => { setShowOverrideInput(false); setOverrideReason(''); }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Button onClick={onUpload} size="sm">
-              <Upload className="h-4 w-4 mr-1" /> Upload Document
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
-              <History className="h-4 w-4 mr-1" /> {showHistory ? 'Hide' : 'View'} History
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggle}
-              disabled={toggleReq.isPending}
-            >
-              {row.is_required ? (
-                <><ShieldOff className="h-4 w-4 mr-1" /> Mark Not Required</>
-              ) : (
-                <><ShieldCheck className="h-4 w-4 mr-1" /> Mark Required</>
-              )}
-            </Button>
-          </div>
+          {!showOverrideInput && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button onClick={onUpload} size="sm">
+                <Upload className="h-4 w-4 mr-1" /> Upload Document
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
+                <History className="h-4 w-4 mr-1" /> {showHistory ? 'Hide' : 'View'} History
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggle}
+                disabled={toggleReq.isPending}
+              >
+                {row.is_required ? (
+                  <><ShieldOff className="h-4 w-4 mr-1" /> Mark Not Required</>
+                ) : (
+                  <><ShieldCheck className="h-4 w-4 mr-1" /> Mark Required</>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

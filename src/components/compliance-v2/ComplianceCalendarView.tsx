@@ -122,23 +122,51 @@ export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: Comp
         </Popover>
       )}
 
+      {/* Jump-to-next-expiry */}
+      {visibleOnGrid > 0 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              const firstNonZero = months.find(m => (expiryByMonth.get(format(m, 'yyyy-MM')) || []).length > 0);
+              if (!firstNonZero) return;
+              const el = document.getElementById(`cal-month-${format(firstNonZero, 'yyyy-MM')}`);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.focus();
+              }
+            }}
+            className="text-xs text-primary hover:underline"
+          >
+            Jump to next expiry →
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-        {months.map(month => {
+        {months.map((month, idx) => {
           const key = format(month, 'yyyy-MM');
           const items = expiryByMonth.get(key) || [];
           const count = items.length;
+          const isCurrent = idx === 0;
           return (
             <Popover key={key}>
               <PopoverTrigger asChild>
                 <button
+                  id={`cal-month-${key}`}
+                  aria-label={`${format(month, 'MMMM yyyy')}: ${count} ${count === 1 ? 'expiry' : 'expiries'}`}
                   className={cn(
-                    'border rounded-lg p-3 text-center hover:bg-muted/30 transition-colors',
-                    count === 0 && 'border-success/30 bg-success/5',
+                    'border rounded-lg p-3 text-center hover:bg-muted/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    count === 0 && 'border-success/30 bg-success/5 cursor-default hover:bg-success/5',
                     count >= 1 && count <= 2 && 'border-warning/30 bg-warning/5',
                     count >= 3 && 'border-destructive/30 bg-destructive/5',
+                    isCurrent && 'ring-2 ring-primary/40',
                   )}
                 >
-                  <p className="text-xs text-muted-foreground">{format(month, 'MMM yyyy')}</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    {format(month, 'MMM yyyy')}
+                    {isCurrent && <span className="text-[9px] uppercase font-semibold text-primary">Now</span>}
+                  </p>
                   <p className={cn(
                     'text-2xl font-bold mt-1',
                     count === 0 && 'text-success',
