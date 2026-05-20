@@ -199,9 +199,20 @@ export default function ComplianceV2() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => window.print()}
+              title="Print the compliance register"
+              className="print:hidden"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleRescan}
               disabled={rescanning}
               title="Re-run AI extraction on Vault documents that previously failed or are still pending"
+              className="print:hidden"
             >
               <RefreshCw className={cn('h-4 w-4 mr-2', rescanning && 'animate-spin')} />
               {rescanning ? 'Rescanning…' : 'Rescan Vault Documents'}
