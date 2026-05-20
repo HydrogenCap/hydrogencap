@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import {
@@ -15,6 +15,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
+import { PulseActionDrawer, type PulseActionId } from './PulseActionDrawer';
 
 type Severity = 'critical' | 'warning' | 'info' | 'success';
 
@@ -68,6 +69,8 @@ export function PortfolioPulse({
   complianceEvents,
   propertiesCount,
 }: PortfolioPulseProps) {
+  const [openAction, setOpenAction] = useState<PulseActionId | null>(null);
+  const handleOpen = useCallback((id: string) => setOpenAction(id as PulseActionId), []);
   const { actions, summary, pulseScore } = useMemo(() => {
     const acts: PulseAction[] = [];
     const now = new Date();
@@ -239,10 +242,12 @@ export function PortfolioPulse({
                 const s = severityStyles[a.severity];
                 return (
                   <li key={a.id}>
-                    <Link
-                      to={a.href}
+                    <button
+                      type="button"
+                      onClick={() => handleOpen(a.id)}
+                      aria-label={`${a.title} — open details`}
                       className={cn(
-                        'group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all',
+                        'group w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all text-left',
                         'hover:shadow-sm hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         s.ring,
                       )}
@@ -260,11 +265,11 @@ export function PortfolioPulse({
                         <p className="text-xs text-muted-foreground truncate">{a.detail}</p>
                       </div>
                       <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-foreground">
-                        {a.cta}
+                        Details
                         <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                       </span>
                       <span className={cn('h-1.5 w-1.5 rounded-full sm:hidden', s.dot)} />
-                    </Link>
+                    </button>
                   </li>
                 );
               })}
@@ -272,7 +277,7 @@ export function PortfolioPulse({
 
             {actions.length > 0 && actions[0].id !== 'all-clear' && (
               <div className="mt-4 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>Prioritised by urgency · updated live</span>
+                <span>Click any item for metrics, filters & next steps</span>
                 <Button asChild variant="ghost" size="sm" className="h-7 px-2 text-xs">
                   <Link to="/insights">View full insights →</Link>
                 </Button>
@@ -281,6 +286,13 @@ export function PortfolioPulse({
           </div>
         </div>
       </CardContent>
+
+      <PulseActionDrawer
+        open={openAction !== null}
+        onOpenChange={(o) => !o && setOpenAction(null)}
+        actionId={openAction}
+        data={{ risks, criticalCount, rentSchedule, loanAlerts, complianceEvents }}
+      />
     </Card>
   );
 }
