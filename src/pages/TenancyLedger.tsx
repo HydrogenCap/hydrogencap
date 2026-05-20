@@ -11,10 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import { LoadingState, EmptyState } from '@/components/common';
+import { LoadingState, EmptyState, ResponsiveTable, type ColumnConfig } from '@/components/common';
 import {
   useTenancyLedger, usePaidOnTimeStats,
   useRentSchedule, normalizeRentItem, type LedgerEntry, type RentScheduleWithDetails,
