@@ -145,6 +145,32 @@ export default function PropertiesV2() {
     return result;
   }, [properties, search, filterEntity, filterType, filterStage, filterListing, sort]);
 
+  const sel = useTableSelection(filtered.map(p => p.id));
+
+  const handleBulkDelete = async () => {
+    const ids = sel.selectedIds;
+    setConfirmDelete(false);
+    try {
+      await Promise.all(ids.map(id => deleteProperty.mutateAsync(id)));
+      toast({ title: 'Properties deleted', description: `${ids.length} removed.` });
+      sel.clear();
+    } catch (err: any) {
+      toast({ title: 'Delete failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkSetStage = async (stage: string) => {
+    const ids = sel.selectedIds;
+    try {
+      await Promise.all(ids.map(id => updateProperty.mutateAsync({ id, lifecycle_stage: stage } as any)));
+      toast({ title: 'Stage updated', description: `${ids.length} properties moved to ${LIFECYCLE_STAGES.find(s => s.value === stage)?.label ?? stage}.` });
+      sel.clear();
+    } catch (err: any) {
+      toast({ title: 'Update failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
+
   // Stats
   const totalCount = properties?.length || 0;
   const totalValuation = properties?.reduce((s, p) => s + (p.current_valuation || 0), 0) || 0;
