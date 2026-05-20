@@ -323,21 +323,68 @@ export default function PropertiesV2() {
               description="Try adjusting your search or filter criteria."
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map(p => (
-                <PropertyCard
-                  key={p.id}
-                  property={p}
-                  roomSummary={roomSummaries?.get(p.id)}
-                  complianceStatus={complianceStatusMap?.get(p.id) ?? 'grey'}
-                  photoUrl={photoMap?.get(p.id)}
-                  onClick={() => navigate(`/properties-v2/${p.id}`)}
+            <>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <Checkbox
+                  checked={sel.isAllSelected}
+                  onCheckedChange={() => sel.toggleAll()}
+                  aria-label="Select all properties"
                 />
-              ))}
-            </div>
+                <span>{sel.count > 0 ? `${sel.count} of ${filtered.length} selected` : `Select all (${filtered.length})`}</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map(p => (
+                  <PropertyCard
+                    key={p.id}
+                    property={p}
+                    roomSummary={roomSummaries?.get(p.id)}
+                    complianceStatus={complianceStatusMap?.get(p.id) ?? 'grey'}
+                    photoUrl={photoMap?.get(p.id)}
+                    selected={sel.isSelected(p.id)}
+                    onToggleSelect={() => sel.toggle(p.id)}
+                    onClick={() => navigate(`/properties-v2/${p.id}`)}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </ListState>
       </div>
+
+      <BulkActionBar count={sel.count} onClear={sel.clear} itemLabel="property">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <MoveRight className="h-3.5 w-3.5 mr-1.5" /> Move stage
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {LIFECYCLE_STAGES.map(s => (
+              <DropdownMenuItem key={s.value} onClick={() => handleBulkSetStage(s.value)}>
+                {s.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+          <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+        </Button>
+      </BulkActionBar>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {sel.count} {sel.count === 1 ? 'property' : 'properties'}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected properties and all their linked passport data. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <PropertyWizard open={showWizard} onOpenChange={setShowWizard} />
     </AppLayout>
