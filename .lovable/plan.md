@@ -1,100 +1,56 @@
+## Entities Page Upgrade Plan
 
-# Improvements 1–10 — Implementation Plan
-
-Scope is large, so we'll ship in **4 phased waves**. Each wave is independently shippable and verifiable in preview. Nothing here changes the data model destructively — all additions are read-side composition over existing hooks/tables, plus a couple of small JSONB-backed user-preference tables.
-
----
-
-## Wave A — Daily landing & visibility (items #2, #3, #14 partial)
-
-**A1. "Today" page (`/today`)**
-A single morning landing page composed from existing hooks. Sections:
-- **Overdue & due-in-7-days**: compliance items (`compliance_matrix_v2`), tasks (`useTasks`), tenancy events (`useTenancyEvents`), rent arrears (`useArrearsPredictions`), filing deadlines (`useLegalEntities`).
-- **Recent activity**: last 24h from `useAuditLog` + `useActivityLog`.
-- **New this week**: payments matched, documents uploaded, leads added.
-- **Flagged risks**: top 5 from `usePortfolioInsightsAndRisks`.
-- Each row links to source record; "Snooze 7 days" + "Mark done" inline.
-- Add route + sidebar entry above Dashboard. Make it the default post-login landing (behind a user preference; default ON for new users, OFF for existing).
-
-**A2. Fix-it queue (`/fix-it`)**
-Aggregates every missing-data signal into one prioritised list:
-- Reuses `useMissingInfoV2`, `useDataCompletenessScoring`, compliance gaps, missing ownership %, missing valuations, missing rent on active tenancies, missing filing dates.
-- Columns: Property/Entity · What's missing · Impact (High/Med/Low) · Quick fix button (opens correct drawer/wizard step).
-- Filter by category + assignee. Bulk-dismiss with reason.
-
-**A3. Skeletons for slow pages**
-Replace spinners on Dashboard, Today, Fix-it, Compliance, Properties list with layout-matching skeletons.
+Six focused improvements to the `/entities` list page, keeping detail-page work out of scope. Built on top of existing hooks (`useLegalEntities`, `useEntityVerificationStatus`, `usePropertiesV2`, `useAllLoanFacilities`).
 
 ---
 
-## Wave B — Explainability & ownership (items #1, #4, #5)
+### 1. KPI Header Strip
+Add a 4-card summary row above the filter bar showing portfolio-wide entity stats:
 
-**B1. Explainable KPIs**
-- New `<KPIBreakdownPopover>` component. Click any KPI on Dashboard / Portfolio / Entity / Property → opens drawer showing inputs, formula text, contributing rows (sortable table), and a "Copy calculation" button.
-- Wire to: Portfolio Value, Debt, Equity, LTV, NOI, DSCR, Net Yield, Cashflow, Rent.
-- Centralise formulas in `src/lib/kpi/explainers.ts` so PDF + live UI share the source of truth.
+- **Total entities** (with breakdown chip: SPVs / Personal / JV / Trust)
+- **Aggregate portfolio value** (sum across all entities)
+- **Aggregate debt + blended LTV**
+- **Filings attention needed** (count of overdue + due-within-30d Accounts/Confirmation Statements) — clickable to filter
 
-**B2. Ownership graph extension**
-- Extend `useOwnershipFlowchartData` to optionally include properties + loans beneath each entity node.
-- Add toggle: "Show properties" / "Show loans" / "Beneficial vs Direct (side-by-side)".
-- Add effective-date slider: render the graph as of a chosen date using existing audit history. (Read-only; no new tables — derive from `useAuditLog` JSONB diffs for ownership-related tables.)
+### 2. Quick Filter Chips + Saved Filter State
+Replace the lone sort dropdown with a chip row:
+- All • SPV • Personal • JV/Trust • Group Parent • Stale sync (>24h) • Filings overdue • Filings <30d • Dormant
+- Chips combine with the search box. Active filter count badge.
+- Persist last filter to `localStorage` so it survives reloads.
 
-**B3. Entity operating view parity**
-- New `EntityOperatingPanel` on existing entity detail page, mirroring Property Passport shape: Value · Debt · Equity · Rent · Cashflow · LTV · Filing health · Properties list · Loans · Bank accounts · Documents · Recent activity.
-- Reuses `useCompanyPropertyExposure`, `useEntityCompliance`, `useLoanFacilities`, `useEntityInvestorData`.
+### 3. Mobile-Responsive Table
+Convert the 11-column `<Table>` to `ResponsiveTable` (same pattern used on Tenants, Lending, Investors). Mobile shows Name + Type + Value + LTV; rest collapse into expandable card. Solves the horizontal scroll on small screens.
 
----
+### 4. Bulk Action Toolbar
+Add a checkbox column. When ≥1 row selected, replace the filter bar with a sticky action toolbar:
+- **Sync selected** (CH sync only the selection)
+- **Export CSV** (entity register snapshot)
+- **Archive / mark dormant** (status update)
+- **Clear selection**
 
-## Wave C — Power-user UX (items #6, #7, #8)
+Keeps "Sync All SPVs" button for the no-selection case.
 
-**C1. Bulk actions**
-- Add `useTableSelection` hook + `<BulkActionBar>` sticky footer.
-- Apply to Properties V2 list, Tenants list, Compliance list, Documents.
-- Actions: Bulk tag, bulk lifecycle change, bulk export CSV, bulk archive, bulk assign owner. Permissions gated by `useUserRole`.
+### 5. Per-Row Sync Indicators & Last-Synced Pill
+- Replace the static "Verified / Mismatch / Not Synced" cell with a richer pill that includes the relative timestamp ("2h ago", "5d ago", "Never").
+- Show a small spinner inline on the row while that specific entity is syncing (via `useSyncEntity` mutation state keyed by entityId).
+- Add an inline "Sync now" icon button on hover for one-off refresh without leaving the page.
 
-**C2. Saved views**
-- New table `saved_views` (id, user_id, org_id, scope, name, filters_json, is_shared, created_at) with RLS.
-- Generic `<SavedViewsMenu scope="properties" />` reads/writes URL search params ↔ filters.
-- Applied to Properties, Compliance, Tenants, Tasks.
-
-**C3. Search upgrades**
-- Add fuzzy ranking client-side (Fuse.js, 6kb) over the `global_search` RPC results.
-- Add hover-preview card (address, status, key metric) in Command Palette.
-- Rank `useRecentlyViewed` matches above cold results.
-
----
-
-## Wave D — Mobile & print parity (items #9, #10)
-
-**D1. Mobile responsive tables**
-- New `<ResponsiveTable>` wrapper: renders `<table>` on `md+`, stacked cards on mobile.
-- Apply to Properties, Tenants, Compliance, Work Orders, Rent payments.
-- Make compliance calendar collapse to a vertical agenda list under `md`.
-
-**D2. Print/PDF parity audit**
-- Add a `useReportData` shared hook consumed by both Bank Presentation PDF and live Passport.
-- Snapshot test: render the same property in PDF generator + live page, diff the headline numbers.
-- Fix any drift found; document in `docs/release/`.
+### 6. CSV Export of Entity Register
+Add a "Export" button next to "Add Entity" that downloads a CSV of the currently filtered list with columns: Entity Name, Company Number, Type, Status, Properties, Value, Debt, LTV, Monthly Rent, CH Status, Accounts Due, Confirmation Due, Last Synced. Reuses the existing CSV utility pattern from Data Export Utilities V2.
 
 ---
 
-## Technical notes
+### Out of scope (suggested follow-ups, not in this plan)
+- Detail-drawer / row expand with Officers + Shares + Filings
+- Filings deadline tracker as a dedicated page widget
+- AML/KYC director tracking
+- PSC/Director change diff alerts after sync
+- Per-entity P&L card
 
-- **New tables**: only `saved_views` and `user_dismissed_fixit` (id, user_id, target_type, target_id, reason, dismissed_until). Both small, both RLS by user_id + org_id.
-- **No V1 references**; all queries hit V2 tables per project memory.
-- **Casts**: continue the `any`-cast pattern for new Supabase queries until types regen.
-- **Design tokens**: navy/gold only; DM Serif Display for page H1 only; semantic tokens elsewhere.
-- **Routing**: all new pages lazy-loaded in `src/App.tsx`; `usePageTitle` on each.
-- **Tests**: smoke Playwright spec for `/today` and `/fix-it` load; Vitest for `kpi/explainers.ts` formulas; snapshot test for PDF/live parity.
-- **Feature flags**: none — ship behind sidebar entries with `useSectionVisibility` so users can hide.
-
----
-
-## Suggested shipping order
-
-1. Wave A (biggest perceived value, ~1 build) — Today + Fix-it + skeletons
-2. Wave B (high strategic value) — KPI breakdowns + ownership + entity view
-3. Wave C (quality of life for heavy users) — bulk + saved views + search
-4. Wave D (polish, can run partly in parallel)
-
-I'd recommend approving the whole plan and I'll ship Wave A first, then check in before Wave B.
+### Technical notes
+- All work is frontend-only in `src/pages/Entities.tsx` plus 1–2 small component splits (`EntitiesKPIStrip.tsx`, `EntitiesBulkBar.tsx`, `EntitiesFilterChips.tsx`).
+- No DB migrations. No edge function changes.
+- Reuse `ResponsiveTable` + `ColumnConfig` from `@/components/common`.
+- Reuse existing CSV export helper if one exists; otherwise inline a small `Blob` + `URL.createObjectURL` helper.
+- The existing auto-sync `useEffect` stays; per-row sync spinners will hook into the same `useSyncEntity` mutation.
+- Brand styling preserved (navy/gold, semantic tokens — no hardcoded colors).

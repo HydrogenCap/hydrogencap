@@ -1,35 +1,32 @@
 import { useState, useMemo, useEffect, useRef, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, RefreshCw, Loader2, AlertCircle as AlertCircleIcon, CheckCircle2 } from 'lucide-react';
+import {
+  Plus, Search, Building2, User, Handshake, Shield,
+  CheckCircle, AlertTriangle, RefreshCw, Loader2,
+  AlertCircle as AlertCircleIcon, CheckCircle2, Download, Archive,
+} from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { useLegalEntities } from '@/hooks/useLegalEntities';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card } from '@/components/ui/card';
+import { ResponsiveTable, type ColumnConfig } from '@/components/common';
+import { BulkActionBar } from '@/components/common/BulkActionBar';
+import { useLegalEntities, useUpdateLegalEntity, type LegalEntity } from '@/hooks/useLegalEntities';
 import { useEntityVerificationStatus, useSyncEntity, type EntityVerification } from '@/hooks/useCompaniesHouseV2';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useAllLoanFacilities } from '@/hooks/useLoanFacilities';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { getComplianceStatus } from '@/lib/complianceStatus';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
+import { EntitiesKPIStrip } from '@/components/entities/EntitiesKPIStrip';
+import { EntitiesFilterChips, type EntityFilterKey } from '@/components/entities/EntitiesFilterChips';
 import { useToast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
+
+const FILTER_STORAGE_KEY = 'entities_filter_chip';
 
 const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline'; icon: ComponentType<{ className?: string }> }> = {
   spv: { label: 'SPV', variant: 'default', icon: Building2 },
@@ -38,7 +35,6 @@ const TYPE_CONFIG: Record<string, { label: string; variant: 'default' | 'seconda
   joint_venture: { label: 'Joint Venture', variant: 'outline', icon: Handshake },
   trust: { label: 'Trust', variant: 'outline', icon: Shield },
 };
-
 const DEFAULT_TYPE_CONFIG = { label: 'Entity', variant: 'outline' as const, icon: Building2 };
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -46,22 +42,31 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   dormant: { label: 'Dormant', className: 'bg-muted text-muted-foreground border-border' },
   dissolved: { label: 'Dissolved', className: 'bg-destructive/10 text-destructive border-destructive/20' },
 };
-
 const DEFAULT_STATUS_CONFIG = { label: 'Unknown', className: 'bg-muted text-muted-foreground border-border' };
+
+const STALE_MS = 24 * 60 * 60 * 1000;
+const DUE_SOON_MS = 30 * 24 * 60 * 60 * 1000;
 
 function formatGBP(value: number | null | undefined) {
   if (value == null) return '—';
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 }
-
 function formatPercent(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return '—';
   return `${value.toFixed(1)}%`;
+}
+function relativeTime(iso: string | null | undefined): string {
+  if (!iso) return 'Never';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
 }
 
 function ComplianceStatusIndicator({ dueDate }: { dueDate: string }) {
@@ -90,6 +95,31 @@ interface EntityMetrics {
   ltv: number | null;
 }
 
+interface Row extends LegalEntity {
+  metrics: EntityMetrics;
+  verification: EntityVerification | undefined;
+  needsAttention: boolean;
+  isStale: boolean;
+}
+
+function csvEscape(v: unknown): string {
+  if (v == null) return '';
+  const s = String(v);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function downloadCSV(filename: string, rows: string[][]) {
+  const csv = rows.map((r) => r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Entities() {
   const { data: entities, isLoading } = useLegalEntities();
   const { data: verifications } = useEntityVerificationStatus();
@@ -97,79 +127,147 @@ export default function Entities() {
   const { data: loans } = useAllLoanFacilities();
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const syncEntity = useSyncEntity();
+  const updateEntity = useUpdateLegalEntity();
   const { toast } = useToast();
   const navigate = useNavigate();
+
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'type' | 'status' | 'value' | 'debt' | 'ltv'>('name');
+  const [filterChip, setFilterChip] = useState<EntityFilterKey>(() => {
+    if (typeof window === 'undefined') return 'all';
+    return (localStorage.getItem(FILTER_STORAGE_KEY) as EntityFilterKey) || 'all';
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [bulkSyncing, setBulkSyncing] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    localStorage.setItem(FILTER_STORAGE_KEY, filterChip);
+  }, [filterChip]);
 
   const verificationMap = useMemo(() => {
     const map: Record<string, EntityVerification> = {};
-    verifications?.forEach(v => { map[v.entity_id] = v; });
+    verifications?.forEach((v) => { map[v.entity_id] = v; });
     return map;
   }, [verifications]);
 
   const entityMetricsMap = useMemo(() => {
     const map = new Map<string, EntityMetrics>();
     const propertyIdToEntity = new Map<string, string>();
-
-    allPropertiesV2?.forEach((property) => {
-      propertyIdToEntity.set(property.id, property.entity_id);
-      const current = map.get(property.entity_id) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
-      const monthlyRent = property.rent_basis === 'whole_house'
-        ? (property.whole_house_rent_pcm || 0)
-        : (roomSummaries?.get(property.id)?.gross_rent_pcm || 0);
-      map.set(property.entity_id, {
-        ...current,
-        propertyCount: current.propertyCount + 1,
-        totalValue: current.totalValue + (property.current_valuation || 0),
-        monthlyRent: current.monthlyRent + monthlyRent,
+    allPropertiesV2?.forEach((p) => {
+      propertyIdToEntity.set(p.id, p.entity_id);
+      const cur = map.get(p.entity_id) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
+      const rent = p.rent_basis === 'whole_house' ? (p.whole_house_rent_pcm || 0) : (roomSummaries?.get(p.id)?.gross_rent_pcm || 0);
+      map.set(p.entity_id, {
+        ...cur,
+        propertyCount: cur.propertyCount + 1,
+        totalValue: cur.totalValue + (p.current_valuation || 0),
+        monthlyRent: cur.monthlyRent + rent,
       });
     });
-
     loans?.forEach((loan) => {
       if (!['active', 'drawdown', 'pending_drawdown'].includes(loan.status)) return;
-      const entityId = propertyIdToEntity.get(loan.property_id) || loan.entity_id;
-      const current = map.get(entityId) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
-      map.set(entityId, {
-        ...current,
-        totalDebt: current.totalDebt + (loan.current_balance || 0),
-      });
+      const eid = propertyIdToEntity.get(loan.property_id) || loan.entity_id;
+      const cur = map.get(eid) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
+      map.set(eid, { ...cur, totalDebt: cur.totalDebt + (loan.current_balance || 0) });
     });
-
-    map.forEach((metrics, entityId) => {
-      map.set(entityId, {
-        ...metrics,
-        ltv: metrics.totalValue > 0 ? (metrics.totalDebt / metrics.totalValue) * 100 : null,
-      });
+    map.forEach((m, id) => {
+      map.set(id, { ...m, ltv: m.totalValue > 0 ? (m.totalDebt / m.totalValue) * 100 : null });
     });
-
     return map;
   }, [allPropertiesV2, loans, roomSummaries]);
 
-  const filtered = useMemo(() => {
+  const enrichedRows: Row[] = useMemo(() => {
     if (!entities) return [];
-    const result = entities.filter(e =>
-      e.entity_name.toLowerCase().includes(search.toLowerCase()) ||
-      (e.company_number && e.company_number.toLowerCase().includes(search.toLowerCase()))
-    );
-    result.sort((a, b) => {
-      if (sortBy === 'name') return a.entity_name.localeCompare(b.entity_name);
-      if (sortBy === 'type') return a.entity_type.localeCompare(b.entity_type);
-      if (sortBy === 'status') return a.status.localeCompare(b.status);
-      const aMetrics = entityMetricsMap.get(a.id);
-      const bMetrics = entityMetricsMap.get(b.id);
-      if (sortBy === 'value') return (bMetrics?.totalValue || 0) - (aMetrics?.totalValue || 0);
-      if (sortBy === 'debt') return (bMetrics?.totalDebt || 0) - (aMetrics?.totalDebt || 0);
-      if (sortBy === 'ltv') return (bMetrics?.ltv || 0) - (aMetrics?.ltv || 0);
-      return 0;
+    const now = Date.now();
+    return entities.map((e) => {
+      const v = verificationMap[e.id];
+      const metrics = entityMetricsMap.get(e.id) || { propertyCount: 0, totalValue: 0, totalDebt: 0, monthlyRent: 0, ltv: null };
+      const accountsOverdue = v?.ch_accounts_next_due ? getComplianceStatus(v.ch_accounts_next_due).status === 'overdue' : false;
+      const accountsSoon = v?.ch_accounts_next_due ? getComplianceStatus(v.ch_accounts_next_due).status === 'due_soon' : false;
+      const confOverdue = v?.ch_confirmation_next_due ? getComplianceStatus(v.ch_confirmation_next_due).status === 'overdue' : false;
+      const confSoon = v?.ch_confirmation_next_due ? getComplianceStatus(v.ch_confirmation_next_due).status === 'due_soon' : false;
+      const needsAttention = accountsOverdue || accountsSoon || confOverdue || confSoon;
+      const isStale = (e.entity_type === 'spv') && !!e.company_number && (!v?.last_synced || now - new Date(v.last_synced).getTime() > STALE_MS);
+      return { ...e, metrics, verification: v, needsAttention, isStale };
     });
-    return result;
-  }, [entities, search, sortBy, entityMetricsMap]);
+  }, [entities, verificationMap, entityMetricsMap]);
+
+  const totals = useMemo(() => {
+    const breakdown = { spv: 0, personal: 0, jv: 0, trust: 0 };
+    let totalValue = 0;
+    let totalDebt = 0;
+    let attention = 0;
+    enrichedRows.forEach((r) => {
+      if (r.entity_type === 'spv') breakdown.spv++;
+      else if (r.entity_type === 'personal') breakdown.personal++;
+      else if (r.entity_type === 'joint_venture') breakdown.jv++;
+      else if (r.entity_type === 'trust') breakdown.trust++;
+      totalValue += r.metrics.totalValue;
+      totalDebt += r.metrics.totalDebt;
+      if (r.needsAttention) attention++;
+    });
+    return {
+      total: enrichedRows.length,
+      breakdown,
+      totalValue,
+      totalDebt,
+      blendedLTV: totalValue > 0 ? (totalDebt / totalValue) * 100 : null,
+      attention,
+    };
+  }, [enrichedRows]);
+
+  const chipCounts: Partial<Record<EntityFilterKey, number>> = useMemo(() => {
+    const c: Partial<Record<EntityFilterKey, number>> = { all: enrichedRows.length };
+    let spv = 0, personal = 0, jvt = 0, gp = 0, stale = 0, fo = 0, fs = 0, dormant = 0;
+    enrichedRows.forEach((r) => {
+      if (r.entity_type === 'spv') spv++;
+      if (r.entity_type === 'personal') personal++;
+      if (r.entity_type === 'joint_venture' || r.entity_type === 'trust') jvt++;
+      if (r.is_group_parent) gp++;
+      if (r.isStale) stale++;
+      const v = r.verification;
+      if (v?.ch_accounts_next_due && getComplianceStatus(v.ch_accounts_next_due).status === 'overdue') fo++;
+      else if (v?.ch_confirmation_next_due && getComplianceStatus(v.ch_confirmation_next_due).status === 'overdue') fo++;
+      if (v?.ch_accounts_next_due && getComplianceStatus(v.ch_accounts_next_due).status === 'due_soon') fs++;
+      else if (v?.ch_confirmation_next_due && getComplianceStatus(v.ch_confirmation_next_due).status === 'due_soon') fs++;
+      if (r.status === 'dormant') dormant++;
+    });
+    return { ...c, spv, personal, jv_trust: jvt, group_parent: gp, stale_sync: stale, filings_overdue: fo, filings_due_soon: fs, dormant };
+  }, [enrichedRows]);
+
+  const filtered = useMemo(() => {
+    const s = search.toLowerCase();
+    return enrichedRows.filter((r) => {
+      const matchesSearch =
+        r.entity_name.toLowerCase().includes(s) ||
+        (r.company_number && r.company_number.toLowerCase().includes(s));
+      if (!matchesSearch) return false;
+      switch (filterChip) {
+        case 'all': return true;
+        case 'spv': return r.entity_type === 'spv';
+        case 'personal': return r.entity_type === 'personal';
+        case 'jv_trust': return r.entity_type === 'joint_venture' || r.entity_type === 'trust';
+        case 'group_parent': return !!r.is_group_parent;
+        case 'stale_sync': return r.isStale;
+        case 'filings_overdue': {
+          const v = r.verification;
+          return (v?.ch_accounts_next_due && getComplianceStatus(v.ch_accounts_next_due).status === 'overdue') ||
+                 (v?.ch_confirmation_next_due && getComplianceStatus(v.ch_confirmation_next_due).status === 'overdue');
+        }
+        case 'filings_due_soon': {
+          const v = r.verification;
+          return (v?.ch_accounts_next_due && getComplianceStatus(v.ch_accounts_next_due).status === 'due_soon') ||
+                 (v?.ch_confirmation_next_due && getComplianceStatus(v.ch_confirmation_next_due).status === 'due_soon');
+        }
+        case 'dormant': return r.status === 'dormant';
+        default: return true;
+      }
+    });
+  }, [enrichedRows, search, filterChip]);
 
   const handleBulkSync = async () => {
-    const spvs = entities?.filter(e => e.entity_type === 'spv' && e.company_number) || [];
+    const spvs = entities?.filter((e) => e.entity_type === 'spv' && e.company_number) || [];
     if (spvs.length === 0) { toast({ title: 'No SPVs with company numbers to sync' }); return; }
     setBulkSyncing(true);
     let synced = 0;
@@ -177,82 +275,255 @@ export default function Entities() {
       try {
         await syncEntity.mutateAsync({ entityId: spv.id, companyNumber: spv.company_number! });
         synced++;
-      } catch (err) { console.error('Failed to sync entity:', err); /* continue */ }
-      await new Promise(r => setTimeout(r, 500));
+      } catch (err) { console.error('Failed to sync entity:', err); }
+      await new Promise((r) => setTimeout(r, 500));
     }
     setBulkSyncing(false);
-    const issues = verifications?.filter(v => v.verification_status === 'status_mismatch').length || 0;
-    const overdue = verifications?.filter(v => v.accounts_filing_status === 'overdue' || v.confirmation_filing_status === 'overdue').length || 0;
-    toast({ title: `Synced ${synced} SPVs. ${issues} discrepancies. ${overdue} overdue filings.` });
+    toast({ title: `Synced ${synced} of ${spvs.length} SPVs` });
   };
 
-  // Auto-sync on page load: refresh stale (>24h) or never-synced SPVs in the
-  // background once per session. Silent — no toast unless user triggers manual sync.
+  const handleRowSync = async (entity: LegalEntity) => {
+    if (!entity.company_number) return;
+    setSyncingIds((prev) => new Set(prev).add(entity.id));
+    try {
+      await syncEntity.mutateAsync({ entityId: entity.id, companyNumber: entity.company_number });
+      toast({ title: `${entity.entity_name} synced` });
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Sync failed', variant: 'destructive' });
+    } finally {
+      setSyncingIds((prev) => { const n = new Set(prev); n.delete(entity.id); return n; });
+    }
+  };
+
+  const handleExportCSV = (rows: Row[]) => {
+    const header = ['Entity Name','Company Number','Type','Status','Properties','Value (GBP)','Debt (GBP)','LTV (%)','Monthly Rent (GBP)','CH Status','Accounts Due','Confirmation Due','Last Synced'];
+    const body = rows.map((r) => [
+      r.entity_name,
+      r.company_number || '',
+      r.entity_type,
+      r.status,
+      r.metrics.propertyCount,
+      Math.round(r.metrics.totalValue),
+      Math.round(r.metrics.totalDebt),
+      r.metrics.ltv != null ? r.metrics.ltv.toFixed(1) : '',
+      Math.round(r.metrics.monthlyRent),
+      r.verification?.verification_status || 'not_synced',
+      r.verification?.ch_accounts_next_due || '',
+      r.verification?.ch_confirmation_next_due || '',
+      r.verification?.last_synced || '',
+    ].map(String));
+    downloadCSV(`entities-${new Date().toISOString().slice(0,10)}.csv`, [header, ...body]);
+    toast({ title: `Exported ${rows.length} entities` });
+  };
+
+  const handleBulkSyncSelected = async () => {
+    const targets = filtered.filter((r) => selected.has(r.id) && r.company_number);
+    if (targets.length === 0) { toast({ title: 'No syncable entities in selection' }); return; }
+    setBulkSyncing(true);
+    let n = 0;
+    for (const t of targets) {
+      try {
+        await syncEntity.mutateAsync({ entityId: t.id, companyNumber: t.company_number! });
+        n++;
+      } catch (err) { console.error(err); }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    setBulkSyncing(false);
+    toast({ title: `Synced ${n} of ${targets.length} selected` });
+  };
+
+  const handleBulkMarkDormant = async () => {
+    const targets = filtered.filter((r) => selected.has(r.id) && r.status !== 'dormant');
+    if (targets.length === 0) { toast({ title: 'Nothing to update' }); return; }
+    let n = 0;
+    for (const t of targets) {
+      try {
+        await updateEntity.mutateAsync({ id: t.id, status: 'dormant' });
+        n++;
+      } catch (err) { console.error(err); }
+    }
+    toast({ title: `Marked ${n} entities as dormant` });
+    setSelected(new Set());
+  };
+
+  // Auto-sync stale SPVs once per session (silent)
   const autoSyncedRef = useRef(false);
   useEffect(() => {
     if (autoSyncedRef.current) return;
     if (!entities || !verifications) return;
-
     const SESSION_KEY = 'entities_autosync_done';
-    if (sessionStorage.getItem(SESSION_KEY)) {
-      autoSyncedRef.current = true;
-      return;
-    }
-
-    const STALE_MS = 24 * 60 * 60 * 1000; // 24h
+    if (sessionStorage.getItem(SESSION_KEY)) { autoSyncedRef.current = true; return; }
     const now = Date.now();
-    const verifByEntity = new Map(verifications.map(v => [v.entity_id, v]));
-
-    const stale = entities.filter(e => {
-      if (e.entity_type !== 'spv') return false;
-      if (!e.company_number) return false;
-      const v = verifByEntity.get(e.id);
-      if (!v || !v.last_synced) return true;
-      return now - new Date(v.last_synced).getTime() > STALE_MS;
+    const vByE = new Map(verifications.map((v) => [v.entity_id, v]));
+    const stale = entities.filter((e) => {
+      if (e.entity_type !== 'spv' || !e.company_number) return false;
+      const v = vByE.get(e.id);
+      return !v?.last_synced || now - new Date(v.last_synced).getTime() > STALE_MS;
     });
-
-    if (stale.length === 0) {
-      autoSyncedRef.current = true;
-      sessionStorage.setItem(SESSION_KEY, '1');
-      return;
-    }
-
     autoSyncedRef.current = true;
     sessionStorage.setItem(SESSION_KEY, '1');
-
+    if (stale.length === 0) return;
     (async () => {
-      for (const entity of stale) {
-        try {
-          await syncEntity.mutateAsync({ entityId: entity.id, companyNumber: entity.company_number! });
-        } catch (err) {
-          console.error('Auto-sync failed for entity', entity.id, err);
-        }
-        await new Promise(r => setTimeout(r, 600));
+      for (const e of stale) {
+        try { await syncEntity.mutateAsync({ entityId: e.id, companyNumber: e.company_number! }); }
+        catch (err) { console.error('Auto-sync failed', e.id, err); }
+        await new Promise((r) => setTimeout(r, 600));
       }
     })();
   }, [entities, verifications, syncEntity]);
 
-  const CHStatusCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
-    if (entityType !== 'spv' && entityType !== 'ltd_company') return <span className="text-muted-foreground text-xs">N/A</span>;
-    const v = verificationMap[entityId];
-    if (!v || v.verification_status === 'not_synced') return <Badge variant="secondary" className="text-xs">Not Synced</Badge>;
-    if (v.verification_status === 'verified') return <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Verified</span>;
-    return <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1"><AlertTriangle className="h-3.5 w-3.5" /> Mismatch</span>;
+  const toggleRow = (id: string) => {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((r) => r.id)));
   };
 
+  const columns: ColumnConfig<Row>[] = [
+    {
+      key: 'select',
+      header: '',
+      render: (r) => (
+        <Checkbox
+          checked={selected.has(r.id)}
+          onCheckedChange={() => toggleRow(r.id)}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Select ${r.entity_name}`}
+        />
+      ),
+      hideOnMobile: true,
+    },
+    {
+      key: 'name',
+      header: 'Entity Name',
+      render: (r) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold">{r.entity_name}</p>
+            {r.is_group_parent && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+                Group
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground font-mono">{r.company_number || 'No company number'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (r) => {
+        const cfg = TYPE_CONFIG[r.entity_type] || DEFAULT_TYPE_CONFIG;
+        const Icon = cfg.icon;
+        return (
+          <Badge variant={cfg.variant} className="gap-1">
+            <Icon className="h-3 w-3" />
+            {cfg.label}
+          </Badge>
+        );
+      },
+    },
+    { key: 'properties', header: 'Properties', render: (r) => <span className="text-muted-foreground">{r.metrics.propertyCount}</span>, hideOnMobile: true },
+    { key: 'value', header: 'Value', render: (r) => <span className="font-medium">{formatGBP(r.metrics.totalValue)}</span> },
+    { key: 'debt', header: 'Debt', render: (r) => formatGBP(r.metrics.totalDebt), hideOnMobile: true },
+    { key: 'ltv', header: 'LTV', render: (r) => formatPercent(r.metrics.ltv) },
+    { key: 'rent', header: 'Rent/mo', render: (r) => formatGBP(r.metrics.monthlyRent), hideOnMobile: true },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (r) => {
+        const cfg = STATUS_CONFIG[r.status] || DEFAULT_STATUS_CONFIG;
+        return <Badge variant="outline" className={cfg.className}>{cfg.label}</Badge>;
+      },
+      hideOnMobile: true,
+    },
+    {
+      key: 'ch',
+      header: 'CH Sync',
+      render: (r) => {
+        if (r.entity_type !== 'spv') return <span className="text-muted-foreground text-xs">N/A</span>;
+        const v = r.verification;
+        const isSyncing = syncingIds.has(r.id);
+        const status = v?.verification_status || 'not_synced';
+        const statusEl =
+          isSyncing ? (
+            <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Syncing…</span>
+          ) : status === 'verified' ? (
+            <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 text-xs"><CheckCircle className="h-3.5 w-3.5" />Verified</span>
+          ) : status === 'not_synced' ? (
+            <Badge variant="secondary" className="text-xs">Not synced</Badge>
+          ) : (
+            <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1 text-xs"><AlertTriangle className="h-3.5 w-3.5" />Mismatch</span>
+          );
+        return (
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col">
+              {statusEl}
+              <span className="text-[10px] text-muted-foreground">{relativeTime(v?.last_synced)}</span>
+            </div>
+            {r.company_number && !isSyncing && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => { e.stopPropagation(); handleRowSync(r); }}
+                aria-label="Sync now"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        );
+      },
+      hideOnMobile: true,
+    },
+    {
+      key: 'accounts',
+      header: 'Accounts',
+      render: (r) =>
+        r.company_number && r.verification?.ch_accounts_next_due ? (
+          <ComplianceStatusIndicator dueDate={r.verification.ch_accounts_next_due} />
+        ) : r.company_number ? <span className="text-xs text-muted-foreground">Not synced</span>
+        : <span className="text-xs text-muted-foreground">—</span>,
+      hideOnMobile: true,
+    },
+    {
+      key: 'conf',
+      header: 'Conf. Stmt',
+      render: (r) =>
+        r.company_number && r.verification?.ch_confirmation_next_due ? (
+          <ComplianceStatusIndicator dueDate={r.verification.ch_confirmation_next_due} />
+        ) : r.company_number ? <span className="text-xs text-muted-foreground">Not synced</span>
+        : <span className="text-xs text-muted-foreground">—</span>,
+      hideOnMobile: true,
+    },
+  ];
+
+  // Wrap render to add group-hover via custom mobileCardRender? Simpler: add wrapper className via Card
   return (
     <AppLayout>
       <SEO title="Entities — TenureIQ" description="Manage SPVs, partnerships, and trusts with Companies House data built in." />
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Entities</h1>
             <p className="text-muted-foreground">Manage your legal entities, directors, shareholders, and entity-level portfolio performance</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => handleExportCSV(filtered)} disabled={filtered.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
             <Button variant="outline" onClick={handleBulkSync} disabled={bulkSyncing}>
               {bulkSyncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-              Sync All SPVs
+              Sync all SPVs
             </Button>
             <Button onClick={() => setShowAddModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -261,126 +532,74 @@ export default function Entities() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+        {!isLoading && (
+          <EntitiesKPIStrip
+            total={totals.total}
+            typeBreakdown={totals.breakdown}
+            totalValue={totals.totalValue}
+            totalDebt={totals.totalDebt}
+            blendedLTV={totals.blendedLTV}
+            filingsAttention={totals.attention}
+            onClickFilings={() => setFilterChip('filings_overdue')}
+          />
+        )}
+
+        <div className="space-y-3">
+          <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or company number..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+            <Input placeholder="Search by name or company number..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Sort by Name</SelectItem>
-              <SelectItem value="type">Sort by Type</SelectItem>
-              <SelectItem value="status">Sort by Status</SelectItem>
-              <SelectItem value="value">Sort by Value</SelectItem>
-              <SelectItem value="debt">Sort by Debt</SelectItem>
-              <SelectItem value="ltv">Sort by LTV</SelectItem>
-            </SelectContent>
-          </Select>
+          <EntitiesFilterChips active={filterChip} onChange={setFilterChip} counts={chipCounts} />
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            {search ? 'No entities match your search.' : 'No entities yet. Click "Add Entity" to get started.'}
-          </div>
+          <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
         ) : (
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Entity Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Properties</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                  <TableHead className="text-right">Debt</TableHead>
-                  <TableHead className="text-right">LTV</TableHead>
-                  <TableHead className="text-right">Rent/mo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>CH Status</TableHead>
-                  <TableHead>Accounts</TableHead>
-                  <TableHead>Conf. Statement</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((entity) => {
-                  const typeConfig = TYPE_CONFIG[entity.entity_type] || DEFAULT_TYPE_CONFIG;
-                  const statusConfig = STATUS_CONFIG[entity.status] || DEFAULT_STATUS_CONFIG;
-                  const TypeIcon = typeConfig.icon;
-                  const v = verificationMap[entity.id];
-                  const metrics = entityMetricsMap.get(entity.id);
-                  return (
-                    <TableRow
-                      key={entity.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/entities/${entity.id}`)}
-                    >
-                      <TableCell>
-                        <div>
-                          <p className="font-semibold">{entity.entity_name}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{entity.company_number || 'No company number'}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={typeConfig.variant} className="gap-1">
-                          <TypeIcon className="h-3 w-3" />
-                          {typeConfig.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {metrics?.propertyCount || 0}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">{formatGBP(metrics?.totalValue)}</TableCell>
-                      <TableCell className="text-right">{formatGBP(metrics?.totalDebt)}</TableCell>
-                      <TableCell className="text-right">{formatPercent(metrics?.ltv)}</TableCell>
-                      <TableCell className="text-right">{formatGBP(metrics?.monthlyRent)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusConfig.className}>
-                          {statusConfig.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell><CHStatusCell entityId={entity.id} entityType={entity.entity_type} /></TableCell>
-                      <TableCell>
-                        {entity.company_number && v?.ch_accounts_next_due ? (
-                          <ComplianceStatusIndicator dueDate={v.ch_accounts_next_due} />
-                        ) : entity.company_number ? (
-                          <span className="text-xs text-muted-foreground">Not synced</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {entity.company_number && v?.ch_confirmation_next_due ? (
-                          <ComplianceStatusIndicator dueDate={v.ch_confirmation_next_due} />
-                        ) : entity.company_number ? (
-                          <span className="text-xs text-muted-foreground">Not synced</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <Card className="overflow-hidden">
+            {/* select-all header for desktop only */}
+            <div className="hidden md:flex items-center gap-3 border-b px-4 py-2 bg-muted/30">
+              <Checkbox
+                checked={filtered.length > 0 && selected.size === filtered.length}
+                onCheckedChange={toggleAll}
+                aria-label="Select all"
+              />
+              <span className="text-xs text-muted-foreground">
+                {selected.size > 0 ? `${selected.size} selected` : `${filtered.length} ${filtered.length === 1 ? 'entity' : 'entities'}`}
+              </span>
+            </div>
+            <div className="[&_tbody_tr]:group">
+              <ResponsiveTable<Row>
+                columns={columns}
+                data={filtered}
+                keyExtractor={(r) => r.id}
+                onRowClick={(r) => navigate(`/entities/${r.id}`)}
+                emptyMessage={search || filterChip !== 'all' ? 'No entities match your filters.' : 'No entities yet. Click "Add Entity" to get started.'}
+              />
+            </div>
+          </Card>
         )}
       </div>
 
-      <EntityFormModal
-        open={showAddModal}
-        onOpenChange={setShowAddModal}
-      />
+      <BulkActionBar
+        count={selected.size}
+        onClear={() => setSelected(new Set())}
+        itemLabel="entity"
+      >
+        <Button size="sm" variant="outline" onClick={handleBulkSyncSelected} disabled={bulkSyncing}>
+          {bulkSyncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          Sync selected
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => handleExportCSV(filtered.filter((r) => selected.has(r.id)))}>
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+        <Button size="sm" variant="outline" onClick={handleBulkMarkDormant}>
+          <Archive className="h-4 w-4 mr-2" />
+          Mark dormant
+        </Button>
+      </BulkActionBar>
+
+      <EntityFormModal open={showAddModal} onOpenChange={setShowAddModal} />
     </AppLayout>
   );
 }
