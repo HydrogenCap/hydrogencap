@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PoundSterling, TrendingUp, Percent, AlertTriangle, ShieldCheck, Wallet, DoorOpen, Clock, CircleDot } from 'lucide-react';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { DualKpiCard } from '@/components/dashboard/DualKpiCard';
+import { KpiBreakdownPopover } from '@/components/common/KpiBreakdownPopover';
 import { formatGBP, formatPercent } from '@/lib/calculations';
 import type { RiskItem } from '@/hooks/usePortfolioRisks';
 
@@ -80,6 +81,7 @@ export function KpiCards({
           grossClassName="text-primary"
           attrClassName="text-primary"
           onClick={() => onMetricClick('equity')}
+          headerAction={<KpiBreakdownPopover explainerId="portfolio_value" currentValue={formatGBP(portfolioKPIs.gross.totalValue)} />}
         />
         <DualKpiCard
           label="Equity"
@@ -92,6 +94,7 @@ export function KpiCards({
           grossClassName="text-primary"
           attrClassName="text-primary"
           onClick={() => onMetricClick('equity')}
+          headerAction={<KpiBreakdownPopover explainerId="equity" currentValue={formatGBP(portfolioKPIs.gross.totalEquity)} />}
         />
         <DualKpiCard
           label={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
@@ -140,6 +143,7 @@ export function KpiCards({
             portfolioKPIs.attributable.weightedLTV > 75 ? 'text-warning' : ''
           }
           onClick={() => onMetricClick('ltv')}
+          headerAction={<KpiBreakdownPopover explainerId="ltv" currentValue={formatPercent(portfolioKPIs.gross.weightedLTV)} />}
         />
         <DualKpiCard
           label="DSCR"
@@ -157,6 +161,7 @@ export function KpiCards({
             portfolioKPIs.attributable.dscr !== null && portfolioKPIs.attributable.dscr < 1.25 ? 'text-warning' : 'text-success'
           }
           onClick={() => onMetricClick('dscr')}
+          headerAction={<KpiBreakdownPopover explainerId="dscr" currentValue={portfolioKPIs.gross.dscr !== null ? `${portfolioKPIs.gross.dscr.toFixed(2)}x` : '—'} />}
         />
         <DualKpiCard
           label="Net Yield"
@@ -166,6 +171,7 @@ export function KpiCards({
           subtitle="Annual NOI ÷ Value"
           icon={TrendingUp}
           onClick={() => navigate('/financials')}
+          headerAction={<KpiBreakdownPopover explainerId="net_yield" currentValue={portfolioKPIs.gross.netYieldPct !== null ? formatPercent(portfolioKPIs.gross.netYieldPct) : '—'} />}
         />
         <DualKpiCard
           label="Annual Rent"
@@ -174,6 +180,7 @@ export function KpiCards({
           groupParentName={portfolioKPIs.groupParentName}
           icon={Wallet}
           iconClassName="text-primary"
+          headerAction={<KpiBreakdownPopover explainerId="annual_rent" currentValue={formatGBP(portfolioKPIs.gross.annualRent)} />}
         />
         <KpiCard
           label="Action Required"
@@ -206,6 +213,7 @@ export function KpiCards({
           icon={DoorOpen}
           iconClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
           valueClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
+          headerAction={<KpiBreakdownPopover explainerId="occupancy" currentValue={formatPercent(rentalStats.occupancyRate)} />}
         />
         <KpiCard
           label="WAULT"
@@ -223,6 +231,7 @@ export function KpiCards({
             rentalStats.waultMonths === null ? '' :
             rentalStats.waultMonths >= 12 ? 'text-success' : rentalStats.waultMonths >= 6 ? 'text-warning' : 'text-destructive'
           }
+          headerAction={<KpiBreakdownPopover explainerId="wault" currentValue={rentalStats.waultMonths !== null ? `${rentalStats.waultMonths.toFixed(1)} mo` : '—'} />}
         />
         <KpiCard
           label="Void Rate"
@@ -238,6 +247,7 @@ export function KpiCards({
             voidRateData.voidRate <= 5 ? 'text-success' : voidRateData.voidRate <= 15 ? 'text-warning' : 'text-destructive'
           }
           onClick={() => navigate('/voids')}
+          headerAction={<KpiBreakdownPopover explainerId="void_rate" currentValue={voidRateData ? `${voidRateData.voidRate}%` : '—'} />}
         />
         <KpiCard
           label="Portfolio Net Yield"
