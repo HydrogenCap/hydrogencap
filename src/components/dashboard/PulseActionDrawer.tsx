@@ -232,21 +232,25 @@ function buildConfig(
         items: dated
           .sort((a, b) => (a._days ?? 0) - (b._days ?? 0))
           .slice(0, 6)
-          .map((l) => ({
-            primary: String(l?.lender_name ?? l?.facility_name ?? 'Loan facility'),
-            secondary: [
-              l?.property_address,
-              l?.maturity_date ? `Matures ${format(new Date(l.maturity_date), 'd MMM yyyy')}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ') || undefined,
-            badge: {
-              label: l._days! < 0
-                ? `${Math.abs(l._days!)}d overdue`
-                : `${l._days}d`,
-              tone: l._days! < 0 ? 'critical' : l._days! <= 90 ? 'warning' : 'info',
-            },
-          })),
+          .map((l) => {
+            const address = l?.property_address ?? l?.address ?? l?.property?.address_line;
+            const lender = l?.lender_name ?? l?.facility_name;
+            return {
+              primary: address ? String(address) : String(lender ?? 'Loan facility'),
+              secondary: [
+                lender && address ? `Lender: ${lender}` : null,
+                l?.maturity_date ? `Matures ${format(new Date(l.maturity_date), 'd MMM yyyy')}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined,
+              badge: {
+                label: l._days! < 0
+                  ? `${Math.abs(l._days!)}d overdue`
+                  : `${l._days}d`,
+                tone: l._days! < 0 ? 'critical' : l._days! <= 90 ? 'warning' : 'info',
+              },
+            };
+          }),
         filters: [
           { label: 'All facilities', href: '/lending' },
           { label: 'Maturity calendar', href: '/compliance?view=calendar&type=mortgages' },
