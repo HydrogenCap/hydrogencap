@@ -516,9 +516,53 @@ export default function ComplianceV2() {
           </div>
         </div>
 
+        {/* Active filter chips bar (visible when any filter is active) */}
+        {filtersActive && (
+          <div className="flex items-center gap-2 flex-wrap text-xs print:hidden -mt-2">
+            <span className="text-muted-foreground">Active filters:</span>
+            {statusFilter !== 'needs_attention' && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter('needs_attention')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+              >
+                Status: {statusFilter.replace('_', ' ')} <X className="h-3 w-3" />
+              </button>
+            )}
+            {propertyType !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setPropertyType('all')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+              >
+                Type: {propertyType} <X className="h-3 w-3" />
+              </button>
+            )}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+              >
+                Search: "{searchQuery}" <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Print-only context header */}
+        <div className="hidden print:block border-b pb-2 text-xs text-muted-foreground">
+          Compliance Register · {uniquePropertyCount} {uniquePropertyCount === 1 ? 'property' : 'properties'} ·
+          Printed {new Date().toLocaleString('en-GB')}
+          {filtersActive && (
+            <> · Filters: {statusFilter}{propertyType !== 'all' && ` · ${propertyType}`}{searchQuery && ` · "${searchQuery}"`}</>
+          )}
+        </div>
+
         {/* Content */}
         {isLoading ? (
           <Skeleton className="h-96" />
+
         ) : viewMode === 'matrix' ? (
           <ComplianceMatrixGrid
             rows={matrix || []}
