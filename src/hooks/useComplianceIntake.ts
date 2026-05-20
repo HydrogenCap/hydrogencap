@@ -487,20 +487,31 @@ export function useAcceptAllHighConfidence() {
       extracted_epc_rating: string | null;
       property?: CompliancePropertySummary | null;
     }>) => {
-      const highConfidenceDocs = documents.filter(d => 
-        d.ai_suggested_doc_type && 
-        (d.ai_doc_type_confidence || 0) >= 0.7 &&
-        d.ai_suggested_property_id &&
-        (d.ai_property_confidence || 0) >= 0.7 &&
-        d.property
+      const propertyIds = Array.from(new Set(documents.map(d => d.ai_suggested_property_id).filter(Boolean))) as string[];
+      const { data: properties, error: propertyError } = propertyIds.length > 0
+        ? await supabaseAny
+          .from('properties_v2')
+          .select('id, address_line_1, city, address_line')
+          .in('id', propertyIds)
+        : { data: [], error: null };
+
+      if (propertyError) throw propertyError;
+
+      const propertyById = new Map<string, CompliancePropertySummary>(
+        ((properties || []) as CompliancePropertySummary[]).map(p => [p.id, p])
       );
 
-      if (highConfidenceDocs.length === 0) {
-        throw new Error('No high-confidence documents to accept');
+      const acceptReadyDocs = documents
+        .filter(d => d.ai_suggested_doc_type && d.ai_suggested_property_id)
+        .map(d => ({ ...d, property: d.property || propertyById.get(d.ai_suggested_property_id!) || null }))
+        .filter(d => d.property);
+
+      if (acceptReadyDocs.length === 0) {
+        throw new Error('No documents with both a compliance type and property match to accept');
       }
 
       let accepted = 0;
-      for (const doc of highConfidenceDocs) {
+      for (const doc of acceptReadyDocs) {
         const prop = doc.property;
         const propertyAddress = prop?.address_line_1
           ? `${prop.address_line_1}, ${prop.city || ''}`
