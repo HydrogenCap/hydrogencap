@@ -332,6 +332,11 @@ export function PortfolioPulse({
                     <span>{delta > 0 ? '+' : ''}{delta} vs yesterday</span>
                   </div>
                 )}
+                {weekStats && weekStats.n >= 2 && (
+                  <div className="text-[10px] text-muted-foreground tabular-nums">
+                    {weekStats.n}d hi {weekStats.high} · lo {weekStats.low}
+                  </div>
+                )}
               </div>
             )}
           </div>
