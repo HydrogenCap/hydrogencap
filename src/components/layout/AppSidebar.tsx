@@ -113,6 +113,7 @@ const operationsItems: NavItem[] = [
       { title: 'Reg. Monitor', icon: Scale, href: '/regulatory-monitor' },
     ],
   },
+  { title: 'Compliance Inbox', icon: InboxIcon, href: '/inbox', badgeType: 'inbox' },
   {
     title: 'Lettings',
     icon: ArrowRight,
@@ -153,7 +154,6 @@ const operationsItems: NavItem[] = [
     href: '/documents',
     children: [
       { title: 'Templates', icon: FileSignature, href: '/templates' },
-      { title: 'Compliance Inbox', icon: InboxIcon, href: '/inbox', badgeType: 'inbox' },
       { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
     ],
   },
@@ -235,7 +235,7 @@ export function AppSidebar() {
 
 
   const pendingCount = inboxDocuments?.filter(
-    d => d.review_status === 'pending' && d.extraction_status === 'completed'
+    d => d.review_status === 'pending'
   ).length || 0;
 
   const complianceAlertCount = complianceStats.expired + complianceStats.expiring;
