@@ -5,17 +5,24 @@ import {
   Activity,
   AlertTriangle,
   Banknote,
+  BellOff,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
+  EyeOff,
+  Eye,
   ShieldAlert,
   Sparkles,
+  TrendingDown,
+  TrendingUp,
+  Undo2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
 import { PulseActionDrawer, type PulseActionId } from './PulseActionDrawer';
+import { usePulseHistory, usePulseSnooze } from './usePulsePersistence';
 
 type Severity = 'critical' | 'warning' | 'info' | 'success';
 
