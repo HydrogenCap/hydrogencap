@@ -161,14 +161,25 @@ export default function EntityDetail() {
           <CompanySecretsCard companyId={entity.id} />
         )}
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="operating" className="w-full">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="operating">Operating</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="filings">Filings</TabsTrigger>
             <TabsTrigger value="officers">Officers</TabsTrigger>
             <TabsTrigger value="loans">Loans</TabsTrigger>
             <TabsTrigger value="financials">Financials</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="operating" className="space-y-6 mt-4">
+            <EntityFinancialConsolidation entityId={entity.id} />
+            <CompanyFilingDeadlines entityId={entity.id} entity={entity} />
+            <EntityPropertiesCard
+              entityProperties={entityProperties}
+              onNavigateToProperty={(propertyId) => navigate(`/properties-v2/${propertyId}`)}
+            />
+          </TabsContent>
+
 
           <TabsContent value="overview" className="space-y-6 mt-4">
             {entity.company_number && (
