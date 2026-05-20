@@ -437,3 +437,53 @@ body[data-density='dense'] [role='table'] [data-slot='badge'] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Accessible focus rings ───────────────────────────────────────────
+   Consistent focus-visible ring across interactive elements. Avoid the
+   default browser outline; use the design-system ring color instead. */
+*:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Image fade-in ────────────────────────────────────────────────────
+   Subtle fade once images finish loading. Skipped under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  img {
+    animation: img-fade-in 240ms ease-out both;
+  }
+  @keyframes img-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* ─── Print stylesheet ────────────────────────────────────────────────
+   Optimised printing for portfolio reports and compliance exports. */
+@media print {
+  /* Hide app chrome */
+  [data-app-sidebar],
+  aside[role="navigation"],
+  nav[aria-label="Main"],
+  .toaster,
+  [data-sonner-toaster],
+  [data-radix-popper-content-wrapper],
+  button[aria-label="Back to top"] {
+    display: none !important;
+  }
+  /* Force readable, ink-saving palette */
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  a { text-decoration: none !important; color: inherit !important; }
+  /* Avoid breaking inside critical blocks */
+  table, figure, .card, [data-print-keep] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Expand collapsed sections so reports are complete */
+  [hidden] { display: revert !important; }
+}
