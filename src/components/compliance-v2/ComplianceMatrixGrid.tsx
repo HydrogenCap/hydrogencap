@@ -124,26 +124,44 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-2">
-        {/* Legend */}
-        <div className="flex items-center gap-4 flex-wrap text-xs text-muted-foreground px-1">
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-success inline-block" /> Valid</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-warning inline-block" /> Expiring soon</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block animate-pulse" /> Critical (&lt;30d)</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block" /> Expired</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-destructive inline-block" /> Missing</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-muted inline-block" /> Not required</span>
-          <span className="ml-auto">Sorted by urgency · {visibleEntries.length} of {grouped.size} properties</span>
-        </div>
+        {/* Summary tallies + Legend */}
+        {(() => {
+          const visibleCells = visibleEntries.flatMap(e => Array.from(e.prop.cells.values()));
+          const tally = {
+            valid: visibleCells.filter(c => c.calculated_status === 'valid').length,
+            expiring: visibleCells.filter(c => c.calculated_status === 'expiring_soon').length,
+            critical: visibleCells.filter(c => c.calculated_status === 'critical').length,
+            expired: visibleCells.filter(c => c.calculated_status === 'expired').length,
+            missing: visibleCells.filter(c => c.calculated_status === 'missing').length,
+          };
+          return (
+            <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground px-1">
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-success inline-block" /> Valid <span className="text-foreground font-medium">{tally.valid}</span></span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-warning inline-block" /> Expiring <span className="text-foreground font-medium">{tally.expiring}</span></span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block animate-pulse" /> Critical <span className="text-foreground font-medium">{tally.critical}</span></span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block" /> Expired <span className="text-foreground font-medium">{tally.expired}</span></span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-destructive inline-block" /> Missing <span className="text-foreground font-medium">{tally.missing}</span></span>
+              <span className="ml-auto">Sorted by urgency · {visibleEntries.length} of {grouped.size} properties</span>
+            </div>
+          );
+        })()}
 
-        <div className="overflow-x-auto border rounded-lg">
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh] border rounded-lg">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted/50">
-                <th className="text-left p-2 font-medium text-muted-foreground sticky left-0 bg-muted/50 min-w-[200px] z-10">Property</th>
+            <thead className="sticky top-0 z-20">
+              <tr className="bg-muted">
+                <th className="text-left p-2 font-medium text-muted-foreground sticky left-0 bg-muted min-w-[200px] z-30 shadow-[1px_0_0_0_hsl(var(--border))]">Property</th>
                 {MATRIX_COLUMN_ORDER.map(docType => (
-                  <th key={docType} className="p-2 text-center font-medium text-muted-foreground whitespace-nowrap text-xs">
-                    {DOC_TYPE_SHORT_LABELS[docType]}
-                  </th>
+                  <Tooltip key={docType}>
+                    <TooltipTrigger asChild>
+                      <th className="p-2 text-center font-medium text-muted-foreground whitespace-nowrap text-xs cursor-help hover:bg-muted/80 transition-colors">
+                        {DOC_TYPE_SHORT_LABELS[docType]}
+                      </th>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">
+                      {DOC_TYPE_DISPLAY_NAMES[docType]}
+                    </TooltipContent>
+                  </Tooltip>
                 ))}
               </tr>
             </thead>
