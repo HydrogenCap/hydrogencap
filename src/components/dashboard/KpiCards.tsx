@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PoundSterling, TrendingUp, Percent, AlertTriangle, ShieldCheck, Wallet, DoorOpen, Clock, CircleDot } from 'lucide-react';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { DualKpiCard } from '@/components/dashboard/DualKpiCard';
+import { KpiBreakdownPopover } from '@/components/common/KpiBreakdownPopover';
 import { formatGBP, formatPercent } from '@/lib/calculations';
 import type { RiskItem } from '@/hooks/usePortfolioRisks';
 
