@@ -1,4 +1,4 @@
-import { useState, useMemo, type ComponentType } from 'react';
+import { useState, useMemo, useEffect, useRef, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, RefreshCw, Loader2, AlertCircle as AlertCircleIcon, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
