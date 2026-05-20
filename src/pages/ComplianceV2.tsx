@@ -147,7 +147,31 @@ export default function ComplianceV2() {
   const orgId = matrix?.[0]?.org_id || '';
 
   const uniquePropertyCount = useMemo(() => new Set((matrix || []).map(r => r.property_id)).size, [matrix]);
-  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '';
+  const propertyTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of matrix || []) if (r.property_type) set.add(r.property_type);
+    return Array.from(set).sort();
+  }, [matrix]);
+  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '' || propertyType !== 'all';
+
+  // Mirror the matrix's row visibility logic so CSV export honors current filters.
+  const filteredCsvRows = useMemo(() => {
+    if (!matrix) return [];
+    const needsAttention = (s: string) => ['expiring_soon', 'critical', 'expired', 'missing'].includes(s);
+    return matrix.filter(r => {
+      if (!r.is_required) return false;
+      if (propertyType !== 'all' && (r.property_type || '').toLowerCase() !== propertyType.toLowerCase()) return false;
+      if (searchQuery && !r.property_address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      switch (statusFilter) {
+        case 'needs_attention': return needsAttention(r.calculated_status);
+        case 'expired': return r.calculated_status === 'expired';
+        case 'missing': return r.calculated_status === 'missing';
+        case 'valid': return r.calculated_status === 'valid';
+        case 'all':
+        default: return true;
+      }
+    });
+  }, [matrix, statusFilter, searchQuery, propertyType]);
 
   return (
     <AppLayout>
