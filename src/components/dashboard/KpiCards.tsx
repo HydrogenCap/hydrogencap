@@ -81,6 +81,7 @@ export function KpiCards({
           grossClassName="text-primary"
           attrClassName="text-primary"
           onClick={() => onMetricClick('equity')}
+          headerAction={<KpiBreakdownPopover explainerId="portfolio_value" currentValue={formatGBP(portfolioKPIs.gross.totalValue)} />}
         />
         <DualKpiCard
           label="Equity"
@@ -93,6 +94,7 @@ export function KpiCards({
           grossClassName="text-primary"
           attrClassName="text-primary"
           onClick={() => onMetricClick('equity')}
+          headerAction={<KpiBreakdownPopover explainerId="equity" currentValue={formatGBP(portfolioKPIs.gross.totalEquity)} />}
         />
         <DualKpiCard
           label={cashflowPeriod === 'monthly' ? 'Monthly Cashflow' : 'Annual Cashflow'}
