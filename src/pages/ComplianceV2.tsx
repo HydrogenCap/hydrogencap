@@ -41,14 +41,32 @@ export default function ComplianceV2() {
   );
   const [searchQuery, setSearchQueryState] = useState(urlSearch);
   const [viewMode, setViewModeState] = useState<'matrix' | 'calendar'>(urlView === 'calendar' ? 'calendar' : 'matrix');
+  const [propertyType, setPropertyTypeState] = useState<string>(searchParams.get('type') || 'all');
   const [rescanning, setRescanning] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Density: persisted across sessions
+  const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
+    if (typeof window === 'undefined') return 'comfortable';
+    return (localStorage.getItem('compliance-v2-density') as 'comfortable' | 'compact') || 'comfortable';
+  });
+  useEffect(() => {
+    try { localStorage.setItem('compliance-v2-density', density); } catch { /* ignore */ }
+  }, [density]);
+
+  // Back-to-top visibility
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const updateUrl = useCallback((next: Record<string, string | null>) => {
     setSearchParams(prev => {
       const params = new URLSearchParams(prev);
       for (const [k, v] of Object.entries(next)) {
-        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix')) {
+        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix') || (k === 'type' && v === 'all')) {
           params.delete(k);
         } else {
           params.set(k, v);
@@ -61,6 +79,7 @@ export default function ComplianceV2() {
   const setStatusFilter = (v: string) => { setStatusFilterState(v); updateUrl({ status: v }); };
   const setSearchQuery = (v: string) => { setSearchQueryState(v); updateUrl({ q: v }); };
   const setViewMode = (v: 'matrix' | 'calendar') => { setViewModeState(v); updateUrl({ view: v }); };
+  const setPropertyType = (v: string) => { setPropertyTypeState(v); updateUrl({ type: v }); };
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
