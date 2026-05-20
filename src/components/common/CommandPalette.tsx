@@ -112,6 +112,7 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const location = useLocation();
   const { query, setQuery, grouped, isLoading, recordSearch } = useGlobalSearch();
+  const recentEntities = useRecentlyViewed(6);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
 
   // Open with ⌘K / Ctrl+K
