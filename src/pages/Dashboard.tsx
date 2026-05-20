@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AlertCircle, ArrowRight, FileText, Home, Users } from 'lucide-react';
+import { AlertCircle, ArrowRight, FileText, Home, Users, RefreshCw, Upload } from 'lucide-react';
 import { format } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -42,12 +44,36 @@ import { LeaseholdAlertWidget } from '@/components/dashboard/LeaseholdAlertWidge
 import { formatGBP, formatPercent } from '@/lib/calculations';
 import { MetricKey, MetricBreakdown } from '@/lib/metricsConfig';
 import { SEO } from '@/components/SEO';
+import { cn } from '@/lib/utils';
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { lifecycleFilter, filterProperties: _filterProperties } = useLifecycleFilter();
+
+  // Time-based greeting
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries();
+      toast.success('Dashboard refreshed');
+    } catch {
+      toast.error('Refresh failed');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient]);
+
 
   // ── Data hooks ──────────────────────────────────────────
   const { data: propertiesV2, isLoading: propsLoading } = usePropertiesV2();
@@ -275,13 +301,27 @@ function DashboardPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {greeting}
+              <span className="text-muted-foreground font-normal"> · Dashboard</span>
+            </h1>
             <p className="text-muted-foreground">
               {filteredProperties?.length || 0} properties
               {propertiesV2 && filteredProperties.length < propertiesV2.length ? ` (${propertiesV2.length} total)` : ''}
+              <span className="ml-2 text-xs">· {format(new Date(), 'EEE d MMM yyyy')}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap print:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              aria-label="Refresh dashboard data"
+              title="Refresh dashboard data"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            </Button>
             <BankPresentationDialog
               trigger={
                 <Button variant="outline" size="sm" className="gap-2">
@@ -299,16 +339,25 @@ function DashboardPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Home className="h-12 w-12 text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Welcome to Tenure IQ</h2>
-            <p className="text-muted-foreground mb-4">Add your first property to see your portfolio dashboard.</p>
-            <Button asChild>
-              <Link to="/wizards/add-property">Add your first property</Link>
-            </Button>
+            <p className="text-muted-foreground mb-4 max-w-md">
+              Add your first property — or bulk-import an existing portfolio — to unlock your live dashboard, compliance register, and lender packs.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Button asChild>
+                <Link to="/wizards/add-property">Add your first property</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/import" className="gap-2">
+                  <Upload className="h-4 w-4" /> Import portfolio
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
 
         {/* Top-level tabs: Overview vs Shareholders */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full max-w-md grid grid-cols-2 overflow-x-auto flex-nowrap">
+          <TabsList className="w-full max-w-md grid grid-cols-2 overflow-x-auto flex-nowrap print:hidden">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="shareholders">
               <Users className="h-4 w-4 mr-2" />
@@ -360,14 +409,35 @@ function DashboardPage() {
                       <div className="p-2 rounded-full bg-warning/20">
                         <AlertCircle className="h-5 w-5 text-warning" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Missing Information</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {missingStats.propertiesWithFinanceMissing > 0 && <span>{missingStats.propertiesWithFinanceMissing} finance &bull; </span>}
-                          {missingStats.propertiesWithInsuranceMissing > 0 && <span>{missingStats.propertiesWithInsuranceMissing} insurance &bull; </span>}
-                          {missingStats.propertiesWithPassportMissing > 0 && <span>{missingStats.propertiesWithPassportMissing} passport &bull; </span>}
-                          <span className="font-medium text-warning">{missingStats.totalMissingFields} fields total</span>
-                        </p>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
+                          Missing Information
+                          <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
+                            {missingStats.totalMissingFields} field{missingStats.totalMissingFields === 1 ? '' : 's'}
+                          </span>
+                        </h3>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                          {missingStats.propertiesWithFinanceMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                              {missingStats.propertiesWithFinanceMissing} finance
+                            </span>
+                          )}
+                          {missingStats.propertiesWithInsuranceMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                              {missingStats.propertiesWithInsuranceMissing} insurance
+                            </span>
+                          )}
+                          {missingStats.propertiesWithPassportMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                              {missingStats.propertiesWithPassportMissing} passport
+                            </span>
+                          )}
+                          {missingStats.propertiesWithCriticalPassportMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 border border-destructive/30 text-destructive font-medium">
+                              {missingStats.propertiesWithCriticalPassportMissing} critical
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground" />

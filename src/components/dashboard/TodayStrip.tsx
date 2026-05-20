@@ -36,9 +36,23 @@ function StripItem({ icon: Icon, label, value, sublabel, href, variant = 'defaul
     success: 'text-success',
   };
 
+  const ringMap = {
+    default: '',
+    warning: 'border-warning/40 bg-warning/[0.04]',
+    critical: 'border-destructive/40 bg-destructive/[0.04]',
+    success: 'border-success/40 bg-success/[0.04]',
+  };
+
   const content = (
     <div className="flex items-center gap-2 min-w-0">
-      <Icon className={cn('h-4 w-4 shrink-0', colorMap[variant])} />
+      <Icon
+        className={cn(
+          'h-4 w-4 shrink-0',
+          colorMap[variant],
+          variant === 'critical' && 'animate-pulse',
+        )}
+        aria-hidden="true"
+      />
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground truncate">{label}</p>
         <p className={cn('text-sm font-semibold truncate', colorMap[variant])}>{value}</p>
@@ -47,11 +61,23 @@ function StripItem({ icon: Icon, label, value, sublabel, href, variant = 'defaul
     </div>
   );
 
+  const baseCls = cn(
+    'flex-1 min-w-[140px] rounded-lg border bg-card px-3 py-2 transition-all',
+    ringMap[variant],
+  );
+
+  const ariaLabel = `${label}: ${value}${sublabel ? ` — ${sublabel}` : ''}`;
+
   if (href) {
     return (
       <Link
         to={href}
-        className="flex-1 min-w-[140px] rounded-lg border bg-card px-3 py-2 hover:bg-accent/50 transition-colors"
+        aria-label={ariaLabel}
+        className={cn(
+          baseCls,
+          'hover:bg-accent/50 hover:shadow-sm hover:-translate-y-px',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        )}
       >
         {content}
       </Link>
@@ -59,7 +85,7 @@ function StripItem({ icon: Icon, label, value, sublabel, href, variant = 'defaul
   }
 
   return (
-    <div className="flex-1 min-w-[140px] rounded-lg border bg-card px-3 py-2">
+    <div className={baseCls} aria-label={ariaLabel}>
       {content}
     </div>
   );
