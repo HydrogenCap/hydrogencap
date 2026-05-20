@@ -77,7 +77,7 @@ export function useReportData(): ReportDataset {
       (properties.error as Error | null) ||
       (entities.error as Error | null) ||
       (loans.error as Error | null) ||
-      (kpis.error as Error | null) ||
+      null,
       null,
   };
 }
