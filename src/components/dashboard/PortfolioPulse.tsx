@@ -219,6 +219,14 @@ export function PortfolioPulse({
     return { d, w, h, points: xs.map((x, i) => ({ x, y: ys[i] })) };
   }, [history]);
 
+  // 7-day high/low
+  const weekStats = useMemo(() => {
+    const last7 = history.slice(-7);
+    if (last7.length === 0) return null;
+    const scores = last7.map((h) => h.score);
+    return { high: Math.max(...scores), low: Math.min(...scores), n: last7.length };
+  }, [history]);
+
   // Partition actions by snooze state
   const visibleActions = actions.filter((a) => !isSnoozed(a.id));
   const snoozedActions = actions.filter((a) => isSnoozed(a.id));
@@ -232,6 +240,30 @@ export function PortfolioPulse({
       : delta > 0
         ? 'text-success'
         : 'text-destructive';
+
+  const handleCopyBriefing = useCallback(async () => {
+    const lines: string[] = [];
+    lines.push(`Portfolio briefing — ${format(new Date(), 'EEE d MMM yyyy')}`);
+    lines.push(`Pulse score: ${pulseScore}/100${delta !== null ? ` (${delta > 0 ? '+' : ''}${delta} vs yesterday)` : ''}`);
+    lines.push('');
+    lines.push(summary);
+    lines.push('');
+    const visible = actions.filter((a) => !isSnoozed(a.id));
+    if (visible.length > 0) {
+      lines.push('Actions:');
+      visible.forEach((a, i) => {
+        lines.push(`${i + 1}. [${a.severity.toUpperCase()}] ${a.title} — ${a.detail}`);
+      });
+    }
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      setCopied(true);
+      toast({ title: 'Briefing copied', description: 'Paste into Slack, email, or your standup notes.' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: 'Copy failed', description: 'Clipboard unavailable.', variant: 'destructive' });
+    }
+  }, [pulseScore, delta, summary, actions, isSnoozed, toast]);
 
   return (
     <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/20">
