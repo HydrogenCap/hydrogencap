@@ -299,19 +299,23 @@ function buildConfig(
         items: upcoming
           .sort((a, b) => (a._days ?? 0) - (b._days ?? 0))
           .slice(0, 6)
-          .map((e) => ({
-            primary: String(e?.compliance_type ?? e?.type ?? 'Certificate'),
-            secondary: [
-              e?.property_address,
-              e._date ? `Due ${formatDistanceToNowStrict(e._date, { addSuffix: true })}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ') || undefined,
-            badge: {
-              label: `${e._days}d`,
-              tone: e._days! <= 7 ? 'critical' : e._days! <= 14 ? 'warning' : 'info',
-            },
-          })),
+          .map((e) => {
+            const address = e?.property_address ?? e?.address ?? e?.property?.address_line;
+            const type = String(e?.compliance_type ?? e?.type ?? 'Certificate');
+            return {
+              primary: address ? String(address) : type,
+              secondary: [
+                address ? type : null,
+                e._date ? `Due ${formatDistanceToNowStrict(e._date, { addSuffix: true })}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined,
+              badge: {
+                label: `${e._days}d`,
+                tone: e._days! <= 7 ? 'critical' : e._days! <= 14 ? 'warning' : 'info',
+              },
+            };
+          }),
         filters: [
           { label: 'Full register', href: '/compliance' },
           { label: 'Calendar view', href: '/compliance?view=calendar' },
