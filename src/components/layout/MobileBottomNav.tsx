@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Building2,
   FolderOpen,
+  Inbox,
   MoreHorizontal,
   Shield,
   Wrench,
@@ -87,6 +88,7 @@ function MoreDrawerItem({ icon: Icon, label, href, isActive, onClose }: MoreDraw
 
 const moreItems = [
   { icon: Shield, label: 'Compliance', href: '/compliance-v2' },
+  { icon: Inbox, label: 'Compliance Inbox', href: '/inbox' },
   { icon: Wrench, label: 'Jobs & Works', href: '/jobs-and-works' },
   { icon: Users, label: 'Tenants', href: '/tenants-v2' },
   { icon: Wallet, label: 'Finance', href: '/financials' },

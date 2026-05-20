@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2, Sparkles } from 'lucide-react';
 import { partitionReadyDocs, countUnreviewedAISuggestions, isUnreviewedAISuggestion } from '@/lib/inboxBulkGate';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useActivitySidebar } from '@/state/activitySidebar';
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,8 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
 export default function InboxPage() {
-  const { openSidebar } = useActivitySidebar();
-  useEffect(() => { openSidebar('inbox'); }, [openSidebar]);
   return (<AppLayout><InboxPageInner /></AppLayout>);
 }
 
@@ -59,14 +55,19 @@ function InboxPageInner() {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const pendingDocs = documents?.filter(d => d.review_status === 'pending') || [];
+  const isStaleProcessing = useCallback((doc: { extraction_status?: string | null; created_at?: string | null }) => {
+    if (doc.extraction_status !== 'pending' && doc.extraction_status !== 'processing') return false;
+    if (!doc.created_at) return false;
+    return Date.now() - new Date(doc.created_at).getTime() > 10 * 60 * 1000;
+  }, []);
   const processingDocs = documents?.filter(d =>
-    d.extraction_status === 'pending' || d.extraction_status === 'processing'
+    (d.extraction_status === 'pending' || d.extraction_status === 'processing') && !isStaleProcessing(d)
   ) || [];
   const failedDocs = documents?.filter(d =>
-    (d.extraction_status === 'failed' || d.extraction_status === 'rate_limited' || d.extraction_status === 'credits_exhausted') &&
+    (d.extraction_status === 'failed' || d.extraction_status === 'rate_limited' || d.extraction_status === 'credits_exhausted' || isStaleProcessing(d)) &&
     d.review_status === 'pending'
   ) || [];
-  const readyDocsAll = pendingDocs.filter(d => d.extraction_status === 'completed');
+  const readyDocsAll = pendingDocs.filter(d => d.extraction_status === 'completed' || d.extraction_status === 'review_needed');
 
   // #57 follow-up: partition into high / null-confidence / low-confidence buckets.
   // NULL-confidence rows used to fall through `(NULL || 0) >= 0.7` and were
@@ -173,7 +174,7 @@ function InboxPageInner() {
   }, [refetch]);
 
   return (
-    <AppLayout>
+    <>
       <SEO title="Inbox — TenureIQ" description="Tenant messages, contractor updates, and tasks in one place." />
       <div className="space-y-6">
         {/* Page Header */}
@@ -518,6 +519,6 @@ function InboxPageInner() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    </>
   );
 }
