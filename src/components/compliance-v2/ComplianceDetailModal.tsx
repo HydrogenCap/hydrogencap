@@ -47,6 +47,24 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload }: Complian
   const [showHistory, setShowHistory] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
   const [showOverrideInput, setShowOverrideInput] = useState(false);
+  const overrideRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showOverrideInput) {
+      // Defer to allow Input to mount
+      const t = setTimeout(() => overrideRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [showOverrideInput]);
+
+  // Reset transient state when row changes or modal closes
+  useEffect(() => {
+    if (!open) {
+      setShowHistory(false);
+      setShowOverrideInput(false);
+      setOverrideReason('');
+    }
+  }, [open, row?.requirement_id]);
 
   const toggleReq = useToggleRequirementV2();
 
