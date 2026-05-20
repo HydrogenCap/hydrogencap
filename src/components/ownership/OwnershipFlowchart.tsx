@@ -300,8 +300,8 @@ function SummaryBar({ data }: { data: FlowchartData }) {
 }
 
 // ─── Main component ─────────────────────────────────────────────
-export function OwnershipFlowchart() {
-  const { data, isLoading, error } = useOwnershipFlowchartData();
+export function OwnershipFlowchart({ asOfDate }: { asOfDate?: string } = {}) {
+  const { data, isLoading, error } = useOwnershipFlowchartData(asOfDate);
   const navigate = useNavigate();
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
