@@ -7,8 +7,10 @@ import {
   Banknote,
   BellOff,
   CalendarClock,
+  Check,
   CheckCircle2,
   ChevronRight,
+  Copy,
   EyeOff,
   Eye,
   ShieldAlert,
@@ -21,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
+import { useToast } from '@/hooks/use-toast';
 import { PulseActionDrawer, type PulseActionId } from './PulseActionDrawer';
 import { usePulseHistory, usePulseSnooze } from './usePulsePersistence';
 
@@ -78,6 +81,8 @@ export function PortfolioPulse({
 }: PortfolioPulseProps) {
   const [openAction, setOpenAction] = useState<PulseActionId | null>(null);
   const [showSnoozed, setShowSnoozed] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
   const { isSnoozed, snoozeUntilTomorrow, unsnooze, snoozed } = usePulseSnooze();
   const handleOpen = useCallback((id: string) => setOpenAction(id as PulseActionId), []);
   const { actions, summary, pulseScore } = useMemo(() => {
@@ -214,6 +219,14 @@ export function PortfolioPulse({
     return { d, w, h, points: xs.map((x, i) => ({ x, y: ys[i] })) };
   }, [history]);
 
+  // 7-day high/low
+  const weekStats = useMemo(() => {
+    const last7 = history.slice(-7);
+    if (last7.length === 0) return null;
+    const scores = last7.map((h) => h.score);
+    return { high: Math.max(...scores), low: Math.min(...scores), n: last7.length };
+  }, [history]);
+
   // Partition actions by snooze state
   const visibleActions = actions.filter((a) => !isSnoozed(a.id));
   const snoozedActions = actions.filter((a) => isSnoozed(a.id));
@@ -227,6 +240,30 @@ export function PortfolioPulse({
       : delta > 0
         ? 'text-success'
         : 'text-destructive';
+
+  const handleCopyBriefing = useCallback(async () => {
+    const lines: string[] = [];
+    lines.push(`Portfolio briefing — ${format(new Date(), 'EEE d MMM yyyy')}`);
+    lines.push(`Pulse score: ${pulseScore}/100${delta !== null ? ` (${delta > 0 ? '+' : ''}${delta} vs yesterday)` : ''}`);
+    lines.push('');
+    lines.push(summary);
+    lines.push('');
+    const visible = actions.filter((a) => !isSnoozed(a.id));
+    if (visible.length > 0) {
+      lines.push('Actions:');
+      visible.forEach((a, i) => {
+        lines.push(`${i + 1}. [${a.severity.toUpperCase()}] ${a.title} — ${a.detail}`);
+      });
+    }
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      setCopied(true);
+      toast({ title: 'Briefing copied', description: 'Paste into Slack, email, or your standup notes.' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: 'Copy failed', description: 'Clipboard unavailable.', variant: 'destructive' });
+    }
+  }, [pulseScore, delta, summary, actions, isSnoozed, toast]);
 
   return (
     <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/20">
@@ -295,6 +332,11 @@ export function PortfolioPulse({
                     <span>{delta > 0 ? '+' : ''}{delta} vs yesterday</span>
                   </div>
                 )}
+                {weekStats && weekStats.n >= 2 && (
+                  <div className="text-[10px] text-muted-foreground tabular-nums">
+                    {weekStats.n}d hi {weekStats.high} · lo {weekStats.low}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -308,18 +350,30 @@ export function PortfolioPulse({
                   Portfolio briefing
                 </h2>
               </div>
-              {snoozedCount > 0 && (
+              <div className="flex items-center gap-1">
+                {snoozedCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
+                    onClick={() => setShowSnoozed((v) => !v)}
+                    aria-pressed={showSnoozed}
+                  >
+                    {showSnoozed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {showSnoozed ? 'Hide' : 'Show'} {snoozedCount} snoozed
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
-                  onClick={() => setShowSnoozed((v) => !v)}
-                  aria-pressed={showSnoozed}
+                  onClick={handleCopyBriefing}
+                  title="Copy briefing to clipboard"
                 >
-                  {showSnoozed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  {showSnoozed ? 'Hide' : 'Show'} {snoozedCount} snoozed
+                  {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                  {copied ? 'Copied' : 'Copy'}
                 </Button>
-              )}
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mb-4">{summary}</p>
 
