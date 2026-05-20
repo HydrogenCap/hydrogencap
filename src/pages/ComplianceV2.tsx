@@ -513,6 +513,7 @@ export default function ComplianceV2() {
               <CalendarDays className="h-4 w-4 mr-1" /> Calendar
             </Button>
           </div>
+          </div>
         </div>
 
         {/* Content */}
@@ -524,9 +525,24 @@ export default function ComplianceV2() {
             onCellClick={handleCellClick}
             statusFilter={statusFilter}
             searchQuery={searchQuery}
+            density={density}
+            propertyTypeFilter={propertyType}
+            onLegendStatusClick={setStatusFilter}
           />
         ) : (
           <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
+        )}
+
+        {/* Back to top */}
+        {showBackToTop && (
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="print:hidden fixed bottom-6 right-6 z-40 h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Back to top"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
         )}
 
       </div>
