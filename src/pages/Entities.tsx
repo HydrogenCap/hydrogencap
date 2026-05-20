@@ -347,13 +347,13 @@ export default function Entities() {
     setSelected(new Set());
   };
 
-  // Auto-sync stale SPVs once per session (silent)
+  // Auto-sync stale SPVs once per page mount. The in-memory ref prevents
+  // duplicate runs; the >24h `last_synced` check already prevents redundant
+  // CH API calls, so no sessionStorage lockout is needed.
   const autoSyncedRef = useRef(false);
   useEffect(() => {
     if (autoSyncedRef.current) return;
     if (!entities || !verifications) return;
-    const SESSION_KEY = 'entities_autosync_done';
-    if (sessionStorage.getItem(SESSION_KEY)) { autoSyncedRef.current = true; return; }
     const now = Date.now();
     const vByE = new Map(verifications.map((v) => [v.entity_id, v]));
     const stale = entities.filter((e) => {
@@ -362,16 +362,24 @@ export default function Entities() {
       return !v?.last_synced || now - new Date(v.last_synced).getTime() > STALE_MS;
     });
     autoSyncedRef.current = true;
-    sessionStorage.setItem(SESSION_KEY, '1');
     if (stale.length === 0) return;
     (async () => {
+      let failures = 0;
       for (const e of stale) {
         try { await syncEntity.mutateAsync({ entityId: e.id, companyNumber: e.company_number! }); }
-        catch (err) { console.error('Auto-sync failed', e.id, err); }
+        catch (err) { failures++; console.error('Auto-sync failed', e.id, err); }
         await new Promise((r) => setTimeout(r, 600));
       }
+      if (failures > 0) {
+        toast({
+          title: `${failures} of ${stale.length} entity syncs failed`,
+          description: 'Companies House refresh failed for some entities. Try a manual sync to see the error.',
+          variant: 'destructive',
+        });
+      }
     })();
-  }, [entities, verifications, syncEntity]);
+  }, [entities, verifications, syncEntity, toast]);
+
 
   const toggleRow = (id: string) => {
     setSelected((prev) => {
