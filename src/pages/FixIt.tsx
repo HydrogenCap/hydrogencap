@@ -75,7 +75,7 @@ export default function FixIt() {
     // ---- Missing-info derived items (one row per category per property) ----
     if (missingInfo) {
       for (const m of missingInfo) {
-        const address = m.property.address_line_1 || 'Unnamed property';
+        const address = m.property.address_line || 'Unnamed property';
         const url = `/properties-v2/${m.property.id}`;
 
         if (m.missingPropertyCoreFields.length > 0) {
