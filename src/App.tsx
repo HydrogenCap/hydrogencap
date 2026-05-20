@@ -204,10 +204,12 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <ScrollToTopOnNavigate />
+                <RecentlyViewedTracker />
                 <GlobalShortcuts />
                 <CommandPalette />
                 <ShortcutsCheatSheet />
                 <BackToTop />
+                <ConnectionStatus />
                 <DensityBridge />
                 <SessionExpiryModal />
                 <CookieConsent />
