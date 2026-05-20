@@ -224,7 +224,10 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
             </tbody>
           </table>
           {grouped.size === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No compliance data available. Add properties to get started.</div>
+            <div className="text-center py-12 px-6 text-muted-foreground">
+              <p className="font-medium">No compliance data available</p>
+              <p className="text-xs mt-1">Add properties from the Properties page, then upload compliance certificates to start tracking expiries.</p>
+            </div>
           ) : visibleEntries.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No properties match the current filters.</div>
           ) : null}
