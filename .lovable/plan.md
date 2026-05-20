@@ -1,56 +1,55 @@
-## Entities Page Upgrade Plan
 
-Six focused improvements to the `/entities` list page, keeping detail-page work out of scope. Built on top of existing hooks (`useLegalEntities`, `useEntityVerificationStatus`, `usePropertiesV2`, `useAllLoanFacilities`).
+# Top 10 Gaps & Fixes
+
+Prioritised from highest user-pain to nice-to-have. Each item lists the symptom, root cause area, and the fix.
+
+## 1. Cold-start performance is brutal
+- **Symptom**: Console shows TTFB 17s, FCP 28s, LCP 40s on first load. Users think the app is broken.
+- **Cause**: Heavy initial bundle, eager Supabase auth calls, no skeleton on shell.
+- **Fix**: Split the App.tsx route tree more aggressively (lazy ActivitySidebar, Sentry, jspdf, recharts); add a real shell skeleton; defer `useUnreadCount` and `useOnboardingStatus` until after first paint; preconnect Supabase in `index.html`.
+
+## 2. Auth lock orphaning blocks every query for 5s
+- **Symptom**: Repeated `"lock:sb-...auth-token" was not released within 5000ms` warnings; queries (onboarding, section visibility, subscription) all stall.
+- **Cause**: StrictMode double-mount + multiple parallel `getSession()` calls.
+- **Fix**: Centralise a single `useSession()` provider that calls `getSession` once, share via context — remove redundant `_getAccessToken` calls in the three hooks identified in the logs.
+
+## 3. Compliance Inbox still has orphaned/failed docs with no triage UI
+- **Symptom**: 27 docs stuck in `extraction_status=failed` from early April.
+- **Fix**: Add a "Failed" tab to `/inbox` with per-doc Retry, Manual classify, and Delete actions; surface the extractor error message; nightly cron to auto-retry < 3 attempts.
+
+## 4. "Confirm All" / bulk accept is fragile
+- **Symptom**: Bulk accept silently no-ops when any one doc fails (missing property match, low confidence, etc.).
+- **Fix**: Partial-success semantics — process per-doc, show a per-row result toast, keep failures in the list with the reason inline. Add a confidence threshold slider.
+
+## 5. Bulk Upload → Inbox handoff is invisible
+- **Symptom**: After bulk upload users don't know what happened; uploads don't appear in inbox without refresh (now partly fixed via realtime).
+- **Fix**: Post-upload success screen with "View in Inbox (n)" CTA, live progress per file (queued → extracting → ready), and a persistent toast linking to inbox until acknowledged.
+
+## 6. Missing-info / data-quality nudges are scattered
+- **Symptom**: Dashboard widget, passport completeness, and property card all use different rules; users can't see one ranked list of "fix this next".
+- **Fix**: Single `/data-quality` page that aggregates: missing mortgage, valuation, EPC, gas/EICR, ownership %, rent, tenancy end date — sorted by impact, click to deep-link into the right form.
+
+## 7. Compliance status on property cards still inconsistent
+- **Symptom**: Some cards show placeholder green/grey even when `compliance_matrix_v2` says expired (called out in `docs/product-excellence-roadmap.md`).
+- **Fix**: Replace placeholder logic in `PropertyCard` with a single `usePropertyComplianceStatus(propertyId)` hook reading the V2 matrix; invalidate it on cert upload/delete.
+
+## 8. Entity pages aren't operational yet
+- **Symptom**: Legal entity page lists properties but not their value, debt, rent, cashflow, filing health — so it's a list not a management view.
+- **Fix**: Reuse `usePortfolioKPIs` filtered by entity; add an entity-health strip (overdue accounts, missing CH number, ownership gaps).
+
+## 9. Navigation drift: dead/duplicated links, mobile parity
+- **Symptom**: Several routes exist but aren't in the sidebar (Inbox was the recent example); mobile bottom nav is missing key destinations; some sidebar groups expand to empty.
+- **Fix**: Generate sidebar items from a single `navConfig.ts` shared by `AppSidebar` and `MobileBottomNav`; add a route-existence test in CI; remove section groups whose children are all hidden by `section_visibility`.
+
+## 10. Error visibility is poor — silent failures everywhere
+- **Symptom**: Failed extractions, failed edge functions, failed bulk actions all just… disappear. Same pattern that hid the Stert St gas cert.
+- **Fix**: Standardise an `errors_log` table written by every edge function on catch; expose a "System Health" panel under Settings → Admin; ensure every mutation hook surfaces `onError` toast with a Copy Details button.
 
 ---
 
-### 1. KPI Header Strip
-Add a 4-card summary row above the filter bar showing portfolio-wide entity stats:
+## Suggested ordering
+1. Quick wins (1 day each): #1 preconnect + skeleton, #2 session provider, #9 navConfig dedup.
+2. High-value (2-3 days): #3 Failed tab, #4 partial-success bulk accept, #10 errors log.
+3. Strategic (1 week+): #6 unified data-quality page, #7 compliance status hook, #8 entity operating view, #5 upload handoff polish.
 
-- **Total entities** (with breakdown chip: SPVs / Personal / JV / Trust)
-- **Aggregate portfolio value** (sum across all entities)
-- **Aggregate debt + blended LTV**
-- **Filings attention needed** (count of overdue + due-within-30d Accounts/Confirmation Statements) — clickable to filter
-
-### 2. Quick Filter Chips + Saved Filter State
-Replace the lone sort dropdown with a chip row:
-- All • SPV • Personal • JV/Trust • Group Parent • Stale sync (>24h) • Filings overdue • Filings <30d • Dormant
-- Chips combine with the search box. Active filter count badge.
-- Persist last filter to `localStorage` so it survives reloads.
-
-### 3. Mobile-Responsive Table
-Convert the 11-column `<Table>` to `ResponsiveTable` (same pattern used on Tenants, Lending, Investors). Mobile shows Name + Type + Value + LTV; rest collapse into expandable card. Solves the horizontal scroll on small screens.
-
-### 4. Bulk Action Toolbar
-Add a checkbox column. When ≥1 row selected, replace the filter bar with a sticky action toolbar:
-- **Sync selected** (CH sync only the selection)
-- **Export CSV** (entity register snapshot)
-- **Archive / mark dormant** (status update)
-- **Clear selection**
-
-Keeps "Sync All SPVs" button for the no-selection case.
-
-### 5. Per-Row Sync Indicators & Last-Synced Pill
-- Replace the static "Verified / Mismatch / Not Synced" cell with a richer pill that includes the relative timestamp ("2h ago", "5d ago", "Never").
-- Show a small spinner inline on the row while that specific entity is syncing (via `useSyncEntity` mutation state keyed by entityId).
-- Add an inline "Sync now" icon button on hover for one-off refresh without leaving the page.
-
-### 6. CSV Export of Entity Register
-Add a "Export" button next to "Add Entity" that downloads a CSV of the currently filtered list with columns: Entity Name, Company Number, Type, Status, Properties, Value, Debt, LTV, Monthly Rent, CH Status, Accounts Due, Confirmation Due, Last Synced. Reuses the existing CSV utility pattern from Data Export Utilities V2.
-
----
-
-### Out of scope (suggested follow-ups, not in this plan)
-- Detail-drawer / row expand with Officers + Shares + Filings
-- Filings deadline tracker as a dedicated page widget
-- AML/KYC director tracking
-- PSC/Director change diff alerts after sync
-- Per-entity P&L card
-
-### Technical notes
-- All work is frontend-only in `src/pages/Entities.tsx` plus 1–2 small component splits (`EntitiesKPIStrip.tsx`, `EntitiesBulkBar.tsx`, `EntitiesFilterChips.tsx`).
-- No DB migrations. No edge function changes.
-- Reuse `ResponsiveTable` + `ColumnConfig` from `@/components/common`.
-- Reuse existing CSV export helper if one exists; otherwise inline a small `Blob` + `URL.createObjectURL` helper.
-- The existing auto-sync `useEffect` stays; per-row sync spinners will hook into the same `useSyncEntity` mutation.
-- Brand styling preserved (navy/gold, semantic tokens — no hardcoded colors).
+Tell me which of these you want me to start on and I'll write a focused implementation plan.
