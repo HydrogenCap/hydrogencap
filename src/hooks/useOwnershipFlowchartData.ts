@@ -54,11 +54,11 @@ export interface FlowchartData {
   companyToProperty: FlowchartEdge[];
 }
 
-export function useOwnershipFlowchartData() {
+export function useOwnershipFlowchartData(asOfDate?: string) {
   const { data: org } = useOrganization();
 
   return useQuery({
-    queryKey: ['ownership-flowchart', org?.id],
+    queryKey: ['ownership-flowchart', org?.id, asOfDate || 'current'],
     queryFn: async (): Promise<FlowchartData> => {
       if (!org?.id) throw new Error('No org');
 
@@ -83,16 +83,27 @@ export function useOwnershipFlowchartData() {
 
       const entityIds = entities.map(e => e.id);
 
+      // Build shareholders query — if asOfDate provided, get historical snapshot;
+      // otherwise default to current (effective_to IS NULL).
+      const buildShareholdersQuery = () => {
+        let q = supabaseAny
+          .from('entity_shareholders')
+          .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type, effective_date, effective_to')
+          .in('entity_id', entityIds);
+        if (asOfDate) {
+          q = q.lte('effective_date', asOfDate).or(`effective_to.is.null,effective_to.gt.${asOfDate}`);
+        } else {
+          q = q.is('effective_to', null);
+        }
+        return q;
+      };
+
       const [
         { data: shareholders },
         { data: entityLinks },
       ] = await Promise.all([
         entityIds.length > 0
-          ? supabaseAny
-              .from('entity_shareholders')
-              .select('id, entity_id, shareholder_name, shareholder_entity_id, shares_held, percentage, shareholder_type')
-              .in('entity_id', entityIds)
-              .is('effective_to', null)
+          ? buildShareholdersQuery()
           : Promise.resolve({ data: [] as EntityShareholderRow[], error: null }),
         entityIds.length > 0
           ? supabaseAny
