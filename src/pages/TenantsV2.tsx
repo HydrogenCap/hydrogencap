@@ -12,8 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { EmptyState, SavedViewsMenu } from '@/components/common';
+import { EmptyState, SavedViewsMenu, ResponsiveTable } from '@/components/common';
+import type { ColumnConfig } from '@/components/common/ResponsiveTable';
 import { ListState } from '@/components/ListState';
 import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES } from '@/hooks/useTenantsV2';
 import { useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
