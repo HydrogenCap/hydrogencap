@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 import { Shield, RefreshCw, CheckCheck, Upload, AlertTriangle, CheckCircle2, Brain, Settings2, Trash2, Sparkles } from 'lucide-react';
 import { partitionReadyDocs, countUnreviewedAISuggestions, isUnreviewedAISuggestion } from '@/lib/inboxBulkGate';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useActivitySidebar } from '@/state/activitySidebar';
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,8 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
 
 export default function InboxPage() {
-  const { openSidebar } = useActivitySidebar();
-  useEffect(() => { openSidebar('inbox'); }, [openSidebar]);
   return (<AppLayout><InboxPageInner /></AppLayout>);
 }
 
