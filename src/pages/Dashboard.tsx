@@ -25,6 +25,8 @@ import { computeLenderData } from '@/components/dashboard/LenderExposureChart';
 import { TodayStrip } from '@/components/dashboard/TodayStrip';
 import { KpiCards } from '@/components/dashboard/KpiCards';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
+import { PortfolioPulse } from '@/components/dashboard/PortfolioPulse';
+import { CollapsibleSection } from '@/components/dashboard/CollapsibleSection';
 
 // Hooks
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
@@ -366,97 +368,121 @@ function DashboardPage() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
+            {/* Zone 0 — Portfolio Pulse (intelligent briefing) */}
+            <CollapsibleSection id="pulse" title="Today's briefing" defaultOpen>
+              <PortfolioPulse
+                risks={portfolioRisks}
+                criticalCount={portfolioCriticalCount}
+                loanAlerts={loanAlerts}
+                rentSchedule={rentSchedule}
+                complianceEvents={complianceEvents}
+                propertiesCount={filteredProperties.length}
+              />
+            </CollapsibleSection>
+
             {/* Zone 1 — Today Strip */}
-            <TodayStrip
-              risks={portfolioRisks}
-              criticalCount={portfolioCriticalCount}
-              loanAlerts={loanAlerts}
-              rentSchedule={rentSchedule}
-              complianceEvents={complianceEvents}
-            />
+            <CollapsibleSection id="today-strip" title="At-a-glance" defaultOpen>
+              <TodayStrip
+                risks={portfolioRisks}
+                criticalCount={portfolioCriticalCount}
+                loanAlerts={loanAlerts}
+                rentSchedule={rentSchedule}
+                complianceEvents={complianceEvents}
+              />
+            </CollapsibleSection>
 
             {/* Zone 2 — KPI Cards */}
             {portfolioKPIs && (
-              <KpiCards
-                portfolioKPIs={portfolioKPIs}
-                risks={portfolioRisks}
-                criticalCount={portfolioCriticalCount}
-                rentalStats={rentalStats}
-                snapshotKPIs={snapshotKPIs}
-                voidRateData={voidRateData}
-                onMetricClick={handleMetricClick}
-              />
+              <CollapsibleSection id="kpis" title="Key metrics" defaultOpen>
+                <KpiCards
+                  portfolioKPIs={portfolioKPIs}
+                  risks={portfolioRisks}
+                  criticalCount={portfolioCriticalCount}
+                  rentalStats={rentalStats}
+                  snapshotKPIs={snapshotKPIs}
+                  voidRateData={voidRateData}
+                  onMetricClick={handleMetricClick}
+                />
+              </CollapsibleSection>
             )}
 
             {/* RRB Readiness KPI */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-              <RentersRightsBillKPI />
-            </div>
+            <CollapsibleSection id="rrb" title="Renters' Rights Bill readiness" defaultOpen>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <RentersRightsBillKPI />
+              </div>
+            </CollapsibleSection>
 
             {/* Missing Info Shortcut */}
             {missingStats.totalMissingFields > 0 && (
-              <Card
-                className="bg-warning/5 border-warning/30 hover:bg-warning/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate('/missing-info')}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/missing-info'); } }}
-                aria-label="View missing information"
-              >
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-full bg-warning/20">
-                        <AlertCircle className="h-5 w-5 text-warning" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
-                          Missing Information
-                          <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
-                            {missingStats.totalMissingFields} field{missingStats.totalMissingFields === 1 ? '' : 's'}
-                          </span>
-                        </h3>
-                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                          {missingStats.propertiesWithFinanceMissing > 0 && (
-                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
-                              {missingStats.propertiesWithFinanceMissing} finance
+              <CollapsibleSection id="missing-info" title="Data quality" defaultOpen>
+                <Card
+                  className="bg-warning/5 border-warning/30 hover:bg-warning/10 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate('/missing-info')}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/missing-info'); } }}
+                  aria-label="View missing information"
+                >
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 rounded-full bg-warning/20">
+                          <AlertCircle className="h-5 w-5 text-warning" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
+                            Missing Information
+                            <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
+                              {missingStats.totalMissingFields} field{missingStats.totalMissingFields === 1 ? '' : 's'}
                             </span>
-                          )}
-                          {missingStats.propertiesWithInsuranceMissing > 0 && (
-                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
-                              {missingStats.propertiesWithInsuranceMissing} insurance
-                            </span>
-                          )}
-                          {missingStats.propertiesWithPassportMissing > 0 && (
-                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
-                              {missingStats.propertiesWithPassportMissing} passport
-                            </span>
-                          )}
-                          {missingStats.propertiesWithCriticalPassportMissing > 0 && (
-                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 border border-destructive/30 text-destructive font-medium">
-                              {missingStats.propertiesWithCriticalPassportMissing} critical
-                            </span>
-                          )}
+                          </h3>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                            {missingStats.propertiesWithFinanceMissing > 0 && (
+                              <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                                {missingStats.propertiesWithFinanceMissing} finance
+                              </span>
+                            )}
+                            {missingStats.propertiesWithInsuranceMissing > 0 && (
+                              <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                                {missingStats.propertiesWithInsuranceMissing} insurance
+                              </span>
+                            )}
+                            {missingStats.propertiesWithPassportMissing > 0 && (
+                              <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                                {missingStats.propertiesWithPassportMissing} passport
+                              </span>
+                            )}
+                            {missingStats.propertiesWithCriticalPassportMissing > 0 && (
+                              <span className="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 border border-destructive/30 text-destructive font-medium">
+                                {missingStats.propertiesWithCriticalPassportMissing} critical
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </CollapsibleSection>
             )}
 
             {/* Leasehold Alerts */}
-            <LeaseholdAlertWidget />
+            <CollapsibleSection id="leasehold" title="Leasehold alerts" defaultOpen>
+              <LeaseholdAlertWidget />
+            </CollapsibleSection>
 
             {/* Zone 3 — Tabbed Detail */}
-            <DashboardTabs
-              v1CoreRentalProperties={v1CoreRentalProperties}
-              v1Properties={v1Properties}
-              lenderData={lenderData}
-              mapProperties={mapProperties}
-              onHealthMetricClick={() => handleMetricClick('health')}
-            />
+            <CollapsibleSection id="detail-tabs" title="Detail" defaultOpen>
+              <DashboardTabs
+                v1CoreRentalProperties={v1CoreRentalProperties}
+                v1Properties={v1Properties}
+                lenderData={lenderData}
+                mapProperties={mapProperties}
+                onHealthMetricClick={() => handleMetricClick('health')}
+              />
+            </CollapsibleSection>
           </TabsContent>
 
           <TabsContent value="shareholders">
