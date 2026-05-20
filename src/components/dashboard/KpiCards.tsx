@@ -143,6 +143,7 @@ export function KpiCards({
             portfolioKPIs.attributable.weightedLTV > 75 ? 'text-warning' : ''
           }
           onClick={() => onMetricClick('ltv')}
+          headerAction={<KpiBreakdownPopover explainerId="ltv" currentValue={formatPercent(portfolioKPIs.gross.weightedLTV)} />}
         />
         <DualKpiCard
           label="DSCR"
@@ -160,6 +161,7 @@ export function KpiCards({
             portfolioKPIs.attributable.dscr !== null && portfolioKPIs.attributable.dscr < 1.25 ? 'text-warning' : 'text-success'
           }
           onClick={() => onMetricClick('dscr')}
+          headerAction={<KpiBreakdownPopover explainerId="dscr" currentValue={portfolioKPIs.gross.dscr !== null ? `${portfolioKPIs.gross.dscr.toFixed(2)}x` : '—'} />}
         />
         <DualKpiCard
           label="Net Yield"
@@ -169,6 +171,7 @@ export function KpiCards({
           subtitle="Annual NOI ÷ Value"
           icon={TrendingUp}
           onClick={() => navigate('/financials')}
+          headerAction={<KpiBreakdownPopover explainerId="net_yield" currentValue={portfolioKPIs.gross.netYieldPct !== null ? formatPercent(portfolioKPIs.gross.netYieldPct) : '—'} />}
         />
         <DualKpiCard
           label="Annual Rent"
@@ -177,6 +180,7 @@ export function KpiCards({
           groupParentName={portfolioKPIs.groupParentName}
           icon={Wallet}
           iconClassName="text-primary"
+          headerAction={<KpiBreakdownPopover explainerId="annual_rent" currentValue={formatGBP(portfolioKPIs.gross.annualRent)} />}
         />
         <KpiCard
           label="Action Required"
