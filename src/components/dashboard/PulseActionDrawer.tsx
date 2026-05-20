@@ -174,19 +174,23 @@ function buildConfig(
         ],
         itemsTitle: 'Behind on payment',
         emptyItems: 'No outstanding tenancies in the current schedule.',
-        items: fullyOverdue.slice(0, 6).map((r) => ({
-          primary: String(r?.tenant_name ?? r?.tenancy_name ?? r?.property_address ?? 'Tenancy'),
-          secondary: [
-            r?.property_address,
-            r?.due_date ? `Due ${format(new Date(r.due_date), 'd MMM')}` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ') || undefined,
-          badge: {
-            label: formatGBP(Number(r?.expected_amount ?? r?.amount ?? 0)),
-            tone: 'warning',
-          },
-        })),
+        items: fullyOverdue.slice(0, 6).map((r) => {
+          const address = r?.property_address ?? r?.address ?? r?.property?.address_line;
+          const tenant = r?.tenant_name ?? r?.tenancy_name;
+          return {
+            primary: address ? String(address) : String(tenant ?? 'Tenancy'),
+            secondary: [
+              tenant && address ? `Tenant: ${tenant}` : null,
+              r?.due_date ? `Due ${format(new Date(r.due_date), 'd MMM')}` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || undefined,
+            badge: {
+              label: formatGBP(Number(r?.expected_amount ?? r?.amount ?? 0)),
+              tone: 'warning',
+            },
+          };
+        }),
         filters: [
           { label: 'Reconcile now', href: '/rent-reconciliation' },
           { label: 'Arrears report', href: '/rent-reconciliation?view=arrears' },
