@@ -4,12 +4,19 @@ import { DOC_TYPE_SHORT_LABELS, MATRIX_COLUMN_ORDER } from '@/lib/complianceV2Ty
 import type { ComplianceMatrixRow } from '@/lib/complianceV2Types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
+import { formatDistanceToNowStrict } from 'date-fns';
 
 interface ComplianceMatrixGridProps {
   rows: ComplianceMatrixRow[];
   onCellClick: (propertyId: string, docType: ComplianceDocType) => void;
   statusFilter: string;
   searchQuery: string;
+  /** Optional UI density */
+  density?: 'comfortable' | 'compact';
+  /** Optional property type filter (e.g. "HMO"); when omitted, all types shown */
+  propertyTypeFilter?: string;
+  /** Click handler from the legend chips to filter by status */
+  onLegendStatusClick?: (status: string) => void;
 }
 
 /** Group matrix rows by property */
@@ -29,8 +36,9 @@ function groupByProperty(rows: ComplianceMatrixRow[]) {
   return map;
 }
 
-function StatusDot({ status, daysRemaining }: { status: ComplianceStatusV2; daysRemaining: number | null }) {
-  const dotBase = 'h-3 w-3 rounded-full inline-block';
+function StatusDot({ status, daysRemaining, compact }: { status: ComplianceStatusV2; daysRemaining: number | null; compact?: boolean }) {
+  const dotBase = compact ? 'h-2.5 w-2.5 rounded-full inline-block' : 'h-3 w-3 rounded-full inline-block';
+  const labelSize = compact ? 'text-[9px]' : 'text-[10px]';
 
   switch (status) {
     case 'valid':
@@ -39,28 +47,28 @@ function StatusDot({ status, daysRemaining }: { status: ComplianceStatusV2; days
       return (
         <span className="flex items-center gap-1">
           <span className={cn(dotBase, 'bg-warning')} />
-          <span className="text-[10px] text-warning font-medium">{daysRemaining}d</span>
+          <span className={cn(labelSize, 'text-warning font-medium')}>{daysRemaining}d</span>
         </span>
       );
     case 'critical':
       return (
         <span className="flex items-center gap-1">
           <span className={cn(dotBase, 'bg-destructive animate-pulse')} />
-          <span className="text-[10px] text-destructive font-bold">{daysRemaining}d</span>
+          <span className={cn(labelSize, 'text-destructive font-bold')}>{daysRemaining}d</span>
         </span>
       );
     case 'expired':
       return (
         <span className="flex items-center gap-1">
           <span className={cn(dotBase, 'bg-destructive')} />
-          <span className="text-[10px] text-destructive font-bold">EXPIRED</span>
+          <span className={cn(labelSize, 'text-destructive font-bold')}>EXPIRED</span>
         </span>
       );
     case 'missing':
       return (
         <span className="flex items-center gap-1">
           <span className={cn(dotBase, 'border-2 border-destructive bg-transparent')} />
-          <span className="text-[10px] text-destructive font-medium">MISSING</span>
+          <span className={cn(labelSize, 'text-destructive font-medium')}>MISSING</span>
         </span>
       );
     case 'not_required':
@@ -107,54 +115,107 @@ function rowUrgency(cells: Map<ComplianceDocType, ComplianceMatrixRow>) {
   return { score, issues };
 }
 
-export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQuery }: ComplianceMatrixGridProps) {
+/** Highlight matched search substring within text */
+function Highlight({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-warning/30 text-foreground rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
+export function ComplianceMatrixGrid({
+  rows,
+  onCellClick,
+  statusFilter,
+  searchQuery,
+  density = 'comfortable',
+  propertyTypeFilter,
+  onLegendStatusClick,
+}: ComplianceMatrixGridProps) {
+  const compact = density === 'compact';
+  const cellPad = compact ? 'p-1' : 'p-2';
+  const rowFontSize = compact ? 'text-xs' : 'text-sm';
+
   const grouped = groupByProperty(rows);
   const visibleEntries = Array.from(grouped.entries())
     .filter(([, prop]) => {
       if (searchQuery && !prop.address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (propertyTypeFilter && propertyTypeFilter !== 'all' && (prop.propertyType || '').toLowerCase() !== propertyTypeFilter.toLowerCase()) return false;
       return shouldShowProperty(prop.cells, statusFilter);
     })
     .map(([id, prop]) => ({ id, prop, urgency: rowUrgency(prop.cells) }))
     .sort((a, b) => {
-      // Most urgent first; ties → alphabetical
       if (b.urgency.score !== a.urgency.score) return b.urgency.score - a.urgency.score;
       return a.prop.address.localeCompare(b.prop.address);
     });
+
+  // Per-column tallies (issues only) across visible rows
+  const visibleCells = visibleEntries.flatMap(e => Array.from(e.prop.cells.values()));
+  const columnIssues = new Map<ComplianceDocType, number>();
+  for (const docType of MATRIX_COLUMN_ORDER) columnIssues.set(docType, 0);
+  for (const c of visibleCells) {
+    if (['expired', 'missing', 'critical', 'expiring_soon'].includes(c.calculated_status)) {
+      columnIssues.set(c.document_type, (columnIssues.get(c.document_type) || 0) + 1);
+    }
+  }
+
+  const tally = {
+    valid: visibleCells.filter(c => c.calculated_status === 'valid').length,
+    expiring: visibleCells.filter(c => c.calculated_status === 'expiring_soon').length,
+    critical: visibleCells.filter(c => c.calculated_status === 'critical').length,
+    expired: visibleCells.filter(c => c.calculated_status === 'expired').length,
+    missing: visibleCells.filter(c => c.calculated_status === 'missing').length,
+  };
+
+  const legendChip = (label: string, count: number, dotCls: string, filterValue: string) => {
+    const clickable = !!onLegendStatusClick;
+    const active = statusFilter === filterValue;
+    const Cmp: any = clickable ? 'button' : 'span';
+    return (
+      <Cmp
+        type={clickable ? 'button' : undefined}
+        onClick={clickable ? () => onLegendStatusClick!(filterValue) : undefined}
+        className={cn(
+          'flex items-center gap-1.5',
+          clickable && 'hover:text-foreground hover:underline underline-offset-2 rounded transition-colors',
+          active && 'text-foreground font-semibold',
+        )}
+        aria-pressed={clickable ? active : undefined}
+      >
+        <span className={cn('h-2.5 w-2.5 rounded-full inline-block', dotCls)} />
+        {label} <span className="text-foreground font-medium">{count}</span>
+      </Cmp>
+    );
+  };
 
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-2">
         {/* Summary tallies + Legend */}
-        {(() => {
-          const visibleCells = visibleEntries.flatMap(e => Array.from(e.prop.cells.values()));
-          const tally = {
-            valid: visibleCells.filter(c => c.calculated_status === 'valid').length,
-            expiring: visibleCells.filter(c => c.calculated_status === 'expiring_soon').length,
-            critical: visibleCells.filter(c => c.calculated_status === 'critical').length,
-            expired: visibleCells.filter(c => c.calculated_status === 'expired').length,
-            missing: visibleCells.filter(c => c.calculated_status === 'missing').length,
-          };
-          return (
-            <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground px-1">
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-success inline-block" /> Valid <span className="text-foreground font-medium">{tally.valid}</span></span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-warning inline-block" /> Expiring <span className="text-foreground font-medium">{tally.expiring}</span></span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block animate-pulse" /> Critical <span className="text-foreground font-medium">{tally.critical}</span></span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block" /> Expired <span className="text-foreground font-medium">{tally.expired}</span></span>
-              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full border-2 border-destructive inline-block" /> Missing <span className="text-foreground font-medium">{tally.missing}</span></span>
-              <span className="ml-auto">Sorted by urgency · {visibleEntries.length} of {grouped.size} properties</span>
-            </div>
-          );
-        })()}
+        <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground px-1">
+          {legendChip('Valid', tally.valid, 'bg-success', 'valid')}
+          {legendChip('Expiring', tally.expiring, 'bg-warning', 'needs_attention')}
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-destructive inline-block animate-pulse" /> Critical <span className="text-foreground font-medium">{tally.critical}</span></span>
+          {legendChip('Expired', tally.expired, 'bg-destructive', 'expired')}
+          {legendChip('Missing', tally.missing, 'border-2 border-destructive', 'missing')}
+          <span className="ml-auto">Sorted by urgency · {visibleEntries.length} of {grouped.size} properties</span>
+        </div>
 
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh] border rounded-lg">
-          <table className="w-full text-sm">
+          <table className={cn('w-full', rowFontSize)}>
             <thead className="sticky top-0 z-20">
               <tr className="bg-muted">
-                <th className="text-left p-2 font-medium text-muted-foreground sticky left-0 bg-muted min-w-[200px] z-30 shadow-[1px_0_0_0_hsl(var(--border))]">Property</th>
+                <th className={cn('text-left font-medium text-muted-foreground sticky left-0 bg-muted min-w-[200px] z-30 shadow-[1px_0_0_0_hsl(var(--border))]', cellPad)}>Property</th>
                 {MATRIX_COLUMN_ORDER.map(docType => (
                   <Tooltip key={docType}>
                     <TooltipTrigger asChild>
-                      <th className="p-2 text-center font-medium text-muted-foreground whitespace-nowrap text-xs cursor-help hover:bg-muted/80 transition-colors">
+                      <th className={cn('text-center font-medium text-muted-foreground whitespace-nowrap text-xs cursor-help hover:bg-muted/80 transition-colors', cellPad)}>
                         {DOC_TYPE_SHORT_LABELS[docType]}
                       </th>
                     </TooltipTrigger>
@@ -176,10 +237,12 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
                       hasExpiredOrMissing ? 'bg-destructive/[0.03] hover:bg-destructive/[0.06]' : 'hover:bg-muted/30',
                     )}
                   >
-                    <td className={cn('p-2 font-medium sticky left-0 z-10', hasExpiredOrMissing ? 'bg-destructive/[0.03]' : 'bg-background')}>
+                    <td className={cn('font-medium sticky left-0 z-10', cellPad, hasExpiredOrMissing ? 'bg-destructive/[0.03]' : 'bg-background')}>
                       <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate max-w-[180px]" title={prop.address}>{prop.address}</div>
+                          <div className="truncate max-w-[180px]" title={prop.address}>
+                            <Highlight text={prop.address} query={searchQuery} />
+                          </div>
                           {prop.entityName && <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>}
                         </div>
                         {urgency.issues > 0 && (
@@ -195,7 +258,7 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
                     {MATRIX_COLUMN_ORDER.map(docType => {
                       const cell = prop.cells.get(docType);
                       return (
-                        <td key={docType} className="p-1 text-center">
+                        <td key={docType} className={cn('text-center', compact ? 'p-0.5' : 'p-1')}>
                           {cell ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -203,13 +266,16 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
                                   className="p-1 rounded hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
                                   onClick={() => onCellClick(propertyId, docType)}
                                 >
-                                  <StatusDot status={cell.calculated_status} daysRemaining={cell.days_remaining} />
+                                  <StatusDot status={cell.calculated_status} daysRemaining={cell.days_remaining} compact={compact} />
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs max-w-[200px]">
+                              <TooltipContent side="top" className="text-xs max-w-[220px]">
                                 <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[docType]}</p>
                                 <p className="capitalize">{cell.calculated_status.replace('_', ' ')}</p>
                                 {cell.days_remaining !== null && <p>{cell.days_remaining} days remaining</p>}
+                                {cell.calculated_status === 'valid' && cell.issue_date && (
+                                  <p className="text-muted-foreground">Issued {formatDistanceToNowStrict(new Date(cell.issue_date), { addSuffix: true })}</p>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
@@ -222,6 +288,31 @@ export function ComplianceMatrixGrid({ rows, onCellClick, statusFilter, searchQu
                 );
               })}
             </tbody>
+            {visibleEntries.length > 0 && (
+              <tfoot className="sticky bottom-0 z-10">
+                <tr className="bg-muted/80 backdrop-blur border-t">
+                  <td className={cn('font-medium text-xs text-muted-foreground sticky left-0 bg-muted/80 z-10', cellPad)}>
+                    Issues by column
+                  </td>
+                  {MATRIX_COLUMN_ORDER.map(docType => {
+                    const n = columnIssues.get(docType) || 0;
+                    return (
+                      <td key={docType} className={cn('text-center', cellPad)}>
+                        <span
+                          className={cn(
+                            'inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded-full',
+                            n > 0 ? 'bg-destructive/10 text-destructive' : 'text-muted-foreground/60',
+                          )}
+                          title={`${n} issue${n === 1 ? '' : 's'} for ${DOC_TYPE_DISPLAY_NAMES[docType]}`}
+                        >
+                          {n}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
+              </tfoot>
+            )}
           </table>
           {grouped.size === 0 ? (
             <div className="text-center py-12 px-6 text-muted-foreground">
