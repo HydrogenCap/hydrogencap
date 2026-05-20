@@ -194,9 +194,31 @@ export function ComplianceMatrixGrid({
     );
   };
 
+  // Top doc types with most issues (for "Top issues" chips)
+  const topIssues = Array.from(columnIssues.entries())
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-2">
+        {/* Top issues chips */}
+        {topIssues.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap text-xs px-1">
+            <span className="text-muted-foreground">Top issues:</span>
+            {topIssues.map(([docType, n]) => (
+              <span
+                key={docType}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium"
+                title={`${n} item${n === 1 ? '' : 's'} with ${DOC_TYPE_DISPLAY_NAMES[docType]} issues`}
+              >
+                {DOC_TYPE_SHORT_LABELS[docType]} · {n}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Summary tallies + Legend */}
         <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground px-1">
           {legendChip('Valid', tally.valid, 'bg-success', 'valid')}
