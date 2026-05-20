@@ -1,75 +1,100 @@
-# Performance & Polish — Full Epic
 
-## Baseline (measured this session)
+# Improvements 1–10 — Implementation Plan
 
-- **LCP 19,772 ms** (budget 2,500 ms) — ~8× over budget
-- **CLS 0 ms** — already green
-- **Console warnings on every load**: icon-only `<Button>` missing `aria-label`, unknown `RESET_BLANK_CHECK` message
-- **Bundle topology**: 104 lazy routes in `App.tsx` (good), but `vendor-charts` (recharts) is force-chunked even though it's only used by 10 files, several behind dynamic flows. Map/PDF/ZIP correctly left to rollup auto-split.
-- **Dashboard hook**: `useDashboardDataV2` already exists with three `useQuery` blocks; opportunity to parallelise and prefetch.
+Scope is large, so we'll ship in **4 phased waves**. Each wave is independently shippable and verifiable in preview. Nothing here changes the data model destructively — all additions are read-side composition over existing hooks/tables, plus a couple of small JSONB-backed user-preference tables.
 
-## Why LCP is 19.7s (working theory, to confirm with profiler)
+---
 
-The dashboard is gated behind `ProtectedRoute` → auth round-trip → `useUserOrg` → three serial-ish queries → first paint. Combined with eager `vendor-charts` chunk and Helmet hydration, the LCP candidate (the first KPI card) waits on the full data tree. Standard fix is **render-then-fetch** with skeletons measured as LCP, plus parallel query fan-out and resource hints.
+## Wave A — Daily landing & visibility (items #2, #3, #14 partial)
 
-## Phase 1 — Diagnose (S, ~1h, blocks others)
+**A1. "Today" page (`/today`)**
+A single morning landing page composed from existing hooks. Sections:
+- **Overdue & due-in-7-days**: compliance items (`compliance_matrix_v2`), tasks (`useTasks`), tenancy events (`useTenancyEvents`), rent arrears (`useArrearsPredictions`), filing deadlines (`useLegalEntities`).
+- **Recent activity**: last 24h from `useAuditLog` + `useActivityLog`.
+- **New this week**: payments matched, documents uploaded, leads added.
+- **Flagged risks**: top 5 from `usePortfolioInsightsAndRisks`.
+- Each row links to source record; "Snooze 7 days" + "Mark done" inline.
+- Add route + sidebar entry above Dashboard. Make it the default post-login landing (behind a user preference; default ON for new users, OFF for existing).
 
-1. Run `browser--performance_profile` on `/dashboard` after a hard reload; capture LCP element, long tasks, transfer sizes.
-2. Build the bundle with `VITE_ANALYZE=true` and read `dist/bundle-report.html` to identify the actual top-10 modules by gzipped size.
-3. Capture three traces: cold cache, warm cache, throttled "Fast 3G".
-4. Output: a short `docs/perf-baseline-2026-05.md` with numbers so Phase 5 can verify deltas.
+**A2. Fix-it queue (`/fix-it`)**
+Aggregates every missing-data signal into one prioritised list:
+- Reuses `useMissingInfoV2`, `useDataCompletenessScoring`, compliance gaps, missing ownership %, missing valuations, missing rent on active tenancies, missing filing dates.
+- Columns: Property/Entity · What's missing · Impact (High/Med/Low) · Quick fix button (opens correct drawer/wizard step).
+- Filter by category + assignee. Bulk-dismiss with reason.
 
-## Phase 2 — Critical-path wins (M, ~3h)
+**A3. Skeletons for slow pages**
+Replace spinners on Dashboard, Today, Fix-it, Compliance, Properties list with layout-matching skeletons.
 
-1. **Skeleton-first dashboard**: render the KPI grid + header immediately with skeletons sized to final dimensions (CLS stays 0). LCP candidate becomes the H1, which paints on first frame.
-2. **Parallelise queries**: convert serial `useQuery` chains in `useDashboardDataV2` to `useQueries`, batched off `org_id`. Combine the auth + org bootstrap into a single `useQuery({ queryKey: ['bootstrap'] })` so route children don't each wait.
-3. **Prefetch on auth success**: in the auth flow, `queryClient.prefetchQuery(['dashboard', orgId])` while the protected-route gate is still resolving.
-4. **Resource hints**: add `<link rel="preconnect">` for the Supabase URL and `<link rel="preload" as="font">` for the one display font used above the fold.
-5. **Suspense boundary**: wrap heavy panels (Compliance heatmap, charts) in their own boundaries so they don't block LCP.
+---
 
-## Phase 3 — Bundle diet (M, ~3h)
+## Wave B — Explainability & ownership (items #1, #4, #5)
 
-1. **Recharts on-demand**: drop the `vendor-charts` manual chunk; charts are only on PortalDashboard, LocationRegistryCard, InvestorStatement, PropertyMap. Let rollup auto-split. Verify recharts doesn't appear in the dashboard's initial preload waterfall.
-2. **Lazy chart wrappers**: convert remaining eager `import` of recharts in any dashboard widget to `lazy()`.
-3. **Lucide tree-shake check**: confirm icons import from `lucide-react` (named) — flag any namespace imports.
-4. **Date-fns audit**: confirm sub-path imports (`date-fns/format`) where possible; the `vendor-date` chunk swallows the whole package today.
-5. **Image audit**: any `>100 KB` images in `public/` and `src/assets/` → convert with `vite-imagetools` to AVIF/WebP variants.
+**B1. Explainable KPIs**
+- New `<KPIBreakdownPopover>` component. Click any KPI on Dashboard / Portfolio / Entity / Property → opens drawer showing inputs, formula text, contributing rows (sortable table), and a "Copy calculation" button.
+- Wire to: Portfolio Value, Debt, Equity, LTV, NOI, DSCR, Net Yield, Cashflow, Rent.
+- Centralise formulas in `src/lib/kpi/explainers.ts` so PDF + live UI share the source of truth.
 
-## Phase 4 — Polish & a11y (S, ~2h)
+**B2. Ownership graph extension**
+- Extend `useOwnershipFlowchartData` to optionally include properties + loans beneath each entity node.
+- Add toggle: "Show properties" / "Show loans" / "Beneficial vs Direct (side-by-side)".
+- Add effective-date slider: render the graph as of a chosen date using existing audit history. (Read-only; no new tables — derive from `useAuditLog` JSONB diffs for ownership-related tables.)
 
-1. **Icon-button audit**: fix the console-warning source by adding `aria-label` to every `<Button size="icon">` (the warning's stack points at `button.tsx` — find call-sites with `rg "size=\"icon\"" src` and label each).
-2. **Loading/empty/error states**: standard `EmptyState` and `ErrorState` components used everywhere a `useQuery` resolves to `[]` or error. Audit the top-12 most-visited pages.
-3. **`RESET_BLANK_CHECK` warning**: trace and suppress at the `lovable.js` boundary — likely a stale postMessage handler.
-4. **Focus rings**: visible focus on all interactive elements (some custom `Button` variants drop the ring).
-5. **Reduced motion**: respect `prefers-reduced-motion` on the dashboard animations.
+**B3. Entity operating view parity**
+- New `EntityOperatingPanel` on existing entity detail page, mirroring Property Passport shape: Value · Debt · Equity · Rent · Cashflow · LTV · Filing health · Properties list · Loans · Bank accounts · Documents · Recent activity.
+- Reuses `useCompanyPropertyExposure`, `useEntityCompliance`, `useLoanFacilities`, `useEntityInvestorData`.
 
-## Phase 5 — Verify & ship guardrails (S, ~1h)
+---
 
-1. Re-run Phase 1's profile; assert LCP < 4s on warm cache, < 6s cold (mid-tier mobile).
-2. Lighthouse CI step in the existing GitHub workflow with budgets matching `src/lib/performance-budget.ts`.
-3. Update `docs/perf-baseline-2026-05.md` with before/after numbers.
-4. Memory note: capture any new patterns (skeleton-first, prefetch-on-auth) under `mem://architecture/`.
+## Wave C — Power-user UX (items #6, #7, #8)
 
-## Out of scope
+**C1. Bulk actions**
+- Add `useTableSelection` hook + `<BulkActionBar>` sticky footer.
+- Apply to Properties V2 list, Tenants list, Compliance list, Documents.
+- Actions: Bulk tag, bulk lifecycle change, bulk export CSV, bulk archive, bulk assign owner. Permissions gated by `useUserRole`.
 
-- Server-side rendering / prerendering of the app shell
-- Database index tuning (separate plan if Phase 1 profiling shows query time dominates)
-- Rewriting any V2 schema
+**C2. Saved views**
+- New table `saved_views` (id, user_id, org_id, scope, name, filters_json, is_shared, created_at) with RLS.
+- Generic `<SavedViewsMenu scope="properties" />` reads/writes URL search params ↔ filters.
+- Applied to Properties, Compliance, Tenants, Tasks.
 
-## Stop-and-ask checkpoints
+**C3. Search upgrades**
+- Add fuzzy ranking client-side (Fuse.js, 6kb) over the `global_search` RPC results.
+- Add hover-preview card (address, status, key metric) in Command Palette.
+- Rank `useRecentlyViewed` matches above cold results.
 
-- **After Phase 1**: surface measured top bottleneck. If it's *network* (Supabase latency) not *bundle*, swap Phase 3 for an edge-function/caching plan.
-- **Before Phase 3 manual-chunk change**: confirm — removing `vendor-charts` chunk is low risk but visible in build output.
-- **Before Lighthouse CI** in Phase 5: confirm GitHub Actions minutes budget is OK.
+---
 
-## Sizing summary
+## Wave D — Mobile & print parity (items #9, #10)
 
-| Phase | Size | Blocks |
-|---|---|---|
-| 1 Diagnose | S | Yes — sets Phase 2 priorities |
-| 2 Critical path | M | No |
-| 3 Bundle diet | M | No |
-| 4 Polish & a11y | S | No |
-| 5 Verify | S | After 2–4 |
+**D1. Mobile responsive tables**
+- New `<ResponsiveTable>` wrapper: renders `<table>` on `md+`, stacked cards on mobile.
+- Apply to Properties, Tenants, Compliance, Work Orders, Rent payments.
+- Make compliance calendar collapse to a vertical agenda list under `md`.
 
-Total: ~10 working hours across 2–3 ship windows.
+**D2. Print/PDF parity audit**
+- Add a `useReportData` shared hook consumed by both Bank Presentation PDF and live Passport.
+- Snapshot test: render the same property in PDF generator + live page, diff the headline numbers.
+- Fix any drift found; document in `docs/release/`.
+
+---
+
+## Technical notes
+
+- **New tables**: only `saved_views` and `user_dismissed_fixit` (id, user_id, target_type, target_id, reason, dismissed_until). Both small, both RLS by user_id + org_id.
+- **No V1 references**; all queries hit V2 tables per project memory.
+- **Casts**: continue the `any`-cast pattern for new Supabase queries until types regen.
+- **Design tokens**: navy/gold only; DM Serif Display for page H1 only; semantic tokens elsewhere.
+- **Routing**: all new pages lazy-loaded in `src/App.tsx`; `usePageTitle` on each.
+- **Tests**: smoke Playwright spec for `/today` and `/fix-it` load; Vitest for `kpi/explainers.ts` formulas; snapshot test for PDF/live parity.
+- **Feature flags**: none — ship behind sidebar entries with `useSectionVisibility` so users can hide.
+
+---
+
+## Suggested shipping order
+
+1. Wave A (biggest perceived value, ~1 build) — Today + Fix-it + skeletons
+2. Wave B (high strategic value) — KPI breakdowns + ownership + entity view
+3. Wave C (quality of life for heavy users) — bulk + saved views + search
+4. Wave D (polish, can run partly in parallel)
+
+I'd recommend approving the whole plan and I'll ship Wave A first, then check in before Wave B.
