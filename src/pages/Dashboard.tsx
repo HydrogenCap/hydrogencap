@@ -47,9 +47,32 @@ import { SEO } from '@/components/SEO';
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMetric, setSelectedMetric] = useState<MetricKey | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { lifecycleFilter, filterProperties: _filterProperties } = useLifecycleFilter();
+
+  // Time-based greeting
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries();
+      toast.success('Dashboard refreshed');
+    } catch {
+      toast.error('Refresh failed');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient]);
+
 
   // ── Data hooks ──────────────────────────────────────────
   const { data: propertiesV2, isLoading: propsLoading } = usePropertiesV2();
