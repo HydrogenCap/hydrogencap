@@ -391,14 +391,14 @@ export default function PropertiesV2() {
   );
 }
 
-function PropertyCard({ property: p, roomSummary, complianceStatus, photoUrl, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; complianceStatus: PropertyComplianceStatus; photoUrl?: string; onClick: () => void }) {
+function PropertyCard({ property: p, roomSummary, complianceStatus, photoUrl, selected, onToggleSelect, onClick }: { property: PropertyWithEntity; roomSummary?: PropertyRoomSummary; complianceStatus: PropertyComplianceStatus; photoUrl?: string; selected?: boolean; onToggleSelect?: () => void; onClick: () => void }) {
   const isWholeHouse = p.rent_basis === 'whole_house';
   const occupied = roomSummary?.total_occupied ?? 0;
   const lettable = roomSummary?.total_lettable ?? (p.total_lettable_rooms || 0);
   const grossRent = isWholeHouse ? (p.whole_house_rent_pcm ?? 0) : (roomSummary?.gross_rent_pcm ?? 0);
   return (
     <Card
-      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden`}
+      className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden relative ${selected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
     >
       {photoUrl && (
