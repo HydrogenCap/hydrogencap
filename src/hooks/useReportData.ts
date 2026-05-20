@@ -78,6 +78,5 @@ export function useReportData(): ReportDataset {
       (entities.error as Error | null) ||
       (loans.error as Error | null) ||
       null,
-      null,
   };
 }
