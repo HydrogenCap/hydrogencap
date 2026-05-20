@@ -293,17 +293,33 @@ export default function ComplianceV2() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <span className={cn(
-                    'text-3xl font-bold',
-                    (score?.compliance_score_pct ?? 0) === 100 && 'text-success',
-                    (score?.compliance_score_pct ?? 0) >= 90 && (score?.compliance_score_pct ?? 0) < 100 && 'text-warning',
-                    (score?.compliance_score_pct ?? 0) < 90 && 'text-destructive',
-                  )}>
-                    {score?.compliance_score_pct ?? 0}%
-                  </span>
-                  <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
-                    {score?.total_valid ?? 0} of {score?.total_required ?? 0} required items valid
-                  </p>
+                  {(() => {
+                    const pct = score?.compliance_score_pct ?? 0;
+                    const r = 18;
+                    const c = 2 * Math.PI * r;
+                    const dash = (pct / 100) * c;
+                    const ringColor = pct === 100 ? 'text-success' : pct >= 90 ? 'text-warning' : 'text-destructive';
+                    return (
+                      <div className="flex items-center gap-3">
+                        <svg width="48" height="48" viewBox="0 0 48 48" className={ringColor} aria-hidden="true">
+                          <circle cx="24" cy="24" r={r} fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="5" />
+                          <circle
+                            cx="24" cy="24" r={r} fill="none" stroke="currentColor" strokeWidth="5"
+                            strokeDasharray={`${dash} ${c - dash}`}
+                            strokeDashoffset={c / 4}
+                            strokeLinecap="round"
+                            transform="rotate(-90 24 24)"
+                          />
+                        </svg>
+                        <div>
+                          <span className={cn('text-3xl font-bold leading-none', ringColor)}>{pct}%</span>
+                          <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                            {score?.total_valid ?? 0} of {score?.total_required ?? 0} required items valid
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
