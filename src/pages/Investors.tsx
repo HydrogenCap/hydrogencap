@@ -11,9 +11,7 @@ import { ListState } from '@/components/ListState';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+import { ResponsiveTable, ColumnConfig } from '@/components/common';
 import { useInvestors, useInvestorPortfolioSummaries, Investor } from '@/hooks/useInvestors';
 import { InvestorFormModal } from '@/components/investors/InvestorFormModal';
 import { SEO } from '@/components/SEO';
