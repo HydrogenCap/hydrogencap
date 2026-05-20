@@ -78,6 +78,12 @@ export default function BulkUpload() {
   const confirmedCount = documents.filter(d => d.status === 'confirmed').length;
   const readyCount = documents.filter(d => d.status === 'ready').length;
   const processingCount = documents.filter(d => d.status === 'uploading' || d.status === 'classifying').length;
+  // Files where AI extraction silently failed (status moved to 'ready' but no doc type
+  // returned and an error string was captured). These previously hid in the table
+  // with a generic "Review" badge — surface them so the user can manually classify.
+  const extractionFailedDocs = documents.filter(
+    d => d.status === 'ready' && (!d.classification.documentType || d.classification.confidence === 0) && d.error
+  );
   const progressPct = documents.length > 0
     ? Math.round(((documents.length - processingCount) / documents.length) * 100)
     : 0;
