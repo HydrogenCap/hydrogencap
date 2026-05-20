@@ -8264,6 +8264,42 @@ export type Database = {
           },
         ]
       }
+      saved_views: {
+        Row: {
+          created_at: string
+          filters_json: Json
+          id: string
+          is_shared: boolean
+          name: string
+          org_id: string
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters_json?: Json
+          id?: string
+          is_shared?: boolean
+          name: string
+          org_id: string
+          scope: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters_json?: Json
+          id?: string
+          is_shared?: boolean
+          name?: string
+          org_id?: string
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_email_runs: {
         Row: {
           created_at: string
