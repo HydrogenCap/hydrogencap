@@ -127,10 +127,14 @@ export default function ComplianceV2() {
 
   const orgId = matrix?.[0]?.org_id || '';
 
+  const uniquePropertyCount = useMemo(() => new Set((matrix || []).map(r => r.property_id)).size, [matrix]);
+  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '';
+
   return (
     <AppLayout>
       <SEO title="Compliance Register — TenureIQ" description="Portfolio compliance, traffic-lighted by property and room." />
-      <div className="space-y-6">
+      <TooltipProvider delayDuration={200}>
+      <div className="space-y-6 print:space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
@@ -138,7 +142,14 @@ export default function ComplianceV2() {
               <ShieldCheck className="h-6 w-6" />
               Compliance Dashboard
             </h1>
-            <p className="text-muted-foreground">Portfolio-wide compliance monitoring and document management</p>
+            <p className="text-muted-foreground">
+              {uniquePropertyCount > 0
+                ? `${uniquePropertyCount} ${uniquePropertyCount === 1 ? 'property' : 'properties'} · Portfolio-wide compliance monitoring`
+                : 'Portfolio-wide compliance monitoring and document management'}
+              {dataUpdatedAt > 0 && (
+                <span className="ml-2 text-xs">· Updated {formatDistanceToNow(new Date(dataUpdatedAt), { addSuffix: true })}</span>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
