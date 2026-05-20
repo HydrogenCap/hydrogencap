@@ -429,6 +429,20 @@ export default function ComplianceV2() {
               </SelectContent>
             </Select>
 
+            {propertyTypes.length > 1 && (
+              <Select value={propertyType} onValueChange={setPropertyType}>
+                <SelectTrigger className="w-[160px]" aria-label="Property type filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All types</SelectItem>
+                  {propertyTypes.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -455,12 +469,31 @@ export default function ComplianceV2() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); }}
+                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
               >
                 <X className="h-3.5 w-3.5 mr-1" /> Clear filters
               </Button>
             )}
           </div>
+
+          <div className="flex items-center gap-2">
+            {viewMode === 'matrix' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDensity(d => d === 'comfortable' ? 'compact' : 'comfortable')}
+                    aria-label={`Switch to ${density === 'comfortable' ? 'compact' : 'comfortable'} density`}
+                  >
+                    {density === 'comfortable' ? <Rows3 className="h-4 w-4" /> : <Rows4 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {density === 'comfortable' ? 'Switch to compact rows' : 'Switch to comfortable rows'}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
           <div className="flex items-center gap-1 border rounded-lg p-0.5">
             <Button
