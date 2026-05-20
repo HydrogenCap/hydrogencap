@@ -357,10 +357,10 @@ export default function ComplianceV2() {
         <TenancyChecklistSummaryCard />
 
         {/* Filters + View Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between print:hidden">
           <div className="flex items-center gap-3 flex-wrap">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px]" aria-label="Status filter">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -375,12 +375,34 @@ export default function ComplianceV2() {
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search property..."
+                ref={searchInputRef}
+                placeholder="Search property... (press /)"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 w-[200px]"
+                className="pl-9 pr-8 w-[220px]"
+                aria-label="Search properties"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
+
+            {filtersActive && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); }}
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Clear filters
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-1 border rounded-lg p-0.5">
@@ -388,6 +410,7 @@ export default function ComplianceV2() {
               variant={viewMode === 'matrix' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('matrix')}
+              aria-pressed={viewMode === 'matrix'}
             >
               <Grid3X3 className="h-4 w-4 mr-1" /> Matrix
             </Button>
@@ -395,6 +418,7 @@ export default function ComplianceV2() {
               variant={viewMode === 'calendar' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('calendar')}
+              aria-pressed={viewMode === 'calendar'}
             >
               <CalendarDays className="h-4 w-4 mr-1" /> Calendar
             </Button>
@@ -416,6 +440,7 @@ export default function ComplianceV2() {
         )}
 
       </div>
+      </TooltipProvider>
 
       {/* Modals */}
       <ComplianceDetailModal
