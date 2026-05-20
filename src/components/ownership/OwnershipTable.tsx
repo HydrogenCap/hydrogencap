@@ -14,8 +14,8 @@ import { Building2, User, Home, ExternalLink } from 'lucide-react';
 import { useOwnershipFlowchartData } from '@/hooks/useOwnershipFlowchartData';
 import { formatGBP, formatPercent } from '@/lib/calculations';
 
-export function OwnershipTable() {
-  const { data, isLoading, error } = useOwnershipFlowchartData();
+export function OwnershipTable({ asOfDate }: { asOfDate?: string } = {}) {
+  const { data, isLoading, error } = useOwnershipFlowchartData(asOfDate);
   const navigate = useNavigate();
 
   if (isLoading) {

@@ -22,6 +22,7 @@ import type { EnhancedPresentationOptions } from '@/lib/bankPresentationGenerato
 import { calculatePortfolioStats } from '@/lib/portfolioStats';
 import { getPropertyMetrics } from '@/lib/propertyMetrics';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
+import { useReportData } from '@/hooks/useReportData';
 import { toast } from 'sonner';
 
 interface BankPresentationDialogProps {
@@ -44,6 +45,8 @@ export function BankPresentationDialog({ trigger }: BankPresentationDialogProps)
   const { data: coverPhotos, isLoading: loadingPhotos } = useAllPropertyCoverPhotos();
   const { data: allComplianceData, isLoading: loadingCompliance } = useAllCompliance();
   const allCompliance = allComplianceData?.items;
+  // Single source of truth for portfolio totals — guarantees parity with the dashboard.
+  const reportData = useReportData();
 
   // Build photo map for PDF
   const coverPhotoMap = useMemo(() => {
@@ -84,7 +87,9 @@ export function BankPresentationDialog({ trigger }: BankPresentationDialogProps)
     return properties?.filter(p => p.lifecycle_type === 'core_rental') || [];
   }, [properties]);
 
-  // Calculate portfolio stats
+  // Calculate portfolio stats. Yield/cashflow stay local, but value/mortgage/
+  // equity/LTV are overridden with useReportData totals to guarantee parity
+  // with on-screen dashboards.
   const portfolioStats = useMemo(() => {
     if (!coreProperties.length) return null;
 
@@ -94,17 +99,18 @@ export function BankPresentationDialog({ trigger }: BankPresentationDialogProps)
     });
 
     const stats = calculatePortfolioStats(coreProperties, metricsMap);
-    
+    const t = reportData.totals;
+
     return {
-      totalValue: stats.totalValue,
-      totalMortgage: stats.totalMortgageBalance,
-      totalEquity: stats.totalEquity,
-      averageLTV: stats.portfolioLTV,
+      totalValue: t.totalValuation || stats.totalValue,
+      totalMortgage: t.totalMortgage || stats.totalMortgageBalance,
+      totalEquity: t.netEquity || stats.totalEquity,
+      averageLTV: t.portfolioLTV ?? stats.portfolioLTV,
       monthlyCashflow: stats.totalMonthlyCashflow,
-      propertyCount: stats.count,
+      propertyCount: t.propertyCount || stats.count,
       averageYield: stats.weightedAvgYield,
     };
-  }, [coreProperties]);
+  }, [coreProperties, reportData.totals]);
 
   const handleGenerate = async () => {
     if (!coreProperties.length || !portfolioStats) {

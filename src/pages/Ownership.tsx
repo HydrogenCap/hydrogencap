@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { CalendarClock, RotateCcw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { OwnershipFlowchart } from '@/components/ownership/OwnershipFlowchart';
@@ -20,6 +24,7 @@ export default function Ownership() {
   const { data: org } = useOrganization();
   const { data: entities = [] } = useLegalEntities();
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
+  const [asOfDate, setAsOfDate] = useState<string>('');
 
   const activeEntityId = selectedEntityId || entities[0]?.id || '';
   const orgId = org?.id || '';
@@ -35,20 +40,47 @@ export default function Ownership() {
               Click a person or company to filter · Double-click for full details
             </p>
           </div>
-          {entities.length > 0 && (
-            <Select value={activeEntityId} onValueChange={setSelectedEntityId}>
-              <SelectTrigger className="w-[260px]">
-                <SelectValue placeholder="Select entity" />
-              </SelectTrigger>
-              <SelectContent>
-                {entities.map((entity) => (
-                  <SelectItem key={entity.id} value={entity.id}>
-                    {entity.entity_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-1.5">
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="asof" className="text-xs text-muted-foreground whitespace-nowrap">
+                As of
+              </Label>
+              <Input
+                id="asof"
+                type="date"
+                value={asOfDate}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                className="h-7 w-[150px] border-0 bg-transparent p-0 text-sm focus-visible:ring-0"
+                aria-label="View ownership as of date"
+              />
+              {asOfDate && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1.5"
+                  onClick={() => setAsOfDate('')}
+                  aria-label="Clear as-of date"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            {entities.length > 0 && (
+              <Select value={activeEntityId} onValueChange={setSelectedEntityId}>
+                <SelectTrigger className="w-[260px]">
+                  <SelectValue placeholder="Select entity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {entities.map((entity) => (
+                    <SelectItem key={entity.id} value={entity.id}>
+                      {entity.entity_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
         <Tabs defaultValue="chart" className="w-full">
           <TabsList>
@@ -78,10 +110,10 @@ export default function Ownership() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="chart" className="mt-4">
-            <OwnershipFlowchart />
+            <OwnershipFlowchart asOfDate={asOfDate || undefined} />
           </TabsContent>
           <TabsContent value="table" className="mt-4">
-            <OwnershipTable />
+            <OwnershipTable asOfDate={asOfDate || undefined} />
           </TabsContent>
           <TabsContent value="register" className="mt-4">
             {activeEntityId && orgId ? (
