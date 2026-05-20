@@ -251,6 +251,18 @@ export default function PropertiesV2() {
               <SelectItem value="valuation_asc">Valuation (Lowest)</SelectItem>
             </SelectContent>
           </Select>
+          <SavedViewsMenu
+            scope="properties"
+            currentFilters={{ search, filterEntity, filterType, filterStage, filterListing, sort }}
+            onApply={(f) => {
+              if (typeof f.search === 'string') setSearch(f.search);
+              if (typeof f.filterEntity === 'string') setFilterEntity(f.filterEntity);
+              if (typeof f.filterType === 'string') setFilterType(f.filterType);
+              if (typeof f.filterStage === 'string') setFilterStage(f.filterStage);
+              if (typeof f.filterListing === 'string') setFilterListing(f.filterListing);
+              if (typeof f.sort === 'string') setSort(f.sort as PropertySortOption);
+            }}
+          />
         </div>
 
         {/* Grid */}
