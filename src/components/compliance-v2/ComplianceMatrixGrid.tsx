@@ -350,7 +350,18 @@ export function ComplianceMatrixGrid({
               <p className="text-xs mt-1">Add properties from the Properties page, then upload compliance certificates to start tracking expiries.</p>
             </div>
           ) : visibleEntries.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No properties match the current filters.</div>
+            <div className="text-center py-12 text-muted-foreground space-y-2">
+              <p>No properties match the current filters.</p>
+              {onClearFilters && (
+                <button
+                  type="button"
+                  onClick={onClearFilters}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
           ) : null}
         </div>
       </div>
