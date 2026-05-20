@@ -32,6 +32,7 @@ import {
   CommandShortcut,
 } from '@/components/ui/command';
 import { useGlobalSearch, type SearchResult } from '@/hooks/useGlobalSearch';
+import { useRecentlyViewed, type RecentEntityType } from '@/hooks/useRecentlyViewed';
 
 interface NavCommand {
   id: string;
@@ -96,11 +97,22 @@ const RESULT_ICON: Record<SearchResult['result_type'], React.ComponentType<{ cla
   investor: Coins,
 };
 
+const RECENT_ENTITY_ICON: Record<RecentEntityType, React.ComponentType<{ className?: string }>> = {
+  property: Building2,
+  tenant: Users,
+  entity: Briefcase,
+  job: Wrench,
+  workorder: Wrench,
+  investor: Coins,
+  capex: TrendingUp,
+};
+
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { query, setQuery, grouped, isLoading, recordSearch } = useGlobalSearch();
+  const recentEntities = useRecentlyViewed(6);
   const [recent, setRecent] = useState<string[]>(() => readRecent());
 
   // Open with ⌘K / Ctrl+K
@@ -214,10 +226,36 @@ export function CommandPalette() {
           </>
         )}
 
+        {/* Recently viewed records when not searching */}
+        {!query && recentEntities.length > 0 && (
+          <>
+            <CommandGroup heading="Recently viewed">
+              {recentEntities.map((r) => {
+                const Icon = RECENT_ENTITY_ICON[r.type];
+                return (
+                  <CommandItem
+                    key={`rv-${r.type}-${r.id}`}
+                    value={`recent ${r.label} ${r.type}`}
+                    onSelect={() => {
+                      navigate(r.url);
+                      setOpen(false);
+                    }}
+                  >
+                    <Icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">{r.label}</span>
+                    <span className="ml-auto text-xs text-muted-foreground capitalize">{r.type}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            <CommandSeparator />
+          </>
+        )}
+
         {/* Recently used commands when not searching */}
         {!query && recentNav.length > 0 && (
           <>
-            <CommandGroup heading="Recent">
+            <CommandGroup heading="Recent shortcuts">
               {recentNav.map((cmd) => {
                 const Icon = cmd.icon;
                 return (
