@@ -350,18 +350,30 @@ export function PortfolioPulse({
                   Portfolio briefing
                 </h2>
               </div>
-              {snoozedCount > 0 && (
+              <div className="flex items-center gap-1">
+                {snoozedCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
+                    onClick={() => setShowSnoozed((v) => !v)}
+                    aria-pressed={showSnoozed}
+                  >
+                    {showSnoozed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {showSnoozed ? 'Hide' : 'Show'} {snoozedCount} snoozed
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
-                  onClick={() => setShowSnoozed((v) => !v)}
-                  aria-pressed={showSnoozed}
+                  onClick={handleCopyBriefing}
+                  title="Copy briefing to clipboard"
                 >
-                  {showSnoozed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  {showSnoozed ? 'Hide' : 'Show'} {snoozedCount} snoozed
+                  {copied ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                  {copied ? 'Copied' : 'Copy'}
                 </Button>
-              )}
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mb-4">{summary}</p>
 
