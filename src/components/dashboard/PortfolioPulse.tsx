@@ -77,6 +77,8 @@ export function PortfolioPulse({
   propertiesCount,
 }: PortfolioPulseProps) {
   const [openAction, setOpenAction] = useState<PulseActionId | null>(null);
+  const [showSnoozed, setShowSnoozed] = useState(false);
+  const { isSnoozed, snoozeUntilTomorrow, unsnooze, snoozed } = usePulseSnooze();
   const handleOpen = useCallback((id: string) => setOpenAction(id as PulseActionId), []);
   const { actions, summary, pulseScore } = useMemo(() => {
     const acts: PulseAction[] = [];
