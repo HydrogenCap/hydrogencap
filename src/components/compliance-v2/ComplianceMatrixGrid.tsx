@@ -265,8 +265,13 @@ export function ComplianceMatrixGrid({
                     <td className={cn('font-medium sticky left-0 z-10', cellPad, hasExpiredOrMissing ? 'bg-destructive/[0.03]' : 'bg-background')}>
                       <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate max-w-[180px]" title={prop.address}>
-                            <Highlight text={prop.address} query={searchQuery} />
+                          <div className="truncate max-w-[180px] flex items-center gap-1.5" title={prop.address}>
+                            <span className="truncate"><Highlight text={prop.address} query={searchQuery} /></span>
+                            {prop.propertyType && (
+                              <span className="text-[9px] uppercase tracking-wide px-1 py-px rounded bg-muted text-muted-foreground shrink-0">
+                                {prop.propertyType}
+                              </span>
+                            )}
                           </div>
                           {prop.entityName && <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>}
                         </div>
