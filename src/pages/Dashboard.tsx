@@ -409,14 +409,35 @@ function DashboardPage() {
                       <div className="p-2 rounded-full bg-warning/20">
                         <AlertCircle className="h-5 w-5 text-warning" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">Missing Information</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {missingStats.propertiesWithFinanceMissing > 0 && <span>{missingStats.propertiesWithFinanceMissing} finance &bull; </span>}
-                          {missingStats.propertiesWithInsuranceMissing > 0 && <span>{missingStats.propertiesWithInsuranceMissing} insurance &bull; </span>}
-                          {missingStats.propertiesWithPassportMissing > 0 && <span>{missingStats.propertiesWithPassportMissing} passport &bull; </span>}
-                          <span className="font-medium text-warning">{missingStats.totalMissingFields} fields total</span>
-                        </p>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
+                          Missing Information
+                          <span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-warning/20 text-warning">
+                            {missingStats.totalMissingFields} field{missingStats.totalMissingFields === 1 ? '' : 's'}
+                          </span>
+                        </h3>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                          {missingStats.propertiesWithFinanceMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                              {missingStats.propertiesWithFinanceMissing} finance
+                            </span>
+                          )}
+                          {missingStats.propertiesWithInsuranceMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                              {missingStats.propertiesWithInsuranceMissing} insurance
+                            </span>
+                          )}
+                          {missingStats.propertiesWithPassportMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-background border text-muted-foreground">
+                              {missingStats.propertiesWithPassportMissing} passport
+                            </span>
+                          )}
+                          {missingStats.propertiesWithCriticalPassportMissing > 0 && (
+                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 border border-destructive/30 text-destructive font-medium">
+                              {missingStats.propertiesWithCriticalPassportMissing} critical
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground" />
