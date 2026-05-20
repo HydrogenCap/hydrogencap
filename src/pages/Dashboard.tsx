@@ -300,13 +300,27 @@ function DashboardPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {greeting}
+              <span className="text-muted-foreground font-normal"> · Dashboard</span>
+            </h1>
             <p className="text-muted-foreground">
               {filteredProperties?.length || 0} properties
               {propertiesV2 && filteredProperties.length < propertiesV2.length ? ` (${propertiesV2.length} total)` : ''}
+              <span className="ml-2 text-xs">· {format(new Date(), 'EEE d MMM yyyy')}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap print:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              aria-label="Refresh dashboard data"
+              title="Refresh dashboard data"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            </Button>
             <BankPresentationDialog
               trigger={
                 <Button variant="outline" size="sm" className="gap-2">
@@ -324,10 +338,19 @@ function DashboardPage() {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Home className="h-12 w-12 text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">Welcome to Tenure IQ</h2>
-            <p className="text-muted-foreground mb-4">Add your first property to see your portfolio dashboard.</p>
-            <Button asChild>
-              <Link to="/wizards/add-property">Add your first property</Link>
-            </Button>
+            <p className="text-muted-foreground mb-4 max-w-md">
+              Add your first property — or bulk-import an existing portfolio — to unlock your live dashboard, compliance register, and lender packs.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Button asChild>
+                <Link to="/wizards/add-property">Add your first property</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/import" className="gap-2">
+                  <Upload className="h-4 w-4" /> Import portfolio
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
 
