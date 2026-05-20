@@ -1,18 +1,28 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Building2, Zap } from 'lucide-react';
+import { Plus, Search, Building2, Zap, Trash2, MoveRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { EmptyState, SavedViewsMenu } from '@/components/common';
+import { Checkbox } from '@/components/ui/checkbox';
+import { EmptyState, SavedViewsMenu, BulkActionBar } from '@/components/common';
 import { ListState } from '@/components/ListState';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useTableSelection } from '@/hooks/useTableSelection';
+import { useToast } from '@/hooks/use-toast';
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { usePropertiesV2, usePropertyComplianceStatusMap, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, type PropertyComplianceStatus } from '@/hooks/usePropertiesV2';
+import { usePropertiesV2, usePropertyComplianceStatusMap, useDeletePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES, type PropertyComplianceStatus } from '@/hooks/usePropertiesV2';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { PropertyWizard } from '@/components/properties-v2/wizard/PropertyWizard';
