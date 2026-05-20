@@ -244,14 +244,29 @@ function DocumentRow({
   const expiry = doc.userOverrides.expiryDate || doc.classification.extractedData.expiryDate || '';
   const certNum = doc.userOverrides.certificateNumber || doc.classification.extractedData.certificateNumber || '';
 
+  const hasExtractionError = doc.status === 'ready' && (!doc.classification.documentType || doc.classification.confidence === 0) && !!doc.error;
+
   return (
-    <TableRow className={doc.status === 'rejected' ? 'opacity-50' : doc.status === 'filed' ? 'bg-accent/50' : ''}>
+    <TableRow className={
+      doc.status === 'rejected' ? 'opacity-50'
+        : doc.status === 'filed' ? 'bg-accent/50'
+        : hasExtractionError ? 'bg-amber-50/60 dark:bg-amber-950/20'
+        : ''
+    }>
       <TableCell className="font-mono text-xs truncate max-w-[200px]" title={doc.file.name}>
         <div className="flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-          {doc.file.name}
+          <div className="flex flex-col min-w-0">
+            <span className="truncate">{doc.file.name}</span>
+            {hasExtractionError && (
+              <span className="text-[10px] text-amber-700 dark:text-amber-300 truncate" title={doc.error || undefined}>
+                AI couldn't read this — classify manually
+              </span>
+            )}
+          </div>
         </div>
       </TableCell>
+
       <TableCell><StatusBadge status={doc.status} /></TableCell>
       <TableCell>
         {isEditable ? (
