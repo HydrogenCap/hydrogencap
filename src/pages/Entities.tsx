@@ -204,7 +204,7 @@ export default function Entities() {
     const verifByEntity = new Map(verifications.map(v => [v.entity_id, v]));
 
     const stale = entities.filter(e => {
-      if (e.entity_type !== 'spv' && e.entity_type !== 'ltd_company') return false;
+      if (e.entity_type !== 'spv') return false;
       if (!e.company_number) return false;
       const v = verifByEntity.get(e.id);
       if (!v || !v.last_synced) return true;
