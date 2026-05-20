@@ -202,6 +202,9 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <ScrollToTopOnNavigate />
+                <GlobalShortcuts />
+                <BackToTop />
                 <DensityBridge />
                 <SessionExpiryModal />
                 <CookieConsent />
