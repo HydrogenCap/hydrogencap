@@ -68,6 +68,26 @@ export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: Comp
     Array.from(expiryByMonth.values()).reduce((acc, list) => acc + list.length, 0);
   const offGrid = missingItems.length + expiredNoDateItems.length;
 
+  // Heatmap: compute max count for intensity scaling
+  const maxCount = Array.from(expiryByMonth.values()).reduce((m, list) => Math.max(m, list.length), 0);
+
+  // Auto-scroll to first non-empty month on mount (once)
+  const didScrollRef = useRef(false);
+  useEffect(() => {
+    if (didScrollRef.current) return;
+    if (visibleOnGrid === 0) return;
+    const firstNonZero = months.find(m => (expiryByMonth.get(format(m, 'yyyy-MM')) || []).length > 0);
+    if (!firstNonZero) return;
+    const el = document.getElementById(`cal-month-${format(firstNonZero, 'yyyy-MM')}`);
+    if (el) {
+      // Only scroll if it's not already visible
+      const rect = el.getBoundingClientRect();
+      const offscreen = rect.top < 0 || rect.bottom > window.innerHeight;
+      if (offscreen) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      didScrollRef.current = true;
+    }
+  }, [visibleOnGrid, months, expiryByMonth]);
+
   return (
     <div className="space-y-3">
       {(missingItems.length > 0 || expiredNoDateItems.length > 0) && (
