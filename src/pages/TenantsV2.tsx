@@ -215,51 +215,38 @@ export default function TenantsV2() {
               description="Try adjusting your search or filter criteria."
             />
           ) : (
-            <div className="border rounded-lg overflow-x-auto -mx-4 md:mx-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Room</TableHead>
-                    <TableHead className="text-right">Rent PCM</TableHead>
-                    <TableHead>Start</TableHead>
-                    <TableHead className="w-10">Deposit</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map(t => {
-                      const c = complianceMap.get(t.id);
-                      const depositOk = !c || c.deposit_compliance === 'compliant' || c.deposit_compliance === 'no_deposit';
-                      return (
-                        <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tenants-v2/${t.id}`)}>
-                          <TableCell className="font-medium">{t.last_name}, {t.first_name}</TableCell>
-                          <TableCell><Badge className={STATUS_BG[t.status]}>{getLabel(TENANT_STATUSES, t.status)}</Badge></TableCell>
-                          <TableCell><Badge className={TYPE_BG[t.tenant_type]}>{getLabel(TENANT_TYPES, t.tenant_type)}</Badge></TableCell>
-                          <TableCell className="text-sm">{t.current_tenancy?.property_address || '—'}</TableCell>
-                          <TableCell className="text-sm">{t.current_tenancy?.room_name || '—'}</TableCell>
-                          <TableCell className="text-right font-medium">{fmtRent(t.current_tenancy?.rent_amount_pcm)}</TableCell>
-                          <TableCell className="text-sm">{fmtDate(t.current_tenancy?.start_date ?? null)}</TableCell>
-                          <TableCell>
-                            {c ? (
-                              depositOk ? (
-                                <Check className="h-4 w-4 text-emerald-600" />
-                              ) : (
-                                <Tooltip>
-                                  <TooltipTrigger><AlertTriangle className="h-4 w-4 text-destructive" /></TooltipTrigger>
-                                  <TooltipContent>{c.deposit_compliance.replace(/_/g, ' ')}</TooltipContent>
-                                </Tooltip>
-                              )
-                            ) : <span className="text-muted-foreground">—</span>}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
-            </div>
+            <ResponsiveTable
+              data={filtered}
+              keyExtractor={(t) => t.id}
+              onRowClick={(t) => navigate(`/tenants-v2/${t.id}`)}
+              columns={[
+                { key: 'name', header: 'Name', render: (t) => <span className="font-medium">{t.last_name}, {t.first_name}</span> },
+                { key: 'status', header: 'Status', render: (t) => <Badge className={STATUS_BG[t.status]}>{getLabel(TENANT_STATUSES, t.status)}</Badge> },
+                { key: 'type', header: 'Type', render: (t) => <Badge className={TYPE_BG[t.tenant_type]}>{getLabel(TENANT_TYPES, t.tenant_type)}</Badge>, hideOnMobile: true },
+                { key: 'property', header: 'Property', render: (t) => <span className="text-sm">{t.current_tenancy?.property_address || '—'}</span> },
+                { key: 'room', header: 'Room', render: (t) => <span className="text-sm">{t.current_tenancy?.room_name || '—'}</span>, hideOnMobile: true },
+                { key: 'rent', header: 'Rent PCM', render: (t) => <span className="font-medium">{fmtRent(t.current_tenancy?.rent_amount_pcm)}</span> },
+                { key: 'start', header: 'Start', render: (t) => <span className="text-sm">{fmtDate(t.current_tenancy?.start_date ?? null)}</span>, hideOnMobile: true },
+                {
+                  key: 'deposit',
+                  header: 'Deposit',
+                  render: (t) => {
+                    const c = complianceMap.get(t.id);
+                    if (!c) return <span className="text-muted-foreground">—</span>;
+                    const depositOk = c.deposit_compliance === 'compliant' || c.deposit_compliance === 'no_deposit';
+                    return depositOk ? (
+                      <Check className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger><AlertTriangle className="h-4 w-4 text-destructive" /></TooltipTrigger>
+                        <TooltipContent>{c.deposit_compliance.replace(/_/g, ' ')}</TooltipContent>
+                      </Tooltip>
+                    );
+                  },
+                },
+              ] as ColumnConfig<typeof filtered[number]>[]}
+            />
+
           )}
         </ListState>
       </div>
