@@ -104,7 +104,11 @@ export default function PropertiesV2() {
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
   
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const deleteProperty = useDeletePropertyV2();
+  const updateProperty = useUpdatePropertyV2();
   const [showWizard, setShowWizard] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [search, setSearch] = useState('');
   const [filterEntity, setFilterEntity] = useState('all');
   const [filterType, setFilterType] = useState('all');
