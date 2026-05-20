@@ -25,15 +25,42 @@ import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { SEO } from '@/components/SEO';
 
 export default function ComplianceV2() {
-  const { data: matrix, isLoading } = useComplianceMatrix();
+  const { data: matrix, isLoading, dataUpdatedAt } = useComplianceMatrix();
   const { data: score } = usePortfolioComplianceScoreV2();
   const refreshStatuses = useRefreshComplianceStatuses();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [statusFilter, setStatusFilter] = useState('needs_attention');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'matrix' | 'calendar'>('matrix');
+  // URL-synced state
+  const VALID_FILTERS = ['needs_attention', 'all', 'expired', 'missing', 'valid'];
+  const urlStatus = searchParams.get('status');
+  const urlView = searchParams.get('view');
+  const urlSearch = searchParams.get('q') ?? '';
+  const [statusFilter, setStatusFilterState] = useState(
+    urlStatus && VALID_FILTERS.includes(urlStatus) ? urlStatus : 'needs_attention',
+  );
+  const [searchQuery, setSearchQueryState] = useState(urlSearch);
+  const [viewMode, setViewModeState] = useState<'matrix' | 'calendar'>(urlView === 'calendar' ? 'calendar' : 'matrix');
   const [rescanning, setRescanning] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const updateUrl = useCallback((next: Record<string, string | null>) => {
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      for (const [k, v] of Object.entries(next)) {
+        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix')) {
+          params.delete(k);
+        } else {
+          params.set(k, v);
+        }
+      }
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setStatusFilter = (v: string) => { setStatusFilterState(v); updateUrl({ status: v }); };
+  const setSearchQuery = (v: string) => { setSearchQueryState(v); updateUrl({ q: v }); };
+  const setViewMode = (v: 'matrix' | 'calendar') => { setViewModeState(v); updateUrl({ view: v }); };
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
@@ -43,6 +70,24 @@ export default function ComplianceV2() {
   useEffect(() => {
     refreshStatuses.mutate();
   }, [refreshStatuses]);
+
+  // Keyboard shortcuts: "/" focuses search, Escape clears
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (e.key === '/' && !isTyping) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === 'Escape' && target === searchInputRef.current && searchQuery) {
+        setSearchQuery('');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
 
   const handleRescan = async () => {
     setRescanning(true);
