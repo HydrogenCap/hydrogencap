@@ -186,6 +186,52 @@ export default function Entities() {
     toast({ title: `Synced ${synced} SPVs. ${issues} discrepancies. ${overdue} overdue filings.` });
   };
 
+  // Auto-sync on page load: refresh stale (>24h) or never-synced SPVs in the
+  // background once per session. Silent — no toast unless user triggers manual sync.
+  const autoSyncedRef = useRef(false);
+  useEffect(() => {
+    if (autoSyncedRef.current) return;
+    if (!entities || !verifications) return;
+
+    const SESSION_KEY = 'entities_autosync_done';
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      autoSyncedRef.current = true;
+      return;
+    }
+
+    const STALE_MS = 24 * 60 * 60 * 1000; // 24h
+    const now = Date.now();
+    const verifByEntity = new Map(verifications.map(v => [v.entity_id, v]));
+
+    const stale = entities.filter(e => {
+      if (e.entity_type !== 'spv' && e.entity_type !== 'ltd_company') return false;
+      if (!e.company_number) return false;
+      const v = verifByEntity.get(e.id);
+      if (!v || !v.last_synced) return true;
+      return now - new Date(v.last_synced).getTime() > STALE_MS;
+    });
+
+    if (stale.length === 0) {
+      autoSyncedRef.current = true;
+      sessionStorage.setItem(SESSION_KEY, '1');
+      return;
+    }
+
+    autoSyncedRef.current = true;
+    sessionStorage.setItem(SESSION_KEY, '1');
+
+    (async () => {
+      for (const entity of stale) {
+        try {
+          await syncEntity.mutateAsync({ entityId: entity.id, companyNumber: entity.company_number! });
+        } catch (err) {
+          console.error('Auto-sync failed for entity', entity.id, err);
+        }
+        await new Promise(r => setTimeout(r, 600));
+      }
+    })();
+  }, [entities, verifications, syncEntity]);
+
   const CHStatusCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
     if (entityType !== 'spv' && entityType !== 'ltd_company') return <span className="text-muted-foreground text-xs">N/A</span>;
     const v = verificationMap[entityId];
