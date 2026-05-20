@@ -78,6 +78,12 @@ export default function BulkUpload() {
   const confirmedCount = documents.filter(d => d.status === 'confirmed').length;
   const readyCount = documents.filter(d => d.status === 'ready').length;
   const processingCount = documents.filter(d => d.status === 'uploading' || d.status === 'classifying').length;
+  // Files where AI extraction silently failed (status moved to 'ready' but no doc type
+  // returned and an error string was captured). These previously hid in the table
+  // with a generic "Review" badge — surface them so the user can manually classify.
+  const extractionFailedDocs = documents.filter(
+    d => d.status === 'ready' && (!d.classification.documentType || d.classification.confidence === 0) && d.error
+  );
   const progressPct = documents.length > 0
     ? Math.round(((documents.length - processingCount) / documents.length) * 100)
     : 0;
@@ -130,6 +136,26 @@ export default function BulkUpload() {
             {processingCount > 0 && <Progress value={progressPct} />}
           </div>
         )}
+
+        {/* Extraction-failure banner — these files were uploaded but the AI couldn't
+            read them, so they'd otherwise sit in the table with no doc type / no
+            property and never land in the compliance register. */}
+        {extractionFailedDocs.length > 0 && (
+          <div className="border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200">
+                  {extractionFailedDocs.length} file{extractionFailedDocs.length !== 1 ? 's' : ''} need{extractionFailedDocs.length === 1 ? 's' : ''} manual classification
+                </h3>
+                <p className="text-sm text-amber-800/80 dark:text-amber-200/80 mt-1">
+                  AI extraction failed (likely a scanned or low-quality PDF). Set the document type, property and expiry date in the row below, then confirm — otherwise these certificates won't appear in your compliance register.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Results Table */}
         {documents.length > 0 && (
@@ -218,14 +244,29 @@ function DocumentRow({
   const expiry = doc.userOverrides.expiryDate || doc.classification.extractedData.expiryDate || '';
   const certNum = doc.userOverrides.certificateNumber || doc.classification.extractedData.certificateNumber || '';
 
+  const hasExtractionError = doc.status === 'ready' && (!doc.classification.documentType || doc.classification.confidence === 0) && !!doc.error;
+
   return (
-    <TableRow className={doc.status === 'rejected' ? 'opacity-50' : doc.status === 'filed' ? 'bg-accent/50' : ''}>
+    <TableRow className={
+      doc.status === 'rejected' ? 'opacity-50'
+        : doc.status === 'filed' ? 'bg-accent/50'
+        : hasExtractionError ? 'bg-amber-50/60 dark:bg-amber-950/20'
+        : ''
+    }>
       <TableCell className="font-mono text-xs truncate max-w-[200px]" title={doc.file.name}>
         <div className="flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
-          {doc.file.name}
+          <div className="flex flex-col min-w-0">
+            <span className="truncate">{doc.file.name}</span>
+            {hasExtractionError && (
+              <span className="text-[10px] text-amber-700 dark:text-amber-300 truncate" title={doc.error || undefined}>
+                AI couldn't read this — classify manually
+              </span>
+            )}
+          </div>
         </div>
       </TableCell>
+
       <TableCell><StatusBadge status={doc.status} /></TableCell>
       <TableCell>
         {isEditable ? (
