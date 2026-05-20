@@ -204,6 +204,8 @@ const App = () => (
               <BrowserRouter>
                 <ScrollToTopOnNavigate />
                 <GlobalShortcuts />
+                <CommandPalette />
+                <ShortcutsCheatSheet />
                 <BackToTop />
                 <DensityBridge />
                 <SessionExpiryModal />
