@@ -14,7 +14,7 @@ import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { PortalProtectedRoute } from "@/components/portal";
 import { TenantPortalProtectedRoute } from "@/components/tenant-portal/TenantPortalProtectedRoute";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
-import { LoadingState, ErrorBoundary, RouteBoundary, ScrollToTopOnNavigate, BackToTop, GlobalShortcuts } from "@/components/common";
+import { LoadingState, ErrorBoundary, RouteBoundary, ScrollToTopOnNavigate, BackToTop, GlobalShortcuts, CommandPalette, ShortcutsCheatSheet } from "@/components/common";
 import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { DensityBridge } from "@/components/DensityToggle";
@@ -204,6 +204,8 @@ const App = () => (
               <BrowserRouter>
                 <ScrollToTopOnNavigate />
                 <GlobalShortcuts />
+                <CommandPalette />
+                <ShortcutsCheatSheet />
                 <BackToTop />
                 <DensityBridge />
                 <SessionExpiryModal />

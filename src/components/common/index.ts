@@ -24,4 +24,6 @@ export type { ColumnConfig } from './ResponsiveTable';
 export { MobileDetailsSheet } from './MobileDetailsSheet';
 export { ScrollToTopOnNavigate } from './ScrollToTopOnNavigate';
 export { BackToTop } from './BackToTop';
-export { GlobalShortcuts } from './GlobalShortcuts';
+export { GlobalShortcuts, SHORTCUT_GROUPS } from './GlobalShortcuts';
+export { CommandPalette } from './CommandPalette';
+export { ShortcutsCheatSheet } from './ShortcutsCheatSheet';
