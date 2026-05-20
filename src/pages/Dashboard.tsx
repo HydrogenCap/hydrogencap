@@ -357,7 +357,7 @@ function DashboardPage() {
 
         {/* Top-level tabs: Overview vs Shareholders */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full max-w-md grid grid-cols-2 overflow-x-auto flex-nowrap">
+          <TabsList className="w-full max-w-md grid grid-cols-2 overflow-x-auto flex-nowrap print:hidden">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="shareholders">
               <Users className="h-4 w-4 mr-2" />
