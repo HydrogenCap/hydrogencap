@@ -293,17 +293,33 @@ export default function ComplianceV2() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <span className={cn(
-                    'text-3xl font-bold',
-                    (score?.compliance_score_pct ?? 0) === 100 && 'text-success',
-                    (score?.compliance_score_pct ?? 0) >= 90 && (score?.compliance_score_pct ?? 0) < 100 && 'text-warning',
-                    (score?.compliance_score_pct ?? 0) < 90 && 'text-destructive',
-                  )}>
-                    {score?.compliance_score_pct ?? 0}%
-                  </span>
-                  <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
-                    {score?.total_valid ?? 0} of {score?.total_required ?? 0} required items valid
-                  </p>
+                  {(() => {
+                    const pct = score?.compliance_score_pct ?? 0;
+                    const r = 18;
+                    const c = 2 * Math.PI * r;
+                    const dash = (pct / 100) * c;
+                    const ringColor = pct === 100 ? 'text-success' : pct >= 90 ? 'text-warning' : 'text-destructive';
+                    return (
+                      <div className="flex items-center gap-3">
+                        <svg width="48" height="48" viewBox="0 0 48 48" className={ringColor} aria-hidden="true">
+                          <circle cx="24" cy="24" r={r} fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="5" />
+                          <circle
+                            cx="24" cy="24" r={r} fill="none" stroke="currentColor" strokeWidth="5"
+                            strokeDasharray={`${dash} ${c - dash}`}
+                            strokeDashoffset={c / 4}
+                            strokeLinecap="round"
+                            transform="rotate(-90 24 24)"
+                          />
+                        </svg>
+                        <div>
+                          <span className={cn('text-3xl font-bold leading-none', ringColor)}>{pct}%</span>
+                          <p className="text-[11px] text-muted-foreground mt-1 leading-tight">
+                            {score?.total_valid ?? 0} of {score?.total_required ?? 0} required items valid
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
@@ -516,9 +532,53 @@ export default function ComplianceV2() {
           </div>
         </div>
 
+        {/* Active filter chips bar (visible when any filter is active) */}
+        {filtersActive && (
+          <div className="flex items-center gap-2 flex-wrap text-xs print:hidden -mt-2">
+            <span className="text-muted-foreground">Active filters:</span>
+            {statusFilter !== 'needs_attention' && (
+              <button
+                type="button"
+                onClick={() => setStatusFilter('needs_attention')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+              >
+                Status: {statusFilter.replace('_', ' ')} <X className="h-3 w-3" />
+              </button>
+            )}
+            {propertyType !== 'all' && (
+              <button
+                type="button"
+                onClick={() => setPropertyType('all')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+              >
+                Type: {propertyType} <X className="h-3 w-3" />
+              </button>
+            )}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted hover:bg-muted/70 transition-colors"
+              >
+                Search: "{searchQuery}" <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Print-only context header */}
+        <div className="hidden print:block border-b pb-2 text-xs text-muted-foreground">
+          Compliance Register · {uniquePropertyCount} {uniquePropertyCount === 1 ? 'property' : 'properties'} ·
+          Printed {new Date().toLocaleString('en-GB')}
+          {filtersActive && (
+            <> · Filters: {statusFilter}{propertyType !== 'all' && ` · ${propertyType}`}{searchQuery && ` · "${searchQuery}"`}</>
+          )}
+        </div>
+
         {/* Content */}
         {isLoading ? (
           <Skeleton className="h-96" />
+
         ) : viewMode === 'matrix' ? (
           <ComplianceMatrixGrid
             rows={matrix || []}
@@ -528,6 +588,7 @@ export default function ComplianceV2() {
             density={density}
             propertyTypeFilter={propertyType}
             onLegendStatusClick={setStatusFilter}
+            onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
           />
         ) : (
           <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />

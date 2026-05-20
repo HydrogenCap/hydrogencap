@@ -17,6 +17,8 @@ interface ComplianceMatrixGridProps {
   propertyTypeFilter?: string;
   /** Click handler from the legend chips to filter by status */
   onLegendStatusClick?: (status: string) => void;
+  /** Optional callback when user wants to clear all filters from empty state */
+  onClearFilters?: () => void;
 }
 
 /** Group matrix rows by property */
@@ -137,6 +139,7 @@ export function ComplianceMatrixGrid({
   density = 'comfortable',
   propertyTypeFilter,
   onLegendStatusClick,
+  onClearFilters,
 }: ComplianceMatrixGridProps) {
   const compact = density === 'compact';
   const cellPad = compact ? 'p-1' : 'p-2';
@@ -194,9 +197,31 @@ export function ComplianceMatrixGrid({
     );
   };
 
+  // Top doc types with most issues (for "Top issues" chips)
+  const topIssues = Array.from(columnIssues.entries())
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-2">
+        {/* Top issues chips */}
+        {topIssues.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap text-xs px-1">
+            <span className="text-muted-foreground">Top issues:</span>
+            {topIssues.map(([docType, n]) => (
+              <span
+                key={docType}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium"
+                title={`${n} item${n === 1 ? '' : 's'} with ${DOC_TYPE_DISPLAY_NAMES[docType]} issues`}
+              >
+                {DOC_TYPE_SHORT_LABELS[docType]} · {n}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Summary tallies + Legend */}
         <div className="flex items-center gap-3 flex-wrap text-xs text-muted-foreground px-1">
           {legendChip('Valid', tally.valid, 'bg-success', 'valid')}
@@ -240,8 +265,13 @@ export function ComplianceMatrixGrid({
                     <td className={cn('font-medium sticky left-0 z-10', cellPad, hasExpiredOrMissing ? 'bg-destructive/[0.03]' : 'bg-background')}>
                       <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate max-w-[180px]" title={prop.address}>
-                            <Highlight text={prop.address} query={searchQuery} />
+                          <div className="truncate max-w-[180px] flex items-center gap-1.5" title={prop.address}>
+                            <span className="truncate"><Highlight text={prop.address} query={searchQuery} /></span>
+                            {prop.propertyType && (
+                              <span className="text-[9px] uppercase tracking-wide px-1 py-px rounded bg-muted text-muted-foreground shrink-0">
+                                {prop.propertyType}
+                              </span>
+                            )}
                           </div>
                           {prop.entityName && <div className="text-[10px] text-muted-foreground truncate">{prop.entityName}</div>}
                         </div>
@@ -320,7 +350,18 @@ export function ComplianceMatrixGrid({
               <p className="text-xs mt-1">Add properties from the Properties page, then upload compliance certificates to start tracking expiries.</p>
             </div>
           ) : visibleEntries.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No properties match the current filters.</div>
+            <div className="text-center py-12 text-muted-foreground space-y-2">
+              <p>No properties match the current filters.</p>
+              {onClearFilters && (
+                <button
+                  type="button"
+                  onClick={onClearFilters}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
           ) : null}
         </div>
       </div>
