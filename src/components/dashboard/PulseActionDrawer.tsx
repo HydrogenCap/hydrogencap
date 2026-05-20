@@ -119,11 +119,17 @@ function buildConfig(
         ],
         itemsTitle: 'Top critical items',
         emptyItems: 'No critical risk records were returned by the risks feed.',
-        items: critical.slice(0, 6).map((r) => ({
-          primary: String(r?.title ?? r?.description ?? r?.message ?? 'Untitled risk'),
-          secondary: [r?.property_address, r?.category ?? r?.type].filter(Boolean).join(' · ') || undefined,
-          badge: { label: 'Critical', tone: 'critical' },
-        })),
+        items: critical.slice(0, 6).map((r) => {
+          const address = r?.address ?? r?.property_address ?? r?.propertyAddress ?? r?.property?.address_line;
+          const title = String(r?.message ?? r?.title ?? r?.description ?? 'Untitled risk');
+          return {
+            primary: address ? String(address) : title,
+            secondary: address
+              ? [title, r?.category ?? r?.type].filter(Boolean).join(' · ')
+              : (r?.category ?? r?.type) || undefined,
+            badge: { label: 'Critical', tone: 'critical' },
+          };
+        }),
         filters: [
           { label: 'All risks', href: '/risks' },
           ...topCats.map(([cat, n]) => ({
