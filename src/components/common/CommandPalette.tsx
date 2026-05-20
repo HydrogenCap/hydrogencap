@@ -97,6 +97,16 @@ const RESULT_ICON: Record<SearchResult['result_type'], React.ComponentType<{ cla
   investor: Coins,
 };
 
+const RECENT_ENTITY_ICON: Record<RecentEntityType, React.ComponentType<{ className?: string }>> = {
+  property: Building2,
+  tenant: Users,
+  entity: Briefcase,
+  job: Wrench,
+  workorder: Wrench,
+  investor: Coins,
+  capex: TrendingUp,
+};
+
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
