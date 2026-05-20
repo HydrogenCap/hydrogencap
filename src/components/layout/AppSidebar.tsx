@@ -149,7 +149,9 @@ const operationsItems: NavItem[] = [
   { title: 'Inspections', icon: ClipboardCheck, href: '/inspections' },
   {
     title: 'Documents',
-...
+    icon: FolderOpen,
+    href: '/documents',
+    children: [
       { title: 'Templates', icon: FileSignature, href: '/templates' },
       { title: 'Compliance Inbox', icon: InboxIcon, href: '/inbox', badgeType: 'inbox' },
       { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
