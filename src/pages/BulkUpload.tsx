@@ -137,6 +137,26 @@ export default function BulkUpload() {
           </div>
         )}
 
+        {/* Extraction-failure banner — these files were uploaded but the AI couldn't
+            read them, so they'd otherwise sit in the table with no doc type / no
+            property and never land in the compliance register. */}
+        {extractionFailedDocs.length > 0 && (
+          <div className="border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200">
+                  {extractionFailedDocs.length} file{extractionFailedDocs.length !== 1 ? 's' : ''} need{extractionFailedDocs.length === 1 ? 's' : ''} manual classification
+                </h3>
+                <p className="text-sm text-amber-800/80 dark:text-amber-200/80 mt-1">
+                  AI extraction failed (likely a scanned or low-quality PDF). Set the document type, property and expiry date in the row below, then confirm — otherwise these certificates won't appear in your compliance register.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+
         {/* Results Table */}
         {documents.length > 0 && (
           <div className="border rounded-lg overflow-auto">
