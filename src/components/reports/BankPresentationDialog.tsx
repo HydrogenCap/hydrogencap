@@ -45,6 +45,8 @@ export function BankPresentationDialog({ trigger }: BankPresentationDialogProps)
   const { data: coverPhotos, isLoading: loadingPhotos } = useAllPropertyCoverPhotos();
   const { data: allComplianceData, isLoading: loadingCompliance } = useAllCompliance();
   const allCompliance = allComplianceData?.items;
+  // Single source of truth for portfolio totals — guarantees parity with the dashboard.
+  const reportData = useReportData();
 
   // Build photo map for PDF
   const coverPhotoMap = useMemo(() => {
