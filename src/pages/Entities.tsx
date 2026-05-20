@@ -1,4 +1,4 @@
-import { useState, useMemo, type ComponentType } from 'react';
+import { useState, useMemo, useEffect, useRef, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Building2, User, Handshake, Shield, CheckCircle, AlertTriangle, RefreshCw, Loader2, AlertCircle as AlertCircleIcon, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -185,6 +185,52 @@ export default function Entities() {
     const overdue = verifications?.filter(v => v.accounts_filing_status === 'overdue' || v.confirmation_filing_status === 'overdue').length || 0;
     toast({ title: `Synced ${synced} SPVs. ${issues} discrepancies. ${overdue} overdue filings.` });
   };
+
+  // Auto-sync on page load: refresh stale (>24h) or never-synced SPVs in the
+  // background once per session. Silent — no toast unless user triggers manual sync.
+  const autoSyncedRef = useRef(false);
+  useEffect(() => {
+    if (autoSyncedRef.current) return;
+    if (!entities || !verifications) return;
+
+    const SESSION_KEY = 'entities_autosync_done';
+    if (sessionStorage.getItem(SESSION_KEY)) {
+      autoSyncedRef.current = true;
+      return;
+    }
+
+    const STALE_MS = 24 * 60 * 60 * 1000; // 24h
+    const now = Date.now();
+    const verifByEntity = new Map(verifications.map(v => [v.entity_id, v]));
+
+    const stale = entities.filter(e => {
+      if (e.entity_type !== 'spv') return false;
+      if (!e.company_number) return false;
+      const v = verifByEntity.get(e.id);
+      if (!v || !v.last_synced) return true;
+      return now - new Date(v.last_synced).getTime() > STALE_MS;
+    });
+
+    if (stale.length === 0) {
+      autoSyncedRef.current = true;
+      sessionStorage.setItem(SESSION_KEY, '1');
+      return;
+    }
+
+    autoSyncedRef.current = true;
+    sessionStorage.setItem(SESSION_KEY, '1');
+
+    (async () => {
+      for (const entity of stale) {
+        try {
+          await syncEntity.mutateAsync({ entityId: entity.id, companyNumber: entity.company_number! });
+        } catch (err) {
+          console.error('Auto-sync failed for entity', entity.id, err);
+        }
+        await new Promise(r => setTimeout(r, 600));
+      }
+    })();
+  }, [entities, verifications, syncEntity]);
 
   const CHStatusCell = ({ entityId, entityType }: { entityId: string; entityType: string }) => {
     if (entityType !== 'spv' && entityType !== 'ltd_company') return <span className="text-muted-foreground text-xs">N/A</span>;
