@@ -401,6 +401,14 @@ function PropertyCard({ property: p, roomSummary, complianceStatus, photoUrl, se
       className={`cursor-pointer hover:shadow-md transition-shadow border-l-4 ${LIFECYCLE_BORDER[p.lifecycle_stage] || 'border-l-border'} overflow-hidden relative ${selected ? 'ring-2 ring-primary' : ''}`}
       onClick={onClick}
     >
+      {onToggleSelect && (
+        <div
+          className="absolute top-2 left-2 z-10 bg-card/90 backdrop-blur-sm rounded p-1 shadow"
+          onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
+        >
+          <Checkbox checked={!!selected} aria-label={`Select ${p.address_line_1}`} />
+        </div>
+      )}
       {photoUrl && (
         <div className="h-32 w-full overflow-hidden">
           <img src={photoUrl} alt={p.address_line_1} loading="lazy" width={400} height={128} className="w-full h-full object-cover" />
