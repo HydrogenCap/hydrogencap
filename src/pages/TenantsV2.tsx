@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { EmptyState } from '@/components/common';
+import { EmptyState, SavedViewsMenu } from '@/components/common';
 import { ListState } from '@/components/ListState';
 import { useTenantsV2WithTenancy, TENANT_TYPES, TENANT_STATUSES } from '@/hooks/useTenantsV2';
 import { useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
@@ -185,6 +185,16 @@ export default function TenantsV2() {
               <SelectItem value="rent_low">Rent ↓</SelectItem>
             </SelectContent>
           </Select>
+          <SavedViewsMenu
+            scope="tenants"
+            currentFilters={{ search, statusFilter, typeFilter, sortBy }}
+            onApply={(f) => {
+              if (typeof f.search === 'string') setSearch(f.search);
+              if (typeof f.statusFilter === 'string') setStatusFilter(f.statusFilter);
+              if (typeof f.typeFilter === 'string') setTypeFilter(f.typeFilter);
+              if (typeof f.sortBy === 'string') setSortBy(f.sortBy);
+            }}
+          />
         </div>
 
         {/* Table */}

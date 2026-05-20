@@ -18,6 +18,7 @@ import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianc
 import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
 import { ComplianceMatrixGrid } from '@/components/compliance-v2/ComplianceMatrixGrid';
 import { ComplianceCalendarView } from '@/components/compliance-v2/ComplianceCalendarView';
+import { SavedViewsMenu } from '@/components/common';
 import { ComplianceDetailModal } from '@/components/compliance-v2/ComplianceDetailModal';
 import { UploadComplianceDocModal } from '@/components/compliance-v2/UploadComplianceDocModal';
 import type { ComplianceMatrixRow, ComplianceDocType } from '@/lib/complianceV2Types';
@@ -529,6 +530,16 @@ export default function ComplianceV2() {
               <CalendarDays className="h-4 w-4 mr-1" /> Calendar
             </Button>
           </div>
+          <SavedViewsMenu
+            scope="compliance"
+            currentFilters={{ statusFilter, searchQuery, propertyType, viewMode }}
+            onApply={(f) => {
+              if (typeof f.statusFilter === 'string') setStatusFilter(f.statusFilter);
+              if (typeof f.searchQuery === 'string') setSearchQuery(f.searchQuery);
+              if (typeof f.propertyType === 'string') setPropertyType(f.propertyType);
+              if (f.viewMode === 'matrix' || f.viewMode === 'calendar') setViewMode(f.viewMode);
+            }}
+          />
           </div>
         </div>
 
