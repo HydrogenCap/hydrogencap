@@ -199,12 +199,12 @@ export default function ComplianceV2() {
               variant="outline"
               size="sm"
               onClick={() => {
-                const rows = (matrix || []).filter(r => r.is_required);
+                const rows = filteredCsvRows;
                 if (rows.length === 0) {
-                  toast.info('Nothing to export');
+                  toast.info('Nothing to export with the current filters');
                   return;
                 }
-                const headers = ['Property', 'Document', 'Status', 'Days Remaining', 'Expiry Date', 'Issue Date', 'Issuer', 'Certificate #', 'Cost (£)'];
+                const headers = ['Property', 'Property Type', 'Document', 'Status', 'Days Remaining', 'Expiry Date', 'Issue Date', 'Issuer', 'Certificate #', 'Cost (£)'];
                 const escape = (v: unknown) => {
                   const s = v === null || v === undefined ? '' : String(v);
                   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -213,6 +213,7 @@ export default function ComplianceV2() {
                 for (const r of rows) {
                   lines.push([
                     r.property_address,
+                    r.property_type ?? '',
                     DOC_TYPE_DISPLAY_NAMES[r.document_type],
                     r.calculated_status,
                     r.days_remaining ?? '',
@@ -227,17 +228,18 @@ export default function ComplianceV2() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `compliance-register-${new Date().toISOString().slice(0, 10)}.csv`;
+                const suffix = filtersActive ? `-${statusFilter}` : '';
+                a.download = `compliance-register${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                toast.success(`Exported ${rows.length} compliance items`);
+                toast.success(`Exported ${rows.length} compliance item${rows.length === 1 ? '' : 's'}${filtersActive ? ' (filtered)' : ''}`);
               }}
               disabled={isLoading || !matrix?.length}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Export CSV{filtersActive && matrix?.length ? ` (${filteredCsvRows.length})` : ''}
             </Button>
             <Button
               variant="outline"
