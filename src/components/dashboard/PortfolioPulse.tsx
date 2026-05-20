@@ -201,12 +201,39 @@ export function PortfolioPulse({
   const circumference = 2 * Math.PI * 26;
   const dash = (pulseScore / 100) * circumference;
 
+  const { history, delta } = usePulseHistory(pulseScore);
+
+  // Build sparkline path
+  const sparkPath = useMemo(() => {
+    if (history.length < 2) return null;
+    const w = 100;
+    const h = 24;
+    const xs = history.map((_, i) => (i / (history.length - 1)) * w);
+    const ys = history.map((p) => h - (Math.max(0, Math.min(100, p.score)) / 100) * h);
+    const d = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
+    return { d, w, h, points: xs.map((x, i) => ({ x, y: ys[i] })) };
+  }, [history]);
+
+  // Partition actions by snooze state
+  const visibleActions = actions.filter((a) => !isSnoozed(a.id));
+  const snoozedActions = actions.filter((a) => isSnoozed(a.id));
+  const renderedActions = showSnoozed ? actions : visibleActions;
+  const snoozedCount = snoozedActions.length;
+
+  const deltaIcon = delta === null ? null : delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : null;
+  const deltaColor =
+    delta === null || delta === 0
+      ? 'text-muted-foreground'
+      : delta > 0
+        ? 'text-success'
+        : 'text-destructive';
+
   return (
     <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/20">
       <CardContent className="p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:items-start gap-5">
-          {/* Score ring */}
-          <div className="flex items-center gap-4 md:flex-col md:items-center md:gap-2 md:min-w-[120px]">
+          {/* Score ring + trend */}
+          <div className="flex items-center gap-4 md:flex-col md:items-center md:gap-2 md:min-w-[140px]">
             <div className="relative h-[72px] w-[72px]">
               <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90">
                 <circle cx="32" cy="32" r="26" fill="none" className="stroke-muted" strokeWidth="6" />
@@ -233,52 +260,145 @@ export function PortfolioPulse({
                 {format(new Date(), 'EEE d MMM')}
               </p>
             </div>
+
+            {/* Sparkline + delta */}
+            {sparkPath && (
+              <div
+                className="hidden md:flex flex-col items-center gap-1 mt-1"
+                aria-label={`Pulse trend over ${history.length} days`}
+                title={`${history.length}-day pulse trend`}
+              >
+                <svg
+                  viewBox={`0 0 ${sparkPath.w} ${sparkPath.h}`}
+                  className="w-[100px] h-6"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d={sparkPath.d}
+                    fill="none"
+                    className={scoreRing}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <circle
+                    cx={sparkPath.points[sparkPath.points.length - 1].x}
+                    cy={sparkPath.points[sparkPath.points.length - 1].y}
+                    r="1.8"
+                    className={cn('fill-current', scoreColor)}
+                  />
+                </svg>
+                {delta !== null && (
+                  <div className={cn('flex items-center gap-0.5 text-[10px] font-medium tabular-nums', deltaColor)}>
+                    {deltaIcon ? React.createElement(deltaIcon, { className: 'h-3 w-3' }) : null}
+                    <span>{delta > 0 ? '+' : ''}{delta} vs yesterday</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-base md:text-lg font-semibold text-foreground">
-                Portfolio briefing
-              </h2>
+            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h2 className="text-base md:text-lg font-semibold text-foreground">
+                  Portfolio briefing
+                </h2>
+              </div>
+              {snoozedCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] gap-1 text-muted-foreground"
+                  onClick={() => setShowSnoozed((v) => !v)}
+                  aria-pressed={showSnoozed}
+                >
+                  {showSnoozed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {showSnoozed ? 'Hide' : 'Show'} {snoozedCount} snoozed
+                </Button>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mb-4">{summary}</p>
 
+            {renderedActions.length === 0 && snoozedCount > 0 && !showSnoozed && (
+              <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-6 text-center">
+                <BellOff className="h-5 w-5 mx-auto text-muted-foreground mb-1.5" />
+                <p className="text-sm text-foreground">All actions snoozed until tomorrow</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 mt-1 text-xs"
+                  onClick={() => setShowSnoozed(true)}
+                >
+                  Show {snoozedCount} snoozed item{snoozedCount === 1 ? '' : 's'}
+                </Button>
+              </div>
+            )}
+
             <ul className="space-y-2">
-              {actions.map((a) => {
+              {renderedActions.map((a) => {
                 const Icon = a.icon;
                 const s = severityStyles[a.severity];
+                const snoozedNow = isSnoozed(a.id);
                 return (
                   <li key={a.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleOpen(a.id)}
-                      aria-label={`${a.title} — open details`}
+                    <div
                       className={cn(
-                        'group w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all text-left',
-                        'hover:shadow-sm hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        'group relative w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all',
+                        'hover:shadow-sm focus-within:ring-2 focus-within:ring-ring',
                         s.ring,
+                        snoozedNow && 'opacity-60',
                       )}
                     >
-                      <span
-                        className={cn(
-                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
-                          s.pill,
-                        )}
+                      <button
+                        type="button"
+                        onClick={() => handleOpen(a.id)}
+                        aria-label={`${a.title} — open details`}
+                        className="flex items-center gap-3 flex-1 min-w-0 text-left focus:outline-none"
                       >
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{a.detail}</p>
-                      </div>
-                      <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-foreground">
-                        Details
-                        <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                      </span>
-                      <span className={cn('h-1.5 w-1.5 rounded-full sm:hidden', s.dot)} />
-                    </button>
+                        <span
+                          className={cn(
+                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
+                            s.pill,
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {snoozedNow ? `Snoozed · ${a.detail}` : a.detail}
+                          </p>
+                        </div>
+                        <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-foreground">
+                          Details
+                          <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </button>
+                      {a.id !== 'all-clear' && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            snoozedNow ? unsnooze(a.id) : snoozeUntilTomorrow(a.id);
+                          }}
+                          className={cn(
+                            'ml-1 shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md',
+                            'text-muted-foreground hover:text-foreground hover:bg-muted',
+                            'focus:outline-none focus:ring-2 focus:ring-ring',
+                            'opacity-0 group-hover:opacity-100 focus:opacity-100',
+                            snoozedNow && 'opacity-100',
+                          )}
+                          aria-label={snoozedNow ? 'Unsnooze action' : 'Snooze until tomorrow'}
+                          title={snoozedNow ? 'Unsnooze' : 'Snooze until tomorrow'}
+                        >
+                          {snoozedNow ? <Undo2 className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+                        </button>
+                      )}
+                    </div>
                   </li>
                 );
               })}
