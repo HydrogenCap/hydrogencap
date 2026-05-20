@@ -18,6 +18,7 @@ import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianc
 import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
 import { ComplianceMatrixGrid } from '@/components/compliance-v2/ComplianceMatrixGrid';
 import { ComplianceCalendarView } from '@/components/compliance-v2/ComplianceCalendarView';
+import { SavedViewsMenu } from '@/components/common';
 import { ComplianceDetailModal } from '@/components/compliance-v2/ComplianceDetailModal';
 import { UploadComplianceDocModal } from '@/components/compliance-v2/UploadComplianceDocModal';
 import type { ComplianceMatrixRow, ComplianceDocType } from '@/lib/complianceV2Types';
