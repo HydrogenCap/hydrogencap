@@ -528,6 +528,7 @@ export default function ComplianceV2() {
             density={density}
             propertyTypeFilter={propertyType}
             onLegendStatusClick={setStatusFilter}
+            onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
           />
         ) : (
           <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
