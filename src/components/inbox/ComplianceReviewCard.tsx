@@ -259,7 +259,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const canAcceptManually = needsManualClassification && selectedDocType && selectedPropertyId;
 
   return (
-    <Card className={`bg-card border-border ${!selectedPropertyId && isProcessed ? 'border-amber-500/50' : ''}`}>
+    <Card className={`bg-card border-border ${!selectedPropertyId && isActionable ? 'border-amber-500/50' : ''}`}>
       <CardContent className="p-4">
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
           <div className="flex items-start gap-4">
@@ -311,7 +311,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </div>
               )}
 
-              {isProcessed && (
+              {isActionable && (
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   {!selectedPropertyId ? (
                     <Badge variant="outline" className="border-amber-500 text-amber-600">
@@ -347,7 +347,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </div>
               )}
 
-              {needsManualClassification && !isProcessed && (
+              {needsManualClassification && !isActionable && (
                 <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <span>{document.original_file_name}</span>
                   {document.created_at && (
@@ -398,7 +398,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </AlertDialogContent>
               </AlertDialog>
 
-              {isFailed || isRateLimited ? (
+              {isFailed || isRateLimited || hasTimedOut ? (
                 <Button
                   variant="outline"
                   onClick={handleRetry}
@@ -427,7 +427,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
 
                   <Button
                     onClick={handleAccept}
-                    disabled={isProcessing || (!isProcessed && !canAcceptManually) || !selectedDocType}
+                    disabled={isProcessing || (!isActionable && !canAcceptManually) || !selectedDocType}
                     className={isReadyForConfirm ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
                   >
                     {isProcessing ? (
