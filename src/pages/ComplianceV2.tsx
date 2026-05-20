@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download, X, Printer, Info } from 'lucide-react';
+import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download, X, Printer, Info, Rows3, Rows4, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
