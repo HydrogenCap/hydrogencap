@@ -25,6 +25,7 @@ import {
   PoundSterling,
   Wrench,
   Upload,
+  Inbox as InboxIcon,
   FolderUp,
   FileSignature,
   ShieldCheck,
