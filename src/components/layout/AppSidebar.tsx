@@ -25,6 +25,7 @@ import {
   PoundSterling,
   Wrench,
   Upload,
+  Inbox as InboxIcon,
   FolderUp,
   FileSignature,
   ShieldCheck,
@@ -152,6 +153,7 @@ const operationsItems: NavItem[] = [
     href: '/documents',
     children: [
       { title: 'Templates', icon: FileSignature, href: '/templates' },
+      { title: 'Compliance Inbox', icon: InboxIcon, href: '/inbox', badgeType: 'inbox' },
       { title: 'Bulk Upload', icon: FolderUp, href: '/bulk-upload' },
     ],
   },
