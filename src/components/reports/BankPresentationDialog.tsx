@@ -22,6 +22,7 @@ import type { EnhancedPresentationOptions } from '@/lib/bankPresentationGenerato
 import { calculatePortfolioStats } from '@/lib/portfolioStats';
 import { getPropertyMetrics } from '@/lib/propertyMetrics';
 import { getComplianceItemStatus } from '@/lib/complianceTypes';
+import { useReportData } from '@/hooks/useReportData';
 import { toast } from 'sonner';
 
 interface BankPresentationDialogProps {
