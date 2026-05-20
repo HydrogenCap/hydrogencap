@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download, X, Printer, Info } from 'lucide-react';
+import { ShieldCheck, Search, Grid3X3, CalendarDays, RefreshCw, Download, X, Printer, Info, Rows3, Rows4, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,14 +41,32 @@ export default function ComplianceV2() {
   );
   const [searchQuery, setSearchQueryState] = useState(urlSearch);
   const [viewMode, setViewModeState] = useState<'matrix' | 'calendar'>(urlView === 'calendar' ? 'calendar' : 'matrix');
+  const [propertyType, setPropertyTypeState] = useState<string>(searchParams.get('type') || 'all');
   const [rescanning, setRescanning] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Density: persisted across sessions
+  const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
+    if (typeof window === 'undefined') return 'comfortable';
+    return (localStorage.getItem('compliance-v2-density') as 'comfortable' | 'compact') || 'comfortable';
+  });
+  useEffect(() => {
+    try { localStorage.setItem('compliance-v2-density', density); } catch { /* ignore */ }
+  }, [density]);
+
+  // Back-to-top visibility
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const updateUrl = useCallback((next: Record<string, string | null>) => {
     setSearchParams(prev => {
       const params = new URLSearchParams(prev);
       for (const [k, v] of Object.entries(next)) {
-        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix')) {
+        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix') || (k === 'type' && v === 'all')) {
           params.delete(k);
         } else {
           params.set(k, v);
@@ -61,6 +79,7 @@ export default function ComplianceV2() {
   const setStatusFilter = (v: string) => { setStatusFilterState(v); updateUrl({ status: v }); };
   const setSearchQuery = (v: string) => { setSearchQueryState(v); updateUrl({ q: v }); };
   const setViewMode = (v: 'matrix' | 'calendar') => { setViewModeState(v); updateUrl({ view: v }); };
+  const setPropertyType = (v: string) => { setPropertyTypeState(v); updateUrl({ type: v }); };
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
@@ -128,7 +147,31 @@ export default function ComplianceV2() {
   const orgId = matrix?.[0]?.org_id || '';
 
   const uniquePropertyCount = useMemo(() => new Set((matrix || []).map(r => r.property_id)).size, [matrix]);
-  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '';
+  const propertyTypes = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of matrix || []) if (r.property_type) set.add(r.property_type);
+    return Array.from(set).sort();
+  }, [matrix]);
+  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '' || propertyType !== 'all';
+
+  // Mirror the matrix's row visibility logic so CSV export honors current filters.
+  const filteredCsvRows = useMemo(() => {
+    if (!matrix) return [];
+    const needsAttention = (s: string) => ['expiring_soon', 'critical', 'expired', 'missing'].includes(s);
+    return matrix.filter(r => {
+      if (!r.is_required) return false;
+      if (propertyType !== 'all' && (r.property_type || '').toLowerCase() !== propertyType.toLowerCase()) return false;
+      if (searchQuery && !r.property_address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      switch (statusFilter) {
+        case 'needs_attention': return needsAttention(r.calculated_status);
+        case 'expired': return r.calculated_status === 'expired';
+        case 'missing': return r.calculated_status === 'missing';
+        case 'valid': return r.calculated_status === 'valid';
+        case 'all':
+        default: return true;
+      }
+    });
+  }, [matrix, statusFilter, searchQuery, propertyType]);
 
   return (
     <AppLayout>
@@ -156,12 +199,12 @@ export default function ComplianceV2() {
               variant="outline"
               size="sm"
               onClick={() => {
-                const rows = (matrix || []).filter(r => r.is_required);
+                const rows = filteredCsvRows;
                 if (rows.length === 0) {
-                  toast.info('Nothing to export');
+                  toast.info('Nothing to export with the current filters');
                   return;
                 }
-                const headers = ['Property', 'Document', 'Status', 'Days Remaining', 'Expiry Date', 'Issue Date', 'Issuer', 'Certificate #', 'Cost (£)'];
+                const headers = ['Property', 'Property Type', 'Document', 'Status', 'Days Remaining', 'Expiry Date', 'Issue Date', 'Issuer', 'Certificate #', 'Cost (£)'];
                 const escape = (v: unknown) => {
                   const s = v === null || v === undefined ? '' : String(v);
                   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -170,6 +213,7 @@ export default function ComplianceV2() {
                 for (const r of rows) {
                   lines.push([
                     r.property_address,
+                    r.property_type ?? '',
                     DOC_TYPE_DISPLAY_NAMES[r.document_type],
                     r.calculated_status,
                     r.days_remaining ?? '',
@@ -184,17 +228,18 @@ export default function ComplianceV2() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `compliance-register-${new Date().toISOString().slice(0, 10)}.csv`;
+                const suffix = filtersActive ? `-${statusFilter}` : '';
+                a.download = `compliance-register${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                toast.success(`Exported ${rows.length} compliance items`);
+                toast.success(`Exported ${rows.length} compliance item${rows.length === 1 ? '' : 's'}${filtersActive ? ' (filtered)' : ''}`);
               }}
               disabled={isLoading || !matrix?.length}
             >
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Export CSV{filtersActive && matrix?.length ? ` (${filteredCsvRows.length})` : ''}
             </Button>
             <Button
               variant="outline"
@@ -384,6 +429,20 @@ export default function ComplianceV2() {
               </SelectContent>
             </Select>
 
+            {propertyTypes.length > 1 && (
+              <Select value={propertyType} onValueChange={setPropertyType}>
+                <SelectTrigger className="w-[160px]" aria-label="Property type filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All types</SelectItem>
+                  {propertyTypes.map(t => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -410,12 +469,31 @@ export default function ComplianceV2() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); }}
+                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
               >
                 <X className="h-3.5 w-3.5 mr-1" /> Clear filters
               </Button>
             )}
           </div>
+
+          <div className="flex items-center gap-2">
+            {viewMode === 'matrix' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDensity(d => d === 'comfortable' ? 'compact' : 'comfortable')}
+                    aria-label={`Switch to ${density === 'comfortable' ? 'compact' : 'comfortable'} density`}
+                  >
+                    {density === 'comfortable' ? <Rows3 className="h-4 w-4" /> : <Rows4 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {density === 'comfortable' ? 'Switch to compact rows' : 'Switch to comfortable rows'}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
           <div className="flex items-center gap-1 border rounded-lg p-0.5">
             <Button
@@ -435,6 +513,7 @@ export default function ComplianceV2() {
               <CalendarDays className="h-4 w-4 mr-1" /> Calendar
             </Button>
           </div>
+          </div>
         </div>
 
         {/* Content */}
@@ -446,9 +525,24 @@ export default function ComplianceV2() {
             onCellClick={handleCellClick}
             statusFilter={statusFilter}
             searchQuery={searchQuery}
+            density={density}
+            propertyTypeFilter={propertyType}
+            onLegendStatusClick={setStatusFilter}
           />
         ) : (
           <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
+        )}
+
+        {/* Back to top */}
+        {showBackToTop && (
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="print:hidden fixed bottom-6 right-6 z-40 h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Back to top"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
         )}
 
       </div>
