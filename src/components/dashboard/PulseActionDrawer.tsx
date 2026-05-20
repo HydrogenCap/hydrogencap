@@ -119,11 +119,17 @@ function buildConfig(
         ],
         itemsTitle: 'Top critical items',
         emptyItems: 'No critical risk records were returned by the risks feed.',
-        items: critical.slice(0, 6).map((r) => ({
-          primary: String(r?.title ?? r?.description ?? r?.message ?? 'Untitled risk'),
-          secondary: [r?.property_address, r?.category ?? r?.type].filter(Boolean).join(' · ') || undefined,
-          badge: { label: 'Critical', tone: 'critical' },
-        })),
+        items: critical.slice(0, 6).map((r) => {
+          const address = r?.address ?? r?.property_address ?? r?.propertyAddress ?? r?.property?.address_line;
+          const title = String(r?.message ?? r?.title ?? r?.description ?? 'Untitled risk');
+          return {
+            primary: address ? String(address) : title,
+            secondary: address
+              ? [title, r?.category ?? r?.type].filter(Boolean).join(' · ')
+              : (r?.category ?? r?.type) || undefined,
+            badge: { label: 'Critical', tone: 'critical' },
+          };
+        }),
         filters: [
           { label: 'All risks', href: '/risks' },
           ...topCats.map(([cat, n]) => ({
@@ -168,19 +174,23 @@ function buildConfig(
         ],
         itemsTitle: 'Behind on payment',
         emptyItems: 'No outstanding tenancies in the current schedule.',
-        items: fullyOverdue.slice(0, 6).map((r) => ({
-          primary: String(r?.tenant_name ?? r?.tenancy_name ?? r?.property_address ?? 'Tenancy'),
-          secondary: [
-            r?.property_address,
-            r?.due_date ? `Due ${format(new Date(r.due_date), 'd MMM')}` : null,
-          ]
-            .filter(Boolean)
-            .join(' · ') || undefined,
-          badge: {
-            label: formatGBP(Number(r?.expected_amount ?? r?.amount ?? 0)),
-            tone: 'warning',
-          },
-        })),
+        items: fullyOverdue.slice(0, 6).map((r) => {
+          const address = r?.property_address ?? r?.address ?? r?.property?.address_line;
+          const tenant = r?.tenant_name ?? r?.tenancy_name;
+          return {
+            primary: address ? String(address) : String(tenant ?? 'Tenancy'),
+            secondary: [
+              tenant && address ? `Tenant: ${tenant}` : null,
+              r?.due_date ? `Due ${format(new Date(r.due_date), 'd MMM')}` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || undefined,
+            badge: {
+              label: formatGBP(Number(r?.expected_amount ?? r?.amount ?? 0)),
+              tone: 'warning',
+            },
+          };
+        }),
         filters: [
           { label: 'Reconcile now', href: '/rent-reconciliation' },
           { label: 'Arrears report', href: '/rent-reconciliation?view=arrears' },
@@ -222,21 +232,25 @@ function buildConfig(
         items: dated
           .sort((a, b) => (a._days ?? 0) - (b._days ?? 0))
           .slice(0, 6)
-          .map((l) => ({
-            primary: String(l?.lender_name ?? l?.facility_name ?? 'Loan facility'),
-            secondary: [
-              l?.property_address,
-              l?.maturity_date ? `Matures ${format(new Date(l.maturity_date), 'd MMM yyyy')}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ') || undefined,
-            badge: {
-              label: l._days! < 0
-                ? `${Math.abs(l._days!)}d overdue`
-                : `${l._days}d`,
-              tone: l._days! < 0 ? 'critical' : l._days! <= 90 ? 'warning' : 'info',
-            },
-          })),
+          .map((l) => {
+            const address = l?.property_address ?? l?.address ?? l?.property?.address_line;
+            const lender = l?.lender_name ?? l?.facility_name;
+            return {
+              primary: address ? String(address) : String(lender ?? 'Loan facility'),
+              secondary: [
+                lender && address ? `Lender: ${lender}` : null,
+                l?.maturity_date ? `Matures ${format(new Date(l.maturity_date), 'd MMM yyyy')}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined,
+              badge: {
+                label: l._days! < 0
+                  ? `${Math.abs(l._days!)}d overdue`
+                  : `${l._days}d`,
+                tone: l._days! < 0 ? 'critical' : l._days! <= 90 ? 'warning' : 'info',
+              },
+            };
+          }),
         filters: [
           { label: 'All facilities', href: '/lending' },
           { label: 'Maturity calendar', href: '/compliance?view=calendar&type=mortgages' },
@@ -285,19 +299,23 @@ function buildConfig(
         items: upcoming
           .sort((a, b) => (a._days ?? 0) - (b._days ?? 0))
           .slice(0, 6)
-          .map((e) => ({
-            primary: String(e?.compliance_type ?? e?.type ?? 'Certificate'),
-            secondary: [
-              e?.property_address,
-              e._date ? `Due ${formatDistanceToNowStrict(e._date, { addSuffix: true })}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ') || undefined,
-            badge: {
-              label: `${e._days}d`,
-              tone: e._days! <= 7 ? 'critical' : e._days! <= 14 ? 'warning' : 'info',
-            },
-          })),
+          .map((e) => {
+            const address = e?.property_address ?? e?.address ?? e?.property?.address_line;
+            const type = String(e?.compliance_type ?? e?.type ?? 'Certificate');
+            return {
+              primary: address ? String(address) : type,
+              secondary: [
+                address ? type : null,
+                e._date ? `Due ${formatDistanceToNowStrict(e._date, { addSuffix: true })}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || undefined,
+              badge: {
+                label: `${e._days}d`,
+                tone: e._days! <= 7 ? 'critical' : e._days! <= 14 ? 'warning' : 'info',
+              },
+            };
+          }),
         filters: [
           { label: 'Full register', href: '/compliance' },
           { label: 'Calendar view', href: '/compliance?view=calendar' },
