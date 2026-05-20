@@ -530,6 +530,16 @@ export default function ComplianceV2() {
               <CalendarDays className="h-4 w-4 mr-1" /> Calendar
             </Button>
           </div>
+          <SavedViewsMenu
+            scope="compliance"
+            currentFilters={{ statusFilter, searchQuery, propertyType, viewMode }}
+            onApply={(f) => {
+              if (typeof f.statusFilter === 'string') setStatusFilter(f.statusFilter);
+              if (typeof f.searchQuery === 'string') setSearchQuery(f.searchQuery);
+              if (typeof f.propertyType === 'string') setPropertyType(f.propertyType);
+              if (f.viewMode === 'matrix' || f.viewMode === 'calendar') setViewMode(f.viewMode);
+            }}
+          />
           </div>
         </div>
 
