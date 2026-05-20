@@ -213,6 +213,7 @@ export function KpiCards({
           icon={DoorOpen}
           iconClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
           valueClassName={rentalStats.occupancyRate >= 90 ? 'text-success' : rentalStats.occupancyRate >= 75 ? 'text-warning' : 'text-destructive'}
+          headerAction={<KpiBreakdownPopover explainerId="occupancy" currentValue={formatPercent(rentalStats.occupancyRate)} />}
         />
         <KpiCard
           label="WAULT"
@@ -230,6 +231,7 @@ export function KpiCards({
             rentalStats.waultMonths === null ? '' :
             rentalStats.waultMonths >= 12 ? 'text-success' : rentalStats.waultMonths >= 6 ? 'text-warning' : 'text-destructive'
           }
+          headerAction={<KpiBreakdownPopover explainerId="wault" currentValue={rentalStats.waultMonths !== null ? `${rentalStats.waultMonths.toFixed(1)} mo` : '—'} />}
         />
         <KpiCard
           label="Void Rate"
@@ -245,6 +247,7 @@ export function KpiCards({
             voidRateData.voidRate <= 5 ? 'text-success' : voidRateData.voidRate <= 15 ? 'text-warning' : 'text-destructive'
           }
           onClick={() => navigate('/voids')}
+          headerAction={<KpiBreakdownPopover explainerId="void_rate" currentValue={voidRateData ? `${voidRateData.voidRate}%` : '—'} />}
         />
         <KpiCard
           label="Portfolio Net Yield"
