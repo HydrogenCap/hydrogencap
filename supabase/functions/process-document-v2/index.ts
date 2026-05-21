@@ -544,14 +544,48 @@ Deno.serve(withInvocationLog("process-document-v2", async (req, _invocationLog) 
       error: error instanceof Error ? error.message : String(error),
     });
 
-    // Best-effort: reset document status so it doesn't stay stuck at pending/processing
+    // Best-effort: reset document status so it doesn't stay stuck at pending/processing,
+    // capture the error reason on the document row, and log to errors_log for triage.
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const adminClient = createClient(supabaseUrl, supabaseServiceKey);
       const body = await req.clone().json().catch(() => ({}));
-      if (body?.document_id) {
-        await adminClient.from("documents").update({ extraction_status: "failed" }).eq("id", body.document_id);
+      const documentId: string | undefined = body?.document_id;
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
+
+      if (documentId) {
+        await adminClient
+          .from("documents")
+          .update({
+            extraction_status: "failed",
+            validation_errors: [errMsg],
+          })
+          .eq("id", documentId);
+
+        // Lookup org_id for the document so the errors_log row is org-scoped
+        const { data: docRow } = await adminClient
+          .from("documents")
+          .select("org_id")
+          .eq("id", documentId)
+          .maybeSingle();
+
+        await adminClient.from("errors_log").insert({
+          org_id: docRow?.org_id ?? null,
+          source: "process-document-v2",
+          severity: "error",
+          message: errMsg,
+          context: { document_id: documentId },
+          stack: error instanceof Error ? (error.stack ?? null) : null,
+        });
+      } else {
+        await adminClient.from("errors_log").insert({
+          source: "process-document-v2",
+          severity: "error",
+          message: errMsg,
+          context: { note: "no document_id in body" },
+          stack: error instanceof Error ? (error.stack ?? null) : null,
+        });
       }
     } catch {
       // ignore — primary error takes precedence
