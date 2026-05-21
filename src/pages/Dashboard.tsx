@@ -27,6 +27,7 @@ import { KpiCards } from '@/components/dashboard/KpiCards';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
 import { PortfolioPulse } from '@/components/dashboard/PortfolioPulse';
 import { CollapsibleSection } from '@/components/dashboard/CollapsibleSection';
+import { RefinancingBanner } from '@/components/dashboard/RefinancingBanner';
 
 // Hooks
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
@@ -299,6 +300,8 @@ function DashboardPage() {
         <DemoBanner />
         <ActivationWidget />
         <ActivationChecklist />
+        <RefinancingBanner />
+
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

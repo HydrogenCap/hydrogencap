@@ -50,7 +50,8 @@ export type BadgeType =
   | 'inbox'
   | 'tasks'
   | 'tenancy_events'
-  | 'arrears';
+  | 'arrears'
+  | 'refinancing';
 
 export interface NavItem {
   title: string;
@@ -106,7 +107,7 @@ export const operationsItems: NavItem[] = [
     href: '/financials',
     children: [
       { title: 'Lending', icon: PoundSterling, href: '/lending', sectionKey: 'lending' },
-      { title: 'Refinancing', icon: TrendingUp, href: '/refinancing-opportunities', sectionKey: 'lending' },
+      { title: 'Refinancing', icon: TrendingUp, href: '/refinancing-opportunities', sectionKey: 'lending', badgeType: 'refinancing' },
       { title: 'Financials', icon: BarChart3, href: '/financials' },
       { title: 'Investors', icon: Briefcase, href: '/investors', sectionKey: 'investors' },
       { title: 'Distributions', icon: Banknote, href: '/distributions', sectionKey: 'distributions' },

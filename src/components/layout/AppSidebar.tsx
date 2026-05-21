@@ -32,6 +32,7 @@ import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
+import { useExpiringLoanCount } from '@/hooks/useExpiringLoanCount';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { LogoWordmark } from '@/components/LogoWordmark';
 import { useSectionVisibility } from '@/hooks/useSectionVisibility';
@@ -76,6 +77,7 @@ export function AppSidebar() {
   const { urgentCount: tenancyUrgentCount } = useTenancyEventCounts();
   const { data: arrearsData } = useArrears();
   const arrearsCount = arrearsData?.length ?? 0;
+  const refinancingCount = useExpiringLoanCount();
 
   const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
 
@@ -219,6 +221,17 @@ export function AppSidebar() {
           aria-label={`${arrearsCount} tenancies in arrears`}
         >
           {arrearsCount}
+        </Badge>
+      );
+    }
+    if (item.badgeType === 'refinancing' && refinancingCount > 0) {
+      return (
+        <Badge
+          variant="secondary"
+          className="h-5 min-w-5 px-1.5 text-xs border-amber-500/40 text-amber-700"
+          aria-label={`${refinancingCount} loans approaching rate expiry`}
+        >
+          {refinancingCount}
         </Badge>
       );
     }
