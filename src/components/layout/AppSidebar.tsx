@@ -224,6 +224,17 @@ export function AppSidebar() {
         </Badge>
       );
     }
+    if (item.badgeType === 'refinancing' && refinancingCount > 0) {
+      return (
+        <Badge
+          variant="secondary"
+          className="h-5 min-w-5 px-1.5 text-xs border-amber-500/40 text-amber-700"
+          aria-label={`${refinancingCount} loans approaching rate expiry`}
+        >
+          {refinancingCount}
+        </Badge>
+      );
+    }
     return null;
   };
 
