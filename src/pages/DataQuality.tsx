@@ -38,8 +38,7 @@ export default function DataQuality() {
   usePageTitle('Data Quality');
   const { data: properties, isLoading: pLoading } = usePropertiesV2();
   const { byProperty: complianceMap, isLoading: cLoading } = usePropertyComplianceStatus();
-  const missingInfo = useMissingInfo();
-  const { data: missingData, isLoading: mLoading } = missingInfo as any;
+  const { data: missingData, isLoading: mLoading } = useMissingInfo();
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | Category>('all');
