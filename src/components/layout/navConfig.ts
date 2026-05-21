@@ -65,6 +65,7 @@ export const portfolioItems: NavItem[] = [
   { title: 'Today', icon: Activity, href: '/today' },
   { title: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { title: 'Fix-it queue', icon: Wrench, href: '/fix-it' },
+  { title: 'Missing info', icon: AlertTriangle, href: '/missing-info' },
   { title: 'Properties', icon: Building2, href: '/properties-v2' },
   { title: 'Pipeline', icon: Construction, href: '/pipeline' },
   {
