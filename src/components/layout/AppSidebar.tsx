@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ShieldCheck, ArrowRight, LogOut } from 'lucide-react';
 import { usePortfolioComplianceStats } from '@/hooks/usePortfolioComplianceStats';
 import {
   Sidebar,
