@@ -9,6 +9,7 @@ export interface PropertyComplianceStatus {
   valid: number;
   expiring: number;
   expired: number;
+  critical: number;
   missing: number;
   notRequired: number;
   total: number;
@@ -25,9 +26,6 @@ interface MatrixRow {
  * Single source of truth for "how compliant is property X?" — reads
  * compliance_matrix_v2 once and lets callers (cards, status bars,
  * property detail headers) derive consistent badges and counts.
- *
- * Pass `propertyId` to scope to one property. Omit to receive the
- * full per-property map (useful for grids / tables).
  */
 export function usePropertyComplianceStatus(propertyId?: string) {
   const { data: matrixRows, isLoading } = useQuery({
@@ -53,6 +51,7 @@ export function usePropertyComplianceStatus(propertyId?: string) {
         case 'valid': existing.valid++; break;
         case 'expiring_soon': existing.expiring++; break;
         case 'expired': existing.expired++; break;
+        case 'critical': existing.critical++; break;
         case 'missing': existing.missing++; break;
         case 'not_required': existing.notRequired++; break;
       }
@@ -82,6 +81,7 @@ function emptyStatus(): PropertyComplianceStatus {
     valid: 0,
     expiring: 0,
     expired: 0,
+    critical: 0,
     missing: 0,
     notRequired: 0,
     total: 0,
@@ -91,7 +91,7 @@ function emptyStatus(): PropertyComplianceStatus {
 
 function deriveLevel(s: PropertyComplianceStatus): PropertyComplianceLevel {
   if (s.total === 0) return 'unknown';
-  if (s.expired > 0 || s.missing > 0) return 'expired';
+  if (s.expired > 0 || s.critical > 0 || s.missing > 0) return 'expired';
   if (s.expiring > 0) return 'expiring';
   if (s.valid > 0) return 'valid';
   return 'unknown';
@@ -99,10 +99,8 @@ function deriveLevel(s: PropertyComplianceStatus): PropertyComplianceLevel {
 
 function deriveLabel(s: PropertyComplianceStatus): string {
   if (s.total === 0) return 'No data';
-  if (s.expired > 0 || s.missing > 0) {
-    const n = s.expired + s.missing;
-    return `${n} expired/missing`;
-  }
+  const broken = s.expired + s.critical + s.missing;
+  if (broken > 0) return `${broken} issue${broken === 1 ? '' : 's'}`;
   if (s.expiring > 0) return `${s.expiring} expiring`;
   return 'All valid';
 }
