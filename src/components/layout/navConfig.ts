@@ -84,6 +84,7 @@ export const operationsItems: NavItem[] = [
     href: '/compliance-v2',
     badgeType: 'compliance',
     children: [
+      { title: 'Action Centre', icon: AlertTriangle, href: '/compliance-actions', badgeType: 'compliance' },
       { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks', badgeType: 'tasks' },
       { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
       { title: "Renters' Rights", icon: ShieldCheck, href: '/renters-rights' },
@@ -170,6 +171,7 @@ export const adminItems: NavItem[] = [
     href: '/import',
     children: [{ title: 'Passport', icon: ClipboardList, href: '/passport' }],
   },
+  { title: 'System Health', icon: Activity, href: '/system-health' },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 
