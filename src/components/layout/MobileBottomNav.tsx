@@ -3,19 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Building2,
-  FolderOpen,
-  Inbox,
-  MoreHorizontal,
   Shield,
-  Wrench,
-  Wallet,
-  Activity,
-  FileText,
-  MessageSquare,
-  Settings,
-  Upload,
-  Users,
-  Construction,
+  FolderOpen,
+  MoreHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -24,6 +14,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { useSectionVisibility } from '@/hooks/useSectionVisibility';
+import { flattenNav, type NavItem } from './navConfig';
 
 interface MobileNavItemProps {
   icon: React.ComponentType<{ className?: string }>;
@@ -62,60 +54,47 @@ function MobileNavItem({ icon: Icon, label, href, onClick, isActive }: MobileNav
   );
 }
 
-interface MoreDrawerItemProps {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  href: string;
-  isActive: boolean;
-  onClose: () => void;
-}
-
-function MoreDrawerItem({ icon: Icon, label, href, isActive, onClose }: MoreDrawerItemProps) {
-  return (
-    <Link
-      to={href}
-      onClick={onClose}
-      className={cn(
-        'flex items-center gap-3 min-h-[44px] px-4 py-2 rounded-lg text-sm transition-colors',
-        isActive ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-muted'
-      )}
-    >
-      <Icon className="h-5 w-5 flex-shrink-0" />
-      <span>{label}</span>
-    </Link>
-  );
-}
-
-const moreItems = [
+/** Primary bottom-bar destinations (always visible). */
+const PRIMARY: Array<{ icon: React.ComponentType<{ className?: string }>; label: string; href: string }> = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: Building2, label: 'Properties', href: '/properties-v2' },
   { icon: Shield, label: 'Compliance', href: '/compliance-v2' },
-  { icon: Inbox, label: 'Compliance Inbox', href: '/inbox' },
-  { icon: Wrench, label: 'Jobs & Works', href: '/jobs-and-works' },
-  { icon: Users, label: 'Tenants', href: '/tenants-v2' },
-  { icon: Wallet, label: 'Finance', href: '/financials' },
-  { icon: Construction, label: 'Pipeline', href: '/pipeline' },
-  { icon: Activity, label: 'Insights', href: '/insights' },
-  { icon: FileText, label: 'Reports', href: '/reports' },
-  { icon: MessageSquare, label: 'Chat', href: '/chat' },
-  { icon: Upload, label: 'Import', href: '/import' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
+  { icon: FolderOpen, label: 'Documents', href: '/documents' },
 ];
+
+const PRIMARY_HREFS = new Set(PRIMARY.map(p => p.href));
+// Routes that don't make sense in mobile More drawer
+const HIDE_FROM_DRAWER = new Set<string>([]);
 
 export function MobileBottomNav() {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { isVisible } = useSectionVisibility();
 
   const isActive = (href: string) =>
     location.pathname === href ||
     (href !== '/dashboard' && location.pathname.startsWith(href));
 
+  // Derive More-drawer items from the shared nav config, minus the primary bar
+  // and anything hidden by section visibility.
+  const drawerItems: NavItem[] = flattenNav()
+    .filter(item => !PRIMARY_HREFS.has(item.href))
+    .filter(item => !HIDE_FROM_DRAWER.has(item.href))
+    .filter(item => !item.sectionKey || isVisible(item.sectionKey));
+
   return (
     <>
       <nav aria-label="Mobile navigation" className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-bottom">
         <div className="flex items-center justify-around h-14">
-          <MobileNavItem icon={LayoutDashboard} label="Dashboard" href="/dashboard" isActive={isActive('/dashboard')} />
-          <MobileNavItem icon={Building2} label="Properties" href="/properties-v2" isActive={isActive('/properties-v2')} />
-          <MobileNavItem icon={Shield} label="Compliance" href="/compliance-v2" isActive={isActive('/compliance-v2')} />
-          <MobileNavItem icon={FolderOpen} label="Documents" href="/documents" isActive={isActive('/documents')} />
+          {PRIMARY.map(p => (
+            <MobileNavItem
+              key={p.href}
+              icon={p.icon}
+              label={p.label}
+              href={p.href}
+              isActive={isActive(p.href)}
+            />
+          ))}
           <MobileNavItem icon={MoreHorizontal} label="More" onClick={() => setMoreOpen(true)} />
         </div>
       </nav>
@@ -127,15 +106,21 @@ export function MobileBottomNav() {
           </DrawerHeader>
           <div className="px-2 pb-6 max-h-[60vh] overflow-y-auto">
             <div className="space-y-0.5">
-              {moreItems.map((item) => (
-                <MoreDrawerItem
+              {drawerItems.map((item) => (
+                <Link
                   key={item.href}
-                  icon={item.icon}
-                  label={item.label}
-                  href={item.href}
-                  isActive={isActive(item.href)}
-                  onClose={() => setMoreOpen(false)}
-                />
+                  to={item.href}
+                  onClick={() => setMoreOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 min-h-[44px] px-4 py-2 rounded-lg text-sm transition-colors',
+                    isActive(item.href)
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{item.title}</span>
+                </Link>
               ))}
             </div>
           </div>

@@ -123,7 +123,7 @@ function productIdToTier(productId: string | null): SubscriptionTier {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
   // Primary: read from subscriptions table (set by webhook).
@@ -180,7 +180,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       return peerSub ?? ownSub ?? null;
     },
-    enabled: !!user,
+    enabled: !!user && !authLoading,
     staleTime: 5 * 60 * 1000,
   });
 
