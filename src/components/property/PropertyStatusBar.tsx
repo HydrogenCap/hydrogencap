@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
 import { Shield, Home, AlertTriangle, BarChart3, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { usePropertyCompliance } from '@/hooks/useCompliance';
+import { usePropertyComplianceStatus } from '@/hooks/usePropertyComplianceStatus';
 import { usePropertyPassport, calculatePassportCompleteness } from '@/hooks/usePropertyPassport';
 import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useTenancies } from '@/hooks/useTenancies';
-import { getExpiryStatus } from '@/lib/calculations';
 
 interface PropertyStatusBarProps {
   propertyId: string;
@@ -13,7 +12,7 @@ interface PropertyStatusBarProps {
 }
 
 export function PropertyStatusBar({ propertyId, lifecycleType }: PropertyStatusBarProps) {
-  const { data: complianceItems } = usePropertyCompliance(propertyId);
+  const { status: compStatus } = usePropertyComplianceStatus(propertyId);
   const { data: passport } = usePropertyPassport(propertyId);
   const { risks } = usePortfolioRisks();
   const { data: tenancies } = useTenancies({ propertyId, status: 'active' });
@@ -23,20 +22,21 @@ export function PropertyStatusBar({ propertyId, lifecycleType }: PropertyStatusB
     [passport]
   );
 
-  // Compliance summary
+  // Compliance summary — sourced from compliance_matrix_v2 (single source of truth)
   const complianceSummary = useMemo(() => {
-    if (!complianceItems || complianceItems.length === 0) {
+    if (!compStatus || compStatus.total === 0) {
       return { status: 'unknown' as const, label: 'Not checked', issues: 0 };
     }
-    const required = complianceItems;
-    const issues = required.filter(i => {
-      if (!i.expiry_date) return true; // missing
-      const status = getExpiryStatus(i.expiry_date);
-      return status === 'expired';
-    });
-    if (issues.length === 0) return { status: 'good' as const, label: 'Compliant', issues: 0 };
-    return { status: 'bad' as const, label: `${issues.length} issue${issues.length > 1 ? 's' : ''}`, issues: issues.length };
-  }, [complianceItems]);
+    const issues = compStatus.expired + compStatus.critical + compStatus.missing;
+    if (issues === 0 && compStatus.expiring === 0) {
+      return { status: 'good' as const, label: 'Compliant', issues: 0 };
+    }
+    if (issues === 0) {
+      return { status: 'neutral' as const, label: compStatus.label, issues: compStatus.expiring };
+    }
+    return { status: 'bad' as const, label: compStatus.label, issues };
+  }, [compStatus]);
+
 
   // Tenancy summary
   const tenancySummary = useMemo(() => {
