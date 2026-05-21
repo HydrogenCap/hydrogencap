@@ -511,34 +511,57 @@ export function useAcceptAllHighConfidence() {
       }
 
       let accepted = 0;
+      const failures: Array<{ id: string; filename: string; error: string }> = [];
       for (const doc of acceptReadyDocs) {
         const prop = doc.property;
         const propertyAddress = prop?.address_line_1
           ? `${prop.address_line_1}, ${prop.city || ''}`
           : prop?.address_line || 'Unknown';
 
-        await acceptDocument.mutateAsync({
-          documentId: doc.id,
-          docType: doc.ai_suggested_doc_type!,
-          propertyId: doc.ai_suggested_property_id!,
-          propertyAddress,
-          issueDate: doc.extracted_issue_date,
-          expiryDate: doc.expiry_date,
-          originalFilename: doc.original_file_name,
-          fileUrl: doc.file_url,
-          epcRating: doc.extracted_epc_rating,
-          wasEdited: false,
-        });
-        accepted++;
+        try {
+          await acceptDocument.mutateAsync({
+            documentId: doc.id,
+            docType: doc.ai_suggested_doc_type!,
+            propertyId: doc.ai_suggested_property_id!,
+            propertyAddress,
+            issueDate: doc.extracted_issue_date,
+            expiryDate: doc.expiry_date,
+            originalFilename: doc.original_file_name,
+            fileUrl: doc.file_url,
+            epcRating: doc.extracted_epc_rating,
+            wasEdited: false,
+          });
+          accepted++;
+        } catch (err) {
+          failures.push({
+            id: doc.id,
+            filename: doc.original_file_name,
+            error: err instanceof Error ? err.message : 'Unknown error',
+          });
+        }
       }
 
-      return { accepted };
+      return { accepted, failures, total: acceptReadyDocs.length };
     },
     onSuccess: (data) => {
-      toast({
-        title: `Accepted ${data.accepted} documents`,
-        description: 'High-confidence AI suggestions applied to compliance records',
-      });
+      if (data.failures.length === 0) {
+        toast({
+          title: `Accepted ${data.accepted} document${data.accepted === 1 ? '' : 's'}`,
+          description: 'High-confidence AI suggestions applied to compliance records',
+        });
+      } else if (data.accepted === 0) {
+        toast({
+          title: `All ${data.total} failed`,
+          description: data.failures[0]?.error || 'See per-row errors',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: `Accepted ${data.accepted} of ${data.total}`,
+          description: `${data.failures.length} failed — ${data.failures[0].filename}: ${data.failures[0].error}`,
+          variant: 'destructive',
+        });
+      }
     },
     onError: (error) => {
       toast({
