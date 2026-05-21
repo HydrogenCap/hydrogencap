@@ -22,7 +22,7 @@ interface ActiveTenancyRow {
 
 interface RoomRentRow {
   property_id: string;
-  rent_pcm: number | null;
+  target_rent_pcm: number | null;
 }
 
 /**
