@@ -72,7 +72,7 @@ export function useAllPropertyRents() {
           .select('id, whole_house_rent_pcm'),
         supabaseAny
           .from('rooms')
-          .select('property_id, rent_pcm'),
+          .select('property_id, target_rent_pcm'),
       ]);
 
       return {
