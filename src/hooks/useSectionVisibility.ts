@@ -26,7 +26,7 @@ function mergeSectionVisibility(raw: unknown): SectionVisibility {
 }
 
 export function useSectionVisibility() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: visibilitySettings, isLoading } = useQuery({
@@ -41,7 +41,7 @@ export function useSectionVisibility() {
       if (error) throw error;
       return mergeSectionVisibility(data?.section_visibility);
     },
-    enabled: !!user,
+    enabled: !!user && !loading,
     staleTime: 5 * 60 * 1000,
   });
 
