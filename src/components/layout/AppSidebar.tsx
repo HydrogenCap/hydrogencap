@@ -32,6 +32,7 @@ import { usePortfolioRisks } from '@/hooks/usePortfolioRisks';
 import { useJobCounts } from '@/hooks/useContractorJobs';
 import { useComplianceTaskStats } from '@/hooks/useComplianceTasks';
 import { useTenancyEventCounts } from '@/hooks/useTenancyEvents';
+import { useExpiringLoanCount } from '@/hooks/useExpiringLoanCount';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { LogoWordmark } from '@/components/LogoWordmark';
 import { useSectionVisibility } from '@/hooks/useSectionVisibility';
