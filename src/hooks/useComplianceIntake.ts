@@ -539,6 +539,12 @@ export function useAcceptAllHighConfidence() {
             filename: doc.original_file_name,
             error: err instanceof Error ? err.message : 'Unknown error',
           });
+          logError({
+            source: 'useAcceptAllHighConfidence',
+            message: `Bulk-accept failed for ${doc.original_file_name}`,
+            context: { documentId: doc.id, docType: doc.ai_suggested_doc_type, propertyId: doc.ai_suggested_property_id },
+            error: err,
+          });
         }
       }
 
