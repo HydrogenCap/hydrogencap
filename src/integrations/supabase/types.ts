@@ -3339,6 +3339,45 @@ export type Database = {
           },
         ]
       }
+      errors_log: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          message: string
+          org_id: string | null
+          resolved: boolean
+          severity: string
+          source: string
+          stack: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message: string
+          org_id?: string | null
+          resolved?: boolean
+          severity?: string
+          source: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message?: string
+          org_id?: string | null
+          resolved?: boolean
+          severity?: string
+          source?: string
+          stack?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       escalation_rules: {
         Row: {
           action_config: Json | null
