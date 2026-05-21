@@ -50,7 +50,8 @@ export type BadgeType =
   | 'inbox'
   | 'tasks'
   | 'tenancy_events'
-  | 'arrears';
+  | 'arrears'
+  | 'refinancing';
 
 export interface NavItem {
   title: string;
