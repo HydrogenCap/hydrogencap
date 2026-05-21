@@ -188,6 +188,12 @@ function InboxPageInner() {
                   {pendingDocs.length} pending
                 </Badge>
               )}
+              {failedDocs.length > 0 && (
+                <Badge variant="destructive" className="ml-1 gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {failedDocs.length} failed
+                </Badge>
+              )}
               {unreviewedCount > 0 && (
                 <button
                   type="button"
