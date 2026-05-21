@@ -29,6 +29,7 @@ const Today = lazy(() => import("./pages/Today"));
 const FixIt = lazy(() => import("./pages/FixIt"));
 const ComplianceActions = lazy(() => import("./pages/ComplianceActions"));
 const SystemHealth = lazy(() => import("./pages/SystemHealth"));
+const DataQuality = lazy(() => import("./pages/DataQuality"));
 
 const PropertyNew = lazy(() => import("./pages/PropertyNew"));
 const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
@@ -263,6 +264,16 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <SystemHealth />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/data-quality"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <DataQuality />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
