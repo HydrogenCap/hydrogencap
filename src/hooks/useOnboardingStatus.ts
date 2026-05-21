@@ -3,7 +3,7 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useOnboardingStatus() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return useQuery({
     queryKey: ['onboarding-status', user?.id],
@@ -16,7 +16,7 @@ export function useOnboardingStatus() {
       if (error) throw error;
       return data.onboarding_completed as boolean;
     },
-    enabled: !!user,
+    enabled: !!user && !loading,
     staleTime: 5 * 60 * 1000,
   });
 }
