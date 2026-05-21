@@ -4,6 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { extractStoragePath } from '@/lib/storagePaths';
+import { logError } from '@/lib/errorLogger';
 
 // Map document types to compliance types
 export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
