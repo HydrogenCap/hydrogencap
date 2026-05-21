@@ -1,55 +1,61 @@
+## What the data says
 
-# Top 10 Gaps & Fixes
+I pulled live signals from your org before writing this:
 
-Prioritised from highest user-pain to nice-to-have. Each item lists the symptom, root cause area, and the fix.
+- **27 properties**, but only **13 active tenancy agreements** across **12 properties** → 15 effectively vacant / untracked.
+- **26 of 27 properties** have no `whole_house_rent_pcm`. Rent is held on tenancy agreements, so any KPI/widget reading the property column is wrong by default.
+- **98 compliance gaps** in `compliance_matrix_v2`: 80 missing, 12 expired, 6 critical, 15 expiring — concentrated across only 27 assets.
+- **Doc AI pipeline**: of ~242 processed documents, **58 failed** (~24%). **16 are still stuck** as `failed + pending` with no recovery happening.
+- **2 loan facilities** have rate expiry within 180 days — a refinancing window with no visible nudge.
+- **`errors_log`** (just created) has zero entries — nothing is writing to it yet.
 
-## 1. Cold-start performance is brutal
-- **Symptom**: Console shows TTFB 17s, FCP 28s, LCP 40s on first load. Users think the app is broken.
-- **Cause**: Heavy initial bundle, eager Supabase auth calls, no skeleton on shell.
-- **Fix**: Split the App.tsx route tree more aggressively (lazy ActivitySidebar, Sentry, jspdf, recharts); add a real shell skeleton; defer `useUnreadCount` and `useOnboardingStatus` until after first paint; preconnect Supabase in `index.html`.
+That gives a real "next 6" — each tied to a measurable gap, not a generic wishlist.
 
-## 2. Auth lock orphaning blocks every query for 5s
-- **Symptom**: Repeated `"lock:sb-...auth-token" was not released within 5000ms` warnings; queries (onboarding, section visibility, subscription) all stall.
-- **Cause**: StrictMode double-mount + multiple parallel `getSession()` calls.
-- **Fix**: Centralise a single `useSession()` provider that calls `getSession` once, share via context — remove redundant `_getAccessToken` calls in the three hooks identified in the logs.
+## The Plan
 
-## 3. Compliance Inbox still has orphaned/failed docs with no triage UI
-- **Symptom**: 27 docs stuck in `extraction_status=failed` from early April.
-- **Fix**: Add a "Failed" tab to `/inbox` with per-doc Retry, Manual classify, and Delete actions; surface the extractor error message; nightly cron to auto-retry < 3 attempts.
+### 1. Fix the rent KPI at source (highest impact, smallest blast radius)
+Right now the dashboard / property cards read `properties_v2.whole_house_rent_pcm`, which is null on 26/27 assets. The actual rent lives on `tenancy_agreements`. Build one shared `usePropertyRent(propertyId)` hook that:
+- Reads the property's active tenancy agreement first.
+- Falls back to `whole_house_rent_pcm`, then to sum of room-level rents (HMOs).
+- Returns `{ pcm, source: 'tenancy' | 'property' | 'rooms' | 'none' }` so UI can show provenance.
+Then swap call sites: property card, dashboard rent KPI, portfolio totals.
 
-## 4. "Confirm All" / bulk accept is fragile
-- **Symptom**: Bulk accept silently no-ops when any one doc fails (missing property match, low confidence, etc.).
-- **Fix**: Partial-success semantics — process per-doc, show a per-row result toast, keep failures in the list with the reason inline. Add a confidence threshold slider.
+### 2. Compliance Action Centre
+80 missing + 12 expired + 6 critical across 27 properties is a lot of noise but a *finite* worklist. Build `/compliance-actions` (or a tab on `/compliance-v2`) that:
+- Lists every gap from `compliance_matrix_v2` where `calculated_status ∈ (missing, expired, critical, expiring_soon)`.
+- Groups by severity → property → certificate type.
+- Each row has one-click actions: **Upload now** (opens inbox prefilled), **Mark not applicable**, **Snooze 7d**.
+- Sort by overdue days desc so the worst rises to the top.
 
-## 5. Bulk Upload → Inbox handoff is invisible
-- **Symptom**: After bulk upload users don't know what happened; uploads don't appear in inbox without refresh (now partly fixed via realtime).
-- **Fix**: Post-upload success screen with "View in Inbox (n)" CTA, live progress per file (queued → extracting → ready), and a persistent toast linking to inbox until acknowledged.
+### 3. Doc pipeline reliability — kill the 16 stuck docs and stop the bleed
+- **Recovery sweep**: a small "Stuck for >24h" group in the Inbox Analysing tab with a one-click **Retry all** (we already have per-doc retry; wrap it).
+- **Wire `logError()`** into the AI extraction edge function (`extract-compliance-document` or equivalent) so the 24% failure rate becomes attributable — model timeouts vs. corrupt PDFs vs. classification failures.
+- Add a **"Why did this fail?"** disclosure on failed cards reading `extraction_error` (already in DB) — currently surfaced only as a generic toast.
 
-## 6. Missing-info / data-quality nudges are scattered
-- **Symptom**: Dashboard widget, passport completeness, and property card all use different rules; users can't see one ranked list of "fix this next".
-- **Fix**: Single `/data-quality` page that aggregates: missing mortgage, valuation, EPC, gas/EICR, ownership %, rent, tenancy end date — sorted by impact, click to deep-link into the right form.
+### 4. Refinancing radar
+2 loans expire within 180 days. Today the user only sees that on the (deep) `/refinancing-opportunities` page. Add a **dashboard banner** when any loan has a rate expiry within the next 6 months, linking through. Also add the count to the sidebar Lending badge.
 
-## 7. Compliance status on property cards still inconsistent
-- **Symptom**: Some cards show placeholder green/grey even when `compliance_matrix_v2` says expired (called out in `docs/product-excellence-roadmap.md`).
-- **Fix**: Replace placeholder logic in `PropertyCard` with a single `usePropertyComplianceStatus(propertyId)` hook reading the V2 matrix; invalidate it on cert upload/delete.
+### 5. Adopt `usePropertyComplianceStatus` (the hook I shipped last turn but nothing uses yet)
+Swap any ad-hoc compliance bucketing in:
+- `PropertyStatusBar.tsx`
+- `EntityPortfolioSummaryCard.tsx`
+- Property-card compliance badge (currently inconsistent across grid vs. detail)
+…over to the shared hook. Removes drift between surfaces and proves the abstraction.
 
-## 8. Entity pages aren't operational yet
-- **Symptom**: Legal entity page lists properties but not their value, debt, rent, cashflow, filing health — so it's a list not a management view.
-- **Fix**: Reuse `usePortfolioKPIs` filtered by entity; add an entity-health strip (overdue accounts, missing CH number, ownership gaps).
+### 6. System Health page (cash in on `errors_log`)
+Tiny `/system-health` page (Settings nav) showing:
+- Errors in last 7 days grouped by `source`, with severity badges.
+- Doc pipeline success rate (computed live from `documents`).
+- Stuck-doc count.
+- "Mark resolved" action per error.
+Gives both you and the user one place to see if anything is silently breaking.
 
-## 9. Navigation drift: dead/duplicated links, mobile parity
-- **Symptom**: Several routes exist but aren't in the sidebar (Inbox was the recent example); mobile bottom nav is missing key destinations; some sidebar groups expand to empty.
-- **Fix**: Generate sidebar items from a single `navConfig.ts` shared by `AppSidebar` and `MobileBottomNav`; add a route-existence test in CI; remove section groups whose children are all hidden by `section_visibility`.
+## Suggested order
+1, 3, 4 first — they're each ≤1 file/migration and directly fix things users see this week. Then 2, 5, 6 (2 is the biggest UI build).
 
-## 10. Error visibility is poor — silent failures everywhere
-- **Symptom**: Failed extractions, failed edge functions, failed bulk actions all just… disappear. Same pattern that hid the Stert St gas cert.
-- **Fix**: Standardise an `errors_log` table written by every edge function on catch; expose a "System Health" panel under Settings → Admin; ensure every mutation hook surfaces `onError` toast with a Copy Details button.
+## Out of scope (deliberately)
+- Performance work — last batch already covered cold-start.
+- Auth/session — already centralised.
+- Marketing site / SEO — no signal it's broken.
 
----
-
-## Suggested ordering
-1. Quick wins (1 day each): #1 preconnect + skeleton, #2 session provider, #9 navConfig dedup.
-2. High-value (2-3 days): #3 Failed tab, #4 partial-success bulk accept, #10 errors log.
-3. Strategic (1 week+): #6 unified data-quality page, #7 compliance status hook, #8 entity operating view, #5 upload handoff polish.
-
-Tell me which of these you want me to start on and I'll write a focused implementation plan.
+Want me to start on **1, 3, 4** (the quick high-impact set) or pick differently?
