@@ -101,8 +101,8 @@ export function useAllPropertyRents() {
     // Rooms — fallback if no tenancy
     const roomPcm = new Map<string, number>();
     for (const r of data.rooms) {
-      if (!r.property_id || !r.rent_pcm) continue;
-      roomPcm.set(r.property_id, (roomPcm.get(r.property_id) || 0) + Number(r.rent_pcm));
+      if (!r.property_id || !r.target_rent_pcm) continue;
+      roomPcm.set(r.property_id, (roomPcm.get(r.property_id) || 0) + Number(r.target_rent_pcm));
     }
 
     // Property column — final fallback
