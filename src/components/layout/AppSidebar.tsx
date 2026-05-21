@@ -77,6 +77,7 @@ export function AppSidebar() {
   const { urgentCount: tenancyUrgentCount } = useTenancyEventCounts();
   const { data: arrearsData } = useArrears();
   const arrearsCount = arrearsData?.length ?? 0;
+  const refinancingCount = useExpiringLoanCount();
 
   const urgentJobsCount = (jobCounts?.urgent || 0) + (jobCounts?.high || 0);
 
