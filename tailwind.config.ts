@@ -131,8 +131,9 @@ export default {
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["'DM Serif Display'", "Georgia", "serif"],
+        sans: ["Epilogue", "Inter", "system-ui", "sans-serif"],
+        display: ["Urbanist", "Inter", "system-ui", "sans-serif"],
+        serif: ["'DM Serif Display'", "Georgia", "serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
     },
