@@ -18,19 +18,31 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        'space-y-4',
+        'space-y-5',
         align === 'center' && 'text-center',
         className
       )}
     >
       {badge && (
-        <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
+        <p
+          className={cn(
+            'text-xs uppercase tracking-[0.18em] text-gold font-semibold',
+            align === 'center' && 'inline-block'
+          )}
+        >
           {badge}
-        </span>
+        </p>
       )}
-      <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{title}</h2>
+      <h2 className="font-display text-4xl md:text-5xl font-extrabold leading-[1.05] tracking-tight text-foreground">
+        {title}
+      </h2>
       {description && (
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p
+          className={cn(
+            'text-lg text-muted-foreground font-light leading-relaxed max-w-2xl',
+            align === 'center' && 'mx-auto'
+          )}
+        >
           {description}
         </p>
       )}

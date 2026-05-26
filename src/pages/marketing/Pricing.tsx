@@ -1,24 +1,23 @@
 import { SEO } from '@/components/SEO';
 import { breadcrumbList, faqPage, productWithOffers } from '@/lib/seo/jsonLd';
 import { Link } from 'react-router-dom';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { MarketingLayout, SectionHeading } from '@/components/marketing';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
 
 const plans = [
   {
     name: 'Starter',
     price: '£49',
     period: '/month',
-    description: 'For landlords with a small portfolio getting started with professional management.',
+    description: 'For landlords getting their portfolio onto a proper system.',
     properties: 'Up to 10 properties',
     features: [
       'Portfolio dashboard & KPIs',
@@ -27,14 +26,14 @@ const plans = [
       'Basic reporting',
       'Email support',
     ],
-    cta: 'Get Started',
+    cta: 'Get started',
     popular: false,
   },
   {
     name: 'Professional',
     price: '£99',
     period: '/month',
-    description: 'For growing portfolios that need multi-entity management and advanced reporting.',
+    description: 'For growing portfolios that need multi-entity management.',
     properties: 'Up to 50 properties',
     features: [
       'Everything in Starter',
@@ -45,14 +44,14 @@ const plans = [
       'Compliance calendar',
       'Priority support',
     ],
-    cta: 'Book a Demo',
+    cta: 'Book a demo',
     popular: true,
   },
   {
     name: 'Enterprise',
     price: 'Custom',
     period: '',
-    description: 'For large portfolios and fund operators requiring bespoke configuration.',
+    description: 'For large portfolios and fund operators with bespoke needs.',
     properties: 'Unlimited properties',
     features: [
       'Everything in Professional',
@@ -63,7 +62,7 @@ const plans = [
       'SLA & uptime guarantee',
       'Audit trail & compliance exports',
     ],
-    cta: 'Contact Us',
+    cta: 'Contact us',
     popular: false,
   },
 ];
@@ -71,11 +70,11 @@ const plans = [
 const faqs = [
   {
     q: 'Is there a free trial?',
-    a: 'We offer a free 14-day trial on Starter and Professional plans. No credit card required — just book a demo and we\'ll get you set up.',
+    a: 'We offer a free 14-day trial on Starter and Professional plans. No credit card required — just book a demo and we will get you set up.',
   },
   {
     q: 'Can I switch plans later?',
-    a: 'Yes. You can upgrade or downgrade at any time. Changes take effect on your next billing cycle, and we pro-rate any differences.',
+    a: 'Yes. Upgrade or downgrade at any time. Changes take effect on your next billing cycle, and we pro-rate any differences.',
   },
   {
     q: 'What counts as a "property"?',
@@ -87,11 +86,11 @@ const faqs = [
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept all major credit and debit cards via Stripe. Enterprise customers can pay by invoice and bank transfer.',
+    a: 'All major credit and debit cards via Stripe. Enterprise customers can pay by invoice and bank transfer.',
   },
   {
     q: 'Can I cancel at any time?',
-    a: 'Yes. There are no long-term contracts. You can cancel at any time and retain access until the end of your billing period.',
+    a: 'Yes. There are no long-term contracts. Cancel any time and retain access until the end of your billing period.',
   },
 ];
 
@@ -119,109 +118,129 @@ export default function MarketingPricing() {
         ]}
       />
 
-      {/* Hero */}
-      <section className="bg-gradient-to-b from-primary/5 to-background py-20 lg:py-28">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-              Pricing
-            </span>
-            <h1 className="text-4xl md:text-5xl font-display tracking-tight">
-              Simple, transparent pricing
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              No hidden fees. No per-user charges. Just one plan that fits your portfolio size.
-            </p>
-          </div>
+      {/* HERO */}
+      <section className="relative overflow-hidden border-b border-border bg-card">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-96 w-[60rem] rounded-full bg-gold/10 blur-3xl" aria-hidden="true" />
+        <div className="container relative mx-auto px-4 lg:px-8 py-24 lg:py-28 text-center max-w-3xl">
+          <p className="text-xs uppercase tracking-[0.18em] text-gold font-semibold mb-6">
+            Pricing
+          </p>
+          <h1 className="font-display text-5xl md:text-6xl font-extrabold leading-[1.02] tracking-tight">
+            Simple, transparent,{' '}
+            <span className="text-primary">no per-user fees.</span>
+          </h1>
+          <p className="mt-6 text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
+            One price per portfolio band. Everyone on your team gets full access —
+            no surprise charges as you grow.
+          </p>
         </div>
       </section>
 
-      {/* Pricing Cards */}
-      <section className="py-20 lg:py-28">
+      {/* PRICING TABLE */}
+      <section className="py-24 lg:py-28">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {plans.map((plan) => (
-              <Card
+              <div
                 key={plan.name}
-                className={`relative h-full flex flex-col ${plan.popular ? 'border-primary shadow-lg' : ''}`}
+                className={cn(
+                  'relative flex flex-col rounded-2xl border bg-background p-8 transition-shadow',
+                  plan.popular
+                    ? 'border-primary shadow-2xl shadow-primary/10 lg:-translate-y-2'
+                    : 'border-border hover:shadow-lg'
+                )}
               >
                 {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    Most Popular
-                  </Badge>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-[10px] uppercase tracking-widest font-bold text-gold-foreground">
+                    <Sparkles className="h-3 w-3" />
+                    Most popular
                   </div>
-                  <CardDescription className="mt-2">{plan.description}</CardDescription>
-                  <p className="text-sm font-medium text-primary mt-2">{plan.properties}</p>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                  <ul className="space-y-3 flex-1">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className="w-full mt-6"
-                    variant={plan.popular ? 'default' : 'outline'}
-                    asChild
-                  >
-                    <Link to={plan.name === 'Enterprise' ? '/contact' : '/book-a-demo'}>
-                      {plan.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+                )}
+
+                <p className="text-xs uppercase tracking-[0.18em] font-semibold text-muted-foreground">
+                  {plan.name}
+                </p>
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="font-display text-5xl font-extrabold tracking-tight text-foreground">
+                    {plan.price}
+                  </span>
+                  <span className="text-muted-foreground">{plan.period}</span>
+                </div>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                  {plan.description}
+                </p>
+                <p className="mt-3 inline-flex self-start rounded-full bg-primary/8 px-2.5 py-1 text-xs font-medium text-primary">
+                  {plan.properties}
+                </p>
+
+                <div className="my-6 h-px bg-border" />
+
+                <ul className="space-y-3 flex-1">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm">
+                      <CheckCircle className="mt-0.5 h-4 w-4 text-gold shrink-0" />
+                      <span className="text-foreground/85">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  className={cn(
+                    'w-full mt-8 font-display font-semibold tracking-wide',
+                    plan.popular && 'bg-gold text-gold-foreground hover:bg-gold/90'
+                  )}
+                  variant={plan.popular ? 'default' : 'outline'}
+                  asChild
+                >
+                  <Link to={plan.name === 'Enterprise' ? '/contact' : '/book-a-demo'}>
+                    {plan.cta}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-20 lg:py-28 bg-muted/30">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <SectionHeading
-              badge="FAQ"
-              title="Frequently asked questions"
-            />
-            <Accordion type="single" collapsible className="mt-12">
-              {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`}>
-                  <AccordionTrigger className="text-left">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
+      <section className="bg-card border-y border-border py-24 lg:py-28">
+        <div className="container mx-auto px-4 lg:px-8 max-w-3xl">
+          <SectionHeading badge="FAQ" title="Frequently asked questions" />
+          <Accordion type="single" collapsible className="mt-12">
+            {faqs.map((faq, i) => (
+              <AccordionItem key={i} value={`faq-${i}`}>
+                <AccordionTrigger className="text-left font-display font-semibold text-base">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground leading-relaxed">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 lg:py-28">
-        <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-          <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-            Book a demo and we'll walk you through the platform with your portfolio in mind.
+      <section className="relative overflow-hidden bg-primary text-primary-foreground">
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-gold/20 blur-3xl" aria-hidden="true" />
+        <div className="container relative mx-auto px-4 lg:px-8 py-24 text-center max-w-3xl">
+          <h2 className="font-display text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+            Try it before you decide.
+          </h2>
+          <p className="mt-6 text-lg text-primary-foreground/75 font-light max-w-xl mx-auto">
+            Book a 20-minute demo and we will walk through the platform with
+            your portfolio in mind — no commitment.
           </p>
-          <Button size="lg" asChild>
-            <Link to="/book-a-demo">
-              Book a Demo
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="mt-10">
+            <Button size="lg" className="font-display font-semibold tracking-wide bg-gold text-gold-foreground hover:bg-gold/90" asChild>
+              <Link to="/book-a-demo">
+                Book a demo
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
     </MarketingLayout>
