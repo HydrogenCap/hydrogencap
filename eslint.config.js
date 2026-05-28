@@ -47,6 +47,7 @@ export default tseslint.config(
       "react-hooks/purity": "off",
       "react-hooks/immutability": "off",
       "react-hooks/incompatible-library": "off",
+      "react-hooks/preserve-manual-memoization": "off",
       // these produce false positives in complex conditional flows
       "no-useless-assignment": "off",
     },

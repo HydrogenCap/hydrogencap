@@ -98,7 +98,7 @@ export function useCreateRoom() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (room: Omit<RoomV2, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase.from('rooms_v2').insert(room).select().single();
+      const { data, error } = await supabase.from('rooms_v2').insert(room as any).select().single();
       if (error) throw error;
       return data;
     },
@@ -113,7 +113,7 @@ export function useBulkCreateRooms() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (rooms: Omit<RoomV2, 'id' | 'created_at' | 'updated_at'>[]) => {
-      const { data, error } = await supabase.from('rooms_v2').insert(rooms).select();
+      const { data, error } = await supabase.from('rooms_v2').insert(rooms as any).select();
       if (error) throw error;
       return data;
     },
@@ -131,7 +131,7 @@ export function useUpdateRoom() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...room }: Partial<RoomV2> & { id: string }) => {
-      const { data, error } = await supabase.from('rooms_v2').update(room).eq('id', id).select().single();
+      const { data, error } = await supabase.from('rooms_v2').update(room as any).eq('id', id).select().single();
       if (error) throw error;
       return data;
     },
