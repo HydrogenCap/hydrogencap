@@ -1,25 +1,27 @@
-## Confirmation: migration has already run
+## Cleanup Plan
 
-Queried `photos` for property `b33f02bf-89de-416d-baa7-919a26c9a37e`:
+### 1. Remove dead dependencies from `package.json`
+Verified zero references in `src/` and `supabase/functions/`:
+- `lodash`
+- `axios`
+- `framer-motion`
+- `papaparse`
 
-| display_order | file_url | is_cover |
-|---|---|---|
-| 1 | `b33f02bf…/24_West_Street_Main.jpg` | true |
-| 2 | `b33f02bf…/24_West_Street_10.jpg` | false |
-| 3 | `b33f02bf…/24_West_Street_Rear.jpg` | false |
+Keep `moment`, `uuid`, `xlsx` (still used).
 
-All three rows match the exact `dst` paths hardcoded in `migrate-stranded-photos/index.ts`, created `2026-04-30 20:37:10` (a single batch). The one-shot migration is complete.
+### 2. Delete dead components
+Verified zero importers anywhere in `src/` (the only matches were each file defining its own symbol):
+- `src/components/ownership/ShareholdingEditor.tsx`
+- `src/components/companies/ShareholdingEditor.tsx`
+- `src/components/compliance/QuickRenewalDialog.tsx`
+- `src/components/ownership/DerivedBeneficialOwnershipCard.tsx`
 
-## Plan
+All four are unreferenced and will be deleted.
 
-1. **Delete the function directory** `supabase/functions/migrate-stranded-photos/` (just `index.ts` inside).
-2. **Remove the config block** at lines 3-4 of `supabase/config.toml`:
-   ```
-   [functions.migrate-stranded-photos]
-   verify_jwt = false
-   ```
-   Leaving only `project_id = "jnkwooocjpgpznittueo"`.
-3. **Call `supabase--delete_edge_functions`** with `["migrate-stranded-photos"]` to remove the already-deployed function from Supabase (it would otherwise remain as a live public endpoint despite the code being gone).
-4. **Run the verify chain**: `npm run lint`, `npm run typecheck`, `npm run build`. No tests reference this function.
+### 3. Verify
+- `bun install` to regenerate `bun.lock`
+- `bun run lint`
+- `bun run typecheck`
+- `bun run build`
 
-No other functions touched. No runtime UI code changed.
+No other files touched.
