@@ -305,7 +305,7 @@ export function useBatchUpdateTenancies() {
   return useMutation({
     mutationFn: async (updates: MigrationTenancyUpdate[]) => {
       for (const { id, ...fields } of updates) {
-        const { error } = await supabase.from('tenancy_agreements').update(fields).eq('id', id);
+        const { error } = await supabase.from('tenancy_agreements').update(fields as any).eq('id', id);
         if (error) throw error;
       }
     },
