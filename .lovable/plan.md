@@ -1,61 +1,75 @@
-## What the data says
+## Goal
 
-I pulled live signals from your org before writing this:
+Wire the existing `logError()` util into high-signal failure paths of four hooks so mutation / edge-function / storage failures are persisted to `errors_log`. Strictly additive — existing `console.error`, toasts, return values, and control flow stay untouched.
 
-- **27 properties**, but only **13 active tenancy agreements** across **12 properties** → 15 effectively vacant / untracked.
-- **26 of 27 properties** have no `whole_house_rent_pcm`. Rent is held on tenancy agreements, so any KPI/widget reading the property column is wrong by default.
-- **98 compliance gaps** in `compliance_matrix_v2`: 80 missing, 12 expired, 6 critical, 15 expiring — concentrated across only 27 assets.
-- **Doc AI pipeline**: of ~242 processed documents, **58 failed** (~24%). **16 are still stuck** as `failed + pending` with no recovery happening.
-- **2 loan facilities** have rate expiry within 180 days — a refinancing window with no visible nudge.
-- **`errors_log`** (just created) has zero entries — nothing is writing to it yet.
+## Scope (4 files, 6 edits)
 
-That gives a real "next 6" — each tied to a measurable gap, not a generic wishlist.
+Import to add at the top of each file (matching `useComplianceIntake.ts` style):
 
-## The Plan
+```ts
+import { logError } from '@/lib/errorLogger';
+```
 
-### 1. Fix the rent KPI at source (highest impact, smallest blast radius)
-Right now the dashboard / property cards read `properties_v2.whole_house_rent_pcm`, which is null on 26/27 assets. The actual rent lives on `tenancy_agreements`. Build one shared `usePropertyRent(propertyId)` hook that:
-- Reads the property's active tenancy agreement first.
-- Falls back to `whole_house_rent_pcm`, then to sum of room-level rents (HMOs).
-- Returns `{ pcm, source: 'tenancy' | 'property' | 'rooms' | 'none' }` so UI can show provenance.
-Then swap call sites: property card, dashboard rent KPI, portfolio totals.
+### 1. `src/hooks/useSignedUrl.ts`
 
-### 2. Compliance Action Centre
-80 missing + 12 expired + 6 critical across 27 properties is a lot of noise but a *finite* worklist. Build `/compliance-actions` (or a tab on `/compliance-v2`) that:
-- Lists every gap from `compliance_matrix_v2` where `calculated_status ∈ (missing, expired, critical, expiring_soon)`.
-- Groups by severity → property → certificate type.
-- Each row has one-click actions: **Upload now** (opens inbox prefilled), **Mark not applicable**, **Snooze 7d**.
-- Sort by overdue days desc so the worst rises to the top.
+Two true `catch` blocks, both wrapping Supabase storage operations.
 
-### 3. Doc pipeline reliability — kill the 16 stuck docs and stop the bleed
-- **Recovery sweep**: a small "Stuck for >24h" group in the Inbox Analysing tab with a one-click **Retry all** (we already have per-doc retry; wrap it).
-- **Wire `logError()`** into the AI extraction edge function (`extract-compliance-document` or equivalent) so the 24% failure rate becomes attributable — model timeouts vs. corrupt PDFs vs. classification failures.
-- Add a **"Why did this fail?"** disclosure on failed cards reading `extraction_error` (already in DB) — currently surfaced only as a generic toast.
+- Line 67 catch in `fetchSignedUrl` (storage `createSignedUrl`):
+  ```ts
+  logError({ source: 'useSignedUrl.fetchSignedUrl', message: 'Failed to generate signed URL', severity: 'error', error: err });
+  ```
+- Line 123 catch in `useDownloadFile.download` (storage `createSignedUrl` + fetch):
+  ```ts
+  logError({ source: 'useSignedUrl.download', message: 'Failed to download file from storage', severity: 'error', error: err });
+  ```
 
-### 4. Refinancing radar
-2 loans expire within 180 days. Today the user only sees that on the (deep) `/refinancing-opportunities` page. Add a **dashboard banner** when any loan has a rate expiry within the next 6 months, linking through. Also add the count to the sidebar Lending badge.
+Line 59 (`if (signError)`) is an error branch, not a `catch`, so per the instructions it is left alone.
 
-### 5. Adopt `usePropertyComplianceStatus` (the hook I shipped last turn but nothing uses yet)
-Swap any ad-hoc compliance bucketing in:
-- `PropertyStatusBar.tsx`
-- `EntityPortfolioSummaryCard.tsx`
-- Property-card compliance badge (currently inconsistent across grid vs. detail)
-…over to the shared hook. Removes drift between surfaces and proves the abstraction.
+### 2. `src/hooks/useMaintenanceRequests.ts`
 
-### 6. System Health page (cash in on `errors_log`)
-Tiny `/system-health` page (Settings nav) showing:
-- Errors in last 7 days grouped by `source`, with severity badges.
-- Doc pipeline success rate (computed live from `documents`).
-- Stuck-doc count.
-- "Mark resolved" action per error.
-Gives both you and the user one place to see if anything is silently breaking.
+- Line 210, the `.catch()` handler on the fire-and-forget `createNotification(...)` mutation:
+  ```ts
+  .catch((err) => {
+    console.error('Failed to create maintenance notification:', err);
+    logError({ source: 'useMaintenanceRequests.createNotification', message: 'Failed to create maintenance notification', severity: 'error', error: err });
+  });
+  ```
 
-## Suggested order
-1, 3, 4 first — they're each ≤1 file/migration and directly fix things users see this week. Then 2, 5, 6 (2 is the biggest UI build).
+### 3. `src/hooks/useTeamManagement.ts`
 
-## Out of scope (deliberately)
-- Performance work — last batch already covered cold-start.
-- Auth/session — already centralised.
-- Marketing site / SEO — no signal it's broken.
+- Line 198 is an `if (fnError)` branch after `supabase.functions.invoke('send-team-invite', ...)`, not a `catch` block. Per the strict "catch blocks only" rule it would be skipped, but it is the only error-handling branch for an edge-function invoke in this hook and matches the spirit of "high-signal edge-function failures".
+  
+  **Proposed:** add `logError` here as well, additively:
+  ```ts
+  if (fnError) {
+    console.error('Email send failed:', fnError);
+    logError({ source: 'useTeamManagement.sendTeamInvite', message: 'send-team-invite edge function failed', severity: 'error', error: fnError });
+    // Don't throw — invite is created, they can copy the link manually
+  }
+  ```
+  
+  If you want me to honour the catch-block rule strictly, this file gets only the `logError` import and no call site — let me know in feedback and I'll drop it.
 
-Want me to start on **1, 3, 4** (the quick high-impact set) or pick differently?
+### 4. `src/hooks/useRentCollection.ts`
+
+- Line 1002 catch around `supabase.functions.invoke('send-rent-reminder', ...)`:
+  ```ts
+  } catch (err) {
+    console.error('Failed to send reminder:', err);
+    logError({ source: 'useRentCollection.sendRentReminder', message: 'send-rent-reminder edge function failed', severity: 'error', error: err });
+    results.failed++;
+  }
+  ```
+
+## Guarantees
+
+- No `console.error` removed; no `console.warn` touched.
+- No success-path code, return values, toasts, query invalidations, or UI behaviour modified.
+- No new dependencies; `logError` already exists and is side-effect-safe (never throws).
+- Diff is purely additive: one import + one new line per edit site.
+
+## Out of scope
+
+- The `if (signError)` branch in `useSignedUrl.ts` (not a catch block, low signal — fallback already swallows it).
+- Any other hooks or files.
+- Refactoring shared error-handling utilities.
