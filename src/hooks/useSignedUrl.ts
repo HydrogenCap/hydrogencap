@@ -123,6 +123,7 @@ export function useDownloadFile(bucketName: string) {
       triggerDownload(blob, fileName);
     } catch (err) {
       console.error('Failed to download file:', err);
+      logError({ source: 'useSignedUrl.download', message: 'Failed to download file from storage', severity: 'error', error: err });
       toast.error(err instanceof Error ? err.message : 'Failed to download file');
       // Fallback: open in new tab
       window.open(fileUrl, '_blank');
