@@ -258,7 +258,7 @@ export function useBatchUpdateProperties() {
   return useMutation({
     mutationFn: async (updates: MigrationPropertyUpdate[]) => {
       for (const { id, ...fields } of updates) {
-        const { error } = await supabase.from('properties_v2').update(fields).eq('id', id);
+        const { error } = await supabase.from('properties_v2').update(fields as any).eq('id', id);
         if (error) throw error;
       }
     },
