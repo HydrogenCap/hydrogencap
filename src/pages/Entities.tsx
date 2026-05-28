@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 const DEFAULT_STATUS_CONFIG = { label: 'Unknown', className: 'bg-muted text-muted-foreground border-border' };
 
 const STALE_MS = 24 * 60 * 60 * 1000;
-const DUE_SOON_MS = 30 * 24 * 60 * 60 * 1000;
+const _DUE_SOON_MS = 30 * 24 * 60 * 60 * 1000;
 
 function formatGBP(value: number | null | undefined) {
   if (value == null) return '—';
