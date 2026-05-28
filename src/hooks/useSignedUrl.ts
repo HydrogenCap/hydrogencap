@@ -66,6 +66,7 @@ export function useSignedUrl(
       }
     } catch (err) {
       console.error('Failed to generate signed URL:', err);
+      logError({ source: 'useSignedUrl.fetchSignedUrl', message: 'Failed to generate signed URL', severity: 'error', error: err });
       toast.error(err instanceof Error ? err.message : 'Failed to generate signed URL');
       setSignedUrl(fileUrl);
       setError(err instanceof Error ? err.message : 'Failed to generate signed URL');
