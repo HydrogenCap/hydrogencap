@@ -274,7 +274,7 @@ export function useBatchUpdateRooms() {
   return useMutation({
     mutationFn: async (updates: MigrationRoomUpdate[]) => {
       for (const { id, ...fields } of updates) {
-        const { error } = await supabase.from('rooms_v2').update(fields).eq('id', id);
+        const { error } = await supabase.from('rooms_v2').update(fields as any).eq('id', id);
         if (error) throw error;
       }
     },
