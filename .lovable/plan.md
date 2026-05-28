@@ -1,34 +1,25 @@
-## Fix npm ERESOLVE by downgrading ESLint to v9
+## Confirmation: migration has already run
 
-### Problem
-`npm install` fails with `ERESOLVE` because:
-- `package.json` pins `eslint@^10.1.0` and `@eslint/js@^10.0.1`
-- `eslint-plugin-react-hooks@7.0.1` only declares peer support up to `eslint@^9`
+Queried `photos` for property `b33f02bf-89de-416d-baa7-919a26c9a37e`:
 
-### Changes
+| display_order | file_url | is_cover |
+|---|---|---|
+| 1 | `b33f02bf…/24_West_Street_Main.jpg` | true |
+| 2 | `b33f02bf…/24_West_Street_10.jpg` | false |
+| 3 | `b33f02bf…/24_West_Street_Rear.jpg` | false |
 
-1. **`package.json`** — update two devDependencies only:
-   - `"eslint": "^10.1.0"` → `"eslint": "^9.36.0"`
-   - `"@eslint/js": "^10.0.1"` → `"@eslint/js": "^9.36.0"`
+All three rows match the exact `dst` paths hardcoded in `migrate-stranded-photos/index.ts`, created `2026-04-30 20:37:10` (a single batch). The one-shot migration is complete.
 
-2. **Regenerate lockfiles** (the repo has `package-lock.json`, `bun.lock`, and `bun.lockb`):
-   - `rm -f package-lock.json bun.lock bun.lockb`
-   - `npm install` (regenerates `package-lock.json`, must succeed without ERESOLVE)
-   - `bun install` (regenerates `bun.lock` + `bun.lockb`)
+## Plan
 
-3. **No change to `eslint.config.js`** — the existing flat config is already compatible with ESLint 9.
+1. **Delete the function directory** `supabase/functions/migrate-stranded-photos/` (just `index.ts` inside).
+2. **Remove the config block** at lines 3-4 of `supabase/config.toml`:
+   ```
+   [functions.migrate-stranded-photos]
+   verify_jwt = false
+   ```
+   Leaving only `project_id = "jnkwooocjpgpznittueo"`.
+3. **Call `supabase--delete_edge_functions`** with `["migrate-stranded-photos"]` to remove the already-deployed function from Supabase (it would otherwise remain as a live public endpoint despite the code being gone).
+4. **Run the verify chain**: `npm run lint`, `npm run typecheck`, `npm run build`. No tests reference this function.
 
-### Verification
-
-Run the full verify chain and confirm all stay green:
-- `npm install` — completes without ERESOLVE
-- `npm run lint`
-- `npm run typecheck` (or `tsc --noEmit` via the project's script)
-- `npm test` (vitest)
-- `npm run build`
-
-If any step fails, stop and report the failure rather than papering over it.
-
-### Notes
-- Strictly two version bumps + lockfile regeneration. No other source files touched.
-- Memory rule #1 (React 19 / current stack) unaffected; this is a tooling-only change.
+No other functions touched. No runtime UI code changed.
