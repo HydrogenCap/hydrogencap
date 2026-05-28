@@ -197,7 +197,7 @@ export function PortfolioPulse({
     }
 
     return { actions: acts.slice(0, 5), summary: sum, pulseScore: score };
-  }, [risks, criticalCount, loanAlerts, rentSchedule, complianceEvents, propertiesCount]);
+  }, [criticalCount, loanAlerts, rentSchedule, complianceEvents, propertiesCount]);
 
   const scoreColor =
     pulseScore >= 85 ? 'text-success' : pulseScore >= 60 ? 'text-warning' : 'text-destructive';
