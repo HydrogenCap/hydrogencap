@@ -98,7 +98,7 @@ export function useCreateRoom() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (room: Omit<RoomV2, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase.from('rooms_v2').insert(room).select().single();
+      const { data, error } = await supabase.from('rooms_v2').insert(room as any).select().single();
       if (error) throw error;
       return data;
     },
