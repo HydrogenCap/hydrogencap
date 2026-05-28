@@ -342,10 +342,10 @@ function FloorplanItem({ floorplan, onView, onDownload, onDelete, onSetPrimary }
 
       {/* Actions */}
       <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={onView} title="View">
+        <Button aria-label="View floorplan" variant="ghost" size="icon" onClick={onView} title="View">
           <Eye className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" size="icon" onClick={onDownload} title="Download">
+        <Button aria-label="Download floorplan" variant="ghost" size="icon" onClick={onDownload} title="Download">
           <Download className="h-4 w-4" />
         </Button>
         <DropdownMenu>
