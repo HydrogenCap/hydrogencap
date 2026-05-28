@@ -36,7 +36,8 @@ export default tseslint.config(
         caughtErrorsIgnorePattern: "^_",
         ignoreRestSiblings: true,
       }],
-      "@typescript-eslint/no-explicit-any": "warn",
+      // Project convention (memory rule): use `any` casts to bypass DB/TS type mismatches.
+      "@typescript-eslint/no-explicit-any": "off",
       // react-hooks v7 added several strict rules that flag valid patterns
       // throughout the codebase. Disabling to keep CI green without refactoring.
       "react-hooks/set-state-in-effect": "off",
