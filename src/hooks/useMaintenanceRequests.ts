@@ -4,6 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
+import { logError } from '@/lib/errorLogger';
 import type {
   MaintenanceCategory, MaintenancePriority, MaintenanceStatus,
   MaintenanceOverviewRow, ReportedBy,
@@ -207,7 +208,10 @@ export function useCreateMaintenanceRequest() {
           linkTo: `/maintenance/${data.id}`,
           entityType: 'maintenance_request',
           entityId: data.id,
-        }).catch((err) => { console.error('Failed to create maintenance notification:', err); });
+        }).catch((err) => {
+          console.error('Failed to create maintenance notification:', err);
+          logError({ source: 'useMaintenanceRequests.createNotification', message: 'Failed to create maintenance notification', severity: 'error', error: err });
+        });
       }
     },
     onError: (error) => {

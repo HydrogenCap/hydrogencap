@@ -2,6 +2,7 @@
  import { supabase, supabaseAny } from '@/integrations/supabase/client';
  import { fetchUserOrgId as getUserOrgId, useUserOrg } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
+ import { logError } from '@/lib/errorLogger';
  
 export type RentStatus = 'upcoming' | 'due' | 'paid' | 'partial' | 'overdue' | 'bad_debt';
  
@@ -1000,6 +1001,7 @@ export function useBulkSendReminder() {
           results.sent++;
         } catch (err) {
           console.error('Failed to send reminder:', err);
+          logError({ source: 'useRentCollection.sendRentReminder', message: 'send-rent-reminder edge function failed', severity: 'error', error: err });
           results.failed++;
         }
       }
