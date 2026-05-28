@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { extractStoragePath } from '@/lib/storagePaths';
 import { toast } from 'sonner';
+import { logError } from '@/lib/errorLogger';
 
 interface SignedUrlOptions {
   /** URL expiration time in seconds (default: 3600 = 1 hour) */
