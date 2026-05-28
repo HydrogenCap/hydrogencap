@@ -1,9 +1,34 @@
-All five target hooks (`useAIComplianceChecker.ts`, `useCompaniesHouse.ts`, `useCompaniesHouseV2.ts`, `useGeocoding.ts`, `usePropertyLookup.ts`) already have the `logError()` wiring in place from the prior loop:
+## Fix npm ERESOLVE by downgrading ESLint to v9
 
-- Import `import { logError } from '@/lib/errorLogger';` is present in each file.
-- All 8 high-signal catch blocks have `logError({ source, message, severity: 'error', error })` immediately after the existing `console.error` (verified via ripgrep).
-- `console.warn` calls untouched, success paths untouched, toast/UI behaviour unchanged.
+### Problem
+`npm install` fails with `ERESOLVE` because:
+- `package.json` pins `eslint@^10.1.0` and `@eslint/js@^10.0.1`
+- `eslint-plugin-react-hooks@7.0.1` only declares peer support up to `eslint@^9`
 
-**No further changes required.** The task is already complete.
+### Changes
 
-If you'd like, I can extend the wiring to additional hooks (e.g. the remaining ~80 hooks in `src/hooks/` that still log errors only via `console.error`) — just name the next batch.
+1. **`package.json`** — update two devDependencies only:
+   - `"eslint": "^10.1.0"` → `"eslint": "^9.36.0"`
+   - `"@eslint/js": "^10.0.1"` → `"@eslint/js": "^9.36.0"`
+
+2. **Regenerate lockfiles** (the repo has `package-lock.json`, `bun.lock`, and `bun.lockb`):
+   - `rm -f package-lock.json bun.lock bun.lockb`
+   - `npm install` (regenerates `package-lock.json`, must succeed without ERESOLVE)
+   - `bun install` (regenerates `bun.lock` + `bun.lockb`)
+
+3. **No change to `eslint.config.js`** — the existing flat config is already compatible with ESLint 9.
+
+### Verification
+
+Run the full verify chain and confirm all stay green:
+- `npm install` — completes without ERESOLVE
+- `npm run lint`
+- `npm run typecheck` (or `tsc --noEmit` via the project's script)
+- `npm test` (vitest)
+- `npm run build`
+
+If any step fails, stop and report the failure rather than papering over it.
+
+### Notes
+- Strictly two version bumps + lockfile regeneration. No other source files touched.
+- Memory rule #1 (React 19 / current stack) unaffected; this is a tooling-only change.
