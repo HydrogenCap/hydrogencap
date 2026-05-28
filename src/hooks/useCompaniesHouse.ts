@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logError } from '@/lib/errorLogger';
 
 export interface CHCompanySearchResult {
   company_number: string;
@@ -77,6 +78,7 @@ export function useCompaniesHouse() {
       return data.companies || [];
     } catch (err) {
       console.error('Failed to search Companies House:', err);
+      logError({ source: 'useCompaniesHouse.searchCompanies', message: 'Companies House search edge function failed', severity: 'error', error: err });
       setError(err instanceof Error ? err.message : 'Failed to search Companies House');
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to search Companies House', variant: 'destructive' });
       setSearchResults([]);
@@ -118,6 +120,7 @@ export function useCompaniesHouse() {
       return result;
     } catch (err) {
       console.error('Failed to look up company:', err);
+      logError({ source: 'useCompaniesHouse.lookupCompany', message: 'Companies House company lookup edge function failed', severity: 'error', error: err });
       setError(err instanceof Error ? err.message : 'Failed to lookup company');
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to look up company', variant: 'destructive' });
       setLookupResult(null);

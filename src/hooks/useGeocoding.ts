@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { logError } from '@/lib/errorLogger';
 
 export type GeocodeStatus = 'NOT_STARTED' | 'SUCCESS' | 'PARTIAL' | 'FAILED';
 export type GeocodeSource = 'PLACES' | 'GEOCODE';
@@ -64,6 +65,7 @@ export function useGeocoding() {
       };
     } catch (err) {
       console.error('Failed to geocode address:', err);
+      logError({ source: 'useGeocoding.geocodeAddress', message: 'Geocode address edge function failed', severity: 'error', error: err });
       toast.error(err instanceof Error ? err.message : 'Failed to geocode address');
       return null;
     }
@@ -247,6 +249,7 @@ export function useBackfillGeocoding() {
             // would abort the whole loop. Swallow per-property so the batch continues.
             failureMessage = err instanceof Error ? err.message : String(err);
             console.error(`Geocode failed for ${property.id}:`, err);
+            logError({ source: 'useGeocoding.backfillPerProperty', message: 'Geocode property failed during backfill', severity: 'error', error: err });
           }
 
           if (ac.signal.aborted) break outer;
@@ -292,6 +295,7 @@ export function useBackfillGeocoding() {
       }
     } catch (err) {
       console.error('Backfill error:', err);
+      logError({ source: 'useGeocoding.startBackfill', message: 'Property geocode backfill failed', severity: 'error', error: err });
       toast({
         title: 'Geocoding failed',
         description: err instanceof Error ? err.message : 'An error occurred while geocoding properties',

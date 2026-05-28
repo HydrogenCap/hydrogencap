@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePropertyWithFeatures } from './useComplianceRequirements';
 import { usePropertyCompliance } from './useCompliance';
 import { toast } from 'sonner';
+import { logError } from '@/lib/errorLogger';
 
 export interface AIComplianceRequirement {
   type: string;
@@ -75,6 +76,7 @@ export function useAIComplianceChecker(propertyId: string | undefined) {
     },
     onError: (error: Error) => {
       console.error('AI Compliance analysis error:', error);
+      logError({ source: 'useAIComplianceChecker.analyzeCompliance', message: 'AI compliance checker edge function failed', severity: 'error', error });
       if (error.message.includes('Rate limit')) {
         toast.error('Rate limit exceeded. Please try again in a moment.');
       } else if (error.message.includes('credits')) {
