@@ -1,4 +1,1 @@
 project_id = "jnkwooocjpgpznittueo"
-
-[functions.migrate-stranded-photos]
-verify_jwt = false
