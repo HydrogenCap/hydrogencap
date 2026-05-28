@@ -51,8 +51,8 @@ export function DirectorsSection({
               {directors.map((d) => (
                 <TableRow key={d.id}>
                   <TableCell className="font-medium">{d.director_name}</TableCell>
-                  <TableCell>{formatDate(d.appointment_date)}</TableCell>
-                  <TableCell>{formatDate(d.resignation_date)}</TableCell>
+                  <TableCell>{formatDateUK(d.appointment_date)}</TableCell>
+                  <TableCell>{formatDateUK(d.resignation_date)}</TableCell>
                   <TableCell>
                     <Badge variant={d.is_current ? 'default' : 'secondary'}>
                       {d.is_current ? 'Current' : 'Resigned'}
