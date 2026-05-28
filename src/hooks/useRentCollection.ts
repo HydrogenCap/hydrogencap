@@ -1001,6 +1001,7 @@ export function useBulkSendReminder() {
           results.sent++;
         } catch (err) {
           console.error('Failed to send reminder:', err);
+          logError({ source: 'useRentCollection.sendRentReminder', message: 'send-rent-reminder edge function failed', severity: 'error', error: err });
           results.failed++;
         }
       }
