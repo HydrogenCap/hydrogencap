@@ -78,7 +78,19 @@ export default function PlanningTracker({ projectId, propertyId }: { projectId: 
               <Card key={app.id} className={expired ? 'border-destructive' : expiryWarning ? 'border-amber-300' : ''}>
                 <CardContent className="p-4">
                   {/* Header */}
-                  <div className="flex items-start justify-between cursor-pointer" onClick={() => setExpandedApp(isExpanded ? null : app.id)}>
+                  <div
+                    className="flex items-start justify-between cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
+                    onClick={() => setExpandedApp(isExpanded ? null : app.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setExpandedApp(isExpanded ? null : app.id);
+                      }
+                    }}
+                  >
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{APP_TYPE_LABELS[app.application_type] || app.application_type}</span>

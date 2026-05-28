@@ -148,7 +148,18 @@ function PersonCard({ person, pos, selected, onSelect, highlighted }: {
   const c = COLORS.person;
   return (
     <foreignObject x={pos.x} y={pos.y} width={pos.w} height={pos.h}>
-      <div onClick={() => onSelect(person.id)} style={{
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`Select person ${person.name}`}
+        onClick={() => onSelect(person.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(person.id);
+          }
+        }}
+        style={{
         width: '100%', height: '100%',
         background: selected || highlighted ? c.bg : 'white',
         border: `2px solid ${selected ? c.border : highlighted ? c.border : '#e2e8f0'}`,
@@ -186,7 +197,18 @@ function CompanyCard({ company, pos, selected, onSelect, highlighted, onNavigate
   const c = getCompanyColor(company.companyType);
   return (
     <foreignObject x={pos.x} y={pos.y} width={pos.w} height={pos.h}>
-      <div onClick={() => onSelect(company.id)} onDoubleClick={() => onNavigate(company.companyId)}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`Select company ${company.name}`}
+        onClick={() => onSelect(company.id)}
+        onDoubleClick={() => onNavigate(company.companyId)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(company.id);
+          }
+        }}
         style={{
           width: '100%', height: '100%',
           background: selected || highlighted ? c.bg : 'white',
@@ -225,7 +247,18 @@ function PropertyCard({ property, pos, highlighted, onNavigate }: {
   const c = getPropertyColor(property.type);
   return (
     <foreignObject x={pos.x} y={pos.y} width={pos.w} height={pos.h}>
-      <div onClick={() => onNavigate(property.id)} style={{
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`Open property`}
+        onClick={() => onNavigate(property.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onNavigate(property.id);
+          }
+        }}
+        style={{
         width: '100%', height: '100%',
         background: highlighted ? c.bg : 'white',
         border: `2px solid ${highlighted ? c.border : '#e2e8f0'}`,
