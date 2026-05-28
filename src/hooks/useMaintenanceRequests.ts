@@ -4,6 +4,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
+import { logError } from '@/lib/errorLogger';
 import type {
   MaintenanceCategory, MaintenancePriority, MaintenanceStatus,
   MaintenanceOverviewRow, ReportedBy,
