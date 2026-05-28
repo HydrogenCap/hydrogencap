@@ -3,6 +3,7 @@ import { useCompaniesHouse, type CHLookupResult } from '@/hooks/useCompaniesHous
 import { useUpdateLegalEntity, useCreateDirector, useCreateShareholder } from '@/hooks/useLegalEntities';
 import { useToast } from '@/hooks/use-toast';
 import type { LegalEntity, EntityDirector, EntityShareholder } from '@/hooks/useLegalEntities';
+import { logError } from '@/lib/errorLogger';
 
 interface UseEntityCHSyncOptions {
   entity: LegalEntity | undefined;
@@ -43,6 +44,7 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
           imported.directors++;
         } catch (e) {
           console.error('Failed to import director:', officer.name, e);
+          logError({ source: 'useEntityCHSync.importDirector', message: 'Failed to import director from Companies House', severity: 'error', error: e });
           toast({ title: 'Error', description: `Failed to import director ${officer.name}`, variant: 'destructive' });
         }
       }
@@ -64,6 +66,7 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
           imported.shareholders++;
         } catch (e) {
           console.error('Failed to import shareholder:', psc.name, e);
+          logError({ source: 'useEntityCHSync.importShareholder', message: 'Failed to import shareholder from Companies House', severity: 'error', error: e });
           toast({ title: 'Error', description: `Failed to import shareholder ${psc.name}`, variant: 'destructive' });
         }
       }
@@ -110,6 +113,7 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
         }
       } catch (err) {
         console.error('Failed to auto-sync entity from Companies House:', err);
+        logError({ source: 'useEntityCHSync.autoSync', message: 'Auto-sync from Companies House failed', severity: 'error', error: err });
         toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to auto-sync from Companies House', variant: 'destructive' });
       }
     }

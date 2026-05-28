@@ -5,6 +5,7 @@ import { fetchUserOrgId } from './useUserOrg';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { logError } from '@/lib/errorLogger';
 
 function invalidateComplianceCaches(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
@@ -169,6 +170,7 @@ export function useBulkDocScanner() {
       });
     } catch (error: unknown) {
       console.error('Failed to classify document:', error);
+      logError({ source: 'useBulkDocScanner.classify', message: 'AI document classification via process-document failed', severity: 'error', error });
       toast.error(error instanceof Error ? error.message : 'Failed to classify document');
       // Still mark as ready with low confidence — user can manually classify
       updateDoc(idx, {

@@ -6,6 +6,7 @@ import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { classifyFilename, extractDateFromFilename, type FilenameClassification } from '@/lib/documents/filenameClassifier';
 import { matchPropertyFromFolder } from '@/lib/documents/folderPropertyMatcher';
 import { toast } from 'sonner';
+import { logError } from '@/lib/errorLogger';
 
 export type QueueItemStatus =
   | 'queued'
@@ -194,6 +195,7 @@ export function useBulkDocumentUpload() {
       });
     } catch (catError) {
       console.error('Categorisation failed:', catError);
+      logError({ source: 'useBulkDocumentUpload.categorise', message: 'Document categorisation via categorise-documents edge function failed', severity: 'error', error: catError });
       // Continue to extraction even if categorisation fails
     }
 
@@ -252,6 +254,7 @@ export function useBulkDocumentUpload() {
       });
     } catch (extError) {
       console.error('Extraction failed:', extError);
+      logError({ source: 'useBulkDocumentUpload.extract', message: 'Document extraction via process-document-v2 edge function failed', severity: 'error', error: extError });
       // Mark document as failed in the DB so it doesn't stay stuck
       await supabaseAny.from('documents').update({ extraction_status: 'failed' }).eq('id', docRecord.id);
       updateItem(item.id, {
