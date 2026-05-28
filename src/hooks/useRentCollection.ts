@@ -2,6 +2,7 @@
  import { supabase, supabaseAny } from '@/integrations/supabase/client';
  import { fetchUserOrgId as getUserOrgId, useUserOrg } from './useUserOrg';
  import { useToast } from '@/hooks/use-toast';
+ import { logError } from '@/lib/errorLogger';
  
 export type RentStatus = 'upcoming' | 'due' | 'paid' | 'partial' | 'overdue' | 'bad_debt';
  
