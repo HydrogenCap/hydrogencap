@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { logError } from '@/lib/errorLogger';
 
 interface PricePaidResult {
   propertyId: string;
@@ -40,6 +41,7 @@ export function useBulkPricePaidEnrich() {
 
       if (error) {
         console.error('Bulk Price Paid enrich error:', error);
+        logError({ source: 'useBulkPricePaidEnrich.enrichAll', message: 'Edge function bulk-price-paid-enrich returned error', severity: 'error', error });
         toast({
           title: 'Enrichment failed',
           description: error.message || 'Failed to fetch Price Paid data.',
@@ -76,6 +78,7 @@ export function useBulkPricePaidEnrich() {
       return result;
     } catch (err) {
       console.error('Bulk Price Paid enrich error:', err);
+      logError({ source: 'useBulkPricePaidEnrich.enrichAll', message: 'Unexpected error during bulk Price Paid enrichment', severity: 'error', error: err });
       toast({
         title: 'Enrichment failed',
         description: 'An unexpected error occurred.',

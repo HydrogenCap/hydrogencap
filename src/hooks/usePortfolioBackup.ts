@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { BACKUP_TABLES, formatBytes } from '@/lib/backupConfig';
 import { toast } from 'sonner';
+import { logError } from '@/lib/errorLogger';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -310,6 +311,7 @@ export function usePortfolioBackup() {
             }
           } catch (error: unknown) {
             console.error(`Failed to download file ${entry.bucket}/${shortName}:`, error);
+            logError({ source: 'usePortfolioBackup.downloadFile', message: 'Storage file download failed during backup', severity: 'error', error });
             warnings.push(`${entry.bucket}/${shortName}: ${getErrorMessage(error)}`);
           }
 
