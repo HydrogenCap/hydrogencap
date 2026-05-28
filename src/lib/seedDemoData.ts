@@ -174,7 +174,7 @@ export async function seedDemoData(
         org_id: orgId,
         property_id: propertyIds[property_index],
         room_id: roomId || null,
-      });
+      } as any);
       if (error) throw new Error(`Void: ${error.message}`);
     }
 
