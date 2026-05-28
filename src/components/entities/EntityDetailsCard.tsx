@@ -1,15 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { format } from 'date-fns';
 import type { LegalEntity } from '@/hooks/useLegalEntities';
+import { formatDateUK } from '@/lib/calculations';
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'dd/MM/yyyy');
-  } catch {
-    return dateStr;
-  }
-}
 
 interface EntityDetailsCardProps {
   entity: LegalEntity;
@@ -33,7 +25,7 @@ export function EntityDetailsCard({ entity }: EntityDetailsCardProps) {
           {entity.incorporation_date && (
             <div>
               <span className="text-muted-foreground">Incorporation Date</span>
-              <p className="font-medium">{formatDate(entity.incorporation_date)}</p>
+              <p className="font-medium">{formatDateUK(entity.incorporation_date)}</p>
             </div>
           )}
           {entity.registered_address && (
@@ -72,7 +64,7 @@ export function EntityDetailsCard({ entity }: EntityDetailsCardProps) {
           {entity.ch_last_synced_at && (
             <div>
               <span className="text-muted-foreground">Last CH Sync</span>
-              <p className="font-medium">{formatDate(entity.ch_last_synced_at)}</p>
+              <p className="font-medium">{formatDateUK(entity.ch_last_synced_at)}</p>
             </div>
           )}
           {entity.notes && (

@@ -9,18 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { format } from 'date-fns';
 import type { EntityShareholder } from '@/hooks/useLegalEntities';
 import type { ShareClassWithAllocation } from '@/hooks/useShareCapital';
+import { formatDateUK } from '@/lib/calculations';
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'dd/MM/yyyy');
-  } catch {
-    return dateStr;
-  }
-}
 
 interface ShareholdersSectionProps {
   shareholders: EntityShareholder[] | undefined;
@@ -81,7 +73,7 @@ export function ShareholdersSection({
                   <TableCell>{sh.share_class}</TableCell>
                   <TableCell className="text-right">{sh.shares_held.toLocaleString()}</TableCell>
                   <TableCell className="text-right">{Number(sh.percentage).toFixed(2)}%</TableCell>
-                  <TableCell>{formatDate(sh.effective_date)}</TableCell>
+                  <TableCell>{formatDateUK(sh.effective_date)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" aria-label="Edit shareholder" className="h-7 w-7" onClick={() => onEditShareholder(sh)}>

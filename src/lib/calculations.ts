@@ -52,6 +52,11 @@ export function formatDateShort(date: string | Date | null | undefined): string 
     year: 'numeric',
   });
 }
+// Format GBP currency (e.g. £1,234.50)
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
+}
+
 // Format compact GBP (e.g. £1.2M, £450K)
 export function formatGBPCompact(amount: number | null | undefined): string {
   if (amount == null) return '\u2014';
