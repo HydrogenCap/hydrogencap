@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logError } from '@/lib/errorLogger';
 
 export interface EPCData {
   epcRating?: string;
@@ -90,6 +91,7 @@ export function usePropertyLookup() {
       return result;
     } catch (err) {
       console.error('Property lookup error:', err);
+      logError({ source: 'usePropertyLookup.lookupProperty', message: 'Property lookup edge function failed', severity: 'error', error: err });
       toast({
         title: 'Lookup failed',
         description: 'An unexpected error occurred.',

@@ -4,6 +4,7 @@ import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from 'sonner';
+import { logError } from '@/lib/errorLogger';
 
 // Types
 export interface CHSearchResult {
@@ -107,6 +108,7 @@ export function useCompaniesHouseV2() {
       return data.companies || [];
     } catch (err) {
       console.error('Failed to search Companies House:', err);
+      logError({ source: 'useCompaniesHouseV2.searchCompanies', message: 'Companies House V2 search edge function failed', severity: 'error', error: err });
       toast.error(err instanceof Error ? err.message : 'Failed to search Companies House');
       return [];
     } finally {
