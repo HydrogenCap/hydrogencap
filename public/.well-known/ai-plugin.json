@@ -10,9 +10,9 @@
   },
   "api": {
     "type": "openapi",
-    "url": "https://hydrogencap.lovable.app/.well-known/openapi.json"
+    "url": "https://tenureiq.com/.well-known/openapi.json"
   },
-  "logo_url": "https://hydrogencap.lovable.app/favicon.png",
+  "logo_url": "https://tenureiq.com/favicon.png",
   "contact_email": "support@tenureiq.com",
-  "legal_info_url": "https://hydrogencap.lovable.app"
+  "legal_info_url": "https://tenureiq.com"
 }
