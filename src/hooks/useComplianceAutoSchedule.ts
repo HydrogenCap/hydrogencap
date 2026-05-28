@@ -128,7 +128,7 @@ export function useUpcomingRenewals(days: number = 90) {
     return map;
   }, [properties]);
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- React Compiler bails on this complex derivation; manual memo is correct and safe
+   
   const renewals = useMemo<RenewalWindowItem[]>(() => {
     if (!complianceItems?.length) return [];
 

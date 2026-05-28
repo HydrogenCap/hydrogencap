@@ -75,7 +75,7 @@ export default function AddPropertyWizard() {
           has_ensuite: r.has_ensuite,
           is_lettable: r.is_lettable,
           target_rent_pcm: r.target_rent_pcm || null,
-        }))
+        })) as any
       );
     }
 

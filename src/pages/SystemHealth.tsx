@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { PageSkeleton, EmptyState } from '@/components/common';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Activity, AlertCircle, FileX, CheckCircle2, RefreshCw, RotateCw } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
 interface ErrorRow {

@@ -83,7 +83,7 @@ export function PortfolioPulse({
   const [showSnoozed, setShowSnoozed] = useState(false);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
-  const { isSnoozed, snoozeUntilTomorrow, unsnooze, snoozed } = usePulseSnooze();
+  const { isSnoozed, snoozeUntilTomorrow, unsnooze } = usePulseSnooze();
   const handleOpen = useCallback((id: string) => setOpenAction(id as PulseActionId), []);
   const { actions, summary, pulseScore } = useMemo(() => {
     const acts: PulseAction[] = [];
@@ -197,7 +197,7 @@ export function PortfolioPulse({
     }
 
     return { actions: acts.slice(0, 5), summary: sum, pulseScore: score };
-  }, [risks, criticalCount, loanAlerts, rentSchedule, complianceEvents, propertiesCount]);
+  }, [criticalCount, loanAlerts, rentSchedule, complianceEvents, propertiesCount]);
 
   const scoreColor =
     pulseScore >= 85 ? 'text-success' : pulseScore >= 60 ? 'text-warning' : 'text-destructive';

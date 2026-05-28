@@ -69,7 +69,7 @@ export function ComplianceCalendarView({ rows, statusFilter, onItemClick }: Comp
   const offGrid = missingItems.length + expiredNoDateItems.length;
 
   // Heatmap: compute max count for intensity scaling
-  const maxCount = Array.from(expiryByMonth.values()).reduce((m, list) => Math.max(m, list.length), 0);
+  const _maxCount = Array.from(expiryByMonth.values()).reduce((m, list) => Math.max(m, list.length), 0);
 
   // Auto-scroll to first non-empty month on mount (once)
   const didScrollRef = useRef(false);

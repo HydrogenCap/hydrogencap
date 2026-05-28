@@ -91,7 +91,7 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 // Recharts tooltip prop shape varies across chart types; the component is a
 // thin passthrough over Recharts internals.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const ChartTooltipContent = React.forwardRef<HTMLDivElement, any>(
   (
     {
