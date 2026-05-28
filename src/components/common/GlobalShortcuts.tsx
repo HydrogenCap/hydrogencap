@@ -98,6 +98,7 @@ export function GlobalShortcuts() {
   return null;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const SHORTCUT_GROUPS = [
   {
     label: 'Global',
