@@ -437,7 +437,7 @@ export function PortfolioPulse({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            snoozedNow ? unsnooze(a.id) : snoozeUntilTomorrow(a.id);
+                            if (snoozedNow) { unsnooze(a.id); } else { snoozeUntilTomorrow(a.id); }
                           }}
                           className={cn(
                             'ml-1 shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md',
