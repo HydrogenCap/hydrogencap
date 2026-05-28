@@ -197,6 +197,7 @@ export function useSendTeamInvite() {
 
       if (fnError) {
         console.error('Email send failed:', fnError);
+        logError({ source: 'useTeamManagement.sendTeamInvite', message: 'send-team-invite edge function failed', severity: 'error', error: fnError });
         // Don't throw — invite is created, they can copy the link manually
       }
 
