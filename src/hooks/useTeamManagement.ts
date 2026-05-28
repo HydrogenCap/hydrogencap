@@ -3,6 +3,7 @@ import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
+import { logError } from '@/lib/errorLogger';
 
 // ─── Types ───────────────────────────────────────────────────────
 
