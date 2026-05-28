@@ -10,17 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { format } from 'date-fns';
 import type { EntityDirector } from '@/hooks/useLegalEntities';
+import { formatDateUK } from '@/lib/calculations';
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'dd/MM/yyyy');
-  } catch {
-    return dateStr;
-  }
-}
 
 interface DirectorsSectionProps {
   directors: EntityDirector[] | undefined;

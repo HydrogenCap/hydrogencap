@@ -462,6 +462,4 @@ export function calculateStampDuty(consideration: number): number {
   return Math.ceil(consideration * 0.005 * 100) / 100;
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-}
+export { formatCurrency } from '@/lib/calculations';

@@ -30,9 +30,6 @@ const STATUS_STYLES: Record<string, string> = {
   expired: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 };
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-}
 
 function getResponseTime(quote: JobQuote): string | null {
   if (!quote.responded_at || !quote.submitted_at) return null;

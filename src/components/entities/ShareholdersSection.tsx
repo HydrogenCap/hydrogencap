@@ -9,18 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { format } from 'date-fns';
 import type { EntityShareholder } from '@/hooks/useLegalEntities';
 import type { ShareClassWithAllocation } from '@/hooks/useShareCapital';
+import { formatDateUK } from '@/lib/calculations';
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'dd/MM/yyyy');
-  } catch {
-    return dateStr;
-  }
-}
 
 interface ShareholdersSectionProps {
   shareholders: EntityShareholder[] | undefined;

@@ -1,15 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { format } from 'date-fns';
 import type { LegalEntity } from '@/hooks/useLegalEntities';
+import { formatDateUK } from '@/lib/calculations';
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '—';
-  try {
-    return format(new Date(dateStr), 'dd/MM/yyyy');
-  } catch {
-    return dateStr;
-  }
-}
 
 interface EntityDetailsCardProps {
   entity: LegalEntity;
