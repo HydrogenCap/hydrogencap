@@ -1,5 +1,8 @@
 # TenureIQ — Property Intelligence Platform
 
+> **Package manager:** `bun` is the canonical package manager (see `bun.lock`). `npm install` requires `--legacy-peer-deps` because several UI deps (vaul, react-day-picker, cmdk, react-leaflet, etc.) still declare React 18 peer ranges while the app runs on React 19.
+
+
 Property intelligence platform for UK HMO landlords and investors. Track compliance, rent collection, lending, and portfolio performance in one place.
 
 🌐 **[tenureiq.com](https://tenureiq.com)**
