@@ -113,7 +113,7 @@ export function useBulkCreateRooms() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (rooms: Omit<RoomV2, 'id' | 'created_at' | 'updated_at'>[]) => {
-      const { data, error } = await supabase.from('rooms_v2').insert(rooms).select();
+      const { data, error } = await supabase.from('rooms_v2').insert(rooms as any).select();
       if (error) throw error;
       return data;
     },
