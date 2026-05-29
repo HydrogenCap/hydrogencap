@@ -159,6 +159,5 @@ export function usePropertyDetailState() {
     capitalGrowth,
     handleSaveNotes,
     handleDownloadPassportPdf,
-    toast,
   };
 }
