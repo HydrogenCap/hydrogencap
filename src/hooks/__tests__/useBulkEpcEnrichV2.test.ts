@@ -10,9 +10,10 @@ import { renderAppHook } from '@/test/renderHook';
 import { createMockSupabase, type MockSupabase } from './supabaseMock';
 
 let mock: MockSupabase;
-const toastSpy = vi.fn() as unknown as ((...args: unknown[]) => void) & { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
-(toastSpy as unknown as { success: ReturnType<typeof vi.fn> }).success = vi.fn();
-(toastSpy as unknown as { error: ReturnType<typeof vi.fn> }).error = vi.fn();
+const toastSpy = vi.fn();
+const toastSuccessSpy = vi.fn();
+const toastErrorSpy = vi.fn();
+Object.assign(toastSpy, { success: toastSuccessSpy, error: toastErrorSpy });
 
 vi.mock('@/integrations/supabase/client', () => ({
   get supabase() {
@@ -27,6 +28,9 @@ vi.mock('sonner', () => ({
 
 beforeEach(() => {
   toastSpy.mockReset();
+  toastSuccessSpy.mockReset();
+  toastErrorSpy.mockReset();
+  Object.assign(toastSpy, { success: toastSuccessSpy, error: toastErrorSpy });
   mock = createMockSupabase(() => ({ data: null, error: null }));
 });
 
@@ -48,7 +52,8 @@ describe('useBulkEpcEnrichV2', () => {
       body: { mode: 'all' },
     });
     expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'EPC Enrichment Complete' }),
+      'EPC Enrichment Complete',
+      expect.objectContaining({ description: expect.any(String) }),
     );
   });
 
