@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ─── Types ───
 
@@ -87,7 +87,6 @@ export function useActionAssignments() {
 
 export function useSnoozeAction() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   const { user } = useAuth();
 
   return useMutation({
@@ -112,18 +111,16 @@ export function useSnoozeAction() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['action-snoozes'] });
-      toast({ title: 'Action snoozed' });
+      toast.success('Action snoozed');
     },
     onError: (e) => {
-      toast({ title: 'Failed to snooze action', description: e.message, variant: 'destructive' });
+      toast.error('Failed to snooze action', { description: e.message });
     },
   });
 }
 
 export function useUnsnoozeAction() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (snoozeId: string) => {
       const { error } = await supabaseAny
@@ -135,17 +132,16 @@ export function useUnsnoozeAction() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['action-snoozes'] });
-      toast({ title: 'Snooze removed' });
+      toast.success('Snooze removed');
     },
     onError: (e) => {
-      toast({ title: 'Failed to remove snooze', description: e.message, variant: 'destructive' });
+      toast.error('Failed to remove snooze', { description: e.message });
     },
   });
 }
 
 export function useAssignAction() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   const { user } = useAuth();
 
   return useMutation({
@@ -170,18 +166,16 @@ export function useAssignAction() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['action-assignments'] });
-      toast({ title: 'Action assigned' });
+      toast.success('Action assigned');
     },
     onError: (e) => {
-      toast({ title: 'Failed to assign action', description: e.message, variant: 'destructive' });
+      toast.error('Failed to assign action', { description: e.message });
     },
   });
 }
 
 export function useUnassignAction() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (assignmentId: string) => {
       const { error } = await supabaseAny
@@ -193,10 +187,10 @@ export function useUnassignAction() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['action-assignments'] });
-      toast({ title: 'Assignment removed' });
+      toast.success('Assignment removed');
     },
     onError: (e) => {
-      toast({ title: 'Failed to remove assignment', description: e.message, variant: 'destructive' });
+      toast.error('Failed to remove assignment', { description: e.message });
     },
   });
 }

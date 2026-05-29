@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export type Density = 'cosy' | 'dense';
 const DENSITY_KEY = 'ui_density';
@@ -39,8 +39,6 @@ export function useAppSettings() {
 
 export function useUpdateAppSetting() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
       const orgId = await fetchUserOrgId();
@@ -60,14 +58,10 @@ export function useUpdateAppSetting() {
     onSuccess: async () => {
       const orgId = await fetchUserOrgId();
       queryClient.invalidateQueries({ queryKey: ['app-settings', orgId] });
-      toast({ title: 'Setting saved' });
+      toast.success('Setting saved');
     },
     onError: (err) => {
-      toast({
-        title: 'Failed to save setting',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Failed to save setting', { description: err instanceof Error ? err.message : 'Unknown error' });
     },
   });
 }

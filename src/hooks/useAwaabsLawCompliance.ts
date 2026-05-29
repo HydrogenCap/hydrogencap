@@ -7,7 +7,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
 import {
   addWorkingDays,
@@ -18,6 +17,7 @@ import {
   type DeadlineSeverity,
 } from '@/lib/working-days';
 import type { MaintenanceCategory } from '@/lib/maintenanceTypes';
+import { toast } from "sonner";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -274,8 +274,6 @@ async function logAwaabsEvent(
 /** Start investigation — logs timestamp and calculates written summary deadline. */
 export function useStartInvestigation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (requestId: string) => {
       const orgId = await fetchUserOrgId();
@@ -311,10 +309,10 @@ export function useStartInvestigation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['awaabs_law'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
-      toast({ title: 'Investigation started', description: 'Written summary due within 3 working days.' });
+      toast.success('Investigation started', { description: 'Written summary due within 3 working days.' });
     },
     onError: (err) => {
-      toast({ title: 'Failed to start investigation', description: (err as Error).message, variant: 'destructive' });
+      toast.error('Failed to start investigation', { description: (err as Error).message });
     },
   });
 }
@@ -322,8 +320,6 @@ export function useStartInvestigation() {
 /** Send written summary to tenant — logs timestamp and summary text. */
 export function useSendWrittenSummary() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ requestId, summaryText }: { requestId: string; summaryText: string }) => {
       const orgId = await fetchUserOrgId();
@@ -348,10 +344,10 @@ export function useSendWrittenSummary() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['awaabs_law'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
-      toast({ title: 'Written summary sent', description: 'Tenant has been notified.' });
+      toast.success('Written summary sent', { description: 'Tenant has been notified.' });
     },
     onError: (err) => {
-      toast({ title: 'Failed to send summary', description: (err as Error).message, variant: 'destructive' });
+      toast.error('Failed to send summary', { description: (err as Error).message });
     },
   });
 }
@@ -359,8 +355,6 @@ export function useSendWrittenSummary() {
 /** Start repair — logs repair commencement. */
 export function useStartRepair() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (requestId: string) => {
       const orgId = await fetchUserOrgId();
@@ -384,10 +378,10 @@ export function useStartRepair() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['awaabs_law'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
-      toast({ title: 'Repair started' });
+      toast.success('Repair started');
     },
     onError: (err) => {
-      toast({ title: 'Failed to start repair', description: (err as Error).message, variant: 'destructive' });
+      toast.error('Failed to start repair', { description: (err as Error).message });
     },
   });
 }
@@ -395,8 +389,6 @@ export function useStartRepair() {
 /** Complete repair — logs completion. */
 export function useCompleteRepair() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (requestId: string) => {
       const orgId = await fetchUserOrgId();
@@ -433,10 +425,10 @@ export function useCompleteRepair() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['awaabs_law'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
-      toast({ title: 'Repair completed', description: 'Awaab\'s Law obligations fulfilled.' });
+      toast.success('Repair completed', { description: 'Awaab\'s Law obligations fulfilled.' });
     },
     onError: (err) => {
-      toast({ title: 'Failed to complete repair', description: (err as Error).message, variant: 'destructive' });
+      toast.error('Failed to complete repair', { description: (err as Error).message });
     },
   });
 }
@@ -444,8 +436,6 @@ export function useCompleteRepair() {
 /** Classify or reclassify a hazard. */
 export function useClassifyHazard() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       requestId,
@@ -510,10 +500,10 @@ export function useClassifyHazard() {
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['awaabs_law'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
-      toast({ title: 'Hazard classified', description: `Category: ${vars.hazardCategory}` });
+      toast.success('Hazard classified', { description: `Category: ${vars.hazardCategory}` });
     },
     onError: (err) => {
-      toast({ title: 'Failed to classify hazard', description: (err as Error).message, variant: 'destructive' });
+      toast.error('Failed to classify hazard', { description: (err as Error).message });
     },
   });
 }

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface BankTransaction {
   id: string;
@@ -99,8 +99,6 @@ export function useImportBatches(bankAccountId?: string) {
 
 export function useImportBankTransactions() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       bankAccountId,
@@ -190,21 +188,16 @@ export function useImportBankTransactions() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['bank_transactions'] });
       queryClient.invalidateQueries({ queryKey: ['import_batches'] });
-      toast({
-        title: 'Import complete',
-        description: `${data.importedCount} transactions imported, ${data.duplicateCount} duplicates skipped`,
-      });
+      toast.success('Import complete', { description: `${data.importedCount} transactions imported, ${data.duplicateCount} duplicates skipped` });
     },
     onError: (error) => {
-      toast({ title: 'Import failed', description: error.message, variant: 'destructive' });
+      toast.error('Import failed', { description: error.message });
     },
   });
 }
 
 export function useReconcileTransaction() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       transactionId,
@@ -255,18 +248,16 @@ export function useReconcileTransaction() {
       queryClient.invalidateQueries({ queryKey: ['bank_transactions'] });
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
       queryClient.invalidateQueries({ queryKey: ['rent_payments'] });
-      toast({ title: 'Transaction reconciled' });
+      toast.success('Transaction reconciled');
     },
     onError: (error) => {
-      toast({ title: 'Reconciliation failed', description: error.message, variant: 'destructive' });
+      toast.error('Reconciliation failed', { description: error.message });
     },
   });
 }
 
 export function useBulkReconcile() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (
       matches: Array<{
@@ -308,10 +299,10 @@ export function useBulkReconcile() {
       queryClient.invalidateQueries({ queryKey: ['bank_transactions'] });
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
       queryClient.invalidateQueries({ queryKey: ['rent_payments'] });
-      toast({ title: `${count} transactions reconciled` });
+      toast.success(`${count} transactions reconciled`);
     },
     onError: (error) => {
-      toast({ title: 'Bulk reconciliation failed', description: error.message, variant: 'destructive' });
+      toast.error('Bulk reconciliation failed', { description: error.message });
     },
   });
 }
