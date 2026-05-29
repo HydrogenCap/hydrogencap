@@ -9,12 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 import {
   useTenantNotices,
   useCreateNotice,
 } from '@/hooks/useTenantLifecycle';
 import type { NoticeType, NoticeStatus, ServedMethod, TenantNotice } from '@/hooks/useTenantLifecycle';
+import { toast } from "sonner";
 
 // ============================================================
 // Notice Templates
@@ -164,8 +164,6 @@ interface NoticeComposerProps {
 export function NoticeComposer({ tenantId, tenancyId, tenant, property }: NoticeComposerProps) {
   const { data: notices, isLoading } = useTenantNotices(tenantId);
   const createNotice = useCreateNotice();
-  const { toast } = useToast();
-
   const [showCompose, setShowCompose] = useState(false);
   const [noticeType, setNoticeType] = useState<NoticeType>('custom');
   const [subject, setSubject] = useState('');
@@ -181,7 +179,7 @@ export function NoticeComposer({ tenantId, tenancyId, tenant, property }: Notice
 
   const handleSaveDraft = () => {
     if (!subject.trim() || !content.trim()) {
-      toast({ title: 'Error', description: 'Subject and content are required.', variant: 'destructive' });
+      toast.error('Error', { description: 'Subject and content are required.' });
       return;
     }
     createNotice.mutate(
@@ -198,7 +196,7 @@ export function NoticeComposer({ tenantId, tenancyId, tenant, property }: Notice
       },
       {
         onSuccess: () => {
-          toast({ title: 'Draft saved' });
+          toast.success('Draft saved');
           resetForm();
         },
       },
@@ -207,11 +205,11 @@ export function NoticeComposer({ tenantId, tenancyId, tenant, property }: Notice
 
   const handleSend = () => {
     if (!subject.trim() || !content.trim()) {
-      toast({ title: 'Error', description: 'Subject and content are required.', variant: 'destructive' });
+      toast.error('Error', { description: 'Subject and content are required.' });
       return;
     }
     if (!servedMethod) {
-      toast({ title: 'Error', description: 'Please select a service method.', variant: 'destructive' });
+      toast.error('Error', { description: 'Please select a service method.' });
       return;
     }
     createNotice.mutate(
@@ -228,7 +226,7 @@ export function NoticeComposer({ tenantId, tenancyId, tenant, property }: Notice
       },
       {
         onSuccess: () => {
-          toast({ title: 'Notice sent', description: 'The notice has been recorded as sent.' });
+          toast.success('Notice sent', { description: 'The notice has been recorded as sent.' });
           resetForm();
         },
       },

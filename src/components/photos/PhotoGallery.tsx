@@ -13,7 +13,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
 import {
   usePropertyPhotos,
   useUploadPhoto,
@@ -21,6 +20,7 @@ import {
   useDeletePhoto,
   type Photo,
 } from '@/hooks/usePhotos';
+import { toast } from "sonner";
 
 interface PhotoGalleryProps {
   propertyId: string;
@@ -30,8 +30,6 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<Photo | null>(null);
-  const { toast } = useToast();
-
   const { data: photos = [], isLoading } = usePropertyPhotos(propertyId);
   const uploadPhoto = useUploadPhoto();
   const setCoverPhoto = useSetCoverPhoto();
@@ -44,11 +42,7 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
     });
 
     if (validFiles.length === 0) {
-      toast({
-        title: "That's not an image",
-        description: 'Photos need to be JPEG, PNG, WebP, or GIF.',
-        variant: 'destructive',
-      });
+      toast.error("That's not an image", { description: 'Photos need to be JPEG, PNG, WebP, or GIF.' });
       return;
     }
 
@@ -56,21 +50,14 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
       try {
         await uploadPhoto.mutateAsync({ file, propertyId });
       } catch (err) {
-        toast({
-          title: "Upload didn't complete",
-          description: err instanceof Error ? err.message : 'Unknown error',
-          variant: 'destructive',
-        });
+        toast.error("Upload didn't complete", { description: err instanceof Error ? err.message : 'Unknown error' });
       }
     }
 
     if (validFiles.length > 0) {
-      toast({
-        title: 'Photos uploaded',
-        description: `${validFiles.length} photo(s) are now in the gallery.`,
-      });
+      toast.success('Photos uploaded', { description: `${validFiles.length} photo(s) are now in the gallery.` });
     }
-  }, [propertyId, uploadPhoto, toast]);
+  }, [propertyId, uploadPhoto]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -97,16 +84,9 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
   const handleSetCover = async (photo: Photo) => {
     try {
       await setCoverPhoto.mutateAsync({ photoId: photo.id, propertyId });
-      toast({
-        title: 'New cover photo',
-        description: 'This shot leads the property listing.',
-      });
+      toast('New cover photo', { description: 'This shot leads the property listing.' });
     } catch (_err) {
-      toast({
-        title: "Cover didn't update",
-        description: 'Give it another go.',
-        variant: 'destructive',
-      });
+      toast.error("Cover didn't update", { description: 'Give it another go.' });
     }
   };
 
@@ -119,17 +99,10 @@ export function PhotoGallery({ propertyId }: PhotoGalleryProps) {
         propertyId,
         fileUrl: photoToDelete.file_url,
       });
-      toast({
-        title: 'Photo removed',
-        description: 'Gone from the gallery.',
-      });
+      toast.success('Photo removed', { description: 'Gone from the gallery.' });
       setPhotoToDelete(null);
     } catch (_err) {
-      toast({
-        title: "Photo didn't delete",
-        description: 'Give it another go.',
-        variant: 'destructive',
-      });
+      toast.error("Photo didn't delete", { description: 'Give it another go.' });
     }
   };
 

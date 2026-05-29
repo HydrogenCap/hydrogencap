@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useSectionVisibility } from '@/hooks/useSectionVisibility';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from "sonner";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,7 +19,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { data: onboardingCompleted, isLoading: onboardingLoading } = useOnboardingStatus();
   const { isRouteHidden, isLoading: visibilityLoading } = useSectionVisibility();
   const location = useLocation();
-  const { toast } = useToast();
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -34,12 +33,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const hidden = !loading && !!user && isRouteHidden(location.pathname);
   useEffect(() => {
     if (hidden) {
-      toast({
-        title: 'Section hidden',
-        description: 'This section is currently hidden. You can enable it in Settings → Sections.',
-      });
+      toast('Section hidden', { description: 'This section is currently hidden. You can enable it in Settings → Sections.' });
     }
-  }, [hidden, toast]);
+  }, [hidden]);
 
   const handleResendVerification = useCallback(async () => {
     if (!user?.email || resendCooldown > 0) return;
@@ -47,12 +43,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       const { error } = await supabase.auth.resend({ type: 'signup', email: user.email });
       if (error) throw error;
       setResendCooldown(60);
-      toast({ title: 'Verification email sent', description: 'Please check your inbox.' });
+      toast.success('Verification email sent', { description: 'Please check your inbox.' });
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Please try again later.';
-      toast({ title: 'Failed to resend', description, variant: 'destructive' });
+      toast.error('Failed to resend', { description: description });
     }
-  }, [user?.email, resendCooldown, toast]);
+  }, [user?.email, resendCooldown]);
 
   if (loading || (user && (onboardingLoading || visibilityLoading))) {
     return (

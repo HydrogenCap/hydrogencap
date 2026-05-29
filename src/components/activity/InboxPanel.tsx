@@ -20,7 +20,7 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { useAcceptAllHighConfidence } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export function InboxPanel() {
   useInboxRealtime();
@@ -37,7 +37,6 @@ export function InboxPanel() {
   });
   const acceptAllHighConfidence = useAcceptAllHighConfidence();
   const deleteDocument = useDeleteDocument();
-  const { toast } = useToast();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -101,7 +100,7 @@ export function InboxPanel() {
       (d.ai_property_confidence || 0) >= 0.7
     );
     if (highConfSelected.length === 0) {
-      toast({ title: 'No high-confidence documents selected', description: 'Only documents with high AI confidence can be bulk-accepted.', variant: 'destructive' });
+      toast.error('No high-confidence documents selected', { description: 'Only documents with high AI confidence can be bulk-accepted.' });
       return;
     }
     setIsAcceptingAll(true);
@@ -119,7 +118,7 @@ export function InboxPanel() {
       for (const id of selectedIds) {
         await deleteDocument.mutateAsync(id);
       }
-      toast({ title: `Deleted ${selectedIds.size} document(s)`, variant: 'destructive' });
+      toast.error(`Deleted ${selectedIds.size} document(s)`);
       setSelectedIds(new Set());
     } catch {
       // individual errors handled by hook

@@ -19,13 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import {
   useSavedViews,
   useCreateSavedView,
   useDeleteSavedView,
   type SavedView,
 } from '@/hooks/useSavedViews';
+import { toast } from "sonner";
 
 interface SavedViewsMenuProps {
   /** Stable identifier per list page (e.g. "properties", "compliance") */
@@ -41,7 +41,6 @@ interface SavedViewsMenuProps {
  * as a named "view" and re-apply or share it later.
  */
 export function SavedViewsMenu({ scope, currentFilters, onApply }: SavedViewsMenuProps) {
-  const { toast } = useToast();
   const { data: views = [] } = useSavedViews(scope);
   const createView = useCreateSavedView();
   const deleteView = useDeleteSavedView();
@@ -60,16 +59,12 @@ export function SavedViewsMenu({ scope, currentFilters, onApply }: SavedViewsMen
         filters: currentFilters,
         is_shared: shared,
       });
-      toast({ title: 'View saved', description: `"${trimmed}" is ready to reuse.` });
+      toast.success('View saved', { description: `"${trimmed}" is ready to reuse.` });
       setSaveOpen(false);
       setName('');
       setShared(false);
     } catch (err) {
-      toast({
-        title: 'Could not save view',
-        description: err instanceof Error ? err.message : 'Unexpected error',
-        variant: 'destructive',
-      });
+      toast.error('Could not save view', { description: err instanceof Error ? err.message : 'Unexpected error' });
     }
   };
 
@@ -77,13 +72,9 @@ export function SavedViewsMenu({ scope, currentFilters, onApply }: SavedViewsMen
     e.stopPropagation();
     try {
       await deleteView.mutateAsync(view.id);
-      toast({ title: 'View deleted' });
+      toast.success('View deleted');
     } catch (err) {
-      toast({
-        title: 'Could not delete view',
-        description: err instanceof Error ? err.message : 'Unexpected error',
-        variant: 'destructive',
-      });
+      toast.error('Could not delete view', { description: err instanceof Error ? err.message : 'Unexpected error' });
     }
   };
 

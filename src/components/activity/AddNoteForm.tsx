@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { MessageSquarePlus } from 'lucide-react';
 import { LoadingButton } from '@/components/common/LoadingButton';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import { ActivityLoggers } from '@/hooks/useActivityLog';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from "sonner";
 
 interface AddNoteFormProps {
   propertyId: string;
@@ -13,7 +13,6 @@ interface AddNoteFormProps {
 export function AddNoteForm({ propertyId }: AddNoteFormProps) {
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,20 +25,13 @@ export function AddNoteForm({ propertyId }: AddNoteFormProps) {
     try {
       await ActivityLoggers.noteAdded(propertyId, trimmedNote);
       setNote('');
-      toast({
-        title: 'Note on the timeline',
-        description: 'Your note is logged against this property.',
-      });
+      toast('Note on the timeline', { description: 'Your note is logged against this property.' });
       // Invalidate activity log queries to refresh the timeline
       queryClient.invalidateQueries({ queryKey: ['activity_log'] });
       queryClient.invalidateQueries({ queryKey: ['activity_log', propertyId] });
     } catch (error) {
       console.error('Failed to add note:', error);
-      toast({
-        title: "Note didn't save",
-        description: error instanceof Error ? error.message : 'Failed to add note',
-        variant: 'destructive',
-      });
+      toast.error("Note didn't save", { description: error instanceof Error ? error.message : 'Failed to add note' });
     } finally {
       setIsSubmitting(false);
     }

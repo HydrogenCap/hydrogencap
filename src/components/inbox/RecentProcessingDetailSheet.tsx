@@ -19,7 +19,7 @@ import {
 } from '@/hooks/useComplianceIntake';
 import { useQuery } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface ProcessingHistoryDoc {
   id: string;
@@ -56,7 +56,6 @@ export function RecentProcessingDetailSheet({
   onOpenChange,
 }: RecentProcessingDetailSheetProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const acceptDoc = useAcceptComplianceDocument();
   const rejectDoc = useRejectComplianceDocument();
 
@@ -109,11 +108,7 @@ export function RecentProcessingDetailSheet({
       });
       onOpenChange(false);
     } catch (err) {
-      toast({
-        title: 'Approval failed',
-        description: err instanceof Error ? err.message : 'Open in Inbox to review.',
-        variant: 'destructive',
-      });
+      toast.error('Approval failed', { description: err instanceof Error ? err.message : 'Open in Inbox to review.' });
     }
   };
 

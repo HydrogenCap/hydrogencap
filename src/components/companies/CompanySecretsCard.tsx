@@ -19,8 +19,8 @@ import {
   useRevealSecrets,
   useSetCompanySecrets,
 } from '@/hooks/useCompanySecrets';
-import { useToast } from '@/hooks/use-toast';
 import { formatDateUK } from '@/lib/calculations';
+import { toast } from "sonner";
 
 interface CompanySecretsCardProps {
   companyId: string;
@@ -30,8 +30,6 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
   const { data: maskedSecrets, isLoading } = useCompanySecretsMasked(companyId);
   const revealSecrets = useRevealSecrets();
   const setSecrets = useSetCompanySecrets();
-  const { toast } = useToast();
-
   const [revealed, setRevealed] = useState<{ auth_code: string | null; utr: string | null } | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editAuthCode, setEditAuthCode] = useState('');
@@ -44,7 +42,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
       setRevealed(result);
     } catch (err) {
       console.error('Failed to reveal secrets:', err);
-      toast({ title: "Couldn't reveal secret", description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast.error("Couldn't reveal secret", { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 
@@ -56,7 +54,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
     await navigator.clipboard.writeText(value);
     setCopiedField(field);
     // Don't show toast with value for security
-    toast({ title: 'Copied to clipboard' });
+    toast.success('Copied to clipboard');
     setTimeout(() => setCopiedField(null), 2000);
   };
 
@@ -77,7 +75,7 @@ export function CompanySecretsCard({ companyId }: CompanySecretsCardProps) {
       setRevealed(null); // Hide after edit
     } catch (err) {
       console.error('Failed to save secrets:', err);
-      toast({ title: "Couldn't save secret", description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast.error("Couldn't save secret", { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 

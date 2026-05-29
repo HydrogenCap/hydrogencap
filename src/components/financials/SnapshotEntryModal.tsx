@@ -14,7 +14,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Lock, Unlock, ChevronDown, ChevronUp, Save, AlertCircle } from 'lucide-react';
 import { usePropertiesV2, type PropertyWithEntity } from '@/hooks/usePropertiesV2';
 import { useMonthSnapshots, useUpsertSnapshot, useLockMonth } from '@/hooks/useFinancialSnapshots';
-import { useToast } from '@/hooks/use-toast';
 import { formatGBPDecimal } from '@/lib/calculations';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth, subMonths } from 'date-fns';
@@ -22,6 +21,7 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import type { Database } from '@/integrations/supabase/types';
 import type { FinancialSnapshot } from '@/lib/financialSnapshotTypes';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -88,7 +88,6 @@ function getMonthOptions() {
 }
 
 export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }: Props) {
-  const { toast } = useToast();
   const months = getMonthOptions();
   const [selectedMonth, setSelectedMonth] = useState(months[0].value);
   const [showAll, setShowAll] = useState(false);
@@ -207,7 +206,7 @@ export function SnapshotEntryModal({ open, onOpenChange, preselectedPropertyId }
               variant={isMonthLocked ? 'destructive' : 'outline'}
               size="sm"
               onClick={() => lockMonth.mutate({ month: selectedMonth, lock: !isMonthLocked }, {
-                onSuccess: () => toast({ title: isMonthLocked ? 'Month open for edits' : 'Month locked for edits' }),
+                onSuccess: () => toast.success(isMonthLocked ? 'Month open for edits' : 'Month locked for edits'),
               })}
             >
               {isMonthLocked ? <><Unlock className="h-3 w-3 mr-1" /> Unlock</> : <><Lock className="h-3 w-3 mr-1" /> Lock Month</>}
@@ -267,7 +266,6 @@ interface EntryProps {
 }
 
 function PropertySnapshotEntry({ property, month, existing, suggestions, isExpanded, onToggle, isLocked, onSave }: EntryProps) {
-  const { toast } = useToast();
   const [values, setValues] = useState<SnapshotFormValues>(() => ({
     gross_rent_due: existing?.gross_rent_due ?? suggestions.grossRentDue,
     gross_rent_received: existing?.gross_rent_received ?? suggestions.grossRentDue,
@@ -311,8 +309,8 @@ function PropertySnapshotEntry({ property, month, existing, suggestions, isExpan
       locked_at: null,
       locked_by: null,
     }, {
-      onSuccess: () => toast({ title: `Snapshot saved · ${property.address_line_1}` }),
-      onError: (err: unknown) => toast({ title: "Snapshot didn't save", description: getErrorMessage(err), variant: 'destructive' }),
+      onSuccess: () => toast.success(`Snapshot saved · ${property.address_line_1}`),
+      onError: (err: unknown) => toast.error("Snapshot didn't save", { description: getErrorMessage(err) }),
     });
   };
 
@@ -427,7 +425,6 @@ interface QuickProps {
 }
 
 function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggestions, isLocked, onSave }: QuickProps) {
-  const { toast } = useToast();
   const [rows, setRows] = useState<Record<string, Record<string, number>>>(() => {
     const init: Record<string, Record<string, number>> = {};
     properties.forEach(p => {
@@ -491,8 +488,8 @@ function QuickEntryTable({ properties, month, existingSnapshots, getAutoSuggesti
     });
 
     Promise.all(promises)
-      .then(() => toast({ title: `Saved ${properties.length} snapshots` }))
-      .catch((err) => toast({ title: "Bulk save didn't complete", description: err.message, variant: 'destructive' }));
+      .then(() => toast.success(`Saved ${properties.length} snapshots`))
+      .catch((err) => toast.error("Bulk save didn't complete", { description: err.message }));
   };
 
   const fields = [

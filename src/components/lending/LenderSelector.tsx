@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { useLenders, useCreateLender, LENDER_TYPES, type Lender } from '@/hooks/useLenders';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface LenderSelectorProps {
   value: string;
@@ -23,7 +23,6 @@ function getErrorMessage(error: unknown): string {
 export function LenderSelector({ value, onChange }: LenderSelectorProps) {
   const { data: lenders = [] } = useLenders();
   const createLender = useCreateLender();
-  const { toast } = useToast();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<LenderFormState>({
     lender_name: '', lender_type: 'high_street',
@@ -33,7 +32,7 @@ export function LenderSelector({ value, onChange }: LenderSelectorProps) {
   });
 
   const handleCreate = async () => {
-    if (!form.lender_name.trim()) { toast({ title: 'Lender name required', variant: 'destructive' }); return; }
+    if (!form.lender_name.trim()) { toast.error('Lender name required'); return; }
     try {
       const created = await createLender.mutateAsync({
         lender_name: form.lender_name,
@@ -48,10 +47,10 @@ export function LenderSelector({ value, onChange }: LenderSelectorProps) {
       });
       onChange(created.id);
       setShowAdd(false);
-      toast({ title: 'Lender created' });
+      toast.success('Lender created');
     } catch (err: unknown) {
       console.error('Failed to create lender:', err);
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(err) });
     }
   };
 

@@ -7,7 +7,6 @@ import { Rocket, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization';
-import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
 import { useDemoData } from '@/hooks/useDemoData';
@@ -20,6 +19,7 @@ import { OrganizationStep } from './OrganizationStep';
 import { FirstPropertyStep } from './FirstPropertyStep';
 import { DemoDataStep } from './DemoDataStep';
 import { CompletionStep } from './CompletionStep';
+import { toast } from "sonner";
 
 const STEPS = ['Welcome', 'About You', 'Your Goals', 'Organisation', 'First Property', 'Demo Data', 'Complete'] as const;
 const TOTAL_PROGRESS_STEPS = STEPS.length - 1; // exclude "Complete" from progress
@@ -27,7 +27,6 @@ const TOTAL_PROGRESS_STEPS = STEPS.length - 1; // exclude "Complete" from progre
 export function OnboardingWizard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: org } = useOrganization();
   const updateOrg = useUpdateOrganization();
@@ -175,11 +174,7 @@ export function OnboardingWizard() {
       }
     } catch (error) {
       console.error('Failed to save onboarding step:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Something went wrong' });
       throw error; // prevent advancing
     }
   };

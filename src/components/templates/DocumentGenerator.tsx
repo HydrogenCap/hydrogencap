@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useTenancyAgreements } from '@/hooks/useTenancyAgreements';
 import {
@@ -20,6 +19,7 @@ import {
 } from '@/hooks/useTemplateUpgrade';
 import { mergeTemplate, extractMergeFields } from '@/lib/template-merge';
 import { DOCUMENT_TEMPLATES } from '@/lib/documentTemplates';
+import { toast } from "sonner";
 
 type DocStatus = 'draft' | 'final' | 'sent_for_signing' | 'signed';
 
@@ -37,8 +37,6 @@ interface DocumentGeneratorProps {
 }
 
 export function DocumentGenerator({ onBack }: DocumentGeneratorProps) {
-  const { toast } = useToast();
-
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [selectedTenancyId, setSelectedTenancyId] = useState<string>('');
@@ -113,13 +111,9 @@ export function DocumentGenerator({ onBack }: DocumentGeneratorProps) {
         status: docStatus,
       });
       setSavedDocId(result.id);
-      toast({ title: 'Document saved', description: `Status: ${STATUS_CONFIG[docStatus].label}` });
+      toast.success('Document saved', { description: `Status: ${STATUS_CONFIG[docStatus].label}` });
     } catch (err) {
-      toast({
-        title: 'Save failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Save failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 
@@ -132,13 +126,9 @@ export function DocumentGenerator({ onBack }: DocumentGeneratorProps) {
         ...(newStatus === 'signed' ? { signed_at: new Date().toISOString() } : {}),
       });
       setDocStatus(newStatus);
-      toast({ title: 'Status updated', description: STATUS_CONFIG[newStatus].label });
+      toast.success('Status updated', { description: STATUS_CONFIG[newStatus].label });
     } catch (err) {
-      toast({
-        title: 'Update failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Update failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 
@@ -170,8 +160,8 @@ export function DocumentGenerator({ onBack }: DocumentGeneratorProps) {
 
     const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
     doc.save(filename);
-    toast({ title: 'PDF generated', description: filename });
-  }, [editedContent, mergedContent, selectedTemplate, toast]);
+    toast.success('PDF generated', { description: filename });
+  }, [editedContent, mergedContent, selectedTemplate]);
 
   const canGenerate = !!selectedTemplateId && !!latestVersion && !!selectedPropertyId;
 

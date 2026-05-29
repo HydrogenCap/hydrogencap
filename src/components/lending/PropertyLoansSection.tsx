@@ -12,7 +12,7 @@ import {
   fmtGBP,
   type LoanFacilityWithDetails,
 } from '@/hooks/useLoanFacilities';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface Props {
   propertyId: string;
@@ -29,7 +29,6 @@ export function PropertyLoansSection({ propertyId, entityId, entities, propertyV
   const { data: facilities = [], isLoading } = useLoanFacilitiesByProperty(propertyId);
   const { data: alerts = [] } = useLoanAlerts();
   const updateFacility = useUpdateLoanFacility();
-  const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<LoanFacilityWithDetails | null>(null);
 
@@ -42,10 +41,10 @@ export function PropertyLoansSection({ propertyId, entityId, entities, propertyV
   const handleRedeem = async (id: string) => {
     try {
       await updateFacility.mutateAsync({ id, status: 'redeemed' });
-      toast({ title: 'Loan marked as redeemed' });
+      toast('Loan marked as redeemed');
     } catch (err: unknown) {
       console.error('Failed to redeem loan:', err);
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(err) });
     }
   };
 

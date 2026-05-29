@@ -22,8 +22,8 @@ import {
   useUpdateTenancyDraft,
   type TenancyAgreementDraft,
 } from '@/hooks/useLettingsWorkflow';
-import { useToast } from '@/hooks/use-toast';
 import type { LettingsPipelineItem } from '@/hooks/useLettingsPipeline';
+import { toast } from "sonner";
 
 function generateAgreementHtml(d: Omit<TenancyAgreementDraft, 'id' | 'org_id' | 'created_at' | 'agreement_html'>): string {
   const depositWeeks = d.deposit_amount && d.rent_amount
@@ -132,7 +132,6 @@ export function TenancyAgreementGenerator({ item }: TenancyAgreementGeneratorPro
   const { data: existingDraft, isLoading } = useTenancyDraft(item.id);
   const saveDraft = useSaveTenancyDraft();
   const updateDraft = useUpdateTenancyDraft();
-  const { toast } = useToast();
   const previewRef = useRef<HTMLDivElement>(null);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -263,7 +262,7 @@ export function TenancyAgreementGenerator({ item }: TenancyAgreementGeneratorPro
       doc.text('Date: __________', margin + 110, y);
 
       doc.save(`tenancy-agreement-${form.tenant_names.replace(/\s+/g, '-').toLowerCase()}.pdf`);
-      toast({ title: 'PDF downloaded' });
+      toast.success('PDF downloaded');
     });
   };
 
@@ -275,7 +274,7 @@ export function TenancyAgreementGenerator({ item }: TenancyAgreementGeneratorPro
         status: 'sent_for_signing',
       });
     }
-    toast({ title: 'Agreement sent for signing', description: 'E-signature integration coming soon' });
+    toast.success('Agreement sent for signing', { description: 'E-signature integration coming soon' });
   };
 
   if (isLoading) return <p className="text-sm text-muted-foreground py-4">Loading agreement…</p>;
