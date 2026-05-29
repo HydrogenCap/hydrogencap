@@ -1,7 +1,8 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TEXT, CARD } from '@/lib/design-tokens';
-import { Loader2, BarChart3, Clock } from 'lucide-react';
+import { BarChart3, Clock } from 'lucide-react';
 import { useAcquisitionAdvisorState } from './hooks/useAcquisitionAdvisorState';
 import { AnalysisForm } from './components/AnalysisForm';
 import { AnalysisResults } from './components/AnalysisResults';
@@ -41,8 +42,13 @@ export default function AcquisitionAdvisor() {
               </CardHeader>
               <CardContent className={CARD.compact}>
                 {s.loadingPast ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="space-y-2" aria-busy="true" aria-label="Loading past analyses">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="rounded-md border border-border p-3 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    ))}
                   </div>
                 ) : s.pastAnalyses && s.pastAnalyses.length > 0 ? (
                   <div className="space-y-2">
