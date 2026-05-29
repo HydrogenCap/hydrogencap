@@ -164,7 +164,7 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save entity';
-      toast({ title: "Entity didn't save", description, variant: 'destructive' });
+      toast.error("Entity didn't save", { description: description });
     }
   };
 

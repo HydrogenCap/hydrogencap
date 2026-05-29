@@ -79,7 +79,7 @@ export function DirectorFormModal({ open, onOpenChange, entityId, editingDirecto
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save director';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast.error('Error', { description: description });
     }
   };
 

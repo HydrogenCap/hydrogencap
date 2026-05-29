@@ -144,7 +144,7 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save shareholder';
-      toast({ title: "Cap table didn't update", description, variant: 'destructive' });
+      toast.error("Cap table didn't update", { description: description });
     }
   };
 

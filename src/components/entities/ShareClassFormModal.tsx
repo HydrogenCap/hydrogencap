@@ -80,7 +80,7 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save share class';
-      toast({ title: "Share class didn't save", description, variant: 'destructive' });
+      toast.error("Share class didn't save", { description: description });
     }
   };
 
