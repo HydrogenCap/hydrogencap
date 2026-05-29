@@ -993,11 +993,8 @@ export function useBulkSendReminder() {
       if (results.skipped > 0) parts.push(`${results.skipped} skipped (no email)`);
       if (results.failed > 0) parts.push(`${results.failed} failed`);
 
-      toast({
-        title: 'Reminders processed',
-        description: parts.join(', '),
-        variant: results.failed > 0 ? 'destructive' : 'default',
-      });
+      const toastFn = results.failed > 0 ? toast.error : toast;
+      toastFn('Reminders processed', { description: parts.join(', ') });
     },
     onError: (error) => {
       toast.error('Failed to send reminders', { description: error.message });
