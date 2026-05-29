@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { toast } from "sonner";
 
 export interface CapexProject {
   id: string;
@@ -52,8 +52,6 @@ export function useCapexProjects(propertyId: string) {
 
 export function useCreateCapexProject() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (project: {
       property_id: string;
@@ -76,18 +74,16 @@ export function useCreateCapexProject() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['capex-projects', data.property_id] });
-      toast({ title: 'Project created' });
+      toast.success('Project created');
     },
     onError: (error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast.error('Error', { description: error.message });
     },
   });
 }
 
 export function useUpdateCapexProject() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexProject> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -102,15 +98,13 @@ export function useUpdateCapexProject() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['capex-projects', data.property_id] });
-      toast({ title: 'Project updated' });
+      toast.success('Project updated');
     },
   });
 }
 
 export function useAddCapexLineItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (item: {
       project_id: string;
@@ -134,7 +128,7 @@ export function useAddCapexLineItem() {
     },
     onSuccess: (_, _variables) => {
       queryClient.invalidateQueries({ queryKey: ['capex-projects'] });
-      toast({ title: 'Line item added' });
+      toast.success('Line item added');
     },
   });
 }

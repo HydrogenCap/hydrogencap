@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -147,8 +147,6 @@ export function useInspection(id: string | undefined) {
 export function useCreateInspection() {
   const qc = useQueryClient();
   const { data: org } = useOrganization();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (inspection: {
       property_id: string;
@@ -169,18 +167,16 @@ export function useCreateInspection() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inspections'] });
-      toast({ title: 'Inspection scheduled' });
+      toast.success('Inspection scheduled');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to schedule inspection', description: error.message, variant: 'destructive' });
+      toast.error('Failed to schedule inspection', { description: error.message });
     },
   });
 }
 
 export function useUpdateInspection() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<PropertyInspection> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -195,18 +191,16 @@ export function useUpdateInspection() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['inspections'] });
       qc.invalidateQueries({ queryKey: ['inspection', vars.id] });
-      toast({ title: 'Inspection updated' });
+      toast.success('Inspection updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update inspection', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update inspection', { description: error.message });
     },
   });
 }
 
 export function useCompleteInspection() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, overall_condition, summary, follow_up_actions }: {
       id: string;
@@ -232,10 +226,10 @@ export function useCompleteInspection() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['inspections'] });
       qc.invalidateQueries({ queryKey: ['inspection', vars.id] });
-      toast({ title: 'Inspection completed' });
+      toast.success('Inspection completed');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to complete inspection', description: error.message, variant: 'destructive' });
+      toast.error('Failed to complete inspection', { description: error.message });
     },
   });
 }
@@ -317,8 +311,6 @@ export function useInspectionTemplates() {
 export function useCreateInspectionTemplate() {
   const qc = useQueryClient();
   const { data: org } = useOrganization();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (template: { name: string; inspection_type: string; rooms: InspectionTemplateRoom[] }) => {
       const { data, error } = await supabaseAny
@@ -331,18 +323,16 @@ export function useCreateInspectionTemplate() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inspection_templates'] });
-      toast({ title: 'Template created' });
+      toast.success('Template created');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create template', { description: error.message });
     },
   });
 }
 
 export function useUpdateInspectionTemplate() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<InspectionTemplate> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -356,18 +346,16 @@ export function useUpdateInspectionTemplate() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inspection_templates'] });
-      toast({ title: 'Template updated' });
+      toast.success('Template updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update template', { description: error.message });
     },
   });
 }
 
 export function useDeleteInspectionTemplate() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabaseAny
@@ -378,10 +366,10 @@ export function useDeleteInspectionTemplate() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inspection_templates'] });
-      toast({ title: 'Template deleted' });
+      toast.success('Template deleted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete template', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete template', { description: error.message });
     },
   });
 }

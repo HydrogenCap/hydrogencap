@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
-import { useToast } from '@/hooks/use-toast';
 import { useUserOrg } from '@/hooks/useUserOrg';
+import { toast } from "sonner";
 
 type FreeAgentConnectionRow = Database['public']['Tables']['freeagent_connections']['Row'];
 type FreeAgentConnectionUpdate = Database['public']['Tables']['freeagent_connections']['Update'];
@@ -165,8 +165,6 @@ export function useDisconnectFreeAgent() {
 
 export function useUpdateFreeAgentSettings() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: FreeAgentConnectionUpdate & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -180,18 +178,16 @@ export function useUpdateFreeAgentSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['freeagent-connections'] });
-      toast({ title: 'FreeAgent settings updated' });
+      toast.success('FreeAgent settings updated');
     },
     onError: (error) => {
-      toast({ title: 'Failed to update', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Failed to update', { description: getErrorMessage(error) });
     },
   });
 }
 
 export function useSyncToFreeAgent() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (entityOrCompanyId: string) => {
       const { data, error } = await supabase.functions.invoke<FreeAgentSyncResult>('freeagent-sync-payments', {
@@ -206,10 +202,10 @@ export function useSyncToFreeAgent() {
       const msg = syncedCount > 0
         ? `${syncedCount} payment${syncedCount !== 1 ? 's' : ''} synced to FreeAgent`
         : 'All payments already synced';
-      toast({ title: 'FreeAgent sync complete', description: msg });
+      toast.success('FreeAgent sync complete', { description: msg });
     },
     onError: (error) => {
-      toast({ title: 'Sync failed', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Sync failed', { description: getErrorMessage(error) });
     },
   });
 }

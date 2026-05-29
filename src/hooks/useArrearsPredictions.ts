@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface ContributingFactor {
   factor: string;
@@ -75,8 +75,6 @@ export function useArrearsPredictions(propertyId?: string) {
 
 export function useRunArrearsPrediction() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (propertyId?: string) => {
       const body: Record<string, unknown> = {};
@@ -88,17 +86,10 @@ export function useRunArrearsPrediction() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [PREDICTIONS_KEY] });
-      toast({
-        title: 'Arrears prediction complete',
-        description: `Analysed ${data?.summary?.total ?? 0} tenants. ${data?.summary?.critical ?? 0} critical, ${data?.summary?.high ?? 0} high risk.`,
-      });
+      toast.success('Arrears prediction complete', { description: `Analysed ${data?.summary?.total ?? 0} tenants. ${data?.summary?.critical ?? 0} critical, ${data?.summary?.high ?? 0} high risk.` });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Prediction failed',
-        description: error.message || 'Failed to run arrears prediction',
-        variant: 'destructive',
-      });
+      toast.error('Prediction failed', { description: error.message || 'Failed to run arrears prediction' });
     },
   });
 }

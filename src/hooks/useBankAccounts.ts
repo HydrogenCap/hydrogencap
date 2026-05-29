@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface BankAccount {
   id: string;
@@ -43,8 +43,6 @@ export function useBankAccounts() {
 
 export function useCreateBankAccount() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (account: Omit<BankAccount, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await getUserOrgId();
@@ -59,18 +57,16 @@ export function useCreateBankAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bank_accounts'] });
-      toast({ title: 'Bank account added' });
+      toast.success('Bank account added');
     },
     onError: (error) => {
-      toast({ title: 'Failed to add bank account', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add bank account', { description: error.message });
     },
   });
 }
 
 export function useUpdateBankAccount() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<BankAccount> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -84,18 +80,16 @@ export function useUpdateBankAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bank_accounts'] });
-      toast({ title: 'Bank account updated' });
+      toast.success('Bank account updated');
     },
     onError: (error) => {
-      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update', { description: error.message });
     },
   });
 }
 
 export function useDeleteBankAccount() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('bank_accounts').delete().eq('id', id);
@@ -103,10 +97,10 @@ export function useDeleteBankAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bank_accounts'] });
-      toast({ title: 'Bank account deleted' });
+      toast.success('Bank account deleted');
     },
     onError: (error) => {
-      toast({ title: 'Failed to delete', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete', { description: error.message });
     },
   });
 }

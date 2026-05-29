@@ -1,9 +1,9 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase, supabaseAny } from '@/integrations/supabase/client';
  import { fetchUserOrgId as getUserOrgId, useUserOrg } from './useUserOrg';
- import { useToast } from '@/hooks/use-toast';
  import { logError } from '@/lib/errorLogger';
- 
+import { toast } from "sonner";
+
 export type RentStatus = 'upcoming' | 'due' | 'paid' | 'partial' | 'overdue' | 'bad_debt';
  
  export interface RentScheduleItem {
@@ -291,8 +291,6 @@ export function useRentSchedule(filters?: {
  
  export function useRecordPayment() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async (payment: Omit<RentPayment, 'id' | 'org_id' | 'created_at' | 'is_reconciled' | 'recorded_by'>) => {
        const orgId = await getUserOrgId();
@@ -317,10 +315,10 @@ export function useRentSchedule(filters?: {
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['rent_payments'] });
        queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-       toast({ title: 'Payment recorded' });
+       toast.success('Payment recorded');
      },
      onError: (error) => {
-       toast({ title: 'Failed to record payment', description: error.message, variant: 'destructive' });
+       toast.error('Failed to record payment', { description: error.message });
      },
    });
  }
@@ -343,8 +341,6 @@ export function useRentScheduleItem(id: string) {
 
 export function useUpdateRentScheduleStatus() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: RentStatus }) => {
       const { error } = await supabase.rpc('update_rent_schedule_item_status', {
@@ -366,13 +362,13 @@ export function useUpdateRentScheduleStatus() {
       if (context?.previous) {
         queryClient.setQueryData(['rent_schedule', newData.id], context.previous);
       }
-      toast({ title: 'Failed to update status', description: _err.message, variant: 'destructive' });
+      toast.error('Failed to update status', { description: _err.message });
     },
     // Success toast belongs in onSuccess — the previous onSettled implementation
     // fired "Status updated" even on error, showing both a destructive error
     // toast and a success toast for the same failed update.
     onSuccess: () => {
-      toast({ title: 'Status updated' });
+      toast.success('Status updated');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
@@ -398,8 +394,6 @@ export function usePaymentReminders(rentScheduleId: string) {
 
 export function useSendReminder() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (params: {
       rentScheduleId: string;
@@ -417,18 +411,16 @@ export function useSendReminder() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['payment_reminders'] });
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: 'Reminder sent', description: `Sent to ${data.sentTo}` });
+      toast.success('Reminder sent', { description: `Sent to ${data.sentTo}` });
     },
     onError: (error) => {
-      toast({ title: 'Failed to send reminder', description: error.message, variant: 'destructive' });
+      toast.error('Failed to send reminder', { description: error.message });
     },
   });
 }
 
 export function useDeleteRentSchedule() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('rent_schedule').delete().eq('id', id);
@@ -436,18 +428,16 @@ export function useDeleteRentSchedule() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: 'Payment deleted' });
+      toast.success('Payment deleted');
     },
     onError: (error) => {
-      toast({ title: 'Failed to delete', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete', { description: error.message });
     },
   });
 }
 
 export function useDuplicateRentSchedule() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (item: RentScheduleWithDetails) => {
       const orgId = await getUserOrgId();
@@ -480,18 +470,16 @@ export function useDuplicateRentSchedule() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: 'Payment duplicated' });
+      toast.success('Payment duplicated');
     },
     onError: (error) => {
-      toast({ title: 'Failed to duplicate', description: error.message, variant: 'destructive' });
+      toast.error('Failed to duplicate', { description: error.message });
     },
   });
 }
 
 export function useUpdateRentScheduleNotes() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, notes, tags }: { id: string; notes?: string; tags?: string[] }) => {
       const updates: RentScheduleNotesUpdate = {};
@@ -520,11 +508,11 @@ export function useUpdateRentScheduleNotes() {
       if (context?.previous) {
         queryClient.setQueryData(['rent_schedule', newData.id], context.previous);
       }
-      toast({ title: 'Failed to update', description: _err.message, variant: 'destructive' });
+      toast.error('Failed to update', { description: _err.message });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: 'Updated' });
+      toast.success('Updated');
     },
   });
 }
@@ -799,8 +787,6 @@ export function useTenancyLedger(params: string | { tenancyId?: string; agreemen
 
 export function useBulkMarkPaid() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       items,
@@ -869,25 +855,19 @@ export function useBulkMarkPaid() {
       queryClient.invalidateQueries({ queryKey: ['rent_payments'] });
 
       if (results.failed === 0) {
-        toast({ title: `${results.success} payments recorded` });
+        toast.success(`${results.success} payments recorded`);
       } else {
-        toast({
-          title: `${results.success} succeeded, ${results.failed} failed`,
-          description: results.errors.slice(0, 3).join('\n'),
-          variant: 'destructive',
-        });
+        toast.error(`${results.success} succeeded, ${results.failed} failed`, { description: results.errors.slice(0, 3).join('\n') });
       }
     },
     onError: (error) => {
-      toast({ title: 'Bulk payment failed', description: error.message, variant: 'destructive' });
+      toast.error('Bulk payment failed', { description: error.message });
     },
   });
 }
 
 export function useBulkWriteOff() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       items,
@@ -908,18 +888,16 @@ export function useBulkWriteOff() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: `${result.count} items written off` });
+      toast.success(`${result.count} items written off`);
     },
     onError: (error) => {
-      toast({ title: 'Write-off failed', description: error.message, variant: 'destructive' });
+      toast.error('Write-off failed', { description: error.message });
     },
   });
 }
 
 export function useBulkAddNote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       items,
@@ -956,18 +934,16 @@ export function useBulkAddNote() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: `Note added to ${result.count} items` });
+      toast.success(`Note added to ${result.count} items`);
     },
     onError: (error) => {
-      toast({ title: 'Failed to add notes', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add notes', { description: error.message });
     },
   });
 }
 
 export function useBulkSendReminder() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       items,
@@ -1017,14 +993,11 @@ export function useBulkSendReminder() {
       if (results.skipped > 0) parts.push(`${results.skipped} skipped (no email)`);
       if (results.failed > 0) parts.push(`${results.failed} failed`);
 
-      toast({
-        title: 'Reminders processed',
-        description: parts.join(', '),
-        variant: results.failed > 0 ? 'destructive' : 'default',
-      });
+      const toastFn = results.failed > 0 ? toast.error : toast;
+      toastFn('Reminders processed', { description: parts.join(', ') });
     },
     onError: (error) => {
-      toast({ title: 'Failed to send reminders', description: error.message, variant: 'destructive' });
+      toast.error('Failed to send reminders', { description: error.message });
     },
   });
 }
@@ -1089,8 +1062,6 @@ export function usePaidOnTimeStats(params: string | { tenancyId?: string; agreem
 
 export function useGenerateScheduleFromAgreement() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       agreementId,
@@ -1181,10 +1152,10 @@ export function useGenerateScheduleFromAgreement() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
-      toast({ title: `${result.count} schedule entries generated` });
+      toast.success(`${result.count} schedule entries generated`);
     },
     onError: (error) => {
-      toast({ title: 'Failed to generate schedule', description: error.message, variant: 'destructive' });
+      toast.error('Failed to generate schedule', { description: error.message });
     },
   });
 }

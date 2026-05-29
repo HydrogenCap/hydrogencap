@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : 'Unknown error';
 
 export function useBulkEpcEnrichV2() {
   const [isEnriching, setIsEnriching] = useState(false);
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   const enrichAll = async (mode: 'missing-only' | 'all' = 'missing-only') => {
     setIsEnriching(true);
     try {
@@ -21,13 +19,10 @@ export function useBulkEpcEnrichV2() {
 
       qc.invalidateQueries({ queryKey: ['properties_v2'] });
 
-      toast({
-        title: 'EPC Enrichment Complete',
-        description: `Updated ${data.updated} of ${data.total} properties.${data.failed ? ` ${data.failed} failed.` : ''}`,
-      });
+      toast('EPC Enrichment Complete', { description: `Updated ${data.updated} of ${data.total} properties.${data.failed ? ` ${data.failed} failed.` : ''}` });
       return data;
     } catch (error: unknown) {
-      toast({ title: 'EPC Enrichment Failed', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('EPC Enrichment Failed', { description: getErrorMessage(error) });
     } finally {
       setIsEnriching(false);
     }

@@ -4,8 +4,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import type { CapexProject } from './useCapex';
+import { toast } from "sonner";
 
 export interface CapexProjectWithProperty extends CapexProject {
   properties?: { id: string; address_line_1: string; city: string | null; postcode: string | null };
@@ -50,8 +50,6 @@ export function useCapexProject(projectId: string) {
 
 export function useCreateCapexProjectFull() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (project: {
       property_id: string;
@@ -73,16 +71,14 @@ export function useCreateCapexProjectFull() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['capex-all-projects'] });
       queryClient.invalidateQueries({ queryKey: ['capex-projects'] });
-      toast({ title: 'Project created' });
+      toast.success('Project created');
     },
-    onError: (error: Error) => toast({ title: 'Error', description: error.message, variant: 'destructive' }),
+    onError: (error: Error) => toast.error('Error', { description: error.message }),
   });
 }
 
 export function useCompleteCapexProject() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ projectId, propertyId }: { projectId: string; propertyId: string }) => {
       await supabase.from('capex_projects').update({
@@ -97,7 +93,7 @@ export function useCompleteCapexProject() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['capex-all-projects'] });
       queryClient.invalidateQueries({ queryKey: ['capex-projects'] });
-      toast({ title: 'Project completed', description: 'Property moved to Letting stage' });
+      toast.success('Project completed', { description: 'Property moved to Letting stage' });
     },
   });
 }

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useCompaniesHouse, type CHLookupResult } from '@/hooks/useCompaniesHouse';
 import { useUpdateLegalEntity, useCreateDirector, useCreateShareholder } from '@/hooks/useLegalEntities';
-import { useToast } from '@/hooks/use-toast';
 import type { LegalEntity, EntityDirector, EntityShareholder } from '@/hooks/useLegalEntities';
 import { logError } from '@/lib/errorLogger';
+import { toast } from "sonner";
 
 interface UseEntityCHSyncOptions {
   entity: LegalEntity | undefined;
@@ -17,7 +17,6 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
   const updateEntity = useUpdateLegalEntity();
   const createDirector = useCreateDirector();
   const createShareholder = useCreateShareholder();
-  const { toast } = useToast();
   const hasAutoSynced = useRef(false);
 
   // Import officers & PSCs from CH result, skipping duplicates
@@ -45,7 +44,7 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
         } catch (e) {
           console.error('Failed to import director:', officer.name, e);
           logError({ source: 'useEntityCHSync.importDirector', message: 'Failed to import director from Companies House', severity: 'error', error: e });
-          toast({ title: 'Error', description: `Failed to import director ${officer.name}`, variant: 'destructive' });
+          toast.error('Error', { description: `Failed to import director ${officer.name}` });
         }
       }
     }
@@ -67,13 +66,13 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
         } catch (e) {
           console.error('Failed to import shareholder:', psc.name, e);
           logError({ source: 'useEntityCHSync.importShareholder', message: 'Failed to import shareholder from Companies House', severity: 'error', error: e });
-          toast({ title: 'Error', description: `Failed to import shareholder ${psc.name}`, variant: 'destructive' });
+          toast.error('Error', { description: `Failed to import shareholder ${psc.name}` });
         }
       }
     }
 
     return imported;
-  }, [createDirector, createShareholder, toast]);
+  }, [createDirector, createShareholder]);
 
   const applyUpdateFromCH = useCallback(async (result: CHLookupResult, targetEntity: LegalEntity) => {
     await updateEntity.mutateAsync({
@@ -109,15 +108,15 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
           const parts = [];
           if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
           if (imported.shareholders > 0) parts.push(`${imported.shareholders} shareholder(s)`);
-          toast({ title: 'Auto-synced from Companies House', description: parts.length ? `Imported ${parts.join(' and ')}` : undefined });
+          toast.success('Auto-synced from Companies House', { description: parts.length ? `Imported ${parts.join(' and ')}` : undefined });
         }
       } catch (err) {
         console.error('Failed to auto-sync entity from Companies House:', err);
         logError({ source: 'useEntityCHSync.autoSync', message: 'Auto-sync from Companies House failed', severity: 'error', error: err });
-        toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to auto-sync from Companies House', variant: 'destructive' });
+        toast.error('Error', { description: err instanceof Error ? err.message : 'Failed to auto-sync from Companies House' });
       }
     }
-  }, [entity, isLookingUp, lookupCompany, applyUpdateFromCH, toast]);
+  }, [entity, isLookingUp, lookupCompany, applyUpdateFromCH]);
 
   useEffect(() => {
     if (entity && !isLoading) {
@@ -134,12 +133,12 @@ export function useEntityCHSync({ entity, isLoading, directors, shareholders }: 
         const parts = [];
         if (imported.directors > 0) parts.push(`${imported.directors} director(s)`);
         if (imported.shareholders > 0) parts.push(`${imported.shareholders} shareholder(s)`);
-        toast({ title: 'Synced from Companies House', description: `Company details updated${parts.length ? '. Imported ' + parts.join(' and ') : ''}` });
+        toast.success('Synced from Companies House', { description: `Company details updated${parts.length ? '. Imported ' + parts.join(' and ') : ''}` });
       }
     } catch {
-      toast({ title: 'Error', description: 'Failed to sync from Companies House', variant: 'destructive' });
+      toast.error('Error', { description: 'Failed to sync from Companies House' });
     }
-  }, [entity, lookupCompany, applyUpdateFromCH, toast]);
+  }, [entity, lookupCompany, applyUpdateFromCH]);
 
   return {
     isLookingUp,

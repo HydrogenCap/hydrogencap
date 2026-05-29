@@ -2,13 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { createNotification } from '@/lib/createNotification';
 import { logError } from '@/lib/errorLogger';
 import type {
   MaintenanceCategory, MaintenancePriority, MaintenanceStatus,
   MaintenanceOverviewRow, ReportedBy,
 } from '@/lib/maintenanceTypes';
+import { toast } from "sonner";
 
 // Re-export types for backwards compat
 export type { MaintenanceCategory, MaintenancePriority, MaintenanceStatus };
@@ -142,8 +142,6 @@ export function useMaintenanceRequest(requestId: string | undefined) {
 
 export function useCreateMaintenanceRequest() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (request: {
       property_id?: string | null;
@@ -194,7 +192,7 @@ export function useCreateMaintenanceRequest() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
-      toast({ title: 'Maintenance request created' });
+      toast.success('Maintenance request created');
 
       // Fire-and-forget notification
       if (data?.org_id) {
@@ -215,15 +213,13 @@ export function useCreateMaintenanceRequest() {
       }
     },
     onError: (error) => {
-      toast({ title: 'Failed to create request', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create request', { description: error.message });
     },
   });
 }
 
 export function useUpdateMaintenanceRequest() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: MaintenanceRequestUpdate & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -238,10 +234,10 @@ export function useUpdateMaintenanceRequest() {
     onSuccess: (_, _vars) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
-      toast({ title: 'Request updated' });
+      toast.success('Request updated');
     },
     onError: (error) => {
-      toast({ title: 'Failed to update request', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update request', { description: error.message });
     },
   });
 }

@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useOrganization } from '@/hooks/useOrganization';
-import { useToast } from '@/hooks/use-toast';
 import type { ComplianceTaskOverview, ComplianceScanResult, TaskStatus, TaskPriority, TaskType } from '@/lib/complianceTaskTypes';
 import { ACTIVE_PIPELINE_STATUSES } from '@/lib/complianceTaskTypes';
 import type { AIComplianceRequirement } from '@/hooks/useAIComplianceChecker';
+import { toast } from "sonner";
 
 type ComplianceTaskInsert = Database['public']['Tables']['compliance_tasks']['Insert'];
 type ComplianceTaskFullUpdate = Database['public']['Tables']['compliance_tasks']['Update'];
@@ -41,7 +41,6 @@ export function useComplianceTaskStats() {
 
 export function useUpdateTaskStatus() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: TaskStatus; notes?: string }) => {
       const updates: ComplianceTaskFullUpdate = { status };
@@ -53,47 +52,44 @@ export function useUpdateTaskStatus() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
-    onError: (error: Error) => toast({ title: 'Failed to update task status', description: error.message, variant: 'destructive' }),
+    onError: (error: Error) => toast.error('Failed to update task status', { description: error.message }),
   });
 }
 
 export function useUpdateTaskPriority() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, priority }: { id: string; priority: TaskPriority }) => {
       const { error } = await supabase.from('compliance_tasks').update({ priority }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
-    onError: (error: Error) => toast({ title: 'Failed to update task priority', description: error.message, variant: 'destructive' }),
+    onError: (error: Error) => toast.error('Failed to update task priority', { description: error.message }),
   });
 }
 
 export function useUpdateTask() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: ComplianceTaskFullUpdate }) => {
       const { error } = await supabase.from('compliance_tasks').update(updates).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
-    onError: (error: Error) => toast({ title: 'Failed to update task', description: error.message, variant: 'destructive' }),
+    onError: (error: Error) => toast.error('Failed to update task', { description: error.message }),
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   const { data: org } = useOrganization();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (task: Partial<ComplianceTaskInsert>) => {
       const { error } = await supabase.from('compliance_tasks').insert([{ ...task, org_id: org!.id, source: 'manual' } as ComplianceTaskInsert]);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['compliance-tasks'] }),
-    onError: (error: Error) => toast({ title: 'Failed to create task', description: error.message, variant: 'destructive' }),
+    onError: (error: Error) => toast.error('Failed to create task', { description: error.message }),
   });
 }
 
@@ -164,8 +160,6 @@ export interface CreateTasksFromAIResult {
 export function useCreateTasksFromAIAnalysis() {
   const qc = useQueryClient();
   const { data: org } = useOrganization();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ propertyId, requirements }: CreateTasksFromAIInput): Promise<CreateTasksFromAIResult> => {
       if (!org?.id) throw new Error('No organisation in context');
@@ -218,19 +212,13 @@ export function useCreateTasksFromAIAnalysis() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['compliance-tasks'] });
       if (result.created === 0 && result.skipped > 0) {
-        toast({
-          title: 'No new tasks created',
-          description: `${result.skipped} task${result.skipped === 1 ? ' is' : 's are'} already open for these items.`,
-        });
+        toast.success('No new tasks created', { description: `${result.skipped} task${result.skipped === 1 ? ' is' : 's are'} already open for these items.` });
         return;
       }
       const skippedSuffix = result.skipped > 0 ? ` (${result.skipped} already open)` : '';
-      toast({
-        title: `Created ${result.created} task${result.created === 1 ? '' : 's'}`,
-        description: `Find them under Compliance Tasks${skippedSuffix}.`,
-      });
+      toast.success(`Created ${result.created} task${result.created === 1 ? '' : 's'}`, { description: `Find them under Compliance Tasks${skippedSuffix}.` });
     },
     onError: (error: Error) =>
-      toast({ title: 'Failed to create tasks', description: error.message, variant: 'destructive' }),
+      toast.error('Failed to create tasks', { description: error.message }),
   });
 }

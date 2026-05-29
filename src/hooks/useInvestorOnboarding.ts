@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ── Types ──
 
@@ -75,8 +75,6 @@ export function useInvestorKYC(investorId: string | undefined) {
 export function useUpdateKYC() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ investorId, data }: { investorId: string; data: Partial<InvestorKYC> }) => {
       // Check if KYC record exists
@@ -108,18 +106,16 @@ export function useUpdateKYC() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investor-kyc'] });
-      toast({ title: 'KYC updated' });
+      toast.success('KYC updated');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error updating KYC', description: err.message, variant: 'destructive' });
+      toast.error('Error updating KYC', { description: err.message });
     },
   });
 }
 
 export function useApproveKYC() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (kycId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -142,10 +138,10 @@ export function useApproveKYC() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investor-kyc'] });
-      toast({ title: 'KYC approved' });
+      toast.success('KYC approved');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error approving KYC', description: err.message, variant: 'destructive' });
+      toast.error('Error approving KYC', { description: err.message });
     },
   });
 }
@@ -173,8 +169,6 @@ export function useCapitalCalls() {
 export function useCreateCapitalCall() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (data: {
       title: string;
@@ -208,10 +202,10 @@ export function useCreateCapitalCall() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['capital-calls'] });
       queryClient.invalidateQueries({ queryKey: ['capital-call-items'] });
-      toast({ title: 'Capital call created' });
+      toast.success('Capital call created');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error creating capital call', description: err.message, variant: 'destructive' });
+      toast.error('Error creating capital call', { description: err.message });
     },
   });
 }
@@ -248,8 +242,6 @@ export function useInvestorCapitalCallItems(investorId: string | undefined) {
 
 export function useRecordCapitalPayment() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (data: {
       itemId: string;
@@ -306,10 +298,10 @@ export function useRecordCapitalPayment() {
       queryClient.invalidateQueries({ queryKey: ['capital-calls'] });
       queryClient.invalidateQueries({ queryKey: ['capital-call-items'] });
       queryClient.invalidateQueries({ queryKey: ['investor-capital-call-items'] });
-      toast({ title: 'Payment recorded' });
+      toast.success('Payment recorded');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error recording payment', description: err.message, variant: 'destructive' });
+      toast.error('Error recording payment', { description: err.message });
     },
   });
 }

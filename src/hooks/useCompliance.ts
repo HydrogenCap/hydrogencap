@@ -3,7 +3,7 @@ import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { ComplianceItem, ComplianceDocument } from '@/lib/complianceTypes';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
 import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
-import { toast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 async function resolveComplianceDocuments<T extends { file_url: string }>(documents: T[]): Promise<T[]> {
   return Promise.all(
@@ -248,17 +248,13 @@ export function useDeleteComplianceItem() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
       queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
-      toast({ title: 'Compliance item deleted' });
+      toast.success('Compliance item deleted');
     },
     onError: (error) => {
       // Previously this hook had no onError handler, so deletes that failed
       // (RLS denial, FK constraints, etc.) appeared to succeed until the next
       // page refresh. Surface the real error to the user.
-      toast({
-        title: 'Failed to delete compliance item',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete compliance item', { description: error instanceof Error ? error.message : 'Unknown error' });
     },
   });
 }
@@ -443,14 +439,10 @@ export function useDeleteComplianceDocument() {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['compliance', result.propertyId] });
-      toast({ title: 'Document deleted' });
+      toast.success('Document deleted');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to delete document',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete document', { description: error instanceof Error ? error.message : 'Unknown error' });
     },
   });
 }

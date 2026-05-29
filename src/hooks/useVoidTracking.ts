@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import {
   calculateVoidDays,
   calculateAverageTurnaround,
   calculatePortfolioVoidRate,
 } from '@/lib/void-calculator';
+import { toast } from "sonner";
 
 export type VoidReason =
   | 'between_tenants'
@@ -110,8 +110,6 @@ export function useVoidHistory(propertyId?: string) {
 /** Start a void period */
 export function useCreateVoid() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: {
       propertyId: string;
@@ -141,7 +139,7 @@ export function useCreateVoid() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['void-tracking'] });
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Void period started' });
+      toast.success('Void period started');
     },
   });
 }
@@ -149,8 +147,6 @@ export function useCreateVoid() {
 /** End a void period with actual costs */
 export function useEndVoid() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       id,
@@ -179,7 +175,7 @@ export function useEndVoid() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['void-tracking'] });
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Void period ended' });
+      toast.success('Void period ended');
     },
   });
 }

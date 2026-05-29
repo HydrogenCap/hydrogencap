@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -215,8 +215,6 @@ export function useWorkOrderCounts() {
 
 export function useCreateWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: {
       title: string;
@@ -272,9 +270,9 @@ export function useCreateWorkOrder() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: `Work order ${data.wo_number} created` });
+      toast.success(`Work order ${data.wo_number} created`);
     },
-    onError: (e: Error) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
 }
 
@@ -282,8 +280,6 @@ export function useCreateWorkOrder() {
 
 export function useSubmitWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabaseAny
@@ -297,7 +293,7 @@ export function useSubmitWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: 'Submitted for approval' });
+      toast.success('Submitted for approval');
     },
   });
 }
@@ -306,8 +302,6 @@ export function useSubmitWorkOrder() {
 
 export function useApproveWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, approvedBudget }: { id: string; approvedBudget: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -329,7 +323,7 @@ export function useApproveWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: 'Work order approved' });
+      toast.success('Work order approved');
     },
   });
 }
@@ -338,8 +332,6 @@ export function useApproveWorkOrder() {
 
 export function useRejectWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const payload: WorkOrderUpdate = {
@@ -358,7 +350,7 @@ export function useRejectWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: 'Work order rejected' });
+      toast.success('Work order rejected');
     },
   });
 }
@@ -367,8 +359,6 @@ export function useRejectWorkOrder() {
 
 export function useUpdateWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<WorkOrderUpdate> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -397,7 +387,7 @@ export function useUpdateWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', variables.id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: 'Work order updated' });
+      toast.success('Work order updated');
     },
   });
 }
@@ -453,8 +443,6 @@ export async function syncMaintenanceCostToSnapshot({
 
 export function useCompleteWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, actualCost }: { id: string; actualCost?: number }) => {
       // Read the work order up front so we can (a) detect an already-completed
@@ -510,7 +498,7 @@ export function useCompleteWorkOrder() {
       qc.invalidateQueries({ queryKey: ['portfolio_monthly_summary'] });
       qc.invalidateQueries({ queryKey: ['entity_financial_summary'] });
       qc.invalidateQueries({ queryKey: ['property_annual_performance'] });
-      toast({ title: 'Work order completed' });
+      toast.success('Work order completed');
     },
   });
 }
@@ -571,8 +559,6 @@ export function useDeleteCostItem() {
 
 export function useLinkJobToWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ jobId, workOrderId }: { jobId: string; workOrderId: string }) => {
       const payload: ContractorJobUpdate = { work_order_id: workOrderId };
@@ -586,7 +572,7 @@ export function useLinkJobToWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', variables.workOrderId] });
       qc.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
-      toast({ title: 'Job linked to work order' });
+      toast.success('Job linked to work order');
     },
   });
 }

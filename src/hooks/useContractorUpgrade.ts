@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId } from '@/hooks/useUserOrg';
+import { toast } from "sonner";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -79,8 +79,6 @@ export function useJobQuotes(jobId: string | undefined) {
 
 export function useRequestQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (quote: {
       jobId: string;
@@ -110,18 +108,16 @@ export function useRequestQuote() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['job-quotes', variables.jobId] });
-      toast({ title: 'Quote requested' });
+      toast.success('Quote requested');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to request quote', description: error.message, variant: 'destructive' });
+      toast.error('Failed to request quote', { description: error.message });
     },
   });
 }
 
 export function useRespondToQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ quoteId, jobId, status }: { quoteId: string; jobId: string; status: 'accepted' | 'rejected' }) => {
       const { data, error } = await supabaseAny
@@ -152,10 +148,10 @@ export function useRespondToQuote() {
       queryClient.invalidateQueries({ queryKey: ['job-quotes', variables.jobId] });
       queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-      toast({ title: variables.status === 'accepted' ? 'Quote accepted' : 'Quote rejected' });
+      toast.success(variables.status === 'accepted' ? 'Quote accepted' : 'Quote rejected');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update quote', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update quote', { description: error.message });
     },
   });
 }
@@ -183,8 +179,6 @@ export function useJobEvidence(jobId: string | undefined) {
 
 export function useUploadEvidence() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (evidence: {
       jobId: string;
@@ -213,18 +207,16 @@ export function useUploadEvidence() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['job-evidence', variables.jobId] });
-      toast({ title: 'Evidence uploaded' });
+      toast.success('Evidence uploaded');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to upload evidence', description: error.message, variant: 'destructive' });
+      toast.error('Failed to upload evidence', { description: error.message });
     },
   });
 }
 
 export function useDeleteEvidence() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, jobId: _jobId }: { id: string; jobId: string }) => {
       const { error } = await supabaseAny
@@ -236,7 +228,7 @@ export function useDeleteEvidence() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['job-evidence', variables.jobId] });
-      toast({ title: 'Evidence removed' });
+      toast.success('Evidence removed');
     },
   });
 }
@@ -264,8 +256,6 @@ export function useContractorRatings(contractorId: string | undefined) {
 
 export function useRateContractor() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (rating: {
       contractorId: string;
@@ -317,10 +307,10 @@ export function useRateContractor() {
       queryClient.invalidateQueries({ queryKey: ['contractor-ratings', variables.contractorId] });
       queryClient.invalidateQueries({ queryKey: ['contractors'] });
       queryClient.invalidateQueries({ queryKey: ['contractor', variables.contractorId] });
-      toast({ title: 'Rating submitted' });
+      toast.success('Rating submitted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to submit rating', description: error.message, variant: 'destructive' });
+      toast.error('Failed to submit rating', { description: error.message });
     },
   });
 }

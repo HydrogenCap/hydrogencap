@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import type { ChatMessage } from './useChatMessages';
+import { toast } from "sonner";
 
 export interface ToolCallExecution {
   name: string;
@@ -42,8 +42,6 @@ export function useChat() {
   const [activeTools, setActiveTools] = useState<string[]>([]);
   const [optimisticMessages, setOptimisticMessages] = useState<ChatMessage[]>([]);
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   const sendMessage = useCallback(
     async (
       messageText: string,
@@ -109,11 +107,7 @@ export function useChat() {
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
-        toast({
-          title: 'Chat Error',
-          description: errorMessage,
-          variant: 'destructive',
-        });
+        toast.error('Chat Error', { description: errorMessage });
         setOptimisticMessages([]);
         return null;
       } finally {
@@ -121,7 +115,7 @@ export function useChat() {
         setActiveTools([]);
       }
     },
-    [isLoading, queryClient, toast]
+    [isLoading, queryClient]
   );
 
   return {

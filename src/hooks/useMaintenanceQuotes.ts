@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface MaintenanceQuote {
   id: string;
@@ -68,8 +68,6 @@ export function useMaintenanceQuotes(requestId: string | undefined) {
 
 export function useCreateQuote() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (quote: MaintenanceQuoteInsert) => {
       const orgId = await getUserOrgId();
@@ -85,18 +83,16 @@ export function useCreateQuote() {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_quotes', vars.maintenance_request_id] });
-      toast({ title: 'Quote added' });
+      toast.success('Quote added');
     },
     onError: (error) => {
-      toast({ title: 'Failed to add quote', description: error.message, variant: 'destructive' });
+      toast.error('Failed to add quote', { description: error.message });
     },
   });
 }
 
 export function useUpdateQuoteStatus() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       quoteId,
@@ -137,10 +133,10 @@ export function useUpdateQuoteStatus() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['maintenance_quotes', result.requestId] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
-      toast({ title: result.status === 'accepted' ? 'Quote accepted' : 'Quote rejected' });
+      toast.success(result.status === 'accepted' ? 'Quote accepted' : 'Quote rejected');
     },
     onError: (error) => {
-      toast({ title: 'Failed to update quote', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update quote', { description: error.message });
     },
   });
 }

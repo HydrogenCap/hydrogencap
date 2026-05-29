@@ -4,7 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg, fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -95,7 +95,6 @@ export function useCapexPhases(projectId: string) {
 
 export function useCreateCapexPhase() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (phase: Omit<CapexPhase, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -109,15 +108,14 @@ export function useCreateCapexPhase() {
     },
     onSuccess: (_data) => {
       qc.invalidateQueries({ queryKey: ['capex-phases'] });
-      toast({ title: 'Phase added' });
+      toast.success('Phase added');
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Error', { description: e.message }),
   });
 }
 
 export function useUpdateCapexPhase() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexPhase> & { id: string }) => {
       const { error } = await supabaseAny
@@ -128,7 +126,7 @@ export function useUpdateCapexPhase() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['capex-phases'] });
-      toast({ title: 'Phase updated' });
+      toast.success('Phase updated');
     },
   });
 }
@@ -166,7 +164,6 @@ export function useCapexPayments(projectId: string) {
 
 export function useCreateCapexPayment() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (payment: Omit<CapexPayment, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -180,15 +177,14 @@ export function useCreateCapexPayment() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['capex-payments'] });
-      toast({ title: 'Payment added' });
+      toast.success('Payment added');
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Error', { description: e.message }),
   });
 }
 
 export function useUpdateCapexPayment() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CapexPayment> & { id: string }) => {
       const { error } = await supabaseAny
@@ -199,7 +195,7 @@ export function useUpdateCapexPayment() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['capex-payments'] });
-      toast({ title: 'Payment updated' });
+      toast.success('Payment updated');
     },
   });
 }
@@ -237,7 +233,6 @@ export function useCapexPhotos(projectId: string) {
 
 export function useCreateCapexPhoto() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (photo: Omit<CapexPhoto, 'id' | 'org_id' | 'created_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -251,9 +246,9 @@ export function useCreateCapexPhoto() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['capex-photos'] });
-      toast({ title: 'Photo added' });
+      toast.success('Photo added');
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Error', { description: e.message }),
   });
 }
 
@@ -290,7 +285,6 @@ export function usePlanningApplications(projectId: string) {
 
 export function useCreatePlanningApplication() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (app: Omit<PlanningApplication, 'id' | 'org_id' | 'created_at' | 'updated_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -304,15 +298,14 @@ export function useCreatePlanningApplication() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['planning-applications'] });
-      toast({ title: 'Application added' });
+      toast.success('Application added');
     },
-    onError: (e: Error) => toast({ title: 'Error', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Error', { description: e.message }),
   });
 }
 
 export function useUpdatePlanningApplication() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<PlanningApplication> & { id: string }) => {
       const { error } = await supabaseAny
@@ -323,7 +316,7 @@ export function useUpdatePlanningApplication() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['planning-applications'] });
-      toast({ title: 'Application updated' });
+      toast.success('Application updated');
     },
   });
 }

@@ -7,8 +7,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import type { WorksOrderStatus } from '@/lib/maintenanceTypes';
+import { toast } from "sonner";
 
 export interface WorksOrder {
   id: string;
@@ -124,8 +124,6 @@ export function useWorksOrder(orderId: string | undefined) {
 
 export function useCreateWorksOrder() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (order: WorksOrderInsert) => {
       const orgId = await getUserOrgId();
@@ -172,18 +170,16 @@ export function useCreateWorksOrder() {
       queryClient.invalidateQueries({ queryKey: ['works_orders'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
-      toast({ title: 'Works order created' });
+      toast.success('Works order created');
     },
     onError: (error) => {
-      toast({ title: 'Failed to create works order', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create works order', { description: error.message });
     },
   });
 }
 
 export function useUpdateWorksOrder() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & WorksOrderUpdate) => {
       const { data, error } = await supabaseAny
@@ -199,10 +195,10 @@ export function useUpdateWorksOrder() {
       queryClient.invalidateQueries({ queryKey: ['works_orders'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_requests'] });
       queryClient.invalidateQueries({ queryKey: ['maintenance_overview'] });
-      toast({ title: 'Works order updated' });
+      toast.success('Works order updated');
     },
     onError: (error) => {
-      toast({ title: 'Failed to update works order', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update works order', { description: error.message });
     },
   });
 }

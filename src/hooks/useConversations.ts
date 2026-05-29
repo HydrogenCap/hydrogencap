@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface Conversation {
   id: string;
@@ -37,8 +37,6 @@ export function useConversations() {
 
 export function useDeleteConversation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (conversationId: string) => {
       const headers = await getAuthHeaders();
@@ -52,7 +50,7 @@ export function useDeleteConversation() {
       queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast.error('Error', { description: error.message });
     },
   });
 }

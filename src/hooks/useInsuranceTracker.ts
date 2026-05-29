@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
+import { toast } from "sonner";
 
 export interface InsuranceTrackerPolicy {
   id: string;
@@ -119,8 +119,6 @@ export function useInsurancePolicies(filters?: {
 
 export function useCreatePolicy() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (policy: {
       property_id: string;
@@ -155,15 +153,13 @@ export function useCreatePolicy() {
       queryClient.invalidateQueries({ queryKey: ['insurance-tracker-policies'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-tracker-stats'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-coverage-gaps'] });
-      toast({ title: 'Insurance policy created' });
+      toast.success('Insurance policy created');
     },
   });
 }
 
 export function useUpdatePolicy() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Record<string, unknown>) => {
       const { data, error } = await supabaseAny
@@ -180,7 +176,7 @@ export function useUpdatePolicy() {
       queryClient.invalidateQueries({ queryKey: ['insurance-tracker-policies'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-tracker-stats'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-coverage-gaps'] });
-      toast({ title: 'Policy updated' });
+      toast.success('Policy updated');
     },
   });
 }
@@ -216,8 +212,6 @@ export function useInsuranceClaims(filters?: { policyId?: string; status?: strin
 
 export function useCreateClaim() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (claim: {
       policy_id: string;
@@ -244,15 +238,13 @@ export function useCreateClaim() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insurance-claims'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-tracker-stats'] });
-      toast({ title: 'Claim submitted' });
+      toast.success('Claim submitted');
     },
   });
 }
 
 export function useUpdateClaim() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Record<string, unknown>) => {
       const { data, error } = await supabaseAny
@@ -268,7 +260,7 @@ export function useUpdateClaim() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insurance-claims'] });
       queryClient.invalidateQueries({ queryKey: ['insurance-tracker-stats'] });
-      toast({ title: 'Claim updated' });
+      toast.success('Claim updated');
     },
   });
 }

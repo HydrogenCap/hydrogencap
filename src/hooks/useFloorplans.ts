@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { createSignedStorageUrl, extractStoragePath } from '@/lib/storagePaths';
+import { toast } from "sonner";
 
 export interface Floorplan {
   id: string;
@@ -86,8 +86,6 @@ function generateStoragePath(propertyId: string, fileName: string): string {
 
 export function useUploadFloorplan() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ propertyId, file, isPrimary, versionLabel, notes }: UploadFloorplanParams) => {
       const fileType = getFileType(file);
@@ -120,26 +118,17 @@ export function useUploadFloorplan() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['floorplans', data.property_id] });
-      toast({
-        title: 'Floorplan uploaded',
-        description: 'The floorplan has been added successfully.',
-      });
+      toast.success('Floorplan uploaded', { description: 'The floorplan has been added successfully.' });
     },
     onError: (error) => {
       console.error('Failed to upload floorplan:', error);
-      toast({
-        title: 'Upload failed',
-        description: 'Failed to upload floorplan. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Upload failed', { description: 'Failed to upload floorplan. Please try again.' });
     },
   });
 }
 
 export function useUpdateFloorplan() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Floorplan> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -154,26 +143,17 @@ export function useUpdateFloorplan() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['floorplans', data.property_id] });
-      toast({
-        title: 'Floorplan updated',
-        description: 'The floorplan has been updated.',
-      });
+      toast.success('Floorplan updated', { description: 'The floorplan has been updated.' });
     },
     onError: (error) => {
       console.error('Failed to update floorplan:', error);
-      toast({
-        title: 'Update failed',
-        description: 'Failed to update floorplan.',
-        variant: 'destructive',
-      });
+      toast.error('Update failed', { description: 'Failed to update floorplan.' });
     },
   });
 }
 
 export function useDeleteFloorplan() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, propertyId, fileUrl }: { id: string; propertyId: string; fileUrl: string }) => {
       const storagePath = extractStoragePath('floorplans', fileUrl);
@@ -191,26 +171,17 @@ export function useDeleteFloorplan() {
     },
     onSuccess: ({ propertyId }) => {
       queryClient.invalidateQueries({ queryKey: ['floorplans', propertyId] });
-      toast({
-        title: 'Floorplan deleted',
-        description: 'The floorplan has been removed.',
-      });
+      toast.success('Floorplan deleted', { description: 'The floorplan has been removed.' });
     },
     onError: (error) => {
       console.error('Failed to delete floorplan:', error);
-      toast({
-        title: 'Delete failed',
-        description: 'Failed to delete floorplan.',
-        variant: 'destructive',
-      });
+      toast.error('Delete failed', { description: 'Failed to delete floorplan.' });
     },
   });
 }
 
 export function useSetPrimaryFloorplan() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, propertyId: _propertyId }: { id: string; propertyId: string }) => {
       const { data, error } = await supabaseAny
@@ -225,18 +196,11 @@ export function useSetPrimaryFloorplan() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['floorplans', data.property_id] });
-      toast({
-        title: 'Primary floorplan set',
-        description: 'This floorplan is now the primary view.',
-      });
+      toast.success('Primary floorplan set', { description: 'This floorplan is now the primary view.' });
     },
     onError: (error) => {
       console.error('Failed to set primary floorplan:', error);
-      toast({
-        title: 'Update failed',
-        description: 'Failed to set primary floorplan.',
-        variant: 'destructive',
-      });
+      toast.error('Update failed', { description: 'Failed to set primary floorplan.' });
     },
   });
 }

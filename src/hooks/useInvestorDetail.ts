@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 type InvestorCommitmentInsert = Database['public']['Tables']['investor_commitments']['Insert'];
 type InvestorDistributionInsert = Database['public']['Tables']['investor_distributions']['Insert'];
@@ -56,8 +56,6 @@ export function useInvestorReturnMetrics(investorId: string | undefined) {
 export function useCreateCommitment() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (data: {
       investor_id: string;
@@ -87,10 +85,10 @@ export function useCreateCommitment() {
       queryClient.invalidateQueries({ queryKey: ['investor-commitment-detail'] });
       queryClient.invalidateQueries({ queryKey: ['investor-portfolio-summaries'] });
       queryClient.invalidateQueries({ queryKey: ['investor-return-metrics'] });
-      toast({ title: 'Commitment added' });
+      toast.success('Commitment added');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error adding commitment', description: err.message, variant: 'destructive' });
+      toast.error('Error adding commitment', { description: err.message });
     },
   });
 }
@@ -98,8 +96,6 @@ export function useCreateCommitment() {
 export function useCreateDistribution() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (data: {
       investor_id: string;
@@ -129,10 +125,10 @@ export function useCreateDistribution() {
       queryClient.invalidateQueries({ queryKey: ['investor-distributions'] });
       queryClient.invalidateQueries({ queryKey: ['investor-portfolio-summaries'] });
       queryClient.invalidateQueries({ queryKey: ['investor-return-metrics'] });
-      toast({ title: 'Distribution recorded' });
+      toast.success('Distribution recorded');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error recording distribution', description: err.message, variant: 'destructive' });
+      toast.error('Error recording distribution', { description: err.message });
     },
   });
 }

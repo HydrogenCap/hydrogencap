@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
-import { useToast } from '@/hooks/use-toast';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
+import { toast } from "sonner";
 
 export interface RegulatoryAlert {
   id: string;
@@ -46,7 +46,6 @@ export function useRegulatoryAlerts() {
 
 export function useAcknowledgeAlert() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (alertId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -62,16 +61,15 @@ export function useAcknowledgeAlert() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['regulatory-alerts'] });
-      toast({ title: 'Alert acknowledged' });
+      toast.success('Alert acknowledged');
     },
     onError: (error: Error) =>
-      toast({ title: 'Failed to acknowledge alert', description: error.message, variant: 'destructive' }),
+      toast.error('Failed to acknowledge alert', { description: error.message }),
   });
 }
 
 export function useDismissAlert() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (alertId: string) => {
       const { error } = await supabaseAny
@@ -82,16 +80,15 @@ export function useDismissAlert() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['regulatory-alerts'] });
-      toast({ title: 'Alert dismissed' });
+      toast.success('Alert dismissed');
     },
     onError: (error: Error) =>
-      toast({ title: 'Failed to dismiss alert', description: error.message, variant: 'destructive' }),
+      toast.error('Failed to dismiss alert', { description: error.message }),
   });
 }
 
 export function useCheckRegChanges() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async () => {
       return invokeEdgeFunction<{ success: boolean; alertsInserted: number }>(
@@ -101,14 +98,11 @@ export function useCheckRegChanges() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['regulatory-alerts'] });
-      toast({
-        title: 'Regulatory check complete',
-        description: data.alertsInserted > 0
-          ? `Found ${data.alertsInserted} new alert${data.alertsInserted === 1 ? '' : 's'}`
-          : 'No new regulatory changes found',
-      });
+      toast.success('Regulatory check complete', { description: data.alertsInserted > 0
+                  ? `Found ${data.alertsInserted} new alert${data.alertsInserted === 1 ? '' : 's'}`
+                  : 'No new regulatory changes found' });
     },
     onError: (error: Error) =>
-      toast({ title: 'Regulatory check failed', description: error.message, variant: 'destructive' }),
+      toast.error('Regulatory check failed', { description: error.message }),
   });
 }
