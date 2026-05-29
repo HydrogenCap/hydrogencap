@@ -102,7 +102,8 @@ export function OverviewTab({ state }: Props) {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">Tenants scan this to report a maintenance issue directly from their phone.</p>
             <p className="text-xs font-mono bg-muted px-2 py-1 rounded">{window.location.origin}/tenant-portal/maintenance</p>
-            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast({ title: 'Link copied!' }); }}>
+            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast.success('Link copied!'); }}>
+
               <Copy className="h-3 w-3 mr-1" /> Copy link
             </Button>
           </div>
