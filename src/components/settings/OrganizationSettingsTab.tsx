@@ -5,10 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2 } from 'lucide-react';
 import { useOrganization, useUpdateOrganization } from '@/hooks/useOrganization';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export function OrganizationSettingsTab() {
-  const { toast } = useToast();
   const { data: organization } = useOrganization();
   const updateOrganization = useUpdateOrganization();
   const [orgName, setOrgName] = useState('');
@@ -20,7 +19,7 @@ export function OrganizationSettingsTab() {
   const handleSaveOrganization = () => {
     if (!organization?.id) return;
     if (!orgName.trim()) {
-      toast({ title: 'Name required', description: 'Please enter an organization name', variant: 'destructive' });
+      toast.error('Name required', { description: 'Please enter an organization name' });
       return;
     }
     updateOrganization.mutate({ orgId: organization.id, name: orgName.trim() });

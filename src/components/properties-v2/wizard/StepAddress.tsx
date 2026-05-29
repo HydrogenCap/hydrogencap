@@ -4,8 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Info } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import type { WizardData } from './types';
+import { toast } from "sonner";
 
 interface Props {
   data: WizardData;
@@ -16,7 +16,6 @@ const UK_POSTCODE_REGEX = /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i;
 const COUNTRIES = ['England', 'Wales', 'Scotland', 'Northern Ireland'];
 
 export function StepAddress({ data, onChange }: Props) {
-  const { toast } = useToast();
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocoded, setGeocoded] = useState(false);
 
@@ -37,7 +36,7 @@ export function StepAddress({ data, onChange }: Props) {
       }
     } catch (error) {
       console.error('Failed to autofill address from postcode:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Something went wrong' });
     } finally {
       setIsGeocoding(false);
     }

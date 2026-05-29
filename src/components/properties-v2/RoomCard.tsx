@@ -8,8 +8,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useDeleteRoom } from '@/hooks/useRoomsV2';
-import { useToast } from '@/hooks/use-toast';
 import type { RoomV2 } from '@/hooks/useRoomsV2';
+import { toast } from "sonner";
 
 const ROOM_TYPE_BG: Record<string, string> = {
   single: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
@@ -63,8 +63,6 @@ function getErrorMessage(error: unknown) {
 export function RoomCard({ room, onEdit }: Props) {
   const navigate = useNavigate();
   const deleteRoom = useDeleteRoom();
-  const { toast } = useToast();
-
   const isVacant = room.occupancy_status === 'vacant';
   const targetRent = room.target_rent_pcm ?? room.current_rent_pcm;
   const dailyVoidCost = isVacant && targetRent ? (targetRent / 30.44) : null;
@@ -144,9 +142,9 @@ export function RoomCard({ room, onEdit }: Props) {
                   onClick={async () => {
                     try {
                       await deleteRoom.mutateAsync({ id: room.id, propertyId: room.property_id });
-                      toast({ title: 'Room deleted' });
+                      toast.success('Room deleted');
                     } catch (error: unknown) {
-                      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                      toast.error('Error', { description: getErrorMessage(error) });
                     }
                   }}
                 >Delete</AlertDialogAction>

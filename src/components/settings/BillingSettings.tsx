@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription, TIERS, type SubscriptionTier } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { Check, Crown, Loader2, ExternalLink, RefreshCw, Star, Shield, Zap } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from "sonner";
 
 const PLAN_DETAILS: {
   tier: SubscriptionTier;
@@ -98,7 +98,6 @@ const TIER_ORDER: SubscriptionTier[] = ['free', 'solo', 'portfolio', 'pro'];
 
 export function BillingSettings() {
   const { tier, subscribed, subscriptionEnd, checkSubscription, loading } = useSubscription();
-  const { toast } = useToast();
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -114,11 +113,7 @@ export function BillingSettings() {
         window.open(data.url, '_blank');
       }
     } catch (err) {
-      toast({
-        title: 'Checkout failed',
-        description: err instanceof Error ? err.message : 'Please try again',
-        variant: 'destructive',
-      });
+      toast.error('Checkout failed', { description: err instanceof Error ? err.message : 'Please try again' });
     } finally {
       setCheckoutLoading(null);
     }
@@ -133,11 +128,7 @@ export function BillingSettings() {
         window.open(data.url, '_blank');
       }
     } catch (err) {
-      toast({
-        title: 'Portal failed',
-        description: err instanceof Error ? err.message : 'Please try again',
-        variant: 'destructive',
-      });
+      toast.error('Portal failed', { description: err instanceof Error ? err.message : 'Please try again' });
     } finally {
       setPortalLoading(false);
     }
@@ -147,7 +138,7 @@ export function BillingSettings() {
     setRefreshing(true);
     await checkSubscription();
     setRefreshing(false);
-    toast({ title: 'Subscription status refreshed' });
+    toast('Subscription status refreshed');
   };
 
   const currentTierIndex = TIER_ORDER.indexOf(tier);

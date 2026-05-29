@@ -9,8 +9,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useBulkCreateRooms, ROOM_TYPES } from '@/hooks/useRoomsV2';
-import { useToast } from '@/hooks/use-toast';
 import type { RoomV2 } from '@/hooks/useRoomsV2';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -30,7 +30,6 @@ function getErrorMessage(error: unknown) {
 
 export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoomCount, unitId }: Props) {
   const bulkCreate = useBulkCreateRooms();
-  const { toast } = useToast();
   const [count, setCount] = useState('3');
   const [roomType, setRoomType] = useState('double');
   const [rent, setRent] = useState('');
@@ -40,7 +39,7 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
     e.preventDefault();
     const n = parseInt(count);
     if (!n || n < 1 || n > 20) {
-      toast({ title: 'Enter 1-20 rooms', variant: 'destructive' });
+      toast.error('Enter 1-20 rooms');
       return;
     }
     const start = parseInt(startNum) || (existingRoomCount + 1);
@@ -66,10 +65,10 @@ export function BulkAddRoomsModal({ open, onOpenChange, propertyId, existingRoom
     }
     try {
       await bulkCreate.mutateAsync(rooms);
-      toast({ title: `${n} rooms added` });
+      toast.success(`${n} rooms added`);
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 

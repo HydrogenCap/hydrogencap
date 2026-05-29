@@ -46,7 +46,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useTeamMembers,
@@ -61,6 +60,7 @@ import {
   type TeamMember,
   type TeamInvite,
 } from '@/hooks/useTeamManagement';
+import { toast } from "sonner";
 
 // ─── Role display helpers ────────────────────────────────────────
 
@@ -87,7 +87,6 @@ function RoleBadge({ role }: { role: AppRole }) {
 
 export function TeamManagement() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { data: members, isLoading: membersLoading } = useTeamMembers();
   const { data: invites, isLoading: invitesLoading } = useTeamInvites();
   const { data: currentRole } = useCurrentUserRole();
@@ -116,12 +115,12 @@ export function TeamManagement() {
     if (!inviteEmail.trim()) return;
 
     if (inviteEmail.toLowerCase().trim() === user?.email) {
-      toast({ title: 'Cannot invite yourself', variant: 'destructive' });
+      toast.error('Cannot invite yourself');
       return;
     }
 
     if (members?.some(m => m.email.toLowerCase() === inviteEmail.toLowerCase().trim())) {
-      toast({ title: 'This person is already a team member', variant: 'destructive' });
+      toast.error('This person is already a team member');
       return;
     }
 
@@ -135,14 +134,14 @@ export function TeamManagement() {
       setInviteName('');
       setInviteRole('viewer');
     } catch (err) {
-      toast({ title: 'Failed to send invite', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+      toast.error('Failed to send invite', { description: err instanceof Error ? err.message : 'Please try again.' });
     }
   };
 
   const copyInviteLink = (token: string) => {
     const url = `${window.location.origin}/team/accept/${token}`;
     navigator.clipboard.writeText(url);
-    toast({ title: 'Invite link copied' });
+    toast.success('Invite link copied');
   };
 
   return (

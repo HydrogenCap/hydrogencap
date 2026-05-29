@@ -11,8 +11,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useCreateRoom, useUpdateRoom, ROOM_TYPES, OCCUPANCY_STATUSES } from '@/hooks/useRoomsV2';
-import { useToast } from '@/hooks/use-toast';
 import type { RoomV2 } from '@/hooks/useRoomsV2';
+import { toast } from "sonner";
 
 const OCCUPANCY_TYPES = [
   { value: 'single', label: 'Single Adult' },
@@ -63,8 +63,6 @@ function getErrorMessage(error: unknown) {
 export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, unitId }: Props) {
   const create = useCreateRoom();
   const update = useUpdateRoom();
-  const { toast } = useToast();
-
   const [form, setForm] = useState<RoomFormState>(initialForm);
 
   useEffect(() => {
@@ -106,7 +104,7 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.room_name) {
-      toast({ title: 'Room name is required', variant: 'destructive' });
+      toast.error('Room name is required');
       return;
     }
     const payload: RoomCreateInput = {
@@ -128,14 +126,14 @@ export function RoomFormModal({ open, onOpenChange, propertyId, editingRoom, uni
     try {
       if (editingRoom) {
         await update.mutateAsync({ id: editingRoom.id, ...payload });
-        toast({ title: 'Room updated' });
+        toast.success('Room updated');
       } else {
         await create.mutateAsync(payload);
-        toast({ title: 'Room created' });
+        toast.success('Room created');
       }
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 

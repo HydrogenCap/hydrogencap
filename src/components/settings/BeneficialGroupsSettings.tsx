@@ -30,14 +30,13 @@ import {
   type BeneficialGroupWithMappings,
 } from '@/hooks/useBeneficialGroups';
 import { useOwnershipEntities } from '@/hooks/useOwnershipLookthrough';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
 export function BeneficialGroupsSettings() {
-  const { toast } = useToast();
   const { data: groups, isLoading } = useBeneficialGroups();
   const { data: entities } = useOwnershipEntities();
   const createGroup = useCreateBeneficialGroup();
@@ -57,18 +56,18 @@ export function BeneficialGroupsSettings() {
     try {
       await createGroup.mutateAsync({ name: newGroupName.trim() });
       setNewGroupName('');
-      toast({ title: 'Beneficial group created' });
+      toast.success('Beneficial group created');
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 
   const handleDeleteGroup = async (id: string) => {
     try {
       await deleteGroup.mutateAsync(id);
-      toast({ title: 'Beneficial group deleted' });
+      toast.success('Beneficial group deleted');
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 
@@ -82,25 +81,21 @@ export function BeneficialGroupsSettings() {
       });
       setAddEntityDialogOpen(false);
       setSelectedEntityForAdd('');
-      toast({ title: 'Entity added to group' });
+      toast.success('Entity added to group');
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
-      toast({ 
-        title: 'Error', 
-        description: errorMessage.includes('duplicate') 
-          ? 'Entity is already in this group' 
-          : errorMessage, 
-        variant: 'destructive' 
-      });
+      toast.error('Error', { description: errorMessage.includes('duplicate') 
+                  ? 'Entity is already in this group' 
+                  : errorMessage });
     }
   };
 
   const handleRemoveEntityFromGroup = async (mappingId: string) => {
     try {
       await removeMapping.mutateAsync(mappingId);
-      toast({ title: 'Entity removed from group' });
+      toast.success('Entity removed from group');
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 

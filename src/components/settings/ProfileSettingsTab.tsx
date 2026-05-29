@@ -8,11 +8,10 @@ import { User } from 'lucide-react';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { AccountDeletionSection } from '@/components/settings/AccountDeletionSection';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export function ProfileSettingsTab() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const [fullName, setFullName] = useState('');
@@ -23,7 +22,7 @@ export function ProfileSettingsTab() {
 
   const handleSaveProfile = () => {
     if (!fullName.trim()) {
-      toast({ title: 'Name required', description: 'Please enter your full name', variant: 'destructive' });
+      toast.error('Name required', { description: 'Please enter your full name' });
       return;
     }
     updateProfile.mutate({ full_name: fullName.trim() });
