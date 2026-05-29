@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, fetchUserOrgIdOrNull, useUserOrg } from '@/hooks/useUserOrg';
- 
+import { toast } from "sonner";
+
  export type JobStatus = 'draft' | 'requested' | 'quoted' | 'accepted' | 'booked' | 'in_progress' | 'completed' | 'verified' | 'cancelled';
  export type JobPriority = 'low' | 'normal' | 'high' | 'urgent';
  export type JobSource = 'manual' | 'auto_compliance' | 'auto_rate_expiry';
@@ -286,8 +286,6 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  
  export function useCreateJob() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
    mutationFn: async (job: {
       propertyId?: string;
@@ -328,15 +326,13 @@ export function useMatchingContractors(complianceType: string, postcode: string)
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({ title: 'Job created' });
+       toast.success('Job created');
      },
    });
  }
  
  export function useUpdateJob() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
-
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<ContractorJob> & { id: string }) => {
        const { data, error } = await supabaseAny
@@ -366,15 +362,13 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.id] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({ title: 'Job updated' });
+       toast.success('Job updated');
      },
    });
  }
  
  export function useSendJobRequest() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({ jobId, customMessage }: { jobId: string; customMessage?: string }) => {
        const { data, error } = await supabase.functions.invoke('send-job-request', {
@@ -388,25 +382,16 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({
-         title: 'Request sent',
-         description: `Job request sent to ${data.sentTo}`,
-       });
+       toast.success('Request sent', { description: `Job request sent to ${data.sentTo}` });
      },
      onError: (error) => {
-        toast({
-          title: 'Failed to send',
-          description: error instanceof Error ? error.message : 'Failed to send job request',
-          variant: 'destructive',
-        });
+        toast.error('Failed to send', { description: error instanceof Error ? error.message : 'Failed to send job request' });
       },
    });
  }
  
  export function useBookJob() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({
        jobId,
@@ -437,15 +422,13 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({ title: 'Job booked' });
+       toast.success('Job booked');
      },
    });
  }
  
  export function useCompleteJob() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({
        jobId,
@@ -473,7 +456,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({ title: 'Job marked as completed' });
+       toast.success('Job marked as completed');
      },
    });
  }
@@ -481,8 +464,6 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  // Assign contractor to job
  export function useAssignContractor() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({ jobId, contractorId }: { jobId: string; contractorId: string }) => {
        const { error } = await supabaseAny
@@ -499,7 +480,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({ title: 'Contractor assigned' });
+       toast.success('Contractor assigned');
      },
    });
  }
@@ -507,8 +488,6 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  // Cancel job
  export function useCancelJob() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({ jobId, reason }: { jobId: string; reason?: string }) => {
        const { error } = await supabaseAny
@@ -526,7 +505,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
        queryClient.invalidateQueries({ queryKey: ['contractor-job', variables.jobId] });
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({ title: 'Job cancelled' });
+       toast.success('Job cancelled');
      },
    });
  }
@@ -534,8 +513,6 @@ export function useMatchingContractors(complianceType: string, postcode: string)
  // Run auto-job creation manually
  export function useRunAutoJobCreation() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async () => {
        const { data, error } = await supabase.functions.invoke('create-compliance-jobs');
@@ -545,10 +522,7 @@ export function useMatchingContractors(complianceType: string, postcode: string)
      onSuccess: (data) => {
        queryClient.invalidateQueries({ queryKey: ['contractor-jobs'] });
        queryClient.invalidateQueries({ queryKey: ['job-counts'] });
-       toast({
-         title: 'Auto-job creation complete',
-         description: `Created ${data.jobs_created} new jobs, updated ${data.priorities_updated} priorities`,
-       });
+       toast.success('Auto-job creation complete', { description: `Created ${data.jobs_created} new jobs, updated ${data.priorities_updated} priorities` });
      },
    });
  }

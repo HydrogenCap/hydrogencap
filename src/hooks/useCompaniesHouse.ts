@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/lib/errorLogger';
+import { toast } from "sonner";
 
 export interface CHCompanySearchResult {
   company_number: string;
@@ -55,8 +55,6 @@ export function useCompaniesHouse() {
   const [searchResults, setSearchResults] = useState<CHCompanySearchResult[]>([]);
   const [lookupResult, setLookupResult] = useState<CHLookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
   const searchCompanies = async (query: string) => {
     if (!query || query.length < 2) {
       setSearchResults([]);
@@ -80,7 +78,7 @@ export function useCompaniesHouse() {
       console.error('Failed to search Companies House:', err);
       logError({ source: 'useCompaniesHouse.searchCompanies', message: 'Companies House search edge function failed', severity: 'error', error: err });
       setError(err instanceof Error ? err.message : 'Failed to search Companies House');
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to search Companies House', variant: 'destructive' });
+      toast.error('Error', { description: err instanceof Error ? err.message : 'Failed to search Companies House' });
       setSearchResults([]);
       return [];
     } finally {
@@ -122,7 +120,7 @@ export function useCompaniesHouse() {
       console.error('Failed to look up company:', err);
       logError({ source: 'useCompaniesHouse.lookupCompany', message: 'Companies House company lookup edge function failed', severity: 'error', error: err });
       setError(err instanceof Error ? err.message : 'Failed to lookup company');
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to look up company', variant: 'destructive' });
+      toast.error('Error', { description: err instanceof Error ? err.message : 'Failed to look up company' });
       setLookupResult(null);
       return null;
     } finally {

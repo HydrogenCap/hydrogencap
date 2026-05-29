@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface CompanySecretsMasked {
   company_id: string;
@@ -69,8 +69,6 @@ export function useRevealSecrets() {
 // Set/update secrets
 export function useSetCompanySecrets() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       companyId,
@@ -99,14 +97,10 @@ export function useSetCompanySecrets() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['company-secrets-masked', variables.companyId] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast({ title: 'Secrets saved securely' });
+      toast.success('Secrets saved securely');
     },
     onError: (error) => {
-      toast({ 
-        title: 'Error', 
-        description: error instanceof Error ? error.message : 'Failed to save secrets',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to save secrets' });
     },
   });
 }
@@ -114,8 +108,6 @@ export function useSetCompanySecrets() {
 // Bulk set secrets (for admin backfill)
 export function useBulkSetSecrets() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (secrets: Array<{ company_number: string; auth_code?: string; utr?: string }>) => {
       const { data, error } = await supabase.functions.invoke('company-secrets', {
@@ -134,14 +126,10 @@ export function useBulkSetSecrets() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-secrets-masked'] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast({ title: 'Bulk secrets saved successfully' });
+      toast.success('Bulk secrets saved successfully');
     },
     onError: (error) => {
-      toast({ 
-        title: 'Error', 
-        description: error instanceof Error ? error.message : 'Failed to bulk set secrets',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to bulk set secrets' });
     },
   });
 }

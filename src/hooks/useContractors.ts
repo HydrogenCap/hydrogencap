@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
- 
+import { toast } from "sonner";
+
  export interface Contractor {
    id: string;
    org_id: string;
@@ -146,8 +146,6 @@ export function useContractors(filters?: {
  
  export function useCreateContractor() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
   return useMutation({
     mutationFn: async (contractor: Omit<Contractor, 'id' | 'org_id' | 'average_rating' | 'total_jobs' | 'last_used_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -163,18 +161,16 @@ export function useContractors(filters?: {
      },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['contractors'] });
-        toast({ title: 'Contractor added' });
+        toast.success('Contractor added');
       },
       onError: (error: Error) => {
-        toast({ title: 'Failed to add contractor', description: error.message, variant: 'destructive' });
+        toast.error('Failed to add contractor', { description: error.message });
       },
    });
  }
  
  export function useUpdateContractor() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<Contractor> & { id: string }) => {
        const { data, error } = await supabaseAny
@@ -190,18 +186,16 @@ export function useContractors(filters?: {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['contractors'] });
         queryClient.invalidateQueries({ queryKey: ['contractor', data.id] });
-        toast({ title: 'Contractor updated' });
+        toast.success('Contractor updated');
       },
       onError: (error: Error) => {
-        toast({ title: 'Failed to update contractor', description: error.message, variant: 'destructive' });
+        toast.error('Failed to update contractor', { description: error.message });
       },
    });
  }
  
  export function useAddContractorReview() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
     mutationFn: async (review: {
       contractorId: string;
@@ -240,18 +234,16 @@ export function useContractors(filters?: {
       onSuccess: (data) => {
         queryClient.invalidateQueries({ queryKey: ['contractors'] });
         queryClient.invalidateQueries({ queryKey: ['contractor-reviews', data.contractor_id] });
-        toast({ title: 'Review added' });
+        toast.success('Review added');
       },
       onError: (error: Error) => {
-        toast({ title: 'Failed to add review', description: error.message, variant: 'destructive' });
+        toast.error('Failed to add review', { description: error.message });
       },
    });
  }
  
  export function useDeleteContractor() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async (id: string) => {
        const { error } = await supabaseAny
@@ -263,10 +255,10 @@ export function useContractors(filters?: {
      },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['contractors'] });
-        toast({ title: 'Contractor removed' });
+        toast.success('Contractor removed');
       },
       onError: (error: Error) => {
-        toast({ title: 'Failed to remove contractor', description: error.message, variant: 'destructive' });
+        toast.error('Failed to remove contractor', { description: error.message });
       },
    });
  }

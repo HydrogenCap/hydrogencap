@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { extractStoragePath } from '@/lib/storagePaths';
 import { logError } from '@/lib/errorLogger';
+import { toast } from "sonner";
 
 // Map document types to compliance types
 export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
@@ -199,8 +199,6 @@ function generateComplianceFilename(params: {
  */
 export function useAcceptComplianceDocument() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (params: AcceptComplianceDocumentParams) => {
       const {
@@ -425,17 +423,10 @@ export function useAcceptComplianceDocument() {
       queryClient.invalidateQueries({ queryKey: ['compliance', data.propertyId] });
       queryClient.invalidateQueries({ queryKey: ['compliance', 'all'] });
 
-      toast({
-        title: 'Document accepted',
-        description: `${data.complianceType} record updated successfully`,
-      });
+      toast.success('Document accepted', { description: `${data.complianceType} record updated successfully` });
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to process document',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Failed to process document', { description: error instanceof Error ? error.message : 'Unknown error' });
     },
   });
 }
@@ -445,8 +436,6 @@ export function useAcceptComplianceDocument() {
  */
 export function useRejectComplianceDocument() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (documentId: string) => {
       const { error } = await supabaseAny
@@ -459,10 +448,7 @@ export function useRejectComplianceDocument() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
-      toast({
-        title: 'Document rejected',
-        description: 'Document moved to rejected',
-      });
+      toast.success('Document rejected', { description: 'Document moved to rejected' });
     },
   });
 }
@@ -472,8 +458,6 @@ export function useRejectComplianceDocument() {
  */
 export function useAcceptAllHighConfidence() {
   const acceptDocument = useAcceptComplianceDocument();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (documents: Array<{
       id: string;
@@ -552,30 +536,15 @@ export function useAcceptAllHighConfidence() {
     },
     onSuccess: (data) => {
       if (data.failures.length === 0) {
-        toast({
-          title: `Accepted ${data.accepted} document${data.accepted === 1 ? '' : 's'}`,
-          description: 'High-confidence AI suggestions applied to compliance records',
-        });
+        toast.success(`Accepted ${data.accepted} document${data.accepted === 1 ? '' : 's'}`, { description: 'High-confidence AI suggestions applied to compliance records' });
       } else if (data.accepted === 0) {
-        toast({
-          title: `All ${data.total} failed`,
-          description: data.failures[0]?.error || 'See per-row errors',
-          variant: 'destructive',
-        });
+        toast.error(`All ${data.total} failed`, { description: data.failures[0]?.error || 'See per-row errors' });
       } else {
-        toast({
-          title: `Accepted ${data.accepted} of ${data.total}`,
-          description: `${data.failures.length} failed — ${data.failures[0].filename}: ${data.failures[0].error}`,
-          variant: 'destructive',
-        });
+        toast.error(`Accepted ${data.accepted} of ${data.total}`, { description: `${data.failures.length} failed — ${data.failures[0].filename}: ${data.failures[0].error}` });
       }
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to accept documents',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Failed to accept documents', { description: error instanceof Error ? error.message : 'Unknown error' });
     },
   });
 }
