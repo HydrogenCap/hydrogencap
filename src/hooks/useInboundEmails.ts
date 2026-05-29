@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface InboundEmail {
   id: string;
@@ -115,8 +115,6 @@ export function useInboundEmailStats() {
 
 export function useUpdateInboundEmail() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ 
       id, 
@@ -144,7 +142,7 @@ export function useUpdateInboundEmail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inbound-emails'] });
       queryClient.invalidateQueries({ queryKey: ['inbound-email-stats'] });
-      toast({ title: 'Email updated' });
+      toast.success('Email updated');
     },
   });
 }
@@ -152,8 +150,6 @@ export function useUpdateInboundEmail() {
 // Reprocess a failed or pending email
 export function useReprocessEmail() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (emailId: string) => {
       // This would call an edge function to reprocess
@@ -170,7 +166,7 @@ export function useReprocessEmail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inbound-emails'] });
-      toast({ title: 'Email queued for reprocessing' });
+      toast.success('Email queued for reprocessing');
     },
   });
 }

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface ValuationSummary {
   id: string;
@@ -77,8 +77,6 @@ export function useDocumentSummary(documentId: string | undefined) {
 
 export function useTriggerDocumentSummary() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (documentId: string) => {
       const { data, error } = await supabase.functions.invoke('summarize-valuation-document', {
@@ -91,19 +89,12 @@ export function useTriggerDocumentSummary() {
       queryClient.invalidateQueries({ queryKey: ['document-summary', documentId] });
       queryClient.invalidateQueries({ queryKey: ['portfolio-valuation-summaries'] });
       queryClient.invalidateQueries({ queryKey: ['document-vault'] });
-      toast({
-        title: 'Valuation Analysed',
-        description: data?.valuation_figure
-          ? `Valuation: £${Number(data.valuation_figure).toLocaleString()}`
-          : 'Summary generated successfully',
-      });
+      toast.success('Valuation Analysed', { description: data?.valuation_figure
+                  ? `Valuation: £${Number(data.valuation_figure).toLocaleString()}`
+                  : 'Summary generated successfully' });
     },
     onError: (error) => {
-      toast({
-        title: 'Analysis Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Analysis Failed', { description: error.message });
     },
   });
 }

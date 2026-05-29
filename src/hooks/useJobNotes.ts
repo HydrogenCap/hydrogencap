@@ -1,7 +1,7 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase, supabaseAny } from '@/integrations/supabase/client';
- import { useToast } from '@/hooks/use-toast';
- 
+import { toast } from "sonner";
+
  export interface JobNote {
    id: string;
    job_id: string;
@@ -31,8 +31,6 @@
  
  export function useAddJobNote() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({ jobId, note }: { jobId: string; note: string }) => {
        const { data: { user } } = await supabase.auth.getUser();
@@ -52,7 +50,7 @@
      },
      onSuccess: (_, variables) => {
        queryClient.invalidateQueries({ queryKey: ['job-notes', variables.jobId] });
-       toast({ title: 'Note added' });
+       toast.success('Note added');
      },
    });
  }

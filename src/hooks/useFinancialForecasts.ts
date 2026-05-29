@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface MonthlyProjection {
   month: number;
@@ -81,21 +81,15 @@ export function useFinancialForecasts() {
 
 export function useRunForecast() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: (params: RunForecastParams) =>
       invokeEdgeFunction<FinancialForecast>('financial-forecast', params as unknown as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financial-forecasts'] });
-      toast({ title: 'Forecast generated successfully' });
+      toast.success('Forecast generated successfully');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Failed to generate forecast',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to generate forecast', { description: error.message });
     },
   });
 }

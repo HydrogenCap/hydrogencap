@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export type LettingsStage =
   | 'marketing'
@@ -110,8 +110,6 @@ export function useLettingsPipeline() {
 
 export function useCreateLetting() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: {
       propertyId: string;
@@ -141,15 +139,13 @@ export function useCreateLetting() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lettings-pipeline'] });
-      toast({ title: 'Letting added to pipeline' });
+      toast.success('Letting added to pipeline');
     },
   });
 }
 
 export function useAdvanceStage() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: LettingsPipelineUpdate }) => {
       const { data, error } = await supabaseAny
@@ -163,15 +159,13 @@ export function useAdvanceStage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['lettings-pipeline'] });
-      toast({ title: `Moved to ${STAGE_LABELS[data.stage]}` });
+      toast.success(`Moved to ${STAGE_LABELS[data.stage]}`);
     },
   });
 }
 
 export function useCompleteLetting() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, tenancyId, actualMoveIn, voidPeriodId }: {
       id: string;
@@ -202,7 +196,7 @@ export function useCompleteLetting() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lettings-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Letting completed 🎉' });
+      toast.success('Letting completed 🎉');
     },
   });
 }

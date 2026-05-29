@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 type InvestorInsert = Database['public']['Tables']['investors']['Insert'];
 
@@ -87,8 +87,6 @@ export function useInvestorPortfolioSummaries() {
 export function useCreateInvestor() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (data: Partial<InvestorFormData>) => {
       const payload = { ...data, org_id: orgId! } as InvestorInsert;
@@ -103,18 +101,16 @@ export function useCreateInvestor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investors'] });
       queryClient.invalidateQueries({ queryKey: ['investor-portfolio-summaries'] });
-      toast({ title: 'Investor created' });
+      toast.success('Investor created');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error creating investor', description: err.message, variant: 'destructive' });
+      toast.error('Error creating investor', { description: err.message });
     },
   });
 }
 
 export function useUpdateInvestor() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InvestorFormData> }) => {
       const { data: result, error } = await supabaseAny
@@ -129,17 +125,15 @@ export function useUpdateInvestor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investors'] });
       queryClient.invalidateQueries({ queryKey: ['investor-portfolio-summaries'] });
-      toast({ title: 'Investor updated' });
+      toast.success('Investor updated');
     },
     onError: (err: Error) => {
-      toast({ title: 'Error updating investor', description: err.message, variant: 'destructive' });
+      toast.error('Error updating investor', { description: err.message });
     },
   });
 }
 
 export function useSendInvestorPortalAccessEmail() {
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (investorId: string) => {
       const { error } = await supabase.functions.invoke('send-investor-portal-access', {
@@ -149,14 +143,10 @@ export function useSendInvestorPortalAccessEmail() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: 'Portal access email sent' });
+      toast.success('Portal access email sent');
     },
     onError: (err: Error) => {
-      toast({
-        title: 'Failed to send portal access email',
-        description: err.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to send portal access email', { description: err.message });
     },
   });
 }

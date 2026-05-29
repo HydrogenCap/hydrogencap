@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -217,8 +217,6 @@ export function useDeals(filters?: DealFilters) {
 
 export function useCreateDeal() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: DealPipelineInsert) => {
       const orgId = await fetchUserOrgId();
@@ -251,15 +249,13 @@ export function useCreateDeal() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deal-pipeline'] });
-      toast({ title: 'Deal added to pipeline' });
+      toast.success('Deal added to pipeline');
     },
   });
 }
 
 export function useUpdateDeal() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: DealPipelineUpdate }) => {
       const { data, error } = await supabaseAny
@@ -273,15 +269,13 @@ export function useUpdateDeal() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deal-pipeline'] });
-      toast({ title: 'Deal updated' });
+      toast.success('Deal updated');
     },
   });
 }
 
 export function useUpdateDealStage() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, stage, updates }: {
       id: string;
@@ -321,7 +315,7 @@ export function useUpdateDealStage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['deal-pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['due-diligence'] });
-      toast({ title: `Moved to ${DEAL_STAGE_LABELS[data.stage]}` });
+      toast.success(`Moved to ${DEAL_STAGE_LABELS[data.stage]}`);
     },
   });
 }
@@ -344,8 +338,6 @@ export function useDueDiligenceItems(dealId: string | null) {
 
 export function useUpdateDDItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: DDItemUpdate }) => {
       const finalUpdates = { ...updates };
@@ -363,15 +355,13 @@ export function useUpdateDDItem() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['due-diligence', data.deal_id] });
-      toast({ title: 'Checklist item updated' });
+      toast.success('Checklist item updated');
     },
   });
 }
 
 export function useCompleteDeal() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, completionDate }: { id: string; completionDate?: string }) => {
       const { data, error } = await supabaseAny
@@ -388,7 +378,7 @@ export function useCompleteDeal() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deal-pipeline'] });
-      toast({ title: 'Deal completed! Ready for onboarding.' });
+      toast.success('Deal completed! Ready for onboarding.');
     },
   });
 }

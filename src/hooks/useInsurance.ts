@@ -1,8 +1,8 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabaseAny } from '@/integrations/supabase/client';
- import { useToast } from '@/hooks/use-toast';
  import { fetchUserOrgId, useUserOrg } from './useUserOrg';
- 
+import { toast } from "sonner";
+
  export interface InsurancePolicy {
    id: string;
    property_id: string;
@@ -130,8 +130,6 @@ export function useInsurancePolicies(filters?: {
  // Create policy
  export function useCreateInsurancePolicy() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async (policy: {
        propertyId: string;
@@ -179,7 +177,7 @@ export function useInsurancePolicies(filters?: {
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
        queryClient.invalidateQueries({ queryKey: ['insurance-totals'] });
-       toast({ title: 'Insurance policy added' });
+       toast.success('Insurance policy added');
      },
    });
  }
@@ -187,8 +185,6 @@ export function useInsurancePolicies(filters?: {
  // Update policy
  export function useUpdateInsurancePolicy() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({ id, ...updates }: Partial<InsurancePolicy> & { id: string }) => {
        const { data, error } = await supabaseAny
@@ -205,7 +201,7 @@ export function useInsurancePolicies(filters?: {
        queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
        queryClient.invalidateQueries({ queryKey: ['insurance-policy', data.id] });
        queryClient.invalidateQueries({ queryKey: ['insurance-totals'] });
-       toast({ title: 'Policy updated' });
+       toast.success('Policy updated');
      },
    });
  }
@@ -213,8 +209,6 @@ export function useInsurancePolicies(filters?: {
  // Delete policy
  export function useDeleteInsurancePolicy() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async (policyId: string) => {
        const { error } = await supabaseAny
@@ -227,7 +221,7 @@ export function useInsurancePolicies(filters?: {
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['insurance-policies'] });
        queryClient.invalidateQueries({ queryKey: ['insurance-totals'] });
-       toast({ title: 'Policy deleted' });
+       toast.success('Policy deleted');
      },
    });
  }

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ── Tenant References ──
 
@@ -55,7 +55,6 @@ export function useTenantReferences(lettingId: string | undefined) {
 
 export function useCreateReference() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (input: Partial<TenantReference> & { letting_id: string; applicant_name: string }) => {
       const orgId = await fetchUserOrgId();
@@ -69,14 +68,13 @@ export function useCreateReference() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['tenant-references', data.letting_id] });
-      toast({ title: 'Reference record created' });
+      toast.success('Reference record created');
     },
   });
 }
 
 export function useUpdateReference() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<TenantReference> & { id: string; lettingId: string }) => {
       const { data, error } = await supabaseAny
@@ -90,14 +88,13 @@ export function useUpdateReference() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['tenant-references', data.lettingId] });
-      toast({ title: 'Reference updated' });
+      toast.success('Reference updated');
     },
   });
 }
 
 export function useApproveApplicant() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, status }: { id: string; lettingId: string; status: 'approved' | 'rejected' }) => {
       const { error } = await supabaseAny
@@ -110,7 +107,7 @@ export function useApproveApplicant() {
     onSuccess: ({ lettingId, status }) => {
       qc.invalidateQueries({ queryKey: ['tenant-references', lettingId] });
       qc.invalidateQueries({ queryKey: ['lettings-pipeline'] });
-      toast({ title: status === 'approved' ? 'Applicant approved' : 'Applicant rejected' });
+      toast.success(status === 'approved' ? 'Applicant approved' : 'Applicant rejected');
     },
   });
 }
@@ -185,7 +182,6 @@ export function useCreateMoveInChecklist() {
 
 export function useUpdateMoveInItem() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<MoveInChecklistItem> & { id: string; lettingId: string }) => {
       const { data, error } = await supabaseAny
@@ -199,14 +195,13 @@ export function useUpdateMoveInItem() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['move-in-checklist', data.lettingId] });
-      toast({ title: 'Checklist updated' });
+      toast.success('Checklist updated');
     },
   });
 }
 
 export function useCompleteMoveIn() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId }: { id: string; lettingId: string }) => {
       const { error } = await supabaseAny
@@ -219,7 +214,7 @@ export function useCompleteMoveIn() {
     onSuccess: ({ lettingId }) => {
       qc.invalidateQueries({ queryKey: ['move-in-checklist', lettingId] });
       qc.invalidateQueries({ queryKey: ['lettings-pipeline'] });
-      toast({ title: 'Move-in completed' });
+      toast.success('Move-in completed');
     },
   });
 }
@@ -260,7 +255,6 @@ export function useViewings(lettingId: string | undefined) {
 
 export function useCreateViewing() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (input: Omit<PropertyViewing, 'id' | 'org_id' | 'created_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -274,14 +268,13 @@ export function useCreateViewing() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['property-viewings', data.letting_id] });
-      toast({ title: 'Viewing scheduled' });
+      toast.success('Viewing scheduled');
     },
   });
 }
 
 export function useUpdateViewing() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<PropertyViewing> & { id: string; lettingId: string }) => {
       const { data, error } = await supabaseAny
@@ -295,7 +288,7 @@ export function useUpdateViewing() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['property-viewings', data.lettingId] });
-      toast({ title: 'Viewing updated' });
+      toast.success('Viewing updated');
     },
   });
 }
@@ -347,7 +340,6 @@ export function useTenancyDraft(lettingId: string | undefined) {
 
 export function useSaveTenancyDraft() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async (input: Omit<TenancyAgreementDraft, 'id' | 'org_id' | 'created_at'>) => {
       const orgId = await fetchUserOrgId();
@@ -361,14 +353,13 @@ export function useSaveTenancyDraft() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['tenancy-draft', data.letting_id] });
-      toast({ title: 'Agreement saved' });
+      toast.success('Agreement saved');
     },
   });
 }
 
 export function useUpdateTenancyDraft() {
   const qc = useQueryClient();
-  const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ id, lettingId, ...updates }: Partial<TenancyAgreementDraft> & { id: string; lettingId: string }) => {
       const { data, error } = await supabaseAny
@@ -382,7 +373,7 @@ export function useUpdateTenancyDraft() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['tenancy-draft', data.lettingId] });
-      toast({ title: 'Agreement updated' });
+      toast.success('Agreement updated');
     },
   });
 }

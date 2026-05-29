@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface LeaseholdDetails {
   id: string;
@@ -59,8 +59,6 @@ export function useLeaseholdDetails(propertyId?: string) {
 
 export function useUpdateLeaseholdDetails() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (details: {
       propertyId: string;
@@ -130,7 +128,7 @@ export function useUpdateLeaseholdDetails() {
     },
     onSuccess: (_data) => {
       queryClient.invalidateQueries({ queryKey: ['leasehold-details'] });
-      toast({ title: 'Leasehold details saved' });
+      toast.success('Leasehold details saved');
     },
   });
 }

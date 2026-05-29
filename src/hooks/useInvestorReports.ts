@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { InvestorReportData } from '@/lib/investorReportGenerator';
+import { toast } from "sonner";
 
 type InvestorReportInsert = Database['public']['Tables']['investor_reports']['Insert'];
 
@@ -27,8 +27,6 @@ export function useInvestorReports(investorId: string | undefined) {
 export function useGenerateInvestorReport() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       reportData,
@@ -98,10 +96,10 @@ export function useGenerateInvestorReport() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investor-reports'] });
-      toast({ title: 'Report generated', description: 'Your investor statement has been downloaded.' });
+      toast.success('Report generated', { description: 'Your investor statement has been downloaded.' });
     },
     onError: (err: Error) => {
-      toast({ title: 'Report generation failed', description: err.message, variant: 'destructive' });
+      toast.error('Report generation failed', { description: err.message });
     },
   });
 }

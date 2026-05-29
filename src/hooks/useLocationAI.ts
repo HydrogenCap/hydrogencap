@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface LocationInsights {
   locationSummary: string;
@@ -49,8 +49,6 @@ export function useLocationAI() {
   const [insights, setInsights] = useState<LocationInsights | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
   const generateInsights = useCallback(async (
     properties: PropertyLocation[],
     portfolioSummary: string
@@ -82,30 +80,18 @@ export function useLocationAI() {
       setError(message);
       
       if (message.includes('Rate limit')) {
-        toast({
-          title: 'Rate Limit Exceeded',
-          description: 'Please wait a moment and try again.',
-          variant: 'destructive',
-        });
+        toast.error('Rate Limit Exceeded', { description: 'Please wait a moment and try again.' });
       } else if (message.includes('credits')) {
-        toast({
-          title: 'AI Credits Exhausted',
-          description: 'Please add credits to continue using AI insights.',
-          variant: 'destructive',
-        });
+        toast.error('AI Credits Exhausted', { description: 'Please add credits to continue using AI insights.' });
       } else {
-        toast({
-          title: 'Location AI Error',
-          description: message,
-          variant: 'destructive',
-        });
+        toast.error('Location AI Error', { description: message });
       }
       
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   const reset = useCallback(() => {
     setInsights(null);

@@ -3,12 +3,11 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { useOrganization } from '@/hooks/useOrganization';
 import { useAuth } from '@/contexts/AuthContext';
 import { seedDemoData, clearDemoData } from '@/lib/seedDemoData';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export function useDemoData() {
   const { user } = useAuth();
   const { data: org } = useOrganization();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: hasDemoData = false, isLoading } = useQuery({
@@ -34,11 +33,11 @@ export function useDemoData() {
       return result;
     },
     onSuccess: () => {
-      toast({ title: 'Demo portfolio loaded', description: '3 properties with sample data' });
+      toast.success('Demo portfolio loaded', { description: '3 properties with sample data' });
       queryClient.invalidateQueries();
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed to load demo data', description: err.message, variant: 'destructive' });
+      toast.error('Failed to load demo data', { description: err.message });
     },
   });
 
@@ -50,11 +49,11 @@ export function useDemoData() {
       return result;
     },
     onSuccess: () => {
-      toast({ title: 'Demo data removed', description: 'Your portfolio is now empty' });
+      toast.success('Demo data removed', { description: 'Your portfolio is now empty' });
       queryClient.invalidateQueries();
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed to remove demo data', description: err.message, variant: 'destructive' });
+      toast.error('Failed to remove demo data', { description: err.message });
     },
   });
 

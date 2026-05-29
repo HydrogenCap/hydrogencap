@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { showMutationError } from '@/lib/errorToast';
 import { generateStructuredFilename } from '@/lib/documentNaming';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { toast } from "sonner";
 
 interface PropertyAddressJoin {
   address_line: string | null;
@@ -183,8 +183,6 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
  // Upload document
  export function useUploadManagedDocument() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({
        file,
@@ -375,14 +373,10 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
       },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
-       toast({ title: 'Document uploaded successfully' });
+       toast.success('Document uploaded successfully');
      },
      onError: (error) => {
-       toast({
-         title: 'Upload failed',
-         description: error.message,
-         variant: 'destructive',
-       });
+       toast.error('Upload failed', { description: error.message });
      },
    });
  }
@@ -390,8 +384,6 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
  // Update document metadata
  export function useUpdateManagedDocument() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async ({
        id,
@@ -452,7 +444,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
      },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
-        toast({ title: 'Document updated' });
+        toast.success('Document updated');
       },
       onError: (error) => {
         showMutationError(error, 'Failed to update document');
@@ -463,8 +455,6 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
  // Soft delete document
  export function useDeleteManagedDocument() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async (documentId: string) => {
        const { data, error } = await supabase.rpc('soft_delete_document', {
@@ -476,7 +466,7 @@ export async function resolveManagedDocumentUrls<T extends { file_url: string }>
      },
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['managed-documents'] });
-        toast({ title: 'Document deleted' });
+        toast.success('Document deleted');
       },
       onError: (error) => {
         showMutationError(error, 'Failed to delete document');
