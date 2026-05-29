@@ -107,7 +107,7 @@ export function useRoomDetailState() {
       toast.success('Notes saved');
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save notes';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast.error('Error', { description });
     }
   };
 
