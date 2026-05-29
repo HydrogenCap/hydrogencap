@@ -10,7 +10,9 @@ import { renderAppHook } from '@/test/renderHook';
 import { createMockSupabase, type MockSupabase } from './supabaseMock';
 
 let mock: MockSupabase;
-const toastSpy = vi.fn();
+const toastSpy = vi.fn() as unknown as ((...args: unknown[]) => void) & { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+(toastSpy as unknown as { success: ReturnType<typeof vi.fn> }).success = vi.fn();
+(toastSpy as unknown as { error: ReturnType<typeof vi.fn> }).error = vi.fn();
 
 vi.mock('@/integrations/supabase/client', () => ({
   get supabase() {
@@ -19,8 +21,8 @@ vi.mock('@/integrations/supabase/client', () => ({
   get supabaseAny() { return mock; },
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({ toast: toastSpy }),
+vi.mock('sonner', () => ({
+  toast: toastSpy,
 }));
 
 beforeEach(() => {
