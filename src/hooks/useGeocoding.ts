@@ -219,8 +219,7 @@ export function useBackfillGeocoding() {
       if (!properties?.length) {
         updateProgress({ ...localProgress, total: 0 });
         if (mountedRef.current) setIsRunning(false);
-        toast({
-          title: 'No properties to geocode',
+        toast('No properties to geocode', {
           description: 'All properties already have location data',
         });
         return;
@@ -228,8 +227,7 @@ export function useBackfillGeocoding() {
 
       updateProgress({ ...localProgress, total: properties.length });
 
-      toast({
-        title: 'Geocoding started',
+      toast('Geocoding started', {
         description: `Processing ${properties.length} properties...`,
       });
 
