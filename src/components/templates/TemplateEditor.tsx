@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import {
   MERGE_FIELDS,
   MERGE_FIELD_CATEGORIES,
@@ -17,6 +16,7 @@ import {
   extractMergeFields,
 } from '@/lib/template-merge';
 import { useLatestTemplateVersion, useSaveTemplateVersion } from '@/hooks/useTemplateUpgrade';
+import { toast } from "sonner";
 
 interface TemplateEditorProps {
   templateId: string;
@@ -33,7 +33,6 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function TemplateEditor({ templateId, templateName, onSaved }: TemplateEditorProps) {
-  const { toast } = useToast();
   const editorRef = useRef<HTMLDivElement>(null);
   const { data: latestVersion, isLoading } = useLatestTemplateVersion(templateId);
   const saveMutation = useSaveTemplateVersion();
@@ -86,7 +85,7 @@ export function TemplateEditor({ templateId, templateName, onSaved }: TemplateEd
   const handleSave = async () => {
     const text = content ?? editorContent;
     if (!text.trim()) {
-      toast({ title: 'Empty template', description: 'Add some content before saving.', variant: 'destructive' });
+      toast.error('Empty template', { description: 'Add some content before saving.' });
       return;
     }
 
@@ -97,14 +96,10 @@ export function TemplateEditor({ templateId, templateName, onSaved }: TemplateEd
         change_summary: changeSummary || undefined,
       });
       setChangeSummary('');
-      toast({ title: 'Version saved', description: `Template "${templateName}" saved successfully.` });
+      toast.success('Version saved', { description: `Template "${templateName}" saved successfully.` });
       onSaved?.();
     } catch (err) {
-      toast({
-        title: 'Save failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Save failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 

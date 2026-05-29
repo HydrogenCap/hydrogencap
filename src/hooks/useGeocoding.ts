@@ -204,8 +204,8 @@ export function useBackfillGeocoding() {
     };
     updateProgress(localProgress);
 
-    // Import toast dynamically to avoid hook rules violation
-    const { toast } = await import('@/hooks/use-toast');
+    // Import toast dynamically to keep the geocoding hook tree-shaken
+    const { toast } = await import('sonner');
 
     try {
       // Fetch all properties needing geocoding
@@ -219,8 +219,7 @@ export function useBackfillGeocoding() {
       if (!properties?.length) {
         updateProgress({ ...localProgress, total: 0 });
         if (mountedRef.current) setIsRunning(false);
-        toast({
-          title: 'No properties to geocode',
+        toast('No properties to geocode', {
           description: 'All properties already have location data',
         });
         return;
@@ -228,8 +227,7 @@ export function useBackfillGeocoding() {
 
       updateProgress({ ...localProgress, total: properties.length });
 
-      toast({
-        title: 'Geocoding started',
+      toast('Geocoding started', {
         description: `Processing ${properties.length} properties...`,
       });
 
@@ -277,29 +275,23 @@ export function useBackfillGeocoding() {
       queryClient.invalidateQueries({ queryKey: ['properties_v2'] });
 
       if (ac.signal.aborted) {
-        toast({
-          title: 'Geocoding cancelled',
+        toast('Geocoding cancelled', {
           description: `Stopped after ${localProgress.processed} of ${localProgress.total} properties`,
         });
       } else if (localProgress.failed === 0) {
-        toast({
-          title: 'Geocoding complete',
+        toast.success('Geocoding complete', {
           description: `Successfully geocoded ${localProgress.succeeded} properties`,
         });
       } else {
-        toast({
-          title: 'Geocoding complete with errors',
+        toast.error('Geocoding complete with errors', {
           description: `${localProgress.succeeded} succeeded, ${localProgress.failed} failed`,
-          variant: 'destructive',
         });
       }
     } catch (err) {
       console.error('Backfill error:', err);
       logError({ source: 'useGeocoding.startBackfill', message: 'Property geocode backfill failed', severity: 'error', error: err });
-      toast({
-        title: 'Geocoding failed',
+      toast.error('Geocoding failed', {
         description: err instanceof Error ? err.message : 'An error occurred while geocoding properties',
-        variant: 'destructive',
       });
     } finally {
       if (mountedRef.current) setIsRunning(false);

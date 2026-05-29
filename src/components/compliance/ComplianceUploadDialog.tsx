@@ -14,9 +14,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { uploadToStorage, removeFromStorage } from '@/hooks/useStorageUpload';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
-import { useToast } from '@/hooks/use-toast';
 import { useUpdateComplianceItem, useUploadComplianceDocument } from '@/hooks/useCompliance';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { toast } from "sonner";
 
 interface AIAnalysisResult {
   issueDate: string | null;
@@ -61,8 +61,6 @@ export function ComplianceUploadDialog({
   const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [_createdItemId, setCreatedItemId] = useState<string | null>(null);
-  const { toast } = useToast();
-  
   const uploadDocument = useUploadComplianceDocument();
   const updateComplianceItem = useUpdateComplianceItem();
 
@@ -88,20 +86,12 @@ export function ComplianceUploadDialog({
     // Validate file
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     if (!validTypes.includes(file.type)) {
-      toast({
-        title: 'Wrong file type',
-        description: 'Certificates need to be a PDF, JPG, or PNG.',
-        variant: 'destructive',
-      });
+      toast.error('Wrong file type', { description: 'Certificates need to be a PDF, JPG, or PNG.' });
       return;
     }
     
     if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'Too big to upload',
-        description: 'Cap is 10MB — try compressing the PDF.',
-        variant: 'destructive',
-      });
+      toast.error('Too big to upload', { description: 'Cap is 10MB — try compressing the PDF.' });
       return;
     }
 
@@ -166,7 +156,7 @@ export function ComplianceUploadDialog({
       clearInterval(progressInterval);
       console.error('Failed to analyse compliance document:', error);
       captureError(error, 'ComplianceUploadDialog.aiAnalysis');
-      toast({ title: "Couldn't read certificate", description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
+      toast.error("Couldn't read certificate", { description: error instanceof Error ? error.message : 'Something went wrong' });
       
       // Fall back to manual entry with placeholder data
       setAnalysisResult({
@@ -184,7 +174,7 @@ export function ComplianceUploadDialog({
     } finally {
       setIsProcessing(false);
     }
-  }, [complianceType, propertyAddress, toast]);
+  }, [complianceType, propertyAddress]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -230,12 +220,9 @@ export function ComplianceUploadDialog({
         });
       }
 
-      toast({
-        title: isMissing ? 'New compliance record on file' : 'Certificate is on the record',
-        description: isMissing 
-          ? 'New compliance record has been created successfully.'
-          : 'Compliance record has been updated successfully.',
-      });
+      toast(isMissing ? 'New compliance record on file' : 'Certificate is on the record', { description: isMissing 
+                  ? 'New compliance record has been created successfully.'
+                  : 'Compliance record has been updated successfully.' });
       
       onSuccess?.();
       onOpenChange(false);
@@ -243,11 +230,7 @@ export function ComplianceUploadDialog({
     } catch (error) {
       console.error('Save error:', error);
       captureError(error, 'ComplianceUploadDialog.save');
-      toast({
-        title: "Couldn't save certificate",
-        description: 'Try again in a moment.',
-        variant: 'destructive',
-      });
+      toast.error("Couldn't save certificate", { description: 'Try again in a moment.' });
     } finally {
       setIsProcessing(false);
     }

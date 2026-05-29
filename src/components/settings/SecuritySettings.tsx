@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
 import { Shield, Loader2, CheckCircle2, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
+import { toast } from "sonner";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -29,7 +29,6 @@ export function SecuritySettings() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { toast } = useToast();
   const { signOut: _signOut } = useAuth();
 
   const form = useForm<ChangePasswordFormData>({
@@ -50,11 +49,7 @@ export function SecuritySettings() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user?.email) {
-        toast({
-          title: 'Error',
-          description: 'Unable to verify your account. Please try again.',
-          variant: 'destructive',
-        });
+        toast.error('Error', { description: 'Unable to verify your account. Please try again.' });
         return;
       }
 
@@ -65,11 +60,7 @@ export function SecuritySettings() {
       });
 
       if (signInError) {
-        toast({
-          title: 'Incorrect password',
-          description: 'The current password you entered is incorrect.',
-          variant: 'destructive',
-        });
+        toast.error('Incorrect password', { description: 'The current password you entered is incorrect.' });
         return;
       }
 
@@ -79,30 +70,19 @@ export function SecuritySettings() {
       });
 
       if (updateError) {
-        toast({
-          title: 'Error',
-          description: updateError.message,
-          variant: 'destructive',
-        });
+        toast.error('Error', { description: updateError.message });
         return;
       }
 
       setIsSuccess(true);
       form.reset();
       
-      toast({
-        title: 'Password changed',
-        description: 'Your password has been successfully updated.',
-      });
+      toast('Password changed', { description: 'Your password has been successfully updated.' });
 
       // Clear success message after 5 seconds
       setTimeout(() => setIsSuccess(false), 5000);
     } catch {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -114,18 +94,11 @@ export function SecuritySettings() {
       // Sign out from all sessions
       await supabase.auth.signOut({ scope: 'global' });
       
-      toast({
-        title: 'Signed out',
-        description: 'You have been signed out from all devices.',
-      });
+      toast.success('Signed out', { description: 'You have been signed out from all devices.' });
       
       // Redirect will happen automatically via auth state change
     } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to sign out from all sessions.',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to sign out from all sessions.' });
     } finally {
       setIsSigningOut(false);
     }

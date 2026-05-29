@@ -5,7 +5,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Building2, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { useCreatePropertyV2 } from '@/hooks/usePropertiesV2';
 import { useBulkCreateRooms, type RoomV2 } from '@/hooks/useRoomsV2';
 import { useCreateLoanFacility } from '@/hooks/useLoanFacilities';
@@ -21,6 +20,7 @@ import { StepFinancials } from './StepFinancials';
 import { StepCompliance } from './StepCompliance';
 import { StepReview } from './StepReview';
 import { INITIAL_WIZARD_DATA, STEP_LABELS, type WizardData } from './types';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -37,7 +37,6 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>({ ...INITIAL_WIZARD_DATA });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
   const createProperty = useCreatePropertyV2();
   const bulkCreateRooms = useBulkCreateRooms();
@@ -163,7 +162,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
           );
         } catch (err) {
           console.error('Failed to create rooms:', err);
-          toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+          toast.error('Error', { description: err instanceof Error ? err.message : 'Something went wrong' });
         }
       }
 
@@ -216,7 +215,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
           }
         } catch (err) {
           console.error('Loan creation failed:', err);
-          toast({ title: 'Property created', description: 'Mortgage details could not be saved. You can add them on the property page.', variant: 'default' });
+          toast.success('Property created', { description: 'Mortgage details could not be saved. You can add them on the property page.' });
         }
       }
 
@@ -253,11 +252,11 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
           }
         } catch (err) {
           console.error('Compliance creation failed:', err);
-          toast({ title: 'Property created', description: 'Some compliance details could not be saved.', variant: 'default' });
+          toast.success('Property created', { description: 'Some compliance details could not be saved.' });
         }
       }
 
-      toast({ title: `Property created with ${data.rooms.length} room${data.rooms.length !== 1 ? 's' : ''}` });
+      toast.success(`Property created with ${data.rooms.length} room${data.rooms.length !== 1 ? 's' : ''}`);
       onOpenChange(false);
       setData({ ...INITIAL_WIZARD_DATA });
       setStep(0);
@@ -265,7 +264,7 @@ export function PropertyWizard({ open, onOpenChange }: Props) {
     } catch (error: unknown) {
       console.error('Property creation failed:', error);
       captureError(error, 'PropertyWizard.create');
-      toast({ title: 'Failed to create property', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Failed to create property', { description: getErrorMessage(error) });
     } finally {
       setIsSubmitting(false);
     }

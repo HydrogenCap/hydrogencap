@@ -3,10 +3,10 @@ import { Upload, FileText, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useUploadManagedDocument } from '@/hooks/useDocumentManagement';
-import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { toast } from "sonner";
 
 interface VaultUploadZoneProps {
   propertyId?: string;
@@ -19,7 +19,6 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const uploadDocument = useUploadManagedDocument();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleFiles = useCallback(async (files: FileList) => {
@@ -37,21 +36,13 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
     const validFiles = Array.from(files).filter(f => validTypes.includes(f.type));
 
     if (validFiles.length === 0) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload PDF, image, Word, or Excel files.',
-        variant: 'destructive',
-      });
+      toast.error('Invalid file type', { description: 'Please upload PDF, image, Word, or Excel files.' });
       return;
     }
 
     const oversizedFiles = validFiles.filter(f => f.size > MAX_FILE_SIZE);
     if (oversizedFiles.length > 0) {
-      toast({
-        title: 'File too large',
-        description: `${oversizedFiles.map(f => f.name).join(', ')} exceed${oversizedFiles.length === 1 ? 's' : ''} the 50MB limit.`,
-        variant: 'destructive',
-      });
+      toast.error('File too large', { description: `${oversizedFiles.map(f => f.name).join(', ')} exceed${oversizedFiles.length === 1 ? 's' : ''} the 50MB limit.` });
       return;
     }
 
@@ -86,13 +77,9 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
       }
 
       if (duplicates.length > 0) {
-        toast({
-          title: `${duplicates.length} duplicate${duplicates.length > 1 ? 's' : ''} skipped`,
-          description: duplicates.length <= 3
-            ? duplicates.join(', ')
-            : `${duplicates.slice(0, 2).join(', ')} and ${duplicates.length - 2} more`,
-          variant: 'destructive',
-        });
+        toast.error(`${duplicates.length} duplicate${duplicates.length > 1 ? 's' : ''} skipped`, { description: duplicates.length <= 3
+                      ? duplicates.join(', ')
+                      : `${duplicates.slice(0, 2).join(', ')} and ${duplicates.length - 2} more` });
       }
 
       if (newFiles.length === 0) {
@@ -168,10 +155,7 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
         if (data.renamed > 0) parts.push(`${data.renamed} renamed`);
       }
 
-      toast({
-        title: 'Upload complete',
-        description: `${validFiles.length} document${validFiles.length !== 1 ? 's' : ''} uploaded${parts.length > 0 ? ` • ${parts.join(', ')}` : ''}`,
-      });
+      toast('Upload complete', { description: `${validFiles.length} document${validFiles.length !== 1 ? 's' : ''} uploaded${parts.length > 0 ? ` • ${parts.join(', ')}` : ''}` });
 
       queryClient.invalidateQueries({ queryKey: ['document-vault'] });
       queryClient.invalidateQueries({ queryKey: ['document-vault-summaries'] });
@@ -179,16 +163,12 @@ export function VaultUploadZone({ propertyId, companyId, onUploadComplete }: Vau
       onUploadComplete?.();
     } catch (err) {
       console.error('Failed to upload documents to vault:', err);
-      toast({
-        title: 'Upload failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Upload failed', { description: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       setIsUploading(false);
       setUploadProgress(null);
     }
-  }, [uploadDocument, propertyId, companyId, toast, queryClient, onUploadComplete]);
+  }, [uploadDocument, propertyId, companyId, queryClient, onUploadComplete]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

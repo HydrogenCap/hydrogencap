@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
 import { useTemplateVersions, useRestoreTemplateVersion, type TemplateVersion } from '@/hooks/useTemplateUpgrade';
+import { toast } from "sonner";
 
 interface TemplateVersionHistoryProps {
   templateId: string;
@@ -16,7 +16,6 @@ interface TemplateVersionHistoryProps {
 }
 
 export function TemplateVersionHistory({ templateId, templateName, onRestored }: TemplateVersionHistoryProps) {
-  const { toast } = useToast();
   const { data: versions, isLoading } = useTemplateVersions(templateId);
   const restoreMutation = useRestoreTemplateVersion();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -29,17 +28,10 @@ export function TemplateVersionHistory({ templateId, templateName, onRestored }:
         content: version.content,
         restored_from_version: version.version_number,
       });
-      toast({
-        title: 'Version restored',
-        description: `Restored v${version.version_number} as a new version.`,
-      });
+      toast.success('Version restored', { description: `Restored v${version.version_number} as a new version.` });
       onRestored?.();
     } catch (err) {
-      toast({
-        title: 'Restore failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Restore failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 

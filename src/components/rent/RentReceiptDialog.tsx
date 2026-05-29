@@ -4,7 +4,7 @@ import { Download, Mail, Receipt } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface ReceiptData {
   tenantName: string;
@@ -38,7 +38,6 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 export function RentReceiptDialog({ data, open, onOpenChange }: RentReceiptDialogProps) {
-  const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
 
   if (!data) return null;
@@ -50,7 +49,7 @@ export function RentReceiptDialog({ data, open, onOpenChange }: RentReceiptDialo
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast({ title: 'Pop-up blocked', description: 'Please allow pop-ups to download the receipt', variant: 'destructive' });
+      toast.error('Pop-up blocked', { description: 'Please allow pop-ups to download the receipt' });
       return;
     }
 
@@ -128,10 +127,10 @@ export function RentReceiptDialog({ data, open, onOpenChange }: RentReceiptDialo
 
   const handleEmailTenant = () => {
     if (!data.tenantEmail) {
-      toast({ title: 'No email address', description: 'This tenant does not have an email on file', variant: 'destructive' });
+      toast.error('No email address', { description: 'This tenant does not have an email on file' });
       return;
     }
-    toast({ title: 'Email sent', description: `Receipt sent to ${data.tenantEmail}` });
+    toast.success('Email sent', { description: `Receipt sent to ${data.tenantEmail}` });
   };
 
   return (

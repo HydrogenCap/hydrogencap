@@ -6,12 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserOrg } from '@/hooks/useUserOrg';
 import { useWelcomeOverlay, type PortfolioBand } from '@/hooks/useWelcomeOverlay';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { toast } from "sonner";
 
 interface BandOption {
   value: PortfolioBand;
@@ -32,8 +32,6 @@ export function WelcomeOverlay() {
   const { shouldShow, setBand, markSeen } = useWelcomeOverlay();
   const { user } = useAuth();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   const [step, setStep] = useState<Step>(0);
   const [selectedBand, setSelectedBand] = useState<PortfolioBand | null>(null);
   const [address, setAddress] = useState('');
@@ -121,20 +119,13 @@ export function WelcomeOverlay() {
           rent_basis: 'monthly',
         });
         if (error) throw error;
-        toast({ title: 'Property added', description: 'Your first property is in.' });
+        toast.success('Property added', { description: 'Your first property is in.' });
       } else {
-        toast({
-          title: 'Property saved for later',
-          description: 'Add a legal entity in Settings to attach this property.',
-        });
+        toast.success('Property saved for later', { description: 'Add a legal entity in Settings to attach this property.' });
       }
     } catch (err) {
       console.error('Welcome property insert failed', err);
-      toast({
-        title: 'Could not add property',
-        description: err instanceof Error ? err.message : 'Skipping for now.',
-        variant: 'destructive',
-      });
+      toast.error('Could not add property', { description: err instanceof Error ? err.message : 'Skipping for now.' });
     } finally {
       setSavingProperty(false);
       setStep(2);
@@ -170,20 +161,16 @@ export function WelcomeOverlay() {
       await supabase.functions.invoke('process-document-v2', {
         body: { document_url: signedUrl, document_id: docRow.id, org_id: orgId },
       });
-      toast({ title: 'Certificate uploaded', description: 'We’re processing it in the background.' });
+      toast.success('Certificate uploaded', { description: 'We’re processing it in the background.' });
       setStep(3);
     } catch (err) {
       console.error('Welcome doc upload failed', err);
-      toast({
-        title: 'Upload failed',
-        description: err instanceof Error ? err.message : 'You can upload again later from Documents.',
-        variant: 'destructive',
-      });
+      toast.error('Upload failed', { description: err instanceof Error ? err.message : 'You can upload again later from Documents.' });
       setStep(3);
     } finally {
       setDocProcessing(false);
     }
-  }, [user, orgId, toast]);
+  }, [user, orgId]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleDrop,

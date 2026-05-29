@@ -5,9 +5,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks/use-toast';
 import { usePropertyPhotos, useUploadPhoto, useSetCoverPhoto } from '@/hooks/usePhotos';
 import { usePrimaryFloorplan, useUploadFloorplan } from '@/hooks/useFloorplans';
+import { toast } from "sonner";
 
 interface PropertyMediaHeaderProps {
   propertyId: string;
@@ -15,7 +15,6 @@ interface PropertyMediaHeaderProps {
 }
 
 export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMediaHeaderProps) {
-  const { toast } = useToast();
   const coverInputRef = useRef<HTMLInputElement>(null);
   const floorplanInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,11 +39,7 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
 
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload a JPEG, PNG, or WebP image',
-        variant: 'destructive',
-      });
+      toast.error('Invalid file type', { description: 'Please upload a JPEG, PNG, or WebP image' });
       return;
     }
 
@@ -52,16 +47,9 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
       const newPhoto = await uploadPhoto.mutateAsync({ file, propertyId });
       // Set as cover immediately
       await setCoverPhoto.mutateAsync({ photoId: newPhoto.id, propertyId });
-      toast({
-        title: 'Cover photo updated',
-        description: 'Your new cover photo has been set',
-      });
+      toast.success('Cover photo updated', { description: 'Your new cover photo has been set' });
     } catch {
-      toast({
-        title: 'Upload failed',
-        description: 'Failed to upload cover photo',
-        variant: 'destructive',
-      });
+      toast.error('Upload failed', { description: 'Failed to upload cover photo' });
     }
   };
 
@@ -71,11 +59,7 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
 
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload a PDF or image file',
-        variant: 'destructive',
-      });
+      toast.error('Invalid file type', { description: 'Please upload a PDF or image file' });
       return;
     }
 
@@ -90,7 +74,7 @@ export function PropertyMediaHeader({ propertyId, propertyAddress }: PropertyMed
       setFloorplanVersionLabel('Current');
     } catch (err) {
       console.error('Failed to upload floorplan:', err);
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast.error('Error', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 

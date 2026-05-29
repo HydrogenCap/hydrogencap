@@ -14,7 +14,7 @@ import {
   type TenantStatusV2,
   type TenantTypeV2,
 } from '@/hooks/useTenantsV2';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const schema = z.object({
   first_name: z.string().min(1, 'Required'),
@@ -44,7 +44,6 @@ interface AddTenantModalProps {
 
 export function AddTenantModal({ open, onOpenChange, onSuccess }: AddTenantModalProps) {
   const createTenant = useCreateTenantV2();
-  const { toast } = useToast();
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -68,12 +67,12 @@ export function AddTenantModal({ open, onOpenChange, onSuccess }: AddTenantModal
         emergency_contact_phone: values.emergency_contact_phone || null,
         notes: values.notes || null,
       });
-      toast({ title: 'Welcome aboard', description: `${values.first_name} ${values.last_name} is now in your tenant list.` });
+      toast('Welcome aboard', { description: `${values.first_name} ${values.last_name} is now in your tenant list.` });
       form.reset();
       onOpenChange(false);
       onSuccess?.(result.id);
     } catch (error: unknown) {
-      toast({ title: "Tenant didn't save", description: getErrorMessage(error), variant: 'destructive' });
+      toast.error("Tenant didn't save", { description: getErrorMessage(error) });
     }
   };
 

@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown } from 'lucide-react';
 import { LenderSelector } from './LenderSelector';
 import { useCreateLoanFacility, useUpdateLoanFacility, FACILITY_TYPES, RATE_TYPES, REPAYMENT_TYPES, type LoanFacilityWithDetails } from '@/hooks/useLoanFacilities';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -66,7 +66,6 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, defaultEntityId, editingFacility, propertyValuation }: Props) {
-  const { toast } = useToast();
   const createFacility = useCreateLoanFacility();
   const updateFacility = useUpdateLoanFacility();
   const [form, setForm] = useState<LoanFacilityForm>(emptyForm);
@@ -129,7 +128,7 @@ export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, de
 
   const handleSubmit = async () => {
     if (!form.lender_id || !form.entity_id || !form.interest_rate || !form.term_start_date || !form.term_end_date || !form.original_amount || !form.current_balance) {
-      toast({ title: 'Please fill required fields', variant: 'destructive' });
+      toast.error('Please fill required fields');
       return;
     }
     const payload = {
@@ -167,15 +166,15 @@ export function LoanFacilityModal({ open, onOpenChange, propertyId, entities, de
     try {
       if (isEditing) {
         await updateFacility.mutateAsync({ id: editingFacility!.id, ...payload });
-        toast({ title: 'Loan facility updated' });
+        toast.success('Loan facility updated');
       } else {
         await createFacility.mutateAsync(payload);
-        toast({ title: 'Loan facility created' });
+        toast.success('Loan facility created');
       }
       onOpenChange(false);
     } catch (err: unknown) {
       console.error('Failed to save loan facility:', err);
-      toast({ title: 'Error', description: getErrorMessage(err), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(err) });
     }
   };
 

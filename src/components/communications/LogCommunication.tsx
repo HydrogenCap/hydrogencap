@@ -14,7 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLogCommunication } from '@/hooks/useCommunicationLog';
-import { useToast } from '@/hooks/use-toast';
 import { AlertTriangle, Lock } from 'lucide-react';
 import type {
   CommunicationChannel,
@@ -22,6 +21,7 @@ import type {
   CommunicationRelatedType,
   LogCommunicationInput,
 } from '@/hooks/useCommunicationLog';
+import { toast } from "sonner";
 
 const CHANNELS: { value: CommunicationChannel; label: string }[] = [
   { value: 'email', label: 'Email' },
@@ -75,7 +75,6 @@ export function LogCommunication({
   defaultRelatedToType,
   defaultRelatedToId,
 }: LogCommunicationProps) {
-  const { toast } = useToast();
   const logComm = useLogCommunication();
 
   const [direction, setDirection] = useState<CommunicationDirection>('outbound');
@@ -102,7 +101,7 @@ export function LogCommunication({
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      toast({ title: 'Nothing to log', description: 'Pop the message in first.', variant: 'destructive' });
+      toast.error('Nothing to log', { description: 'Pop the message in first.' });
       return;
     }
 
@@ -124,15 +123,11 @@ export function LogCommunication({
 
     try {
       await logComm.mutateAsync(input);
-      toast({ title: 'Conversation on the record' });
+      toast('Conversation on the record');
       resetForm();
       onOpenChange(false);
     } catch (err) {
-      toast({
-        title: "Log didn't save",
-        description: err instanceof Error ? err.message : 'Failed to log communication',
-        variant: 'destructive',
-      });
+      toast.error("Log didn't save", { description: err instanceof Error ? err.message : 'Failed to log communication' });
     }
   };
 

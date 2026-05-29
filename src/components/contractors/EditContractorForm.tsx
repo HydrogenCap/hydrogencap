@@ -7,9 +7,9 @@
  import { Checkbox } from '@/components/ui/checkbox';
  import { Badge } from '@/components/ui/badge';
  import { useUpdateContractor, type Contractor } from '@/hooks/useContractors';
-import { useToast } from '@/hooks/use-toast';
  import { COMPLIANCE_TYPES } from '@/lib/complianceTypes';
- 
+import { toast } from "sonner";
+
  interface EditContractorFormProps {
    contractor: Contractor;
    onSave: () => void;
@@ -32,8 +32,6 @@ import { useToast } from '@/hooks/use-toast';
    });
  
    const updateContractor = useUpdateContractor();
-   const { toast } = useToast();
- 
    const handleSubmit = async (e: React.FormEvent) => {
      e.preventDefault();
      try {
@@ -52,7 +50,7 @@ import { useToast } from '@/hooks/use-toast';
        availability_notes: formData.availability_notes || null,
      });
      } catch (err) {
-       toast({ title: 'Failed to save contractor', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+       toast.error('Failed to save contractor', { description: err instanceof Error ? err.message : 'Please try again.' });
        return;
      }
  

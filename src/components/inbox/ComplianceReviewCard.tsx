@@ -24,10 +24,10 @@ import { useAcceptComplianceDocument, useRejectComplianceDocument, COMPLIANCE_DO
 import { getComplianceItemStatus, getComplianceStatusColor } from '@/lib/complianceTypes';
 import { SEVERITY } from '@/lib/design-tokens';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from "sonner";
 
 type Document = Database['public']['Tables']['documents']['Row'];
 
@@ -123,8 +123,6 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const rejectDocument = useRejectComplianceDocument();
   const deleteDocument = useDeleteDocument();
   const { data: properties } = usePropertiesV2();
-  const { toast } = useToast();
-
   const isProcessed = document.extraction_status === 'completed';
   const isReviewNeeded = document.extraction_status === 'review_needed';
   const hasTimedOut = (document.extraction_status === 'pending' || document.extraction_status === 'processing') &&
@@ -161,20 +159,20 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
       await queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
     } catch (err) {
       console.error('Failed to retry document processing:', err);
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast.error('Error', { description: err instanceof Error ? err.message : 'Something went wrong' });
     } finally {
       setIsRetrying(false);
     }
-  }, [document.id, document.file_url, document.org_id, queryClient, toast]);
+  }, [document.id, document.file_url, document.org_id, queryClient]);
 
   const handleDelete = useCallback(async () => {
     try {
       await deleteDocument.mutateAsync(document.id);
-      toast({ title: 'Document deleted', variant: 'destructive' });
+      toast.error('Document deleted');
     } catch {
       // error toast handled by hook
     }
-  }, [document.id, deleteDocument, toast]);
+  }, [document.id, deleteDocument]);
 
   const docTypeConfidence = document.ai_doc_type_confidence || 0;
   const propertyConfidence = document.ai_property_confidence || 0;

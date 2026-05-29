@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/tooltip';
 import { formatGBP, calculateCostRules, getEffectiveCosts, type CostsData } from '@/lib/calculations';
 import { useUpsertPropertyCostBudget, yearToTaxYear } from '@/hooks/usePropertyCostBudgets';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface CostsEditorProps {
   propertyId: string;
@@ -39,7 +39,6 @@ export function CostsEditor({
   propertyValue,
   onSave,
 }: CostsEditorProps) {
-  const { toast } = useToast();
   const upsertCosts = useUpsertPropertyCostBudget();
 
   // Rule toggles
@@ -130,11 +129,11 @@ export function CostsEditor({
         compliance_gbp_manual: complianceManual ? parseFloat(complianceManual) : null,
         other_gbp_manual: otherManual ? parseFloat(otherManual) : null,
       });
-      toast({ title: 'Costs saved', description: `Costs for ${year} have been updated` });
+      toast.success('Costs saved', { description: `Costs for ${year} have been updated` });
       onSave?.();
     } catch (error) {
       console.error('Failed to save costs:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save costs', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to save costs' });
     }
   };
 

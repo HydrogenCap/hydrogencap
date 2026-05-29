@@ -13,8 +13,8 @@ import { RoomCard } from './RoomCard';
 import { RoomFormModal } from './RoomFormModal';
 import { BulkAddRoomsModal } from './BulkAddRoomsModal';
 import { UnitFormModal } from './UnitFormModal';
-import { useToast } from '@/hooks/use-toast';
 import type { RoomV2 } from '@/hooks/useRoomsV2';
+import { toast } from "sonner";
 
 interface Props {
   propertyId: string;
@@ -36,8 +36,6 @@ export function PropertyRoomsSection({ propertyId }: Props) {
   const { data: rooms } = usePropertyRooms(propertyId);
   const { data: units } = usePropertyUnits(propertyId);
   const deleteUnit = useDeletePropertyUnit();
-  const { toast } = useToast();
-
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomV2 | null>(null);
@@ -58,9 +56,9 @@ export function PropertyRoomsSection({ propertyId }: Props) {
   const handleDeleteUnit = async (unit: PropertyUnit) => {
     try {
       await deleteUnit.mutateAsync({ id: unit.id, propertyId });
-      toast({ title: `Unit "${unit.unit_name}" deleted` });
+      toast.success(`Unit "${unit.unit_name}" deleted`);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 

@@ -24,9 +24,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   get supabaseAny() { return mock; },
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({ toast: vi.fn() }),
-}));
+vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
 
 vi.mock('@/hooks/useUserOrg', () => ({
   useUserOrg: () => ({ data: 'org-1', isLoading: false }),

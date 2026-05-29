@@ -11,6 +11,9 @@ import { createMockSupabase, type MockSupabase } from './supabaseMock';
 
 let mock: MockSupabase;
 const toastSpy = vi.fn();
+const toastSuccessSpy = vi.fn();
+const toastErrorSpy = vi.fn();
+Object.assign(toastSpy, { success: toastSuccessSpy, error: toastErrorSpy });
 
 vi.mock('@/integrations/supabase/client', () => ({
   get supabase() {
@@ -19,12 +22,15 @@ vi.mock('@/integrations/supabase/client', () => ({
   get supabaseAny() { return mock; },
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({ toast: toastSpy }),
+vi.mock('sonner', () => ({
+  toast: toastSpy,
 }));
 
 beforeEach(() => {
   toastSpy.mockReset();
+  toastSuccessSpy.mockReset();
+  toastErrorSpy.mockReset();
+  Object.assign(toastSpy, { success: toastSuccessSpy, error: toastErrorSpy });
   mock = createMockSupabase(() => ({ data: null, error: null }));
 });
 
@@ -46,7 +52,8 @@ describe('useBulkEpcEnrichV2', () => {
       body: { mode: 'all' },
     });
     expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'EPC Enrichment Complete' }),
+      'EPC Enrichment Complete',
+      expect.objectContaining({ description: expect.any(String) }),
     );
   });
 
@@ -81,12 +88,9 @@ describe('useBulkEpcEnrichV2', () => {
       await result.current.enrichAll();
     });
 
-    expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'EPC Enrichment Failed',
-        description: 'API quota exceeded',
-        variant: 'destructive',
-      }),
+    expect(toastErrorSpy).toHaveBeenCalledWith(
+      'EPC Enrichment Failed',
+      expect.objectContaining({ description: 'API quota exceeded' }),
     );
   });
 });

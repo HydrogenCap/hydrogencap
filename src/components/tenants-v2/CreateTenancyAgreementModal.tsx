@@ -23,7 +23,7 @@ import { useTenantsV2 } from '@/hooks/useTenantsV2';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { usePropertyRooms } from '@/hooks/useRoomsV2';
 import { useUpdateTenantV2 } from '@/hooks/useTenantsV2';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const schema = z.object({
   tenant_id: z.string().min(1, 'Required'),
@@ -63,7 +63,6 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
   const { data: tenantsData } = useTenantsV2();
   const tenants = tenantsData?.items;
   const { data: properties } = usePropertiesV2();
-  const { toast } = useToast();
   const [depositOpen, setDepositOpen] = useState(true);
 
   const form = useForm<FormData>({
@@ -153,11 +152,11 @@ export function CreateTenancyAgreementModal({ open, onOpenChange, preselectedTen
         await updateTenant.mutateAsync({ id: tenant.id, status: 'active' });
       }
 
-      toast({ title: 'Tenancy agreement is live' });
+      toast('Tenancy agreement is live');
       onOpenChange(false);
       onSuccess?.(values.tenant_id);
     } catch (error: unknown) {
-      toast({ title: "Agreement didn't save", description: getErrorMessage(error), variant: 'destructive' });
+      toast.error("Agreement didn't save", { description: getErrorMessage(error) });
     }
   };
 

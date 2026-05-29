@@ -19,9 +19,7 @@ vi.mock('@/hooks/useCompanySecrets', () => ({
   useSetCompanySecrets: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({ toast: vi.fn() }),
-}));
+vi.mock('sonner', () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
 
 import { CompanySecretsCard } from '../CompanySecretsCard';
 

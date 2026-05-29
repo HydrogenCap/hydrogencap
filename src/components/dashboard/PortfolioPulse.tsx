@@ -23,9 +23,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
-import { useToast } from '@/hooks/use-toast';
 import { PulseActionDrawer, type PulseActionId } from './PulseActionDrawer';
 import { usePulseHistory, usePulseSnooze } from './usePulsePersistence';
+import { toast } from "sonner";
 
 type Severity = 'critical' | 'warning' | 'info' | 'success';
 
@@ -82,7 +82,6 @@ export function PortfolioPulse({
   const [openAction, setOpenAction] = useState<PulseActionId | null>(null);
   const [showSnoozed, setShowSnoozed] = useState(false);
   const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
   const { isSnoozed, snoozeUntilTomorrow, unsnooze } = usePulseSnooze();
   const handleOpen = useCallback((id: string) => setOpenAction(id as PulseActionId), []);
   const { actions, summary, pulseScore } = useMemo(() => {
@@ -258,12 +257,12 @@ export function PortfolioPulse({
     try {
       await navigator.clipboard.writeText(lines.join('\n'));
       setCopied(true);
-      toast({ title: 'Briefing copied', description: 'Paste into Slack, email, or your standup notes.' });
+      toast.success('Briefing copied', { description: 'Paste into Slack, email, or your standup notes.' });
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast({ title: 'Copy failed', description: 'Clipboard unavailable.', variant: 'destructive' });
+      toast.error('Copy failed', { description: 'Clipboard unavailable.' });
     }
-  }, [pulseScore, delta, summary, actions, isSnoozed, toast]);
+  }, [pulseScore, delta, summary, actions, isSnoozed]);
 
   return (
     <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-card via-card to-muted/20">

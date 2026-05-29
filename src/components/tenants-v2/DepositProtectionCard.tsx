@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useUpdateTenancyAgreement, type TenancyAgreement } from '@/hooks/useTenancyAgreements';
+import { toast } from "sonner";
 
 const DEPOSIT_SCHEMES = [
   { value: 'dps', label: 'DPS (Deposit Protection Service)', url: 'https://www.depositprotection.com' },
@@ -34,7 +34,6 @@ interface Props {
 }
 
 export function DepositProtectionCard({ agreement }: Props) {
-  const { toast } = useToast();
   const updateAgreement = useUpdateTenancyAgreement();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -99,10 +98,10 @@ export function DepositProtectionCard({ agreement }: Props) {
         prescribed_info_served_date: form.prescribed_info_served_date || null,
         how_to_rent_served_date: form.how_to_rent_served_date || null,
       });
-      toast({ title: 'Deposit details on file' });
+      toast('Deposit details on file');
       setEditing(false);
     } catch {
-      toast({ title: "Deposit details didn't save", description: 'Give it another go.', variant: 'destructive' });
+      toast.error("Deposit details didn't save", { description: 'Give it another go.' });
     }
   };
 

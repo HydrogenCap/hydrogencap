@@ -5,9 +5,9 @@
  import { Textarea } from '@/components/ui/textarea';
  import { Label } from '@/components/ui/label';
 import { useAddContractorReview } from '@/hooks/useContractors';
-import { useToast } from '@/hooks/use-toast';
  import { cn } from '@/lib/utils';
- 
+import { toast } from "sonner";
+
  interface AddReviewDialogProps {
    contractorId: string | null;
    jobId?: string;
@@ -24,8 +24,6 @@ import { useToast } from '@/hooks/use-toast';
    const [communication, setCommunication] = useState(0);
  
    const addReview = useAddContractorReview();
-   const { toast } = useToast();
- 
    const handleSubmit = async () => {
      if (!contractorId || rating === 0) return;
  
@@ -41,7 +39,7 @@ import { useToast } from '@/hooks/use-toast';
          communicationRating: communication || undefined,
        });
      } catch (err) {
-       toast({ title: 'Failed to submit review', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+       toast.error('Failed to submit review', { description: err instanceof Error ? err.message : 'Please try again.' });
        return;
      }
  

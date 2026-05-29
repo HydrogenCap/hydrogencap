@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
 import {
   useGenerateSuggestions,
   useApplySuggestions,
@@ -24,6 +23,7 @@ import {
   type PassportSuggestion,
   type AcceptedSuggestion,
 } from '@/hooks/usePassportAutofill';
+import { toast } from "sonner";
 
 interface AutofillSuggestionsModalProps {
   propertyId: string;
@@ -64,7 +64,6 @@ export function AutofillSuggestionsModal({
   open,
   onOpenChange,
 }: AutofillSuggestionsModalProps) {
-  const { toast } = useToast();
   const { data: suggestions = [], isLoading: loadingSuggestions } = usePendingSuggestions(propertyId);
   const generateSuggestions = useGenerateSuggestions();
   const applySuggestions = useApplySuggestions();
@@ -99,17 +98,10 @@ export function AutofillSuggestionsModal({
   const handleGenerate = async () => {
     try {
       await generateSuggestions.mutateAsync(propertyId);
-      toast({
-        title: 'Suggestions generated',
-        description: 'AI has analyzed your property data and generated suggestions.',
-      });
+      toast.success('Suggestions generated', { description: 'AI has analyzed your property data and generated suggestions.' });
     } catch (error) {
       console.error('Failed to generate autofill suggestions:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to generate suggestions',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to generate suggestions' });
     }
   };
 
@@ -167,10 +159,7 @@ export function AutofillSuggestionsModal({
     });
 
     if (accepted.length === 0 && rejected.length === 0) {
-      toast({
-        title: 'No changes',
-        description: 'Accept or reject some suggestions before saving.',
-      });
+      toast('No changes', { description: 'Accept or reject some suggestions before saving.' });
       return;
     }
 
@@ -181,18 +170,11 @@ export function AutofillSuggestionsModal({
         rejectedSuggestionIds: rejected,
       });
 
-      toast({
-        title: 'Passport updated',
-        description: `${result.updated_fields} field${result.updated_fields !== 1 ? 's' : ''} confirmed.`,
-      });
+      toast.success('Passport updated', { description: `${result.updated_fields} field${result.updated_fields !== 1 ? 's' : ''} confirmed.` });
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to apply autofill suggestions:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to apply suggestions',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to apply suggestions' });
     }
   };
 

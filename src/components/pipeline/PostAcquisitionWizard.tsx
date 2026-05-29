@@ -24,7 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatGBP } from '@/lib/calculations';
 import { type DealPipelineItem } from '@/hooks/useDealPipeline';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const STEPS = [
   { id: 'property', label: 'Property Details', icon: Home },
@@ -69,7 +69,6 @@ interface PostAcquisitionWizardProps {
 }
 
 export function PostAcquisitionWizard({ deal, onComplete }: PostAcquisitionWizardProps) {
-  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
 
   // Pre-fill from deal data
@@ -107,10 +106,7 @@ export function PostAcquisitionWizard({ deal, onComplete }: PostAcquisitionWizar
   const progressPercent = ((currentStep + 1) / STEPS.length) * 100;
 
   const handleComplete = () => {
-    toast({
-      title: 'Onboarding complete',
-      description: `${property.address_line} has been set up in TenureIQ.`,
-    });
+    toast('Onboarding complete', { description: `${property.address_line} has been set up in TenureIQ.` });
     onComplete?.();
   };
 

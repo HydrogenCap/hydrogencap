@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreatePropertyUnit, useUpdatePropertyUnit, type PropertyUnit } from '@/hooks/usePropertyUnits';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -32,8 +32,6 @@ function getErrorMessage(error: unknown) {
 export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, existingCount }: Props) {
   const create = useCreatePropertyUnit();
   const update = useUpdatePropertyUnit();
-  const { toast } = useToast();
-
   const [form, setForm] = useState<UnitFormState>(initialForm);
 
   useEffect(() => {
@@ -50,7 +48,7 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.unit_name) {
-      toast({ title: 'Unit name is required', variant: 'destructive' });
+      toast.error('Unit name is required');
       return;
     }
     const payload: PropertyUnitCreateInput = {
@@ -65,14 +63,14 @@ export function UnitFormModal({ open, onOpenChange, propertyId, editingUnit, exi
     try {
       if (editingUnit) {
         await update.mutateAsync({ id: editingUnit.id, ...payload });
-        toast({ title: 'Unit updated' });
+        toast.success('Unit updated');
       } else {
         await create.mutateAsync(payload);
-        toast({ title: 'Unit added' });
+        toast.success('Unit added');
       }
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 

@@ -18,9 +18,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from "sonner";
 
 interface PropertyFeaturesEditorProps {
   propertyId: string;
@@ -54,7 +54,6 @@ export function PropertyFeaturesEditor({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [features, setFeatures] = useState(initialFeatures);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   useEffect(() => {
@@ -89,15 +88,11 @@ export function PropertyFeaturesEditor({
       queryClient.invalidateQueries({ queryKey: ['all_property_features'] });
       queryClient.invalidateQueries({ queryKey: ['compliance'] });
       
-      toast({ title: 'Property features updated' });
+      toast.success('Property features updated');
       setOpen(false);
       onUpdate?.();
     } catch (error) {
-      toast({ 
-        title: 'Failed to update', 
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive' 
-      });
+      toast.error('Failed to update', { description: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setSaving(false);
     }

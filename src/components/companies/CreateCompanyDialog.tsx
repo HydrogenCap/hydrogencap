@@ -23,7 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CompanySearchInput } from './CompanySearchInput';
 import { useCompaniesHouse, type CHCompanySearchResult, type CHLookupResult } from '@/hooks/useCompaniesHouse';
 import { useCreateCompany, type CompanyType } from '@/hooks/useCompanies';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface CreateCompanyDialogProps {
   open: boolean;
@@ -45,7 +45,6 @@ export function CreateCompanyDialog({
   defaultType = 'SPV',
   onSuccess,
 }: CreateCompanyDialogProps) {
-  const { toast } = useToast();
   const { lookupCompany, isLookingUp, error: chError } = useCompaniesHouse();
   const createCompany = useCreateCompany();
 
@@ -85,7 +84,7 @@ export function CreateCompanyDialog({
 
   const handleSubmit = async () => {
     if (!legalName.trim()) {
-      toast({ title: 'Name required', description: 'Add a company name to continue.', variant: 'destructive' });
+      toast.error('Name required', { description: 'Add a company name to continue.' });
       return;
     }
 
@@ -99,16 +98,12 @@ export function CreateCompanyDialog({
         ch_incorporation_date: chDetails?.company?.date_of_creation,
       });
 
-      toast({ title: 'Company is live', description: `${legalName} is now in your portfolio.` });
+      toast('Company is live', { description: `${legalName} is now in your portfolio.` });
       onOpenChange(false);
       onSuccess?.(company.id);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to create company';
-      toast({
-        title: "Company didn't save",
-        description,
-        variant: 'destructive',
-      });
+      toast.error("Company didn't save", { description: description });
     }
   };
 

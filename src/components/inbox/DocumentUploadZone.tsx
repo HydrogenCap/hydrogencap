@@ -4,8 +4,8 @@ import { Upload, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useCreateDocument, useUpdateDocument } from '@/hooks/useDocuments';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId as getUserOrgId } from '@/hooks/useUserOrg';
+import { toast } from "sonner";
 
 interface DocumentUploadZoneProps {
   onUploadComplete?: () => void;
@@ -17,8 +17,6 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const createDocument = useCreateDocument();
   const updateDocument = useUpdateDocument();
-  const { toast } = useToast();
-
   const processWithAI = useCallback(async (documentId: string, fileUrl: string, orgId: string) => {
     try {
       const response = await supabase.functions.invoke('process-document-v2', {
@@ -95,11 +93,7 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
     });
 
     if (validFiles.length === 0) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please upload PDF or image files (JPEG, PNG, WebP)',
-        variant: 'destructive',
-      });
+      toast.error('Invalid file type', { description: 'Please upload PDF or image files (JPEG, PNG, WebP)' });
       return;
     }
 
@@ -110,23 +104,16 @@ export function DocumentUploadZone({ onUploadComplete }: DocumentUploadZoneProps
         await uploadFile(file);
       }
 
-      toast({
-        title: 'Document uploaded',
-        description: 'AI is analysing your document in the background. The inbox will update automatically.',
-      });
+      toast.success('Document uploaded', { description: 'AI is analysing your document in the background. The inbox will update automatically.' });
 
       onUploadComplete?.();
     } catch (err) {
-      toast({
-        title: 'Upload failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Upload failed', { description: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       setIsUploading(false);
       setUploadProgress(null);
     }
-  }, [toast, onUploadComplete, uploadFile]);
+  }, [onUploadComplete, uploadFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

@@ -9,7 +9,6 @@ import { PassportColumnMapper } from '@/components/settings/PassportColumnMapper
 import { PassportMatchPreview } from '@/components/settings/PassportMatchPreview';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
-import { useToast } from '@/hooks/use-toast';
 import type { Database as SupabaseDatabase } from '@/integrations/supabase/types';
 import {
   parseCSV as parsePassportCSV,
@@ -19,6 +18,7 @@ import {
   type PassportColumnMapping,
   type PassportValidatedRow,
 } from '@/lib/passportCsvParser';
+import { toast } from "sonner";
 
 const PASSPORT_STEPS = ['Upload', 'Map Columns', 'Match Properties', 'Import'];
 
@@ -26,7 +26,6 @@ type PropertyPassportInsert = SupabaseDatabase['public']['Tables']['property_pas
 
 export function ImportPassportsTab() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: properties } = useProperties();
   const upsertPassport = useUpsertPassport();
 
@@ -48,13 +47,9 @@ export function ImportPassportsTab() {
       setMapping(autoMapping);
       setCurrentStep(1);
     } catch (err) {
-      toast({
-        title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Unknown error',
-        variant: 'destructive',
-      });
+      toast.error('Failed to parse CSV', { description: err instanceof Error ? err.message : 'Unknown error' });
     }
-  }, [toast]);
+  }, []);
 
   const handleClearFile = useCallback(() => {
     setSelectedFile(null);
@@ -97,11 +92,7 @@ export function ImportPassportsTab() {
   const handleImport = useCallback(async () => {
     const validRows = validatedRows.filter(r => r.isValid && r.matchedPropertyId);
     if (validRows.length === 0) {
-      toast({
-        title: 'No valid rows',
-        description: 'Please fix matching errors before importing',
-        variant: 'destructive',
-      });
+      toast.error('No valid rows', { description: 'Please fix matching errors before importing' });
       return;
     }
 
@@ -125,11 +116,8 @@ export function ImportPassportsTab() {
     setCurrentStep(3);
     setIsImporting(false);
 
-    toast({
-      title: 'Import complete',
-      description: `Successfully imported ${success} passports`,
-    });
-  }, [validatedRows, upsertPassport, toast]);
+    toast('Import complete', { description: `Successfully imported ${success} passports` });
+  }, [validatedRows, upsertPassport]);
 
   const hasAddressMapping = Object.values(mapping).includes('address_match') ||
                             Object.values(mapping).includes('postcode_match');

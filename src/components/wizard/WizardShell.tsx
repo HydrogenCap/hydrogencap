@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight, Save, Trash2, Loader2, CheckCircle2 } from 'luci
 import { WizardStepper } from './WizardStepper';
 import { WizardIssuesPanel } from './WizardIssuesPanel';
 import { useWizardDraft } from '@/hooks/useWizardDraft';
-import { useToast } from '@/hooks/use-toast';
 import { runCrossChecks, PROPERTY_CROSS_CHECKS } from '@/lib/wizard/crossChecks';
 import {
   AlertDialog,
@@ -19,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import type { WizardStepConfig, WizardType, WizardPayload, ValidationError, StepStatus, CrossCheckRule } from '@/lib/wizard/types';
+import { toast } from "sonner";
 
 interface WizardShellProps {
   title: string;
@@ -43,7 +43,6 @@ export function WizardShell({
 }: WizardShellProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { toast } = useToast();
   const {
     draft,
     isLoading,
@@ -134,25 +133,21 @@ export function WizardShell({
 
   const handleSaveAndExit = useCallback(async () => {
     await saveDraft();
-    toast({ title: 'Draft saved', description: 'You can resume this wizard later.' });
+    toast.success('Draft saved', { description: 'You can resume this wizard later.' });
     navigate('/wizards');
-  }, [saveDraft, navigate, toast]);
+  }, [saveDraft, navigate]);
 
   const handleDiscard = useCallback(async () => {
     await discardDraft();
-    toast({ title: 'Draft discarded' });
+    toast('Draft discarded');
     navigate('/wizards');
-  }, [discardDraft, navigate, toast]);
+  }, [discardDraft, navigate]);
 
   const handleSubmit = useCallback(async () => {
     // Check for P0 blockers
     const p0Issues = allIssues.filter((i) => i.priority === 'P0');
     if (p0Issues.length > 0) {
-      toast({
-        title: 'Cannot submit',
-        description: `${p0Issues.length} critical issue${p0Issues.length > 1 ? 's' : ''} must be resolved first.`,
-        variant: 'destructive',
-      });
+      toast.error('Cannot submit', { description: `${p0Issues.length} critical issue${p0Issues.length > 1 ? 's' : ''} must be resolved first.` });
       return;
     }
 
@@ -161,17 +156,13 @@ export function WizardShell({
     try {
       await onSubmit(payload, draft.id);
       await markSubmitted();
-      toast({ title: `${title} submitted successfully!` });
+      toast(`${title} submitted successfully!`);
     } catch (err: unknown) {
-      toast({
-        title: 'Submission failed',
-        description: err instanceof Error ? err.message : 'Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Submission failed', { description: err instanceof Error ? err.message : 'Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
-  }, [allIssues, draft?.id, payload, onSubmit, markSubmitted, title, toast]);
+  }, [allIssues, draft?.id, payload, onSubmit, markSubmitted, title]);
 
   const isLastStep = currentStep === steps.length - 1;
   const p0Count = allIssues.filter((i) => i.priority === 'P0').length;

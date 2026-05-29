@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCompany, useUpdateShareClass, type ShareClass } from '@/hooks/useCompanies';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface ShareCapitalCardProps {
   companyId: string;
@@ -24,8 +24,6 @@ interface ShareCapitalCardProps {
 export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
   const { data: company, isLoading } = useCompany(companyId);
   const updateShareClass = useUpdateShareClass();
-  const { toast } = useToast();
-
   const [editingClass, setEditingClass] = useState<ShareClass | null>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -38,7 +36,7 @@ export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
     if (!editingClass) return;
     const shares = parseInt(editValue);
     if (isNaN(shares) || shares < 1) {
-      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
+      toast.error('Check the share count', { description: 'Needs to be a positive whole number.' });
       return;
     }
     try {
@@ -47,11 +45,11 @@ export function ShareCapitalCard({ companyId }: ShareCapitalCardProps) {
         issued_shares: shares,
         shares_confirmed: true,
       });
-      toast({ title: 'Share capital on file' });
+      toast('Share capital on file');
       setEditingClass(null);
     } catch (error) {
       console.error('Failed to update share capital:', error);
-      toast({ title: "Share capital didn't save", description: error instanceof Error ? error.message : 'Failed to update share capital', variant: 'destructive' });
+      toast.error("Share capital didn't save", { description: error instanceof Error ? error.message : 'Failed to update share capital' });
     }
   };
 

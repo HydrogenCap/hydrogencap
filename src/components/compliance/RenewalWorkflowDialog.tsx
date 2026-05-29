@@ -25,7 +25,7 @@ import {
   COMPLIANCE_TRADE_MAP,
   type RenewalStep,
 } from '@/hooks/useRenewalWorkflow';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // Standard validity periods
 const STANDARD_VALIDITY: Record<string, { years?: number; months?: number }> = {
@@ -110,8 +110,6 @@ export function RenewalWorkflowDialog({
   const confirmAppointment = useConfirmAppointment();
   const uploadCert = useUploadRenewalCert();
   const completeRenewal = useCompleteRenewal();
-  const { toast } = useToast();
-
   const isPending =
     bookContractor.isPending ||
     confirmAppointment.isPending ||
@@ -147,7 +145,7 @@ export function RenewalWorkflowDialog({
       setAppointmentTime(preferredTime);
       setCurrentStep('confirm');
     } catch {
-      toast({ title: 'Failed to book contractor', variant: 'destructive' });
+      toast.error('Failed to book contractor');
     }
   };
 
@@ -161,7 +159,7 @@ export function RenewalWorkflowDialog({
       });
       setCurrentStep('upload');
     } catch {
-      toast({ title: 'Failed to confirm appointment', variant: 'destructive' });
+      toast.error('Failed to confirm appointment');
     }
   };
 
@@ -183,7 +181,7 @@ export function RenewalWorkflowDialog({
       });
       setCurrentStep('verify');
     } catch {
-      toast({ title: 'Failed to upload certificate', variant: 'destructive' });
+      toast.error('Failed to upload certificate');
     }
   };
 
@@ -201,7 +199,7 @@ export function RenewalWorkflowDialog({
         resetForm();
       }, 2000);
     } catch {
-      toast({ title: 'Failed to complete renewal', variant: 'destructive' });
+      toast.error('Failed to complete renewal');
     }
   };
 

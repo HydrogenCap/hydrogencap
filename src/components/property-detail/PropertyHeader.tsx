@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUploadPhoto } from '@/hooks/usePhotos';
 import { useUploadFloorplan } from '@/hooks/useFloorplans';
-import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +31,7 @@ import {
 import { PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { TEXT } from '@/lib/design-tokens';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 
 interface PropertyHeaderProps {
   property: {
@@ -117,7 +117,6 @@ export function PropertyHeader({
   const floorplanInputRef = useRef<HTMLInputElement>(null);
   const uploadPhoto = useUploadPhoto();
   const uploadFloorplan = useUploadFloorplan();
-  const { toast } = useToast();
   const isUploadingPhoto = uploadPhoto.isPending;
   const isUploadingFloorplan = uploadFloorplan.isPending;
 
@@ -127,9 +126,9 @@ export function PropertyHeader({
       for (const file of Array.from(files)) {
         await uploadPhoto.mutateAsync({ file, propertyId: property.id });
       }
-      toast({ title: 'Photos uploaded', description: `${files.length} photo${files.length === 1 ? '' : 's'} added.` });
+      toast.success('Photos uploaded', { description: `${files.length} photo${files.length === 1 ? '' : 's'} added.` });
     } catch (e) {
-      toast({ title: 'Upload failed', description: (e as Error).message, variant: 'destructive' });
+      toast.error('Upload failed', { description: (e as Error).message });
     }
   };
 

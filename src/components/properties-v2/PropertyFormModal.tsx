@@ -14,9 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useCreatePropertyV2, useUpdatePropertyV2, PROPERTY_TYPES, LIFECYCLE_STAGES, LISTING_GRADES } from '@/hooks/usePropertiesV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -71,14 +71,13 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
   const create = useCreatePropertyV2();
   const update = useUpdatePropertyV2();
   const { data: entities } = useLegalEntities();
-  const { toast } = useToast();
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [autoFilledFields, setAutoFilledFields] = useState<Partial<Record<keyof PropertyFormState, string>>>({});
   const [form, setForm] = useState<PropertyFormState>(initialForm);
 
   const handleAutoFill = async () => {
     if (!form.postcode || form.postcode.length < 5) {
-      toast({ title: 'Enter a postcode first', variant: 'destructive' });
+      toast.error('Enter a postcode first');
       return;
     }
     setIsAutoFilling(true);
@@ -113,13 +112,10 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
       });
 
       const count = Object.keys(fields).length;
-      toast({
-        title: count > 0 ? `Auto-filled ${count} fields` : 'No additional data found',
-        description: count > 0 ? Object.entries(sources).map(([k, v]) => `${k}: ${v}`).join(', ') : 'Try adding more address details.',
-      });
+      toast(count > 0 ? `Auto-filled ${count} fields` : 'No additional data found', { description: count > 0 ? Object.entries(sources).map(([k, v]) => `${k}: ${v}`).join(', ') : 'Try adding more address details.' });
     } catch (error: unknown) {
       console.error('Auto-fill error:', error);
-      toast({ title: 'Auto-fill failed', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Auto-fill failed', { description: getErrorMessage(error) });
     } finally {
       setIsAutoFilling(false);
     }
@@ -160,7 +156,7 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.entity_id || !form.address_line_1 || !form.city || !form.postcode) {
-      toast({ title: 'Missing required fields', variant: 'destructive' });
+      toast.error('Missing required fields');
       return;
     }
     const payload = {
@@ -193,14 +189,14 @@ export function PropertyFormModal({ open, onOpenChange, editingProperty }: Props
     try {
       if (editingProperty) {
         await update.mutateAsync({ id: editingProperty.id, ...payload });
-        toast({ title: 'Property updated' });
+        toast.success('Property updated');
       } else {
         await create.mutateAsync(payload);
-        toast({ title: 'Property created' });
+        toast.success('Property created');
       }
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 

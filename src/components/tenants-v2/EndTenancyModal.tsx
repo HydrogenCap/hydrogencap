@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateTenancyAgreement } from '@/hooks/useTenancyAgreements';
 import { useUpdateTenantV2 } from '@/hooks/useTenantsV2';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const REASONS = [
   { value: 'tenant_notice', label: 'Tenant Notice' },
@@ -42,8 +42,6 @@ interface Props {
 export function EndTenancyModal({ open, onOpenChange, tenancyId, tenantId }: Props) {
   const updateAgreement = useUpdateTenancyAgreement();
   const updateTenant = useUpdateTenantV2();
-  const { toast } = useToast();
-
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -71,10 +69,10 @@ export function EndTenancyModal({ open, onOpenChange, tenancyId, tenantId }: Pro
         notes: endNotes || null,
       });
       await updateTenant.mutateAsync({ id: tenantId, status: 'departed' });
-      toast({ title: 'Tenancy closed out' });
+      toast('Tenancy closed out');
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: "End date didn't save", description: getErrorMessage(error), variant: 'destructive' });
+      toast.error("End date didn't save", { description: getErrorMessage(error) });
     }
   };
 
