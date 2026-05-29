@@ -204,8 +204,8 @@ export function useBackfillGeocoding() {
     };
     updateProgress(localProgress);
 
-    // Import toast dynamically to avoid hook rules violation
-    const { toast } = await import('@/hooks/use-toast');
+    // Import toast dynamically to keep the geocoding hook tree-shaken
+    const { toast } = await import('sonner');
 
     try {
       // Fetch all properties needing geocoding
