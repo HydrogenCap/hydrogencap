@@ -1,7 +1,8 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ListState } from '@/components/ListState';
-import { EmptyState } from '@/components/common';
+import { EmptyState, KpiCardSkeleton } from '@/components/common';
 import { Play, Plus, ShieldCheck, GitBranch, Loader2 } from 'lucide-react';
 import { useComplianceTasksState } from './hooks/useComplianceTasksState';
 import { StatsRow } from './components/StatsRow';
@@ -37,13 +38,33 @@ export default function ComplianceTasks() {
           </div>
         </div>
 
-        <StatsRow stats={s.stats} />
-
-        <FiltersBar
-          view={s.view} setView={s.setView}
-          priorityFilter={s.priorityFilter} setPriorityFilter={s.setPriorityFilter}
-          showCompleted={s.showCompleted} setShowCompleted={s.setShowCompleted}
-        />
+        {s.isLoading ? (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <KpiCardSkeleton key={i} showDelta={false} />
+              ))}
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Skeleton className="h-9 w-36" />
+              <Skeleton className="h-9 w-32" />
+              <div className="ml-auto flex gap-1">
+                <Skeleton className="h-9 w-9" />
+                <Skeleton className="h-9 w-9" />
+                <Skeleton className="h-9 w-9" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <StatsRow stats={s.stats} />
+            <FiltersBar
+              view={s.view} setView={s.setView}
+              priorityFilter={s.priorityFilter} setPriorityFilter={s.setPriorityFilter}
+              showCompleted={s.showCompleted} setShowCompleted={s.setShowCompleted}
+            />
+          </>
+        )}
 
         <ListState
           isLoading={s.isLoading}

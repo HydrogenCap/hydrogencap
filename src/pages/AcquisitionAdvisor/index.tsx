@@ -1,7 +1,8 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TEXT, CARD } from '@/lib/design-tokens';
-import { Loader2, BarChart3, Clock } from 'lucide-react';
+import { BarChart3, Clock } from 'lucide-react';
 import { useAcquisitionAdvisorState } from './hooks/useAcquisitionAdvisorState';
 import { AnalysisForm } from './components/AnalysisForm';
 import { AnalysisResults } from './components/AnalysisResults';
@@ -41,8 +42,13 @@ export default function AcquisitionAdvisor() {
               </CardHeader>
               <CardContent className={CARD.compact}>
                 {s.loadingPast ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="space-y-2" aria-busy="true" aria-label="Loading past analyses">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="rounded-md border border-border p-3 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    ))}
                   </div>
                 ) : s.pastAnalyses && s.pastAnalyses.length > 0 ? (
                   <div className="space-y-2">
@@ -66,13 +72,38 @@ export default function AcquisitionAdvisor() {
           {/* Results panel */}
           <div className="lg:col-span-2">
             {s.runAnalysis.isPending ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-                  <p className={TEXT.sectionHeading}>Analysing acquisition...</p>
-                  <p className={`${TEXT.label} mt-2`}>
-                    Comparing against your portfolio, calculating metrics, and assessing risks
-                  </p>
+              <Card aria-busy="true" aria-label="Analysing acquisition">
+                <CardContent className="p-6 space-y-6">
+                  {/* Header / score */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-48" />
+                      <Skeleton className="h-4 w-64" />
+                    </div>
+                    <Skeleton className="h-16 w-16 rounded-full" />
+                  </div>
+
+                  {/* Metric grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="rounded-lg border border-border p-3 space-y-2">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Paragraph blocks */}
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-1/3" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-11/12" />
+                        <Skeleton className="h-3 w-9/12" />
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             ) : s.selectedAnalysis ? (

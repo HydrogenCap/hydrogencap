@@ -1,93 +1,33 @@
-## Goal
+## Problem
+Two data views still show bare `Loader2` spinners during load instead of Skeleton layouts that approximate the loaded content.
 
-Split `src/hooks/useRentCollection.ts` (1,209 lines) into focused files, kept behind a barrel so all existing imports (`@/hooks/useRentCollection`) continue to work byte-identically. Pure mechanical extraction — no logic, signature, or return-shape changes.
+## Investigation Summary
 
-## Approach
+**AcquisitionAdvisor** — two confirmed bare spinners:
+1. Past Analyses card (`s.loadingPast`) renders a centred `Loader2`.
+2. Results panel (`s.runAnalysis.isPending`) renders a centred `Loader2` with text.
 
-Convert `src/hooks/useRentCollection.ts` into a barrel that only re-exports. Move implementation into a new `src/hooks/rent-collection/` directory grouped by concern. Shared types and the `RENT_SCHEDULE_SELECT` constant, `getErrorMessage` helper, and `normalizeRentItem` go into shared modules consumed by the others.
+**ComplianceTasks** — the `ListState` wrapper already uses Skeleton rows (`h-16` bars) for the list area. However, `StatsRow` and `FiltersBar` render unconditionally and show zeros/empty state while data loads. There is no *additional* top-level `Loader2` spinner for the data view beyond the action spinner on the "Run Pipeline" button (which you asked to keep).
 
-All public symbols listed below remain exported from `@/hooks/useRentCollection` with identical names and signatures.
+## Proposed Changes
 
-## Proposed file layout
+### 1. AcquisitionAdvisor (`src/pages/AcquisitionAdvisor/index.tsx`)
+Replace the two bare spinners with Skeleton layouts matching the loaded shape.
 
-```text
-src/hooks/useRentCollection.ts                  (barrel: re-exports only)
-src/hooks/rent-collection/
-  types.ts                                      (shared types + constants)
-  internal.ts                                   (private helpers)
-  useRentSchedule.ts                            (core schedule queries + mutations)
-  useArrears.ts                                 (arrears + summary analytics)
-  useTenancyLedger.ts                           (ledger + on-time stats)
-  useBulkActions.ts                             (bulk mutations)
-  useScheduleGeneration.ts                      (generate-from-agreement)
-  useRentTrend.ts                               (trend analytics)
-```
+- **Past Analyses loading** (`s.loadingPast`): Replace the centred `Loader2` with 4 stacked skeleton rows (each approximating a `PastAnalysisRow`: a `Card` containing two short lines — address skeleton + metadata skeleton).
+- **Analysis running** (`s.runAnalysis.isPending`): Replace the centred `Loader2` with a skeleton layout inside the right-hand `Card` that approximates `AnalysisResults`: a score/header skeleton at top, a grid of 4 metric-card skeletons, and 3 paragraph skeletons below.
 
-## Exact move map
+### 2. ComplianceTasks (`src/pages/ComplianceTasks/index.tsx`)
+No bare `Loader2` exists for the data load, but the stats/filter area looks empty/janky while the list skeletons appear. Proposed fix: when `s.isLoading`, render skeleton versions of `StatsRow` (4 `KpiCardSkeleton`s already in the common library) and `FiltersBar` (a single `Skeleton` bar with button placeholders) **above** the existing `ListState` skeleton rows. The `ListState` skeletons themselves are already correct and stay unchanged.
 
-**`rent-collection/types.ts`** — pure types/interfaces (no runtime code other than the SQL constant):
-- `RentStatus` (line 7)
-- `RentScheduleItem` (9)
-- `RentScheduleWithDetails` (29)
-- `RentItemDisplay` (83)
-- `RentPayment` (155)
-- `RentScheduleNotesUpdate` (171) — currently not exported; keep non-exported but importable from this module
-- `RENT_SCHEDULE_SELECT` (180) — internal constant, exported within the directory only
-- `ArrearsAgingRow` (547)
-- `MonthSummaryData` (637)
-- `LedgerEntry` (676)
-- `RentTrendPoint` (1163)
+*If you intended a different ComplianceTasks spinner that I missed, stop me here and point me to it.*
 
-Public re-exports preserved through barrel: `RentStatus`, `RentScheduleItem`, `RentScheduleWithDetails`, `RentItemDisplay`, `RentPayment`, `ArrearsAgingRow`, `MonthSummaryData`, `LedgerEntry`, `RentTrendPoint`.
+## Files to edit
+- `src/pages/AcquisitionAdvisor/index.tsx` — replace two `Loader2` blocks with inline Skeleton layouts.
+- `src/pages/ComplianceTasks/index.tsx` — conditionally render skeleton stat/filter area during `isLoading`.
 
-**`rent-collection/internal.ts`**:
-- `getErrorMessage` (176)
-- `normalizeRentItem` (97) — re-exported by barrel (currently public)
+## No logic changes
+Data fetching hooks, return shapes, query keys, and auth/form spinners remain untouched.
 
-**`rent-collection/useRentSchedule.ts`**:
-- `useRentSchedule` (201)
-- `useRentScheduleItem` (326)
-- `useUpdateRentScheduleStatus` (342)
-- `usePaymentReminders` (379)
-- `useSendReminder` (395)
-- `useDeleteRentSchedule` (422)
-- `useDuplicateRentSchedule` (439)
-- `useUpdateRentScheduleNotes` (481)
-
-**`rent-collection/useArrears.ts`**:
-- `useRentSummary` (520)
-- `useArrearsAging` (569)
-- `useMonthSummary` (645)
-
-**`rent-collection/useTenancyLedger.ts`**:
-- `useTenancyLedger` (689)
-- `usePaidOnTimeStats` (1005)
-
-**`rent-collection/useBulkActions.ts`**:
-- `useBulkMarkPaid` (788)
-- `useBulkWriteOff` (869)
-- `useBulkAddNote` (899)
-- `useBulkSendReminder` (945)
-
-**`rent-collection/useScheduleGeneration.ts`**:
-- `useGenerateScheduleFromAgreement` (1063)
-
-**`rent-collection/useRentTrend.ts`**:
-- `useRentTrend` (1171)
-
-## Barrel (`src/hooks/useRentCollection.ts` after refactor)
-
-Contains only `export * from './rent-collection/<each file>';` (or named re-exports). All currently public symbols (types + hooks + `normalizeRentItem`) re-exported under the same names. Import path `@/hooks/useRentCollection` unchanged for all 30+ call sites.
-
-## Invariants
-
-- No function bodies modified; only cut/paste plus the imports each new file needs (`useQuery`/`useMutation`/`useQueryClient`, `supabase`/`supabaseAny`, `getUserOrgId`/`useUserOrg`, `logError`, `toast`, shared types/helpers).
-- Public API byte-identical: same export names, same signatures, same return shapes, same query keys, same toast messages.
-- No behaviour change, no renames, no reordering of effects.
-
-## Verify chain after edit
-
-1. `rg -n "from ['\"]@/hooks/useRentCollection" src | wc -l` before/after — count unchanged.
-2. `bun run lint`
-3. `bun run typecheck`
-4. `bun run build`
+## Verify chain after
+`bun run lint`, `bun run typecheck`, `bun run build`.
