@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useUserOrg } from '@/hooks/useUserOrg';
+import { toast } from "sonner";
 
 export interface Organization {
   id: string;
@@ -31,8 +31,6 @@ export function useOrganization() {
 
 export function useUpdateOrganization() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ orgId, name }: { orgId: string; name: string }) => {
       const { data, error } = await supabaseAny
@@ -51,10 +49,10 @@ export function useUpdateOrganization() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['organization', variables.orgId] });
       queryClient.invalidateQueries({ queryKey: ['user-organizations'] });
-      toast({ title: 'Organization updated' });
+      toast.success('Organization updated');
     },
     onError: (error) => {
-      toast({ title: 'Failed to update organization', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update organization', { description: error.message });
     },
   });
 }

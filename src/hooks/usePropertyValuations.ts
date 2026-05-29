@@ -1,7 +1,7 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabase, supabaseAny } from '@/integrations/supabase/client';
- import { useToast } from '@/hooks/use-toast';
- 
+import { toast } from "sonner";
+
  export interface PropertyValuation {
    id: string;
    property_id: string;
@@ -169,8 +169,6 @@ interface RefinancingOpportunityUpdate {
  // Trigger valuation for a property
  export function useTriggerValuation() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
    return useMutation({
      mutationFn: async (propertyId: string) => {
        // First fetch comparables
@@ -194,17 +192,10 @@ interface RefinancingOpportunityUpdate {
        queryClient.invalidateQueries({ queryKey: ['property-comparables', propertyId] });
        queryClient.invalidateQueries({ queryKey: ['valuation-alerts'] });
 
-       toast({
-         title: 'Valuation Complete',
-         description: `Estimated value: £${data?.valuation?.estimated_value?.toLocaleString()} (${data?.valuation?.confidence} confidence)`,
-       });
+       toast.success('Valuation Complete', { description: `Estimated value: £${data?.valuation?.estimated_value?.toLocaleString()} (${data?.valuation?.confidence} confidence)` });
      },
      onError: (error) => {
-       toast({
-         title: 'Valuation Failed',
-         description: error.message,
-         variant: 'destructive',
-       });
+       toast.error('Valuation Failed', { description: error.message });
      },
    });
  }
@@ -252,8 +243,6 @@ interface RefinancingOpportunityUpdate {
  // Update refinancing opportunity status
  export function useUpdateRefinancingStatus() {
    const queryClient = useQueryClient();
-   const { toast } = useToast();
- 
   return useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: RefinancingStatus; notes?: string }) => {
       const updates: RefinancingOpportunityUpdate = { status, updated_at: new Date().toISOString() };
@@ -270,7 +259,7 @@ interface RefinancingOpportunityUpdate {
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['refinancing-opportunities'] });
-       toast({ title: 'Status updated' });
+       toast.success('Status updated');
      },
    });
  }

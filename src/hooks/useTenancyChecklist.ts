@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import {
   generateChecklistDefinitions,
   buildTenancyChecklist,
@@ -14,6 +13,7 @@ import {
   type PropertyContext,
 } from '@/lib/tenancy-checklist';
 import type { ComplianceDocType } from '@/lib/complianceV2Types';
+import { toast } from "sonner";
 
 // ─── useTenancyChecklist ─────────────────────────────────────
 
@@ -183,8 +183,6 @@ interface MarkItemInput {
 
 export function useMarkChecklistItem() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ tenancyId, itemType, label, orgId, notes, documentUrl }: MarkItemInput) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -233,10 +231,10 @@ export function useMarkChecklistItem() {
       queryClient.invalidateQueries({ queryKey: ['tenancy-compliance', variables.tenancyId] });
       queryClient.invalidateQueries({ queryKey: ['tenancy-compliance-stats'] });
       queryClient.invalidateQueries({ queryKey: ['tenancy-checklist-stats'] });
-      toast({ title: 'Item marked complete' });
+      toast.success('Item marked complete');
     },
     onError: (err) => {
-      toast({ title: 'Failed to update', description: (err as Error).message, variant: 'destructive' });
+      toast.error('Failed to update', { description: (err as Error).message });
     },
   });
 }

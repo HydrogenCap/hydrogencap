@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
 import { logError } from '@/lib/errorLogger';
+import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -155,8 +155,6 @@ export function useTeamInvites() {
 
 export function useSendTeamInvite() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ email, name, role }: { email: string; name?: string; role: AppRole }) => {
       const orgId = await fetchUserOrgId();
@@ -205,14 +203,10 @@ export function useSendTeamInvite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-invites'] });
-      toast({ title: 'Invite sent' });
+      toast.success('Invite sent');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to send invite',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to send invite', { description: error.message });
     },
   });
 }
@@ -221,8 +215,6 @@ export function useSendTeamInvite() {
 
 export function useResendTeamInvite() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (inviteId: string) => {
       const { data, error } = await supabaseAny
@@ -245,14 +237,10 @@ export function useResendTeamInvite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-invites'] });
-      toast({ title: 'Invite resent' });
+      toast.success('Invite resent');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to resend invite',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to resend invite', { description: error.message });
     },
   });
 }
@@ -261,8 +249,6 @@ export function useResendTeamInvite() {
 
 export function useRevokeTeamInvite() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (inviteId: string) => {
       const { error } = await supabaseAny
@@ -274,14 +260,10 @@ export function useRevokeTeamInvite() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-invites'] });
-      toast({ title: 'Invite revoked' });
+      toast.success('Invite revoked');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to revoke invite',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to revoke invite', { description: error.message });
     },
   });
 }
@@ -290,8 +272,6 @@ export function useRevokeTeamInvite() {
 
 export function useChangeTeamRole() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ membershipId, newRole }: { membershipId: string; newRole: AppRole }) => {
       // RLS enforces that only admin/owner can update membership roles.
@@ -305,14 +285,10 @@ export function useChangeTeamRole() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      toast({ title: 'Role updated' });
+      toast.success('Role updated');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to update role',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to update role', { description: error.message });
     },
   });
 }
@@ -321,8 +297,6 @@ export function useChangeTeamRole() {
 
 export function useRemoveTeamMember() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (membershipId: string) => {
       const { error } = await supabaseAny
@@ -334,14 +308,10 @@ export function useRemoveTeamMember() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      toast({ title: 'Team member removed' });
+      toast.success('Team member removed');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to remove member',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to remove member', { description: error.message });
     },
   });
 }
@@ -350,8 +320,6 @@ export function useRemoveTeamMember() {
 
 export function useAcceptTeamInvite() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (token: string) => {
       const { data, error } = await supabase.rpc('accept_team_invite', {
@@ -370,14 +338,10 @@ export function useAcceptTeamInvite() {
       queryClient.invalidateQueries({ queryKey: ['team-invites'] });
       queryClient.invalidateQueries({ queryKey: ['organization'] });
       queryClient.invalidateQueries({ queryKey: ['user-org'] });
-      toast({ title: data.message || 'Invite accepted — welcome to the team!' });
+      toast.success(data.message || 'Invite accepted — welcome to the team!');
     },
     onError: (error) => {
-      toast({
-        title: 'Failed to accept invite',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Failed to accept invite', { description: error.message });
     },
   });
 }

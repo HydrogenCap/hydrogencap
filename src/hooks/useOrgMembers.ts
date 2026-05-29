@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import type { AppRole } from '@/hooks/useUserRole';
+import { toast } from "sonner";
 
 export interface OrgMember {
   id: string;
@@ -47,8 +47,6 @@ export function useOrgMembers() {
 
 export function useUpdateMemberRole() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ membershipId, role }: { membershipId: string; role: AppRole }) => {
       const { error } = await supabaseAny
@@ -59,18 +57,16 @@ export function useUpdateMemberRole() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['org-members'] });
-      toast({ title: 'Role updated' });
+      toast.success('Role updated');
     },
     onError: (e) => {
-      toast({ title: 'Failed to update role', description: e.message, variant: 'destructive' });
+      toast.error('Failed to update role', { description: e.message });
     },
   });
 }
 
 export function useRemoveMember() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (membershipId: string) => {
       const { error } = await supabaseAny
@@ -81,10 +77,10 @@ export function useRemoveMember() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['org-members'] });
-      toast({ title: 'Member removed' });
+      toast.success('Member removed');
     },
     onError: (e) => {
-      toast({ title: 'Failed to remove member', description: e.message, variant: 'destructive' });
+      toast.error('Failed to remove member', { description: e.message });
     },
   });
 }

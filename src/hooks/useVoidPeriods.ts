@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { detectVoidRooms } from '@/lib/voidDetection';
+import { toast } from "sonner";
 
 export type VoidReason = 'between_tenants' | 'refurbishment' | 'sale_preparation' | 'legal_dispute' | 'other';
 
@@ -186,8 +186,6 @@ export function useVoidRate() {
 
 export function useCreateVoidPeriod() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (voidPeriod: {
       propertyId: string;
@@ -219,15 +217,13 @@ export function useCreateVoidPeriod() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Void period recorded' });
+      toast.success('Void period recorded');
     },
   });
 }
 
 export function useUpdateVoidPeriod() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<VoidPeriod> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -242,15 +238,13 @@ export function useUpdateVoidPeriod() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Void period updated' });
+      toast.success('Void period updated');
     },
   });
 }
 
 export function useEndVoidPeriod() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, endDate }: { id: string; endDate: string }) => {
       const { data, error } = await supabaseAny
@@ -265,15 +259,13 @@ export function useEndVoidPeriod() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Void period ended' });
+      toast.success('Void period ended');
     },
   });
 }
 
 export function useDeleteVoidPeriod() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('void_periods').delete().eq('id', id);
@@ -281,7 +273,7 @@ export function useDeleteVoidPeriod() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['void-periods'] });
-      toast({ title: 'Void period deleted' });
+      toast.success('Void period deleted');
     },
   });
 }

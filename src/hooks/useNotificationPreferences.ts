@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { fetchUserOrgId, useUserOrg } from '@/hooks/useUserOrg';
- 
+import { toast } from "sonner";
+
  export interface NotificationPreferences {
    id: string;
    user_id: string;
@@ -46,8 +46,6 @@ export function useNotificationPreferences() {
  export function useUpdateNotificationPreferences() {
    const queryClient = useQueryClient();
    const { user } = useAuth();
-   const { toast } = useToast();
-   
    return useMutation({
     mutationFn: async (prefs: Partial<NotificationPreferences>) => {
       if (!user) throw new Error('Not authenticated');
@@ -72,10 +70,10 @@ export function useNotificationPreferences() {
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
-       toast({ title: 'Preferences saved' });
+       toast.success('Preferences saved');
      },
      onError: (error) => {
-       toast({ title: 'Failed to save', description: error.message, variant: 'destructive' });
+       toast.error('Failed to save', { description: error.message });
      },
    });
  }

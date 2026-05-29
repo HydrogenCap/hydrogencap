@@ -6,10 +6,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { fetchUserOrgId, useUserOrg } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import { parseStatement, computeTransactionHash } from '@/lib/statementParser';
 import { findMatches } from '@/lib/reconciliationEngine';
 import type { RentScheduleItem } from './useRentCollection';
+import { toast } from "sonner";
 
 type BankTransactionRow = Database['public']['Tables']['bank_transactions']['Row'];
 type BankTransactionInsert = Database['public']['Tables']['bank_transactions']['Insert'];
@@ -51,8 +51,6 @@ export interface ReconciliationSummary {
 
 export function useImportStatement() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       csvText,
@@ -119,14 +117,11 @@ export function useImportStatement() {
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['bank_transactions'] });
-      toast({
-        title: `${result.imported} transactions imported`,
-        description: result.skipped > 0
-          ? `${result.skipped} duplicates skipped. Format: ${result.format}`
-          : `Format detected: ${result.format}`,
-      });
+      toast.success(`${result.imported} transactions imported`, { description: result.skipped > 0
+                  ? `${result.skipped} duplicates skipped. Format: ${result.format}`
+                  : `Format detected: ${result.format}` });
     },
-    onError: (e: Error) => toast({ title: 'Import failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Import failed', { description: e.message }),
   });
 }
 
@@ -191,8 +186,6 @@ export function useMatchedTransactions(bankAccountId?: string) {
 
 export function useRunAutoMatch() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (bankAccountId?: string) => {
       const orgId = await fetchUserOrgId();
@@ -274,12 +267,9 @@ export function useRunAutoMatch() {
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['bank_transactions'] });
-      toast({
-        title: `${result.suggested} matches suggested`,
-        description: `${result.totalUnmatched - result.suggested} transactions remain unmatched`,
-      });
+      toast.success(`${result.suggested} matches suggested`, { description: `${result.totalUnmatched - result.suggested} transactions remain unmatched` });
     },
-    onError: (e: Error) => toast({ title: 'Auto-match failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Auto-match failed', { description: e.message }),
   });
 }
 
@@ -287,8 +277,6 @@ export function useRunAutoMatch() {
 
 export function useConfirmMatch() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({
       transactionId,
@@ -371,9 +359,9 @@ export function useConfirmMatch() {
       qc.invalidateQueries({ queryKey: ['bank_transactions'] });
       qc.invalidateQueries({ queryKey: ['rent_schedule'] });
       qc.invalidateQueries({ queryKey: ['rent_payments'] });
-      toast({ title: 'Match confirmed & payment recorded' });
+      toast.success('Match confirmed & payment recorded');
     },
-    onError: (e: Error) => toast({ title: 'Failed to confirm', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed to confirm', { description: e.message }),
   });
 }
 
@@ -381,8 +369,6 @@ export function useConfirmMatch() {
 
 export function useBulkConfirmMatches() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (matches: { transactionId: string; scheduleId: string }[]) => {
       let success = 0;
@@ -458,10 +444,7 @@ export function useBulkConfirmMatches() {
       qc.invalidateQueries({ queryKey: ['bank_transactions'] });
       qc.invalidateQueries({ queryKey: ['rent_schedule'] });
       qc.invalidateQueries({ queryKey: ['rent_payments'] });
-      toast({
-        title: `${result.success} matches confirmed`,
-        description: result.failed > 0 ? `${result.failed} failed` : undefined,
-      });
+      toast.success(`${result.success} matches confirmed`, { description: result.failed > 0 ? `${result.failed} failed` : undefined });
     },
   });
 }

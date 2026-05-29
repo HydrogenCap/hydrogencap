@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { useUserOrg } from '@/hooks/useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export interface WebhookEndpoint {
   id: string;
@@ -50,8 +50,6 @@ export function useWebhookEndpoints() {
 export function useCreateEndpoint() {
   const queryClient = useQueryClient();
   const { data: orgId } = useUserOrg();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: { url: string; description?: string; events: string[] }) => {
       if (!orgId) throw new Error('No organization');
@@ -67,18 +65,16 @@ export function useCreateEndpoint() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhook-endpoints'] });
-      toast({ title: 'Webhook endpoint created' });
+      toast.success('Webhook endpoint created');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create endpoint', description: error.message, variant: 'destructive' });
+      toast.error('Failed to create endpoint', { description: error.message });
     },
   });
 }
 
 export function useUpdateEndpoint() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<WebhookEndpoint> & { id: string }) => {
       const { data, error } = await supabaseAny
@@ -93,18 +89,16 @@ export function useUpdateEndpoint() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhook-endpoints'] });
-      toast({ title: 'Webhook endpoint updated' });
+      toast.success('Webhook endpoint updated');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to update endpoint', description: error.message, variant: 'destructive' });
+      toast.error('Failed to update endpoint', { description: error.message });
     },
   });
 }
 
 export function useDeleteEndpoint() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabaseAny
@@ -116,10 +110,10 @@ export function useDeleteEndpoint() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhook-endpoints'] });
-      toast({ title: 'Webhook endpoint deleted' });
+      toast.success('Webhook endpoint deleted');
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to delete endpoint', description: error.message, variant: 'destructive' });
+      toast.error('Failed to delete endpoint', { description: error.message });
     },
   });
 }
@@ -145,8 +139,6 @@ export function useWebhookDeliveries(endpointId: string | undefined) {
 export function useTestWebhook() {
   const { data: orgId } = useUserOrg();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (_endpointId: string) => {
       if (!orgId) throw new Error('No organization');
@@ -164,10 +156,10 @@ export function useTestWebhook() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhook-deliveries'] });
-      toast({ title: 'Test ping sent' });
+      toast.success('Test ping sent');
     },
     onError: (error: Error) => {
-      toast({ title: 'Test ping failed', description: error.message, variant: 'destructive' });
+      toast.error('Test ping failed', { description: error.message });
     },
   });
 }

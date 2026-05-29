@@ -1,8 +1,8 @@
  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
  import { supabaseAny } from '@/integrations/supabase/client';
  import { useAuth } from '@/contexts/AuthContext';
- import { useToast } from '@/hooks/use-toast';
- 
+import { toast } from "sonner";
+
  export interface Profile {
    id: string;
    user_id: string;
@@ -34,8 +34,6 @@
  export function useUpdateProfile() {
    const queryClient = useQueryClient();
    const { user } = useAuth();
-   const { toast } = useToast();
-   
    return useMutation({
      mutationFn: async (updates: { full_name?: string }) => {
        if (!user) throw new Error('Not authenticated');
@@ -55,10 +53,10 @@
      },
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['profile'] });
-       toast({ title: 'Profile updated' });
+       toast.success('Profile updated');
      },
      onError: (error) => {
-       toast({ title: 'Failed to update profile', description: error.message, variant: 'destructive' });
+       toast.error('Failed to update profile', { description: error.message });
      },
    });
  }

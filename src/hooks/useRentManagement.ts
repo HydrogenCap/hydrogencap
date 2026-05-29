@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId as getUserOrgId, useUserOrg } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
 import {
   type RentScheduleWithDetails,
   type RentPayment,
   type RentStatus,
   normalizeRentItem,
 } from './useRentCollection';
+import { toast } from "sonner";
 
 // ─── KPI Metrics ───
 
@@ -117,8 +117,6 @@ export interface RecordPaymentInput {
 
 export function useRecordPaymentMutation() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (payment: RecordPaymentInput) => {
       const orgId = await getUserOrgId();
@@ -144,10 +142,10 @@ export function useRecordPaymentMutation() {
       queryClient.invalidateQueries({ queryKey: ['rent_schedule'] });
       queryClient.invalidateQueries({ queryKey: ['rent_kpis'] });
       queryClient.invalidateQueries({ queryKey: ['rent_arrears'] });
-      toast({ title: 'Payment recorded successfully' });
+      toast.success('Payment recorded successfully');
     },
     onError: (error) => {
-      toast({ title: 'Failed to record payment', description: error.message, variant: 'destructive' });
+      toast.error('Failed to record payment', { description: error.message });
     },
   });
 }

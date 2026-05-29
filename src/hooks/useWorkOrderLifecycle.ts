@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
 import { fetchUserOrgId } from './useUserOrg';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -86,8 +86,6 @@ export function getPipelineStageIndex(stage: PipelineStage): number {
 
 export function useAdvanceWorkOrder() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, targetStage }: { id: string; targetStage: PipelineStage }) => {
       const stageConfig = PIPELINE_STAGES.find(s => s.value === targetStage);
@@ -116,9 +114,9 @@ export function useAdvanceWorkOrder() {
       qc.invalidateQueries({ queryKey: ['work_order', id] });
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
-      toast({ title: 'Work order advanced' });
+      toast.success('Work order advanced');
     },
-    onError: (e: Error) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
 }
 
@@ -126,8 +124,6 @@ export function useAdvanceWorkOrder() {
 
 export function useApproveWorkOrderLifecycle() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, approvedBudget }: { id: string; approvedBudget: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -151,9 +147,9 @@ export function useApproveWorkOrderLifecycle() {
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       qc.invalidateQueries({ queryKey: ['pending_approvals'] });
-      toast({ title: 'Work order approved' });
+      toast.success('Work order approved');
     },
-    onError: (e: Error) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
 }
 
@@ -161,8 +157,6 @@ export function useApproveWorkOrderLifecycle() {
 
 export function useRejectWorkOrderLifecycle() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
       const updates: Record<string, unknown> = {
@@ -183,9 +177,9 @@ export function useRejectWorkOrderLifecycle() {
       qc.invalidateQueries({ queryKey: ['work_orders'] });
       qc.invalidateQueries({ queryKey: ['work_order_counts'] });
       qc.invalidateQueries({ queryKey: ['pending_approvals'] });
-      toast({ title: 'Work order rejected' });
+      toast.success('Work order rejected');
     },
-    onError: (e: Error) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
 }
 
@@ -231,8 +225,6 @@ export function useWorkOrderMaterials(workOrderId: string | undefined) {
 
 export function useAddMaterial() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: {
       work_order_id: string;
@@ -262,9 +254,9 @@ export function useAddMaterial() {
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['work_order_materials', vars.work_order_id] });
-      toast({ title: 'Material added' });
+      toast.success('Material added');
     },
-    onError: (e: Error) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
 }
 
@@ -307,8 +299,6 @@ export function useWorkOrderWarranties(workOrderId: string | undefined) {
 
 export function useCreateWarranty() {
   const qc = useQueryClient();
-  const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (input: {
       work_order_id: string;
@@ -341,9 +331,9 @@ export function useCreateWarranty() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['work_order_warranties', vars.work_order_id] });
       qc.invalidateQueries({ queryKey: ['expiring_warranties'] });
-      toast({ title: 'Warranty recorded' });
+      toast.success('Warranty recorded');
     },
-    onError: (e: Error) => toast({ title: 'Failed', description: e.message, variant: 'destructive' }),
+    onError: (e: Error) => toast.error('Failed', { description: e.message }),
   });
 }
 
