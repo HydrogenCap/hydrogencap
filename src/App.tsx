@@ -204,7 +204,6 @@ const App = () => (
           <OrgProvider>
           <LifecycleFilterProvider>
             <GoogleMapsProvider>
-              <Toaster />
               <Sonner />
               <BrowserRouter>
                 <ScrollToTopOnNavigate />
