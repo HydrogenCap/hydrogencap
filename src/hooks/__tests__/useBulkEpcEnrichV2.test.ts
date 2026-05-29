@@ -88,12 +88,9 @@ describe('useBulkEpcEnrichV2', () => {
       await result.current.enrichAll();
     });
 
-    expect(toastSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'EPC Enrichment Failed',
-        description: 'API quota exceeded',
-        variant: 'destructive',
-      }),
+    expect(toastErrorSpy).toHaveBeenCalledWith(
+      'EPC Enrichment Failed',
+      expect.objectContaining({ description: 'API quota exceeded' }),
     );
   });
 });
