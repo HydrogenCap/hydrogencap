@@ -4,7 +4,6 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
 import { useCreateProperty, useCreateLoan } from '@/hooks/useProperties';
 import { useUpsertPropertyIncomeBudget, yearToTaxYear } from '@/hooks/usePropertyIncomeBudgets';
 import { extractPostcodeArea } from '@/lib/calculations';
@@ -12,10 +11,10 @@ import { useUnitUsage } from '@/hooks/useUnitUsage';
 import { PropertyForm } from '@/components/property/PropertyForm';
 import type { PropertyFormData } from '@/components/property/propertyFormSchema';
 import { AddressData } from '@/components/maps/AddressAutocomplete';
+import { toast } from "sonner";
 
 function PropertyNewPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const createProperty = useCreateProperty();
   const createLoan = useCreateLoan();
   const upsertIncome = useUpsertPropertyIncomeBudget();
@@ -84,10 +83,7 @@ function PropertyNewPage() {
       });
     }
 
-    toast({
-      title: 'Property added',
-      description: 'Your property has been successfully added.',
-    });
+    toast.success('Property added', { description: 'Your property has been successfully added.' });
 
     navigate('/properties');
   };

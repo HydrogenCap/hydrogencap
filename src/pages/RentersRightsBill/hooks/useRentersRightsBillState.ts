@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSettings, useUpdateAppSetting } from '@/hooks/useAppSettings';
-import { useToast } from '@/hooks/use-toast';
 import type { AwaaabComplaint, DecentHomesItem } from '../utils/types';
 import { loadAwaaab, saveAwaaab, loadDecent, saveDecent } from '../utils/storage';
+import { toast } from "sonner";
 
 export function useRentersRightsBillState() {
-  const { toast } = useToast();
   const { data: settings, isLoading: settingsLoading } = useAppSettings();
   const updateSetting = useUpdateAppSetting();
 
@@ -44,7 +43,7 @@ export function useRentersRightsBillState() {
     saveAwaaab(updated);
     setNewComplaint({ property: '', description: '', reported_date: new Date().toISOString().split('T')[0] });
     setShowAddComplaint(false);
-    toast({ title: 'Complaint logged' });
+    toast('Complaint logged');
   };
 
   const removeComplaint = (id: string) => {

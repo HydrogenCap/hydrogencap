@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { addDays } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
 import {
   useComplianceTasks, useComplianceTaskStats,
   useUpdateTaskStatus, useRunComplianceScan, useCreateTask, useUpdateTask,
@@ -8,9 +7,9 @@ import {
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
 import type { ComplianceTaskOverview, TaskStatus } from '@/lib/complianceTaskTypes';
 import type { ViewMode } from '../components/FiltersBar';
+import { toast } from "sonner";
 
 export function useComplianceTasksState() {
-  const { toast } = useToast();
   const { data: tasks, isLoading, error, refetch } = useComplianceTasks();
   const stats = useComplianceTaskStats();
   const updateStatus = useUpdateTaskStatus();
@@ -34,7 +33,7 @@ export function useComplianceTasksState() {
 
   const handleStatusChange = (id: string, status: TaskStatus) => {
     updateStatus.mutate({ id, status }, {
-      onSuccess: () => toast({ title: 'Status updated' }),
+      onSuccess: () => toast.success('Status updated'),
     });
   };
 
@@ -47,13 +46,10 @@ export function useComplianceTasksState() {
         notifications_sent: number;
         priorities_updated: number;
       }>('auto-compliance-pipeline', {});
-      toast({
-        title: 'Pipeline complete',
-        description: `${result.tasks_created} tasks created, ${result.contractors_assigned} contractors assigned, ${result.priorities_updated} priorities updated.`,
-      });
+      toast('Pipeline complete', { description: `${result.tasks_created} tasks created, ${result.contractors_assigned} contractors assigned, ${result.priorities_updated} priorities updated.` });
     } catch (err) {
       console.error('Failed to run compliance pipeline:', err);
-      toast({ title: 'Pipeline failed', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast.error('Pipeline failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     } finally {
       setRunningPipeline(false);
     }
@@ -62,12 +58,9 @@ export function useComplianceTasksState() {
   const handleRunScan = () => {
     runScan.mutate(undefined, {
       onSuccess: (result) => {
-        toast({
-          title: 'Scan complete',
-          description: `${result.tasks_created} tasks created, ${result.tasks_updated} updated, ${result.notifications_sent} notifications sent.`,
-        });
+        toast.success('Scan complete', { description: `${result.tasks_created} tasks created, ${result.tasks_updated} updated, ${result.notifications_sent} notifications sent.` });
       },
-      onError: (err) => toast({ title: 'Scan failed', description: String(err), variant: 'destructive' }),
+      onError: (err) => toast.error('Scan failed', { description: String(err) }),
     });
   };
 
@@ -75,7 +68,7 @@ export function useComplianceTasksState() {
     const newDate = addDays(new Date(), days).toISOString().slice(0, 10);
     updateTask.mutate({ id: taskId, updates: { due_date: newDate } }, {
       onSuccess: () => {
-        toast({ title: `Snoozed ${days} days` });
+        toast.success(`Snoozed ${days} days`);
         setSelectedTask(null);
       },
     });
@@ -83,12 +76,12 @@ export function useComplianceTasksState() {
 
   const handleDismiss = (taskId: string) => {
     if (!dismissReason.trim()) {
-      toast({ title: 'Reason required', variant: 'destructive' });
+      toast.error('Reason required');
       return;
     }
     updateStatus.mutate({ id: taskId, status: 'cancelled', notes: dismissReason }, {
       onSuccess: () => {
-        toast({ title: 'Task dismissed' });
+        toast.success('Task dismissed');
         setSelectedTask(null);
         setDismissReason('');
       },
@@ -108,8 +101,8 @@ export function useComplianceTasksState() {
       due_date: (fd.get('due_date') as string) || null,
       notes: (fd.get('notes') as string) || null,
     }, {
-      onSuccess: () => { setShowCreate(false); toast({ title: 'Task created' }); },
-      onError: (err) => toast({ title: 'Error', description: String(err), variant: 'destructive' }),
+      onSuccess: () => { setShowCreate(false); toast.success('Task created'); },
+      onError: (err) => toast.error('Error', { description: String(err) }),
     });
   };
 

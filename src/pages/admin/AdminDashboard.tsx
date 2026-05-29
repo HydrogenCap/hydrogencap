@@ -9,13 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/usePlatformAdmin';
 import { useAdminDashboard, useAdminUsers, useGrantTrial, useChangePlan } from '@/hooks/useAdminStats';
 import { useActivationFunnel, type ActivationStage } from '@/hooks/useActivationFunnel';
 import { PoundSterling, Users, TrendingUp, TrendingDown, Ellipsis, Search, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { format } from 'date-fns';
+import { toast } from "sonner";
 
 const TIER_COLORS: Record<string, string> = {
   free: 'hsl(var(--muted-foreground))',
@@ -56,7 +56,6 @@ function formatPence(pence: number) {
 
 export default function AdminDashboard() {
   const isAdmin = useIsAdmin();
-  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -80,15 +79,15 @@ export default function AdminDashboard() {
 
   const handleGrantTrial = (userId: string) => {
     grantTrial.mutate({ userId, days: 14 }, {
-      onSuccess: () => toast({ title: '14-day trial granted' }),
-      onError: (err) => toast({ title: 'Failed', description: err.message, variant: 'destructive' }),
+      onSuccess: () => toast.success('14-day trial granted'),
+      onError: (err) => toast.error('Failed', { description: err.message }),
     });
   };
 
   const handleChangePlan = (userId: string, newTier: string) => {
     changePlan.mutate({ userId, newTier }, {
-      onSuccess: () => toast({ title: `Plan changed to ${newTier}` }),
-      onError: (err) => toast({ title: 'Failed', description: err.message, variant: 'destructive' }),
+      onSuccess: () => toast.success(`Plan changed to ${newTier}`),
+      onError: (err) => toast.error('Failed', { description: err.message }),
     });
   };
 

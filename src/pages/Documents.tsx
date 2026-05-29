@@ -17,7 +17,6 @@ import { DocumentListView } from '@/components/documents/DocumentListView';
 import { DocumentGridView } from '@/components/documents/DocumentGridView';
 import { DocumentDeleteDialog } from '@/components/documents/DocumentDeleteDialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useDocumentCategories,
@@ -35,6 +34,7 @@ import { useCompanies } from '@/hooks/useCompanies';
 import { useDocumentSorting } from '@/hooks/useDocumentSorting';
 import type { GroupedSummary } from '@/components/documents/DocumentCategoryOverview';
 import { SEO } from '@/components/SEO';
+import { toast } from "sonner";
 
 const CATEGORY_GROUPS = [
   { label: 'Compliance', slugs: ['gas-safety', 'eicr', 'epc', 'fire-safety', 'pat-testing', 'legionella', 'hmo-licence', 'mcs-certificate', 'building-control', 'planning'] },
@@ -58,8 +58,6 @@ export default function Documents() {
   const [isCategorising, setIsCategorising] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'property' | 'name'>('date');
   const [showArchived, setShowArchived] = useState(false);
-
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: summaryData, isLoading: summariesLoading } = useDocumentCategorySummaries();
@@ -115,11 +113,11 @@ export default function Documents() {
       const parts = [];
       if (data.categorised > 0) parts.push(`${data.categorised} categorised`);
       if (data.renamed > 0) parts.push(`${data.renamed} renamed`);
-      toast({ title: 'AI processing complete', description: parts.length > 0 ? `${parts.join(', ')}.` : 'All documents are already organised.' });
+      toast('AI processing complete', { description: parts.length > 0 ? `${parts.join(', ')}.` : 'All documents are already organised.' });
       invalidateVault();
     } catch (err) {
       console.error('Categorise error:', err);
-      toast({ title: 'Categorisation failed', description: 'Something went wrong. Please try again.', variant: 'destructive' });
+      toast.error('Categorisation failed', { description: 'Something went wrong. Please try again.' });
     } finally {
       setIsCategorising(false);
     }

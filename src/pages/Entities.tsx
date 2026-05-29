@@ -23,8 +23,8 @@ import { getComplianceStatus } from '@/lib/complianceStatus';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { EntitiesKPIStrip } from '@/components/entities/EntitiesKPIStrip';
 import { EntitiesFilterChips, type EntityFilterKey } from '@/components/entities/EntitiesFilterChips';
-import { useToast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
+import { toast } from "sonner";
 
 const FILTER_STORAGE_KEY = 'entities_filter_chip';
 
@@ -128,7 +128,6 @@ export default function Entities() {
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const syncEntity = useSyncEntity();
   const updateEntity = useUpdateLegalEntity();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
@@ -268,7 +267,7 @@ export default function Entities() {
 
   const handleBulkSync = async () => {
     const spvs = entities?.filter((e) => e.entity_type === 'spv' && e.company_number) || [];
-    if (spvs.length === 0) { toast({ title: 'No SPVs with company numbers to sync' }); return; }
+    if (spvs.length === 0) { toast('No SPVs with company numbers to sync'); return; }
     setBulkSyncing(true);
     let synced = 0;
     for (const spv of spvs) {
@@ -279,7 +278,7 @@ export default function Entities() {
       await new Promise((r) => setTimeout(r, 500));
     }
     setBulkSyncing(false);
-    toast({ title: `Synced ${synced} of ${spvs.length} SPVs` });
+    toast.success(`Synced ${synced} of ${spvs.length} SPVs`);
   };
 
   const handleRowSync = async (entity: LegalEntity) => {
@@ -287,10 +286,10 @@ export default function Entities() {
     setSyncingIds((prev) => new Set(prev).add(entity.id));
     try {
       await syncEntity.mutateAsync({ entityId: entity.id, companyNumber: entity.company_number });
-      toast({ title: `${entity.entity_name} synced` });
+      toast.success(`${entity.entity_name} synced`);
     } catch (err) {
       console.error(err);
-      toast({ title: 'Sync failed', variant: 'destructive' });
+      toast.error('Sync failed');
     } finally {
       setSyncingIds((prev) => { const n = new Set(prev); n.delete(entity.id); return n; });
     }
@@ -314,12 +313,12 @@ export default function Entities() {
       r.verification?.last_synced || '',
     ].map(String));
     downloadCSV(`entities-${new Date().toISOString().slice(0,10)}.csv`, [header, ...body]);
-    toast({ title: `Exported ${rows.length} entities` });
+    toast.success(`Exported ${rows.length} entities`);
   };
 
   const handleBulkSyncSelected = async () => {
     const targets = filtered.filter((r) => selected.has(r.id) && r.company_number);
-    if (targets.length === 0) { toast({ title: 'No syncable entities in selection' }); return; }
+    if (targets.length === 0) { toast('No syncable entities in selection'); return; }
     setBulkSyncing(true);
     let n = 0;
     for (const t of targets) {
@@ -330,12 +329,12 @@ export default function Entities() {
       await new Promise((r) => setTimeout(r, 500));
     }
     setBulkSyncing(false);
-    toast({ title: `Synced ${n} of ${targets.length} selected` });
+    toast.success(`Synced ${n} of ${targets.length} selected`);
   };
 
   const handleBulkMarkDormant = async () => {
     const targets = filtered.filter((r) => selected.has(r.id) && r.status !== 'dormant');
-    if (targets.length === 0) { toast({ title: 'Nothing to update' }); return; }
+    if (targets.length === 0) { toast('Nothing to update'); return; }
     let n = 0;
     for (const t of targets) {
       try {
@@ -343,7 +342,7 @@ export default function Entities() {
         n++;
       } catch (err) { console.error(err); }
     }
-    toast({ title: `Marked ${n} entities as dormant` });
+    toast(`Marked ${n} entities as dormant`);
     setSelected(new Set());
   };
 
@@ -371,14 +370,10 @@ export default function Entities() {
         await new Promise((r) => setTimeout(r, 600));
       }
       if (failures > 0) {
-        toast({
-          title: `${failures} of ${stale.length} entity syncs failed`,
-          description: 'Companies House refresh failed for some entities. Try a manual sync to see the error.',
-          variant: 'destructive',
-        });
+        toast.error(`${failures} of ${stale.length} entity syncs failed`, { description: 'Companies House refresh failed for some entities. Try a manual sync to see the error.' });
       }
     })();
-  }, [entities, verifications, syncEntity, toast]);
+  }, [entities, verifications, syncEntity]);
 
 
   const toggleRow = (id: string) => {

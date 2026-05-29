@@ -4,7 +4,6 @@ import { ArrowLeft } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { useProperty, useUpdateProperty, useUpdateLoan, useCreateLoan } from '@/hooks/useProperties';
 import { useUpsertPropertyIncomeBudget, yearToTaxYear } from '@/hooks/usePropertyIncomeBudgets';
 import { extractPostcodeArea } from '@/lib/calculations';
@@ -13,11 +12,11 @@ import { notifyPropertyUpdated } from '@/components/dashboard';
 import { PropertyForm } from '@/components/property/PropertyForm';
 import type { PropertyFormData } from '@/components/property/propertyFormSchema';
 import { AddressData } from '@/components/maps/AddressAutocomplete';
+import { toast } from "sonner";
 
 function PropertyEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: property, isLoading, error } = useProperty(id);
   const updateProperty = useUpdateProperty();
   const updateLoan = useUpdateLoan();
@@ -186,10 +185,7 @@ function PropertyEditPage() {
 
     notifyPropertyUpdated(id);
 
-    toast({
-      title: 'Property updated',
-      description: 'Your changes have been saved.',
-    });
+    toast.success('Property updated', { description: 'Your changes have been saved.' });
 
     navigate(`/properties/${id}`);
   };

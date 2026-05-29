@@ -10,12 +10,10 @@ import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 import { useInsurancePolicies } from '@/hooks/useInsurance';
 import { useLoanFacilitiesByProperty } from '@/hooks/useLoanFacilities';
 import { usePropertyPhotoV2 } from '@/hooks/usePropertyPhotosV2';
-import { useToast } from '@/hooks/use-toast';
 import { buildAndSavePassportPdf } from '../utils/pdfExport';
 
 export function usePropertyDetailState() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
   const { data: property, isLoading } = usePropertyV2(id);
   const { data: roomSummaries } = usePropertyRoomSummaries();
   const updateProperty = useUpdatePropertyV2();
@@ -117,10 +115,10 @@ export function usePropertyDetailState() {
     try {
       await updateProperty.mutateAsync({ id: property.id, notes: notesValue || null });
       setEditingNotes(false);
-      toast({ title: 'Notes saved' });
+      toast.success('Notes saved');
     } catch (err) {
       console.error('Failed to save property notes:', err);
-      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to save notes', variant: 'destructive' });
+      toast.error('Error', { description: err instanceof Error ? err.message : 'Failed to save notes' });
     }
   };
 

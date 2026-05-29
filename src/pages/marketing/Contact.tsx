@@ -9,14 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
 import { supabaseAny } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 export default function MarketingContact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const { toast } = useToast();
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -43,17 +41,10 @@ export default function MarketingContact() {
       if (error) throw error;
 
       setIsSubmitted(true);
-      toast({
-        title: 'Message sent!',
-        description: 'We\'ll be in touch within 24 hours.',
-      });
+      toast.success('Message sent!', { description: 'We\'ll be in touch within 24 hours.' });
     } catch (error) {
       console.error('Submission error:', error);
-      toast({
-        title: 'Submission failed',
-        description: 'Please try again or email us directly.',
-        variant: 'destructive',
-      });
+      toast.error('Submission failed', { description: 'Please try again or email us directly.' });
     } finally {
       setIsSubmitting(false);
     }

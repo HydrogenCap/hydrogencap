@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { supabaseAny } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 const benefits = [
   {
@@ -34,8 +34,6 @@ const benefits = [
 export default function MarketingBookDemo() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const { toast } = useToast();
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -65,17 +63,10 @@ export default function MarketingBookDemo() {
       if (error) throw error;
 
       setIsSubmitted(true);
-      toast({
-        title: 'Demo request received!',
-        description: 'We\'ll be in touch within 24 hours to schedule your call.',
-      });
+      toast('Demo request received!', { description: 'We\'ll be in touch within 24 hours to schedule your call.' });
     } catch (error) {
       console.error('Submission error:', error);
-      toast({
-        title: 'Submission failed',
-        description: 'Please try again or email us at office@tenureiq.com.',
-        variant: 'destructive',
-      });
+      toast.error('Submission failed', { description: 'Please try again or email us at office@tenureiq.com.' });
     } finally {
       setIsSubmitting(false);
     }

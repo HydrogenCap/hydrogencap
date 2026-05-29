@@ -9,7 +9,6 @@ import { ColumnMapper } from '@/components/import/ColumnMapper';
 import { ValidationPreview } from '@/components/import/ValidationPreview';
 import { ImportStepper } from '@/components/import/ImportStepper';
 import { useBatchImport } from '@/hooks/useBatchImport';
-import { useToast } from '@/hooks/use-toast';
 import { 
   parseCSV, 
   autoDetectMapping, 
@@ -19,12 +18,12 @@ import {
   type ValidatedRow,
   PROPERTY_FIELDS,
 } from '@/lib/csvParser';
+import { toast } from "sonner";
 
 const STEPS = ['Upload', 'Map Columns', 'Preview', 'Import'];
 
 export default function Import() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const batchImport = useBatchImport();
   
   const [currentStep, setCurrentStep] = useState(0);
@@ -50,13 +49,9 @@ export default function Import() {
       setCurrentStep(1);
     } catch (err) {
       console.error('Failed to parse CSV file:', err);
-      toast({
-        title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Failed to parse CSV', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
-  }, [toast]);
+  }, []);
 
   const handleClearFile = useCallback(() => {
     setSelectedFile(null);
@@ -81,11 +76,7 @@ export default function Import() {
   const handleImport = useCallback(async () => {
     const validRows = validatedRows.filter(r => r.isValid);
     if (validRows.length === 0) {
-      toast({
-        title: 'No valid rows',
-        description: 'Please fix validation errors before importing',
-        variant: 'destructive',
-      });
+      toast.error('No valid rows', { description: 'Please fix validation errors before importing' });
       return;
     }
 
@@ -94,19 +85,12 @@ export default function Import() {
       setImportResult(result);
       setCurrentStep(3);
       
-      toast({
-        title: 'Import complete',
-        description: `Successfully imported ${result.success} properties`,
-      });
+      toast('Import complete', { description: `Successfully imported ${result.success} properties` });
     } catch (err) {
       console.error('Failed to import properties:', err);
-      toast({
-        title: 'Import failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Import failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
-  }, [validatedRows, batchImport, toast]);
+  }, [validatedRows, batchImport]);
 
   const requiredFieldsMapped = PROPERTY_FIELDS
     .filter(f => f.required)
