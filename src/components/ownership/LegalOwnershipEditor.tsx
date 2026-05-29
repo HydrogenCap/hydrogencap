@@ -42,8 +42,8 @@ import {
   useAddOwnershipLink,
   useDeleteOwnershipLink,
 } from '@/hooks/useOwnershipLinks';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 
 interface LegalOwnershipEditorProps {
   propertyId: string;
@@ -71,7 +71,6 @@ export function LegalOwnershipEditor({
   open,
   onOpenChange,
 }: LegalOwnershipEditorProps) {
-  const { toast } = useToast();
   const { data: property } = useProperty(propertyId);
   const { data: companies } = useCompanies();
   const { data: parties } = useParties();
@@ -161,7 +160,7 @@ export function LegalOwnershipEditor({
 
   const handleCreateCompany = async () => {
     if (!newCompanyName.trim()) {
-      toast({ title: 'Error', description: 'Company name is required', variant: 'destructive' });
+      toast.error('Error', { description: 'Company name is required' });
       return;
     }
 
@@ -173,10 +172,10 @@ export function LegalOwnershipEditor({
       });
       setSelectedCompanyId(newCompany.id);
       setShowNewCompanyForm(false);
-      toast({ title: 'Company created', description: `${newCompanyName} has been created` });
+      toast.success('Company created', { description: `${newCompanyName} has been created` });
     } catch (error) {
       console.error('Failed to create company:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create company', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to create company' });
     }
   };
 
@@ -195,7 +194,7 @@ export function LegalOwnershipEditor({
         partyName = newPerson.display_name;
       } catch (error) {
         console.error('Failed to create person:', error);
-        toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create person', variant: 'destructive' });
+        toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to create person' });
         return;
       }
     } else {
@@ -204,24 +203,24 @@ export function LegalOwnershipEditor({
     }
 
     if (!partyId) {
-      toast({ title: 'Error', description: 'Please select or create a person', variant: 'destructive' });
+      toast.error('Error', { description: 'Please select or create a person' });
       return;
     }
 
     const percent = parseFloat(selectedPersonPercent);
     if (isNaN(percent) || percent <= 0 || percent > 100) {
-      toast({ title: 'Error', description: 'Please enter a valid percentage', variant: 'destructive' });
+      toast.error('Error', { description: 'Please enter a valid percentage' });
       return;
     }
 
     if (percent > remainingPercent + 0.01) {
-      toast({ title: 'Error', description: `Maximum available is ${remainingPercent.toFixed(1)}%`, variant: 'destructive' });
+      toast.error('Error', { description: `Maximum available is ${remainingPercent.toFixed(1)}%` });
       return;
     }
 
     // Check for duplicate
     if (pendingOwners.some(o => o.partyId === partyId)) {
-      toast({ title: 'Error', description: 'This person is already added', variant: 'destructive' });
+      toast.error('Error', { description: 'This person is already added' });
       return;
     }
 
@@ -288,10 +287,10 @@ export function LegalOwnershipEditor({
         }
       }
       
-      toast({ title: 'Ownership updated' });
+      toast.success('Ownership updated');
       onOpenChange(false);
     } catch (error) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 
@@ -313,11 +312,11 @@ export function LegalOwnershipEditor({
         legal_owner_company_id: null,
         legal_owner_party_id: null,
       });
-      toast({ title: 'Ownership cleared' });
+      toast.success('Ownership cleared');
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to clear ownership:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to clear ownership', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to clear ownership' });
     }
   };
 

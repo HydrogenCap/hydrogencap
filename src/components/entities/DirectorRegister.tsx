@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import {
   useDirectorAppointments,
   useCreateDirectorAppointment,
@@ -19,6 +18,7 @@ import {
 import { useOrganization } from '@/hooks/useOrganization';
 import { format } from 'date-fns';
 import { Plus, Users, Trash2, Edit2, Shield, UserCheck, Briefcase } from 'lucide-react';
+import { toast } from "sonner";
 
 const ROLE_CONFIG: Record<OfficerRole, { label: string; icon: React.ReactNode; color: string }> = {
   director: { label: 'Director', icon: <Briefcase className="h-4 w-4" />, color: 'default' },
@@ -31,7 +31,6 @@ interface Props {
 }
 
 export function DirectorRegister({ entityId }: Props) {
-  const { toast } = useToast();
   const { data: org } = useOrganization();
   const { data: appointments, isLoading } = useDirectorAppointments(entityId);
   const createAppointment = useCreateDirectorAppointment();
@@ -79,14 +78,14 @@ export function DirectorRegister({ entityId }: Props) {
       };
       if (editing) {
         await updateAppointment.mutateAsync({ id: editing.id, ...payload });
-        toast({ title: 'Officer updated' });
+        toast.success('Officer updated');
       } else {
         await createAppointment.mutateAsync({ entity_id: entityId, org_id: org.id, ...payload });
-        toast({ title: 'Officer added' });
+        toast.success('Officer added');
       }
       setShowForm(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to save' });
     }
   };
 
@@ -119,7 +118,7 @@ export function DirectorRegister({ entityId }: Props) {
                     {current.map(a => (
                       <OfficerRow key={a.id} appointment={a} onEdit={openEdit} onDelete={async () => {
                         await deleteAppointment.mutateAsync({ id: a.id, entityId });
-                        toast({ title: 'Officer removed' });
+                        toast.success('Officer removed');
                       }} />
                     ))}
                   </div>
@@ -132,7 +131,7 @@ export function DirectorRegister({ entityId }: Props) {
                     {former.map(a => (
                       <OfficerRow key={a.id} appointment={a} onEdit={openEdit} onDelete={async () => {
                         await deleteAppointment.mutateAsync({ id: a.id, entityId });
-                        toast({ title: 'Officer removed' });
+                        toast.success('Officer removed');
                       }} />
                     ))}
                   </div>

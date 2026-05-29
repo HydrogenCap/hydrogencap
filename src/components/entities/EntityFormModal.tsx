@@ -29,7 +29,7 @@ import {
 } from '@/hooks/useLegalEntities';
 import { useCompaniesHouse, type CHCompanySearchResult } from '@/hooks/useCompaniesHouse';
 import { CompanySearchInput } from '@/components/companies/CompanySearchInput';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface EntityFormModalProps {
   open: boolean;
@@ -51,7 +51,6 @@ const STATUS_OPTIONS = [
 ] as const;
 
 export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFormModalProps) {
-  const { toast } = useToast();
   const { data: org } = useOrganization();
   const createEntity = useCreateLegalEntity();
   const updateEntity = useUpdateLegalEntity();
@@ -128,14 +127,14 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
 
   const handleSubmit = async () => {
     if (!form.entity_name.trim()) {
-      toast({ title: 'Entity name required', description: 'Add a legal name to continue.', variant: 'destructive' });
+      toast.error('Entity name required', { description: 'Add a legal name to continue.' });
       return;
     }
     if (!org?.id) return;
 
     const issuedShares = form.issued_shares ? parseInt(form.issued_shares, 10) : null;
     if (form.issued_shares && (isNaN(issuedShares!) || issuedShares! <= 0)) {
-      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
+      toast.error('Check the share count', { description: 'Needs to be a positive whole number.' });
       return;
     }
 
@@ -157,15 +156,15 @@ export function EntityFormModal({ open, onOpenChange, editingEntity }: EntityFor
     try {
       if (isEditing && editingEntity) {
         await updateEntity.mutateAsync({ id: editingEntity.id, ...payload });
-        toast({ title: 'Entity details saved' });
+        toast.success('Entity details saved');
       } else {
         await createEntity.mutateAsync(payload);
-        toast({ title: 'New entity on file' });
+        toast('New entity on file');
       }
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save entity';
-      toast({ title: "Entity didn't save", description, variant: 'destructive' });
+      toast.error("Entity didn't save", { description: description });
     }
   };
 

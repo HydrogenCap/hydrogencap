@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
+import { toast } from "sonner";
 
 const resetPasswordSchema = z.object({
   password: passwordSchema,
@@ -28,8 +28,6 @@ export default function ResetPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
-  const { toast } = useToast();
-
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -84,11 +82,7 @@ export default function ResetPassword() {
       });
 
       if (error) {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
+        toast.error('Error', { description: error.message });
         return;
       }
 
@@ -97,17 +91,10 @@ export default function ResetPassword() {
       // Sign out after password change for security
       await supabase.auth.signOut();
       
-      toast({
-        title: 'Password updated',
-        description: 'Your password has been successfully reset.',
-      });
+      toast.success('Password updated', { description: 'Your password has been successfully reset.' });
     } catch (error) {
       console.error('Failed to reset password:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
     }

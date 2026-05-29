@@ -4,8 +4,8 @@ import { differenceInDays } from 'date-fns';
 import { useRoom, useUpdateRoom } from '@/hooks/useRoomsV2';
 import { useRoomPnL, type RoomPnLPeriod } from '@/hooks/useRoomPnL';
 import { useTenancyAgreements } from '@/hooks/useTenancyAgreements';
-import { useToast } from '@/hooks/use-toast';
 import { supabaseAny } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 export interface ComplianceDocument {
   id: string;
@@ -19,7 +19,6 @@ interface MaintenanceCostRow { actual_cost: number | null }
 
 export function useRoomDetailState() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
   const { data: room, isLoading } = useRoom(id);
   const { data: roomAgreements } = useTenancyAgreements({ roomId: id });
   const updateRoom = useUpdateRoom();
@@ -105,10 +104,10 @@ export function useRoomDetailState() {
     try {
       await updateRoom.mutateAsync({ id: room.id, notes: notesValue || null });
       setEditingNotes(false);
-      toast({ title: 'Notes saved' });
+      toast.success('Notes saved');
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save notes';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast.error('Error', { description });
     }
   };
 

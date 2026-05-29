@@ -24,7 +24,7 @@ import {
   type LettingsPipelineItem,
 } from '@/hooks/useLettingsPipeline';
 import { useTenantReferences } from '@/hooks/useLettingsWorkflow';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const STAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   marketing: Home,
@@ -131,7 +131,6 @@ function DetailSheet({
   const advanceStage = useAdvanceStage();
   const completeLetting = useCompleteLetting();
   const { data: ref } = useTenantReferences(item.id);
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(defaultTabForStage(item.stage));
 
   const next = nextStage(item.stage);
@@ -140,7 +139,7 @@ function DetailSheet({
   const handleAdvance = () => {
     if (!next) return;
     if (!validation.allowed) {
-      toast({ title: 'Cannot advance', description: validation.reason, variant: 'destructive' });
+      toast.error('Cannot advance', { description: validation.reason });
       return;
     }
 

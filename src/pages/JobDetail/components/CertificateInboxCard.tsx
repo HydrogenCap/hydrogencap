@@ -2,8 +2,8 @@ import { format } from 'date-fns';
 import { Inbox, Copy, CheckCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 
 interface Job {
   inbox_email?: string | null;
@@ -13,7 +13,6 @@ interface Job {
 }
 
 export function CertificateInboxCard({ job }: { job: Job }) {
-  const { toast } = useToast();
   if (!job.inbox_email) return null;
   return (
     <Card>
@@ -36,7 +35,7 @@ export function CertificateInboxCard({ job }: { job: Job }) {
             size="sm"
             onClick={() => {
               navigator.clipboard.writeText(job.inbox_email!);
-              toast({ title: 'Email copied to clipboard' });
+              toast.success('Email copied to clipboard');
             }}
           >
             <Copy className="h-4 w-4" />

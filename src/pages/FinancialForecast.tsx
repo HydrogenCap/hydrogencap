@@ -18,7 +18,7 @@ import {
 import { format } from 'date-fns';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 function CashflowTab() {
   const [rentGrowth, setRentGrowth] = useState(2);
@@ -165,8 +165,6 @@ function SavedForecastsTab() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: detail } = useForecastDetail(selectedId ?? undefined);
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   const handleDelete = async (id: string) => {
     const { error } = await supabaseAny
       .from('financial_forecasts')
@@ -174,9 +172,9 @@ function SavedForecastsTab() {
       .eq('id', id);
 
     if (error) {
-      toast({ title: 'Failed to delete forecast', variant: 'destructive' });
+      toast.error('Failed to delete forecast');
     } else {
-      toast({ title: 'Forecast deleted' });
+      toast.success('Forecast deleted');
       queryClient.invalidateQueries({ queryKey: ['financial-forecasts'] });
       if (selectedId === id) setSelectedId(null);
     }

@@ -22,7 +22,6 @@ import {
 } from '@/hooks/useShareCapital';
 import { useEntityVerification, useSyncEntity } from '@/hooks/useCompaniesHouseV2';
 import { useFreeAgentConnectionForEntity } from '@/hooks/useFreeAgentIntegration';
-import { useToast } from '@/hooks/use-toast';
 import { useEntityPropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useEntityCHSync } from '@/hooks/useEntityCHSync';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
@@ -50,12 +49,11 @@ import { CompanyFilingDeadlines } from '@/components/entities/CompanyFilingDeadl
 import { DirectorRegister } from '@/components/entities/DirectorRegister';
 import { IntercompanyLoanTracker } from '@/components/entities/IntercompanyLoanTracker';
 import { EntityFinancialConsolidation } from '@/components/entities/EntityFinancialConsolidation';
+import { toast } from "sonner";
 
 export default function EntityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
   // Data fetching
   const { data: entity, isLoading } = useLegalEntity(id);
   const { data: directors } = useEntityDirectors(id);
@@ -99,10 +97,10 @@ export default function EntityDetail() {
     if (!id) return;
     try {
       await deleteEntity.mutateAsync(id);
-      toast({ title: 'Entity deleted' });
+      toast.success('Entity deleted');
       navigate('/entities');
     } catch (error: unknown) {
-      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+      toast.error('Error', { description: getErrorMessage(error) });
     }
   };
 
@@ -196,7 +194,7 @@ export default function EntityDetail() {
                 }}
                 onUpdate={async (updates) => {
                   await updateEntity.mutateAsync({ id: entity.id, ...updates });
-                  toast({ title: 'Filing dates updated' });
+                  toast.success('Filing dates updated');
                 }}
                 onSyncFromCH={handleRefreshFromCH}
                 isSyncing={isLookingUp}
@@ -211,9 +209,9 @@ export default function EntityDetail() {
               onDeleteDirector={async (d) => {
                 try {
                   await deleteDirector.mutateAsync({ id: d.id, entityId: d.entity_id });
-                  toast({ title: 'Director removed' });
+                  toast.success('Director removed');
                 } catch (error: unknown) {
-                  toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                  toast.error('Error', { description: getErrorMessage(error) });
                 }
               }}
             />
@@ -227,14 +225,14 @@ export default function EntityDetail() {
                 onEditShareClass={(sc) => { setEditingShareClass(sc); setShowAddShareClass(true); }}
                 onDeleteShareClass={async (sc) => {
                   if (sc.allocated_shares > 0) {
-                    toast({ title: 'Cannot delete', description: 'Remove all shareholders from this class first', variant: 'destructive' });
+                    toast.error('Cannot delete', { description: 'Remove all shareholders from this class first' });
                     return;
                   }
                   try {
                     await deleteShareClassMutation.mutateAsync({ id: sc.id, entityId: entity.id });
-                    toast({ title: 'Share class deleted' });
+                    toast.success('Share class deleted');
                   } catch (error: unknown) {
-                    toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                    toast.error('Error', { description: getErrorMessage(error) });
                   }
                 }}
               />
@@ -249,9 +247,9 @@ export default function EntityDetail() {
               onDeleteShareholder={async (sh) => {
                 try {
                   await deleteShareholder.mutateAsync({ id: sh.id, entityId: sh.entity_id });
-                  toast({ title: 'Shareholder removed' });
+                  toast.success('Shareholder removed');
                 } catch (error: unknown) {
-                  toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                  toast.error('Error', { description: getErrorMessage(error) });
                 }
               }}
             />

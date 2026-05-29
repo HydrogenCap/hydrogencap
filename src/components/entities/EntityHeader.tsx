@@ -16,9 +16,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { supabaseAny } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { LegalEntity } from '@/hooks/useLegalEntities';
+import { toast } from "sonner";
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   spv: Building2,
@@ -59,8 +59,6 @@ export function EntityHeader({
 }: EntityHeaderProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   const TypeIcon = TYPE_ICONS[entity.entity_type] || Building2;
 
   const getErrorMessage = (error: unknown) =>
@@ -121,9 +119,9 @@ export function EntityHeader({
                     queryClient.invalidateQueries({ queryKey: ['legal_entities'] });
                     queryClient.invalidateQueries({ queryKey: ['legal_entity', entity.id] });
                     queryClient.invalidateQueries({ queryKey: ['ownership_data_v2'] });
-                    toast({ title: checked ? 'Set as group parent' : 'Removed group parent status' });
+                    toast.success(checked ? 'Set as group parent' : 'Removed group parent status');
                   } catch (error: unknown) {
-                    toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' });
+                    toast.error('Error', { description: getErrorMessage(error) });
                   }
                 }}
                 className="scale-75"

@@ -21,8 +21,8 @@ import {
   getOwnerDisplayName,
   type BeneficialOwner,
 } from '@/hooks/useBeneficialOwnership';
-import { useToast } from '@/hooks/use-toast';
 import { formatPercent, formatDateUK } from '@/lib/calculations';
+import { toast } from "sonner";
 
 interface BeneficialOwnersCardProps {
   propertyId: string;
@@ -110,15 +110,13 @@ function OwnershipDonut({ owners }: { owners: BeneficialOwner[] }) {
 export function BeneficialOwnersCard({ propertyId, onAddOwner, onEditOwner }: BeneficialOwnersCardProps) {
   const { data: owners, isLoading } = useActiveBeneficialOwners(propertyId);
   const deleteOwner = useDeleteBeneficialOwner();
-  const { toast } = useToast();
-
   const handleDelete = async (id: string) => {
     try {
       await deleteOwner.mutateAsync({ id, propertyId });
-      toast({ title: 'Beneficial owner removed' });
+      toast.success('Beneficial owner removed');
     } catch (error) {
       console.error('Failed to remove beneficial owner:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove owner', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to remove owner' });
     }
   };
 

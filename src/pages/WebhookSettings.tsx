@@ -12,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { SeverityBadge } from '@/components/common/SeverityBadge';
 import { Plus, Pencil, Trash2, Play, Eye, EyeOff, Copy, RefreshCw, Webhook } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { WEBHOOK_EVENTS, WEBHOOK_EVENT_CATEGORIES, type WebhookEventType } from '@/lib/webhook-events';
 import {
   useWebhookEndpoints,
@@ -24,6 +23,7 @@ import {
   type WebhookEndpoint,
 } from '@/hooks/useWebhooks';
 import type { SeverityLevel } from '@/lib/design-tokens';
+import { toast } from "sonner";
 
 const DELIVERY_STATUS_SEVERITY: Record<string, SeverityLevel> = {
   delivered: 'success',
@@ -333,7 +333,6 @@ function EndpointDetailSheet({
   onRegenerateSecret: () => void;
   isTestPending: boolean;
 }) {
-  const { toast } = useToast();
   const { data: deliveries, isLoading } = useWebhookDeliveries(endpoint.id);
   const [secretVisible, setSecretVisible] = useState(false);
 
@@ -341,7 +340,7 @@ function EndpointDetailSheet({
 
   const copySecret = async () => {
     await navigator.clipboard.writeText(endpoint.secret);
-    toast({ title: 'Secret copied to clipboard' });
+    toast.success('Secret copied to clipboard');
   };
 
   return (

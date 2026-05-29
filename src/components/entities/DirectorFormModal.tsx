@@ -16,7 +16,7 @@ import {
   useUpdateDirector,
   type EntityDirector,
 } from '@/hooks/useLegalEntities';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface DirectorFormModalProps {
   open: boolean;
@@ -26,7 +26,6 @@ interface DirectorFormModalProps {
 }
 
 export function DirectorFormModal({ open, onOpenChange, entityId, editingDirector }: DirectorFormModalProps) {
-  const { toast } = useToast();
   const createDirector = useCreateDirector();
   const updateDirector = useUpdateDirector();
   const isEditing = !!editingDirector;
@@ -57,7 +56,7 @@ export function DirectorFormModal({ open, onOpenChange, entityId, editingDirecto
 
   const handleSubmit = async () => {
     if (!form.director_name.trim() || !form.appointment_date) {
-      toast({ title: 'Error', description: 'Name and appointment date are required', variant: 'destructive' });
+      toast.error('Error', { description: 'Name and appointment date are required' });
       return;
     }
 
@@ -72,15 +71,15 @@ export function DirectorFormModal({ open, onOpenChange, entityId, editingDirecto
     try {
       if (isEditing && editingDirector) {
         await updateDirector.mutateAsync({ id: editingDirector.id, ...payload });
-        toast({ title: 'Director updated' });
+        toast.success('Director updated');
       } else {
         await createDirector.mutateAsync(payload);
-        toast({ title: 'Director added' });
+        toast.success('Director added');
       }
       onOpenChange(false);
     } catch (err) {
       const description = err instanceof Error ? err.message : 'Failed to save director';
-      toast({ title: 'Error', description, variant: 'destructive' });
+      toast.error('Error', { description: description });
     }
   };
 

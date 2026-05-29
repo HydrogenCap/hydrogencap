@@ -17,8 +17,8 @@ import {
   type ShareholdingWithEntity,
   type EffectiveOwnership,
 } from '@/hooks/useOwnershipLookthrough';
-import { useToast } from '@/hooks/use-toast';
 import { formatPercent } from '@/lib/calculations';
+import { toast } from "sonner";
 
 interface LegalOwnershipCardProps {
   propertyId: string;
@@ -50,7 +50,6 @@ interface ShareholdingsSectionProps {
 function ShareholdingsSection({ entityId, entityName, onAddShareholder, onEditShareholder }: ShareholdingsSectionProps) {
   const { data: shareholdings, isLoading } = useEntityShareholdings(entityId);
   const deleteShareholder = useDeleteShareholding();
-  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
 
   if (isLoading) {
@@ -63,10 +62,10 @@ function ShareholdingsSection({ entityId, entityName, onAddShareholder, onEditSh
   const handleDelete = async (id: string) => {
     try {
       await deleteShareholder.mutateAsync({ id, parentEntityId: entityId });
-      toast({ title: 'Shareholder removed' });
+      toast.success('Shareholder removed');
     } catch (error) {
       console.error('Failed to remove shareholder:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove shareholder', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to remove shareholder' });
     }
   };
 
@@ -155,15 +154,13 @@ export function LegalOwnershipCard({
   const { data: legalOwners, isLoading } = useLegalOwnership(propertyId);
   const { data: effectiveOwnership } = useEffectiveOwnership(propertyId);
   const deleteLegalOwner = useDeleteLegalOwnership();
-  const { toast } = useToast();
-
   const handleDeleteLegalOwner = async (id: string) => {
     try {
       await deleteLegalOwner.mutateAsync({ id, propertyId });
-      toast({ title: 'Legal owner removed' });
+      toast.success('Legal owner removed');
     } catch (error) {
       console.error('Failed to remove legal owner:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove legal owner', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to remove legal owner' });
     }
   };
 

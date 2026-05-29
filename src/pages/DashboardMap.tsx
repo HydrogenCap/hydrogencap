@@ -13,15 +13,13 @@ import { useDuplicateDetection } from '@/hooks/useDuplicateDetection';
 import { useDismissedDuplicates, useDismissDuplicate, isDuplicateDismissed } from '@/hooks/useDismissedDuplicates';
 import { Link } from 'react-router-dom';
 import { MissingLocationsBanner } from '@/components/geocoding';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export default function DashboardMap() {
   const { data: properties, isLoading } = useProperties();
   const allDuplicates = useDuplicateDetection(properties);
   const { data: dismissedDuplicates } = useDismissedDuplicates();
   const dismissDuplicate = useDismissDuplicate();
-  const { toast } = useToast();
-  
   // Filter out dismissed duplicates
   const duplicates = useMemo(() => {
     return allDuplicates.filter(
@@ -238,17 +236,10 @@ export default function DashboardMap() {
                             { propertyId1: dup.property1.id, propertyId2: dup.property2.id },
                             {
                               onSuccess: () => {
-                                toast({
-                                  title: 'Duplicate dismissed',
-                                  description: 'These properties will no longer be flagged as duplicates.',
-                                });
+                                toast.success('Duplicate dismissed', { description: 'These properties will no longer be flagged as duplicates.' });
                               },
                               onError: () => {
-                                toast({
-                                  title: 'Error',
-                                  description: 'Failed to dismiss duplicate.',
-                                  variant: 'destructive',
-                                });
+                                toast.error('Error', { description: 'Failed to dismiss duplicate.' });
                               },
                             }
                           );

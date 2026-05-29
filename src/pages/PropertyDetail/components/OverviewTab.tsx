@@ -1,4 +1,5 @@
 import { Edit, Copy, QrCode } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +21,7 @@ interface Props {
 export function OverviewTab({ state }: Props) {
   const {
     property, capitalGrowth, editingNotes, setEditingNotes,
-    notesValue, setNotesValue, handleSaveNotes, updateProperty, toast,
+    notesValue, setNotesValue, handleSaveNotes, updateProperty,
   } = state;
   if (!property) return null;
   return (
@@ -101,7 +102,8 @@ export function OverviewTab({ state }: Props) {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">Tenants scan this to report a maintenance issue directly from their phone.</p>
             <p className="text-xs font-mono bg-muted px-2 py-1 rounded">{window.location.origin}/tenant-portal/maintenance</p>
-            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast({ title: 'Link copied!' }); }}>
+            <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(window.location.origin + '/tenant-portal/maintenance'); toast.success('Link copied!'); }}>
+
               <Copy className="h-3 w-3 mr-1" /> Copy link
             </Button>
           </div>

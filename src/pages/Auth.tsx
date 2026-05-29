@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable/index';
 import { LogoWordmark } from '@/components/LogoWordmark';
 import { SEO } from '@/components/SEO';
 
 import { passwordSchema, PASSWORD_HINT } from '@/lib/passwordSchema';
+import { toast } from "sonner";
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -47,8 +47,6 @@ function AuthPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
     defaultValues: {
@@ -81,24 +79,13 @@ function AuthPage() {
         const { error } = await signIn(data.email, data.password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: 'Login failed',
-              description: 'Invalid email or password. Please try again.',
-              variant: 'destructive',
-            });
+            toast.error('Login failed', { description: 'Invalid email or password. Please try again.' });
           } else {
-            toast({
-              title: 'Login failed',
-              description: error.message,
-              variant: 'destructive',
-            });
+            toast.error('Login failed', { description: error.message });
           }
           return;
         }
-        toast({
-          title: 'Welcome back!',
-          description: 'You have successfully signed in.',
-        });
+        toast('Welcome back!', { description: 'You have successfully signed in.' });
         const searchParams = new URLSearchParams(window.location.search);
         const returnTo = searchParams.get('returnTo');
         navigate(isSafeInternalPath(returnTo) ? (returnTo as string) : '/dashboard');
@@ -106,34 +93,19 @@ function AuthPage() {
         const { error } = await signUp(data.email, data.password, data.fullName);
         if (error) {
           if (error.message.includes('User already registered')) {
-            toast({
-              title: 'Account exists',
-              description: 'This email is already registered. Please sign in instead.',
-              variant: 'destructive',
-            });
+            toast.error('Account exists', { description: 'This email is already registered. Please sign in instead.' });
             setIsLogin(true);
           } else {
-            toast({
-              title: 'Sign up failed',
-              description: error.message,
-              variant: 'destructive',
-            });
+            toast.error('Sign up failed', { description: error.message });
           }
           return;
         }
-        toast({
-          title: 'Account created!',
-          description: 'Welcome to Tenure IQ.',
-        });
+        toast.success('Account created!', { description: 'Welcome to Tenure IQ.' });
         navigate('/dashboard');
       }
     } catch (error) {
       console.error('Failed to authenticate:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -273,11 +245,7 @@ function AuthPage() {
                   redirect_uri: window.location.origin,
                 });
                 if (error) {
-                  toast({
-                    title: 'Google sign-in failed',
-                    description: error.message,
-                    variant: 'destructive',
-                  });
+                  toast.error('Google sign-in failed', { description: error.message });
                 }
                 setIsGoogleLoading(false);
               }}

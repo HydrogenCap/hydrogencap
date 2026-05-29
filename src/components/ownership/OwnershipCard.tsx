@@ -10,7 +10,7 @@ import {
   type PropertyOwnershipWithEntity,
 } from '@/hooks/useOwnership';
 import { formatPercent } from '@/lib/calculations';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface OwnershipCardProps {
   propertyId: string;
@@ -28,8 +28,6 @@ const entityTypeIcons: Record<string, React.ReactNode> = {
 export function OwnershipCard({ propertyId, onAddOwnership, onEditOwnership }: OwnershipCardProps) {
   const { data: ownership, isLoading } = usePropertyOwnership(propertyId);
   const deleteOwnership = useDeletePropertyOwnership();
-  const { toast } = useToast();
-
   const propertyOwnership = ownership?.filter(o => o.ownership_level === 'Property') ?? [];
   const spvShareholding = ownership?.filter(o => o.ownership_level === 'SPV_Shareholding') ?? [];
   
@@ -39,10 +37,10 @@ export function OwnershipCard({ propertyId, onAddOwnership, onEditOwnership }: O
   const handleDelete = async (id: string) => {
     try {
       await deleteOwnership.mutateAsync({ id, propertyId });
-      toast({ title: 'Ownership removed' });
+      toast.success('Ownership removed');
     } catch (error) {
       console.error('Failed to remove ownership:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove ownership', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to remove ownership' });
     }
   };
 

@@ -22,8 +22,8 @@ import { supabaseAny } from '@/integrations/supabase/client';
 import { useAcceptAllHighConfidence } from '@/hooks/useComplianceIntake';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { SEO } from '@/components/SEO';
+import { toast } from "sonner";
 
 export default function InboxPage() {
   return (<AppLayout><InboxPageInner /></AppLayout>);
@@ -44,7 +44,6 @@ function InboxPageInner() {
   });
   const acceptAllHighConfidence = useAcceptAllHighConfidence();
   const deleteDocument = useDeleteDocument();
-  const { toast } = useToast();
   const [isAcceptingAll, setIsAcceptingAll] = useState(false);
   const [showNullConfirmDialog, setShowNullConfirmDialog] = useState(false);
   const [showUnreviewedOnly, setShowUnreviewedOnly] = useState(false);
@@ -136,7 +135,7 @@ function InboxPageInner() {
     const selectedDocs = readyDocsAll.filter(d => selectedIds.has(d.id));
     const { highConfidence: highConfSelected, nullConfidence: nullConfSelected } = partitionReadyDocs(selectedDocs);
     if (highConfSelected.length === 0 && nullConfSelected.length === 0) {
-      toast({ title: 'Nothing to accept', description: 'Selected documents fall below the AI confidence threshold — review them per-row.', variant: 'destructive' });
+      toast.error('Nothing to accept', { description: 'Selected documents fall below the AI confidence threshold — review them per-row.' });
       return;
     }
     if (nullConfSelected.length > 0 && highConfSelected.length === 0) {
@@ -159,7 +158,7 @@ function InboxPageInner() {
       for (const id of selectedIds) {
         await deleteDocument.mutateAsync(id);
       }
-      toast({ title: `Deleted ${selectedIds.size} document(s)`, variant: 'destructive' });
+      toast.error(`Deleted ${selectedIds.size} document(s)`);
       setSelectedIds(new Set());
     } catch {
       // individual errors handled by hook

@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTenantV2, useUpdateTenantV2, type TenantStatusV2 } from '@/hooks/useTenantsV2';
 import { useTenancyAgreements, useTenancyComplianceChecks } from '@/hooks/useTenancyAgreements';
-import { useToast } from '@/hooks/use-toast';
 import { supabase, supabaseAny } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 export interface RecurringCharge {
   id: string;
@@ -17,7 +17,6 @@ export interface RecurringCharge {
 
 export function useTenantDetailState() {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
   const { data: tenant, isLoading } = useTenantV2(id);
   const { data: agreements } = useTenancyAgreements({ tenantId: id });
   const { data: allCompliance } = useTenancyComplianceChecks();
@@ -81,7 +80,7 @@ export function useTenantDetailState() {
     if (!id) return;
     updateTenant.mutate(
       { id, status: newStatus as TenantStatusV2 },
-      { onSuccess: () => toast({ title: 'Status updated', description: `Tenant status changed to ${newStatus}.` }) },
+      { onSuccess: () => toast.success('Status updated', { description: `Tenant status changed to ${newStatus}.` }) },
     );
   };
 

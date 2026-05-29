@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileUploadZone } from '@/components/import/FileUploadZone';
 import { ImportStepper } from '@/components/import/ImportStepper';
-import { useToast } from '@/hooks/use-toast';
 import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,13 +21,13 @@ import {
   type PassportValidatedRow,
   PASSPORT_FIELDS,
 } from '@/lib/passportCsvParser';
+import { toast } from "sonner";
 
 const STEPS = ['Upload', 'Map Columns', 'Match Properties', 'Import'];
 type PropertyPassportInsert = Database['public']['Tables']['property_passport']['Insert'];
 
 export default function ImportPassport() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: properties } = useProperties();
   const upsertPassport = useUpsertPassport();
   
@@ -56,13 +55,9 @@ export default function ImportPassport() {
       setCurrentStep(1);
     } catch (err) {
       console.error('Failed to parse passport CSV file:', err);
-      toast({
-        title: 'Failed to parse CSV',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
+      toast.error('Failed to parse CSV', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
-  }, [toast]);
+  }, []);
 
   const handleClearFile = useCallback(() => {
     setSelectedFile(null);
@@ -110,11 +105,7 @@ export default function ImportPassport() {
   const handleImport = useCallback(async () => {
     const validRows = validatedRows.filter(r => r.isValid && r.matchedPropertyId);
     if (validRows.length === 0) {
-      toast({
-        title: 'No valid rows',
-        description: 'Please fix matching errors before importing',
-        variant: 'destructive',
-      });
+      toast.error('No valid rows', { description: 'Please fix matching errors before importing' });
       return;
     }
 
@@ -135,11 +126,7 @@ export default function ImportPassport() {
         success++;
       } catch (err) {
         console.error('Failed to import passport row:', err);
-        toast({
-          title: 'Row import failed',
-          description: err instanceof Error ? err.message : 'Something went wrong',
-          variant: 'destructive',
-        });
+        toast.error('Row import failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
         failed++;
       }
     }
@@ -148,11 +135,8 @@ export default function ImportPassport() {
     setCurrentStep(3);
     setIsImporting(false);
     
-    toast({
-      title: 'Import complete',
-      description: `Successfully imported ${success} passports`,
-    });
-  }, [validatedRows, upsertPassport, toast]);
+    toast('Import complete', { description: `Successfully imported ${success} passports` });
+  }, [validatedRows, upsertPassport]);
 
   const hasAddressMapping = Object.values(mapping).includes('address_match') || 
                             Object.values(mapping).includes('postcode_match');

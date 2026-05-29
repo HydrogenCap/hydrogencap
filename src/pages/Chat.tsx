@@ -26,7 +26,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { useToast } from '@/hooks/use-toast';
 import { useConversations, useDeleteConversation } from '@/hooks/useConversations';
 import { useChatMessages, type ChatMessage, type ToolCall } from '@/hooks/useChatMessages';
 import { useChat, getToolLabel } from '@/hooks/useChat';
@@ -47,8 +46,6 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { toast: _toast } = useToast();
-
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
   const { data: messages, isLoading: _messagesLoading } = useChatMessages(activeConversationId);
   const deleteConversation = useDeleteConversation();

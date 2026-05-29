@@ -17,8 +17,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTableSelection } from '@/hooks/useTableSelection';
-import { useToast } from '@/hooks/use-toast';
-
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -31,6 +29,7 @@ import { useBulkEpcEnrichV2 } from '@/hooks/useBulkEpcEnrichV2';
 import type { PropertyWithEntity } from '@/hooks/usePropertiesV2';
 import type { PropertyRoomSummary } from '@/hooks/useRoomsV2';
 import { SEO } from '@/components/SEO';
+import { toast } from "sonner";
 
 // Badge colour maps
 const ENTITY_TYPE_BG: Record<string, string> = {
@@ -104,7 +103,6 @@ export default function PropertiesV2() {
   const { enrichAll: enrichEpc, isEnriching: isEnrichingEpc } = useBulkEpcEnrichV2();
   
   const navigate = useNavigate();
-  const { toast } = useToast();
   const deleteProperty = useDeletePropertyV2();
   const updateProperty = useUpdatePropertyV2();
   const [showWizard, setShowWizard] = useState(false);
@@ -152,10 +150,10 @@ export default function PropertiesV2() {
     setConfirmDelete(false);
     try {
       await Promise.all(ids.map(id => deleteProperty.mutateAsync(id)));
-      toast({ title: 'Properties deleted', description: `${ids.length} removed.` });
+      toast.success('Properties deleted', { description: `${ids.length} removed.` });
       sel.clear();
     } catch (err: any) {
-      toast({ title: 'Delete failed', description: err.message, variant: 'destructive' });
+      toast.error('Delete failed', { description: err.message });
     }
   };
 
@@ -163,10 +161,10 @@ export default function PropertiesV2() {
     const ids = sel.selectedIds;
     try {
       await Promise.all(ids.map(id => updateProperty.mutateAsync({ id, lifecycle_stage: stage } as any)));
-      toast({ title: 'Stage updated', description: `${ids.length} properties moved to ${LIFECYCLE_STAGES.find(s => s.value === stage)?.label ?? stage}.` });
+      toast.success('Stage updated', { description: `${ids.length} properties moved to ${LIFECYCLE_STAGES.find(s => s.value === stage)?.label ?? stage}.` });
       sel.clear();
     } catch (err: any) {
-      toast({ title: 'Update failed', description: err.message, variant: 'destructive' });
+      toast.error('Update failed', { description: err.message });
     }
   };
 

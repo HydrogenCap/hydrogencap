@@ -12,8 +12,8 @@ import {
 import { EntityVerification, useCHOfficers, useCHFilingHistory } from '@/hooks/useCompaniesHouseV2';
 import { EntityDirector, LegalEntity } from '@/hooks/useLegalEntities';
 import { useUpdateLegalEntity, useCreateDirector } from '@/hooks/useLegalEntities';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { toast } from "sonner";
 
 interface Props {
   entityId: string;
@@ -60,8 +60,6 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
   const { data: chFilings = [] } = useCHFilingHistory(entityId, companyNumber);
   const updateEntity = useUpdateLegalEntity();
   const createDirector = useCreateDirector();
-  const { toast } = useToast();
-
   if (!companyNumber || !verification || verification.verification_status === 'not_synced') {
     return null;
   }
@@ -94,9 +92,9 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
           break;
       }
       await updateEntity.mutateAsync(updates);
-      toast({ title: `${field.replace('_', ' ')} updated from Companies House` });
+      toast.success(`${field.replace('_', ' ')} updated from Companies House`);
     } catch (err: unknown) {
-      toast({ title: "Field didn't save", description: getErrorMessage(err), variant: 'destructive' });
+      toast.error("Field didn't save", { description: getErrorMessage(err) });
     }
   };
 
@@ -117,11 +115,11 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
           imported++;
         } catch (err) {
           console.error('Failed to import officer:', officer.name, err);
-          toast({ title: 'Officer import failed', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+          toast.error('Officer import failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
         }
       }
     }
-    toast({ title: imported > 0 ? `${imported} officer(s) added from Companies House` : "Already up to date — every officer's on file" });
+    toast.success(imported > 0 ? `${imported} officer(s) added from Companies House` : "Already up to date — every officer's on file");
   };
 
   const handleImportAll = async () => {
@@ -140,9 +138,9 @@ export function CHDataPanel({ entityId, companyNumber, verification, localDirect
     try {
       await updateEntity.mutateAsync(updates);
       await handleImportOfficers();
-      toast({ title: 'Synced from Companies House' });
+      toast.success('Synced from Companies House');
     } catch (err: unknown) {
-      toast({ title: "Sync didn't complete", description: getErrorMessage(err), variant: 'destructive' });
+      toast.error("Sync didn't complete", { description: getErrorMessage(err) });
     }
   };
 

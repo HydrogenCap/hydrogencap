@@ -24,8 +24,8 @@ import {
   type OwnershipLink,
 } from '@/hooks/useOwnershipLinks';
 import { UnifiedOwnershipEditor } from './UnifiedOwnershipEditor';
-import { useToast } from '@/hooks/use-toast';
 import { formatPercent, formatDateUK } from '@/lib/calculations';
+import { toast } from "sonner";
 
 interface CompanyOwnershipSectionProps {
   companyId: string;
@@ -35,18 +35,16 @@ interface CompanyOwnershipSectionProps {
 export function CompanyOwnershipSection({ companyId, companyName: _companyName }: CompanyOwnershipSectionProps) {
   const { data: links, isLoading } = useCompanyOwnership(companyId);
   const deleteLink = useDeleteOwnershipLink();
-  const { toast } = useToast();
-
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<OwnershipLink | null>(null);
 
   const handleDelete = async (id: string) => {
     try {
       await deleteLink.mutateAsync({ id, subjectType: 'COMPANY', subjectId: companyId });
-      toast({ title: 'Shareholder removed' });
+      toast.success('Shareholder removed');
     } catch (error) {
       console.error('Failed to remove shareholder:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove shareholder', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to remove shareholder' });
     }
   };
 

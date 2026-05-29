@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { format, addMonths } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { usePropertyRooms } from '@/hooks/useRoomsV2';
 import { useTenancyAgreements } from '@/hooks/useTenancyAgreements';
@@ -14,6 +13,7 @@ import {
   generateReferenceRequestPDF,
 } from '@/lib/templatePdfGenerator';
 import type { TemplateFields, WizardStep } from '../utils/types';
+import { toast } from "sonner";
 
 export function useDocumentTemplatesState() {
   const [step, setStep] = useState<WizardStep>('browse');
@@ -24,8 +24,6 @@ export function useDocumentTemplatesState() {
   const [topTab, setTopTab] = useState<string>('wizard');
   const [editorTemplateId, setEditorTemplateId] = useState<string | null>(null);
   const [versionTemplateId, setVersionTemplateId] = useState<string | null>(null);
-
-  const { toast } = useToast();
   const { data: properties } = usePropertiesV2();
   const { data: rooms } = usePropertyRooms(selectedPropertyId || undefined);
   const { data: tenancies } = useTenancyAgreements({ propertyId: selectedPropertyId || undefined });
@@ -193,11 +191,11 @@ export function useDocumentTemplatesState() {
           generated_data: templateFields as Record<string, unknown>,
         });
 
-        toast({ title: 'Document generated', description: 'PDF has been downloaded.' });
+        toast.success('Document generated', { description: 'PDF has been downloaded.' });
       }
     } catch (err) {
       console.error('Failed to generate document:', err);
-      toast({ title: 'Generation failed', description: err instanceof Error ? err.message : 'Something went wrong', variant: 'destructive' });
+      toast.error('Generation failed', { description: err instanceof Error ? err.message : 'Something went wrong' });
     }
   };
 

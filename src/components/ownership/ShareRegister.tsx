@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, ArrowRightLeft } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import {
   useShareClasses,
   useAddShareClass,
@@ -21,6 +20,7 @@ import {
   type ShareClass,
   type Shareholding,
 } from '@/hooks/useShareRegister';
+import { toast } from "sonner";
 
 interface ShareRegisterProps {
   entityId: string;
@@ -28,7 +28,6 @@ interface ShareRegisterProps {
 }
 
 export function ShareRegister({ entityId, orgId }: ShareRegisterProps) {
-  const { toast: _toast } = useToast();
   const { data: shareClasses = [], isLoading: loadingClasses } = useShareClasses(entityId);
   const { data: shareholdings = [], isLoading: loadingHoldings } = useShareholdings(entityId);
 
@@ -174,7 +173,6 @@ function AddShareClassDialog({
   entityId: string;
   orgId: string;
 }) {
-  const { toast } = useToast();
   const addShareClass = useAddShareClass();
   const [className, setClassName] = useState('Ordinary');
   const [nominalValue, setNominalValue] = useState('1.00');
@@ -193,7 +191,7 @@ function AddShareClassDialog({
         voting_rights: votingRights,
         dividend_rights: dividendRights,
       });
-      toast({ title: 'Share class added' });
+      toast.success('Share class added');
       onOpenChange(false);
       setClassName('Ordinary');
       setNominalValue('1.00');
@@ -201,7 +199,7 @@ function AddShareClassDialog({
       setVotingRights(true);
       setDividendRights(true);
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 
@@ -266,7 +264,6 @@ function AddShareholderDialog({
   orgId: string;
   shareClasses: ShareClass[];
 }) {
-  const { toast } = useToast();
   const addShareholding = useAddShareholding();
   const [holderName, setHolderName] = useState('');
   const [holderType, setHolderType] = useState<'individual' | 'corporate' | 'trust' | 'nominee'>('individual');
@@ -287,14 +284,14 @@ function AddShareholderDialog({
         percentage: parseFloat(percentage),
         allotment_date: allotmentDate || null,
       });
-      toast({ title: 'Shareholder added' });
+      toast.success('Shareholder added');
       onOpenChange(false);
       setHolderName('');
       setSharesHeld('');
       setPercentage('');
       setAllotmentDate('');
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 
@@ -380,7 +377,6 @@ function RecordTransferDialog({
   shareClasses: ShareClass[];
   shareholdings: Shareholding[];
 }) {
-  const { toast } = useToast();
   const addTransfer = useAddShareTransfer();
   const [shareClassId, setShareClassId] = useState('');
   const [fromHolder, setFromHolder] = useState('');
@@ -408,7 +404,7 @@ function RecordTransferDialog({
         stamp_duty: stampDuty,
         notes: null,
       });
-      toast({ title: 'Transfer recorded' });
+      toast.success('Transfer recorded');
       onOpenChange(false);
       setShareClassId('');
       setFromHolder('');
@@ -416,7 +412,7 @@ function RecordTransferDialog({
       setSharesTransferred('');
       setConsideration('0');
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 
