@@ -115,7 +115,7 @@ export function useChat() {
         setActiveTools([]);
       }
     },
-    [isLoading, queryClient, toast]
+    [isLoading, queryClient]
   );
 
   return {
