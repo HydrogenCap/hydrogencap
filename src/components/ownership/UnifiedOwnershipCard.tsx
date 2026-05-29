@@ -24,8 +24,8 @@ import {
   getOwnerType,
   type OwnershipLink,
 } from '@/hooks/useOwnershipLinks';
-import { useToast } from '@/hooks/use-toast';
 import { formatPercent, formatDateUK } from '@/lib/calculations';
+import { toast } from "sonner";
 
 interface UnifiedOwnershipCardProps {
   propertyId: string;
@@ -110,15 +110,13 @@ function OwnershipDonut({ links }: { links: OwnershipLink[] }) {
 export function UnifiedOwnershipCard({ propertyId, onAddOwner, onEditOwner }: UnifiedOwnershipCardProps) {
   const { data: links, isLoading } = usePropertyBeneficialOwnership(propertyId);
   const deleteLink = useDeleteOwnershipLink();
-  const { toast } = useToast();
-
   const handleDelete = async (id: string) => {
     try {
       await deleteLink.mutateAsync({ id, subjectType: 'PROPERTY', subjectId: propertyId });
-      toast({ title: 'Beneficial owner removed' });
+      toast.success('Beneficial owner removed');
     } catch (error) {
       console.error('Failed to remove beneficial owner:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to remove owner', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to remove owner' });
     }
   };
 

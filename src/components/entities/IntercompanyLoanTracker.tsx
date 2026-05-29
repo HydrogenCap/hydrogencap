@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import {
   useIntercompanyLoans,
   useCreateIntercompanyLoan,
@@ -21,6 +20,7 @@ import { useOrganization } from '@/hooks/useOrganization';
 import { formatGBPDecimal } from '@/lib/calculations';
 import { format, differenceInDays } from 'date-fns';
 import { Plus, ArrowLeftRight, Trash2, Edit2, TrendingUp } from 'lucide-react';
+import { toast } from "sonner";
 
 const STATUS_BADGE: Record<LoanStatus, { variant: string; label: string }> = {
   active: { variant: 'default', label: 'Active' },
@@ -40,7 +40,6 @@ interface Props {
 }
 
 export function IntercompanyLoanTracker({ entityId }: Props) {
-  const { toast } = useToast();
   const { data: org } = useOrganization();
   const { data: loans, isLoading } = useIntercompanyLoans(entityId);
   const { data: entities } = useLegalEntities();
@@ -138,14 +137,14 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
       };
       if (editing) {
         await updateLoan.mutateAsync({ id: editing.id, ...payload });
-        toast({ title: 'Loan terms saved' });
+        toast.success('Loan terms saved');
       } else {
         await createLoan.mutateAsync(payload);
-        toast({ title: 'Intercompany loan on file' });
+        toast('Intercompany loan on file');
       }
       setShowForm(false);
     } catch (error: unknown) {
-      toast({ title: "Loan didn't save", description: error instanceof Error ? error.message : 'Failed to save', variant: 'destructive' });
+      toast.error("Loan didn't save", { description: error instanceof Error ? error.message : 'Failed to save' });
     }
   };
 
@@ -215,7 +214,7 @@ export function IntercompanyLoanTracker({ entityId }: Props) {
                         size="icon"
                         onClick={async () => {
                           await deleteLoan.mutateAsync(loan.id);
-                          toast({ title: 'Loan deleted from the register' });
+                          toast.success('Loan deleted from the register');
                         }}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />

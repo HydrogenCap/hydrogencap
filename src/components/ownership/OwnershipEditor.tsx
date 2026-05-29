@@ -26,7 +26,7 @@ import {
   useUpdatePropertyOwnership,
   type PropertyOwnershipWithEntity,
 } from '@/hooks/useOwnership';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface OwnershipEditorProps {
   propertyId: string;
@@ -49,8 +49,6 @@ export function OwnershipEditor({
   const createEntity = useCreateOwnershipEntity();
   const addOwnership = useAddPropertyOwnership();
   const updateOwnership = useUpdatePropertyOwnership();
-  const { toast } = useToast();
-
   const [showNewEntity, setShowNewEntity] = useState(false);
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
   const [percent, setPercent] = useState('');
@@ -94,10 +92,10 @@ export function OwnershipEditor({
       });
       setSelectedEntityId(entity.id);
       setShowNewEntity(false);
-      toast({ title: 'Entity created', description: `${entity.name} added to your entities.` });
+      toast.success('Entity created', { description: `${entity.name} added to your entities.` });
     } catch (error) {
       console.error('Failed to create entity:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to create entity', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to create entity' });
     }
   };
 
@@ -106,7 +104,7 @@ export function OwnershipEditor({
 
     const percentNum = parseFloat(percent);
     if (!selectedEntityId || isNaN(percentNum) || percentNum < 0 || percentNum > 100) {
-      toast({ title: 'Invalid input', description: 'Please select an entity and enter a valid percentage', variant: 'destructive' });
+      toast.error('Invalid input', { description: 'Please select an entity and enter a valid percentage' });
       return;
     }
 
@@ -119,7 +117,7 @@ export function OwnershipEditor({
           ownership_level: level,
           notes: notes.trim() || null,
         });
-        toast({ title: 'Ownership updated' });
+        toast.success('Ownership updated');
       } else {
         await addOwnership.mutateAsync({
           property_id: propertyId,
@@ -128,12 +126,12 @@ export function OwnershipEditor({
           ownership_level: level,
           notes: notes.trim() || null,
         });
-        toast({ title: 'Ownership added' });
+        toast.success('Ownership added');
       }
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to save ownership:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save ownership', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to save ownership' });
     }
   };
 

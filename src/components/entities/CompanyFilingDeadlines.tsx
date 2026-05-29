@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import {
   useFilingDeadlines,
   useCreateFilingDeadline,
@@ -21,6 +20,7 @@ import { useOrganization } from '@/hooks/useOrganization';
 import { format, differenceInDays, addMonths, addDays } from 'date-fns';
 import { Plus, FileText, Trash2, Edit2, AlertTriangle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import type { LegalEntity } from '@/hooks/useLegalEntities';
+import { toast } from "sonner";
 
 const FILING_LABELS: Record<FilingType, string> = {
   confirmation_statement: 'Confirmation Statement',
@@ -75,7 +75,6 @@ interface Props {
 }
 
 export function CompanyFilingDeadlines({ entityId, entity }: Props) {
-  const { toast } = useToast();
   const { data: org } = useOrganization();
   const { data: filings, isLoading } = useFilingDeadlines(entityId);
   const createFiling = useCreateFilingDeadline();
@@ -126,7 +125,7 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
           reference: formData.reference || null,
           document_url: formData.document_url || null,
         });
-        toast({ title: 'Filing updated' });
+        toast.success('Filing updated');
       } else {
         await createFiling.mutateAsync({
           entity_id: entityId,
@@ -137,11 +136,11 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
           reference: formData.reference || null,
           document_url: formData.document_url || null,
         });
-        toast({ title: 'Filing deadline added' });
+        toast.success('Filing deadline added');
       }
       setShowForm(false);
     } catch (error: unknown) {
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to save', variant: 'destructive' });
+      toast.error('Error', { description: error instanceof Error ? error.message : 'Failed to save' });
     }
   };
 
@@ -164,7 +163,7 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
         created++;
       }
     }
-    toast({ title: created > 0 ? `${created} filing deadline(s) generated from CH data` : 'No new deadlines to add' });
+    toast.success(created > 0 ? `${created} filing deadline(s) generated from CH data` : 'No new deadlines to add');
   };
 
   if (isLoading) return <Skeleton className="h-48" />;
@@ -227,7 +226,7 @@ export function CompanyFilingDeadlines({ entityId, entity }: Props) {
                         size="icon"
                         onClick={async () => {
                           await deleteFiling.mutateAsync({ id: f.id, entityId });
-                          toast({ title: 'Filing removed' });
+                          toast.success('Filing removed');
                         }}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />

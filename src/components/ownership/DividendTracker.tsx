@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, FileText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import {
   useEntityDividends,
   useAddEntityDividend,
@@ -20,6 +19,7 @@ import {
   type ShareClass,
   type EntityDividend,
 } from '@/hooks/useShareRegister';
+import { toast } from "sonner";
 
 interface DividendTrackerProps {
   entityId: string;
@@ -27,7 +27,6 @@ interface DividendTrackerProps {
 }
 
 export function DividendTracker({ entityId, orgId }: DividendTrackerProps) {
-  const { toast } = useToast();
   const { data: dividends = [], isLoading } = useEntityDividends(entityId);
   const { data: shareClasses = [] } = useShareClasses(entityId);
   const { data: shareholdings = [] } = useShareholdings(entityId);
@@ -43,9 +42,9 @@ export function DividendTracker({ entityId, orgId }: DividendTrackerProps) {
         status: 'paid',
         payment_date: new Date().toISOString().split('T')[0],
       });
-      toast({ title: 'Dividend marked as paid' });
+      toast.success('Dividend marked as paid');
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 
@@ -179,7 +178,6 @@ function DeclareDividendDialog({
   orgId: string;
   shareClasses: ShareClass[];
 }) {
-  const { toast } = useToast();
   const addDividend = useAddEntityDividend();
   const [shareClassId, setShareClassId] = useState('');
   const [declarationDate, setDeclarationDate] = useState(new Date().toISOString().split('T')[0]);
@@ -203,14 +201,14 @@ function DeclareDividendDialog({
         status: 'declared',
         notes: notes || null,
       });
-      toast({ title: 'Dividend declared' });
+      toast('Dividend declared');
       onOpenChange(false);
       setShareClassId('');
       setAmountPerShare('');
       setPaymentDate('');
       setNotes('');
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 

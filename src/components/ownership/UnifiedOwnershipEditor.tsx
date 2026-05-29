@@ -41,8 +41,8 @@ import {
   type SubjectType,
 } from '@/hooks/useOwnershipLinks';
 import { useParties, useCreateParty } from '@/hooks/useParties';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 
 interface UnifiedOwnershipEditorProps {
   subjectType: SubjectType;
@@ -66,8 +66,6 @@ export function UnifiedOwnershipEditor({
   const addLink = useAddOwnershipLink();
   const updateLink = useUpdateOwnershipLink();
   const createParty = useCreateParty();
-  const { toast } = useToast();
-
   const [ownerPartyId, setOwnerPartyId] = useState<string>('');
   const [percent, setPercent] = useState<string>('');
   const [shares, setShares] = useState<string>('');
@@ -114,16 +112,12 @@ export function UnifiedOwnershipEditor({
 
     const percentNum = parseFloat(percent);
     if (isNaN(percentNum) || percentNum <= 0 || percentNum > 100) {
-      toast({ title: 'Error', description: 'Percentage must be between 0 and 100', variant: 'destructive' });
+      toast.error('Error', { description: 'Percentage must be between 0 and 100' });
       return;
     }
 
     if (percentNum > remaining + 0.01 && !editingLink) {
-      toast({ 
-        title: 'Error', 
-        description: `Maximum available is ${remaining.toFixed(2)}%`, 
-        variant: 'destructive' 
-      });
+      toast.error('Error', { description: `Maximum available is ${remaining.toFixed(2)}%` });
       return;
     }
 
@@ -140,7 +134,7 @@ export function UnifiedOwnershipEditor({
       }
 
       if (!finalPartyId) {
-        toast({ title: 'Error', description: 'Please select or create an owner', variant: 'destructive' });
+        toast.error('Error', { description: 'Please select or create an owner' });
         return;
       }
 
@@ -153,7 +147,7 @@ export function UnifiedOwnershipEditor({
           effective_from: effectiveFrom || null,
           notes: notes.trim() || null,
         });
-        toast({ title: 'Ownership updated' });
+        toast.success('Ownership updated');
       } else {
         await addLink.mutateAsync({
           subject_type: subjectType,
@@ -165,17 +159,13 @@ export function UnifiedOwnershipEditor({
           effective_from: effectiveFrom || null,
           notes: notes.trim() || null,
         });
-        toast({ title: 'Owner added' });
+        toast.success('Owner added');
       }
 
       onOpenChange(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save ownership';
-      toast({ 
-        title: 'Error', 
-        description: message, 
-        variant: 'destructive' 
-      });
+      toast.error('Error', { description: message });
     }
   };
 

@@ -10,9 +10,9 @@ import { useCompany, useUpdateCompany } from '@/hooks/useCompanies';
 import { usePropertyBeneficialOwnership, getOwnerName } from '@/hooks/useOwnershipLinks';
 import { useCompaniesHouse } from '@/hooks/useCompaniesHouse';
 import { ComplianceStatusBadge } from '@/components/companies/ComplianceStatusBadge';
-import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { formatPercent } from '@/lib/calculations';
+import { toast } from "sonner";
 
 interface LegalOwnerCardProps {
   propertyId: string;
@@ -27,8 +27,6 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
   const { data: directOwners, isLoading: directOwnersLoading } = usePropertyBeneficialOwnership(propertyId);
   const { lookupCompany, isLookingUp } = useCompaniesHouse();
   const updateCompany = useUpdateCompany();
-  const { toast } = useToast();
-
   const handleSyncFromCH = async () => {
     if (!company?.company_number || !company?.id) return;
 
@@ -47,10 +45,10 @@ export function LegalOwnerCard({ propertyId, onEdit }: LegalOwnerCardProps) {
           confirmation_statement_last_made_up_to: result.compliance.confirmation_statement_last_made_up_to,
           confirmation_statement_last_filed_date: result.compliance.confirmation_statement_last_filed_date,
         });
-        toast({ title: 'Synced from Companies House', description: 'Company data updated.' });
+        toast.success('Synced from Companies House', { description: 'Company data updated.' });
       }
     } catch (_error) {
-      toast({ title: 'Sync failed', description: 'Could not fetch data from Companies House.', variant: 'destructive' });
+      toast.error('Sync failed', { description: 'Could not fetch data from Companies House.' });
     }
   };
 

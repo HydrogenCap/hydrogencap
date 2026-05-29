@@ -9,12 +9,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Plus, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import {
   useBeneficialOwnersPSC,
   useAddBeneficialOwnerPSC,
   useDeleteBeneficialOwnerPSC,
 } from '@/hooks/useShareRegister';
+import { toast } from "sonner";
 
 const NATURE_OF_CONTROL_OPTIONS = [
   'Ownership of shares – more than 25% but not more than 50%',
@@ -33,7 +33,6 @@ interface BeneficialOwnershipMapProps {
 }
 
 export function BeneficialOwnershipMap({ entityId, orgId }: BeneficialOwnershipMapProps) {
-  const { toast } = useToast();
   const { data: owners = [], isLoading } = useBeneficialOwnersPSC(entityId);
   const deleteBeneficialOwner = useDeleteBeneficialOwnerPSC();
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -44,9 +43,9 @@ export function BeneficialOwnershipMap({ entityId, orgId }: BeneficialOwnershipM
   const handleDelete = async (id: string) => {
     try {
       await deleteBeneficialOwner.mutateAsync({ id, entityId });
-      toast({ title: 'Beneficial owner removed' });
+      toast.success('Beneficial owner removed');
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 
@@ -165,7 +164,6 @@ function AddBeneficialOwnerDialog({
   entityId: string;
   orgId: string;
 }) {
-  const { toast } = useToast();
   const addOwner = useAddBeneficialOwnerPSC();
   const [personName, setPersonName] = useState('');
   const [natureOfControl, setNatureOfControl] = useState<string[]>([]);
@@ -196,7 +194,7 @@ function AddBeneficialOwnerDialog({
         service_address: serviceAddress || null,
         notes: null,
       });
-      toast({ title: 'Beneficial owner added' });
+      toast.success('Beneficial owner added');
       onOpenChange(false);
       setPersonName('');
       setNatureOfControl([]);
@@ -206,7 +204,7 @@ function AddBeneficialOwnerDialog({
       setCountryOfResidence('');
       setServiceAddress('');
     } catch (e) {
-      toast({ title: 'Error', description: e instanceof Error ? e.message : String(e), variant: 'destructive' });
+      toast.error('Error', { description: e instanceof Error ? e.message : String(e) });
     }
   };
 

@@ -37,7 +37,7 @@ import {
 } from '@/hooks/useBeneficialOwnership';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useParties, useCreateParty } from '@/hooks/useParties';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 const formSchema = z.object({
   owner_type: z.enum(['COMPANY', 'PERSON']),
@@ -71,7 +71,6 @@ export function BeneficialOwnerEditor({
   onOpenChange,
   editingOwner,
 }: BeneficialOwnerEditorProps) {
-  const { toast } = useToast();
   const addOwner = useAddBeneficialOwner();
   const updateOwner = useUpdateBeneficialOwner();
   const createParty = useCreateParty();
@@ -144,15 +143,11 @@ export function BeneficialOwnerEditor({
       form.setValue('party_id', newParty.id);
       setShowNewPersonInput(false);
       setNewPersonName('');
-      toast({ title: `Created "${newParty.display_name}"` });
+      toast.success(`Created "${newParty.display_name}"`);
     } catch (err) {
       console.error('Error creating party:', err);
       captureError(err, 'BeneficialOwnerEditor.createParty');
-      toast({
-        title: 'Error',
-        description: 'Failed to create person',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to create person' });
     }
   };
 
@@ -174,19 +169,15 @@ export function BeneficialOwnerEditor({
           id: editingOwner.id,
           ...payload,
         });
-        toast({ title: 'Beneficial owner updated' });
+        toast.success('Beneficial owner updated');
       } else {
         await addOwner.mutateAsync(payload);
-        toast({ title: 'Beneficial owner added' });
+        toast.success('Beneficial owner added');
       }
       onOpenChange(false);
     } catch (err) {
       console.error('Error saving beneficial owner:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to save beneficial owner',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to save beneficial owner' });
     }
   };
 

@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import {
   useCreateShareClass, useUpdateShareClass, type ShareClassV2,
 } from '@/hooks/useShareCapital';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -19,7 +19,6 @@ interface Props {
 }
 
 export function ShareClassFormModal({ open, onOpenChange, entityId, editingShareClass }: Props) {
-  const { toast } = useToast();
   const create = useCreateShareClass();
   const update = useUpdateShareClass();
   const isEditing = !!editingShareClass;
@@ -52,12 +51,12 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
 
   const handleSubmit = async () => {
     if (!form.class_name.trim()) {
-      toast({ title: 'Missing class name', description: 'Give it a label like Ordinary or Preference.', variant: 'destructive' });
+      toast.error('Missing class name', { description: 'Give it a label like Ordinary or Preference.' });
       return;
     }
     const issued = parseInt(form.issued_shares, 10);
     if (isNaN(issued) || issued < 1) {
-      toast({ title: 'At least one share', description: 'A class needs at least one issued share.', variant: 'destructive' });
+      toast.error('At least one share', { description: 'A class needs at least one issued share.' });
       return;
     }
 
@@ -73,10 +72,10 @@ export function ShareClassFormModal({ open, onOpenChange, entityId, editingShare
     try {
       if (isEditing && editingShareClass) {
         await update.mutateAsync({ id: editingShareClass.id, ...payload });
-        toast({ title: 'Share class on file' });
+        toast('Share class on file');
       } else {
         await create.mutateAsync(payload);
-        toast({ title: 'New share class added' });
+        toast.success('New share class added');
       }
       onOpenChange(false);
     } catch (err) {

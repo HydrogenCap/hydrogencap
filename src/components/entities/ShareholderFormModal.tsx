@@ -25,7 +25,7 @@ import {
 } from '@/hooks/useLegalEntities';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
 import { useShareClassesWithAllocation } from '@/hooks/useShareCapital';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface ShareholderFormModalProps {
   open: boolean;
@@ -35,7 +35,6 @@ interface ShareholderFormModalProps {
 }
 
 export function ShareholderFormModal({ open, onOpenChange, entityId, editingShareholder }: ShareholderFormModalProps) {
-  const { toast } = useToast();
   const createShareholder = useCreateShareholder();
   const updateShareholder = useUpdateShareholder();
   const { data: shareClassesWithAllocation } = useShareClassesWithAllocation(entityId);
@@ -99,24 +98,24 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
 
   const handleSubmit = async () => {
     if (!form.shareholder_name.trim()) {
-      toast({ title: 'Missing name', description: 'Add a name before saving.', variant: 'destructive' });
+      toast.error('Missing name', { description: 'Add a name before saving.' });
       return;
     }
     if (!form.share_class_id) {
-      toast({ title: 'Share class needed', description: 'Choose the class before saving.', variant: 'destructive' });
+      toast.error('Share class needed', { description: 'Choose the class before saving.' });
       return;
     }
     const shares = parseInt(form.shares_held, 10);
     if (isNaN(shares) || shares <= 0) {
-      toast({ title: 'Check the share count', description: 'Needs to be a positive whole number.', variant: 'destructive' });
+      toast.error('Check the share count', { description: 'Needs to be a positive whole number.' });
       return;
     }
     if (!form.effective_date) {
-      toast({ title: 'Date needed', description: 'Pick when these shares were issued.', variant: 'destructive' });
+      toast.error('Date needed', { description: 'Pick when these shares were issued.' });
       return;
     }
     if (isOverAllocated) {
-      toast({ title: 'Too many shares', description: "You're over the issued total for this class.", variant: 'destructive' });
+      toast.error('Too many shares', { description: "You're over the issued total for this class." });
       return;
     }
 
@@ -137,10 +136,10 @@ export function ShareholderFormModal({ open, onOpenChange, entityId, editingShar
     try {
       if (isEditing && editingShareholder) {
         await updateShareholder.mutateAsync({ id: editingShareholder.id, ...payload });
-        toast({ title: 'Cap table updated' });
+        toast.success('Cap table updated');
       } else {
         await createShareholder.mutateAsync(payload);
-        toast({ title: 'Shareholder on the cap table' });
+        toast('Shareholder on the cap table');
       }
       onOpenChange(false);
     } catch (err) {
