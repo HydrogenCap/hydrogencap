@@ -18,8 +18,5 @@ export function showMutationError(error: unknown, fallbackTitle: string = 'Somet
  * Standard success toast for mutations.
  */
 export function showMutationSuccess(title: string, description?: string) {
-  toast({
-    title,
-    description,
-  });
+  toast.success(title, { description });
 }
