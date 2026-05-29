@@ -21,7 +21,7 @@ interface Props {
 export function OverviewTab({ state }: Props) {
   const {
     property, capitalGrowth, editingNotes, setEditingNotes,
-    notesValue, setNotesValue, handleSaveNotes, updateProperty, toast,
+    notesValue, setNotesValue, handleSaveNotes, updateProperty,
   } = state;
   if (!property) return null;
   return (
