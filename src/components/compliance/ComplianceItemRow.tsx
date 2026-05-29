@@ -54,7 +54,7 @@ import {
   useUploadComplianceDocument 
 } from '@/hooks/useCompliance';
 import { useDownloadFile } from '@/hooks/useSignedUrl';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface ComplianceItemRowProps {
   item: ComplianceItem & { documents: ComplianceDocument[] };
@@ -74,8 +74,6 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
     responsible_party: item.responsible_party,
     notes: item.notes || '',
   });
-  
-  const { toast } = useToast();
   const updateItem = useUpdateComplianceItem();
   const deleteItem = useDeleteComplianceItem();
   const uploadDocument = useUploadComplianceDocument();
@@ -97,13 +95,9 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
         complianceType: item.compliance_type,
         propertyAddress,
       });
-      toast({ title: 'Document uploaded successfully' });
+      toast.success('Document uploaded successfully');
     } catch (error) {
-      toast({ 
-        title: 'Upload failed', 
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive' 
-      });
+      toast.error('Upload failed', { description: error instanceof Error ? error.message : 'Unknown error' });
     }
     
     // Reset input
@@ -119,24 +113,18 @@ export function ComplianceItemRow({ item, propertyId, propertyAddress }: Complia
         expiry_date: editData.expiry_date || null,
       });
       setIsEditing(false);
-      toast({ title: 'Compliance item updated' });
+      toast.success('Compliance item updated');
     } catch (_error) {
-      toast({ 
-        title: 'Update failed', 
-        variant: 'destructive' 
-      });
+      toast.error('Update failed');
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteItem.mutateAsync({ id: item.id, propertyId });
-      toast({ title: 'Compliance item deleted' });
+      toast.success('Compliance item deleted');
     } catch (_error) {
-      toast({ 
-        title: 'Delete failed', 
-        variant: 'destructive' 
-      });
+      toast.error('Delete failed');
     }
   };
 

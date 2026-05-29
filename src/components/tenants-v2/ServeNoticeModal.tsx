@@ -16,8 +16,8 @@ import {
   type TenancyComplianceCheck,
 } from '@/hooks/useTenancyAgreements';
 import { useUpdateTenantV2 } from '@/hooks/useTenantsV2';
-import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { toast } from "sonner";
 
 const schema = z.object({
   notice_type: z.string().min(1, 'Required'),
@@ -41,7 +41,6 @@ interface Props {
 export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, compliance }: Props) {
   const updateAgreement = useUpdateTenancyAgreement();
   const updateTenant = useUpdateTenantV2();
-  const { toast } = useToast();
   const [confirmed, setConfirmed] = useState(false);
 
   const form = useForm<FormData>({
@@ -77,10 +76,10 @@ export function ServeNoticeModal({ open, onOpenChange, tenancyId, tenantId, comp
         status: 'notice_period',
       });
       await updateTenant.mutateAsync({ id: tenantId, status: 'in_notice' });
-      toast({ title: 'Notice served' });
+      toast('Notice served');
       onOpenChange(false);
     } catch (error: unknown) {
-      toast({ title: "Couldn't serve notice", description: getErrorMessage(error), variant: 'destructive' });
+      toast.error("Couldn't serve notice", { description: getErrorMessage(error) });
     }
   };
 

@@ -12,12 +12,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { usePropertyPassport, useUpsertPassport, type PropertyPassport } from '@/hooks/usePropertyPassport';
-import { useToast } from '@/hooks/use-toast';
 import { useManagementCompanies, useCreateManagementCompany, useSeedDefaultManagementCompany } from '@/hooks/useManagementCompanies';
 import { ExtendableSelect } from './ExtendableSelect';
 import { AutofillSuggestionsModal } from './AutofillSuggestionsModal';
 import { useGenerateSuggestions } from '@/hooks/usePassportAutofill';
 import { invokeEdgeFunction } from '@/hooks/useEdgeFunction';
+import { toast } from "sonner";
 
 // Simplified schema - only essential fields
 const passportSchema = z.object({
@@ -60,7 +60,6 @@ interface PassportFormProps {
 }
 
 export function PassportForm({ propertyId, highlightMissing = false }: PassportFormProps) {
-  const { toast } = useToast();
   const { data: passport, isLoading } = usePropertyPassport(propertyId);
   const upsertPassport = useUpsertPassport();
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -118,18 +117,11 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
         // Store combined meter notes in electric_meter_location field
         electric_meter_location: meter_notes || null,
       });
-      toast({
-        title: 'Passport saved',
-        description: "Your changes are now part of this property's passport.",
-      });
+      toast.success('Passport saved', { description: "Your changes are now part of this property's passport." });
     } catch (err) {
       console.error('Passport save error:', err);
       captureError(err, 'PassportForm.save');
-      toast({
-        title: "Passport didn't save",
-        description: 'Something blocked the save — try once more.',
-        variant: 'destructive',
-      });
+      toast.error("Passport didn't save", { description: 'Something blocked the save — try once more.' });
     }
   };
 
@@ -156,11 +148,7 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       await generateSuggestions.mutateAsync(propertyId);
       setAutofillModalOpen(true);
     } catch (error) {
-      toast({
-        title: 'AI suggestions unavailable',
-        description: error instanceof Error ? error.message : 'Failed to generate suggestions',
-        variant: 'destructive',
-      });
+      toast.error('AI suggestions unavailable', { description: error instanceof Error ? error.message : 'Failed to generate suggestions' });
     }
   };
 
@@ -175,17 +163,10 @@ export function PassportForm({ propertyId, highlightMissing = false }: PassportF
       // Auto-expand advanced section to show result
       setAdvancedOpen(true);
       
-      toast({
-        title: 'Build period inferred',
-        description: `AI suggests ~${data.suggestion.estimatedYear} (${data.suggestion.confidence} confidence)`,
-      });
+      toast('Build period inferred', { description: `AI suggests ~${data.suggestion.estimatedYear} (${data.suggestion.confidence} confidence)` });
     } catch (error) {
       console.error('Construction estimate error:', error);
-      toast({
-        title: "Estimate didn't run",
-        description: error instanceof Error ? error.message : 'Could not estimate construction year',
-        variant: 'destructive',
-      });
+      toast.error("Estimate didn't run", { description: error instanceof Error ? error.message : 'Could not estimate construction year' });
     } finally {
       setIsEstimatingConstruction(false);
     }

@@ -26,8 +26,8 @@ import {
   DEFAULT_REMINDER_DAYS 
 } from '@/lib/complianceTypes';
 import { useCreateComplianceItem } from '@/hooks/useCompliance';
-import { useToast } from '@/hooks/use-toast';
 import { supabaseAny } from '@/integrations/supabase/client';
+import { toast } from "sonner";
 
 const EPC_RATINGS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
@@ -55,8 +55,6 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
       setFormData(prev => ({ ...prev, compliance_type: defaultType }));
     }
   }, [defaultType, open]);
-
-  const { toast } = useToast();
   const createItem = useCreateComplianceItem();
 
   const handleQuickExpiry = (months: number) => {
@@ -72,7 +70,7 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
       : formData.compliance_type;
 
     if (!complianceType) {
-      toast({ title: 'Please select a compliance type', variant: 'destructive' });
+      toast.error('Please select a compliance type');
       return;
     }
 
@@ -101,7 +99,7 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
         reminder_days: DEFAULT_REMINDER_DAYS,
       });
 
-      toast({ title: 'Compliance item added' });
+      toast.success('Compliance item added');
       setOpen(false);
       setFormData({
         compliance_type: '',
@@ -113,10 +111,7 @@ export function AddComplianceItemDialog({ propertyId, defaultType, trigger }: Ad
         epc_rating: '',
       });
     } catch (_error) {
-      toast({ 
-        title: 'Failed to add compliance item', 
-        variant: 'destructive' 
-      });
+      toast.error('Failed to add compliance item');
     }
   };
 

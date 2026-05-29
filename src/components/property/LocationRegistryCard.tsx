@@ -17,7 +17,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 // Fix Leaflet default marker icon
 const iconDefaultPrototype = L.Icon.Default.prototype as typeof L.Icon.Default.prototype & {
@@ -81,8 +81,6 @@ export function LocationRegistryCard({
   const [isSaving, setIsSaving] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const queryClient = useQueryClient();
-  const { toast } = useToast();
-
   // Coordinate edit state
   const [coordLat, setCoordLat] = useState<string>('');
   const [coordLng, setCoordLng] = useState<string>('');
@@ -100,11 +98,7 @@ export function LocationRegistryCard({
     const lng = parseFloat(coordLng);
     
     if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      toast({
-        title: 'Invalid coordinates',
-        description: 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).',
-        variant: 'destructive',
-      });
+      toast.error('Invalid coordinates', { description: 'Please enter valid latitude (-90 to 90) and longitude (-180 to 180).' });
       return;
     }
 
@@ -119,16 +113,9 @@ export function LocationRegistryCard({
       
       queryClient.invalidateQueries({ queryKey: ['property_v2', propertyId] });
       setCoordDialogOpen(false);
-      toast({
-        title: 'Coordinates saved',
-        description: `Location set to ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-      });
+      toast.success('Coordinates saved', { description: `Location set to ${lat.toFixed(6)}, ${lng.toFixed(6)}` });
     } catch (_error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save coordinates.',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to save coordinates.' });
     } finally {
       setIsSaving(false);
     }
@@ -152,23 +139,12 @@ export function LocationRegistryCard({
         const result = results[0];
         setCoordLat(parseFloat(result.lat).toFixed(8));
         setCoordLng(parseFloat(result.lon).toFixed(8));
-        toast({
-          title: 'Location found',
-          description: result.display_name.substring(0, 60) + '...',
-        });
+        toast('Location found', { description: result.display_name.substring(0, 60) + '...' });
       } else {
-        toast({
-          title: 'Location not found',
-          description: 'Try entering coordinates manually.',
-          variant: 'destructive',
-        });
+        toast.error('Location not found', { description: 'Try entering coordinates manually.' });
       }
     } catch (_error) {
-      toast({
-        title: 'Geocoding error',
-        description: 'Failed to search for address.',
-        variant: 'destructive',
-      });
+      toast.error('Geocoding error', { description: 'Failed to search for address.' });
     } finally {
       setIsGeocoding(false);
     }

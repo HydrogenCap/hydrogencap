@@ -4,8 +4,8 @@
  import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
  import { useAllCompliance } from '@/hooks/useCompliance';
  import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
- import { useToast } from '@/hooks/use-toast';
- 
+import { toast } from "sonner";
+
  interface CalendarEvent {
    title: string;
    date: Date;
@@ -71,8 +71,6 @@
    const { data: complianceData } = useAllCompliance();
    const complianceItems = complianceData?.items;
    const { data: properties } = useProperties();
-   const { toast } = useToast();
- 
    const propertyMap = React.useMemo(() => {
      const map = new Map<string, string>();
      properties?.forEach(p => map.set(p.id, p.address_line));
@@ -81,7 +79,7 @@
  
    const handleExport = (type: 'google' | 'outlook' | 'ics') => {
      if (!complianceItems?.length) {
-       toast({ title: 'No compliance items to export', variant: 'destructive' });
+       toast.error('No compliance items to export');
        return;
      }
  
@@ -108,11 +106,11 @@
  
      if (type === 'google') {
        window.open('https://calendar.google.com/calendar/r/settings/export', '_blank');
-       toast({ title: 'Import to Google Calendar', description: 'The calendar file has been downloaded. Import it in Google Calendar settings.' });
+       toast('Import to Google Calendar', { description: 'The calendar file has been downloaded. Import it in Google Calendar settings.' });
      } else if (type === 'outlook') {
-       toast({ title: 'Calendar exported', description: 'Double-click the downloaded file to add to Outlook.' });
+       toast.success('Calendar exported', { description: 'Double-click the downloaded file to add to Outlook.' });
      } else {
-       toast({ title: 'Calendar exported', description: 'Import the .ics file into your calendar app.' });
+       toast.success('Calendar exported', { description: 'Import the .ics file into your calendar app.' });
      }
    };
  

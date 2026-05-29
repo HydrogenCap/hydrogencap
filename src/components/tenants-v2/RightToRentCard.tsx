@@ -13,12 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import {
   useTenancyCompliance,
   useCompleteTenancyComplianceItem,
   useUncompleteTenancyComplianceItem,
 } from '@/hooks/useTenancyCompliance';
+import { toast } from "sonner";
 
 const DOCUMENT_TYPES = [
   { value: 'uk_passport', label: 'UK/Irish Passport', hasExpiry: false },
@@ -61,7 +61,6 @@ interface Props {
 }
 
 export function RightToRentCard({ tenancyId }: Props) {
-  const { toast } = useToast();
   const { data: items, isLoading } = useTenancyCompliance(tenancyId);
   const completeMutation = useCompleteTenancyComplianceItem();
   const uncompleteMutation = useUncompleteTenancyComplianceItem();
@@ -144,19 +143,19 @@ export function RightToRentCard({ tenancyId }: Props) {
         // Update notes only — mark as re-checked
         await completeMutation.mutateAsync({ itemId: rtrItem.id, notes });
       }
-      toast({ title: 'Right to Rent on file' });
+      toast('Right to Rent on file');
       setEditing(false);
     } catch {
-      toast({ title: "Right to Rent didn't save", description: 'Give it another go.', variant: 'destructive' });
+      toast.error("Right to Rent didn't save", { description: 'Give it another go.' });
     }
   };
 
   const handleClearCheck = async () => {
     try {
       await uncompleteMutation.mutateAsync(rtrItem.id);
-      toast({ title: 'Right to Rent record cleared' });
+      toast.success('Right to Rent record cleared');
     } catch {
-      toast({ title: "Didn't clear", description: 'Give it another go.', variant: 'destructive' });
+      toast.error("Didn't clear", { description: 'Give it another go.' });
     }
   };
 

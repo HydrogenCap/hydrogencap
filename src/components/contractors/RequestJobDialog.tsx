@@ -9,9 +9,9 @@
  import { useMatchingContractors, type MatchingContractor } from '@/hooks/useContractorJobs';
  import { useContractors, type Contractor } from '@/hooks/useContractors';
  import { useCreateJob, useSendJobRequest } from '@/hooks/useContractorJobs';
- import { useToast } from '@/hooks/use-toast';
  import { formatDateUK } from '@/lib/calculations';
- 
+import { toast } from "sonner";
+
  interface RequestJobDialogProps {
    open: boolean;
    onOpenChange: (open: boolean) => void;
@@ -43,8 +43,6 @@
  
    const createJob = useCreateJob();
    const sendJobRequest = useSendJobRequest();
-   const { toast } = useToast();
- 
    const handleSelectContractor = (contractor: Contractor | MatchingContractor) => {
      setSelectedContractor(contractor);
      setStep('message');
@@ -71,7 +69,7 @@
        resetForm();
      } catch (error) {
        console.error('Failed to send job request:', error);
-       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Something went wrong', variant: 'destructive' });
+       toast.error('Error', { description: error instanceof Error ? error.message : 'Something went wrong' });
      } finally {
        setIsSubmitting(false);
      }

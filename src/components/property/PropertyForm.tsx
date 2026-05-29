@@ -8,7 +8,6 @@ import { PropertyLookupResult } from '@/hooks/usePropertyLookup';
 import { AddressData } from '@/components/maps/AddressAutocomplete';
 import { isSuspiciousGeocodeChange } from '@/hooks/useGeocoding';
 import { calculateMortgagePaymentDetailed } from '@/lib/mortgageCalculations';
-import { useToast } from '@/hooks/use-toast';
 import {
   PropertyDetailsSection,
   LandRegistrySection,
@@ -20,6 +19,7 @@ import {
 } from '@/components/property/PropertyEditFormSections';
 import { LeaseholdFormSection } from '@/components/property/LeaseholdFormSection';
 import { propertyFormSchema, type PropertyFormData } from './propertyFormSchema';
+import { toast } from "sonner";
 
 interface PropertyFormProps {
   mode: 'create' | 'edit';
@@ -44,7 +44,6 @@ export function PropertyForm({
   submitLabel,
   disabled,
 }: PropertyFormProps) {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [geocodeData, setGeocodeData] = useState<AddressData | null>(null);
   const [suspiciousChange, setSuspiciousChange] = useState(false);
@@ -96,11 +95,7 @@ export function PropertyForm({
       data.latitude, data.longitude
     )) {
       setSuspiciousChange(true);
-      toast({
-        title: 'Location Change Warning',
-        description: 'The new address is more than 25 miles from the current location. Please verify this is correct.',
-        variant: 'destructive',
-      });
+      toast.error('Location Change Warning', { description: 'The new address is more than 25 miles from the current location. Please verify this is correct.' });
     } else {
       setSuspiciousChange(false);
     }
@@ -170,13 +165,9 @@ export function PropertyForm({
       await onSubmit(data, geocodeData);
     } catch (error) {
       console.error(`Failed to ${mode === 'create' ? 'add' : 'update'} property:`, error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error
-          ? error.message
-          : `Failed to ${mode === 'create' ? 'add' : 'update'} property. Please try again.`,
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: error instanceof Error
+                  ? error.message
+                  : `Failed to ${mode === 'create' ? 'add' : 'update'} property. Please try again.` });
     } finally {
       setIsSubmitting(false);
     }

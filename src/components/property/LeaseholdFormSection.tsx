@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Building } from 'lucide-react';
 import { useLeaseholdDetails, useUpdateLeaseholdDetails } from '@/hooks/useLeaseholdDetails';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface LeaseholdFormSectionProps {
   propertyId?: string;
@@ -13,8 +13,6 @@ export function LeaseholdFormSection({ propertyId, tenure }: LeaseholdFormSectio
   const isLeasehold = tenure === 'Leasehold' || tenure === 'Share of Freehold';
   const { data: details, isLoading } = useLeaseholdDetails(isLeasehold && propertyId ? propertyId : undefined);
   const upsert = useUpdateLeaseholdDetails();
-  const { toast } = useToast();
-
   if (!isLeasehold) return null;
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,11 +42,7 @@ export function LeaseholdFormSection({ propertyId, tenure }: LeaseholdFormSectio
         notes: (formData.get('leasehold_notes') as string) || undefined,
       });
     } catch (err) {
-      toast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to save leasehold details',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: err instanceof Error ? err.message : 'Failed to save leasehold details' });
     }
   };
 

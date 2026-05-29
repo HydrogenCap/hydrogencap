@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUpdateCoreIdentity, useTitleNumbers, useAddTitleNumber, useRemoveTitleNumber, PROPERTY_TYPES, CONSTRUCTION_TYPES, LISTED_STATUSES, formatUKPostcode } from '@/hooks/useCoreIdentity';
 import { useUpsertPassport } from '@/hooks/usePropertyPassport';
 import type { PropertyPassport } from '@/hooks/usePropertyPassport';
-import { toast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface Property {
   id: string;
@@ -94,9 +94,9 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
         gas_meter_number: passportData.gas_meter_number || null,
       });
 
-      toast({ title: 'All saved', description: 'Property identity and passport are up to date.' });
+      toast.success('All saved', { description: 'Property identity and passport are up to date.' });
     } catch (_error) {
-      toast({ title: "Changes didn't save", description: "Give it another go — your edits are still here.", variant: 'destructive' });
+      toast.error("Changes didn't save", { description: "Give it another go — your edits are still here." });
     } finally {
       setIsSaving(false);
     }
@@ -108,7 +108,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
       await addTitleNumber.mutateAsync({ propertyId: property.id, titleNumber: newTitleNumber });
       setNewTitleNumber('');
     } catch (_error) {
-      toast({ title: "Title number didn't add", description: "Try again — Land Registry didn't accept it.", variant: 'destructive' });
+      toast.error("Title number didn't add", { description: "Try again — Land Registry didn't accept it." });
     }
   };
 
@@ -116,7 +116,7 @@ export function PassportRowEditor({ property, passport, isExpanded, onToggle }: 
     try {
       await removeTitleNumber.mutateAsync({ id, propertyId: property.id });
     } catch (_error) {
-      toast({ title: "Title number didn't remove", description: 'Give it another go.', variant: 'destructive' });
+      toast.error("Title number didn't remove", { description: 'Give it another go.' });
     }
   };
 

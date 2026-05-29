@@ -5,14 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useTitleNumbers, useAddTitleNumber, useRemoveTitleNumber } from '@/hooks/useCoreIdentity';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 interface MultiTitleNumberInputProps {
   propertyId: string;
 }
 
 export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps) {
-  const { toast } = useToast();
   const { data: titleNumbers = [], isLoading } = useTitleNumbers(propertyId);
   const addTitleNumber = useAddTitleNumber();
   const removeTitleNumber = useRemoveTitleNumber();
@@ -26,11 +25,7 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
     
     // Check for duplicates
     if (titleNumbers.some(t => t.title_number === trimmed)) {
-      toast({
-        title: 'Duplicate title number',
-        description: "You've already added this one.",
-        variant: 'destructive',
-      });
+      toast.error('Duplicate title number', { description: "You've already added this one." });
       return;
     }
 
@@ -38,34 +33,20 @@ export function MultiTitleNumberInput({ propertyId }: MultiTitleNumberInputProps
       await addTitleNumber.mutateAsync({ propertyId, titleNumber: trimmed });
       setNewTitle('');
       setIsAdding(false);
-      toast({
-        title: 'Linked to property',
-        description: `${trimmed} has been added.`,
-      });
+      toast('Linked to property', { description: `${trimmed} has been added.` });
     } catch (error) {
       console.error('Failed to add title number:', error);
-      toast({
-        title: "Didn't add",
-        description: 'Give it another go.',
-        variant: 'destructive',
-      });
+      toast.error("Didn't add", { description: 'Give it another go.' });
     }
   };
 
   const handleRemove = async (id: string, titleNumber: string) => {
     try {
       await removeTitleNumber.mutateAsync({ id, propertyId });
-      toast({
-        title: 'Unlinked',
-        description: `${titleNumber} has been removed.`,
-      });
+      toast('Unlinked', { description: `${titleNumber} has been removed.` });
     } catch (error) {
       console.error('Failed to remove title number:', error);
-      toast({
-        title: "Didn't remove",
-        description: 'Give it another go.',
-        variant: 'destructive',
-      });
+      toast.error("Didn't remove", { description: 'Give it another go.' });
     }
   };
 

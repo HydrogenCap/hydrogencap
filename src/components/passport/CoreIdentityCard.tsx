@@ -34,9 +34,9 @@ import {
 } from '@/hooks/useCoreIdentity';
 import { useProperty } from '@/hooks/useProperties';
 import { usePropertyPassport, useUpsertPassport } from '@/hooks/usePropertyPassport';
-import { useToast } from '@/hooks/use-toast';
 import { useLocalAuthorities, useFindOrCreateLocalAuthority } from '@/hooks/useLocalAuthorities';
 import { ExtendableSelect } from './ExtendableSelect';
+import { toast } from "sonner";
 
 // Validation schema
 const coreIdentitySchema = z.object({
@@ -64,7 +64,6 @@ interface CoreIdentityCardProps {
 }
 
 export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
-  const { toast } = useToast();
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
   const { data: passport } = usePropertyPassport(propertyId);
   const { data: titleNumbers = [] } = useTitleNumbers(propertyId);
@@ -134,17 +133,10 @@ export function CoreIdentityCard({ propertyId }: CoreIdentityCardProps) {
         construction_type: construction_type || null,
         built_in_year: year_built ? parseInt(year_built) : null,
       });
-      toast({
-        title: 'Core Identity saved',
-        description: 'Property identity information has been updated.',
-      });
+      toast.success('Core Identity saved', { description: 'Property identity information has been updated.' });
     } catch (error) {
       console.error('Core identity save error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save core identity.',
-        variant: 'destructive',
-      });
+      toast.error('Error', { description: 'Failed to save core identity.' });
     }
   };
 
