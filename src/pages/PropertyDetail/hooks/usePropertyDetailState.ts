@@ -115,10 +115,10 @@ export function usePropertyDetailState() {
     try {
       await updateProperty.mutateAsync({ id: property.id, notes: notesValue || null });
       setEditingNotes(false);
-      toast.success('Notes saved');
+      sonnerToast.success('Notes saved');
     } catch (err) {
       console.error('Failed to save property notes:', err);
-      toast.error('Error', { description: err instanceof Error ? err.message : 'Failed to save notes' });
+      sonnerToast.error('Error', { description: err instanceof Error ? err.message : 'Failed to save notes' });
     }
   };
 
