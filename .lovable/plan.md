@@ -1,33 +1,56 @@
-## Problem
-Two data views still show bare `Loader2` spinners during load instead of Skeleton layouts that approximate the loaded content.
+## Goal
+Split `src/components/dashboard/DataQualityWidget.tsx` (690 lines) into a sibling folder. Pure mechanical extraction — no logic, data, state, props, or markup changes. Same public export, same import path, byte-identical rendered output.
 
-## Investigation Summary
+## New folder
+`src/components/dashboard/data-quality/`
 
-**AcquisitionAdvisor** — two confirmed bare spinners:
-1. Past Analyses card (`s.loadingPast`) renders a centred `Loader2`.
-2. Results panel (`s.runAnalysis.isPending`) renders a centred `Loader2` with text.
+## File-by-file moves
 
-**ComplianceTasks** — the `ListState` wrapper already uses Skeleton rows (`h-16` bars) for the list area. However, `StatsRow` and `FiltersBar` render unconditionally and show zeros/empty state while data loads. There is no *additional* top-level `Loader2` spinner for the data view beyond the action spinner on the "Run Pipeline" button (which you asked to keep).
+### 1. `data-quality/types.ts`
+Moves from current lines 22–66 (verbatim):
+- `DataQualityWidgetProps`
+- `AffectedProperty`
+- `ExemptedProperty`
+- `QualityIssue`
+- `QualityAnalysis`
+- `PropertyWithExemptions`
 
-## Proposed Changes
+Re-imports `PropertyWithFinancials` from `@/hooks/usePropertiesCompat`.
 
-### 1. AcquisitionAdvisor (`src/pages/AcquisitionAdvisor/index.tsx`)
-Replace the two bare spinners with Skeleton layouts matching the loaded shape.
+### 2. `data-quality/formatFieldName.ts`
+Moves lines 68–85 verbatim: `formatFieldName(field: string): string`.
 
-- **Past Analyses loading** (`s.loadingPast`): Replace the centred `Loader2` with 4 stacked skeleton rows (each approximating a `PastAnalysisRow`: a `Card` containing two short lines — address skeleton + metadata skeleton).
-- **Analysis running** (`s.runAnalysis.isPending`): Replace the centred `Loader2` with a skeleton layout inside the right-hand `Card` that approximates `AnalysisResults`: a score/header skeleton at top, a grid of 4 metric-card skeletons, and 3 paragraph skeletons below.
+### 3. `data-quality/checkFieldExemption.ts`
+Moves lines 87–115 verbatim: `checkFieldExemption(...)`. Imports `PropertyWithExemptions` from `./types`.
 
-### 2. ComplianceTasks (`src/pages/ComplianceTasks/index.tsx`)
-No bare `Loader2` exists for the data load, but the stats/filter area looks empty/janky while the list skeletons appear. Proposed fix: when `s.isLoading`, render skeleton versions of `StatsRow` (4 `KpiCardSkeleton`s already in the common library) and `FiltersBar` (a single `Skeleton` bar with button placeholders) **above** the existing `ListState` skeleton rows. The `ListState` skeletons themselves are already correct and stay unchanged.
+### 4. `data-quality/analyzeDataQuality.ts`
+Moves lines 117–289 verbatim: `analyzeDataQuality(properties, companyMap)`. Imports `formatFieldName`, `checkFieldExemption`, and types from siblings.
 
-*If you intended a different ComplianceTasks spinner that I missed, stop me here and point me to it.*
+### 5. `data-quality/statusColors.ts`
+Extracts the two colour-helper pairs that currently appear inline in two places with **different** thresholds. To preserve byte-identical output, export both pairs as-is:
+- `getRowStatusColor` / `getRowProgressColor` — thresholds 100 / 70 (currently `DataQualityIssueRow`, lines 310–320)
+- `getOverallStatusColor` / `getOverallProgressColor` — thresholds 90 / 70 (currently orchestrator, lines 542–552)
 
-## Files to edit
-- `src/pages/AcquisitionAdvisor/index.tsx` — replace two `Loader2` blocks with inline Skeleton layouts.
-- `src/pages/ComplianceTasks/index.tsx` — conditionally render skeleton stat/filter area during `isLoading`.
+### 6. `data-quality/DataQualityIssueRow.tsx`
+Moves lines 291–492 verbatim: the entire `DataQualityIssueRow` component (header `CollapsibleTrigger`, progress bar, expanded missing-properties list, exempt list, all-complete fallback). Imports `QualityIssue` from `./types` and the row colour helpers from `./statusColors`.
 
-## No logic changes
-Data fetching hooks, return shapes, query keys, and auth/form spinners remain untouched.
+### 7. `DataQualityWidget.tsx` (same path, rewritten as thin orchestrator)
+Keeps:
+- `export function DataQualityWidget({ properties }: DataQualityWidgetProps)` — **identical signature**.
+- All hooks in the **same order**: `useState(expandedSections)`, `useState(lastUpdateTime)`, `useState(isRefreshing)`, `useCompanies()`, `useEffect` for `PROPERTY_UPDATED_EVENT`, `useMemo(companyMap)`, `useMemo(qualityAnalysis)`, `useCallback(handleRefresh)`, `toggleSection`.
+- The full Card JSX (current lines 567–688): header with refresh button + percentage, overall progress bar + exempt count line, Needs Attention section, Other Categories section, fallback "show all" section, all-complete state, "View all properties" link.
+- The unused `_completeCategories` local stays as-is (no behaviour change).
 
-## Verify chain after
+Imports from `./data-quality/*`: `analyzeDataQuality`, types, `getOverallStatusColor` / `getOverallProgressColor`, `DataQualityIssueRow`.
+
+## Public API & import paths — unchanged
+- File path stays `src/components/dashboard/DataQualityWidget.tsx`.
+- Named export stays `DataQualityWidget` with the same props (`{ properties }`).
+- Barrel re-export in `src/components/dashboard/index.ts` (`export { DataQualityWidget } from './DataQualityWidget'`) is untouched.
+- All existing call sites continue to work without edits.
+
+## What does NOT change
+Props, hook order, query keys, event-listener wiring, `useMemo`/`useCallback` deps, sort order, thresholds, class names, copy, icons, rendered DOM, the unused `_completeCategories` local.
+
+## Verify chain after approval
 `bun run lint`, `bun run typecheck`, `bun run build`.
