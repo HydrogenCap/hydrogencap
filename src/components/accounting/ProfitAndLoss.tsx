@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useAccounting';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
+import { sanitizeHtml, escapeHtml } from '@/lib/sanitizeHtml';
 
 const fmtGBP = (n: number) =>
   `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
