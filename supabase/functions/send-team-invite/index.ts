@@ -85,7 +85,9 @@ serve(withInvocationLog("send-team-invite", async (req, _invocationLog) => {
 
     const inviterName = profile?.full_name || profile?.email || 'A team member';
     const orgName = (invite.organizations as any)?.name || 'the organisation';
-    const acceptUrl = `${req.headers.get('origin') || 'https://hydrogencapital.lovable.app'}/team/accept/${invite.token}`;
+    const reqOrigin = req.headers.get('origin') ?? '';
+    const safeOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://hydrogencapital.lovable.app';
+    const acceptUrl = `${safeOrigin}/team/accept/${invite.token}`;
 
     const roleName = invite.role === 'admin' ? 'Admin' : 'Viewer';
 

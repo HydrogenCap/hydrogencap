@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useAccounting';
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useLegalEntities } from '@/hooks/useLegalEntities';
+import { sanitizeHtml, escapeHtml } from '@/lib/sanitizeHtml';
 
 const fmtGBP = (n: number) =>
   `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -108,6 +109,11 @@ export function ProfitAndLoss() {
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow || !printRef.current) return;
+    // Sanitize React-rendered innerHTML (defence-in-depth against any
+    // dangerouslySetInnerHTML/DOM-mutation injection) and escape the
+    // DB-sourced period label before interpolation.
+    const safeBody = sanitizeHtml(printRef.current.innerHTML);
+    const safePeriod = escapeHtml(plData?.periodLabel || '');
     printWindow.document.write(`
       <html>
         <head>
@@ -127,8 +133,8 @@ export function ProfitAndLoss() {
         </head>
         <body>
           <h1>Profit & Loss Statement</h1>
-          <h2>${plData?.periodLabel || ''}</h2>
-          ${printRef.current.innerHTML}
+          <h2>${safePeriod}</h2>
+          ${safeBody}
         </body>
       </html>
     `);
