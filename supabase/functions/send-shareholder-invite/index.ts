@@ -86,7 +86,9 @@ serve(withInvocationLog("send-shareholder-invite", async (req, _invocationLog) =
     const inviterName = profile?.full_name || profile?.email || 'A team member';
     const orgName = (invite.organizations as { name?: string } | null)?.name || 'the organisation';
     const inviteeName = invite.name || invite.email;
-    const acceptUrl = `${req.headers.get('origin') || 'https://hydrogencapital.lovable.app'}/portal/accept/${invite.token}`;
+    const reqOrigin = req.headers.get('origin') ?? '';
+    const safeOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://hydrogencapital.lovable.app';
+    const acceptUrl = `${safeOrigin}/portal/accept/${invite.token}`;
 
     const { error: emailError } = await resend.emails.send({
       from: 'HydrogenCap <onboarding@resend.dev>',
