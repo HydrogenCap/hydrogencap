@@ -94,3 +94,18 @@ export function sanitizeHtml(input: string | null | undefined): string {
   walk(root);
   return root.innerHTML;
 }
+
+/**
+ * Escape a string for safe interpolation as HTML text content or an attribute
+ * value. Use this for any DB-sourced or user-supplied value that flows into
+ * raw HTML (e.g. document.write template literals for print windows).
+ */
+export function escapeHtml(input: string | number | null | undefined): string {
+  if (input === null || input === undefined) return '';
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
