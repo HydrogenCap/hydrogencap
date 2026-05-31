@@ -54,11 +54,24 @@ export function RentReceiptDialog({ data, open, onOpenChange }: RentReceiptDialo
       return;
     }
 
+    // Escape every DB-sourced value before interpolating into the print HTML.
+    const safe = {
+      tenantName: escapeHtml(data.tenantName),
+      landlordName: escapeHtml(data.landlordName || 'Property Management'),
+      propertyAddress: escapeHtml(data.propertyAddress),
+      roomName: escapeHtml(data.roomName),
+      paymentMethod: escapeHtml(METHOD_LABELS[data.paymentMethod] || data.paymentMethod),
+      reference: data.reference ? escapeHtml(data.reference) : null,
+      amount: escapeHtml(formatGBP(data.amount)),
+      paymentDate: escapeHtml(format(new Date(data.paymentDate), 'dd MMMM yyyy')),
+      today: escapeHtml(format(new Date(), 'dd MMMM yyyy')),
+    };
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Rent Receipt - ${data.tenantName}</title>
+        <title>Rent Receipt - ${safe.tenantName}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
           .header { text-align: center; margin-bottom: 32px; }
@@ -78,46 +91,46 @@ export function RentReceiptDialog({ data, open, onOpenChange }: RentReceiptDialo
       <body>
         <div class="header">
           <h1>Rent Receipt</h1>
-          <p>${data.landlordName || 'Property Management'}</p>
-          <p>Date: ${format(new Date(data.paymentDate), 'dd MMMM yyyy')}</p>
+          <p>${safe.landlordName}</p>
+          <p>Date: ${safe.paymentDate}</p>
         </div>
         <div class="details">
           <div class="row">
             <span class="label">Tenant</span>
-            <span class="value">${data.tenantName}</span>
+            <span class="value">${safe.tenantName}</span>
           </div>
           <div class="row">
             <span class="label">Property</span>
-            <span class="value">${data.propertyAddress}</span>
+            <span class="value">${safe.propertyAddress}</span>
           </div>
           ${data.roomName !== 'Whole Property' ? `
           <div class="row">
             <span class="label">Room</span>
-            <span class="value">${data.roomName}</span>
+            <span class="value">${safe.roomName}</span>
           </div>` : ''}
           <div class="amount-row">
             <div class="row" style="border: none;">
               <span class="label">Amount Received</span>
-              <span class="value">${formatGBP(data.amount)}</span>
+              <span class="value">${safe.amount}</span>
             </div>
           </div>
           <div class="row">
             <span class="label">Payment Date</span>
-            <span class="value">${format(new Date(data.paymentDate), 'dd MMMM yyyy')}</span>
+            <span class="value">${safe.paymentDate}</span>
           </div>
           <div class="row">
             <span class="label">Payment Method</span>
-            <span class="value">${METHOD_LABELS[data.paymentMethod] || data.paymentMethod}</span>
+            <span class="value">${safe.paymentMethod}</span>
           </div>
-          ${data.reference ? `
+          ${safe.reference ? `
           <div class="row">
             <span class="label">Reference</span>
-            <span class="value">${data.reference}</span>
+            <span class="value">${safe.reference}</span>
           </div>` : ''}
         </div>
         <div class="footer">
           <p>This receipt confirms payment has been received.</p>
-          <p>Generated on ${format(new Date(), 'dd MMMM yyyy')}</p>
+          <p>Generated on ${safe.today}</p>
         </div>
       </body>
       </html>
