@@ -87,7 +87,9 @@ serve(withInvocationLog("send-investor-portal-access", async (req, _invocationLo
 
     const inviterName = profile?.full_name || profile?.email || 'A team member';
     const orgName = (investor.organizations as { name?: string } | null)?.name || 'your investment team';
-    const portalUrl = `${req.headers.get('origin') || 'https://hydrogencapital.lovable.app'}/portal`;
+    const reqOrigin = req.headers.get('origin') ?? '';
+    const safeOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://hydrogencapital.lovable.app';
+    const portalUrl = `${safeOrigin}/portal`;
 
     const { error: emailError } = await resend.emails.send({
       from: 'HydrogenCap <onboarding@resend.dev>',
