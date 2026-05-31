@@ -33,7 +33,7 @@ export const DOC_TYPE_TO_COMPLIANCE_TYPE: Record<string, string> = {
  * DB constraint. Anything not in this map is passed through (and the DB will reject
  * it with a clear error if invalid).
  */
-const DOC_TYPE_TO_V2_DOC_TYPE: Record<string, string> = {
+export const DOC_TYPE_TO_V2_DOC_TYPE: Record<string, string> = {
   building_insurance: 'buildings_insurance',
   buildings_insurance: 'buildings_insurance',
   epc_certificate: 'epc',
@@ -59,11 +59,48 @@ const DOC_TYPE_TO_V2_DOC_TYPE: Record<string, string> = {
   planning_permission: 'planning_permission',
   building_regs_completion: 'building_regs_completion',
   landlord_liability_insurance: 'landlord_liability_insurance',
+  public_liability_insurance: 'landlord_liability_insurance',
   rent_guarantee_insurance: 'rent_guarantee_insurance',
+  // Slugs that previously fell through to 'other' silently.
+  // Map to the closest DB-allowed type; truly unmapped types
+  // (e.g. MCS, floor plans) intentionally fall back to 'other'.
+  fire_suppression_certificate: 'fire_alarm_cert',
+  fire_door_certification: 'fire_alarm_cert',
+  fire_panel_commissioning: 'fire_alarm_cert',
+  planning_building_control: 'building_regs_completion',
+  mcs_certificate: 'other',
+  floor_plans: 'other',
 };
 
-function toV2DocumentType(docType: string): string {
-  return DOC_TYPE_TO_V2_DOC_TYPE[docType] || 'other';
+/** DB CHECK-allowed values for compliance_documents_v2.document_type.
+ *  Keep in sync with the `compliance_documents_v2_document_type_check`
+ *  constraint. Used by the vitest guard. */
+export const V2_DOC_TYPE_ALLOWED = new Set<string>([
+  'gas_safety_certificate',
+  'epc',
+  'eicr',
+  'fire_risk_assessment',
+  'hmo_licence',
+  'selective_licence',
+  'buildings_insurance',
+  'landlord_liability_insurance',
+  'rent_guarantee_insurance',
+  'legionella_risk_assessment',
+  'asbestos_survey',
+  'pat_testing',
+  'emergency_lighting_cert',
+  'fire_alarm_cert',
+  'smoke_co_alarm_cert',
+  'furniture_fire_safety',
+  'energy_performance_certificate',
+  'planning_permission',
+  'building_regs_completion',
+  'other',
+]);
+
+export function toV2DocumentType(docType: string): string {
+  const mapped = DOC_TYPE_TO_V2_DOC_TYPE[docType] || 'other';
+  return V2_DOC_TYPE_ALLOWED.has(mapped) ? mapped : 'other';
 }
 
 // Standard validity periods in years for UK compliance certificates

@@ -6,6 +6,7 @@ import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { logError } from '@/lib/errorLogger';
+import { toV2DocumentType } from './useComplianceIntake';
 
 function invalidateComplianceCaches(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
@@ -263,24 +264,28 @@ export function useBulkDocScanner() {
     for (const doc of confirmed) {
       const idx = documents.indexOf(doc);
       const propId = doc.userOverrides.propertyId || doc.matchedPropertyId;
-      const docType = doc.userOverrides.documentType || doc.classification.documentType;
+      const docTypeRaw = doc.userOverrides.documentType || doc.classification.documentType;
       const issueDate = doc.userOverrides.issueDate || doc.classification.extractedData.issueDate || new Date().toISOString().split('T')[0];
       const expiryDate = doc.userOverrides.expiryDate || doc.classification.extractedData.expiryDate;
       const certNumber = doc.userOverrides.certificateNumber || doc.classification.extractedData.certificateNumber;
 
-      if (!propId || !docType) {
+      if (!propId || !docTypeRaw) {
         updateDoc(idx, { status: 'error', error: 'Missing property or document type' });
         continue;
       }
 
+      // Map AI/app slug -> DB-allowed compliance_documents_v2.document_type.
+      // Without this, slugs like 'fire_suppression_certificate' or
+      // 'building_insurance' fail the CHECK constraint and the document
+      // never lands in the compliance matrix.
+      const v2DocType = toV2DocumentType(docTypeRaw);
+
       try {
-        // Skip if process-document-v2 has already auto-filed this document
-        // (it creates a compliance_documents_v2 record during extraction)
         const { data: existing } = await supabaseAny
           .from('compliance_documents_v2')
           .select('id')
           .eq('property_id', propId)
-          .eq('document_type', docType)
+          .eq('document_type', v2DocType)
           .eq('is_current', true)
           .maybeSingle();
 
@@ -311,7 +316,7 @@ export function useBulkDocScanner() {
             .insert({
               org_id: orgId,
               property_id: propId,
-              document_type: docType,
+              document_type: v2DocType,
               issue_date: issueDate,
               expiry_date: expiryDate || null,
               certificate_number: certNumber || null,
@@ -325,14 +330,15 @@ export function useBulkDocScanner() {
           if (compErr) throw compErr;
         }
 
-        // Update document record
+        // Update document record — use 'accepted' (matches the inbox vocabulary;
+        // 'approved' is not part of the review_status set the inbox filters on).
         if (doc.documentId) {
           await supabaseAny
             .from('documents')
             .update({
               property_id: propId,
-              review_status: 'approved',
-              doc_type: docType,
+              review_status: 'accepted',
+              doc_type: docTypeRaw,
             })
             .eq('id', doc.documentId);
         }
