@@ -6,6 +6,7 @@ import { usePropertiesV2 } from './usePropertiesV2';
 import { toast } from 'sonner';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { logError } from '@/lib/errorLogger';
+import { toV2DocumentType } from './useComplianceIntake';
 
 function invalidateComplianceCaches(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
