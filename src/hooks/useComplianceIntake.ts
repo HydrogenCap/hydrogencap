@@ -97,20 +97,6 @@ export const V2_DOC_TYPE_ALLOWED = new Set<string>([
   'building_regs_completion',
   'other',
 ]);
-  'landlord_liability_insurance',
-  'rent_guarantee_insurance',
-  'legionella_risk_assessment',
-  'asbestos_survey',
-  'pat_testing',
-  'emergency_lighting_cert',
-  'fire_alarm_cert',
-  'smoke_co_alarm_cert',
-  'furniture_fire_safety',
-  'energy_performance_certificate',
-  'planning_permission',
-  'building_regs_completion',
-  'other',
-]);
 
 export function toV2DocumentType(docType: string): string {
   const mapped = DOC_TYPE_TO_V2_DOC_TYPE[docType] || 'other';
