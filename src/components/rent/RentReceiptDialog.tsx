@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from "sonner";
+import { escapeHtml } from '@/lib/sanitizeHtml';
 
 interface ReceiptData {
   tenantName: string;
