@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, History, ShieldOff, ShieldCheck, Copy, RotateCcw } from 'lucide-react';
+import { Upload, FileText, History, ShieldOff, ShieldCheck, Copy, RotateCcw, AlertTriangle, Inbox, Loader2 } from 'lucide-react';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { useComplianceDocumentsV2, useToggleRequirementV2 } from '@/hooks/useComplianceV2';
+import type { MissingCellDiagnostic, DiagnosticDoc } from '@/hooks/useMissingComplianceDiagnostics';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -20,6 +22,10 @@ interface ComplianceDetailModalProps {
   open: boolean;
   onClose: () => void;
   onUpload: () => void;
+  /** Per-cell "why missing?" diagnostics for this property+type. */
+  diagnostics?: MissingCellDiagnostic;
+  /** Accepted org-level orphan docs (no property assigned) of the same v2 type. */
+  orphanDocs?: DiagnosticDoc[];
 }
 
 interface ComplianceHistoryDocument {
