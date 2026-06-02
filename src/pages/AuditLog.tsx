@@ -79,7 +79,7 @@ export function AuditPanel() {
     try {
       const rowsData = await fetchAuditLogForExport(filters);
       if (!rowsData.length) {
-        toast({ title: 'Nothing to export', description: 'No entries match the current filters.' });
+        toast.info('No entries match the current filters.');
         return;
       }
       const headers = ['Timestamp', 'Table', 'Action', 'Record ID', 'Changed Fields', 'Changed By', 'Context', 'IP', 'Old Values', 'New Values'];
@@ -103,9 +103,9 @@ export function AuditPanel() {
       a.download = `audit-log-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: 'Exported', description: `${rowsData.length.toLocaleString()} entries saved.` });
+      toast.success(`Exported ${rowsData.length.toLocaleString()} entries`);
     } catch (err) {
-      toast({ title: 'Export failed', description: (err as Error).message, variant: 'destructive' });
+      toast.error(`Export failed: ${(err as Error).message}`);
     } finally {
       setExporting(false);
     }
