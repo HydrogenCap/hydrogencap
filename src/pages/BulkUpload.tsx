@@ -1,14 +1,16 @@
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Check, X, FileText, AlertTriangle, Loader2, FolderUp } from 'lucide-react';
+import { Upload, Check, X, FileText, AlertTriangle, Loader2, FolderUp, Sparkles, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { useBulkDocScanner, type ScannedDocument } from '@/hooks/useBulkDocScanner';
+import { useBulkDocScanner, type ScannedDocument, AUTO_FILE_CONFIDENCE_THRESHOLD } from '@/hooks/useBulkDocScanner';
 import { COMPLIANCE_DOC_TYPES, DOC_TYPE_DISPLAY_NAMES, type ComplianceDocType } from '@/lib/complianceV2Types';
 
 interface PropertyOption {
@@ -39,6 +41,7 @@ function StatusBadge({ status }: { status: ScannedDocument['status'] }) {
     case 'confirmed': return <Badge variant="default">Confirmed</Badge>;
     case 'rejected': return <Badge variant="destructive">Skipped</Badge>;
     case 'filed': return <Badge variant="secondary">Filed</Badge>;
+    case 'auto-filed': return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white"><Zap className="h-3 w-3 mr-1" />Auto-filed</Badge>;
     case 'error': return <Badge variant="destructive">Error</Badge>;
     default: return null;
   }
@@ -49,6 +52,9 @@ export default function BulkUpload() {
     documents,
     isProcessing,
     isFiling,
+    autoFileMode,
+    setAutoFileMode,
+    autoFiledCount,
     processFiles,
     setOverride,
     confirmDoc,
@@ -99,7 +105,39 @@ export default function BulkUpload() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Bulk Upload Certificates</h1>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Documents → structured data</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Drop compliance certificates here. We extract dates, certificate numbers and the property, and file directly into your register.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-2.5">
+            <Sparkles className="h-4 w-4 text-emerald-600" />
+            <div className="flex flex-col">
+              <Label htmlFor="auto-file-toggle" className="text-sm font-medium cursor-pointer">
+                Auto-file high-confidence certs
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                ≥ {Math.round(AUTO_FILE_CONFIDENCE_THRESHOLD * 100)}% confidence with matched property &amp; expiry
+              </span>
+            </div>
+            <Switch
+              id="auto-file-toggle"
+              checked={autoFileMode}
+              onCheckedChange={setAutoFileMode}
+              disabled={isProcessing}
+            />
+          </div>
+        </div>
+        {autoFiledCount > 0 && (
+          <div className="rounded-lg border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 flex items-center gap-2">
+            <Zap className="h-4 w-4 text-emerald-600" />
+            <span className="text-sm text-emerald-900 dark:text-emerald-100">
+              <strong>{autoFiledCount}</strong> certificate{autoFiledCount !== 1 ? 's' : ''} filed automatically in this batch — no review needed.
+            </span>
+          </div>
+        )}
         {/* Upload Zone */}
         <div
           {...getRootProps()}
@@ -114,6 +152,7 @@ export default function BulkUpload() {
             PDF, JPG, PNG — up to 50 files at once, 20MB per file
           </p>
         </div>
+
 
         {/* Progress */}
         {documents.length > 0 && (
@@ -250,9 +289,11 @@ function DocumentRow({
     <TableRow className={
       doc.status === 'rejected' ? 'opacity-50'
         : doc.status === 'filed' ? 'bg-accent/50'
+        : doc.status === 'auto-filed' ? 'bg-emerald-50/60 dark:bg-emerald-950/20'
         : hasExtractionError ? 'bg-amber-50/60 dark:bg-amber-950/20'
         : ''
     }>
+
       <TableCell className="font-mono text-xs truncate max-w-[200px]" title={doc.file.name}>
         <div className="flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
