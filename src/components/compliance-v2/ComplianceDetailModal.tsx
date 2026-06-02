@@ -49,7 +49,7 @@ function statusBadge(status: ComplianceStatusV2) {
   return <Badge variant="outline" className={cn('text-sm font-semibold', s.className)}>{s.label}</Badge>;
 }
 
-export function ComplianceDetailModal({ row, open, onClose, onUpload }: ComplianceDetailModalProps) {
+export function ComplianceDetailModal({ row, open, onClose, onUpload, diagnostics, orphanDocs }: ComplianceDetailModalProps) {
   const [showHistory, setShowHistory] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
   const [showOverrideInput, setShowOverrideInput] = useState(false);
