@@ -1,87 +1,165 @@
-# Compliance, rethought for portfolio landlords
+# Surface-area reduction pass
 
-You ticked every focus area and asked for a full rethink. I'm not going to ship 40 small tweaks — I'll consolidate the four current pages into one **Compliance Hub** and layer real workflow on top. Three phases, each shippable on its own.
+The app has ~80 page routes and a sidebar with 4 sections, 30+ leaf destinations. That breadth is the single biggest "feels heavy" signal. Goal: collapse the nav to roughly **20 top-level destinations**, remove dead/duplicate routes, and fold useful sub-views into their natural parents as tabs or filters — without losing any working functionality.
 
-The audit shows we currently have four loosely-connected surfaces:
+This is presentation/routing work only. No DB, no business logic, no edge functions.
 
-```text
-/compliance-v2        Matrix (the register)
-/compliance-actions   Triage list of expired / missing
-/compliance-tasks     Renewal pipeline kanban
-/compliance-calendar  Month grid
-```
-
-A portfolio landlord ricochets between them and loses context. This plan collapses them into one navigable workspace with consistent state.
-
----
-
-## Phase 1 — Unified Compliance Hub
-
-Replace the four-page split with one `/compliance` route that contains four **view modes** sharing the same filter bar, search, and selection state.
+## Targets (what gets folded or removed)
 
 ```text
-┌─ Compliance ────────────────────────────────────────────────────┐
-│  Score 87%   12 issues   3 due this month   Next: EICR · 9 Jun  │
-├──────────────────────────────────────────────────────────────────┤
-│  [Today]  [Register]  [Calendar]  [Pipeline]   Filters · Search  │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│   Active view renders here                                        │
-│                                                                   │
-└──────────────────────────────────────────────────────────────────┘
+KEEP (top nav)              ABSORBS / REPLACES
+────────────────────────────────────────────────────────────────────
+Today                       Fix-it queue, Actions, Missing info,
+                            Data Quality  → tabs inside Today
+Dashboard                   Dashboard map → tab
+Properties (V2)             Pipeline → "Lifecycle: development" filter
+Entities                    Ownership → tab on entity & portfolio
+Compliance Hub              already consolidated last phase ✓
+Lettings                    Tenants, Rent, Voids, Lettings Pipeline
+                            → tabs in one Lettings workspace
+Finance                     Lending, Refinancing, Financials, Investors,
+                            Distributions, Insurance, Accounting, Tax,
+                            Tax Engine, Forecast → tabs in Finance
+Contractors                 Jobs & Works, CapEx → tabs
+Inspections                 stays (small but distinct)
+Documents                   Templates, Bulk Upload, Bulk Scanner → tabs
+Insights                    Timeline, Performance, Val. Alerts,
+                            Portfolio Timeline, Chat, AI Reports,
+                            Acquisition Advisor → tabs / cards
+Reports                     stays (artifact generator)
+Admin                       Team, Import, Audit Log, System Health,
+                            Migration, Webhooks, Settings → tabs in
+                            Settings (each becomes a settings section)
 ```
 
-- **Today** (new) — single prioritised list: "What needs doing in the next 14/30/60 days", grouped by property, with one-click actions (Upload · Mark not required · Snooze · Assign contractor). This is what a landlord opens first.
-- **Register** — the existing matrix, kept, but with the "Why missing?" diagnostics we just built becoming the default cell behaviour.
-- **Calendar** — the existing month grid, sharing the same filter chips.
-- **Pipeline** — the existing renewals kanban, but each card links back to the property's Register row in one click.
+Net effect: sidebar drops from **30+ leaves to ~12 top-level items**, each opening into a workspace with consistent tabs (same pattern the Compliance Hub already uses).
 
-Filter state (status, property type, search, entity) lives in the URL and persists across view switches.
+## Routes — keep, redirect, remove
 
-Old routes (`/compliance-v2`, `/compliance-actions`, `/compliance-tasks`, `/compliance-calendar`) become 301 redirects to `/compliance?view=…` so nothing breaks.
+**Keep** every page component file — they remain importable as tabs.
 
-## Phase 2 — Sharper Register + Property drill-down
+**301 redirect** the following URLs to their new homes (so bookmarks, deep links, and external references don't break):
 
-The matrix is dense but flat. Improvements:
+```text
+/fix-it              → /today?view=fix-it
+/missing-info        → /today?view=missing-info
+/data-quality        → /today?view=data-quality
+/actions             → /today?view=actions
+/dashboard/map       → /dashboard?view=map
+/pipeline            → /properties-v2?lifecycle=development
+/ownership           → /entities?view=ownership
+/voids               → /lettings?view=voids
+/rent                → /lettings?view=rent
+/tenants-v2          → /lettings?view=tenants  (detail routes /tenants-v2/:id keep their URL)
+/lettings-pipeline   → /lettings?view=pipeline
+/lending             → /finance?view=lending
+/refinancing-opportunities → /finance?view=refinancing
+/financials          → /finance?view=overview
+/investors           → /finance?view=investors
+/distributions       → /finance?view=distributions
+/insurance           → /finance?view=insurance
+/accounting          → /finance?view=accounting
+/tax /tax-engine     → /finance?view=tax
+/financial-forecast  → /finance?view=forecast
+/jobs-and-works      → /contractors?view=jobs
+/capex               → /contractors?view=capex
+/templates           → /documents?view=templates
+/bulk-upload         → /documents?view=bulk-upload
+/bulk-scanner        → /documents?view=bulk-scanner
+/timeline /portfolio-timeline /valuation-alerts → /insights?view=…
+/chat                → /insights?view=chat
+/investor-reports    → /insights?view=ai-reports
+/acquisition-advisor → /insights?view=acquisition
+/audit-log /webhooks /system-health /migration /team /import /import/passport → /settings?section=…
+```
 
-- **Property row header**: shows the property's compliance score, count of issues, and a one-tap "Open property compliance tab". Sticky on horizontal scroll.
-- **Smart sort**: default sorts properties by *risk-weighted urgency* (expired > critical > expiring_soon × days_remaining, weighted by occupancy). Today's order is alphabetical-ish.
-- **Inline cell actions**: hover/long-press a missing cell to surface *Upload · Why missing? · Mark not required · Snooze · Assign*. No round-trip to a modal for routine moves.
-- **"Focus this month" pill**: filters to anything due, expiring, or already broken in the current calendar month. Plain-English, one click.
-- **Bulk select**: tick multiple cells (e.g. "all EICRs expiring in Q3") → bulk assign to a contractor, bulk snooze, or bulk request quotes.
+**Hard-remove** (no redirect — these are unused/duplicated):
 
-Per-property drill-down (`/properties/:id?tab=compliance`):
+- `Communications.tsx` — covered by Notification Centre + Inbox
+- `Insights.tsx` (the dashboard wrapper) — replaced by tabbed Insights workspace built from existing components
+- `RegulatoryMonitor` as a top-level item — keep the route, demote to a tab under Compliance Hub (already half there)
+- Any V1 redirect helpers still referencing dead `/properties/:id` and `/tenants/:tenantId` shells: keep the redirects, delete the wrapper components after confirming nothing else mounts them
 
-- Replace the current grid-of-cards with a **vertical timeline** showing every cert renewal, expiry, contractor visit, and document upload in chronological order. This is what an agent needs to answer "when did we last test the alarms?" in 2 seconds.
-- Header strip: compliance score, next 3 expiries, current FRA/Gas/EICR status as traffic lights.
+## Workspace shell pattern
 
-## Phase 3 — Real workflow (the part that's actually missing)
+Reuse the existing `ComplianceHubTabs` pattern. Build one `<WorkspaceShell>` component:
 
-Right now compliance is a *record*. We make it a *system*.
+```text
+┌─ Workspace Title ──────────── Filters · Search · New ─┐
+│  [Tab A]  [Tab B]  [Tab C]  [Tab D]                    │
+├────────────────────────────────────────────────────────┤
+│  Active tab content (lazy-loaded existing page)        │
+└────────────────────────────────────────────────────────┘
+```
 
-- **One-click "Renew"**: from any matrix cell or Today row → opens a sheet that (a) picks a contractor from the saved address book, (b) drafts a work order with the right scope, (c) schedules the cert deadline, (d) sends the contractor a branded request email. The returned cert auto-files against the cell via the AI pipeline we already have.
-- **Contractor address book** (new lightweight table): name, trade (Gas/Electrical/Fire/etc.), email, phone, certifications, properties they've worked on. Surfaces as "Suggested" when starting a renewal of a type they previously did.
-- **Reminder cadence, per landlord preference**: a settings panel where they pick the reminder rhythm (default 60/30/14/7 days) and channel (email, in-app, both). Currently hardcoded.
-- **Weekly digest upgrade**: the existing `send-weekly-compliance-email` becomes a real digest — *"5 due in next 30 days, 2 chased contractors awaiting reply, 1 cert filed this week"* — with deep links into the Hub views.
-- **Tenant-facing receipts**: when a new Gas/EICR is filed, optionally surface a "Latest safety certificate" entry in the tenant portal so landlords get audit credit automatically.
-- **"What does the law say?" sidecar**: every requirement type carries a one-paragraph plain-English explainer (HHSRS, Smoke & CO Regs 2022, Awaab's Law, etc.) with a "Why this matters" tooltip. Already half-done in `compliance_templates`; we expose it everywhere a status is shown.
+- Tab state synced to `?view=…` so links and back/forward work.
+- Each tab lazy-imports the original page component — zero rewrites of business logic.
+- Filter chips (org/entity/lifecycle/search) live in the shell and pass through context, so switching tabs preserves filter state.
 
----
+## Sidebar rewrite (`navConfig.ts`)
+
+```text
+Portfolio
+  Today
+  Dashboard
+  Properties
+  Entities
+
+Operations
+  Compliance
+  Lettings
+  Contractors
+  Inspections
+  Documents
+  Inbox
+
+Intelligence
+  Insights
+  Reports
+
+Admin
+  Settings
+```
+
+12 destinations. Children removed from sidebar (they live as in-page tabs). Mobile bottom nav shrinks to 5 (Today, Properties, Compliance, Lettings, More).
+
+## Technical sections
+
+- **`navConfig.ts`**: rewrite to the 12-item tree. Drop `children`.
+- **`App.tsx`**: add the redirects above using `<Navigate to=… replace />`. Keep all `Route` entries for detail pages (`/properties-v2/:id`, `/tenants-v2/:id`, etc.) — only collection routes redirect.
+- **New `src/components/layout/WorkspaceShell.tsx`**: tab strip + URL sync + filter passthrough. Models after `ComplianceHubTabs`.
+- **New workspace pages** that compose existing page components into tabs:
+    - `src/pages/Today.tsx` — add tabs (Today / Fix-it / Missing info / Data quality / Actions)
+    - `src/pages/Lettings.tsx` — new file, tabs into existing TenantsV2/RentCollection/Voids/LettingsPipeline
+    - `src/pages/Finance.tsx` — new file, tabs into Financials/Lending/Refinancing/Investors/Distributions/Insurance/Accounting/Tax/TaxDashboard/FinancialForecast
+    - `src/pages/Contractors.tsx` — already exists, extend with tabs for JobsAndWorks + CapEx
+    - `src/pages/Documents.tsx` — extend with tabs for Templates + BulkUpload + BulkDocumentScanner
+    - `src/pages/Insights.tsx` — rebuild as tabs over Timeline + PortfolioTimeline + ValuationAlerts + Chat + AIInvestorReports + AcquisitionAdvisor
+    - `src/pages/Settings.tsx` — add sub-sections for Team / Import / Audit Log / Webhooks / System Health / Migration
+- **`MobileBottomNav.tsx`**: reduce to 5 items, "More" drawer reads from flattened nav.
+- **Search / command palette** (`GlobalSearch`): regenerate index from new flat nav so jump-to-page still works for the absorbed routes (e.g. typing "refinancing" still finds it).
+- **Tests**: update `e2e/navigation.spec.ts` and any route guard tests that hit the redirected URLs.
+- **Sitemap** (`public/sitemap.xml`): drop redirected internal URLs, keep canonical workspace URLs.
+
+## What I'm explicitly not touching
+
+- Any DB tables, RLS, edge functions, or business logic.
+- Detail routes (`/properties-v2/:id`, `/tenants-v2/:id`, `/jobs/:id`, etc.) — URLs unchanged.
+- Marketing site, portal, tenant-portal — separate surface, untouched.
+- Admin / platform-admin routes — untouched.
 
 ## Out of scope (intentionally)
 
-- Mobile native app — desktop and responsive web only.
-- Contractor self-serve portal (logging in, uploading certs themselves) — punted to a later phase; v3 still goes via email + Inbox.
-- Tenant compliance acknowledgements with e-signature.
-- Local-authority licensing automation (HMO renewals submitted to councils).
+- Visual restyle of the workspace shell beyond reusing the existing Compliance Hub tab styling.
+- New filters or new analytics — only relocation.
+- Killing routes that have telemetry showing real usage; if anything in the redirect list is actually well-used I'd rather keep it and just demote it from the sidebar. If you want, before I build I can run a quick usage check from Sentry / analytics to validate the kill-list.
 
-## What I need from you before building
+## Rollout
 
-This is a **3-phase plan**. Each phase is independently shippable. I'd recommend doing Phase 1 + Phase 2 together (one design pass, mostly frontend), then Phase 3 separately because it needs new tables (contractor address book, reminder preferences) and edge function changes.
+One PR. Behind a feature flag (`flags.consolidated_nav`) so we can flip back in seconds if a user reports a missing path. Flag default ON in preview, OFF in prod for the first 24h, then ON.
 
-Reply with:
-1. **Phases to build now** — all three, just 1+2, or only one of them.
-2. **Anything to cut** from the bullets above (e.g. "skip the timeline", "no bulk select", "we don't want contractor emails sent for us").
-3. **Anything missing** that you wanted included.
+## What I need from you
 
-Once I have that, I'll move to build mode and implement the chosen scope without further questions.
+1. **OK to redirect (not delete) the routes above?** That's the safe path — bookmarks keep working.
+2. **Any route in the redirect list that you know is heavily used and should stay as a top-level sidebar item?** Likely candidates people push back on: Rent Collection, Lending, Tax — easy to promote back if so.
+3. **Keep `Inbox` as a top-level item, or fold under Compliance Hub?** I have it standalone above; arguable either way.
