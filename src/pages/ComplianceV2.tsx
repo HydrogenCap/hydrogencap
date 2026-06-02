@@ -47,6 +47,7 @@ export default function ComplianceV2() {
   const [searchQuery, setSearchQueryState] = useState(urlSearch);
   const [viewMode, setViewModeState] = useState<'matrix' | 'calendar'>(urlView === 'calendar' ? 'calendar' : 'matrix');
   const [propertyType, setPropertyTypeState] = useState<string>(searchParams.get('type') || 'all');
+  const [monthFocus, setMonthFocusState] = useState<boolean>(searchParams.get('focus') === 'month');
   const [rescanning, setRescanning] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +72,12 @@ export default function ComplianceV2() {
     setSearchParams(prev => {
       const params = new URLSearchParams(prev);
       for (const [k, v] of Object.entries(next)) {
-        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix') || (k === 'type' && v === 'all')) {
+        if (
+          v === null || v === '' || v === 'needs_attention' ||
+          (k === 'view' && v === 'matrix') ||
+          (k === 'type' && v === 'all') ||
+          (k === 'focus' && v !== 'month')
+        ) {
           params.delete(k);
         } else {
           params.set(k, v);
@@ -85,6 +91,7 @@ export default function ComplianceV2() {
   const setSearchQuery = (v: string) => { setSearchQueryState(v); updateUrl({ q: v }); };
   const setViewMode = (v: 'matrix' | 'calendar') => { setViewModeState(v); updateUrl({ view: v }); };
   const setPropertyType = (v: string) => { setPropertyTypeState(v); updateUrl({ type: v }); };
+  const setMonthFocus = (v: boolean) => { setMonthFocusState(v); updateUrl({ focus: v ? 'month' : null }); };
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
