@@ -25,6 +25,7 @@ import { UploadComplianceDocModal } from '@/components/compliance-v2/UploadCompl
 import type { ComplianceMatrixRow, ComplianceDocType } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { SEO } from '@/components/SEO';
+import { ComplianceHubTabs } from '@/components/compliance/ComplianceHubTabs';
 
 export default function ComplianceV2() {
   const { data: matrix, isLoading, dataUpdatedAt } = useComplianceMatrix();

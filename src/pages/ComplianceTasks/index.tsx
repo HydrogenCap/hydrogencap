@@ -10,6 +10,7 @@ import { FiltersBar } from './components/FiltersBar';
 import { PipelineView, BoardView, ListView } from './components/TaskViews';
 import { TaskDetailDialog } from './components/TaskDetailDialog';
 import { CreateTaskDialog } from './components/CreateTaskDialog';
+import { ComplianceHubTabs } from '@/components/compliance/ComplianceHubTabs';
 
 export default function ComplianceTasks() {
   const s = useComplianceTasksState();

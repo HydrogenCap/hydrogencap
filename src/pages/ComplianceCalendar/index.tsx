@@ -13,6 +13,7 @@ import { CalendarGrid } from './components/CalendarGrid';
 import { UpcomingEventsList } from './components/UpcomingEventsList';
 import { CalendarLegend } from './components/CalendarLegend';
 import { SEO } from '@/components/SEO';
+import { ComplianceHubTabs } from '@/components/compliance/ComplianceHubTabs';
 
 export default function ComplianceCalendar() {
   const c = useComplianceCalendar();
