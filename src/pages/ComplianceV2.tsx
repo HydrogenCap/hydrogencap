@@ -633,6 +633,8 @@ export default function ComplianceV2() {
           setSelectedRow(null);
           setShowUpload(true);
         }}
+        diagnostics={selectedRow ? diagnostics?.byCell.get(`${selectedRow.property_id}:${selectedRow.document_type}`) : undefined}
+        orphanDocs={selectedRow ? diagnostics?.orphanByType.get(selectedRow.document_type) : undefined}
       />
 
       <UploadComplianceDocModal
