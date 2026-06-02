@@ -184,9 +184,10 @@ export default function ComplianceV2() {
 
   // Mirror the matrix's row visibility logic so CSV export honors current filters.
   const filteredCsvRows = useMemo(() => {
-    if (!matrix) return [];
+    const source = focusedMatrix ?? matrix;
+    if (!source) return [];
     const needsAttention = (s: string) => ['expiring_soon', 'critical', 'expired', 'missing'].includes(s);
-    return matrix.filter(r => {
+    return source.filter(r => {
       if (!r.is_required) return false;
       if (propertyType !== 'all' && (r.property_type || '').toLowerCase() !== propertyType.toLowerCase()) return false;
       if (searchQuery && !r.property_address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
