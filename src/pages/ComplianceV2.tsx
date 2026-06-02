@@ -164,7 +164,23 @@ export default function ComplianceV2() {
     for (const r of matrix || []) if (r.property_type) set.add(r.property_type);
     return Array.from(set).sort();
   }, [matrix]);
-  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '' || propertyType !== 'all';
+  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '' || propertyType !== 'all' || monthFocus;
+
+  // "Focus this month": narrow rows to anything expiring/expired/missing/critical within
+  // the current calendar month — overlaid on top of all other filters.
+  const focusedMatrix = useMemo(() => {
+    if (!matrix || !monthFocus) return matrix;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return matrix.filter((r) => {
+      if (!r.is_required) return false;
+      if (['expired', 'missing', 'critical'].includes(r.calculated_status)) return true;
+      if (!r.expiry_date) return false;
+      const ex = new Date(r.expiry_date);
+      return ex >= monthStart && ex <= monthEnd;
+    });
+  }, [matrix, monthFocus]);
 
   // Mirror the matrix's row visibility logic so CSV export honors current filters.
   const filteredCsvRows = useMemo(() => {
