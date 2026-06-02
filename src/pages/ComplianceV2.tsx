@@ -515,7 +515,7 @@ export default function ComplianceV2() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
+                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); setMonthFocus(false); }}
               >
                 <X className="h-3.5 w-3.5 mr-1" /> Clear filters
               </Button>
@@ -621,18 +621,18 @@ export default function ComplianceV2() {
 
         ) : viewMode === 'matrix' ? (
           <ComplianceMatrixGrid
-            rows={matrix || []}
+            rows={focusedMatrix || matrix || []}
             onCellClick={handleCellClick}
             statusFilter={statusFilter}
             searchQuery={searchQuery}
             density={density}
             propertyTypeFilter={propertyType}
             onLegendStatusClick={setStatusFilter}
-            onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
+            onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); setMonthFocus(false); }}
             diagnostics={diagnostics}
           />
         ) : (
-          <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
+          <ComplianceCalendarView rows={focusedMatrix || matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
         )}
 
         {/* Back to top */}
