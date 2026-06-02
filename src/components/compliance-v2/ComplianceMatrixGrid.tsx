@@ -144,6 +144,7 @@ export function ComplianceMatrixGrid({
   propertyTypeFilter,
   onLegendStatusClick,
   onClearFilters,
+  diagnostics,
 }: ComplianceMatrixGridProps) {
   const compact = density === 'compact';
   const cellPad = compact ? 'p-1' : 'p-2';
