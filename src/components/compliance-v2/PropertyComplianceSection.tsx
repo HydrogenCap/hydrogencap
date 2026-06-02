@@ -33,6 +33,14 @@ const statusOrder: ComplianceStatusV2[] = ['missing', 'expired', 'critical', 'ex
 export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: PropertyComplianceSectionProps) {
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [view, setView] = useState<'cards' | 'timeline'>(() => {
+    if (typeof window === 'undefined') return 'cards';
+    return (localStorage.getItem('property-compliance-view') as 'cards' | 'timeline') || 'cards';
+  });
+  const switchView = (v: 'cards' | 'timeline') => {
+    setView(v);
+    try { localStorage.setItem('property-compliance-view', v); } catch { /* ignore */ }
+  };
 
   const sorted = useMemo(() => {
     return [...matrixRows].sort((a, b) => {
@@ -50,7 +58,7 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <h3 className="text-lg font-semibold">Compliance</h3>
             <Badge
@@ -65,38 +73,66 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
               {scorePct}%
             </Badge>
           </div>
+          <div className="inline-flex rounded-md border bg-background p-0.5" role="tablist" aria-label="Compliance view">
+            <Button
+              type="button"
+              variant={view === 'cards' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => switchView('cards')}
+              aria-pressed={view === 'cards'}
+            >
+              <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Cards
+            </Button>
+            <Button
+              type="button"
+              variant={view === 'timeline' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => switchView('timeline')}
+              aria-pressed={view === 'timeline'}
+            >
+              <History className="h-3.5 w-3.5 mr-1" /> Timeline
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {sorted.map(row => {
-            const cfg = statusConfig(row.calculated_status);
-            return (
-              <button
-                key={row.requirement_id}
-                className={cn(
-                  'border-l-4 rounded-lg border p-3 text-left hover:bg-muted/30 transition-colors',
-                  cfg.border,
-                  cfg.bg,
-                )}
-                onClick={() => setSelectedRow(row)}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="font-medium text-sm">{DOC_TYPE_DISPLAY_NAMES[row.document_type]}</span>
-                  <Badge variant="outline" className={cn('text-[10px] shrink-0', cfg.badge)}>{cfg.label}</Badge>
-                </div>
-                {row.expiry_date && (
-                  <p className={cn('text-xs mt-1', row.calculated_status === 'expired' ? 'text-destructive' : 'text-muted-foreground')}>
-                    {row.calculated_status === 'expired'
-                      ? `Expired ${format(new Date(row.expiry_date), 'dd/MM/yyyy')} (${Math.abs(row.days_remaining || 0)}d overdue)`
-                      : `Expires ${format(new Date(row.expiry_date), 'dd/MM/yyyy')} (${row.days_remaining}d)`}
-                  </p>
-                )}
-                {row.issuer_name && <p className="text-[10px] text-muted-foreground mt-1">{row.issuer_name}</p>}
-              </button>
-            );
-          })}
-        </div>
+        {view === 'cards' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sorted.map(row => {
+              const cfg = statusConfig(row.calculated_status);
+              return (
+                <button
+                  key={row.requirement_id}
+                  className={cn(
+                    'border-l-4 rounded-lg border p-3 text-left hover:bg-muted/30 transition-colors',
+                    cfg.border,
+                    cfg.bg,
+                  )}
+                  onClick={() => setSelectedRow(row)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-medium text-sm">{DOC_TYPE_DISPLAY_NAMES[row.document_type]}</span>
+                    <Badge variant="outline" className={cn('text-[10px] shrink-0', cfg.badge)}>{cfg.label}</Badge>
+                  </div>
+                  {row.expiry_date && (
+                    <p className={cn('text-xs mt-1', row.calculated_status === 'expired' ? 'text-destructive' : 'text-muted-foreground')}>
+                      {row.calculated_status === 'expired'
+                        ? `Expired ${format(new Date(row.expiry_date), 'dd/MM/yyyy')} (${Math.abs(row.days_remaining || 0)}d overdue)`
+                        : `Expires ${format(new Date(row.expiry_date), 'dd/MM/yyyy')} (${row.days_remaining}d)`}
+                    </p>
+                  )}
+                  {row.issuer_name && <p className="text-[10px] text-muted-foreground mt-1">{row.issuer_name}</p>}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <PropertyComplianceTimeline propertyId={propertyId} matrixRows={matrixRows} />
+        )}
       </div>
+
+
 
       <ComplianceDetailModal
         row={selectedRow}
