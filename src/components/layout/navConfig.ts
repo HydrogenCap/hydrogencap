@@ -82,12 +82,13 @@ export const operationsItems: NavItem[] = [
   {
     title: 'Compliance',
     icon: Shield,
-    href: '/compliance-v2',
+    href: '/compliance',
     badgeType: 'compliance',
     children: [
-      { title: 'Action Centre', icon: AlertTriangle, href: '/compliance-actions', badgeType: 'compliance' },
-      { title: 'Tasks', icon: ClipboardList, href: '/compliance-tasks', badgeType: 'tasks' },
+      { title: 'Today', icon: AlertTriangle, href: '/compliance', badgeType: 'compliance' },
+      { title: 'Register', icon: Shield, href: '/compliance-v2' },
       { title: 'Calendar', icon: CalendarCheck, href: '/compliance-calendar' },
+      { title: 'Renewals', icon: ClipboardList, href: '/compliance-tasks', badgeType: 'tasks' },
       { title: "Renters' Rights", icon: ShieldCheck, href: '/renters-rights' },
       { title: 'Reg. Monitor', icon: Scale, href: '/regulatory-monitor' },
     ],
