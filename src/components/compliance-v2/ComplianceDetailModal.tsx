@@ -212,6 +212,16 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload, diagnostic
             </div>
           )}
 
+          {/* "Why missing?" drill-down — surfaces docs that exist but aren't filed,
+              vs. docs still being processed, vs. truly absent. */}
+          {row.calculated_status === 'missing' && !row.document_id && (
+            <WhyMissingPanel
+              diagnostics={diagnostics}
+              orphanDocs={orphanDocs}
+              docTypeLabel={DOC_TYPE_DISPLAY_NAMES[row.document_type]}
+            />
+          )}
+
           {/* History toggle */}
           {showHistory && typedHistory.length > 0 && (
             <div className="border rounded-lg p-3 space-y-2">
