@@ -615,6 +615,15 @@ export default function ComplianceV2() {
                 Search: "{searchQuery}" <X className="h-3 w-3" />
               </button>
             )}
+            {monthFocus && (
+              <button
+                type="button"
+                onClick={() => setMonthFocus(false)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                Focus: this month <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
         )}
 
