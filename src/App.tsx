@@ -24,11 +24,13 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Today = lazy(() => import("./pages/Today"));
-const FixIt = lazy(() => import("./pages/FixIt"));
-const ComplianceActions = lazy(() => import("./pages/ComplianceActions"));
+const TodayWorkspace = lazy(() => import("./pages/TodayWorkspace"));
+const Lettings = lazy(() => import("./pages/Lettings"));
+const Finance = lazy(() => import("./pages/Finance"));
+const ContractorsWorkspace = lazy(() => import("./pages/ContractorsWorkspace"));
+const DocumentsWorkspace = lazy(() => import("./pages/DocumentsWorkspace"));
+const InsightsWorkspace = lazy(() => import("./pages/InsightsWorkspace"));
 const SystemHealth = lazy(() => import("./pages/SystemHealth"));
-const DataQuality = lazy(() => import("./pages/DataQuality"));
 
 const PropertyNew = lazy(() => import("./pages/PropertyNew"));
 const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
@@ -232,21 +234,16 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <RouteBoundary>
-                    <Today />
+                    <TodayWorkspace />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/fix-it"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <FixIt />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            {/* Old standalone routes — now tabs inside /today */}
+            <Route path="/fix-it" element={<Navigate to="/today?view=fix-it" replace />} />
+            <Route path="/missing-info" element={<Navigate to="/today?view=missing-info" replace />} />
+            <Route path="/data-quality" element={<Navigate to="/today?view=data-quality" replace />} />
+            <Route path="/actions" element={<Navigate to="/today?view=actions" replace />} />
             <Route path="/compliance-actions" element={<Navigate to="/compliance" replace />} />
             <Route
               path="/system-health"
@@ -254,16 +251,6 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <SystemHealth />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/data-quality"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <DataQuality />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
@@ -452,27 +439,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/timeline"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Timeline />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/missing-info"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <MissingInfo />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            {/* Insights workspace + redirects from absorbed surfaces */}
+            <Route path="/insights" element={<ProtectedRoute><RouteBoundary><InsightsWorkspace /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/timeline" element={<Navigate to="/insights?view=timeline" replace />} />
+            <Route path="/portfolio-timeline" element={<Navigate to="/insights?view=performance" replace />} />
+            <Route path="/valuation-alerts" element={<Navigate to="/insights?view=valuations" replace />} />
+            <Route path="/chat" element={<Navigate to="/insights?view=chat" replace />} />
+            <Route path="/investor-reports" element={<Navigate to="/insights?view=ai-reports" replace />} />
+            <Route path="/acquisition-advisor" element={<Navigate to="/insights?view=acquisition" replace />} />
 
+            {/* Pipeline now lives as a Properties filter */}
+            <Route path="/pipeline" element={<Navigate to="/properties-v2?lifecycle=development" replace />} />
 
             <Route
               path="/reports"
@@ -480,17 +457,6 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <Reports />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/investor-reports" element={<ProtectedRoute><RouteBoundary><AIInvestorReports /></RouteBoundary></ProtectedRoute>} />
-            <Route
-              path="/actions"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Actions />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
@@ -505,86 +471,13 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/pipeline"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Pipeline />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/refinance-calendar"
-              element={<Navigate to="/compliance-calendar" replace />}
-            />
-            <Route
-              path="/chat"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Chat />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/acquisition-advisor"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <AcquisitionAdvisor />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/refinance-calendar" element={<Navigate to="/compliance-calendar" replace />} />
             <Route
               path="/compliance-calendar"
               element={
                 <ProtectedRoute>
                   <RouteBoundary>
                     <ComplianceCalendar />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/valuation-alerts"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ValuationAlerts />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/refinancing-opportunities"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <RefinancingOpportunities />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/lending"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Lending />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/portfolio-timeline"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <PortfolioTimeline />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
@@ -629,26 +522,17 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/financials"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Financials />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/investors"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Investors />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+
+            {/* Finance: collection routes now redirect into the workspace */}
+            <Route path="/financials" element={<Navigate to="/finance?view=overview" replace />} />
+            <Route path="/lending" element={<Navigate to="/finance?view=lending" replace />} />
+            <Route path="/refinancing-opportunities" element={<Navigate to="/finance?view=refinancing" replace />} />
+            <Route path="/investors" element={<Navigate to="/finance?view=investors" replace />} />
+            <Route path="/accounting" element={<Navigate to="/finance?view=accounting" replace />} />
+            <Route path="/tax" element={<Navigate to="/finance?view=tax" replace />} />
+            <Route path="/tax-engine" element={<Navigate to="/finance?view=tax-engine" replace />} />
+            <Route path="/financial-forecast" element={<Navigate to="/finance?view=forecast" replace />} />
+            {/* Investor detail keeps its URL */}
             <Route
               path="/investors/:id"
               element={
@@ -659,57 +543,29 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/accounting"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Accounting />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tax"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Tax />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tax-engine"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <TaxDashboard />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/financial-forecast" element={<ProtectedRoute><RouteBoundary><FinancialForecast /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/distributions" element={<ProtectedRoute><RouteBoundary><Distributions /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/templates" element={<ProtectedRoute><RouteBoundary><DocumentTemplates /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkDocumentScanner /></RouteBoundary></ProtectedRoute>} />
+
+            <Route path="/distributions" element={<Navigate to="/finance?view=distributions" replace />} />
+            <Route path="/templates" element={<Navigate to="/documents?view=templates" replace />} />
+            <Route path="/bulk-upload" element={<Navigate to="/documents?view=bulk-upload" replace />} />
             <Route path="/bulk-upload-legacy" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/bulk-scanner" element={<Navigate to="/documents?view=bulk-scanner" replace />} />
+
+            {/* Contractors workspace (Directory / Jobs / CapEx tabs) */}
             <Route
               path="/contractors"
               element={
                 <ProtectedRoute>
                   <RouteBoundary>
-                    <Contractors />
+                    <ContractorsWorkspace />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
             />
-            {/* Unified Jobs & Works page */}
-            <Route path="/jobs-and-works" element={<ProtectedRoute><RouteBoundary><JobsAndWorks /></RouteBoundary></ProtectedRoute>} />
-            {/* Legacy routes redirect to unified page */}
-            <Route path="/jobs" element={<Navigate to="/jobs-and-works" replace />} />
-            <Route path="/maintenance" element={<Navigate to="/jobs-and-works" replace />} />
-            <Route path="/work-orders" element={<Navigate to="/jobs-and-works" replace />} />
+            <Route path="/jobs-and-works" element={<Navigate to="/contractors?view=jobs" replace />} />
+            {/* Legacy redirects for jobs/works */}
+            <Route path="/jobs" element={<Navigate to="/contractors?view=jobs" replace />} />
+            <Route path="/maintenance" element={<Navigate to="/contractors?view=jobs" replace />} />
+            <Route path="/work-orders" element={<Navigate to="/contractors?view=jobs" replace />} />
             {/* Detail routes still work */}
             <Route
               path="/jobs/:jobId"
@@ -724,19 +580,27 @@ const App = () => (
             <Route path="/maintenance/:requestId" element={<ProtectedRoute><RouteBoundary><MaintenanceRequestDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/work-orders/:id" element={<ProtectedRoute><RouteBoundary><WorkOrderDetail /></RouteBoundary></ProtectedRoute>} />
 
-            <Route path="/voids" element={<ProtectedRoute><RouteBoundary><Voids /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/lettings" element={<ProtectedRoute><RouteBoundary><LettingsPipeline /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/rent" element={<ProtectedRoute><RouteBoundary><RentCollection /></RouteBoundary></ProtectedRoute>} />
+            {/* Lettings workspace (Tenants / Rent / Voids / Pipeline tabs) */}
+            <Route path="/lettings" element={<ProtectedRoute><RouteBoundary><Lettings /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/voids" element={<Navigate to="/lettings?view=voids" replace />} />
+            <Route path="/rent" element={<Navigate to="/lettings?view=rent" replace />} />
+            {/* Rent detail routes still work */}
             <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><RouteBoundary><TenancyLedger /></RouteBoundary></ProtectedRoute>} />
             <Route path="/rent/reconciliation" element={<ProtectedRoute><RouteBoundary><Reconciliation /></RouteBoundary></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><RouteBoundary><PaymentDetail /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><RouteBoundary><Documents /></RouteBoundary></ProtectedRoute>} />
+
+            {/* Finance workspace (Overview / Lending / Refinancing / Investors / Tax / etc. tabs) */}
+            <Route path="/finance" element={<ProtectedRoute><RouteBoundary><Finance /></RouteBoundary></ProtectedRoute>} />
+
+            {/* Documents workspace (Vault / Templates / Bulk tabs) */}
+            <Route path="/documents" element={<ProtectedRoute><RouteBoundary><DocumentsWorkspace /></RouteBoundary></ProtectedRoute>} />
+
             <Route path="/team" element={<ProtectedRoute><RouteBoundary><TeamManagement /></RouteBoundary></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
             <Route path="/communications" element={<ProtectedRoute><RouteBoundary><Communications /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/insurance" element={<ProtectedRoute><RouteBoundary><Insurance /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/insurance" element={<Navigate to="/finance?view=insurance" replace />} />
+            <Route path="/capex" element={<Navigate to="/contractors?view=capex" replace />} />
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/inspections" element={<ProtectedRoute><RouteBoundary><Inspections /></RouteBoundary></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard,
+  Activity,
   Building2,
   Shield,
-  FolderOpen,
+  ArrowRight,
   MoreHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -56,10 +56,10 @@ function MobileNavItem({ icon: Icon, label, href, onClick, isActive }: MobileNav
 
 /** Primary bottom-bar destinations (always visible). */
 const PRIMARY: Array<{ icon: React.ComponentType<{ className?: string }>; label: string; href: string }> = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: Activity, label: 'Today', href: '/today' },
   { icon: Building2, label: 'Properties', href: '/properties-v2' },
-  { icon: Shield, label: 'Compliance', href: '/compliance-v2' },
-  { icon: FolderOpen, label: 'Documents', href: '/documents' },
+  { icon: Shield, label: 'Compliance', href: '/compliance' },
+  { icon: ArrowRight, label: 'Lettings', href: '/lettings' },
 ];
 
 const PRIMARY_HREFS = new Set(PRIMARY.map(p => p.href));
