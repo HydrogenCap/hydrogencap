@@ -31,6 +31,8 @@ export default function ComplianceV2() {
   const { data: score } = usePortfolioComplianceScoreV2();
   const refreshStatuses = useRefreshComplianceStatuses();
   const queryClient = useQueryClient();
+  const orgIdEarly = matrix?.[0]?.org_id;
+  const { data: diagnostics } = useMissingComplianceDiagnostics(orgIdEarly);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // URL-synced state
