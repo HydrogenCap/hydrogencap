@@ -19,7 +19,7 @@ import {
   humanizeFieldName, formatAuditValue,
 } from '@/lib/auditLogTypes';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const PAGE_SIZE = 50;
 
