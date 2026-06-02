@@ -603,6 +603,7 @@ export default function ComplianceV2() {
             propertyTypeFilter={propertyType}
             onLegendStatusClick={setStatusFilter}
             onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
+            diagnostics={diagnostics}
           />
         ) : (
           <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
