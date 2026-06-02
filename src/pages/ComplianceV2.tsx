@@ -511,6 +511,18 @@ export default function ComplianceV2() {
               )}
             </div>
 
+            <Button
+              variant={monthFocus ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMonthFocus(!monthFocus)}
+              aria-pressed={monthFocus}
+              title="Show only items broken or expiring within the current calendar month"
+            >
+              <CalendarDays className="h-3.5 w-3.5 mr-1" />
+              Focus this month
+            </Button>
+
+
             {filtersActive && (
               <Button
                 variant="ghost"
