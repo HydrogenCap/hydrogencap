@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   FolderOpen,
   HardHat,
+  History,
   Users,
   Wallet,
   Activity,
@@ -66,6 +67,7 @@ export const intelligenceItems: NavItem[] = [
 
 export const adminItems: NavItem[] = [
   { title: 'Team', icon: Users, href: '/team' },
+  { title: 'Audit Log', icon: History, href: '/audit-log' },
   { title: 'Settings', icon: Settings, href: '/settings' },
 ];
 
