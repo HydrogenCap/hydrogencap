@@ -5,6 +5,8 @@ import type { ComplianceMatrixRow } from '@/lib/complianceV2Types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import type { MissingDiagnostics } from '@/hooks/useMissingComplianceDiagnostics';
+import { diagnosticTotal } from '@/hooks/useMissingComplianceDiagnostics';
 
 interface ComplianceMatrixGridProps {
   rows: ComplianceMatrixRow[];
@@ -19,6 +21,8 @@ interface ComplianceMatrixGridProps {
   onLegendStatusClick?: (status: string) => void;
   /** Optional callback when user wants to clear all filters from empty state */
   onClearFilters?: () => void;
+  /** Per-cell "why missing?" diagnostics — unfiled / pending docs in the Inbox */
+  diagnostics?: MissingDiagnostics;
 }
 
 /** Group matrix rows by property */
