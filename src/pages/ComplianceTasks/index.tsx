@@ -10,6 +10,7 @@ import { FiltersBar } from './components/FiltersBar';
 import { PipelineView, BoardView, ListView } from './components/TaskViews';
 import { TaskDetailDialog } from './components/TaskDetailDialog';
 import { CreateTaskDialog } from './components/CreateTaskDialog';
+import { ComplianceHubTabs } from '@/components/compliance/ComplianceHubTabs';
 
 export default function ComplianceTasks() {
   const s = useComplianceTasksState();
@@ -17,6 +18,7 @@ export default function ComplianceTasks() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <ComplianceHubTabs />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Compliance Tasks</h1>

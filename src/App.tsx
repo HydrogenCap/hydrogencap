@@ -85,6 +85,7 @@ const ValuationAlerts = lazy(() => import("./pages/ValuationAlerts"));
 const RentersRightsBill = lazy(() => import("./pages/RentersRightsBill"));
 const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
 const ComplianceTasks = lazy(() => import("./pages/ComplianceTasks"));
+const ComplianceHub = lazy(() => import("./pages/ComplianceHub"));
 const RegulatoryMonitor = lazy(() => import("./pages/RegulatoryMonitor"));
 const Financials = lazy(() => import("./pages/Financials"));
 const Investors = lazy(() => import("./pages/Investors"));
@@ -246,16 +247,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/compliance-actions"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ComplianceActions />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/compliance-actions" element={<Navigate to="/compliance" replace />} />
             <Route
               path="/system-health"
               element={
@@ -764,7 +756,16 @@ const App = () => (
             <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
             <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
             <Route path="/tenants/:tenantId" element={<ProtectedRoute><RouteBoundary><TenantV1Redirect /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/compliance" element={<Navigate to="/compliance-v2" replace />} />
+            <Route
+              path="/compliance"
+              element={
+                <ProtectedRoute>
+                  <RouteBoundary>
+                    <ComplianceHub />
+                  </RouteBoundary>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Marketing pages (public) */}
             <Route path="/" element={<MarketingHome />} />

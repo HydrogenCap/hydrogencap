@@ -25,6 +25,7 @@ import { UploadComplianceDocModal } from '@/components/compliance-v2/UploadCompl
 import type { ComplianceMatrixRow, ComplianceDocType } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { SEO } from '@/components/SEO';
+import { ComplianceHubTabs } from '@/components/compliance/ComplianceHubTabs';
 
 export default function ComplianceV2() {
   const { data: matrix, isLoading, dataUpdatedAt } = useComplianceMatrix();
@@ -182,6 +183,7 @@ export default function ComplianceV2() {
       <SEO title="Compliance Register — TenureIQ" description="Portfolio compliance, traffic-lighted by property and room." />
       <TooltipProvider delayDuration={200}>
       <div className="space-y-6 print:space-y-3">
+        <ComplianceHubTabs />
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
