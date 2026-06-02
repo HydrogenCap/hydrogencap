@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
 import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianceStatuses } from '@/hooks/useComplianceV2';
+import { useMissingComplianceDiagnostics } from '@/hooks/useMissingComplianceDiagnostics';
 import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
 import { ComplianceMatrixGrid } from '@/components/compliance-v2/ComplianceMatrixGrid';
 import { ComplianceCalendarView } from '@/components/compliance-v2/ComplianceCalendarView';
