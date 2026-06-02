@@ -47,6 +47,7 @@ export default function ComplianceV2() {
   const [searchQuery, setSearchQueryState] = useState(urlSearch);
   const [viewMode, setViewModeState] = useState<'matrix' | 'calendar'>(urlView === 'calendar' ? 'calendar' : 'matrix');
   const [propertyType, setPropertyTypeState] = useState<string>(searchParams.get('type') || 'all');
+  const [monthFocus, setMonthFocusState] = useState<boolean>(searchParams.get('focus') === 'month');
   const [rescanning, setRescanning] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +72,12 @@ export default function ComplianceV2() {
     setSearchParams(prev => {
       const params = new URLSearchParams(prev);
       for (const [k, v] of Object.entries(next)) {
-        if (v === null || v === '' || v === 'needs_attention' || (k === 'view' && v === 'matrix') || (k === 'type' && v === 'all')) {
+        if (
+          v === null || v === '' || v === 'needs_attention' ||
+          (k === 'view' && v === 'matrix') ||
+          (k === 'type' && v === 'all') ||
+          (k === 'focus' && v !== 'month')
+        ) {
           params.delete(k);
         } else {
           params.set(k, v);
@@ -85,6 +91,7 @@ export default function ComplianceV2() {
   const setSearchQuery = (v: string) => { setSearchQueryState(v); updateUrl({ q: v }); };
   const setViewMode = (v: 'matrix' | 'calendar') => { setViewModeState(v); updateUrl({ view: v }); };
   const setPropertyType = (v: string) => { setPropertyTypeState(v); updateUrl({ type: v }); };
+  const setMonthFocus = (v: boolean) => { setMonthFocusState(v); updateUrl({ focus: v ? 'month' : null }); };
 
   // Detail modal state
   const [selectedRow, setSelectedRow] = useState<ComplianceMatrixRow | null>(null);
@@ -157,13 +164,30 @@ export default function ComplianceV2() {
     for (const r of matrix || []) if (r.property_type) set.add(r.property_type);
     return Array.from(set).sort();
   }, [matrix]);
-  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '' || propertyType !== 'all';
+  const filtersActive = statusFilter !== 'needs_attention' || searchQuery !== '' || propertyType !== 'all' || monthFocus;
+
+  // "Focus this month": narrow rows to anything expiring/expired/missing/critical within
+  // the current calendar month — overlaid on top of all other filters.
+  const focusedMatrix = useMemo(() => {
+    if (!matrix || !monthFocus) return matrix;
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return matrix.filter((r) => {
+      if (!r.is_required) return false;
+      if (['expired', 'missing', 'critical'].includes(r.calculated_status)) return true;
+      if (!r.expiry_date) return false;
+      const ex = new Date(r.expiry_date);
+      return ex >= monthStart && ex <= monthEnd;
+    });
+  }, [matrix, monthFocus]);
 
   // Mirror the matrix's row visibility logic so CSV export honors current filters.
   const filteredCsvRows = useMemo(() => {
-    if (!matrix) return [];
+    const source = focusedMatrix ?? matrix;
+    if (!source) return [];
     const needsAttention = (s: string) => ['expiring_soon', 'critical', 'expired', 'missing'].includes(s);
-    return matrix.filter(r => {
+    return source.filter(r => {
       if (!r.is_required) return false;
       if (propertyType !== 'all' && (r.property_type || '').toLowerCase() !== propertyType.toLowerCase()) return false;
       if (searchQuery && !r.property_address.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -487,11 +511,23 @@ export default function ComplianceV2() {
               )}
             </div>
 
+            <Button
+              variant={monthFocus ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMonthFocus(!monthFocus)}
+              aria-pressed={monthFocus}
+              title="Show only items broken or expiring within the current calendar month"
+            >
+              <CalendarDays className="h-3.5 w-3.5 mr-1" />
+              Focus this month
+            </Button>
+
+
             {filtersActive && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
+                onClick={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); setMonthFocus(false); }}
               >
                 <X className="h-3.5 w-3.5 mr-1" /> Clear filters
               </Button>
@@ -579,6 +615,15 @@ export default function ComplianceV2() {
                 Search: "{searchQuery}" <X className="h-3 w-3" />
               </button>
             )}
+            {monthFocus && (
+              <button
+                type="button"
+                onClick={() => setMonthFocus(false)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                Focus: this month <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
         )}
 
@@ -597,18 +642,18 @@ export default function ComplianceV2() {
 
         ) : viewMode === 'matrix' ? (
           <ComplianceMatrixGrid
-            rows={matrix || []}
+            rows={focusedMatrix || matrix || []}
             onCellClick={handleCellClick}
             statusFilter={statusFilter}
             searchQuery={searchQuery}
             density={density}
             propertyTypeFilter={propertyType}
             onLegendStatusClick={setStatusFilter}
-            onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
+            onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); setMonthFocus(false); }}
             diagnostics={diagnostics}
           />
         ) : (
-          <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
+          <ComplianceCalendarView rows={focusedMatrix || matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
         )}
 
         {/* Back to top */}
