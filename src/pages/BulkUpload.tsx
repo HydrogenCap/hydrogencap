@@ -1,14 +1,16 @@
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Check, X, FileText, AlertTriangle, Loader2, FolderUp } from 'lucide-react';
+import { Upload, Check, X, FileText, AlertTriangle, Loader2, FolderUp, Sparkles, Zap } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { useBulkDocScanner, type ScannedDocument } from '@/hooks/useBulkDocScanner';
+import { useBulkDocScanner, type ScannedDocument, AUTO_FILE_CONFIDENCE_THRESHOLD } from '@/hooks/useBulkDocScanner';
 import { COMPLIANCE_DOC_TYPES, DOC_TYPE_DISPLAY_NAMES, type ComplianceDocType } from '@/lib/complianceV2Types';
 
 interface PropertyOption {
