@@ -300,3 +300,132 @@ export function ComplianceDetailModal({ row, open, onClose, onUpload, diagnostic
     </Dialog>
   );
 }
+
+function WhyMissingPanel({
+  diagnostics,
+  orphanDocs,
+  docTypeLabel,
+}: {
+  diagnostics?: MissingCellDiagnostic;
+  orphanDocs?: DiagnosticDoc[];
+  docTypeLabel: string;
+}) {
+  const unfiled = diagnostics?.unfiledDocs ?? [];
+  const pending = diagnostics?.pendingDocs ?? [];
+  const orphans = orphanDocs ?? [];
+  const anyEvidence = unfiled.length + pending.length + orphans.length > 0;
+
+  return (
+    <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <AlertTriangle className="h-4 w-4 text-warning" />
+        <p className="text-sm font-semibold">Why is this missing?</p>
+      </div>
+
+      {!anyEvidence ? (
+        <p className="text-xs text-muted-foreground">
+          No accepted or pending {docTypeLabel} found anywhere in the system for this
+          property — the certificate simply hasn't been uploaded yet. Use{' '}
+          <span className="font-medium">Upload Document</span> below to add one.
+        </p>
+      ) : (
+        <div className="space-y-2 text-xs">
+          {unfiled.length > 0 && (
+            <DiagSection
+              tone="warning"
+              icon={<FileText className="h-3.5 w-3.5" />}
+              title={`${unfiled.length} confirmed doc${unfiled.length === 1 ? '' : 's'} not yet filed`}
+              body={
+                <>
+                  <p className="text-muted-foreground">
+                    These were accepted in the Inbox but never landed in the compliance
+                    register — likely a classification mismatch. Re-file them from the
+                    Inbox to flip this cell to valid.
+                  </p>
+                  <DocList docs={unfiled} />
+                </>
+              }
+            />
+          )}
+          {pending.length > 0 && (
+            <DiagSection
+              tone="info"
+              icon={<Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              title={`${pending.length} doc${pending.length === 1 ? '' : 's'} still being processed`}
+              body={
+                <>
+                  <p className="text-muted-foreground">
+                    AI is still extracting details. Will appear here once accepted.
+                  </p>
+                  <DocList docs={pending} />
+                </>
+              }
+            />
+          )}
+          {orphans.length > 0 && (
+            <DiagSection
+              tone="muted"
+              icon={<Inbox className="h-3.5 w-3.5" />}
+              title={`${orphans.length} unassigned ${docTypeLabel}${orphans.length === 1 ? '' : 's'} in the Inbox`}
+              body={
+                <>
+                  <p className="text-muted-foreground">
+                    Accepted docs of this type with no property assigned — one of
+                    these may belong here. Open the Inbox to assign them.
+                  </p>
+                  <DocList docs={orphans} />
+                </>
+              }
+            />
+          )}
+        </div>
+      )}
+
+      <Button variant="outline" size="sm" asChild className="w-full">
+        <Link to="/inbox">
+          <Inbox className="h-3.5 w-3.5 mr-1.5" /> Open Document Inbox
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
+function DiagSection({
+  tone, icon, title, body,
+}: {
+  tone: 'warning' | 'info' | 'muted';
+  icon: React.ReactNode;
+  title: string;
+  body: React.ReactNode;
+}) {
+  const toneCls =
+    tone === 'warning' ? 'border-warning/40 bg-warning/5'
+    : tone === 'info' ? 'border-primary/30 bg-primary/5'
+    : 'border-border';
+  const titleCls =
+    tone === 'warning' ? 'text-warning'
+    : tone === 'info' ? 'text-primary'
+    : 'text-foreground';
+  return (
+    <div className={cn('rounded border p-2 space-y-1', toneCls)}>
+      <p className={cn('flex items-center gap-1.5 font-medium', titleCls)}>{icon}{title}</p>
+      {body}
+    </div>
+  );
+}
+
+function DocList({ docs }: { docs: DiagnosticDoc[] }) {
+  return (
+    <ul className="mt-1 space-y-0.5 list-disc pl-4">
+      {docs.slice(0, 4).map(d => (
+        <li key={d.id} className="truncate">
+          <span title={d.file_name}>{d.file_name}</span>
+          {d.doc_type && <span className="text-muted-foreground"> · {d.doc_type}</span>}
+        </li>
+      ))}
+      {docs.length > 4 && (
+        <li className="text-muted-foreground">+ {docs.length - 4} more…</li>
+      )}
+    </ul>
+  );
+}
