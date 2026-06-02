@@ -41,6 +41,7 @@ function StatusBadge({ status }: { status: ScannedDocument['status'] }) {
     case 'confirmed': return <Badge variant="default">Confirmed</Badge>;
     case 'rejected': return <Badge variant="destructive">Skipped</Badge>;
     case 'filed': return <Badge variant="secondary">Filed</Badge>;
+    case 'auto-filed': return <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white"><Zap className="h-3 w-3 mr-1" />Auto-filed</Badge>;
     case 'error': return <Badge variant="destructive">Error</Badge>;
     default: return null;
   }
