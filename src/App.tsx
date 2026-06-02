@@ -24,11 +24,13 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Today = lazy(() => import("./pages/Today"));
-const FixIt = lazy(() => import("./pages/FixIt"));
-const ComplianceActions = lazy(() => import("./pages/ComplianceActions"));
+const TodayWorkspace = lazy(() => import("./pages/TodayWorkspace"));
+const Lettings = lazy(() => import("./pages/Lettings"));
+const Finance = lazy(() => import("./pages/Finance"));
+const ContractorsWorkspace = lazy(() => import("./pages/ContractorsWorkspace"));
+const DocumentsWorkspace = lazy(() => import("./pages/DocumentsWorkspace"));
+const InsightsWorkspace = lazy(() => import("./pages/InsightsWorkspace"));
 const SystemHealth = lazy(() => import("./pages/SystemHealth"));
-const DataQuality = lazy(() => import("./pages/DataQuality"));
 
 const PropertyNew = lazy(() => import("./pages/PropertyNew"));
 const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
