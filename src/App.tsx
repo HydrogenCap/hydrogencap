@@ -677,26 +677,28 @@ const App = () => (
               }
             />
             <Route path="/financial-forecast" element={<ProtectedRoute><RouteBoundary><FinancialForecast /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/distributions" element={<ProtectedRoute><RouteBoundary><Distributions /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/templates" element={<ProtectedRoute><RouteBoundary><DocumentTemplates /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/bulk-upload" element={<ProtectedRoute><RouteBoundary><BulkDocumentScanner /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/distributions" element={<Navigate to="/finance?view=distributions" replace />} />
+            <Route path="/templates" element={<Navigate to="/documents?view=templates" replace />} />
+            <Route path="/bulk-upload" element={<Navigate to="/documents?view=bulk-upload" replace />} />
             <Route path="/bulk-upload-legacy" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/bulk-scanner" element={<Navigate to="/documents?view=bulk-scanner" replace />} />
+
+            {/* Contractors workspace (Directory / Jobs / CapEx tabs) */}
             <Route
               path="/contractors"
               element={
                 <ProtectedRoute>
                   <RouteBoundary>
-                    <Contractors />
+                    <ContractorsWorkspace />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
             />
-            {/* Unified Jobs & Works page */}
-            <Route path="/jobs-and-works" element={<ProtectedRoute><RouteBoundary><JobsAndWorks /></RouteBoundary></ProtectedRoute>} />
-            {/* Legacy routes redirect to unified page */}
-            <Route path="/jobs" element={<Navigate to="/jobs-and-works" replace />} />
-            <Route path="/maintenance" element={<Navigate to="/jobs-and-works" replace />} />
-            <Route path="/work-orders" element={<Navigate to="/jobs-and-works" replace />} />
+            <Route path="/jobs-and-works" element={<Navigate to="/contractors?view=jobs" replace />} />
+            {/* Legacy redirects for jobs/works */}
+            <Route path="/jobs" element={<Navigate to="/contractors?view=jobs" replace />} />
+            <Route path="/maintenance" element={<Navigate to="/contractors?view=jobs" replace />} />
+            <Route path="/work-orders" element={<Navigate to="/contractors?view=jobs" replace />} />
             {/* Detail routes still work */}
             <Route
               path="/jobs/:jobId"
@@ -711,19 +713,27 @@ const App = () => (
             <Route path="/maintenance/:requestId" element={<ProtectedRoute><RouteBoundary><MaintenanceRequestDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/work-orders/:id" element={<ProtectedRoute><RouteBoundary><WorkOrderDetail /></RouteBoundary></ProtectedRoute>} />
 
-            <Route path="/voids" element={<ProtectedRoute><RouteBoundary><Voids /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/lettings" element={<ProtectedRoute><RouteBoundary><LettingsPipeline /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/rent" element={<ProtectedRoute><RouteBoundary><RentCollection /></RouteBoundary></ProtectedRoute>} />
+            {/* Lettings workspace (Tenants / Rent / Voids / Pipeline tabs) */}
+            <Route path="/lettings" element={<ProtectedRoute><RouteBoundary><Lettings /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/voids" element={<Navigate to="/lettings?view=voids" replace />} />
+            <Route path="/rent" element={<Navigate to="/lettings?view=rent" replace />} />
+            {/* Rent detail routes still work */}
             <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><RouteBoundary><TenancyLedger /></RouteBoundary></ProtectedRoute>} />
             <Route path="/rent/reconciliation" element={<ProtectedRoute><RouteBoundary><Reconciliation /></RouteBoundary></ProtectedRoute>} />
             <Route path="/rent/:scheduleId" element={<ProtectedRoute><RouteBoundary><PaymentDetail /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><RouteBoundary><Documents /></RouteBoundary></ProtectedRoute>} />
+
+            {/* Finance workspace (Overview / Lending / Refinancing / Investors / Tax / etc. tabs) */}
+            <Route path="/finance" element={<ProtectedRoute><RouteBoundary><Finance /></RouteBoundary></ProtectedRoute>} />
+
+            {/* Documents workspace (Vault / Templates / Bulk tabs) */}
+            <Route path="/documents" element={<ProtectedRoute><RouteBoundary><DocumentsWorkspace /></RouteBoundary></ProtectedRoute>} />
+
             <Route path="/team" element={<ProtectedRoute><RouteBoundary><TeamManagement /></RouteBoundary></ProtectedRoute>} />
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
             <Route path="/communications" element={<ProtectedRoute><RouteBoundary><Communications /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/insurance" element={<ProtectedRoute><RouteBoundary><Insurance /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/capex" element={<ProtectedRoute><RouteBoundary><CapExPage /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/insurance" element={<Navigate to="/finance?view=insurance" replace />} />
+            <Route path="/capex" element={<Navigate to="/contractors?view=capex" replace />} />
             <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
             <Route path="/inspections" element={<ProtectedRoute><RouteBoundary><Inspections /></RouteBoundary></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />
