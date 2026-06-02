@@ -234,21 +234,16 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <RouteBoundary>
-                    <Today />
+                    <TodayWorkspace />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/fix-it"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <FixIt />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            {/* Old standalone routes — now tabs inside /today */}
+            <Route path="/fix-it" element={<Navigate to="/today?view=fix-it" replace />} />
+            <Route path="/missing-info" element={<Navigate to="/today?view=missing-info" replace />} />
+            <Route path="/data-quality" element={<Navigate to="/today?view=data-quality" replace />} />
+            <Route path="/actions" element={<Navigate to="/today?view=actions" replace />} />
             <Route path="/compliance-actions" element={<Navigate to="/compliance" replace />} />
             <Route
               path="/system-health"
@@ -256,16 +251,6 @@ const App = () => (
                 <ProtectedRoute>
                   <RouteBoundary>
                     <SystemHealth />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/data-quality"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <DataQuality />
                   </RouteBoundary>
                 </ProtectedRoute>
               }
