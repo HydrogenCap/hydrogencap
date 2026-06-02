@@ -26,6 +26,7 @@ export default function ComplianceCalendar() {
     <AppLayout>
       <SEO title="Compliance Calendar — TenureIQ" description="Never miss a compliance deadline — gas, EICR, EPC, insurance, and refinancing in one calendar." />
       <div className="space-y-6">
+        <ComplianceHubTabs />
         <CalendarHeader visibleEventTypes={c.visibleEventTypes} toggleEventType={c.toggleEventType} />
 
         <StatusCardsRow stats={c.stats} selectedStatus={c.selectedStatus} onClick={c.handleStatusClick} />

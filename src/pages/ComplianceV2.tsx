@@ -183,6 +183,7 @@ export default function ComplianceV2() {
       <SEO title="Compliance Register — TenureIQ" description="Portfolio compliance, traffic-lighted by property and room." />
       <TooltipProvider delayDuration={200}>
       <div className="space-y-6 print:space-y-3">
+        <ComplianceHubTabs />
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
