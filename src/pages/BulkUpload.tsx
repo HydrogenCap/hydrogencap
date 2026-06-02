@@ -289,9 +289,11 @@ function DocumentRow({
     <TableRow className={
       doc.status === 'rejected' ? 'opacity-50'
         : doc.status === 'filed' ? 'bg-accent/50'
+        : doc.status === 'auto-filed' ? 'bg-emerald-50/60 dark:bg-emerald-950/20'
         : hasExtractionError ? 'bg-amber-50/60 dark:bg-amber-950/20'
         : ''
     }>
+
       <TableCell className="font-mono text-xs truncate max-w-[200px]" title={doc.file.name}>
         <div className="flex items-center gap-1.5">
           <FileText className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
