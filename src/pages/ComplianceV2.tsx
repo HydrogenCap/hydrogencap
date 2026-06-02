@@ -15,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
 import { useComplianceMatrix, usePortfolioComplianceScoreV2, useRefreshComplianceStatuses } from '@/hooks/useComplianceV2';
+import { useMissingComplianceDiagnostics } from '@/hooks/useMissingComplianceDiagnostics';
 import { TenancyChecklistSummaryCard } from '@/components/lettings/TenancyChecklist';
 import { ComplianceMatrixGrid } from '@/components/compliance-v2/ComplianceMatrixGrid';
 import { ComplianceCalendarView } from '@/components/compliance-v2/ComplianceCalendarView';
@@ -30,6 +31,8 @@ export default function ComplianceV2() {
   const { data: score } = usePortfolioComplianceScoreV2();
   const refreshStatuses = useRefreshComplianceStatuses();
   const queryClient = useQueryClient();
+  const orgIdEarly = matrix?.[0]?.org_id;
+  const { data: diagnostics } = useMissingComplianceDiagnostics(orgIdEarly);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // URL-synced state
@@ -600,6 +603,7 @@ export default function ComplianceV2() {
             propertyTypeFilter={propertyType}
             onLegendStatusClick={setStatusFilter}
             onClearFilters={() => { setStatusFilter('needs_attention'); setSearchQuery(''); setPropertyType('all'); }}
+            diagnostics={diagnostics}
           />
         ) : (
           <ComplianceCalendarView rows={matrix || []} statusFilter={statusFilter} onItemClick={(row) => setSelectedRow(row)} />
@@ -629,6 +633,8 @@ export default function ComplianceV2() {
           setSelectedRow(null);
           setShowUpload(true);
         }}
+        diagnostics={selectedRow ? diagnostics?.byCell.get(`${selectedRow.property_id}:${selectedRow.document_type}`) : undefined}
+        orphanDocs={selectedRow ? diagnostics?.orphanByType.get(selectedRow.document_type) : undefined}
       />
 
       <UploadComplianceDocModal

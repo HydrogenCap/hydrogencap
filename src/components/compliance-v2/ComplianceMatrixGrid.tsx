@@ -5,6 +5,8 @@ import type { ComplianceMatrixRow } from '@/lib/complianceV2Types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import type { MissingDiagnostics } from '@/hooks/useMissingComplianceDiagnostics';
+import { diagnosticTotal } from '@/hooks/useMissingComplianceDiagnostics';
 
 interface ComplianceMatrixGridProps {
   rows: ComplianceMatrixRow[];
@@ -19,6 +21,8 @@ interface ComplianceMatrixGridProps {
   onLegendStatusClick?: (status: string) => void;
   /** Optional callback when user wants to clear all filters from empty state */
   onClearFilters?: () => void;
+  /** Per-cell "why missing?" diagnostics — unfiled / pending docs in the Inbox */
+  diagnostics?: MissingDiagnostics;
 }
 
 /** Group matrix rows by property */
@@ -140,6 +144,7 @@ export function ComplianceMatrixGrid({
   propertyTypeFilter,
   onLegendStatusClick,
   onClearFilters,
+  diagnostics,
 }: ComplianceMatrixGridProps) {
   const compact = density === 'compact';
   const cellPad = compact ? 'p-1' : 'p-2';
@@ -287,24 +292,47 @@ export function ComplianceMatrixGrid({
                     </td>
                     {MATRIX_COLUMN_ORDER.map(docType => {
                       const cell = prop.cells.get(docType);
+                      const diag = diagnostics?.byCell.get(`${propertyId}:${docType}`);
+                      const diagN = diagnosticTotal(diag);
+                      const showWhyMissing = cell?.calculated_status === 'missing' && diagN > 0;
                       return (
                         <td key={docType} className={cn('text-center', compact ? 'p-0.5' : 'p-1')}>
                           {cell ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <button
-                                  className="p-1 rounded hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
+                                  className="relative p-1 rounded hover:bg-muted/50 transition-colors inline-flex items-center justify-center"
                                   onClick={() => onCellClick(propertyId, docType)}
                                 >
                                   <StatusDot status={cell.calculated_status} daysRemaining={cell.days_remaining} compact={compact} />
+                                  {showWhyMissing && (
+                                    <span
+                                      aria-hidden="true"
+                                      className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-warning text-[8px] font-bold text-warning-foreground flex items-center justify-center ring-2 ring-background"
+                                    >
+                                      !
+                                    </span>
+                                  )}
                                 </button>
                               </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs max-w-[220px]">
+                              <TooltipContent side="top" className="text-xs max-w-[260px]">
                                 <p className="font-medium">{DOC_TYPE_DISPLAY_NAMES[docType]}</p>
                                 <p className="capitalize">{cell.calculated_status.replace('_', ' ')}</p>
                                 {cell.days_remaining !== null && <p>{cell.days_remaining} days remaining</p>}
                                 {cell.calculated_status === 'valid' && cell.issue_date && (
                                   <p className="text-muted-foreground">Issued {formatDistanceToNowStrict(new Date(cell.issue_date), { addSuffix: true })}</p>
+                                )}
+                                {showWhyMissing && diag && (
+                                  <div className="mt-1.5 pt-1.5 border-t border-border/60 space-y-0.5">
+                                    <p className="font-medium text-warning">Why missing?</p>
+                                    {diag.unfiledDocs.length > 0 && (
+                                      <p>{diag.unfiledDocs.length} confirmed doc{diag.unfiledDocs.length === 1 ? '' : 's'} not yet filed</p>
+                                    )}
+                                    {diag.pendingDocs.length > 0 && (
+                                      <p>{diag.pendingDocs.length} doc{diag.pendingDocs.length === 1 ? '' : 's'} still being processed</p>
+                                    )}
+                                    <p className="text-muted-foreground">Click to view & file</p>
+                                  </div>
                                 )}
                               </TooltipContent>
                             </Tooltip>
