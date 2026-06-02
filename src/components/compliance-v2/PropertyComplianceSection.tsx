@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
 import { format } from 'date-fns';
 import { ComplianceDetailModal } from './ComplianceDetailModal';
 import { UploadComplianceDocModal } from './UploadComplianceDocModal';
+import { PropertyComplianceTimeline } from './PropertyComplianceTimeline';
+import { LayoutGrid, History } from 'lucide-react';
 
 interface PropertyComplianceSectionProps {
   matrixRows: ComplianceMatrixRow[];
