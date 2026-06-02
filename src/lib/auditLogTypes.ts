@@ -21,6 +21,8 @@ export interface AuditLogFilters {
   tableName?: string;
   action?: string;
   search?: string;
+  userId?: string;
+  recordId?: string;
   page: number;
   pageSize: number;
 }
