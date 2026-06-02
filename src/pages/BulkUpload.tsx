@@ -105,7 +105,39 @@ export default function BulkUpload() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Bulk Upload Certificates</h1>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Documents → structured data</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Drop compliance certificates here. We extract dates, certificate numbers and the property, and file directly into your register.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-2.5">
+            <Sparkles className="h-4 w-4 text-emerald-600" />
+            <div className="flex flex-col">
+              <Label htmlFor="auto-file-toggle" className="text-sm font-medium cursor-pointer">
+                Auto-file high-confidence certs
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                ≥ {Math.round(AUTO_FILE_CONFIDENCE_THRESHOLD * 100)}% confidence with matched property &amp; expiry
+              </span>
+            </div>
+            <Switch
+              id="auto-file-toggle"
+              checked={autoFileMode}
+              onCheckedChange={setAutoFileMode}
+              disabled={isProcessing}
+            />
+          </div>
+        </div>
+        {autoFiledCount > 0 && (
+          <div className="rounded-lg border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 flex items-center gap-2">
+            <Zap className="h-4 w-4 text-emerald-600" />
+            <span className="text-sm text-emerald-900 dark:text-emerald-100">
+              <strong>{autoFiledCount}</strong> certificate{autoFiledCount !== 1 ? 's' : ''} filed automatically in this batch — no review needed.
+            </span>
+          </div>
+        )}
         {/* Upload Zone */}
         <div
           {...getRootProps()}
@@ -120,6 +152,7 @@ export default function BulkUpload() {
             PDF, JPG, PNG — up to 50 files at once, 20MB per file
           </p>
         </div>
+
 
         {/* Progress */}
         {documents.length > 0 && (
