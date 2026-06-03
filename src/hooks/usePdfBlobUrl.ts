@@ -68,6 +68,7 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
 
         const url = URL.createObjectURL(blob);
         blobUrlRef.current = url;
+        setBlob(blob);
         setBlobUrl(url);
         setDataUrl(url);
       } catch (err) {
@@ -94,5 +95,5 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
     };
   }, [sourceUrl]);
 
-  return { blobUrl, dataUrl, loading, error };
+  return { blobUrl, blob, dataUrl, loading, error };
 }
