@@ -538,6 +538,18 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
             )}
 
             {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
+            {needsManualClassification && (
+              <div className={`p-3 rounded-lg mb-4 ${SEVERITY.warning.bg} ${SEVERITY.warning.border} border`}>
+                <p className={`text-sm font-medium ${SEVERITY.warning.text}`}>
+                  Classify manually
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  AI processing {isFailed ? 'failed' : isRateLimited ? 'was rate limited' : 'is unavailable'}.
+                  Select the document type, property, and expiry date below, then click "Accept manually".
+                </p>
+              </div>
+            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Compliance Type Selection */}
