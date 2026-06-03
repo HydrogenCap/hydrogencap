@@ -26,6 +26,7 @@ import { SEVERITY } from '@/lib/design-tokens';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner";
 
