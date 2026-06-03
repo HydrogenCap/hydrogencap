@@ -41,7 +41,13 @@ export function PdfCanvasPreview({ src, height = 480 }: PdfCanvasPreviewProps) {
     async function render() {
       setLoading(true);
       try {
-        const loadingTask = pdfjsLib.getDocument(src!);
+        // Fetch bytes ourselves — pdf.js's internal fetch of blob: URLs can
+        // fail with "Unexpected server response (0)" inside sandboxed iframes.
+        const resp = await fetch(src!);
+        if (!resp.ok) throw new Error(`Failed to fetch PDF (${resp.status})`);
+        const buf = await resp.arrayBuffer();
+        if (cancelled) return;
+        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf) });
         const pdf = await loadingTask.promise;
         if (cancelled) return;
         setTotalPages(pdf.numPages);
