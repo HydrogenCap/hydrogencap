@@ -99,9 +99,9 @@ export function PdfCanvasPreview({ src, data, height = 480 }: PdfCanvasPreviewPr
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [src, pageNum, height]);
+  }, [src, data, pageNum, height]);
 
-  if (!src) return null;
+  if (!src && !data) return null;
 
   return (
     <div className="w-full flex flex-col" style={{ height }}>
