@@ -485,18 +485,59 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
           </div>
 
           <CollapsibleContent className="mt-4 pt-4 border-t border-border">
-            {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
-            {needsManualClassification && (
-              <div className={`p-3 rounded-lg mb-4 ${SEVERITY.warning.bg} ${SEVERITY.warning.border} border`}>
-                <p className={`text-sm font-medium ${SEVERITY.warning.text}`}>
-                  Classify manually
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  AI processing {isFailed ? 'failed' : isRateLimited ? 'was rate limited' : 'is unavailable'}.
-                  Select the document type, property, and expiry date below, then click "Accept manually".
-                </p>
+            {/* Document preview — helps verify extracted issue/expiry dates against the source */}
+            {document.file_url && (
+              <div className="mb-4 rounded-lg border border-border overflow-hidden bg-muted/30">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground min-w-0">
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{document.original_file_name || 'Document preview'}</span>
+                  </div>
+                  {previewUrl && (
+                    <a
+                      href={previewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
+                    >
+                      Open full size
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+                <div className="bg-background flex items-center justify-center" style={{ height: 420 }}>
+                  {previewLoading && !previewUrl ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : previewUrl ? (
+                    isPdf ? (
+                      <object
+                        data={`${previewUrl}#toolbar=1&navpanes=0&view=FitH`}
+                        type="application/pdf"
+                        className="w-full h-full"
+                        aria-label="Document preview"
+                      >
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          PDF preview not available in this browser.{' '}
+                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            Open in new tab
+                          </a>
+                        </div>
+                      </object>
+                    ) : (
+                      <img
+                        src={previewUrl}
+                        alt="Document preview"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    )
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Preview unavailable</p>
+                  )}
+                </div>
               </div>
             )}
+
+            {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Compliance Type Selection */}
