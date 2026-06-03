@@ -136,7 +136,22 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const needsManualClassification = isFailed || isRateLimited || isCreditsExhausted || hasTimedOut;
   const isProcessing = acceptDocument.isPending || rejectDocument.isPending || deleteDocument.isPending;
   const [isRetrying, setIsRetrying] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const isPdf = !!document.original_file_name?.toLowerCase().endsWith('.pdf');
   const queryClient = useQueryClient();
+
+  // Fetch a signed preview URL when the card is expanded
+  useEffect(() => {
+    if (!isExpanded || previewUrl || !document.file_url) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+    createSignedStorageUrl('documents', document.file_url, 3600)
+      .then(url => { if (!cancelled) setPreviewUrl(url); })
+      .catch(() => { /* silent — preview is best-effort */ })
+      .finally(() => { if (!cancelled) setPreviewLoading(false); });
+    return () => { cancelled = true; };
+  }, [isExpanded, previewUrl, document.file_url]);
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
