@@ -145,7 +145,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
 
   // For PDFs we download via the SDK and stream as a blob: URL (Chrome's PDF
   // viewer often refuses to render Supabase signed URLs directly inside <object>).
-  const { blobUrl: pdfBlobUrl, loading: pdfBlobLoading, error: pdfBlobError } =
+  const { blobUrl: pdfBlobUrl, blob: pdfBlob, loading: pdfBlobLoading, error: pdfBlobError } =
     usePdfBlobUrl(isExpanded && isPdf ? document.file_url : null);
 
   // For images we just need a signed URL.
