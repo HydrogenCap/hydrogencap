@@ -510,9 +510,9 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{document.original_file_name || 'Document preview'}</span>
                   </div>
-                  {previewUrl && (
+                  {openHref && (
                     <a
-                      href={previewUrl}
+                      href={openHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
@@ -522,31 +522,34 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                     </a>
                   )}
                 </div>
-                <div className="bg-background flex items-center justify-center" style={{ height: 420 }}>
-                  {previewLoading && !previewUrl ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : previewUrl ? (
-                    isPdf ? (
-                      <object
-                        data={`${previewUrl}#toolbar=1&navpanes=0&view=FitH`}
-                        type="application/pdf"
-                        className="w-full h-full"
-                        aria-label="Document preview"
-                      >
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          PDF preview not available in this browser.{' '}
-                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <div className="bg-background flex items-center justify-center" style={{ height: 480 }}>
+                  {isPdf ? (
+                    pdfBlobLoading && !pdfBlobUrl ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    ) : pdfBlobUrl ? (
+                      <iframe
+                        src={`${pdfBlobUrl}#toolbar=1&navpanes=0&view=FitH`}
+                        title="Document preview"
+                        className="w-full h-full border-0"
+                      />
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        {pdfBlobError || 'PDF preview unavailable.'}{' '}
+                        {openHref && (
+                          <a href={openHref} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                             Open in new tab
                           </a>
-                        </div>
-                      </object>
-                    ) : (
-                      <img
-                        src={previewUrl}
-                        alt="Document preview"
-                        className="max-h-full max-w-full object-contain"
-                      />
+                        )}
+                      </div>
                     )
+                  ) : previewSignedLoading && !previewUrl ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Document preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   ) : (
                     <p className="text-xs text-muted-foreground">Preview unavailable</p>
                   )}
