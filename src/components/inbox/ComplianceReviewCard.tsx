@@ -559,8 +559,8 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </div>
               </div>
             )}
-              </div>
-            )}
+
+
 
             {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
             {needsManualClassification && (
