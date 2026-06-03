@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
 import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
+import { PdfCanvasPreview } from './PdfCanvasPreview';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner";
 
@@ -522,40 +523,44 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                     </a>
                   )}
                 </div>
-                <div className="bg-background flex items-center justify-center" style={{ height: 480 }}>
+                <div className="bg-background" style={{ minHeight: 480 }}>
                   {isPdf ? (
                     pdfBlobLoading && !pdfBlobUrl ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      <div className="flex items-center justify-center" style={{ height: 480 }}>
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
                     ) : pdfBlobUrl ? (
-                      <iframe
-                        src={`${pdfBlobUrl}#toolbar=1&navpanes=0&view=FitH`}
-                        title="Document preview"
-                        className="w-full h-full border-0"
-                      />
+                      <PdfCanvasPreview src={pdfBlobUrl} height={480} />
                     ) : (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
+                      <div className="flex items-center justify-center p-4 text-center text-sm text-muted-foreground" style={{ height: 480 }}>
                         {pdfBlobError || 'PDF preview unavailable.'}{' '}
                         {openHref && (
-                          <a href={openHref} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          <a href={openHref} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1">
                             Open in new tab
                           </a>
                         )}
                       </div>
                     )
-                  ) : previewSignedLoading && !previewUrl ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt="Document preview"
-                      className="max-h-full max-w-full object-contain"
-                    />
                   ) : (
-                    <p className="text-xs text-muted-foreground">Preview unavailable</p>
+                    <div className="flex items-center justify-center" style={{ height: 480 }}>
+                      {previewSignedLoading && !previewUrl ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt="Document preview"
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Preview unavailable</p>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
             )}
+
+
 
             {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
             {needsManualClassification && (
