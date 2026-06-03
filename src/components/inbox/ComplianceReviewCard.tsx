@@ -525,12 +525,12 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </div>
                 <div className="bg-background" style={{ minHeight: 480 }}>
                   {isPdf ? (
-                    pdfBlobLoading && !pdfBlobUrl ? (
+                    pdfBlobLoading && !pdfBlob ? (
                       <div className="flex items-center justify-center" style={{ height: 480 }}>
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       </div>
-                    ) : pdfBlobUrl ? (
-                      <PdfCanvasPreview src={pdfBlobUrl} height={480} />
+                    ) : pdfBlob ? (
+                      <PdfCanvasPreview data={pdfBlob} height={480} />
                     ) : (
                       <div className="flex items-center justify-center p-4 text-center text-sm text-muted-foreground" style={{ height: 480 }}>
                         {pdfBlobError || 'PDF preview unavailable.'}{' '}
