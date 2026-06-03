@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import {
   FileText, Calendar, Check, X, ChevronDown,
   AlertCircle, Loader2, Shield, Building2, Edit2, RefreshCw, Trash2,
-  Clock, CheckCircle2
+  Clock, CheckCircle2, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
