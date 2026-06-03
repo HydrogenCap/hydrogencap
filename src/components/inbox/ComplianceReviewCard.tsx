@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import {
   FileText, Calendar, Check, X, ChevronDown,
   AlertCircle, Loader2, Shield, Building2, Edit2, RefreshCw, Trash2,
-  Clock, CheckCircle2
+  Clock, CheckCircle2, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -136,7 +136,22 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const needsManualClassification = isFailed || isRateLimited || isCreditsExhausted || hasTimedOut;
   const isProcessing = acceptDocument.isPending || rejectDocument.isPending || deleteDocument.isPending;
   const [isRetrying, setIsRetrying] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const isPdf = !!document.original_file_name?.toLowerCase().endsWith('.pdf');
   const queryClient = useQueryClient();
+
+  // Fetch a signed preview URL when the card is expanded
+  useEffect(() => {
+    if (!isExpanded || previewUrl || !document.file_url) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+    createSignedStorageUrl('documents', document.file_url, 3600)
+      .then(url => { if (!cancelled) setPreviewUrl(url); })
+      .catch(() => { /* silent — preview is best-effort */ })
+      .finally(() => { if (!cancelled) setPreviewLoading(false); });
+    return () => { cancelled = true; };
+  }, [isExpanded, previewUrl, document.file_url]);
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
@@ -470,6 +485,58 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
           </div>
 
           <CollapsibleContent className="mt-4 pt-4 border-t border-border">
+            {/* Document preview — helps verify extracted issue/expiry dates against the source */}
+            {document.file_url && (
+              <div className="mb-4 rounded-lg border border-border overflow-hidden bg-muted/30">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground min-w-0">
+                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{document.original_file_name || 'Document preview'}</span>
+                  </div>
+                  {previewUrl && (
+                    <a
+                      href={previewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
+                    >
+                      Open full size
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+                <div className="bg-background flex items-center justify-center" style={{ height: 420 }}>
+                  {previewLoading && !previewUrl ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : previewUrl ? (
+                    isPdf ? (
+                      <object
+                        data={`${previewUrl}#toolbar=1&navpanes=0&view=FitH`}
+                        type="application/pdf"
+                        className="w-full h-full"
+                        aria-label="Document preview"
+                      >
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          PDF preview not available in this browser.{' '}
+                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            Open in new tab
+                          </a>
+                        </div>
+                      </object>
+                    ) : (
+                      <img
+                        src={previewUrl}
+                        alt="Document preview"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    )
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Preview unavailable</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Manual classification banner for failed/rate_limited/credits_exhausted */}
             {needsManualClassification && (
               <div className={`p-3 rounded-lg mb-4 ${SEVERITY.warning.bg} ${SEVERITY.warning.border} border`}>
@@ -482,6 +549,7 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                 </p>
               </div>
             )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Compliance Type Selection */}
