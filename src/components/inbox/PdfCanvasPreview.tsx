@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import * as pdfjsLib from 'pdfjs-dist';
 // Vite-friendly worker import — bundled as a static asset URL.
@@ -16,6 +16,10 @@ interface PdfCanvasPreviewProps {
   height?: number;
 }
 
+const ZOOM_STEP = 0.25;
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4.0;
+
 /**
  * Renders PDFs as canvas pages using pdf.js. Avoids the "This content is blocked"
  * fallback that Chrome's built-in PDF viewer shows inside sandboxed iframes
@@ -28,11 +32,13 @@ export function PdfCanvasPreview({ src, data, height = 480 }: PdfCanvasPreviewPr
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     setPageNum(1);
     setTotalPages(0);
     setError(null);
+    setZoom(1);
   }, [src, data]);
 
   useEffect(() => {
@@ -68,8 +74,10 @@ export function PdfCanvasPreview({ src, data, height = 480 }: PdfCanvasPreviewPr
 
         const viewport = page.getViewport({ scale: 1 });
         const containerWidth = container.clientWidth - 16; // account for padding
-        const scale = Math.min(containerWidth / viewport.width, (height - 16) / viewport.height);
-        const scaledViewport = page.getViewport({ scale: scale * (window.devicePixelRatio || 1) });
+        const fitScale = Math.min(containerWidth / viewport.width, (height - 16) / viewport.height);
+        const userScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+        const finalScale = fitScale * userScale * (window.devicePixelRatio || 1);
+        const scaledViewport = page.getViewport({ scale: finalScale });
 
         canvas.width = scaledViewport.width;
         canvas.height = scaledViewport.height;
@@ -99,7 +107,7 @@ export function PdfCanvasPreview({ src, data, height = 480 }: PdfCanvasPreviewPr
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [src, data, pageNum, height]);
+  }, [src, data, pageNum, height, zoom]);
 
   if (!src && !data) return null;
 
@@ -120,35 +128,74 @@ export function PdfCanvasPreview({ src, data, height = 480 }: PdfCanvasPreviewPr
           <canvas ref={canvasRef} className="shadow-sm" />
         )}
       </div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 border-t border-border py-1.5 bg-muted/30">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            onClick={() => setPageNum(p => Math.max(1, p - 1))}
-            disabled={pageNum <= 1 || loading}
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            Page {pageNum} of {totalPages}
-          </span>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            onClick={() => setPageNum(p => Math.min(totalPages, p + 1))}
-            disabled={pageNum >= totalPages || loading}
-            aria-label="Next page"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
+      <div className="flex items-center justify-center gap-2 border-t border-border py-1.5 bg-muted/30">
+        {totalPages > 1 && (
+          <>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={() => setPageNum(p => Math.max(1, p - 1))}
+              disabled={pageNum <= 1 || loading}
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Page {pageNum} of {totalPages}
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={() => setPageNum(p => Math.min(totalPages, p + 1))}
+              disabled={pageNum >= totalPages || loading}
+              aria-label="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <div className="w-px h-4 bg-border mx-1" />
+          </>
+        )}
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => setZoom(z => Math.max(MIN_ZOOM, Math.round((z - ZOOM_STEP) / ZOOM_STEP) * ZOOM_STEP))}
+          disabled={zoom <= MIN_ZOOM || loading}
+          aria-label="Zoom out"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <span className="text-xs text-muted-foreground tabular-nums w-12 text-center">
+          {Math.round(zoom * 100)}%
+        </span>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => setZoom(z => Math.min(MAX_ZOOM, Math.round((z + ZOOM_STEP) / ZOOM_STEP) * ZOOM_STEP))}
+          disabled={zoom >= MAX_ZOOM || loading}
+          aria-label="Zoom in"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => setZoom(1)}
+          disabled={zoom === 1 || loading}
+          aria-label="Reset zoom"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
