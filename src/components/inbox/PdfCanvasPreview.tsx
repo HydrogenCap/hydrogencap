@@ -66,8 +66,9 @@ export function PdfCanvasPreview({ src, height = 480 }: PdfCanvasPreviewProps) {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        renderTask = page.render({ canvasContext: ctx, viewport: scaledViewport, canvas });
-        await renderTask.promise;
+        const task = page.render({ canvasContext: ctx, viewport: scaledViewport });
+        renderTask = task;
+        await task.promise;
       } catch (err) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : 'Failed to render PDF';
