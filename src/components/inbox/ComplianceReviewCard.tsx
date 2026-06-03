@@ -138,21 +138,37 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const isProcessing = acceptDocument.isPending || rejectDocument.isPending || deleteDocument.isPending;
   const [isRetrying, setIsRetrying] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewSignedLoading, setPreviewSignedLoading] = useState(false);
   const isPdf = !!document.original_file_name?.toLowerCase().endsWith('.pdf');
   const queryClient = useQueryClient();
 
-  // Fetch a signed preview URL when the card is expanded
+  // For PDFs we download via the SDK and stream as a blob: URL (Chrome's PDF
+  // viewer often refuses to render Supabase signed URLs directly inside <object>).
+  const { blobUrl: pdfBlobUrl, loading: pdfBlobLoading, error: pdfBlobError } =
+    usePdfBlobUrl(isExpanded && isPdf ? document.file_url : null);
+
+  // For images we just need a signed URL.
   useEffect(() => {
-    if (!isExpanded || previewUrl || !document.file_url) return;
+    if (!isExpanded || isPdf || previewUrl || !document.file_url) return;
     let cancelled = false;
-    setPreviewLoading(true);
+    setPreviewSignedLoading(true);
     createSignedStorageUrl('documents', document.file_url, 3600)
       .then(url => { if (!cancelled) setPreviewUrl(url); })
       .catch(() => { /* silent — preview is best-effort */ })
-      .finally(() => { if (!cancelled) setPreviewLoading(false); });
+      .finally(() => { if (!cancelled) setPreviewSignedLoading(false); });
     return () => { cancelled = true; };
-  }, [isExpanded, previewUrl, document.file_url]);
+  }, [isExpanded, isPdf, previewUrl, document.file_url]);
+
+  // A "open full size" link should always use a signed URL (blob: won't survive a new tab cleanly).
+  const [openHref, setOpenHref] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isExpanded || openHref || !document.file_url) return;
+    let cancelled = false;
+    createSignedStorageUrl('documents', document.file_url, 3600)
+      .then(url => { if (!cancelled) setOpenHref(url); })
+      .catch(() => { /* silent */ });
+    return () => { cancelled = true; };
+  }, [isExpanded, openHref, document.file_url]);
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
