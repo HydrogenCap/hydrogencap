@@ -22,6 +22,7 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
 
     if (!sourceUrl) {
       setBlobUrl(null);
+      setBlob(null);
       setDataUrl(null);
       setLoading(false);
       setError(null);
