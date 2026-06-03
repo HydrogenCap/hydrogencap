@@ -26,6 +26,7 @@ import { SEVERITY } from '@/lib/design-tokens';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { createSignedStorageUrl } from '@/lib/storagePaths';
+import { usePdfBlobUrl } from '@/hooks/usePdfBlobUrl';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner";
 
@@ -137,21 +138,37 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
   const isProcessing = acceptDocument.isPending || rejectDocument.isPending || deleteDocument.isPending;
   const [isRetrying, setIsRetrying] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewSignedLoading, setPreviewSignedLoading] = useState(false);
   const isPdf = !!document.original_file_name?.toLowerCase().endsWith('.pdf');
   const queryClient = useQueryClient();
 
-  // Fetch a signed preview URL when the card is expanded
+  // For PDFs we download via the SDK and stream as a blob: URL (Chrome's PDF
+  // viewer often refuses to render Supabase signed URLs directly inside <object>).
+  const { blobUrl: pdfBlobUrl, loading: pdfBlobLoading, error: pdfBlobError } =
+    usePdfBlobUrl(isExpanded && isPdf ? document.file_url : null);
+
+  // For images we just need a signed URL.
   useEffect(() => {
-    if (!isExpanded || previewUrl || !document.file_url) return;
+    if (!isExpanded || isPdf || previewUrl || !document.file_url) return;
     let cancelled = false;
-    setPreviewLoading(true);
+    setPreviewSignedLoading(true);
     createSignedStorageUrl('documents', document.file_url, 3600)
       .then(url => { if (!cancelled) setPreviewUrl(url); })
       .catch(() => { /* silent — preview is best-effort */ })
-      .finally(() => { if (!cancelled) setPreviewLoading(false); });
+      .finally(() => { if (!cancelled) setPreviewSignedLoading(false); });
     return () => { cancelled = true; };
-  }, [isExpanded, previewUrl, document.file_url]);
+  }, [isExpanded, isPdf, previewUrl, document.file_url]);
+
+  // A "open full size" link should always use a signed URL (blob: won't survive a new tab cleanly).
+  const [openHref, setOpenHref] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isExpanded || openHref || !document.file_url) return;
+    let cancelled = false;
+    createSignedStorageUrl('documents', document.file_url, 3600)
+      .then(url => { if (!cancelled) setOpenHref(url); })
+      .catch(() => { /* silent */ });
+    return () => { cancelled = true; };
+  }, [isExpanded, openHref, document.file_url]);
 
   const handleRetry = useCallback(async () => {
     setIsRetrying(true);
@@ -493,9 +510,9 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">{document.original_file_name || 'Document preview'}</span>
                   </div>
-                  {previewUrl && (
+                  {openHref && (
                     <a
-                      href={previewUrl}
+                      href={openHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
@@ -505,31 +522,34 @@ export function ComplianceReviewCard({ document, selected, onSelectChange }: Com
                     </a>
                   )}
                 </div>
-                <div className="bg-background flex items-center justify-center" style={{ height: 420 }}>
-                  {previewLoading && !previewUrl ? (
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  ) : previewUrl ? (
-                    isPdf ? (
-                      <object
-                        data={`${previewUrl}#toolbar=1&navpanes=0&view=FitH`}
-                        type="application/pdf"
-                        className="w-full h-full"
-                        aria-label="Document preview"
-                      >
-                        <div className="p-4 text-center text-sm text-muted-foreground">
-                          PDF preview not available in this browser.{' '}
-                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <div className="bg-background flex items-center justify-center" style={{ height: 480 }}>
+                  {isPdf ? (
+                    pdfBlobLoading && !pdfBlobUrl ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    ) : pdfBlobUrl ? (
+                      <iframe
+                        src={`${pdfBlobUrl}#toolbar=1&navpanes=0&view=FitH`}
+                        title="Document preview"
+                        className="w-full h-full border-0"
+                      />
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        {pdfBlobError || 'PDF preview unavailable.'}{' '}
+                        {openHref && (
+                          <a href={openHref} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                             Open in new tab
                           </a>
-                        </div>
-                      </object>
-                    ) : (
-                      <img
-                        src={previewUrl}
-                        alt="Document preview"
-                        className="max-h-full max-w-full object-contain"
-                      />
+                        )}
+                      </div>
                     )
+                  ) : previewSignedLoading && !previewUrl ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Document preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   ) : (
                     <p className="text-xs text-muted-foreground">Preview unavailable</p>
                   )}
