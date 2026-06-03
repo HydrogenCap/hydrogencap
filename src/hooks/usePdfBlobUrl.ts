@@ -8,6 +8,7 @@ import { toast } from 'sonner';
  */
 export function usePdfBlobUrl(sourceUrl: string | null) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [blob, setBlob] = useState<Blob | null>(null);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +22,7 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
 
     if (!sourceUrl) {
       setBlobUrl(null);
+      setBlob(null);
       setDataUrl(null);
       setLoading(false);
       setError(null);
@@ -66,6 +68,7 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
 
         const url = URL.createObjectURL(blob);
         blobUrlRef.current = url;
+        setBlob(blob);
         setBlobUrl(url);
         setDataUrl(url);
       } catch (err) {
@@ -92,5 +95,5 @@ export function usePdfBlobUrl(sourceUrl: string | null) {
     };
   }, [sourceUrl]);
 
-  return { blobUrl, dataUrl, loading, error };
+  return { blobUrl, blob, dataUrl, loading, error };
 }

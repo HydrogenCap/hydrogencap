@@ -8,8 +8,10 @@ import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface PdfCanvasPreviewProps {
-  /** A blob: URL (or any same-origin URL) pointing at the PDF bytes. */
-  src: string | null;
+  /** A blob: URL (or any same-origin URL) pointing at the PDF bytes. Used as a fallback if `data` is not provided. */
+  src?: string | null;
+  /** Raw PDF bytes — preferred when available; avoids fetching blob: URLs which can fail in sandboxed iframes. */
+  data?: Blob | ArrayBuffer | Uint8Array | null;
   /** Container height in pixels. */
   height?: number;
 }
@@ -19,7 +21,7 @@ interface PdfCanvasPreviewProps {
  * fallback that Chrome's built-in PDF viewer shows inside sandboxed iframes
  * (e.g. the Lovable preview iframe).
  */
-export function PdfCanvasPreview({ src, height = 480 }: PdfCanvasPreviewProps) {
+export function PdfCanvasPreview({ src, data, height = 480 }: PdfCanvasPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [pageNum, setPageNum] = useState(1);
@@ -31,23 +33,28 @@ export function PdfCanvasPreview({ src, height = 480 }: PdfCanvasPreviewProps) {
     setPageNum(1);
     setTotalPages(0);
     setError(null);
-  }, [src]);
+  }, [src, data]);
 
   useEffect(() => {
-    if (!src) return;
+    if (!src && !data) return;
     let cancelled = false;
     let renderTask: { cancel: () => void } | null = null;
 
     async function render() {
       setLoading(true);
       try {
-        // Fetch bytes ourselves — pdf.js's internal fetch of blob: URLs can
-        // fail with "Unexpected server response (0)" inside sandboxed iframes.
-        const resp = await fetch(src!);
-        if (!resp.ok) throw new Error(`Failed to fetch PDF (${resp.status})`);
-        const buf = await resp.arrayBuffer();
+        let bytes: Uint8Array;
+        if (data) {
+          if (data instanceof Uint8Array) bytes = data;
+          else if (data instanceof ArrayBuffer) bytes = new Uint8Array(data);
+          else bytes = new Uint8Array(await data.arrayBuffer());
+        } else {
+          const resp = await fetch(src!);
+          if (!resp.ok) throw new Error(`Failed to fetch PDF (${resp.status})`);
+          bytes = new Uint8Array(await resp.arrayBuffer());
+        }
         if (cancelled) return;
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf) });
+        const loadingTask = pdfjsLib.getDocument({ data: bytes });
         const pdf = await loadingTask.promise;
         if (cancelled) return;
         setTotalPages(pdf.numPages);
@@ -92,9 +99,9 @@ export function PdfCanvasPreview({ src, height = 480 }: PdfCanvasPreviewProps) {
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [src, pageNum, height]);
+  }, [src, data, pageNum, height]);
 
-  if (!src) return null;
+  if (!src && !data) return null;
 
   return (
     <div className="w-full flex flex-col" style={{ height }}>
