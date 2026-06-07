@@ -125,7 +125,9 @@ export function useDashboardPropertiesV2() {
 
         const isCore = ['stabilised', 'letting'].includes(property.lifecycle_stage);
         const lifecycleType = isCore ? 'core_rental' : 'development';
-        const isHmo = property.property_type?.startsWith('hmo');
+        // Use the explicit is_hmo_licensed flag so users can override the licence
+        // requirement for HMO-typed properties that don't need a licence.
+        const isHmo = property.is_hmo_licensed === true;
 
         return {
           id: property.id,
