@@ -43,6 +43,9 @@ export function MarketingNav() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/auth">Log In</Link>
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/demo">View Demo</Link>
           </Button>
