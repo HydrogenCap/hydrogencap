@@ -4,6 +4,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { validateBody } from "../_shared/validate.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { escapeHtml, escapeHtmlMultiline } from "../_shared/escapeHtml.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
