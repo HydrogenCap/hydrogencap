@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 
 import { withInvocationLog } from "../_shared/logger.ts";
+import { escapeHtml } from "../_shared/escapeHtml.ts";
 const ALLOWED_ORIGINS = [
   "https://tenureiq.com",
   "https://www.tenureiq.com",
@@ -163,18 +164,18 @@ function generateEmailHtml(
     return `
       <div style="margin-bottom: 24px;">
         <h2 style="color: ${color}; font-size: 18px; margin-bottom: 12px; border-bottom: 2px solid ${color}; padding-bottom: 8px;">
-          ${title} (${groups.reduce((sum, g) => sum + g.items.length, 0)} items)
+          ${escapeHtml(title)} (${groups.reduce((sum, g) => sum + g.items.length, 0)} items)
         </h2>
         ${groups.map(group => `
           <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
             <h3 style="margin: 0 0 8px 0; font-size: 14px; color: #1f2937;">
-              📍 ${group.property.address_line}${group.property.postcode ? `, ${group.property.postcode}` : ''}
+              📍 ${escapeHtml(group.property.address_line)}${group.property.postcode ? `, ${escapeHtml(group.property.postcode)}` : ''}
             </h3>
             <ul style="margin: 0; padding-left: 20px;">
               ${group.items.map(item => `
                 <li style="color: #4b5563; font-size: 13px; margin-bottom: 4px;">
-                  <strong>${item.compliance_type}</strong> – Due: ${formatDate(item.expiry_date)}
-                  ${item.notes ? `<br><span style="color: #6b7280; font-size: 12px;">${item.notes}</span>` : ''}
+                  <strong>${escapeHtml(item.compliance_type)}</strong> – Due: ${escapeHtml(formatDate(item.expiry_date))}
+                  ${item.notes ? `<br><span style="color: #6b7280; font-size: 12px;">${escapeHtml(item.notes)}</span>` : ''}
                 </li>
               `).join('')}
             </ul>
@@ -208,13 +209,13 @@ function generateEmailHtml(
           
           return `
             <div style="background: #f0f9ff; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
-              <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #1e40af;">📍 ${locationLabel}</h4>
+              <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #1e40af;">📍 ${escapeHtml(locationLabel)}</h4>
               <ul style="margin: 0; padding-left: 16px;">
                 ${activities.slice(0, 5).map(a => `
                   <li style="color: #374151; font-size: 12px; margin-bottom: 2px;">
-                    <strong>${a.title}</strong>
-                    ${a.body ? ` – ${a.body.substring(0, 80)}${a.body.length > 80 ? '...' : ''}` : ''}
-                    <span style="color: #9ca3af;"> (${new Date(a.created_at).toLocaleDateString('en-GB')})</span>
+                    <strong>${escapeHtml(a.title)}</strong>
+                    ${a.body ? ` – ${escapeHtml(a.body.substring(0, 80))}${a.body.length > 80 ? '...' : ''}` : ''}
+                    <span style="color: #9ca3af;"> (${escapeHtml(new Date(a.created_at).toLocaleDateString('en-GB'))})</span>
                   </li>
                 `).join('')}
               </ul>
