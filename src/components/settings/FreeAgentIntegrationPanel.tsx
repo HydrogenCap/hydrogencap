@@ -25,6 +25,7 @@ import {
   type FreeAgentConnection,
 } from '@/hooks/useFreeAgentIntegration';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   success: <CheckCircle2 className="h-3 w-3 text-emerald-500" />,
