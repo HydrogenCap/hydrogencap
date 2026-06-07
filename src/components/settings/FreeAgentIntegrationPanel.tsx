@@ -25,6 +25,7 @@ import {
   type FreeAgentConnection,
 } from '@/hooks/useFreeAgentIntegration';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   success: <CheckCircle2 className="h-3 w-3 text-emerald-500" />,
@@ -132,8 +133,13 @@ export function FreeAgentIntegrationPanel() {
     if (!connectingEntity || !orgId) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const authUrl = buildFreeAgentAuthUrl(connectingEntity, orgId, user.id, useSandbox);
-    window.open(authUrl, '_blank', 'noopener,noreferrer');
+    try {
+      const authUrl = await buildFreeAgentAuthUrl(connectingEntity, orgId, user.id, useSandbox);
+      window.open(authUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start FreeAgent connection';
+      toast.error(message);
+    }
   };
 
   const handleDisconnect = async () => {

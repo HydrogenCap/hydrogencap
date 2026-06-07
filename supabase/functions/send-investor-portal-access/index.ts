@@ -4,6 +4,7 @@ import { Resend } from 'https://esm.sh/resend@4.0.0';
 import { z } from 'https://esm.sh/zod@3.23.8';
 import { validateBody } from '../_shared/validate.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
+import { escapeHtml } from '../_shared/escapeHtml.ts';
 
 import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
@@ -91,6 +92,12 @@ serve(withInvocationLog("send-investor-portal-access", async (req, _invocationLo
     const safeOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://hydrogencapital.lovable.app';
     const portalUrl = `${safeOrigin}/portal`;
 
+    const safeInviter = escapeHtml(inviterName);
+    const safeOrg = escapeHtml(orgName);
+    const safeInvestorName = escapeHtml(investor.investor_name);
+    const safeInvestorEmail = escapeHtml(investor.email);
+    const safePortal = escapeHtml(portalUrl);
+
     const { error: emailError } = await resend.emails.send({
       from: 'HydrogenCap <onboarding@resend.dev>',
       to: investor.email,
@@ -112,15 +119,15 @@ serve(withInvocationLog("send-investor-portal-access", async (req, _invocationLo
       <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">Your investor portal is ready</h2>
 
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 12px;">
-        <strong>${inviterName}</strong> has enabled portal access for <strong>${investor.investor_name}</strong> with <strong>${orgName}</strong>.
+        <strong>${safeInviter}</strong> has enabled portal access for <strong>${safeInvestorName}</strong> with <strong>${safeOrg}</strong>.
       </p>
 
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 24px;">
-        Sign in or create your account using <strong>${investor.email}</strong>. Once you do, your portal access will be linked automatically.
+        Sign in or create your account using <strong>${safeInvestorEmail}</strong>. Once you do, your portal access will be linked automatically.
       </p>
 
       <div style="text-align:center;margin:32px 0;">
-        <a href="${portalUrl}"
+        <a href="${safePortal}"
            style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
           Open Investor Portal
         </a>

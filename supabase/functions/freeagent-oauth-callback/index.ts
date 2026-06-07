@@ -41,12 +41,39 @@ Deno.serve(withInvocationLog("freeagent-oauth-callback", async (req, _invocation
     const { entityId, companyId, orgId, userId, useSandbox, nonce } = stateData;
 
     // Validate required state fields to prevent forged states
-    if (!orgId || !userId || !nonce) {
+    if (!orgId || !userId || !nonce || typeof nonce !== "string") {
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_state`, 302);
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Server-side CSRF check: look up the nonce in oauth_states, ensure it matches
+    // (user_id, org_id, provider) and hasn't expired. Single-use — delete after.
+    const { data: stateRow, error: stateLookupError } = await supabase
+      .from("oauth_states")
+      .select("nonce, user_id, org_id, provider, expires_at")
+      .eq("nonce", nonce)
+      .maybeSingle();
+
+    if (stateLookupError || !stateRow) {
+      console.error("OAuth CSRF: nonce not found in oauth_states");
+      return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_state`, 302);
+    }
+
+    // Always consume the nonce immediately (single use)
+    await supabase.from("oauth_states").delete().eq("nonce", nonce);
+
+    if (
+      stateRow.provider !== "freeagent" ||
+      stateRow.user_id !== userId ||
+      stateRow.org_id !== orgId ||
+      new Date(stateRow.expires_at).getTime() < Date.now()
+    ) {
+      console.error("OAuth CSRF: state mismatch or expired");
       return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=invalid_state`, 302);
     }
 
     // Verify the userId from state is an owner/admin in the target org
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const { data: membership } = await supabase
       .from("memberships")
       .select("id")
@@ -59,6 +86,7 @@ Deno.serve(withInvocationLog("freeagent-oauth-callback", async (req, _invocation
       console.error("OAuth CSRF check failed: userId not authorized for orgId");
       return Response.redirect(`${APP_URL}/settings?tab=integrations&freeagent=error&code=unauthorized`, 302);
     }
+
 
     if (entityId) {
       const { data: entity } = await supabase

@@ -4,6 +4,7 @@ import { Resend } from 'https://esm.sh/resend@4.0.0';
 import { z } from 'https://esm.sh/zod@3.23.8';
 import { validateBody } from '../_shared/validate.ts';
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
+import { escapeHtml } from '../_shared/escapeHtml.ts';
 
 import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
@@ -90,6 +91,11 @@ serve(withInvocationLog("send-shareholder-invite", async (req, _invocationLog) =
     const safeOrigin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://hydrogencapital.lovable.app';
     const acceptUrl = `${safeOrigin}/portal/accept/${invite.token}`;
 
+    const safeInviter = escapeHtml(inviterName);
+    const safeOrg = escapeHtml(orgName);
+    const safeInvitee = escapeHtml(inviteeName);
+    const safeAccept = escapeHtml(acceptUrl);
+
     const { error: emailError } = await resend.emails.send({
       from: 'HydrogenCap <onboarding@resend.dev>',
       to: invite.email,
@@ -111,11 +117,11 @@ serve(withInvocationLog("send-shareholder-invite", async (req, _invocationLog) =
       <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">Shareholder portal invitation</h2>
 
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 12px;">
-        Hi ${inviteeName},
+        Hi ${safeInvitee},
       </p>
 
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 12px;">
-        <strong>${inviterName}</strong> has invited you to view the <strong>${orgName}</strong> portfolio in the shareholder portal.
+        <strong>${safeInviter}</strong> has invited you to view the <strong>${safeOrg}</strong> portfolio in the shareholder portal.
       </p>
 
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -123,7 +129,7 @@ serve(withInvocationLog("send-shareholder-invite", async (req, _invocationLog) =
       </p>
 
       <div style="text-align:center;margin:32px 0;">
-        <a href="${acceptUrl}"
+        <a href="${safeAccept}"
            style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
           Accept Invite
         </a>

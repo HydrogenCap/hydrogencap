@@ -3,6 +3,7 @@ import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
  import { Resend } from 'https://esm.sh/resend@4.0.0';
  import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts';
+ import { escapeHtml, escapeHtmlMultiline } from '../_shared/escapeHtml.ts';
  
  const ALLOWED_ORIGINS = [
    "https://tenureiq.com",
@@ -56,8 +57,17 @@ import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 
      jobReference,
    } = params;
  
-   const subject = `Job Request: ${complianceType} - ${propertyAddress.split(',')[0]}`;
+  const subject = `Job Request: ${complianceType} - ${propertyAddress.split(',')[0]}`;
  
+   const safeContractorName = escapeHtml(contractorName);
+   const safeComplianceType = escapeHtml(complianceType);
+   const safePropertyAddress = escapeHtml(propertyAddress);
+   const safeSenderName = escapeHtml(senderName);
+   const safeSenderEmail = escapeHtml(senderEmail);
+   const safeSenderPhone = senderPhone ? escapeHtml(senderPhone) : '';
+   const safeJobReference = escapeHtml(jobReference);
+   const safeCustomMessage = customMessage ? escapeHtmlMultiline(customMessage) : '';
+
    const html = `
  <!DOCTYPE html>
  <html>
@@ -69,39 +79,39 @@ import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 
    
    <div style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); padding: 30px; border-radius: 12px 12px 0 0;">
      <h1 style="color: white; margin: 0; font-size: 24px;">Job Request</h1>
-     <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Reference: ${jobReference}</p>
+     <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Reference: ${safeJobReference}</p>
    </div>
    
    <div style="background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-     <p style="margin-top: 0;">Hi ${contractorName},</p>
+     <p style="margin-top: 0;">Hi ${safeContractorName},</p>
      
      <p>I would like to request a quote for the following work:</p>
      
      <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border: 1px solid #e5e7eb;">
-       <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #14b8a6;">${complianceType}</h2>
+       <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #14b8a6;">${safeComplianceType}</h2>
        
        <table style="width: 100%; border-collapse: collapse;">
          <tr>
            <td style="padding: 8px 0; color: #6b7280; width: 120px;">Property:</td>
-           <td style="padding: 8px 0; font-weight: 500;">${propertyAddress}</td>
+           <td style="padding: 8px 0; font-weight: 500;">${safePropertyAddress}</td>
          </tr>
          ${expiryDate ? `
          <tr>
            <td style="padding: 8px 0; color: #6b7280;">Current Expiry:</td>
-           <td style="padding: 8px 0; font-weight: 500;">${new Date(expiryDate).toLocaleDateString('en-GB', { 
+           <td style="padding: 8px 0; font-weight: 500;">${escapeHtml(new Date(expiryDate).toLocaleDateString('en-GB', { 
              weekday: 'long', 
              year: 'numeric', 
              month: 'long', 
              day: 'numeric' 
-           })}</td>
+           }))}</td>
          </tr>
          ` : ''}
        </table>
      </div>
      
-     ${customMessage ? `
+     ${safeCustomMessage ? `
      <div style="background: #fef3c7; border-radius: 8px; padding: 15px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-       <p style="margin: 0; white-space: pre-wrap;">${customMessage}</p>
+       <p style="margin: 0; white-space: pre-wrap;">${safeCustomMessage}</p>
      </div>
      ` : ''}
      
@@ -115,13 +125,13 @@ import { withInvocationLog } from "../_shared/logger.ts"; import { serve } from 
      <div style="background: white; border-radius: 8px; padding: 15px; margin: 20px 0; border: 1px solid #e5e7eb;">
        <p style="margin: 0 0 5px 0; font-weight: 600;">Contact Details</p>
        <p style="margin: 0; color: #6b7280;">
-         ${senderName}<br>
-         ${senderEmail}
-         ${senderPhone ? `<br>${senderPhone}` : ''}
+         ${safeSenderName}<br>
+         ${safeSenderEmail}
+         ${safeSenderPhone ? `<br>${safeSenderPhone}` : ''}
        </p>
      </div>
      
-     <p style="margin-bottom: 0;">Kind regards,<br>${senderName}</p>
+     <p style="margin-bottom: 0;">Kind regards,<br>${safeSenderName}</p>
    </div>
    
    <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">

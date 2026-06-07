@@ -4,6 +4,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { validateBody } from "../_shared/validate.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { escapeHtml, escapeHtmlMultiline } from "../_shared/escapeHtml.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
@@ -128,6 +129,10 @@ serve(withInvocationLog("send-rent-reminder", async (req: Request, _invocationLo
     const now = new Date();
     const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    // Escape all user/DB-sourced values before HTML interpolation
+    const safeTenantName = escapeHtml(tenantName);
+    const safeAmount = escapeHtml(amount.toLocaleString());
+
     let subject: string;
     let body: string;
 
@@ -137,32 +142,32 @@ serve(withInvocationLog("send-rent-reminder", async (req: Request, _invocationLo
         : reminderType === "due_date"
         ? `Rent Payment Due Today - ${propertyAddress}`
         : `Upcoming Rent Payment - ${propertyAddress}`;
-      body = customMessage.replace(/\n/g, "<br>");
+      body = escapeHtmlMultiline(customMessage);
     } else {
       switch (reminderType) {
         case "overdue":
           subject = `URGENT: Overdue Rent Payment - ${propertyAddress}`;
           body = `
-            <p>Dear ${tenantName},</p>
-            <p>Your rent payment of <strong>GBP ${amount.toLocaleString()}</strong> is now <strong>${daysOverdue} day${daysOverdue !== 1 ? "s" : ""}</strong> overdue.</p>
+            <p>Dear ${safeTenantName},</p>
+            <p>Your rent payment of <strong>GBP ${safeAmount}</strong> is now <strong>${daysOverdue} day${daysOverdue !== 1 ? "s" : ""}</strong> overdue.</p>
             <p>Please contact us immediately to arrange payment or discuss a payment plan.</p>
-            <p><strong>Outstanding Amount:</strong> GBP ${amount.toLocaleString()}<br>
-            <strong>Original Due Date:</strong> ${formatDate(dueDate)}</p>
+            <p><strong>Outstanding Amount:</strong> GBP ${safeAmount}<br>
+            <strong>Original Due Date:</strong> ${escapeHtml(formatDate(dueDate))}</p>
             <p>Thank you</p>`;
           break;
         case "due_date":
           subject = `Rent Payment Due Today - ${propertyAddress}`;
           body = `
-            <p>Dear ${tenantName},</p>
-            <p>Your rent payment of <strong>GBP ${amount.toLocaleString()}</strong> is due today.</p>
+            <p>Dear ${safeTenantName},</p>
+            <p>Your rent payment of <strong>GBP ${safeAmount}</strong> is due today.</p>
             <p>Please make payment as soon as possible.</p>
             <p>Thank you</p>`;
           break;
         default:
           subject = `Upcoming Rent Payment - ${propertyAddress}`;
           body = `
-            <p>Dear ${tenantName},</p>
-            <p>This is a friendly reminder that your rent payment of <strong>GBP ${amount.toLocaleString()}</strong> will be due on <strong>${formatDate(dueDate)}</strong>.</p>
+            <p>Dear ${safeTenantName},</p>
+            <p>This is a friendly reminder that your rent payment of <strong>GBP ${safeAmount}</strong> will be due on <strong>${escapeHtml(formatDate(dueDate))}</strong>.</p>
             <p>Please ensure payment is made on time.</p>
             <p>Thank you</p>`;
       }
