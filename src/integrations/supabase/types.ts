@@ -4305,7 +4305,7 @@ export type Database = {
           id: string
           insurer_name: string | null
           notes: string | null
-          org_id: string | null
+          org_id: string
           payment_frequency: string | null
           policy_number: string | null
           policy_type: string | null
@@ -4326,7 +4326,7 @@ export type Database = {
           id?: string
           insurer_name?: string | null
           notes?: string | null
-          org_id?: string | null
+          org_id: string
           payment_frequency?: string | null
           policy_number?: string | null
           policy_type?: string | null
@@ -4347,7 +4347,7 @@ export type Database = {
           id?: string
           insurer_name?: string | null
           notes?: string | null
-          org_id?: string | null
+          org_id?: string
           payment_frequency?: string | null
           policy_number?: string | null
           policy_type?: string | null
