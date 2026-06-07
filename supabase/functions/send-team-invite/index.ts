@@ -4,6 +4,7 @@ import { Resend } from 'https://esm.sh/resend@4.0.0';
 import { z } from "https://esm.sh/zod@3.23.8";
 import { validateBody } from "../_shared/validate.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { escapeHtml } from "../_shared/escapeHtml.ts";
 
 import { withInvocationLog } from "../_shared/logger.ts";
 const ALLOWED_ORIGINS = [
@@ -91,6 +92,11 @@ serve(withInvocationLog("send-team-invite", async (req, _invocationLog) => {
 
     const roleName = invite.role === 'admin' ? 'Admin' : 'Viewer';
 
+    const safeInviter = escapeHtml(inviterName);
+    const safeOrg = escapeHtml(orgName);
+    const safeRole = escapeHtml(roleName);
+    const safeAccept = escapeHtml(acceptUrl);
+
     const { error: emailError } = await resend.emails.send({
       from: 'HydrogenCap <onboarding@resend.dev>',
       to: invite.email,
@@ -113,7 +119,7 @@ serve(withInvocationLog("send-team-invite", async (req, _invocationLog) => {
       <h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">You're invited!</h2>
       
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 8px;">
-        <strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on HydrogenCap as a <strong>${roleName}</strong>.
+        <strong>${safeInviter}</strong> has invited you to join <strong>${safeOrg}</strong> on HydrogenCap as a <strong>${safeRole}</strong>.
       </p>
 
       <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 24px;">
@@ -123,7 +129,7 @@ serve(withInvocationLog("send-team-invite", async (req, _invocationLog) => {
       </p>
 
       <div style="text-align:center;margin:32px 0;">
-        <a href="${acceptUrl}" 
+        <a href="${safeAccept}" 
            style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
           Accept Invite
         </a>
