@@ -210,29 +210,35 @@ export function useSyncToFreeAgent() {
   });
 }
 
-export function buildFreeAgentAuthUrl(
+export async function buildFreeAgentAuthUrl(
   entityId: string,
   orgId: string,
-  userId: string,
+  _userId: string,
   useSandbox: boolean = false
-): string {
+): Promise<string> {
   const FREEAGENT_CLIENT_ID = import.meta.env.VITE_FREEAGENT_CLIENT_ID || 'ctJauXO4z3j4tDVb8JMCXw';
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
   const redirectUri = `${SUPABASE_URL}/functions/v1/freeagent-oauth-callback`;
 
-  // CSRF protection: generate a random nonce and store it in sessionStorage
-  const nonce = crypto.randomUUID();
-  sessionStorage.setItem('freeagent_oauth_nonce', nonce);
+  // CSRF protection: ask the backend to generate and persist a server-side
+  // nonce. The returned `state` embeds that nonce; the callback validates it
+  // against the oauth_states table and consumes it (single-use).
+  const { data, error } = await supabase.functions.invoke<{ state: string }>(
+    'freeagent-oauth-init',
+    { body: { entityId, orgId, useSandbox } }
+  );
 
-  const state = btoa(JSON.stringify({ entityId, orgId, userId, useSandbox, nonce }));
+  if (error || !data?.state) {
+    throw new Error(error?.message || 'Failed to initialise FreeAgent OAuth');
+  }
 
-  const authBase = useSandbox ? "https://api.sandbox.freeagent.com" : "https://api.freeagent.com";
+  const authBase = useSandbox ? 'https://api.sandbox.freeagent.com' : 'https://api.freeagent.com';
 
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: FREEAGENT_CLIENT_ID,
     redirect_uri: redirectUri,
-    state,
+    state: data.state,
   });
 
   return `${authBase}/v2/approve_app?${params.toString()}`;
