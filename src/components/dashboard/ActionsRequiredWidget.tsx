@@ -24,6 +24,8 @@ const riskIcons: Record<RiskType, React.ElementType> = {
   insurance: ShieldAlert,
   leasehold: Building,
   lease_expiry: Clock,
+  entity_health: AlertCircle,
+  arrears_risk: TrendingDown,
 };
 
 type ActionCategory = 'all' | 'compliance' | 'financial' | 'data';
