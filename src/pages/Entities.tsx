@@ -129,6 +129,7 @@ export default function Entities() {
   const { data: allPropertiesV2 } = usePropertiesV2();
   const { data: loans } = useAllLoanFacilities();
   const { data: roomSummaries } = usePropertyRoomSummaries();
+  const { map: healthMap } = useEntityHealthMap();
   const syncEntity = useSyncEntity();
   const updateEntity = useUpdateLegalEntity();
   const navigate = useNavigate();
