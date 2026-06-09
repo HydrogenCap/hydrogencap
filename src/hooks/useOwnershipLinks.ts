@@ -176,8 +176,9 @@ export function usePropertyBeneficialOwnership(propertyId: string | undefined) {
   useEffect(() => {
     if (!propertyId) return;
 
+    const topic = `ownership:property:${propertyId}`;
     const channel = supabase
-      .channel(`ownership_property_${propertyId}`)
+      .channel(topic, { config: { private: true } })
       .on(
         'postgres_changes',
         {
@@ -190,7 +191,11 @@ export function usePropertyBeneficialOwnership(propertyId: string | undefined) {
           queryClient.invalidateQueries({ queryKey: ownershipKeys.bySubject('PROPERTY', propertyId) });
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
