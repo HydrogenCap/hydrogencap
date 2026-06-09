@@ -79,7 +79,7 @@ const riskTypeIcons: Record<RiskType, React.ReactNode> = {
   entity_health: <Building2 className="h-4 w-4" />,
   arrears_risk: <TrendingDown className="h-4 w-4" />,
 };
-};
+
 
 function getPriorityLabel(priority: number): { label: string; className: string } {
   if (priority >= 130) return { label: 'Urgent', className: 'bg-destructive text-destructive-foreground' };
