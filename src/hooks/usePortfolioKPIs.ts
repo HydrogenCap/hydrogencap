@@ -1,13 +1,20 @@
 /**
  * V2 Portfolio KPIs hook — computes both gross and attributable metrics.
- * Replaces the 60-line portfolioStats useMemo in Dashboard.tsx.
+ *
+ * The "attributable" column is dual-purpose, driven by the user's
+ * persisted portfolio view mode:
+ *   - 'gross' (default): attributable = group parent's ownership share
+ *   - 'mine': attributable = current user's effective beneficial share
+ *     derived from the entity / shareholding graph (look-through).
  */
 import { useMemo } from 'react';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { useQuery } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useOwnershipData } from './useOwnershipData';
-import { getGroupParentOwnership } from '@/lib/ownershipEngine';
+import { getGroupParentOwnership, resolveEffectiveOwnership } from '@/lib/ownershipEngine';
+import { usePortfolioViewMode } from './usePortfolioViewMode';
+
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
