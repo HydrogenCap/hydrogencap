@@ -69,6 +69,8 @@ export const riskTypeLabels: Record<RiskType, string> = {
   insurance: 'Insurance',
   leasehold: 'Leasehold',
   lease_expiry: 'Lease Expiry',
+  entity_health: 'Entity Health',
+  arrears_risk: 'Arrears Risk',
 };
 
 interface TenancyRiskRecord {
