@@ -19,6 +19,13 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { server } from '@/test/mocks/server';
+
+// These tests hit the live backend, so we must stop the global MSW
+// interceptor that the rest of the suite relies on. It's restarted in
+// afterAll so subsequent test files keep their mocks.
+beforeAll(() => server.close());
+afterAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
