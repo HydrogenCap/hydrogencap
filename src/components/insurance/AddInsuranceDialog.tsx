@@ -115,7 +115,7 @@
                    <SelectContent>
                      {properties?.map(p => (
                        <SelectItem key={p.id} value={p.id}>
-                         {p.address_line?.split(',')[0]} ({p.postcode})
+                         {p.address_line_1?.split(',')[0]} ({p.postcode})
                        </SelectItem>
                      ))}
                    </SelectContent>
