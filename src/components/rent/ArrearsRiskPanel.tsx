@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, ChevronDown, ChevronUp, ShieldAlert, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import {
   useArrearsRiskSummary,
   type ArrearsPrediction,
 } from '@/hooks/useArrearsPredictions';
+import { useDashboardTenanciesV2, useDashboardPropertiesV2 } from '@/hooks/useDashboardDataV2';
 import { formatDistanceToNow } from 'date-fns';
 
 const RISK_SEVERITY: Record<string, SeverityLevel> = {
@@ -47,7 +48,15 @@ function RiskScoreBar({ score }: { score: number }) {
   );
 }
 
-function PredictionRow({ prediction }: { prediction: ArrearsPrediction }) {
+function PredictionRow({
+  prediction,
+  tenantName,
+  propertyLabel,
+}: {
+  prediction: ArrearsPrediction;
+  tenantName: string;
+  propertyLabel: string;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -57,12 +66,8 @@ function PredictionRow({ prediction }: { prediction: ArrearsPrediction }) {
         className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">
-            Tenant ID: {prediction.tenant_id?.slice(0, 8) ?? 'Unknown'}
-          </p>
-          <p className="text-xs text-muted-foreground truncate">
-            Property: {prediction.property_id.slice(0, 8)}
-          </p>
+          <p className="text-sm font-medium truncate">{tenantName}</p>
+          <p className="text-xs text-muted-foreground truncate">{propertyLabel}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <RiskScoreBar score={prediction.risk_score} />
@@ -124,7 +129,36 @@ interface ArrearsRiskPanelProps {
 export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
   const { data: predictions, isLoading } = useArrearsPredictions(propertyId);
   const { data: summary } = useArrearsRiskSummary();
+  const { data: tenancies } = useDashboardTenanciesV2();
+  const { data: properties } = useDashboardPropertiesV2();
   const runPrediction = useRunArrearsPrediction();
+
+  const tenantName = useMemo(() => {
+    const m = new Map<string, string>();
+    (tenancies || []).forEach(t => {
+      const tenant = (t as { tenant?: { id?: string; first_name?: string | null; last_name?: string | null } }).tenant;
+      if (tenant?.id) {
+        const name = `${tenant.first_name || ''} ${tenant.last_name || ''}`.trim();
+        if (name) m.set(tenant.id, name);
+      }
+    });
+    return m;
+  }, [tenancies]);
+
+  const propertyLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    (properties || []).forEach(p => {
+      const addr = (p as { address_line?: string | null; address_line_1?: string | null }).address_line
+        ?? (p as { address_line_1?: string | null }).address_line_1
+        ?? 'Property';
+      m.set(p.id, addr);
+    });
+    return m;
+  }, [properties]);
+
+  const ranked = useMemo(() => {
+    return [...(predictions || [])].sort((a, b) => b.risk_score - a.risk_score);
+  }, [predictions]);
 
   if (isLoading) {
     return (
@@ -141,7 +175,7 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
     );
   }
 
-  const hasPredictions = predictions && predictions.length > 0;
+  const hasPredictions = ranked.length > 0;
 
   return (
     <Card>
@@ -194,8 +228,13 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
         {/* Prediction List */}
         {hasPredictions ? (
           <div className="space-y-2">
-            {predictions.map((prediction) => (
-              <PredictionRow key={prediction.id} prediction={prediction} />
+            {ranked.map((prediction) => (
+              <PredictionRow
+                key={prediction.id}
+                prediction={prediction}
+                tenantName={(prediction.tenant_id && tenantName.get(prediction.tenant_id)) || 'Tenant'}
+                propertyLabel={propertyLabel.get(prediction.property_id) || 'Property'}
+              />
             ))}
           </div>
         ) : (

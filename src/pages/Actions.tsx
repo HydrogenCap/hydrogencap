@@ -44,7 +44,8 @@ import {
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { cn } from '@/lib/utils';
 import { SEVERITY } from '@/lib/design-tokens';
-import { usePortfolioRisks, RiskType, riskTypeLabels, type RiskItem } from '@/hooks/usePortfolioRisks';
+import { RiskType, riskTypeLabels, type RiskItem } from '@/hooks/usePortfolioRisks';
+import { useExtendedActionRisks } from '@/hooks/useExtendedActionRisks';
 import {
   useSnoozedActions,
   useActionAssignments,
@@ -76,7 +77,10 @@ const riskTypeIcons: Record<RiskType, React.ReactNode> = {
   insurance: <ShieldAlert className="h-4 w-4" />,
   leasehold: <Building2 className="h-4 w-4" />,
   lease_expiry: <Clock className="h-4 w-4" />,
+  entity_health: <Building2 className="h-4 w-4" />,
+  arrears_risk: <TrendingDown className="h-4 w-4" />,
 };
+
 
 function getPriorityLabel(priority: number): { label: string; className: string } {
   if (priority >= 130) return { label: 'Urgent', className: 'bg-destructive text-destructive-foreground' };
@@ -311,7 +315,7 @@ function PropertyGroup({
 }
 
 export function ActionsPanel() {
-  const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = usePortfolioRisks();
+  const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = useExtendedActionRisks();
 
   // Workflow data
   const { data: snoozes = [] } = useSnoozedActions();

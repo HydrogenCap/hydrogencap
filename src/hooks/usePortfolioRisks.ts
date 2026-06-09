@@ -19,7 +19,7 @@ import {
   formatGBP,
 } from '@/lib/calculations';
 
-export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance' | 'insurance' | 'leasehold' | 'lease_expiry';
+export type RiskType = 'ltv' | 'epc' | 'rate_expiry' | 'negative_cashflow' | 'hmo_licence' | 'operational_data' | 'tenancy_compliance' | 'insurance' | 'leasehold' | 'lease_expiry' | 'entity_health' | 'arrears_risk';
 
 export interface RiskItem {
   id: string;
@@ -69,6 +69,8 @@ export const riskTypeLabels: Record<RiskType, string> = {
   insurance: 'Insurance',
   leasehold: 'Leasehold',
   lease_expiry: 'Lease Expiry',
+  entity_health: 'Entity Health',
+  arrears_risk: 'Arrears Risk',
 };
 
 interface TenancyRiskRecord {
