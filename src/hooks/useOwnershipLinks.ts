@@ -116,8 +116,9 @@ export function useCompanyOwnership(companyId: string | undefined) {
   useEffect(() => {
     if (!companyId) return;
 
+    const topic = `ownership:company:${companyId}`;
     const channel = supabase
-      .channel(`ownership_company_${companyId}`)
+      .channel(topic, { config: { private: true } })
       .on(
         'postgres_changes',
         {
@@ -130,7 +131,11 @@ export function useCompanyOwnership(companyId: string | undefined) {
           queryClient.invalidateQueries({ queryKey: ownershipKeys.bySubject('COMPANY', companyId) });
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
