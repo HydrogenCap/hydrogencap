@@ -130,7 +130,7 @@ import { useAllCompliance } from '@/hooks/useCompliance';
                      <SelectItem key={property.id} value={property.id}>
                        <div className="flex items-center gap-2">
                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                         <span>{property.address_line?.split(',')[0]}</span>
+                         <span>{property.address_line_1?.split(',')[0]}</span>
                          <span className="text-muted-foreground">({property.postcode})</span>
                        </div>
                      </SelectItem>
