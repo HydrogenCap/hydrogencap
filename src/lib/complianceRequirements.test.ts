@@ -111,6 +111,41 @@ describe('calculateComplianceRequirements', () => {
     expect(hmoLicence).toBeDefined();
     expect(hmoLicence!.required).toBe(true);
   });
+
+  it('does NOT require HMO Licence when is_hmo_licensed=false (suppresses missing alert)', () => {
+    const result = calculateComplianceRequirements(baseProperty, []);
+    const hmoLicence = result.requirements.find(r => r.type === 'HMO Licence');
+    expect(hmoLicence).toBeDefined();
+    expect(hmoLicence!.required).toBe(false);
+    expect(hmoLicence!.status).toBe('not_required');
+    // And does not surface as a compliance issue
+    const issues = getComplianceIssues(result.requirements);
+    expect(issues.map(i => i.type)).not.toContain('HMO Licence');
+  });
+
+  it('marks Smoke Alarm Declaration as not_required when property has integrated fire alarm system', () => {
+    // Mirrors removing the Smoke & CO Alarm certificate for 48 Dodmoor.
+    const property = { ...baseProperty, has_fire_alarm_system: true };
+    const result = calculateComplianceRequirements(property, []);
+    const smoke = result.requirements.find(r => r.type === 'Smoke Alarm Declaration');
+    expect(smoke).toBeDefined();
+    expect(smoke!.required).toBe(false);
+    expect(smoke!.status).toBe('not_required');
+    const issues = getComplianceIssues(result.requirements);
+    expect(issues.map(i => i.type)).not.toContain('Smoke Alarm Declaration');
+  });
+
+  it('marks Emergency Lighting Certificate as not_required when property has no emergency lighting', () => {
+    // Mirrors removing the Emergency Lighting certificate for 39 Chirbury.
+    const property = { ...baseProperty, has_emergency_lighting: false };
+    const result = calculateComplianceRequirements(property, []);
+    const emLighting = result.requirements.find(r => r.type === 'Emergency Lighting Certificate');
+    expect(emLighting).toBeDefined();
+    expect(emLighting!.required).toBe(false);
+    expect(emLighting!.status).toBe('not_required');
+    const issues = getComplianceIssues(result.requirements);
+    expect(issues.map(i => i.type)).not.toContain('Emergency Lighting Certificate');
+  });
 });
 
 describe('getRequirementStatusColor', () => {
