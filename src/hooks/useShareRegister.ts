@@ -332,12 +332,17 @@ export function useBeneficialOwnersPSC(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:beneficial_owners`;
     const channel = supabase
-      .channel(`beneficial_owners_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'beneficial_owners', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.beneficialOwners(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
