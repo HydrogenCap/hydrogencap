@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Calculator, List, Download, ArrowRight } from 'lucide-react';
+import { ExternalLink, Calculator, List, Download, ArrowRight, Wrench, Building2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -146,7 +146,7 @@ export function MetricDetailsSheet({
                           {col.label}
                         </TableHead>
                       ))}
-                      <TableHead className="w-10" />
+                      <TableHead className="w-24" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -163,11 +163,36 @@ export function MetricDetailsSheet({
                               col.align === 'right' && 'text-right font-mono'
                             )}
                           >
-                            {col.key === 'address' ? row.address : row.values[col.key]}
+                            {col.key === 'address' ? (
+                              <div className="flex flex-col">
+                                <span>{row.address}</span>
+                                {row.entityName && (
+                                  <span className="text-xs text-muted-foreground">{row.entityName}</span>
+                                )}
+                              </div>
+                            ) : (
+                              row.values[col.key]
+                            )}
                           </TableCell>
                         ))}
-                        <TableCell className="w-10">
-                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                        <TableCell className="w-24 text-right">
+                          {row.fixUrl ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(row.fixUrl!);
+                                onOpenChange(false);
+                              }}
+                            >
+                              <Wrench className="h-3 w-3" />
+                              {row.fixLabel ?? 'Fix'}
+                            </Button>
+                          ) : (
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground inline" />
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -190,6 +215,44 @@ export function MetricDetailsSheet({
                   </TableBody>
                 </Table>
               </ScrollArea>
+
+              {/* Per-entity rollup */}
+              {breakdown.entityRows && breakdown.entityRows.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    By owning entity
+                    <Badge variant="outline" className="ml-1">
+                      {breakdown.entityRows.length}
+                    </Badge>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {(breakdown.entityColumns ?? breakdown.columns).map(col => (
+                          <TableHead key={col.key} className={cn(col.align === 'right' && 'text-right')}>
+                            {col.label}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {breakdown.entityRows.map(row => (
+                        <TableRow key={row.entityName}>
+                          {(breakdown.entityColumns ?? breakdown.columns).map(col => (
+                            <TableCell
+                              key={col.key}
+                              className={cn(col.align === 'right' && 'text-right font-mono')}
+                            >
+                              {row.values[col.key] ?? ''}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">

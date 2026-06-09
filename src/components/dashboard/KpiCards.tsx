@@ -42,7 +42,7 @@ interface SnapshotKPIs {
   latestMonthLabel: string | null;
 }
 
-type MetricKey = 'equity' | 'cashflow' | 'ltv' | 'dscr' | 'health';
+type MetricKey = 'equity' | 'value' | 'debt' | 'cashflow' | 'rent' | 'noi' | 'net_yield' | 'ltv' | 'dscr' | 'health';
 
 interface KpiCardsProps {
   portfolioKPIs: PortfolioKPIs;
@@ -80,7 +80,7 @@ export function KpiCards({
           iconClassName="text-primary"
           grossClassName="text-primary"
           attrClassName="text-primary"
-          onClick={() => onMetricClick('equity')}
+          onClick={() => onMetricClick('value')}
           headerAction={<KpiBreakdownPopover explainerId="portfolio_value" currentValue={formatGBP(portfolioKPIs.gross.totalValue)} />}
         />
         <DualKpiCard
@@ -170,7 +170,7 @@ export function KpiCards({
           groupParentName={portfolioKPIs.groupParentName}
           subtitle="Annual NOI ÷ Value"
           icon={TrendingUp}
-          onClick={() => navigate('/financials')}
+          onClick={() => onMetricClick('net_yield')}
           headerAction={<KpiBreakdownPopover explainerId="net_yield" currentValue={portfolioKPIs.gross.netYieldPct !== null ? formatPercent(portfolioKPIs.gross.netYieldPct) : '—'} />}
         />
         <DualKpiCard
@@ -180,6 +180,7 @@ export function KpiCards({
           groupParentName={portfolioKPIs.groupParentName}
           icon={Wallet}
           iconClassName="text-primary"
+          onClick={() => onMetricClick('rent')}
           headerAction={<KpiBreakdownPopover explainerId="annual_rent" currentValue={formatGBP(portfolioKPIs.gross.annualRent)} />}
         />
         <KpiCard
@@ -205,6 +206,7 @@ export function KpiCards({
           icon={Wallet}
           iconClassName="text-primary"
           valueClassName="text-primary"
+          onClick={() => onMetricClick('rent')}
         />
         <KpiCard
           label="Occupancy Rate"
@@ -255,7 +257,7 @@ export function KpiCards({
           subtitle={portfolioKPIs.gross.netYieldPct !== null ? 'Annual NOI / valuation' : 'No data yet'}
           icon={TrendingUp}
           iconClassName="text-primary"
-          onClick={() => navigate('/financials')}
+          onClick={() => onMetricClick('net_yield')}
         />
         <KpiCard
           label="Monthly Cash Position"
