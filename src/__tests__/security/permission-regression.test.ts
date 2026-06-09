@@ -85,11 +85,14 @@ describeIfBackend('Permission regression — anonymous role', () => {
     'anon RPC to server-only $name is rejected',
     async ({ name, body }) => {
       const res = await restPost(`/rest/v1/rpc/${name}`, body);
-      // Non-2xx required. We accept 4xx (permission) and 300 (PGRST
-      // overload resolution failure — proves the function is not callable
-      // as anon without disambiguation).
-      expect(res.ok).toBe(false);
-      expect(res.status >= 300).toBe(true);
+      // Non-2xx required. Accept 4xx (permission) and 300 (PGRST overload
+      // resolution failure — proves the function is not callable as anon
+      // without disambiguation, ie. EXECUTE was revoked).
+      // Note: jsdom's fetch reports res.ok=true for 300, so check status
+      // directly rather than relying on res.ok.
+      expect(res.status).toBeGreaterThanOrEqual(300);
+      expect(res.status).toBeLessThan(600);
+      expect(res.status === 200 || res.status === 201).toBe(false);
     },
     TEST_TIMEOUT,
   );
