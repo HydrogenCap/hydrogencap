@@ -193,89 +193,12 @@ function DashboardPage() {
   }, []);
 
   const selectedBreakdown = useMemo<MetricBreakdown | null>(() => {
-    if (!selectedMetric || !portfolioKPIs) return null;
-    const { gross, attributable, properties: propRows, groupParentName } = portfolioKPIs;
-
-    const buildBreakdown = (
-      title: string, summaryValue: string, calculationText: string, formula: string,
-      columns: MetricBreakdown['columns'], rows: MetricBreakdown['rows'],
-    ): MetricBreakdown => ({ title, summaryValue, calculationText, formula, columns, rows });
-
-    switch (selectedMetric) {
-      case 'equity':
-        return buildBreakdown(
-          'Portfolio Value & Equity',
-          `Gross: ${formatGBP(gross.totalEquity)} | ${groupParentName}: ${formatGBP(attributable.totalEquity)}`,
-          `${propRows.length} core rental properties`, 'Equity = Value − Debt',
-          [
-            { key: 'address', label: 'Property', align: 'left' },
-            { key: 'value', label: 'Value', align: 'right' },
-            { key: 'equity', label: 'Equity', align: 'right' },
-            { key: 'attrEquity', label: `${groupParentName} Equity`, align: 'right' },
-          ],
-          [...propRows].sort((a, b) => b.equity - a.equity).map(p => ({
-            propertyId: p.propertyId, address: `${p.address}, ${p.city}`,
-            values: { value: formatGBP(p.value), equity: formatGBP(p.equity), attrEquity: `${formatGBP(p.attrEquity)} (${p.groupOwnershipPct.toFixed(0)}%)` },
-          })),
-        );
-      case 'cashflow':
-        return buildBreakdown(
-          'Monthly Cashflow',
-          `Gross: ${formatGBP(gross.monthlyCashflow)} | ${groupParentName}: ${formatGBP(attributable.monthlyCashflow)}`,
-          'After debt service', 'Cashflow = Rent − Costs − Mortgage',
-          [
-            { key: 'address', label: 'Property', align: 'left' },
-            { key: 'cashflow', label: 'Monthly', align: 'right' },
-            { key: 'attrCashflow', label: `${groupParentName}`, align: 'right' },
-          ],
-          [...propRows].sort((a, b) => b.annualCashflow - a.annualCashflow).map(p => ({
-            propertyId: p.propertyId, address: `${p.address}, ${p.city}`,
-            values: { cashflow: formatGBP(p.annualCashflow / 12), attrCashflow: `${formatGBP(p.attrCashflow / 12)} (${p.groupOwnershipPct.toFixed(0)}%)` },
-          })),
-        );
-      case 'ltv':
-        return buildBreakdown(
-          'Loan-to-Value',
-          `Gross: ${formatPercent(gross.weightedLTV)} | ${groupParentName}: ${formatPercent(attributable.weightedLTV)}`,
-          'Per property', 'LTV = Debt ÷ Value × 100',
-          [
-            { key: 'address', label: 'Property', align: 'left' },
-            { key: 'ltv', label: 'LTV', align: 'right' },
-            { key: 'debt', label: 'Debt', align: 'right' },
-          ],
-          [...propRows].filter(p => p.debt > 0).sort((a, b) => b.ltv - a.ltv).map(p => ({
-            propertyId: p.propertyId, address: `${p.address}, ${p.city}`,
-            values: { ltv: formatPercent(p.ltv), debt: `${formatGBP(p.debt)} on ${formatGBP(p.value)}` },
-          })),
-        );
-      case 'dscr':
-        return buildBreakdown(
-          'Debt Service Coverage Ratio',
-          `Gross: ${gross.dscr !== null ? `${gross.dscr.toFixed(2)}x` : '—'} | ${groupParentName}: ${attributable.dscr !== null ? `${attributable.dscr.toFixed(2)}x` : '—'}`,
-          'NOI ÷ Annual Debt Service', 'DSCR = Annual NOI ÷ Annual Mortgage Payments',
-          [
-            { key: 'address', label: 'Property', align: 'left' },
-            { key: 'noi', label: 'Annual NOI', align: 'right' },
-            { key: 'debtService', label: 'Annual Debt Service', align: 'right' },
-            { key: 'dscr', label: 'DSCR', align: 'right' },
-          ],
-          [...propRows].filter(p => p.debt > 0).sort((a, b) => {
-            const aDscr = a.annualRent > 0 && a.debt > 0 ? a.annualRent / (a.debt * 0.05) : 0;
-            const bDscr = b.annualRent > 0 && b.debt > 0 ? b.annualRent / (b.debt * 0.05) : 0;
-            return aDscr - bDscr;
-          }).map(p => {
-            const annualDebtService = p.debt * 0.05;
-            const dscr = annualDebtService > 0 ? p.annualRent / annualDebtService : null;
-            return {
-              propertyId: p.propertyId, address: `${p.address}, ${p.city}`,
-              values: { noi: formatGBP(p.annualRent), debtService: formatGBP(annualDebtService), dscr: dscr !== null ? `${dscr.toFixed(2)}x` : '—' },
-            };
-          }),
-        );
-      default:
-        return null;
-    }
-  }, [selectedMetric, portfolioKPIs]);
+    if (!selectedMetric || !v1Properties) return null;
+    // Single source of truth — reuse formulas from calculations.ts via METRICS_CONFIG.
+    const cfg = METRICS_CONFIG[selectedMetric];
+    if (!cfg) return null;
+    return cfg.getBreakdown(v1CoreRentalProperties, _passports || []);
+  }, [selectedMetric, v1Properties, v1CoreRentalProperties, _passports]);
 
   // ── Loading state ───────────────────────────────────────
   if (isLoading) {
