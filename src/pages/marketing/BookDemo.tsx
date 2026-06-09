@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabaseAny } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 
 const benefits = [
@@ -43,6 +43,7 @@ export default function MarketingBookDemo() {
     assetType: '',
     challenge: '',
     message: '',
+    website: '', // honeypot — must stay empty
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,23 +51,26 @@ export default function MarketingBookDemo() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabaseAny
-        .from('demo_requests')
-        .insert({
+      const { data, error } = await supabase.functions.invoke('submit-demo-request', {
+        body: {
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
           company: formData.company || null,
           message: `Portfolio: ${formData.portfolioSize} | Asset type: ${formData.assetType} | Challenge: ${formData.challenge}${formData.message ? ` | Notes: ${formData.message}` : ''}`,
-        });
+          website: formData.website,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       setIsSubmitted(true);
       toast('Demo request received!', { description: 'We\'ll be in touch within 24 hours to schedule your call.' });
     } catch (error) {
       console.error('Submission error:', error);
-      toast.error('Submission failed', { description: 'Please try again or email us at office@tenureiq.com.' });
+      const msg = error instanceof Error ? error.message : 'Please try again or email us at office@tenureiq.com.';
+      toast.error('Submission failed', { description: msg });
     } finally {
       setIsSubmitting(false);
     }
@@ -132,6 +136,18 @@ export default function MarketingBookDemo() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Honeypot — hidden from real users, bots typically fill all fields. */}
+                    <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+                      <Label htmlFor="bd-website">Website</Label>
+                      <Input
+                        id="bd-website"
+                        name="website"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={formData.website}
+                        onChange={handleChange}
+                      />
+                    </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Name *</Label>
