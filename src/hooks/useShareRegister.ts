@@ -112,12 +112,17 @@ export function useShareClasses(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:share_classes`;
     const channel = supabase
-      .channel(`share_classes_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'share_classes', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.classes(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
@@ -175,12 +180,17 @@ export function useShareholdings(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:shareholdings`;
     const channel = supabase
-      .channel(`shareholdings_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shareholdings', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.shareholdings(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
@@ -264,12 +274,17 @@ export function useShareTransfers(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:share_transfers`;
     const channel = supabase
-      .channel(`share_transfers_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'share_transfers', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.transfers(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
@@ -317,12 +332,17 @@ export function useBeneficialOwnersPSC(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:beneficial_owners`;
     const channel = supabase
-      .channel(`beneficial_owners_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'beneficial_owners', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.beneficialOwners(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
@@ -405,12 +425,17 @@ export function useEntityDividends(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:entity_dividends`;
     const channel = supabase
-      .channel(`entity_dividends_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'entity_dividends', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.dividends(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 

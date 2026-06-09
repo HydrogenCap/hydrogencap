@@ -188,8 +188,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
+    // Private Realtime topic — authorised by realtime.messages RLS to the
+    // owning user only (see public.realtime_topic_authorized).
+    const topic = `subscription:user:${user.id}`;
     const channel = supabase
-      .channel('subscription-changes')
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -198,7 +201,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }, () => {
         queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
 
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
