@@ -315,7 +315,7 @@ function PropertyGroup({
 }
 
 export function ActionsPanel() {
-  const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = usePortfolioRisks();
+  const { risks, criticalCount: _criticalCount, warningCount: _warningCount, totalCount, isLoading } = useExtendedActionRisks();
 
   // Workflow data
   const { data: snoozes = [] } = useSnoozedActions();
