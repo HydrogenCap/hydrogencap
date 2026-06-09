@@ -6519,6 +6519,7 @@ export type Database = {
           onboarding_goals: Json | null
           platform_role: string
           portfolio_size_band: string | null
+          portfolio_view_mode: string
           role: string | null
           section_visibility: Json
           updated_at: string
@@ -6538,6 +6539,7 @@ export type Database = {
           onboarding_goals?: Json | null
           platform_role?: string
           portfolio_size_band?: string | null
+          portfolio_view_mode?: string
           role?: string | null
           section_visibility?: Json
           updated_at?: string
@@ -6557,6 +6559,7 @@ export type Database = {
           onboarding_goals?: Json | null
           platform_role?: string
           portfolio_size_band?: string | null
+          portfolio_view_mode?: string
           role?: string | null
           section_visibility?: Json
           updated_at?: string

@@ -1,13 +1,20 @@
 /**
  * V2 Portfolio KPIs hook — computes both gross and attributable metrics.
- * Replaces the 60-line portfolioStats useMemo in Dashboard.tsx.
+ *
+ * The "attributable" column is dual-purpose, driven by the user's
+ * persisted portfolio view mode:
+ *   - 'gross' (default): attributable = group parent's ownership share
+ *   - 'mine': attributable = current user's effective beneficial share
+ *     derived from the entity / shareholding graph (look-through).
  */
 import { useMemo } from 'react';
 import { usePropertiesV2 } from './usePropertiesV2';
 import { useQuery } from '@tanstack/react-query';
 import { supabaseAny } from '@/integrations/supabase/client';
 import { useOwnershipData } from './useOwnershipData';
-import { getGroupParentOwnership } from '@/lib/ownershipEngine';
+import { getGroupParentOwnership, resolveEffectiveOwnership } from '@/lib/ownershipEngine';
+import { usePortfolioViewMode } from './usePortfolioViewMode';
+
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -94,6 +101,7 @@ export function usePortfolioKPIs(): {
   const { data: loans, isLoading: loansLoading } = useLoanFacilities();
   const { data: performance, isLoading: perfLoading } = useAnnualPerformanceV2();
   const { data: ownershipData, isLoading: ownershipLoading } = useOwnershipData();
+  const { mode, fullName, email } = usePortfolioViewMode();
 
   const isLoading = propsLoading || loansLoading || perfLoading || ownershipLoading;
 
@@ -104,6 +112,21 @@ export function usePortfolioKPIs(): {
     const now = new Date();
 
     const groupParent = entities.find(e => e.is_group_parent);
+
+    // Resolve the "me" identifier used to match against shareholder names.
+    // We match case-insensitively on full name, falling back to email local-part.
+    const meTokens = new Set<string>();
+    if (fullName) meTokens.add(fullName.trim().toLowerCase());
+    if (email) {
+      meTokens.add(email.trim().toLowerCase());
+      const local = email.split('@')[0];
+      if (local) meTokens.add(local.trim().toLowerCase());
+    }
+    const isMe = (name: string | null | undefined) => {
+      if (!name) return false;
+      const n = name.trim().toLowerCase();
+      return meTokens.has(n);
+    };
 
     // Build lookup maps
     const loansByProperty = new Map<string, typeof loans>();
@@ -137,6 +160,7 @@ export function usePortfolioKPIs(): {
       const annualRent = perf?.annual_rent_received || 0;
       const annualCashflow = perf?.annual_cash_flow || 0;
 
+      // Group parent attribution (legacy behaviour for 'gross' mode label)
       let groupOwnershipPct = 0;
       if (groupParent) {
         const result = getGroupParentOwnership(
@@ -145,7 +169,22 @@ export function usePortfolioKPIs(): {
         groupOwnershipPct = result.ownershipPercent;
       }
 
-      const factor = groupOwnershipPct / 100;
+      // User's effective beneficial share via recursive look-through.
+      let myOwnershipPct = 0;
+      if (meTokens.size > 0 && prop.entity_id) {
+        const chains = resolveEffectiveOwnership(
+          prop.entity_id, 100, [], entities, shareClasses, shareholders, now
+        );
+        for (const c of chains) {
+          if (c.ultimateOwnerType === 'individual' && isMe(c.ultimateOwnerName)) {
+            myOwnershipPct += c.effectivePercent;
+          }
+        }
+        if (myOwnershipPct > 100) myOwnershipPct = 100;
+      }
+
+      const effectivePct = mode === 'mine' ? myOwnershipPct : groupOwnershipPct;
+      const factor = effectivePct / 100;
 
       return {
         propertyId: prop.id,
@@ -159,7 +198,7 @@ export function usePortfolioKPIs(): {
         annualRent,
         annualCashflow,
         ltv,
-        groupOwnershipPct,
+        groupOwnershipPct: effectivePct,
         attrValue: value * factor,
         attrDebt: debt * factor,
         attrEquity: equity * factor,
@@ -216,14 +255,19 @@ export function usePortfolioKPIs(): {
       ? attributable.annualNOI / attributable.annualMortgagePayments : null;
     attributable.propertyCount = propertyRows.filter(r => r.groupOwnershipPct > 0).length;
 
+    const attributableLabel = mode === 'mine'
+      ? (fullName || email || 'My share')
+      : (groupParent?.entity_name || 'No group parent set');
+
     return {
       gross,
       attributable,
-      groupParentName: groupParent?.entity_name || 'No group parent set',
+      groupParentName: attributableLabel,
       groupParentEntityId: groupParent?.id || null,
       properties: propertyRows,
     };
-  }, [properties, loans, performance, ownershipData]);
+  }, [properties, loans, performance, ownershipData, mode, fullName, email]);
+
 
   return { data, isLoading };
 }

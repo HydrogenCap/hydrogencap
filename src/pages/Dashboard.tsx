@@ -24,6 +24,7 @@ import { computeLenderData } from '@/components/dashboard/LenderExposureChart';
 // Zone components
 import { TodayStrip } from '@/components/dashboard/TodayStrip';
 import { KpiCards } from '@/components/dashboard/KpiCards';
+import { PortfolioViewModeToggle } from '@/components/dashboard/PortfolioViewModeToggle';
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs';
 import { PortfolioPulse } from '@/components/dashboard/PortfolioPulse';
 import { CollapsibleSection } from '@/components/dashboard/CollapsibleSection';
@@ -319,7 +320,12 @@ function DashboardPage() {
 
             {/* Zone 2 — KPI Cards */}
             {portfolioKPIs && (
-              <CollapsibleSection id="kpis" title="Key metrics" defaultOpen>
+              <CollapsibleSection
+                id="kpis"
+                title="Key metrics"
+                defaultOpen
+                toolbar={<PortfolioViewModeToggle />}
+              >
                 <KpiCards
                   portfolioKPIs={portfolioKPIs}
                   risks={portfolioRisks}
