@@ -16,11 +16,15 @@ import {
   getHealthGrade,
 } from '@/lib/calculations';
 
-export type MetricKey = 
+export type MetricKey =
   | 'equity'
   | 'value'
   | 'mortgage'
+  | 'debt'
   | 'cashflow'
+  | 'rent'
+  | 'noi'
+  | 'net_yield'
   | 'ltv'
   | 'dscr'
   | 'health'
@@ -31,6 +35,16 @@ export type MetricKey =
 export interface PropertyBreakdownRow {
   propertyId: string;
   address: string;
+  entityName?: string | null;
+  values: Record<string, string | number | null>;
+  /** Deep-link to fix missing inputs for this row (e.g. `/properties/:id?tab=financials`). */
+  fixUrl?: string;
+  /** Short reason shown on the fix button (e.g. "Add valuation"). */
+  fixLabel?: string;
+}
+
+export interface EntityBreakdownRow {
+  entityName: string;
   values: Record<string, string | number | null>;
 }
 
@@ -41,6 +55,10 @@ export interface MetricBreakdown {
   formula: string;
   columns: { key: string; label: string; align?: 'left' | 'right' }[];
   rows: PropertyBreakdownRow[];
+  /** Optional per-owning-entity rollup. */
+  entityRows?: EntityBreakdownRow[];
+  /** Columns for the entity table; falls back to property columns when omitted. */
+  entityColumns?: { key: string; label: string; align?: 'left' | 'right' }[];
   totals?: Record<string, string | number>;
   emptyMessage?: string;
 }
