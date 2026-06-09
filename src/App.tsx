@@ -240,9 +240,9 @@ const App = () => (
               }
             />
             {/* Old standalone routes — now tabs inside /today */}
-            <Route path="/fix-it" element={<Navigate to="/today?view=fix-it" replace />} />
+            <Route path="/fix-it" element={<Navigate to="/today" replace />} />
             <Route path="/missing-info" element={<Navigate to="/today?view=missing-info" replace />} />
-            <Route path="/data-quality" element={<Navigate to="/today?view=data-quality" replace />} />
+            <Route path="/data-quality" element={<Navigate to="/today" replace />} />
             <Route path="/actions" element={<Navigate to="/today?view=actions" replace />} />
             <Route path="/compliance-actions" element={<Navigate to="/compliance" replace />} />
             <Route
