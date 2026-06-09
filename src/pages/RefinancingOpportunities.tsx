@@ -193,6 +193,13 @@ export default function RefinancingOpportunities() {
           </div>
         )}
       </div>
+
+      <LenderPackDialog
+        open={packDialog.open}
+        onOpenChange={(open) => setPackDialog((s) => ({ ...s, open }))}
+        initialPropertyId={packDialog.propertyId}
+        initialSelection={packDialog.selection}
+      />
     </AppLayout>
   );
 }
