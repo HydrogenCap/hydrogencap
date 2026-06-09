@@ -324,7 +324,7 @@ function DashboardPage() {
                 id="kpis"
                 title="Key metrics"
                 defaultOpen
-                headerAction={<PortfolioViewModeToggle />}
+                toolbar={<PortfolioViewModeToggle />}
               >
                 <KpiCards
                   portfolioKPIs={portfolioKPIs}
