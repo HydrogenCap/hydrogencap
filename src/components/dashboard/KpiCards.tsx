@@ -80,7 +80,7 @@ export function KpiCards({
           iconClassName="text-primary"
           grossClassName="text-primary"
           attrClassName="text-primary"
-          onClick={() => onMetricClick('equity')}
+          onClick={() => onMetricClick('value')}
           headerAction={<KpiBreakdownPopover explainerId="portfolio_value" currentValue={formatGBP(portfolioKPIs.gross.totalValue)} />}
         />
         <DualKpiCard
