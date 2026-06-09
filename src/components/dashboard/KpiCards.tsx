@@ -170,7 +170,7 @@ export function KpiCards({
           groupParentName={portfolioKPIs.groupParentName}
           subtitle="Annual NOI ÷ Value"
           icon={TrendingUp}
-          onClick={() => navigate('/financials')}
+          onClick={() => onMetricClick('net_yield')}
           headerAction={<KpiBreakdownPopover explainerId="net_yield" currentValue={portfolioKPIs.gross.netYieldPct !== null ? formatPercent(portfolioKPIs.gross.netYieldPct) : '—'} />}
         />
         <DualKpiCard
@@ -180,6 +180,7 @@ export function KpiCards({
           groupParentName={portfolioKPIs.groupParentName}
           icon={Wallet}
           iconClassName="text-primary"
+          onClick={() => onMetricClick('rent')}
           headerAction={<KpiBreakdownPopover explainerId="annual_rent" currentValue={formatGBP(portfolioKPIs.gross.annualRent)} />}
         />
         <KpiCard
