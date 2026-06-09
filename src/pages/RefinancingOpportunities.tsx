@@ -32,6 +32,9 @@ const STATUS_COLORS: Record<string, string> = {
 export default function RefinancingOpportunities() {
   const { data: opportunities = [], isLoading } = useRefinancingOpportunities();
   const update = useUpdateRefinancingOpportunity();
+  const [packDialog, setPackDialog] = useState<
+    { open: boolean; propertyId?: string; selection?: string[] }
+  >({ open: false });
 
   const active = opportunities.filter(
     (o) => o.status !== 'dismissed' && o.status !== 'completed',
