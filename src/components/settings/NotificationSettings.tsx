@@ -31,13 +31,17 @@ import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
    { value: 1, label: '1 day' },
  ];
 
- type TogglePreferenceKey =
+  type TogglePreferenceKey =
    | 'email_enabled'
    | 'weekly_digest_enabled'
    | 'notify_expired'
    | 'notify_expiring_soon'
    | 'notify_rate_expiry'
-   | 'notify_negative_cashflow';
+   | 'notify_negative_cashflow'
+   | 'notify_rent_collection'
+   | 'notify_voids'
+   | 'notify_regulatory_changes'
+   | 'notify_recommended_actions';
  
  export function NotificationSettings() {
    const { user } = useAuth();
