@@ -125,7 +125,15 @@ export default function RefinancingOpportunities() {
                   {o.notes && (
                     <p className="text-sm text-muted-foreground">{o.notes}</p>
                   )}
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-1 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPackDialog({ open: true, propertyId: o.property_id })}
+                    >
+                      <FileText className="h-4 w-4 mr-1.5" />
+                      Lender pack
+                    </Button>
                     {o.status === 'new' && (
                       <Button
                         size="sm"
