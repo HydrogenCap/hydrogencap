@@ -409,19 +409,43 @@ export default function Entities() {
     {
       key: 'name',
       header: 'Entity Name',
-      render: (r) => (
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="font-semibold">{r.entity_name}</p>
-            {r.is_group_parent && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
-                Group
-              </Badge>
-            )}
+      render: (r) => {
+        const health = healthMap.get(r.id);
+        const dotClass: Record<EntityHealthLevel, string> = {
+          red: 'bg-destructive',
+          amber: 'bg-amber-500',
+          green: 'bg-emerald-500',
+        };
+        const dot = health ? dotClass[health.level] : 'bg-muted';
+        const tipLines = health && health.issues.length
+          ? health.issues.slice(0, 4).map(i => `• ${i.label}`).join('\n')
+          : 'All entity checks pass.';
+        return (
+          <div>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    aria-label={health ? `Entity health: ${HEALTH_LABEL[health.level]}` : 'Entity health unknown'}
+                    className={`inline-block h-2.5 w-2.5 rounded-full ${dot} ring-2 ring-background`}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs whitespace-pre-line">
+                  <p className="font-medium">{health ? HEALTH_LABEL[health.level] : 'Health unknown'}</p>
+                  <p className="text-xs mt-1">{tipLines}</p>
+                </TooltipContent>
+              </Tooltip>
+              <p className="font-semibold">{r.entity_name}</p>
+              {r.is_group_parent && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+                  Group
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground font-mono">{r.company_number || 'No company number'}</p>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">{r.company_number || 'No company number'}</p>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'type',
