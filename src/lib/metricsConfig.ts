@@ -553,7 +553,7 @@ export const METRICS_CONFIG: Record<MetricKey, MetricConfig> = {
         return {
           propertyId: property.id,
           address: property.address_line,
-          entityName: property.__v2_entity_name ?? null,
+          entityName: (property as unknown as { __v2_entity_name?: string | null }).__v2_entity_name ?? null,
           values: {
             rent: missing ? '—' : formatGBP(annual),
             monthly: missing ? '—' : formatGBP(annual / 12),
@@ -607,7 +607,7 @@ export const METRICS_CONFIG: Record<MetricKey, MetricConfig> = {
         return {
           propertyId: property.id,
           address: property.address_line,
-          entityName: property.__v2_entity_name ?? null,
+          entityName: (property as unknown as { __v2_entity_name?: string | null }).__v2_entity_name ?? null,
           values: {
             rent: formatGBP(annualRent),
             costs: formatGBP(annualCosts),
@@ -664,7 +664,7 @@ export const METRICS_CONFIG: Record<MetricKey, MetricConfig> = {
         return {
           propertyId: property.id,
           address: property.address_line,
-          entityName: property.__v2_entity_name ?? null,
+          entityName: (property as unknown as { __v2_entity_name?: string | null }).__v2_entity_name ?? null,
           values: {
             value: formatGBP(value),
             noi: formatGBP(noi),
