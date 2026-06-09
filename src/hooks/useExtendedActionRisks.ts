@@ -35,7 +35,10 @@ export function useExtendedActionRisks() {
   const propertyById = useMemo(() => {
     const m = new Map<string, string>();
     (properties || []).forEach(p => {
-      m.set(p.id, p.address_line_1 || p.address || 'Property');
+      const addr = (p as { address_line?: string | null; address_line_1?: string | null }).address_line
+        ?? (p as { address_line_1?: string | null }).address_line_1
+        ?? 'Property';
+      m.set(p.id, addr);
     });
     return m;
   }, [properties]);
