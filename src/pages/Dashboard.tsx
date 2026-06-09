@@ -45,7 +45,7 @@ import { useUpcomingComplianceEvents } from '@/hooks/useCalendarEvents';
 import { LeaseholdAlertWidget } from '@/components/dashboard/LeaseholdAlertWidget';
 
 import { formatGBP, formatPercent } from '@/lib/calculations';
-import { MetricKey, MetricBreakdown } from '@/lib/metricsConfig';
+import { MetricKey, MetricBreakdown, METRICS_CONFIG } from '@/lib/metricsConfig';
 import { SEO } from '@/components/SEO';
 import { cn } from '@/lib/utils';
 
