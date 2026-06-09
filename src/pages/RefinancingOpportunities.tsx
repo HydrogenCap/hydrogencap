@@ -1,14 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp } from 'lucide-react';
+import { FileText, TrendingUp } from 'lucide-react';
 import {
   useRefinancingOpportunities,
   useUpdateRefinancingOpportunity,
 } from '@/hooks/useRefinancingOpportunities';
+import { LenderPackDialog } from '@/components/refinancing/LenderPackDialog';
 
 function fmtGBP(v: number) {
   return new Intl.NumberFormat('en-GB', {
@@ -30,6 +32,9 @@ const STATUS_COLORS: Record<string, string> = {
 export default function RefinancingOpportunities() {
   const { data: opportunities = [], isLoading } = useRefinancingOpportunities();
   const update = useUpdateRefinancingOpportunity();
+  const [packDialog, setPackDialog] = useState<
+    { open: boolean; propertyId?: string; selection?: string[] }
+  >({ open: false });
 
   const active = opportunities.filter(
     (o) => o.status !== 'dismissed' && o.status !== 'completed',
@@ -41,11 +46,26 @@ export default function RefinancingOpportunities() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Refinancing Opportunities</h1>
-          <p className="text-muted-foreground">
-            AI-identified opportunities to release equity or improve terms
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Refinancing Opportunities</h1>
+            <p className="text-muted-foreground">
+              AI-identified opportunities to release equity or improve terms
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPackDialog({
+                open: true,
+                selection: active.map((o) => o.property_id),
+              })
+            }
+            disabled={active.length === 0}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Generate portfolio pack
+          </Button>
         </div>
 
         {isLoading ? (
@@ -105,7 +125,15 @@ export default function RefinancingOpportunities() {
                   {o.notes && (
                     <p className="text-sm text-muted-foreground">{o.notes}</p>
                   )}
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-1 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPackDialog({ open: true, propertyId: o.property_id })}
+                    >
+                      <FileText className="h-4 w-4 mr-1.5" />
+                      Lender pack
+                    </Button>
                     {o.status === 'new' && (
                       <Button
                         size="sm"
@@ -165,6 +193,13 @@ export default function RefinancingOpportunities() {
           </div>
         )}
       </div>
+
+      <LenderPackDialog
+        open={packDialog.open}
+        onOpenChange={(open) => setPackDialog((s) => ({ ...s, open }))}
+        initialPropertyId={packDialog.propertyId}
+        initialSelection={packDialog.selection}
+      />
     </AppLayout>
   );
 }
