@@ -255,14 +255,19 @@ export function usePortfolioKPIs(): {
       ? attributable.annualNOI / attributable.annualMortgagePayments : null;
     attributable.propertyCount = propertyRows.filter(r => r.groupOwnershipPct > 0).length;
 
+    const attributableLabel = mode === 'mine'
+      ? (fullName || email || 'My share')
+      : (groupParent?.entity_name || 'No group parent set');
+
     return {
       gross,
       attributable,
-      groupParentName: groupParent?.entity_name || 'No group parent set',
+      groupParentName: attributableLabel,
       groupParentEntityId: groupParent?.id || null,
       properties: propertyRows,
     };
-  }, [properties, loans, performance, ownershipData]);
+  }, [properties, loans, performance, ownershipData, mode, fullName, email]);
+
 
   return { data, isLoading };
 }
