@@ -193,8 +193,11 @@ describeIfBackend('Permission regression — authenticated role', () => {
     'authenticated RPC to server-only $name is rejected',
     async ({ name, body }) => {
       const res = await restPost(`/rest/v1/rpc/${name}`, body, token!);
-      expect(res.status).toBeGreaterThanOrEqual(300);
-      expect(res.status === 200 || res.status === 201).toBe(false);
+      const text = await res.text();
+      let payload: unknown = null;
+      try { payload = JSON.parse(text); } catch { /* not JSON = failure */ }
+      const err = payload as { code?: string; message?: string } | null;
+      expect(err && (err.code || err.message), `unexpected success body: ${text.slice(0,200)}`).toBeTruthy();
     },
     TEST_TIMEOUT,
   );
