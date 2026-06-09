@@ -274,12 +274,17 @@ export function useShareTransfers(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:share_transfers`;
     const channel = supabase
-      .channel(`share_transfers_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'share_transfers', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.transfers(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
