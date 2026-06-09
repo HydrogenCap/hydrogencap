@@ -5952,6 +5952,10 @@ export type Database = {
           notify_expiring_soon: boolean
           notify_negative_cashflow: boolean
           notify_rate_expiry: boolean
+          notify_recommended_actions: boolean
+          notify_regulatory_changes: boolean
+          notify_rent_collection: boolean
+          notify_voids: boolean
           org_id: string
           reminder_days: number[]
           timezone: string
@@ -5969,6 +5973,10 @@ export type Database = {
           notify_expiring_soon?: boolean
           notify_negative_cashflow?: boolean
           notify_rate_expiry?: boolean
+          notify_recommended_actions?: boolean
+          notify_regulatory_changes?: boolean
+          notify_rent_collection?: boolean
+          notify_voids?: boolean
           org_id: string
           reminder_days?: number[]
           timezone?: string
@@ -5986,6 +5994,10 @@ export type Database = {
           notify_expiring_soon?: boolean
           notify_negative_cashflow?: boolean
           notify_rate_expiry?: boolean
+          notify_recommended_actions?: boolean
+          notify_regulatory_changes?: boolean
+          notify_rent_collection?: boolean
+          notify_voids?: boolean
           org_id?: string
           reminder_days?: number[]
           timezone?: string
