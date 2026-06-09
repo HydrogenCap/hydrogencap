@@ -293,6 +293,59 @@ export type Database = {
           },
         ]
       }
+      arrears_predictions: {
+        Row: {
+          contributing_factors: Json
+          created_at: string
+          id: string
+          model_version: string
+          org_id: string
+          prediction_period: string
+          property_id: string
+          recommended_actions: Json
+          risk_level: string
+          risk_score: number
+          room_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          contributing_factors?: Json
+          created_at?: string
+          id?: string
+          model_version?: string
+          org_id: string
+          prediction_period?: string
+          property_id: string
+          recommended_actions?: Json
+          risk_level: string
+          risk_score: number
+          room_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          contributing_factors?: Json
+          created_at?: string
+          id?: string
+          model_version?: string
+          org_id?: string
+          prediction_period?: string
+          property_id?: string
+          recommended_actions?: Json
+          risk_level?: string
+          risk_score?: number
+          room_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arrears_predictions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
