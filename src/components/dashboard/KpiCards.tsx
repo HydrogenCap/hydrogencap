@@ -257,7 +257,7 @@ export function KpiCards({
           subtitle={portfolioKPIs.gross.netYieldPct !== null ? 'Annual NOI / valuation' : 'No data yet'}
           icon={TrendingUp}
           iconClassName="text-primary"
-          onClick={() => navigate('/financials')}
+          onClick={() => onMetricClick('net_yield')}
         />
         <KpiCard
           label="Monthly Cash Position"
