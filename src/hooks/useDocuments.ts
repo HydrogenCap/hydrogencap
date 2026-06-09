@@ -50,17 +50,23 @@ export function useDocuments(propertyId?: string, options?: { page?: number; pag
 export function useInboxRealtime() {
   const queryClient = useQueryClient();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const channelNameRef = useRef(`inbox-${crypto.randomUUID()}`);
 
   useEffect(() => {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+    let cancelled = false;
 
-    try {
+    (async () => {
+      // Org-scoped private Realtime topic. RLS on realtime.messages
+      // (public.realtime_topic_authorized) only delivers events to
+      // members of this org; unauthorised users get CHANNEL_ERROR
+      // and fall back to manual refresh.
+      const orgId = await (async () => {
+        try { return await getUserOrgId(); } catch { return null; }
+      })();
+      if (cancelled || !orgId) return;
+
+      const topic = `inbox:org:${orgId}`;
       channelRef.current = supabase
-        .channel(channelNameRef.current)
+        .channel(topic, { config: { private: true } })
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
@@ -68,12 +74,17 @@ export function useInboxRealtime() {
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['documents', 'inbox'] });
         })
-        .subscribe();
-    } catch (err) {
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+          }
+        });
+    })().catch((err) => {
       console.warn('Inbox realtime subscription failed — manual refresh still works:', err);
-    }
+    });
 
     return () => {
+      cancelled = true;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
