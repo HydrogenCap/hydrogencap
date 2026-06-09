@@ -111,8 +111,6 @@ export default tseslint.config(
       "src/components/maps/PropertyMap.tsx",
       "src/components/properties/PropertiesTableCells.tsx",
       "src/components/property/StressTestPanel.tsx",
-      "src/components/insurance/AddInsuranceDialog.tsx",
-      "src/components/jobs/CreateJobDialog.tsx",
       "src/components/maintenance/CreateMaintenanceRequestDialog.tsx",
       "src/components/insights/OwnershipAttributionSection.tsx",
       "src/components/reports/BankPresentationDialog.tsx",
