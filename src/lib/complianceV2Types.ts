@@ -104,6 +104,25 @@ export const DOC_TYPE_SHORT_LABELS: Record<ComplianceDocType, string> = {
   other: 'Other',
 };
 
+/** Suggested "not required" reasons per document type. Free text is also allowed. */
+export const NOT_REQUIRED_REASON_PRESETS: Partial<Record<ComplianceDocType, string[]>> = {
+  hmo_licence: ['Not an HMO', 'Below local HMO threshold', 'Property unoccupied'],
+  selective_licence: ['Not in a selective licensing area', 'Property unoccupied'],
+  gas_safety_certificate: ['No gas supply', 'All-electric property'],
+  eicr: ['Recently rewired — next due > 5 years', 'Commercial unit'],
+  epc: ['Listed building exemption', 'Commercial unit'],
+  fire_risk_assessment: ['Single dwelling — not a common-parts FRA required', 'Owner-occupied'],
+  emergency_lighting_cert: ['No common parts requiring emergency lighting', 'Not an HMO'],
+  fire_alarm_cert: ['Domestic smoke alarms only — no Grade A/D system fitted', 'Not an HMO'],
+  smoke_co_alarm_cert: ['Battery-only domestic alarms (not certified system)', 'Annual landlord test logged elsewhere'],
+  pat_testing: ['No landlord-supplied appliances', 'Furnished by tenant'],
+  legionella_risk_assessment: ['Mains-fed only, no stored water', 'Risk assessment held by management company'],
+  asbestos_survey: ['Built post-2000', 'Survey held by freeholder'],
+  furniture_fire_safety: ['Unfurnished let', 'No upholstered furniture supplied'],
+  rent_guarantee_insurance: ['Self-insured', 'Corporate tenant'],
+  buildings_insurance: ['Covered under block / freeholder policy'],
+};
+
 /** Row shape from the compliance_matrix_v2 view */
 export interface ComplianceMatrixRow {
   requirement_id: string;
