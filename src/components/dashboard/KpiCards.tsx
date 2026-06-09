@@ -42,7 +42,7 @@ interface SnapshotKPIs {
   latestMonthLabel: string | null;
 }
 
-type MetricKey = 'equity' | 'cashflow' | 'ltv' | 'dscr' | 'health';
+type MetricKey = 'equity' | 'value' | 'debt' | 'cashflow' | 'rent' | 'noi' | 'net_yield' | 'ltv' | 'dscr' | 'health';
 
 interface KpiCardsProps {
   portfolioKPIs: PortfolioKPIs;
