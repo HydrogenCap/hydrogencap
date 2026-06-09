@@ -175,7 +175,7 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
     );
   }
 
-  const hasPredictions = predictions && predictions.length > 0;
+  const hasPredictions = ranked.length > 0;
 
   return (
     <Card>
