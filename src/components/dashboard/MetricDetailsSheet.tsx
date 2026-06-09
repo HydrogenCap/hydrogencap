@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Calculator, List, Download, ArrowRight } from 'lucide-react';
+import { ExternalLink, Calculator, List, Download, ArrowRight, Wrench, Building2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
