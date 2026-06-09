@@ -43,6 +43,7 @@ export default function MarketingBookDemo() {
     assetType: '',
     challenge: '',
     message: '',
+    website: '', // honeypot — must stay empty
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,23 +51,26 @@ export default function MarketingBookDemo() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabaseAny
-        .from('demo_requests')
-        .insert({
+      const { data, error } = await supabase.functions.invoke('submit-demo-request', {
+        body: {
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
           company: formData.company || null,
           message: `Portfolio: ${formData.portfolioSize} | Asset type: ${formData.assetType} | Challenge: ${formData.challenge}${formData.message ? ` | Notes: ${formData.message}` : ''}`,
-        });
+          website: formData.website,
+        },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       setIsSubmitted(true);
       toast('Demo request received!', { description: 'We\'ll be in touch within 24 hours to schedule your call.' });
     } catch (error) {
       console.error('Submission error:', error);
-      toast.error('Submission failed', { description: 'Please try again or email us at office@tenureiq.com.' });
+      const msg = error instanceof Error ? error.message : 'Please try again or email us at office@tenureiq.com.';
+      toast.error('Submission failed', { description: msg });
     } finally {
       setIsSubmitting(false);
     }
