@@ -19,7 +19,8 @@
    SelectValue 
  } from '@/components/ui/select';
  import { useCreateJob, JOB_PRIORITIES, JobPriority } from '@/hooks/useContractorJobs';
- import { usePropertiesV2 as useProperties } from '@/hooks/usePropertiesV2';
+import { usePropertiesV2 as useProperties } from '@/hooks/usePropertiesV2';
+import { lifecycleType } from '@/lib/v2FieldAccessors';
 import { useAllCompliance } from '@/hooks/useCompliance';
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
  import { formatDateUK } from '@/lib/calculations';
