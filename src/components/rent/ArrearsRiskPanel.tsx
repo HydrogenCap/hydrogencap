@@ -228,8 +228,13 @@ export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
         {/* Prediction List */}
         {hasPredictions ? (
           <div className="space-y-2">
-            {predictions.map((prediction) => (
-              <PredictionRow key={prediction.id} prediction={prediction} />
+            {ranked.map((prediction) => (
+              <PredictionRow
+                key={prediction.id}
+                prediction={prediction}
+                tenantName={(prediction.tenant_id && tenantName.get(prediction.tenant_id)) || 'Tenant'}
+                propertyLabel={propertyLabel.get(prediction.property_id) || 'Property'}
+              />
             ))}
           </div>
         ) : (
