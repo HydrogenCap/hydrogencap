@@ -19,6 +19,9 @@ import { useEntityVerificationStatus, useSyncEntity, type EntityVerification } f
 import { usePropertiesV2 } from '@/hooks/usePropertiesV2';
 import { useAllLoanFacilities } from '@/hooks/useLoanFacilities';
 import { usePropertyRoomSummaries } from '@/hooks/useRoomsV2';
+import { useEntityHealthMap } from '@/hooks/useEntityHealthMap';
+import { HEALTH_LABEL, type EntityHealthLevel } from '@/lib/entityHealth';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getComplianceStatus } from '@/lib/complianceStatus';
 import { EntityFormModal } from '@/components/entities/EntityFormModal';
 import { EntitiesKPIStrip } from '@/components/entities/EntitiesKPIStrip';
