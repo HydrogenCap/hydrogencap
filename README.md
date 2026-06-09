@@ -9,7 +9,7 @@ Property intelligence platform for UK HMO landlords and investors. Track complia
 
 ## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Shadcn/ui
 - **Backend**: Supabase (Postgres, Auth, Edge Functions, Storage)
 - **Payments**: Stripe
 - **Maps**: Google Maps, Leaflet / OpenStreetMap
