@@ -44,7 +44,8 @@ import {
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { cn } from '@/lib/utils';
 import { SEVERITY } from '@/lib/design-tokens';
-import { usePortfolioRisks, RiskType, riskTypeLabels, type RiskItem } from '@/hooks/usePortfolioRisks';
+import { RiskType, riskTypeLabels, type RiskItem } from '@/hooks/usePortfolioRisks';
+import { useExtendedActionRisks } from '@/hooks/useExtendedActionRisks';
 import {
   useSnoozedActions,
   useActionAssignments,
