@@ -76,6 +76,9 @@ const riskTypeIcons: Record<RiskType, React.ReactNode> = {
   insurance: <ShieldAlert className="h-4 w-4" />,
   leasehold: <Building2 className="h-4 w-4" />,
   lease_expiry: <Clock className="h-4 w-4" />,
+  entity_health: <Building2 className="h-4 w-4" />,
+  arrears_risk: <TrendingDown className="h-4 w-4" />,
+};
 };
 
 function getPriorityLabel(priority: number): { label: string; className: string } {
