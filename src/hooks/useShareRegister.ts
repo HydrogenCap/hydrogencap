@@ -112,12 +112,17 @@ export function useShareClasses(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:share_classes`;
     const channel = supabase
-      .channel(`share_classes_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'share_classes', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.classes(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
