@@ -129,7 +129,36 @@ interface ArrearsRiskPanelProps {
 export function ArrearsRiskPanel({ propertyId }: ArrearsRiskPanelProps) {
   const { data: predictions, isLoading } = useArrearsPredictions(propertyId);
   const { data: summary } = useArrearsRiskSummary();
+  const { data: tenancies } = useDashboardTenanciesV2();
+  const { data: properties } = useDashboardPropertiesV2();
   const runPrediction = useRunArrearsPrediction();
+
+  const tenantName = useMemo(() => {
+    const m = new Map<string, string>();
+    (tenancies || []).forEach(t => {
+      const tenant = (t as { tenant?: { id?: string; first_name?: string | null; last_name?: string | null } }).tenant;
+      if (tenant?.id) {
+        const name = `${tenant.first_name || ''} ${tenant.last_name || ''}`.trim();
+        if (name) m.set(tenant.id, name);
+      }
+    });
+    return m;
+  }, [tenancies]);
+
+  const propertyLabel = useMemo(() => {
+    const m = new Map<string, string>();
+    (properties || []).forEach(p => {
+      const addr = (p as { address_line?: string | null; address_line_1?: string | null }).address_line
+        ?? (p as { address_line_1?: string | null }).address_line_1
+        ?? 'Property';
+      m.set(p.id, addr);
+    });
+    return m;
+  }, [properties]);
+
+  const ranked = useMemo(() => {
+    return [...(predictions || [])].sort((a, b) => b.risk_score - a.risk_score);
+  }, [predictions]);
 
   if (isLoading) {
     return (
