@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LifecycleFilterProvider } from "@/contexts/LifecycleFilterContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
@@ -10,8 +10,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { OrgProvider } from "@/contexts/OrgContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
-import { PortalProtectedRoute } from "@/components/portal";
-import { TenantPortalProtectedRoute } from "@/components/tenant-portal/TenantPortalProtectedRoute";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { LoadingState, ErrorBoundary, RouteBoundary, ScrollToTopOnNavigate, BackToTop, GlobalShortcuts, CommandPalette, ShortcutsCheatSheet, ConnectionStatus } from "@/components/common";
 import { RecentlyViewedTracker } from "@/hooks/useRecentlyViewed";
@@ -19,94 +17,39 @@ import { SessionExpiryModal } from "@/components/auth/SessionExpiryModal";
 import { CookieConsent } from "@/components/common/CookieConsent";
 import { DensityBridge } from "@/components/DensityToggle";
 
-// Lazy-loaded pages
+// Grouped route configs — see src/routes/*
+import { marketingRoutes } from "@/routes/marketingRoutes";
+import { portalRoutes } from "@/routes/portalRoutes";
+import { portfolioRoutes } from "@/routes/portfolioRoutes";
+import { complianceRoutes } from "@/routes/complianceRoutes";
+import { financeRoutes } from "@/routes/financeRoutes";
+
+// Lazy-loaded pages that don't belong to a grouped router file
 const Auth = lazy(() => import("./pages/Auth"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const TodayWorkspace = lazy(() => import("./pages/TodayWorkspace"));
-const Lettings = lazy(() => import("./pages/Lettings"));
-const Finance = lazy(() => import("./pages/Finance"));
-const ContractorsWorkspace = lazy(() => import("./pages/ContractorsWorkspace"));
 const DocumentsWorkspace = lazy(() => import("./pages/DocumentsWorkspace"));
 const InsightsWorkspace = lazy(() => import("./pages/InsightsWorkspace"));
 const SystemHealth = lazy(() => import("./pages/SystemHealth"));
 
-const PropertyNew = lazy(() => import("./pages/PropertyNew"));
-const PropertyEdit = lazy(() => import("./pages/PropertyEdit"));
-
-
-const Entities = lazy(() => import("./pages/Entities"));
-const EntityDetail = lazy(() => import("./pages/EntityDetail"));
-const Ownership = lazy(() => import("./pages/Ownership"));
 const Inbox = lazy(() => import("./pages/Inbox"));
 const Communications = lazy(() => import("./pages/Communications"));
 const Import = lazy(() => import("./pages/Import"));
 const ImportPassport = lazy(() => import("./pages/ImportPassport"));
-const Insights = lazy(() => import("./pages/Insights"));
-const MissingInfo = lazy(() => import("./pages/MissingInfo"));
 const Settings = lazy(() => import("./pages/Settings"));
 const DashboardMap = lazy(() => import("./pages/DashboardMap"));
-const Timeline = lazy(() => import("./pages/Timeline"));
-// RefinanceCalendar removed — merged into ComplianceCalendar
-const ComplianceCalendar = lazy(() => import("./pages/ComplianceCalendar"));
 
 const Reports = lazy(() => import("./pages/Reports"));
-const AIInvestorReports = lazy(() => import("./pages/AIInvestorReports"));
-const Actions = lazy(() => import("./pages/Actions"));
-const Chat = lazy(() => import("./pages/Chat"));
-const AcquisitionAdvisor = lazy(() => import("./pages/AcquisitionAdvisor"));
 const Passport = lazy(() => import("./pages/Passport"));
-const Pipeline = lazy(() => import("./pages/Pipeline"));
 const SharedDocument = lazy(() => import("./pages/SharedDocument"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const Install = lazy(() => import("./pages/Install"));
-const Contractors = lazy(() => import("./pages/Contractors"));
-const JobDetail = lazy(() => import("./pages/JobDetail"));
-const JobsAndWorks = lazy(() => import("./pages/JobsAndWorks"));
 
-
-const Voids = lazy(() => import("./pages/Voids"));
-const LettingsPipeline = lazy(() => import("./pages/LettingsPipeline"));
-const RentCollection = lazy(() => import("./pages/RentCollection"));
-const PaymentDetail = lazy(() => import("./pages/PaymentDetail"));
-const TenancyLedger = lazy(() => import("./pages/TenancyLedger"));
-const Reconciliation = lazy(() => import("./pages/Reconciliation"));
-const MaintenanceRequestDetail = lazy(() => import("./pages/MaintenanceRequestDetail"));
-const WorkOrderDetail = lazy(() => import("./pages/WorkOrderDetail"));
-const Documents = lazy(() => import("./pages/Documents"));
-const PropertiesV2 = lazy(() => import("./pages/PropertiesV2"));
-const PropertyDetailV2 = lazy(() => import("./pages/PropertyDetail"));
-const RoomDetailV2 = lazy(() => import("./pages/RoomDetail"));
-const TenantsV2 = lazy(() => import("./pages/TenantsV2"));
-const TenantDetailV2 = lazy(() => import("./pages/TenantDetail"));
-const Lending = lazy(() => import("./pages/Lending"));
-const PortfolioTimeline = lazy(() => import("./pages/PortfolioTimeline"));
-const RefinancingOpportunities = lazy(() => import("./pages/RefinancingOpportunities"));
-const ValuationAlerts = lazy(() => import("./pages/ValuationAlerts"));
-const RentersRightsBill = lazy(() => import("./pages/RentersRightsBill"));
-const ComplianceV2 = lazy(() => import("./pages/ComplianceV2"));
-const ComplianceTasks = lazy(() => import("./pages/ComplianceTasks"));
-const ComplianceHub = lazy(() => import("./pages/ComplianceHub"));
-const RegulatoryMonitor = lazy(() => import("./pages/RegulatoryMonitor"));
-const Financials = lazy(() => import("./pages/Financials"));
-const Investors = lazy(() => import("./pages/Investors"));
-const InvestorDetail = lazy(() => import("./pages/InvestorDetail"));
-const Accounting = lazy(() => import("./pages/Accounting"));
-const Tax = lazy(() => import("./pages/Tax"));
-const TaxDashboard = lazy(() => import("./pages/TaxDashboard"));
-const FinancialForecast = lazy(() => import("./pages/FinancialForecast"));
-const Distributions = lazy(() => import("./pages/Distributions"));
-const DocumentTemplates = lazy(() => import("./pages/DocumentTemplates"));
 const BulkUpload = lazy(() => import("./pages/BulkUpload"));
-const BulkDocumentScanner = lazy(() => import("./pages/BulkDocumentScanner"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const MigrationDashboard = lazy(() => import("./pages/MigrationDashboard"));
-const Inspections = lazy(() => import("./pages/Inspections"));
-const CapExPage = lazy(() => import("./pages/CapEx"));
-const Insurance = lazy(() => import("./pages/Insurance"));
 const WebhookSettings = lazy(() => import("./pages/WebhookSettings"));
-const CapExDetail = lazy(() => import("./pages/CapExDetail"));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 
@@ -116,48 +59,8 @@ const AddPropertyWizard = lazy(() => import("./pages/AddPropertyWizard"));
 const AddEntityWizard = lazy(() => import("./pages/AddEntityWizard"));
 const AddComplianceWizard = lazy(() => import("./pages/AddComplianceWizard"));
 
-const AcceptInvite = lazy(() => import("./pages/portal/AcceptInvite"));
-const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
-const PortalProperties = lazy(() => import("./pages/portal/PortalProperties"));
-const PortalCompliance = lazy(() => import("./pages/portal/PortalCompliance"));
-const PortalInvestments = lazy(() => import("./pages/portal/PortalInvestments"));
-const PortalStatements = lazy(() => import("./pages/portal/PortalStatements"));
-
-// Tenant portal pages
-const TenantAcceptInvite = lazy(() => import("./pages/tenant-portal/TenantAcceptInvite"));
-// Tenant portal V2 pages
-const TenantDashboard = lazy(() => import("./pages/tenant-portal/TenantDashboard"));
-const TenantPayments = lazy(() => import("./pages/tenant-portal/TenantPayments"));
-const MaintenanceRequest = lazy(() => import("./pages/tenant-portal/MaintenanceRequest"));
-const TenantCertificates = lazy(() => import("./pages/tenant-portal/TenantCertificates"));
 const AcceptTeamInvite = lazy(() => import("./pages/AcceptTeamInvite"));
 const TeamManagement = lazy(() => import("./pages/TeamManagement"));
-
-// Marketing pages
-const MarketingHome = lazy(() => import("./pages/marketing/Home"));
-const MarketingProduct = lazy(() => import("./pages/marketing/Product"));
-const MarketingPortfolio = lazy(() => import("./pages/marketing/Portfolio"));
-const MarketingCaseStudies = lazy(() => import("./pages/marketing/CaseStudies"));
-const MarketingAbout = lazy(() => import("./pages/marketing/About"));
-const MarketingContact = lazy(() => import("./pages/marketing/Contact"));
-const MarketingDemo = lazy(() => import("./pages/marketing/Demo"));
-const MarketingBookDemo = lazy(() => import("./pages/marketing/BookDemo"));
-const MarketingSecurity = lazy(() => import("./pages/marketing/Security"));
-const MarketingPricing = lazy(() => import("./pages/marketing/Pricing"));
-const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("./pages/TermsOfService"));
-const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
-
-// V1 → V2 redirect helpers
-function PropertyV1Redirect() {
-  const { id } = useParams();
-  return <Navigate to={`/properties-v2/${id}`} replace />;
-}
-
-function TenantV1Redirect() {
-  const { tenantId } = useParams();
-  return <Navigate to={`/tenants-v2/${tenantId}`} replace />;
-}
 
 function isAuthError(error: unknown): boolean {
   if (error && typeof error === 'object') {
@@ -223,222 +126,32 @@ const App = () => (
                 <RouteBoundary>
                 <Suspense fallback={<LoadingState text="Loading..." />}>
           <Routes>
-            {/* Public routes */}
+            {/* Auth */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            
-            {/* Protected routes */}
-            <Route
-              path="/today"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <TodayWorkspace />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            {/* Old standalone routes — now tabs inside /today */}
+
+            {/* Today workspace + redirects from absorbed surfaces */}
+            <Route path="/today" element={<ProtectedRoute><RouteBoundary><TodayWorkspace /></RouteBoundary></ProtectedRoute>} />
             <Route path="/fix-it" element={<Navigate to="/today" replace />} />
             <Route path="/missing-info" element={<Navigate to="/today?view=missing-info" replace />} />
             <Route path="/data-quality" element={<Navigate to="/today" replace />} />
             <Route path="/actions" element={<Navigate to="/today?view=actions" replace />} />
             <Route path="/compliance-actions" element={<Navigate to="/compliance" replace />} />
-            <Route
-              path="/system-health"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <SystemHealth />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Dashboard />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/map"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <DashboardMap />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
 
+            <Route path="/system-health" element={<ProtectedRoute><RouteBoundary><SystemHealth /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><RouteBoundary><Dashboard /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/dashboard/map" element={<ProtectedRoute><RouteBoundary><DashboardMap /></RouteBoundary></ProtectedRoute>} />
 
-            <Route
-              path="/properties/new"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <PropertyNew />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/properties/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <PropertyEdit />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            {/* Portfolio: properties, entities, ownership, contractors, lettings */}
+            {portfolioRoutes}
 
+            <Route path="/inbox" element={<ProtectedRoute><RouteBoundary><Inbox /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/import" element={<ProtectedRoute><RouteBoundary><Import /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/import/passport" element={<ProtectedRoute><RouteBoundary><ImportPassport /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><RouteBoundary><Settings /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/settings/webhooks" element={<ProtectedRoute><RouteBoundary><WebhookSettings /></RouteBoundary></ProtectedRoute>} />
 
-            <Route
-              path="/entities"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Entities />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/entities/:id"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <EntityDetail />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/properties-v2"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <PropertiesV2 />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/properties-v2/:id"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <PropertyDetailV2 />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/rooms-v2/:id"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <RoomDetailV2 />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tenants-v2"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <TenantsV2 />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tenants-v2/:id"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <TenantDetailV2 />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/ownership"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Ownership />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/inbox"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Inbox />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/import"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Import />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/import/passport"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ImportPassport />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Settings />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings/webhooks"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <WebhookSettings />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/insights"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Insights />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
             {/* Insights workspace + redirects from absorbed surfaces */}
             <Route path="/insights" element={<ProtectedRoute><RouteBoundary><InsightsWorkspace /></RouteBoundary></ProtectedRoute>} />
             <Route path="/timeline" element={<Navigate to="/insights?view=timeline" replace />} />
@@ -448,149 +161,19 @@ const App = () => (
             <Route path="/investor-reports" element={<Navigate to="/insights?view=ai-reports" replace />} />
             <Route path="/acquisition-advisor" element={<Navigate to="/insights?view=acquisition" replace />} />
 
-            {/* Pipeline now lives as a Properties filter */}
-            <Route path="/pipeline" element={<Navigate to="/properties-v2?lifecycle=development" replace />} />
+            <Route path="/reports" element={<ProtectedRoute><RouteBoundary><Reports /></RouteBoundary></ProtectedRoute>} />
+            <Route path="/passport" element={<ProtectedRoute><RouteBoundary><Passport /></RouteBoundary></ProtectedRoute>} />
 
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Reports />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/passport"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <Passport />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/refinance-calendar" element={<Navigate to="/compliance-calendar" replace />} />
-            <Route
-              path="/compliance-calendar"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ComplianceCalendar />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/compliance-v2"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ComplianceV2 />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/renters-rights"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <RentersRightsBill />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/compliance-tasks"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ComplianceTasks />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/regulatory-monitor"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <RegulatoryMonitor />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            {/* Compliance */}
+            {complianceRoutes}
 
-            {/* Finance: collection routes now redirect into the workspace */}
-            <Route path="/financials" element={<Navigate to="/finance?view=overview" replace />} />
-            <Route path="/lending" element={<Navigate to="/finance?view=lending" replace />} />
-            <Route path="/refinancing-opportunities" element={<Navigate to="/finance?view=refinancing" replace />} />
-            <Route path="/investors" element={<Navigate to="/finance?view=investors" replace />} />
-            <Route path="/accounting" element={<Navigate to="/finance?view=accounting" replace />} />
-            <Route path="/tax" element={<Navigate to="/finance?view=tax" replace />} />
-            <Route path="/tax-engine" element={<Navigate to="/finance?view=tax-engine" replace />} />
-            <Route path="/financial-forecast" element={<Navigate to="/finance?view=forecast" replace />} />
-            {/* Investor detail keeps its URL */}
-            <Route
-              path="/investors/:id"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <InvestorDetail />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
+            {/* Finance */}
+            {financeRoutes}
 
-            <Route path="/distributions" element={<Navigate to="/finance?view=distributions" replace />} />
             <Route path="/templates" element={<Navigate to="/documents?view=templates" replace />} />
             <Route path="/bulk-upload" element={<Navigate to="/documents?view=bulk-upload" replace />} />
             <Route path="/bulk-upload-legacy" element={<ProtectedRoute><RouteBoundary><BulkUpload /></RouteBoundary></ProtectedRoute>} />
             <Route path="/bulk-scanner" element={<Navigate to="/documents?view=bulk-scanner" replace />} />
-
-            {/* Contractors workspace (Directory / Jobs / CapEx tabs) */}
-            <Route
-              path="/contractors"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ContractorsWorkspace />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/jobs-and-works" element={<Navigate to="/contractors?view=jobs" replace />} />
-            {/* Legacy redirects for jobs/works */}
-            <Route path="/jobs" element={<Navigate to="/contractors?view=jobs" replace />} />
-            <Route path="/maintenance" element={<Navigate to="/contractors?view=jobs" replace />} />
-            <Route path="/work-orders" element={<Navigate to="/contractors?view=jobs" replace />} />
-            {/* Detail routes still work */}
-            <Route
-              path="/jobs/:jobId"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <JobDetail />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/maintenance/:requestId" element={<ProtectedRoute><RouteBoundary><MaintenanceRequestDetail /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/work-orders/:id" element={<ProtectedRoute><RouteBoundary><WorkOrderDetail /></RouteBoundary></ProtectedRoute>} />
-
-            {/* Lettings workspace (Tenants / Rent / Voids / Pipeline tabs) */}
-            <Route path="/lettings" element={<ProtectedRoute><RouteBoundary><Lettings /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/voids" element={<Navigate to="/lettings?view=voids" replace />} />
-            <Route path="/rent" element={<Navigate to="/lettings?view=rent" replace />} />
-            {/* Rent detail routes still work */}
-            <Route path="/rent/tenancy/:tenancyId" element={<ProtectedRoute><RouteBoundary><TenancyLedger /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/rent/reconciliation" element={<ProtectedRoute><RouteBoundary><Reconciliation /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/rent/:scheduleId" element={<ProtectedRoute><RouteBoundary><PaymentDetail /></RouteBoundary></ProtectedRoute>} />
-
-            {/* Finance workspace (Overview / Lending / Refinancing / Investors / Tax / etc. tabs) */}
-            <Route path="/finance" element={<ProtectedRoute><RouteBoundary><Finance /></RouteBoundary></ProtectedRoute>} />
 
             {/* Documents workspace (Vault / Templates / Bulk tabs) */}
             <Route path="/documents" element={<ProtectedRoute><RouteBoundary><DocumentsWorkspace /></RouteBoundary></ProtectedRoute>} />
@@ -599,10 +182,6 @@ const App = () => (
             <Route path="/audit-log" element={<ProtectedRoute><RouteBoundary><AuditLog /></RouteBoundary></ProtectedRoute>} />
             <Route path="/communications" element={<ProtectedRoute><RouteBoundary><Communications /></RouteBoundary></ProtectedRoute>} />
             <Route path="/migrate" element={<ProtectedRoute><RouteBoundary><MigrationDashboard /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/insurance" element={<Navigate to="/finance?view=insurance" replace />} />
-            <Route path="/capex" element={<Navigate to="/contractors?view=capex" replace />} />
-            <Route path="/capex/:id" element={<ProtectedRoute><RouteBoundary><CapExDetail /></RouteBoundary></ProtectedRoute>} />
-            <Route path="/inspections" element={<ProtectedRoute><RouteBoundary><Inspections /></RouteBoundary></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><RouteBoundary><NotificationsPage /></RouteBoundary></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminProtectedRoute><RouteBoundary><AdminDashboard /></RouteBoundary></AdminProtectedRoute></ProtectedRoute>} />
 
@@ -613,96 +192,15 @@ const App = () => (
             <Route path="/wizards/add-entity" element={<ProtectedRoute><RouteBoundary><AddEntityWizard /></RouteBoundary></ProtectedRoute>} />
             <Route path="/wizards/add-compliance" element={<ProtectedRoute><RouteBoundary><AddComplianceWizard /></RouteBoundary></ProtectedRoute>} />
 
-            <Route path="/properties" element={<Navigate to="/properties-v2" replace />} />
-            <Route path="/properties/:id" element={<ProtectedRoute><RouteBoundary><PropertyV1Redirect /></RouteBoundary></ProtectedRoute>} />
-
-            <Route path="/companies" element={<Navigate to="/entities" replace />} />
-            <Route path="/companies/:id" element={<Navigate to="/entities" replace />} />
-            <Route path="/tenants" element={<Navigate to="/tenants-v2" replace />} />
-            <Route path="/tenants/:tenantId" element={<ProtectedRoute><RouteBoundary><TenantV1Redirect /></RouteBoundary></ProtectedRoute>} />
-            <Route
-              path="/compliance"
-              element={
-                <ProtectedRoute>
-                  <RouteBoundary>
-                    <ComplianceHub />
-                  </RouteBoundary>
-                </ProtectedRoute>
-              }
-            />
-
             {/* Marketing pages (public) */}
-            <Route path="/" element={<MarketingHome />} />
-            <Route path="/product" element={<MarketingProduct />} />
-            <Route path="/portfolio" element={<MarketingPortfolio />} />
-            <Route path="/case-studies" element={<MarketingCaseStudies />} />
-            <Route path="/about" element={<MarketingAbout />} />
-            <Route path="/contact" element={<MarketingContact />} />
-            <Route path="/demo" element={<MarketingDemo />} />
-            <Route path="/book-a-demo" element={<MarketingBookDemo />} />
-            <Route path="/security" element={<MarketingSecurity />} />
-            <Route path="/pricing" element={<MarketingPricing />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/cookies" element={<CookiePolicy />} />
-            <Route path="/install" element={<Install />} />
-            
+            {marketingRoutes}
+
             {/* Shared document viewer (public) */}
             <Route path="/shared/:token" element={<SharedDocument />} />
-            
-            {/* Portal routes (shareholder access) */}
-            <Route path="/portal/accept/:token" element={<AcceptInvite />} />
-            <Route
-              path="/portal"
-              element={
-                <PortalProtectedRoute requiredPermission="shareholder">
-                  <PortalDashboard />
-                </PortalProtectedRoute>
-              }
-            />
-            <Route
-              path="/portal/properties"
-              element={
-                <PortalProtectedRoute requiredPermission="shareholder">
-                  <PortalProperties />
-                </PortalProtectedRoute>
-              }
-            />
-            <Route
-              path="/portal/compliance"
-              element={
-                <PortalProtectedRoute requiredPermission="compliance">
-                  <PortalCompliance />
-                </PortalProtectedRoute>
-              }
-            />
-            <Route
-              path="/portal/investments"
-              element={
-                <PortalProtectedRoute requiredPermission="investor">
-                  <PortalInvestments />
-                </PortalProtectedRoute>
-              }
-            />
-            <Route
-              path="/portal/statements"
-              element={
-                <PortalProtectedRoute requiredPermission="investor">
-                  <PortalStatements />
-                </PortalProtectedRoute>
-              }
-            />
-            
-            {/* Tenant portal routes */}
-            <Route path="/tenant-portal/accept/:token" element={<TenantAcceptInvite />} />
-            <Route path="/tenant-portal" element={<TenantPortalProtectedRoute><TenantDashboard /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/payments" element={<TenantPortalProtectedRoute requiredPermission="rent"><TenantPayments /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/maintenance" element={<TenantPortalProtectedRoute requiredPermission="maintenance"><MaintenanceRequest /></TenantPortalProtectedRoute>} />
-            <Route path="/tenant-portal/certificates" element={<TenantPortalProtectedRoute><TenantCertificates /></TenantPortalProtectedRoute>} />
-            {/* Legacy V1 tenant portal routes — redirect to V2 */}
-            <Route path="/tenant-portal/rent" element={<Navigate to="/tenant-portal/payments" replace />} />
-            <Route path="/tenant-portal/documents" element={<Navigate to="/tenant-portal/certificates" replace />} />
-            
+
+            {/* Shareholder + tenant portals */}
+            {portalRoutes}
+
             {/* Team invite acceptance */}
             <Route path="/team/accept/:token" element={<AcceptTeamInvite />} />
 
