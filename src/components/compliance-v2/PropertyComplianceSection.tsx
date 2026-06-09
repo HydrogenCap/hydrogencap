@@ -104,11 +104,11 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sorted.map(row => {
               const cfg = statusConfig(row.calculated_status);
-              return (
+              const card = (
                 <button
                   key={row.requirement_id}
                   className={cn(
-                    'border-l-4 rounded-lg border p-3 text-left hover:bg-muted/30 transition-colors',
+                    'border-l-4 rounded-lg border p-3 text-left hover:bg-muted/30 transition-colors w-full',
                     cfg.border,
                     cfg.bg,
                   )}
@@ -128,6 +128,18 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
                   {row.issuer_name && <p className="text-[10px] text-muted-foreground mt-1">{row.issuer_name}</p>}
                 </button>
               );
+              if (!row.is_required && row.override_reason) {
+                return (
+                  <Tooltip key={row.requirement_id}>
+                    <TooltipTrigger asChild>{card}</TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="font-medium mb-0.5">Not required</p>
+                      <p className="text-xs">{row.override_reason}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return card;
             })}
           </div>
         ) : (
