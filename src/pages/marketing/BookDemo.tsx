@@ -136,6 +136,18 @@ export default function MarketingBookDemo() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Honeypot — hidden from real users, bots typically fill all fields. */}
+                    <div aria-hidden="true" className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+                      <Label htmlFor="bd-website">Website</Label>
+                      <Input
+                        id="bd-website"
+                        name="website"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={formData.website}
+                        onChange={handleChange}
+                      />
+                    </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Name *</Label>
