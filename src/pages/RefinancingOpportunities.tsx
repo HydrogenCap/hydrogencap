@@ -46,11 +46,26 @@ export default function RefinancingOpportunities() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Refinancing Opportunities</h1>
-          <p className="text-muted-foreground">
-            AI-identified opportunities to release equity or improve terms
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Refinancing Opportunities</h1>
+            <p className="text-muted-foreground">
+              AI-identified opportunities to release equity or improve terms
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPackDialog({
+                open: true,
+                selection: active.map((o) => o.property_id),
+              })
+            }
+            disabled={active.length === 0}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Generate portfolio pack
+          </Button>
         </div>
 
         {isLoading ? (
