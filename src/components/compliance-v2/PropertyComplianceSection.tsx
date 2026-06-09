@@ -168,5 +168,6 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
         reviewFrequencyMonths={selectedRow?.review_frequency_months}
       />
     </>
+    </TooltipProvider>
   );
 }
