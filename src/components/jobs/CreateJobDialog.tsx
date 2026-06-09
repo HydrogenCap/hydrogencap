@@ -63,7 +63,7 @@ import { useAllCompliance } from '@/hooks/useCompliance';
    }, [preselectedPropertyId, preselectedComplianceItemId]);
  
    // Filter to operational properties
-   const availableProperties = properties?.filter(p => p.lifecycle_type === 'core_rental');
+   const availableProperties = properties?.filter(p => lifecycleType(p) === 'core_rental');
  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
