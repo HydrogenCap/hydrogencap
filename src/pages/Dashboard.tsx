@@ -320,7 +320,12 @@ function DashboardPage() {
 
             {/* Zone 2 — KPI Cards */}
             {portfolioKPIs && (
-              <CollapsibleSection id="kpis" title="Key metrics" defaultOpen>
+              <CollapsibleSection
+                id="kpis"
+                title="Key metrics"
+                defaultOpen
+                headerAction={<PortfolioViewModeToggle />}
+              >
                 <KpiCards
                   portfolioKPIs={portfolioKPIs}
                   risks={portfolioRisks}
