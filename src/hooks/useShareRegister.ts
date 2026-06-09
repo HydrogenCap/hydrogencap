@@ -180,12 +180,17 @@ export function useShareholdings(entityId: string | undefined) {
 
   useEffect(() => {
     if (!entityId) return;
+    const topic = `entity:${entityId}:shareholdings`;
     const channel = supabase
-      .channel(`shareholdings_${entityId}`)
+      .channel(topic, { config: { private: true } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shareholdings', filter: `entity_id=eq.${entityId}` }, () => {
         queryClient.invalidateQueries({ queryKey: shareRegisterKeys.shareholdings(entityId) });
       })
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn(`[realtime] channel "${topic}" status=${status}`, err ?? '');
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [entityId, queryClient]);
 
