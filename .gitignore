@@ -28,5 +28,8 @@ test-results/
 
 coverage/
 
+# e2e results
+e2e-results/
+
 # a11y axe HTML reports
 e2e-results/axe/
