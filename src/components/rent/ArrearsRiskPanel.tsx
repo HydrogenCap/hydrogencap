@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, RefreshCw, ChevronDown, ChevronUp, ShieldAlert, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,7 @@ import {
   useArrearsRiskSummary,
   type ArrearsPrediction,
 } from '@/hooks/useArrearsPredictions';
+import { useDashboardTenanciesV2, useDashboardPropertiesV2 } from '@/hooks/useDashboardDataV2';
 import { formatDistanceToNow } from 'date-fns';
 
 const RISK_SEVERITY: Record<string, SeverityLevel> = {
