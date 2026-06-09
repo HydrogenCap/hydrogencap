@@ -51,6 +51,85 @@ export default tseslint.config(
       "react-hooks/preserve-manual-memoization": "off",
       // these produce false positives in complex conditional flows
       "no-useless-assignment": "off",
+      // Block any NEW imports of the V1 compat layer. The list of files
+      // exempted below ratchets down as consumers migrate to the V2-native
+      // hook (`@/hooks/usePropertiesV2WithFinancials`) — never add a file
+      // back to the override list.
+      "no-restricted-imports": ["error", {
+        paths: [
+          {
+            name: "@/hooks/compat/usePropertyCompat",
+            message: "V1 compat layer is being retired. Use @/hooks/usePropertiesV2 directly and @/lib/v2FieldAccessors for derived fields.",
+          },
+          {
+            name: "@/hooks/usePropertiesCompat",
+            message: "V1 compat layer is being retired. Use @/hooks/usePropertiesV2WithFinancials instead.",
+          },
+        ],
+        patterns: [
+          {
+            group: ["**/compat/usePropertyCompat", "**/usePropertiesCompat"],
+            message: "V1 compat layer is being retired. Migrate to @/hooks/usePropertiesV2WithFinancials + @/lib/v2FieldAccessors.",
+          },
+        ],
+      }],
+    },
+  },
+  {
+    // Existing call-sites of the V1 compat layer at the time the guard was
+    // installed. Remove a file from this list as it is migrated; do NOT add
+    // new entries.
+    files: [
+      "src/hooks/compat/usePropertyCompat.ts",
+      "src/hooks/compat/__tests__/usePropertyCompat.test.ts",
+      "src/hooks/usePropertiesCompat.ts",
+      "src/hooks/usePortfolioRisks.ts",
+      "src/hooks/usePortfolioTimeline.ts",
+      "src/hooks/useMissingInfo.ts",
+      "src/hooks/useComplianceAutoSchedule.ts",
+      "src/hooks/__tests__/usePortfolioRisks.test.ts",
+      "src/lib/metricsConfig.ts",
+      "src/lib/propertyMetrics.ts",
+      "src/lib/propertyMetrics.test.ts",
+      "src/lib/portfolioStats.ts",
+      "src/lib/portfolioStats.test.ts",
+      "src/lib/portfolioInsights.ts",
+      "src/lib/portfolioInsights.test.ts",
+      "src/lib/csvExporter.ts",
+      "src/lib/csvExporter.test.ts",
+      "src/lib/bankPresentationGenerator.ts",
+      "src/components/dashboard/ThisMonthWidget.tsx",
+      "src/components/dashboard/PortfolioHealthWidget.tsx",
+      "src/components/dashboard/LenderExposureChart.tsx",
+      "src/components/dashboard/AreaExposureChart.tsx",
+      "src/components/dashboard/ComplianceAlertsWidget.tsx",
+      "src/components/dashboard/DashboardTabs.tsx",
+      "src/components/dashboard/data-quality/types.ts",
+      "src/components/dashboard/data-quality/checkFieldExemption.ts",
+      "src/components/dashboard/data-quality/analyzeDataQuality.ts",
+      "src/components/documents/ValuationMasterDashboard.tsx",
+      "src/components/maps/PropertyMap.tsx",
+      "src/components/properties/PropertiesTableCells.tsx",
+      "src/components/property/StressTestPanel.tsx",
+      "src/components/insurance/AddInsuranceDialog.tsx",
+      "src/components/jobs/CreateJobDialog.tsx",
+      "src/components/maintenance/CreateMaintenanceRequestDialog.tsx",
+      "src/components/insights/OwnershipAttributionSection.tsx",
+      "src/components/reports/BankPresentationDialog.tsx",
+      "src/components/settings/ImportPassportsTab.tsx",
+      "src/components/compliance/ComplianceCalendarContent.tsx",
+      "src/components/compliance/CalendarExportButton.tsx",
+      "src/pages/Documents.tsx",
+      "src/pages/Pipeline.tsx",
+      "src/pages/Passport.tsx",
+      "src/pages/DashboardMap.tsx",
+      "src/pages/Insights.tsx",
+      "src/pages/ImportPassport.tsx",
+      "src/pages/Timeline.tsx",
+      "src/pages/ComplianceCalendar/hooks/useComplianceCalendar.ts",
+    ],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
 );
