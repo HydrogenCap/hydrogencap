@@ -249,10 +249,16 @@ export function calculatePortfolioRisks(
     const propertyCompliance = complianceByProperty.get(property.id) || [];
 
     // HMO licence risks
+    // Suppress when either (a) the property-level HMO flag is false, or
+    // (b) the user has explicitly marked the HMO licence requirement as not required.
     if (property.is_hmo_licensed) {
-      const hmoRow = propertyCompliance.find(r => r.document_type === 'hmo_licence' && r.is_required);
+      const anyHmoRow = propertyCompliance.find(r => r.document_type === 'hmo_licence');
+      const explicitlyNotRequired = anyHmoRow !== undefined && anyHmoRow.is_required === false;
+      const hmoRow = anyHmoRow && anyHmoRow.is_required ? anyHmoRow : undefined;
 
-      if (!hmoRow || hmoRow.calculated_status === 'missing') {
+      if (explicitlyNotRequired) {
+        // No-op — user has overridden the requirement.
+      } else if (!hmoRow || hmoRow.calculated_status === 'missing') {
         pushRisk(riskItems, {
           id: `hmo-missing-${property.id}`,
           propertyId: property.id,
