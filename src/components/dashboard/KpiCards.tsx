@@ -206,6 +206,7 @@ export function KpiCards({
           icon={Wallet}
           iconClassName="text-primary"
           valueClassName="text-primary"
+          onClick={() => onMetricClick('rent')}
         />
         <KpiCard
           label="Occupancy Rate"
