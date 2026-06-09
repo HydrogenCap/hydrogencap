@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
@@ -56,7 +57,9 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
   const scorePct = totalRequired > 0 ? Math.round((validRequired / totalRequired) * 100) : 100;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <>
+
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
@@ -101,11 +104,11 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sorted.map(row => {
               const cfg = statusConfig(row.calculated_status);
-              return (
+              const card = (
                 <button
                   key={row.requirement_id}
                   className={cn(
-                    'border-l-4 rounded-lg border p-3 text-left hover:bg-muted/30 transition-colors',
+                    'border-l-4 rounded-lg border p-3 text-left hover:bg-muted/30 transition-colors w-full',
                     cfg.border,
                     cfg.bg,
                   )}
@@ -125,6 +128,18 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
                   {row.issuer_name && <p className="text-[10px] text-muted-foreground mt-1">{row.issuer_name}</p>}
                 </button>
               );
+              if (!row.is_required && row.override_reason) {
+                return (
+                  <Tooltip key={row.requirement_id}>
+                    <TooltipTrigger asChild>{card}</TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="font-medium mb-0.5">Not required</p>
+                      <p className="text-xs">{row.override_reason}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              return card;
             })}
           </div>
         ) : (
@@ -153,5 +168,6 @@ export function PropertyComplianceSection({ matrixRows, propertyId, orgId }: Pro
         reviewFrequencyMonths={selectedRow?.review_frequency_months}
       />
     </>
+    </TooltipProvider>
   );
 }

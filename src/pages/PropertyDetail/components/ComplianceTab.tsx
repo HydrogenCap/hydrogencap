@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyComplianceSection } from '@/components/compliance-v2/PropertyComplianceSection';
+import { RequirementsEditor } from '@/components/compliance-v2/RequirementsEditor';
 import { usePropertyComplianceV2 } from '@/hooks/useComplianceV2';
 
 export function ComplianceTab({ propertyId, orgId }: { propertyId: string; orgId: string }) {
@@ -14,5 +15,10 @@ export function ComplianceTab({ propertyId, orgId }: { propertyId: string; orgId
       </Card>
     );
   }
-  return <PropertyComplianceSection matrixRows={matrixRows} propertyId={propertyId} orgId={orgId} />;
+  return (
+    <div className="space-y-6">
+      <PropertyComplianceSection matrixRows={matrixRows} propertyId={propertyId} orgId={orgId} />
+      <RequirementsEditor matrixRows={matrixRows} />
+    </div>
+  );
 }

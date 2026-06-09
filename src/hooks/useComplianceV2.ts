@@ -202,22 +202,30 @@ export function useToggleRequirementV2() {
       requirementId,
       isRequired,
       overrideReason,
+      notes,
     }: {
       requirementId: string;
       isRequired: boolean;
       overrideReason?: string;
+      notes?: string | null;
     }) => {
+      const update: Record<string, unknown> = {
+        is_required: isRequired,
+        override_reason: isRequired ? null : (overrideReason || null),
+      };
+      // Only set notes if explicitly passed (undefined = leave untouched)
+      if (notes !== undefined) update.notes = notes;
       const { error } = await supabaseAny
         .from('compliance_requirements')
-        .update({
-          is_required: isRequired,
-          override_reason: isRequired ? null : (overrideReason || null),
-        })
+        .update(update)
         .eq('id', requirementId);
       if (error) throw error;
     },
     onSuccess: () => {
+      // Recompute compliance matrix, portfolio score, Today-page risks (derived
+      // from the matrix), and the per-property compliance map.
       invalidateComplianceViews(qc);
+      qc.invalidateQueries({ queryKey: ['compliance-matrix-v2'] });
     },
   });
 }
