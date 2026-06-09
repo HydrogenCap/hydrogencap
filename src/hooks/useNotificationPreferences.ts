@@ -17,6 +17,10 @@ import { toast } from "sonner";
    notify_expiring_soon: boolean;
    notify_rate_expiry: boolean;
    notify_negative_cashflow: boolean;
+   notify_rent_collection: boolean;
+   notify_voids: boolean;
+   notify_regulatory_changes: boolean;
+   notify_recommended_actions: boolean;
    timezone: string;
  }
  
