@@ -110,6 +110,10 @@ import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
      notify_expiring_soon: true,
      notify_rate_expiry: true,
      notify_negative_cashflow: false,
+     notify_rent_collection: true,
+     notify_voids: true,
+     notify_regulatory_changes: true,
+     notify_recommended_actions: true,
    };
  
    return (
