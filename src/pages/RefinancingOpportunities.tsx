@@ -1,14 +1,16 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp } from 'lucide-react';
+import { FileText, TrendingUp } from 'lucide-react';
 import {
   useRefinancingOpportunities,
   useUpdateRefinancingOpportunity,
 } from '@/hooks/useRefinancingOpportunities';
+import { LenderPackDialog } from '@/components/refinancing/LenderPackDialog';
 
 function fmtGBP(v: number) {
   return new Intl.NumberFormat('en-GB', {
