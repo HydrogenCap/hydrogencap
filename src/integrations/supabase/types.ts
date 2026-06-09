@@ -11112,6 +11112,7 @@ export type Database = {
         Args: { object_name: string }
         Returns: boolean
       }
+      realtime_topic_authorized: { Args: { _topic: string }; Returns: boolean }
       refresh_compliance_statuses_v2: { Args: never; Returns: undefined }
       restore_document: { Args: { p_document_id: string }; Returns: boolean }
       run_compliance_scan: { Args: { p_org_id: string }; Returns: Json }
