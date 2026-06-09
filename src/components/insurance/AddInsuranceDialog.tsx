@@ -21,7 +21,7 @@
    SelectValue,
  } from '@/components/ui/select';
  import { useCreateInsurancePolicy, POLICY_TYPES } from '@/hooks/useInsurance';
- import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
+ import { usePropertiesV2 as useProperties } from '@/hooks/usePropertiesV2';
  
  interface AddInsuranceDialogProps {
    open: boolean;
