@@ -304,6 +304,72 @@ import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
                    ))}
                  </SelectContent>
                </Select>
+
+               <Separator className="my-2" />
+
+               <Label>Include in digest</Label>
+               <div className="space-y-3">
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <p className="text-sm font-medium">Expiring certificates</p>
+                     <p className="text-xs text-muted-foreground">Overdue and due-soon compliance items</p>
+                   </div>
+                   <Switch
+                     checked={currentPrefs.notify_expiring_soon}
+                     onCheckedChange={(checked) => handleToggle('notify_expiring_soon', checked)}
+                   />
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <p className="text-sm font-medium">Upcoming fixed-rate ends</p>
+                     <p className="text-xs text-muted-foreground">Mortgage rate expiries in the next 6 months</p>
+                   </div>
+                   <Switch
+                     checked={currentPrefs.notify_rate_expiry}
+                     onCheckedChange={(checked) => handleToggle('notify_rate_expiry', checked)}
+                   />
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <p className="text-sm font-medium">Rent collected vs due</p>
+                     <p className="text-xs text-muted-foreground">Last 7 days of rent payments and shortfalls</p>
+                   </div>
+                   <Switch
+                     checked={currentPrefs.notify_rent_collection}
+                     onCheckedChange={(checked) => handleToggle('notify_rent_collection', checked)}
+                   />
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <p className="text-sm font-medium">Voids</p>
+                     <p className="text-xs text-muted-foreground">Currently open void periods and lost income</p>
+                   </div>
+                   <Switch
+                     checked={currentPrefs.notify_voids}
+                     onCheckedChange={(checked) => handleToggle('notify_voids', checked)}
+                   />
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <p className="text-sm font-medium">Regulatory changes</p>
+                     <p className="text-xs text-muted-foreground">New UK housing-law alerts since the last digest</p>
+                   </div>
+                   <Switch
+                     checked={currentPrefs.notify_regulatory_changes}
+                     onCheckedChange={(checked) => handleToggle('notify_regulatory_changes', checked)}
+                   />
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <div>
+                     <p className="text-sm font-medium">Top 3 recommended actions</p>
+                     <p className="text-xs text-muted-foreground">Prioritised follow-ups to tackle this week</p>
+                   </div>
+                   <Switch
+                     checked={currentPrefs.notify_recommended_actions}
+                     onCheckedChange={(checked) => handleToggle('notify_recommended_actions', checked)}
+                   />
+                 </div>
+               </div>
              </div>
            )}
          </CardContent>
