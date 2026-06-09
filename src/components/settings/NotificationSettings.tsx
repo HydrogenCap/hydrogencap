@@ -69,6 +69,18 @@ import { useSendComplianceReminders } from '@/hooks/useSendComplianceReminders';
        case 'notify_negative_cashflow':
          updatePrefs.mutate({ notify_negative_cashflow: value });
          return;
+       case 'notify_rent_collection':
+         updatePrefs.mutate({ notify_rent_collection: value });
+         return;
+       case 'notify_voids':
+         updatePrefs.mutate({ notify_voids: value });
+         return;
+       case 'notify_regulatory_changes':
+         updatePrefs.mutate({ notify_regulatory_changes: value });
+         return;
+       case 'notify_recommended_actions':
+         updatePrefs.mutate({ notify_recommended_actions: value });
+         return;
      }
    };
  
