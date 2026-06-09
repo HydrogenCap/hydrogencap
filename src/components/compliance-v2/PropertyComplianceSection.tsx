@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ComplianceMatrixRow, ComplianceStatusV2 } from '@/lib/complianceV2Types';
 import { DOC_TYPE_DISPLAY_NAMES } from '@/lib/complianceV2Types';
