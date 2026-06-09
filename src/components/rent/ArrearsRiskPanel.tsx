@@ -48,7 +48,15 @@ function RiskScoreBar({ score }: { score: number }) {
   );
 }
 
-function PredictionRow({ prediction }: { prediction: ArrearsPrediction }) {
+function PredictionRow({
+  prediction,
+  tenantName,
+  propertyLabel,
+}: {
+  prediction: ArrearsPrediction;
+  tenantName: string;
+  propertyLabel: string;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -58,12 +66,8 @@ function PredictionRow({ prediction }: { prediction: ArrearsPrediction }) {
         className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/50 transition-colors"
       >
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">
-            Tenant ID: {prediction.tenant_id?.slice(0, 8) ?? 'Unknown'}
-          </p>
-          <p className="text-xs text-muted-foreground truncate">
-            Property: {prediction.property_id.slice(0, 8)}
-          </p>
+          <p className="text-sm font-medium truncate">{tenantName}</p>
+          <p className="text-xs text-muted-foreground truncate">{propertyLabel}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <RiskScoreBar score={prediction.risk_score} />
