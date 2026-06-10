@@ -19,7 +19,8 @@
    SelectValue 
  } from '@/components/ui/select';
  import { useCreateJob, JOB_PRIORITIES, JobPriority } from '@/hooks/useContractorJobs';
- import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
+import { usePropertiesV2 as useProperties } from '@/hooks/usePropertiesV2';
+import { lifecycleType } from '@/lib/v2FieldAccessors';
 import { useAllCompliance } from '@/hooks/useCompliance';
  import { COMPLIANCE_TYPES } from '@/lib/schemas/compliance';
  import { formatDateUK } from '@/lib/calculations';
@@ -63,7 +64,7 @@ import { useAllCompliance } from '@/hooks/useCompliance';
    }, [preselectedPropertyId, preselectedComplianceItemId]);
  
    // Filter to operational properties
-   const availableProperties = properties?.filter(p => p.lifecycle_type === 'core_rental');
+   const availableProperties = properties?.filter(p => lifecycleType(p) === 'core_rental');
  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,7 +130,7 @@ import { useAllCompliance } from '@/hooks/useCompliance';
                      <SelectItem key={property.id} value={property.id}>
                        <div className="flex items-center gap-2">
                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                         <span>{property.address_line?.split(',')[0]}</span>
+                         <span>{property.address_line_1?.split(',')[0]}</span>
                          <span className="text-muted-foreground">({property.postcode})</span>
                        </div>
                      </SelectItem>

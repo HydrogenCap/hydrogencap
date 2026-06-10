@@ -1,165 +1,119 @@
-# Surface-area reduction pass
+## V1 compat layer retirement
 
-The app has ~80 page routes and a sidebar with 4 sections, 30+ leaf destinations. That breadth is the single biggest "feels heavy" signal. Goal: collapse the nav to roughly **20 top-level destinations**, remove dead/duplicate routes, and fold useful sub-views into their natural parents as tabs or filters — without losing any working functionality.
+Move all 47 call-sites off `usePropertyCompat` / `usePropertiesCompat`, delete the shims, and confirm the existing vitest + Playwright suites stay green.
 
-This is presentation/routing work only. No DB, no business logic, no edge functions.
+### What the compat layer actually provides
 
-## Targets (what gets folded or removed)
+`usePropertiesCompat` does three jobs:
 
-```text
-KEEP (top nav)              ABSORBS / REPLACES
-────────────────────────────────────────────────────────────────────
-Today                       Fix-it queue, Actions, Missing info,
-                            Data Quality  → tabs inside Today
-Dashboard                   Dashboard map → tab
-Properties (V2)             Pipeline → "Lifecycle: development" filter
-Entities                    Ownership → tab on entity & portfolio
-Compliance Hub              already consolidated last phase ✓
-Lettings                    Tenants, Rent, Voids, Lettings Pipeline
-                            → tabs in one Lettings workspace
-Finance                     Lending, Refinancing, Financials, Investors,
-                            Distributions, Insurance, Accounting, Tax,
-                            Tax Engine, Forecast → tabs in Finance
-Contractors                 Jobs & Works, CapEx → tabs
-Inspections                 stays (small but distinct)
-Documents                   Templates, Bulk Upload, Bulk Scanner → tabs
-Insights                    Timeline, Performance, Val. Alerts,
-                            Portfolio Timeline, Chat, AI Reports,
-                            Acquisition Advisor → tabs / cards
-Reports                     stays (artifact generator)
-Admin                       Team, Import, Audit Log, System Health,
-                            Migration, Webhooks, Settings → tabs in
-                            Settings (each becomes a settings section)
-```
+1. Reads `properties_v2` and reshapes rows into the V1 `PropertyWithFinancials` shape (renames + derived fields).
+2. Fetches `loan_facilities`, `property_annual_performance`, and `tenancy_agreements` in parallel, then stitches them into nested `loans` / `income` / `costs` / `tenancies` arrays.
+3. Returns `null`/defaults for fields that have no V2 source (`bathrooms`, `epc_rating`, `is_hmo_licensed`, `conservation_area`, `legal_owner_*`).
 
-Net effect: sidebar drops from **30+ leaves to ~12 top-level items**, each opening into a workspace with consistent tabs (same pattern the Compliance Hub already uses).
+Removing it means each consumer must either query V2 directly or accept those null fields explicitly.
 
-## Routes — keep, redirect, remove
-
-**Keep** every page component file — they remain importable as tabs.
-
-**301 redirect** the following URLs to their new homes (so bookmarks, deep links, and external references don't break):
+### Plan
 
 ```text
-/fix-it              → /today?view=fix-it
-/missing-info        → /today?view=missing-info
-/data-quality        → /today?view=data-quality
-/actions             → /today?view=actions
-/dashboard/map       → /dashboard?view=map
-/pipeline            → /properties-v2?lifecycle=development
-/ownership           → /entities?view=ownership
-/voids               → /lettings?view=voids
-/rent                → /lettings?view=rent
-/tenants-v2          → /lettings?view=tenants  (detail routes /tenants-v2/:id keep their URL)
-/lettings-pipeline   → /lettings?view=pipeline
-/lending             → /finance?view=lending
-/refinancing-opportunities → /finance?view=refinancing
-/financials          → /finance?view=overview
-/investors           → /finance?view=investors
-/distributions       → /finance?view=distributions
-/insurance           → /finance?view=insurance
-/accounting          → /finance?view=accounting
-/tax /tax-engine     → /finance?view=tax
-/financial-forecast  → /finance?view=forecast
-/jobs-and-works      → /contractors?view=jobs
-/capex               → /contractors?view=capex
-/templates           → /documents?view=templates
-/bulk-upload         → /documents?view=bulk-upload
-/bulk-scanner        → /documents?view=bulk-scanner
-/timeline /portfolio-timeline /valuation-alerts → /insights?view=…
-/chat                → /insights?view=chat
-/investor-reports    → /insights?view=ai-reports
-/acquisition-advisor → /insights?view=acquisition
-/audit-log /webhooks /system-health /migration /team /import /import/passport → /settings?section=…
+Phase 1 — Build the V2-native equivalent (shared)
+  • Create src/hooks/usePropertiesV2WithFinancials.ts
+    – Same parallel fetch as the compat list hook, but returns native V2 shape:
+      PropertyV2 & { loans: LoanFacility[]; performance: AnnualPerformanceRow | null;
+                     tenancies: TenancyAgreementSlim[]; entity_name: string | null }
+    – No renames, no V1-only null fields, no Proxy warning layer.
+  • Create src/lib/v2FieldAccessors.ts with pure helpers that today live in the compat reshape:
+      lifecycleType(p)         — 'core_rental' | 'development'
+      formattedAddress(p)
+      isGradeListed(p)
+      hasGas(p)
+      lastValuationDate(p) / lastValuationEstimate(p)
+    Tests added alongside.
+  • For property_passport-sourced fields (epc_rating, bathrooms, is_hmo_licensed,
+    conservation_area, legal_owner_*): document mapping table in
+    docs/release/v1-compat-retirement-2026-06-09.md and have each consumer that
+    needs them switch to usePassportPageData / property_passport directly.
+
+Phase 2 — Migrate library / pure-function consumers (no React)
+  Files: src/lib/{metricsConfig,propertyMetrics,portfolioStats,portfolioInsights,
+         csvExporter,bankPresentationGenerator}.ts + their .test.ts.
+  • Change function signatures from `PropertyWithFinancials` to the new
+    V2-native composite type.
+  • Replace field reads: address_line → address_line_1, area_name/town_city
+    → city, beds → total_lettable_rooms, has_gas → has_gas_supply,
+    is_grade_listed → listing_grade !== 'none', lifecycle_type → derived via
+    lifecycleType(), formatted_address → formattedAddress(), etc.
+  • Update existing snapshots/fixtures in lib tests.
+  • Run targeted vitest: bunx vitest run src/lib
+
+Phase 3 — Migrate dashboard widgets and the data-quality module
+  Files: ThisMonthWidget, PortfolioHealthWidget, LenderExposureChart,
+         AreaExposureChart, ComplianceAlertsWidget, DashboardTabs,
+         components/dashboard/data-quality/* (types, checkFieldExemption,
+         analyzeDataQuality), components/maps/PropertyMap,
+         components/properties/PropertiesTableCells.
+  • Swap usePropertiesCompat → usePropertiesV2WithFinancials.
+  • Update field reads via the accessors from Phase 1.
+  • For data-quality "exemption" checks that read passport-only fields,
+    extend the hook input to accept the passport map already available from
+    usePassportPageData.
+
+Phase 4 — Migrate page-level consumers and feature dialogs
+  Files: pages/{Documents,Pipeline,Passport,DashboardMap,Insights,
+         ImportPassport,Timeline}.tsx, pages/ComplianceCalendar/hooks/
+         useComplianceCalendar.ts, components/compliance/{ComplianceCalendar
+         Content, CalendarExportButton}, components/insurance/AddInsurance
+         Dialog, components/jobs/CreateJobDialog, components/maintenance/
+         CreateMaintenanceRequestDialog, components/insights/Ownership
+         AttributionSection, components/property/StressTestPanel,
+         components/reports/BankPresentationDialog, components/settings/
+         ImportPassportsTab, components/documents/ValuationMasterDashboard.
+  • Same swap pattern as Phase 3.
+  • Dialogs that only need {id, address_line_1, postcode} switch to
+    a lightweight selector built on usePropertiesV2 (no financial joins).
+
+Phase 5 — Migrate the remaining hooks
+  Files: src/hooks/{usePortfolioTimeline,usePortfolioRisks,useMissingInfo,
+         useComplianceAutoSchedule}.ts + their tests.
+  • usePortfolioRisks already has a vitest spec — update its fixtures to the
+    new shape, keep the assertions identical (behaviour-preserving).
+
+Phase 6 — Delete the compat layer
+  • Delete src/hooks/compat/usePropertyCompat.ts
+  • Delete src/hooks/compat/__tests__/usePropertyCompat.test.ts
+  • Delete src/hooks/usePropertiesCompat.ts
+  • Delete src/hooks/useProperties.ts re-exports if no longer referenced
+    (verify with rg).
+  • Add an ESLint no-restricted-imports rule so the paths cannot return.
+
+Phase 7 — Verify
+  • bun run typecheck
+  • bun run test  (full vitest suite)
+  • bun run lint
+  • bunx playwright test e2e/smoke.spec.ts e2e/route-guards.spec.ts
+    e2e/dashboard-interaction.spec.ts e2e/property-crud.spec.ts
+  • Manually load /dashboard, /pipeline, /insights, /timeline,
+    /compliance-calendar in preview to confirm no runtime regressions.
+  • Update memory rule #4 (V2 Architecture) to drop the V1↔V2 "compat layer"
+    qualifier.
 ```
 
-**Hard-remove** (no redirect — these are unused/duplicated):
+### Technical notes
 
-- `Communications.tsx` — covered by Notification Centre + Inbox
-- `Insights.tsx` (the dashboard wrapper) — replaced by tabbed Insights workspace built from existing components
-- `RegulatoryMonitor` as a top-level item — keep the route, demote to a tab under Compliance Hub (already half there)
-- Any V1 redirect helpers still referencing dead `/properties/:id` and `/tenants/:tenantId` shells: keep the redirects, delete the wrapper components after confirming nothing else mounts them
+- **Behaviour preservation rule**: derived fields (`lifecycle_type`, `formatted_address`, `is_grade_listed`, `beds`, `has_gas`, `last_valuation_*`) are now produced by `v2FieldAccessors.ts` using exactly the same expressions the compat reshape used. Diffing the compat reshape against the accessors line-by-line is the simplest correctness check.
+- **`__v2_entity_id` / `__v2_entity_name` consumers**: any file currently reading those underscore-prefixed escape hatches just stops needing them — the V2 shape exposes `entity_id` and the joined `entity_name` directly.
+- **Loans mapper quirks** (`lender` populated from `lender_id`, `capital_or_interest` derived from `interest_only`, etc.) are preserved by keeping the same `mapLoanToV1` logic until callers no longer depend on the V1 loan shape. Phase 2/3 consumers that touch loans either keep using the mapped shape (helper retained as `loanFacilityToCard`) or migrate to native `loan_facilities` rows — decided per file.
+- **`property_annual_performance` is a view, not a table** — the new hook keeps the existing single-row-per-property assumption; no new queries.
+- **Test impact**: existing tests in `src/lib/*.test.ts`, `src/hooks/__tests__/usePortfolioRisks.test.ts`, and `src/hooks/compat/__tests__/usePropertyCompat.test.ts` need updates; the compat test is deleted in Phase 6.
+- **Scope discipline**: no behaviour changes, no new features, no field additions in this PR. Pure refactor.
 
-## Workspace shell pattern
+### Risk and sequencing
 
-Reuse the existing `ComplianceHubTabs` pattern. Build one `<WorkspaceShell>` component:
+- Foundation libs (`propertyMetrics`, `portfolioStats`, `portfolioInsights`) feed nearly every dashboard widget. Phase 2 ships first and gets full test coverage before any widget/page is touched.
+- Phases 3–5 are independent file groups and could in principle be reordered, but the listed order keeps `usePropertiesCompat` referenced until the last consumer is migrated, so the shim stays callable mid-migration and the app remains runnable between phases.
+- Phase 6 (delete) is only safe after `rg "usePropertyCompat|usePropertiesCompat|compat/usePropertyCompat|PropertyCompatWithFinancials"` returns zero hits in `src/`.
 
-```text
-┌─ Workspace Title ──────────── Filters · Search · New ─┐
-│  [Tab A]  [Tab B]  [Tab C]  [Tab D]                    │
-├────────────────────────────────────────────────────────┤
-│  Active tab content (lazy-loaded existing page)        │
-└────────────────────────────────────────────────────────┘
-```
+### Out of scope
 
-- Tab state synced to `?view=…` so links and back/forward work.
-- Each tab lazy-imports the original page component — zero rewrites of business logic.
-- Filter chips (org/entity/lifecycle/search) live in the shell and pass through context, so switching tabs preserves filter state.
-
-## Sidebar rewrite (`navConfig.ts`)
-
-```text
-Portfolio
-  Today
-  Dashboard
-  Properties
-  Entities
-
-Operations
-  Compliance
-  Lettings
-  Contractors
-  Inspections
-  Documents
-  Inbox
-
-Intelligence
-  Insights
-  Reports
-
-Admin
-  Settings
-```
-
-12 destinations. Children removed from sidebar (they live as in-page tabs). Mobile bottom nav shrinks to 5 (Today, Properties, Compliance, Lettings, More).
-
-## Technical sections
-
-- **`navConfig.ts`**: rewrite to the 12-item tree. Drop `children`.
-- **`App.tsx`**: add the redirects above using `<Navigate to=… replace />`. Keep all `Route` entries for detail pages (`/properties-v2/:id`, `/tenants-v2/:id`, etc.) — only collection routes redirect.
-- **New `src/components/layout/WorkspaceShell.tsx`**: tab strip + URL sync + filter passthrough. Models after `ComplianceHubTabs`.
-- **New workspace pages** that compose existing page components into tabs:
-    - `src/pages/Today.tsx` — add tabs (Today / Fix-it / Missing info / Data quality / Actions)
-    - `src/pages/Lettings.tsx` — new file, tabs into existing TenantsV2/RentCollection/Voids/LettingsPipeline
-    - `src/pages/Finance.tsx` — new file, tabs into Financials/Lending/Refinancing/Investors/Distributions/Insurance/Accounting/Tax/TaxDashboard/FinancialForecast
-    - `src/pages/Contractors.tsx` — already exists, extend with tabs for JobsAndWorks + CapEx
-    - `src/pages/Documents.tsx` — extend with tabs for Templates + BulkUpload + BulkDocumentScanner
-    - `src/pages/Insights.tsx` — rebuild as tabs over Timeline + PortfolioTimeline + ValuationAlerts + Chat + AIInvestorReports + AcquisitionAdvisor
-    - `src/pages/Settings.tsx` — add sub-sections for Team / Import / Audit Log / Webhooks / System Health / Migration
-- **`MobileBottomNav.tsx`**: reduce to 5 items, "More" drawer reads from flattened nav.
-- **Search / command palette** (`GlobalSearch`): regenerate index from new flat nav so jump-to-page still works for the absorbed routes (e.g. typing "refinancing" still finds it).
-- **Tests**: update `e2e/navigation.spec.ts` and any route guard tests that hit the redirected URLs.
-- **Sitemap** (`public/sitemap.xml`): drop redirected internal URLs, keep canonical workspace URLs.
-
-## What I'm explicitly not touching
-
-- Any DB tables, RLS, edge functions, or business logic.
-- Detail routes (`/properties-v2/:id`, `/tenants-v2/:id`, `/jobs/:id`, etc.) — URLs unchanged.
-- Marketing site, portal, tenant-portal — separate surface, untouched.
-- Admin / platform-admin routes — untouched.
-
-## Out of scope (intentionally)
-
-- Visual restyle of the workspace shell beyond reusing the existing Compliance Hub tab styling.
-- New filters or new analytics — only relocation.
-- Killing routes that have telemetry showing real usage; if anything in the redirect list is actually well-used I'd rather keep it and just demote it from the sidebar. If you want, before I build I can run a quick usage check from Sentry / analytics to validate the kill-list.
-
-## Rollout
-
-One PR. Behind a feature flag (`flags.consolidated_nav`) so we can flip back in seconds if a user reports a missing path. Flag default ON in preview, OFF in prod for the first 24h, then ON.
-
-## What I need from you
-
-1. **OK to redirect (not delete) the routes above?** That's the safe path — bookmarks keep working.
-2. **Any route in the redirect list that you know is heavily used and should stay as a top-level sidebar item?** Likely candidates people push back on: Rent Collection, Lending, Tax — easy to promote back if so.
-3. **Keep `Inbox` as a top-level item, or fold under Compliance Hub?** I have it standalone above; arguable either way.
+- Adding V2 sources for fields that genuinely don't exist in V2 (`bathrooms`, `epc_rating`, etc.). Those become explicit reads against `property_passport` per the existing memory note, or stay as `null` where the consumer already tolerated it.
+- Touching the V1 `properties` table itself — the freeze triggers already cover that.
+- The unrelated `supabaseAny` typed-client debt (separate effort).

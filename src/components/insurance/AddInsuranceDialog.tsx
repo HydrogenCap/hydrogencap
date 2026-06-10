@@ -21,7 +21,7 @@
    SelectValue,
  } from '@/components/ui/select';
  import { useCreateInsurancePolicy, POLICY_TYPES } from '@/hooks/useInsurance';
- import { usePropertiesCompat as useProperties } from '@/hooks/usePropertiesCompat';
+ import { usePropertiesV2 as useProperties } from '@/hooks/usePropertiesV2';
  
  interface AddInsuranceDialogProps {
    open: boolean;
@@ -115,7 +115,7 @@
                    <SelectContent>
                      {properties?.map(p => (
                        <SelectItem key={p.id} value={p.id}>
-                         {p.address_line?.split(',')[0]} ({p.postcode})
+                         {p.address_line_1?.split(',')[0]} ({p.postcode})
                        </SelectItem>
                      ))}
                    </SelectContent>
