@@ -19,11 +19,15 @@ import { writeAxeHtmlReport } from './helpers/axeReport';
  * HTML report per case is written to e2e-results/axe/<UTC-date>/<slug>.html.
  */
 
-const ROUTES: { path: string; name: string; note?: string }[] = [
+const ROUTES: { path: string; name: string; note?: string; public?: boolean }[] = [
   { path: '/dashboard', name: 'dashboard' },
+  { path: '/today', name: 'today', note: 'Core flow: Today workspace (WCAG 2.1 AA gate)' },
+  { path: '/properties-v2', name: 'properties-v2-list', note: 'Core flow: Properties V2 list' },
+  { path: '/properties-v2/b33f02bf-89de-416d-baa7-919a26c9a37e', name: 'property-detail' },
+  { path: '/compliance-v2', name: 'compliance-v2', note: 'Core flow: Compliance V2 register' },
+  { path: '/auth', name: 'auth', public: true, note: 'Core flow: Auth — scanned logged-out' },
   { path: '/compliance/calendar', name: 'compliance-calendar' },
   { path: '/rent', name: 'rent' },
-  { path: '/properties-v2/b33f02bf-89de-416d-baa7-919a26c9a37e', name: 'property-detail' },
   // #63b coverage expansion (2026-05-08):
   { path: '/inbox', name: 'inbox', note: 'Inbox page touched by #57b NULL-confidence trapdoor' },
   { path: '/tenants-v2', name: 'tenants-v2' },
@@ -140,7 +144,9 @@ test.describe('A11y smoke (axe-core)', () => {
     for (const mode of MODES) {
       const key = `${route.name}-${mode}`;
       test(`${route.name} — ${mode} mode has no serious/critical violations`, async ({ page }) => {
-        await login(page);
+        if (!route.public) {
+          await login(page);
+        }
         await page.addInitScript((m: string) => {
           try {
             localStorage.setItem('tenureiq-theme', m);
