@@ -18,13 +18,50 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="TenureIQ" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://js.stripe.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://maps.googleapis.com https://maps.gstatic.com https://*.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://maps.googleapis.com https://api.companieshouse.gov.uk https://epc.opendatacommunities.org https://landregistry.data.gov.uk https://api.freeagent.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;">
+    <!--
+      Content-Security-Policy
+      -----------------------
+      Hardened June 2026. Notes on each non-default directive:
+
+        script-src
+          - 'unsafe-eval' DROPPED. The only dependency that previously hinted at
+            eval was pdfjs-dist, which feature-tests `new Function('')` via
+            `FeatureTest.isEvalSupported` and falls back gracefully when the
+            CSP refuses it. PDF preview uses the worker build
+            (pdfjs-dist/build/pdf.worker.min.mjs) so no runtime eval is needed.
+          - 'unsafe-inline' DROPPED. Inline bootstrap scripts moved to
+            /app-init.js and /sw-register.js. JSON-LD blocks are pinned via
+            sha256 hashes below — update the hash if their content changes.
+          - Stripe.js (js.stripe.com) and Google Maps JS API (maps.googleapis.com)
+            are kept because the Stripe Elements iframe and Maps loader are
+            served from those origins.
+
+        style-src
+          - 'unsafe-inline' MUST remain. shadcn/ui, Radix, Recharts, Leaflet
+            and our pre-paint shell all attach inline style attributes /
+            <style> blocks at runtime. There is no practical hash/nonce
+            strategy for these without forking those libraries.
+
+        worker-src 'self' blob:
+          - Required for pdfjs-dist (worker shipped as a blob URL) and
+            Leaflet's tile workers.
+
+        frame-src https://js.stripe.com https://hooks.stripe.com
+          - Required for Stripe Elements / 3DS challenge iframes.
+
+        img-src ... maps.googleapis.com maps.gstatic.com *.tile.openstreetmap.org
+          - Required for Google Maps tiles + OSM fallback used in the mapping module.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-eQXptIyJJwq+MtWAQntZ4VK4hGr9U1upvg/dTUPLJVk=' 'sha256-ey9dowOyBSHNk5640sjNZLbuRaodkQ3/SHEjBkHnJd4=' 'sha256-UgaA/DVWWwt/bmb6+3IScdtgam7EwW0cqhyLF0Oeoco=' https://js.stripe.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://maps.googleapis.com https://maps.gstatic.com https://*.google.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://maps.googleapis.com https://api.companieshouse.gov.uk https://epc.opendatacommunities.org https://landregistry.data.gov.uk https://api.freeagent.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:;">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://jnkwooocjpgpznittueo.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://jnkwooocjpgpznittueo.supabase.co" />
-    <!-- Non-blocking font load: fetch via preload, attach as stylesheet onload. -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Urbanist:wght@400;500;600;700;800;900&family=Epilogue:wght@300;400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <!--
+      Non-blocking font load: preload then upgrade to stylesheet from
+      /app-init.js (inline onload removed for strict CSP).
+    -->
+    <link rel="preload" as="style" data-font-swap href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Urbanist:wght@400;500;600;700;800;900&family=Epilogue:wght@300;400;500;600;700&display=swap" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Urbanist:wght@400;500;600;700;800;900&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet" /></noscript>
 
     <!-- JSON-LD Structured Data -->
@@ -205,45 +242,7 @@
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Hide the pre-paint shell once React has rendered.
-      (function () {
-        var el = document.getElementById('app-shell');
-        if (!el) return;
-        var root = document.getElementById('root');
-        var hide = function () {
-          el.classList.add('hide');
-          setTimeout(function () { el && el.parentNode && el.parentNode.removeChild(el); }, 350);
-        };
-        // Poll for first child of #root (cheap and reliable across frameworks).
-        var start = Date.now();
-        var iv = setInterval(function () {
-          if (root && root.firstChild) { clearInterval(iv); hide(); }
-          else if (Date.now() - start > 15000) { clearInterval(iv); hide(); }
-        }, 60);
-      })();
-    </script>
-    <script>
-      (function () {
-        if (!('serviceWorker' in navigator)) return;
-        var inIframe = false;
-        try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
-        var host = window.location.hostname;
-        var isPreview =
-          host.indexOf('id-preview--') !== -1 ||
-          host.indexOf('lovableproject.com') !== -1 ||
-          host.indexOf('lovable.app') !== -1;
-        if (inIframe || isPreview) {
-          // Don't register in preview/iframe — unregister anything stale.
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            regs.forEach(function (r) { r.unregister(); });
-          }).catch(function () {});
-          return;
-        }
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
-        });
-      })();
-    </script>
+    <script src="/app-init.js"></script>
+    <script src="/sw-register.js"></script>
   </body>
 </html>
